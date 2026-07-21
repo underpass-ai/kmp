@@ -17,6 +17,7 @@ These documents are the current source of truth for users and maintainers:
 | Navigation | [index.md](index.md) |
 | v1beta1 maturity and limitations | [beta-status.md](beta-status.md) |
 | Product roadmap | [product/kernel-roadmap-milestones.md](product/kernel-roadmap-milestones.md) |
+| Embedded edition roadmap | [product/kmp-embedded-edition-roadmap.md](product/kmp-embedded-edition-roadmap.md) |
 | KMP product/API design | [product/kernel-context-api-design.md](product/kernel-context-api-design.md) |
 | Typed KMS/gRPC status | [product/kernel-memory-service-grpc-plan.md](product/kernel-memory-service-grpc-plan.md) |
 | Writer helper protocol | [product/kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md) |
