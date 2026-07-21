@@ -21,6 +21,7 @@ rehydration-adapter-neo4j.workspace = true
 rehydration-adapter-valkey.workspace = true
 rehydration-application.workspace = true
 rehydration-config.workspace = true
+rehydration-conformance.workspace = true
 rehydration-domain.workspace = true
 rehydration-mcp.workspace = true
 rehydration-proto.workspace = true
@@ -76,4 +77,9 @@ required-features = ["container-tests"]
 [[test]]
 name = "mcp_real_kernel_integration"
 path = "tests/mcp_real_kernel_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "conformance_integration"
+path = "tests/conformance_integration.rs"
 required-features = ["container-tests"]

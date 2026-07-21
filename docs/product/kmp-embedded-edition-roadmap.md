@@ -141,7 +141,19 @@ Exit criteria:
 ## Milestone E1: Backend-Independent Conformance Suite
 
 Priority: P0
-Status: not started
+Status: **done (2026-07-21)** — `crates/rehydration-conformance`: 16 scenarios
+expressed only in ports + application services (write→read coherence,
+depth-bounded traversal, context paths, ingest idempotency, projection-event
+dedup, replay safety, known-at-time temporal navigation, relation proof).
+Runs green against (a) the coherent in-memory kernel store
+(`rehydration-testkit::InMemoryKernelStore`, new — the fixture-style stores
+had no write→read coherence) in the `test` job, and (b) the containerized
+Neo4j/Valkey adapters in the `integration-conformance` job. Linked as the
+executable definition of storage semantics from
+[runtime-guarantees.md](../runtime-guarantees.md). Port-leakage audit: clean
+on Cypher/Neo4j/Valkey categories; one finding ticketed
+([#128](https://github.com/underpass-ai/rehydration-kernel/issues/128),
+NATS publisher + `async-nats` dependency in `rehydration-transport-grpc`).
 
 This is the keystone: it is what lets the embedded edition claim "same
 product" instead of "similar product", and it protects both editions from

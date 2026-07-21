@@ -2178,6 +2178,16 @@ name = "rehydration-config"
 version = "0.1.0"
 
 [[package]]
+name = "rehydration-conformance"
+version = "0.1.0"
+dependencies = [
+ "rehydration-application",
+ "rehydration-domain",
+ "rehydration-testkit",
+ "tokio",
+]
+
+[[package]]
 name = "rehydration-domain"
 version = "0.1.0"
 dependencies = [
@@ -2305,6 +2315,7 @@ dependencies = [
  "rehydration-adapter-valkey",
  "rehydration-application",
  "rehydration-config",
+ "rehydration-conformance",
  "rehydration-domain",
  "rehydration-mcp",
  "rehydration-proto",
