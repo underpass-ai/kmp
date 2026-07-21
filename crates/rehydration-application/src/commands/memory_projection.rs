@@ -6,7 +6,43 @@ use rehydration_domain::{
 };
 use serde_json::Value;
 
+use rehydration_domain::ContextUpdatedEvent;
+
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
+
+/// Derives the projection mutations for an already-accepted context event.
+///
+/// This is the replay contract: rebuilding a read model from the append-only
+/// event log applies exactly these mutations per event, in log order. The
+/// anchor's `memory_work_item_id` property is reconstructed from the event's
+/// idempotency key — for KMP memory ingest they are identical; the original
+/// `work_item_id` is not persisted on the event.
+pub fn projection_mutations_for_context_event(
+    event: &ContextUpdatedEvent,
+) -> Result<Vec<ProjectionMutation>, PortError> {
+    let command = UpdateContextCommand {
+        root_node_id: event.root_node_id.clone(),
+        role: event.role.clone(),
+        work_item_id: event.idempotency_key.clone().unwrap_or_default(),
+        changes: event
+            .changes
+            .iter()
+            .map(|change| UpdateContextChange {
+                operation: change.operation.clone(),
+                entity_kind: change.entity_kind.clone(),
+                entity_id: change.entity_id.clone(),
+                payload_json: change.payload_json.clone(),
+                reason: change.reason.clone().unwrap_or_default(),
+                scopes: change.scopes.clone(),
+            })
+            .collect(),
+        expected_revision: None,
+        expected_content_hash: None,
+        idempotency_key: event.idempotency_key.clone(),
+        requested_by: event.requested_by.clone(),
+    };
+    memory_projection_mutations(&command, event.revision, &event.content_hash)
+}
 
 pub(crate) fn memory_projection_mutations(
     command: &UpdateContextCommand,
@@ -428,4 +464,95 @@ fn truncate(value: &str, max_chars: usize) -> String {
         out.push_str("...");
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::SystemTime;
+
+    use rehydration_domain::{ContextEventChange, ContextUpdatedEvent, ProjectionMutation};
+
+    use super::{memory_projection_mutations, projection_mutations_for_context_event};
+    use crate::commands::{UpdateContextChange, UpdateContextCommand};
+
+    fn entry_change_payload() -> String {
+        serde_json::json!({
+            "id": "claim:replayed",
+            "kind": "claim",
+            "text": "Replayed decision.",
+            "coordinates": [{
+                "dimension": "conversation",
+                "scope_id": "about:question:r:dimension:conversation:s1",
+                "occurred_at": "2026-07-01T10:00:00Z",
+                "sequence": 1
+            }]
+        })
+        .to_string()
+    }
+
+    fn sample_event() -> ContextUpdatedEvent {
+        ContextUpdatedEvent {
+            root_node_id: "question:r".to_string(),
+            role: "memory".to_string(),
+            revision: 3,
+            content_hash: "hash-3".to_string(),
+            changes: vec![ContextEventChange {
+                operation: "UPSERT".to_string(),
+                entity_kind: "memory_entry".to_string(),
+                entity_id: "claim:replayed".to_string(),
+                payload_json: entry_change_payload(),
+                reason: Some("KMP memory entry ingest".to_string()),
+                scopes: vec!["about:question:r:dimension:conversation:s1".to_string()],
+            }],
+            idempotency_key: Some("ingest:replay-test".to_string()),
+            requested_by: Some("agent-r".to_string()),
+            occurred_at: SystemTime::UNIX_EPOCH,
+        }
+    }
+
+    #[test]
+    fn event_derivation_matches_command_derivation() {
+        let event = sample_event();
+        let command = UpdateContextCommand {
+            root_node_id: event.root_node_id.clone(),
+            role: event.role.clone(),
+            work_item_id: "ingest:replay-test".to_string(),
+            changes: vec![UpdateContextChange {
+                operation: "UPSERT".to_string(),
+                entity_kind: "memory_entry".to_string(),
+                entity_id: "claim:replayed".to_string(),
+                payload_json: entry_change_payload(),
+                reason: "KMP memory entry ingest".to_string(),
+                scopes: vec!["about:question:r:dimension:conversation:s1".to_string()],
+            }],
+            expected_revision: None,
+            expected_content_hash: None,
+            idempotency_key: Some("ingest:replay-test".to_string()),
+            requested_by: Some("agent-r".to_string()),
+        };
+
+        let from_event =
+            projection_mutations_for_context_event(&event).expect("event should derive");
+        let from_command = memory_projection_mutations(&command, event.revision, "hash-3")
+            .expect("command should derive");
+
+        assert_eq!(from_event, from_command);
+        assert!(!from_event.is_empty());
+        assert!(from_event.iter().any(|mutation| matches!(
+            mutation,
+            ProjectionMutation::UpsertNodeDetail(detail) if detail.node_id == "claim:replayed"
+                && detail.revision == 3
+        )));
+    }
+
+    #[test]
+    fn event_derivation_skips_non_memory_changes() {
+        let mut event = sample_event();
+        event.changes[0].entity_kind = "workspace_note".to_string();
+
+        let mutations =
+            projection_mutations_for_context_event(&event).expect("event should derive");
+
+        assert!(mutations.is_empty());
+    }
 }

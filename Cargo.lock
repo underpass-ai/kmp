@@ -2038,6 +2038,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "redb"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e925444704b5f17d32bf42f5b6e2df050bceebc3dcd6e71cc73dafe8092e839"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2114,6 +2123,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
+name = "rehydration-adapter-embedded"
+version = "0.1.0"
+dependencies = [
+ "redb",
+ "rehydration-application",
+ "rehydration-domain",
+ "rehydration-ports",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "rehydration-adapter-nats"
 version = "0.1.0"
 dependencies = [
@@ -2181,9 +2204,11 @@ version = "0.1.0"
 name = "rehydration-conformance"
 version = "0.1.0"
 dependencies = [
+ "rehydration-adapter-embedded",
  "rehydration-application",
  "rehydration-domain",
  "rehydration-testkit",
+ "tempfile",
  "tokio",
 ]
 

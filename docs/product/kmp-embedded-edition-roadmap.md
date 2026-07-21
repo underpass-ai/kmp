@@ -184,7 +184,25 @@ Exit criteria:
 ## Milestone E2: Embedded Storage Adapters
 
 Priority: P0
-Status: not started
+Status: **done (2026-07-21)** — `crates/rehydration-adapter-embedded`:
+`EmbeddedKernelStore` implements every persistence port on one redb file
+(ADR-009 layout under the ADR-012 data dir: `FORMAT_VERSION` fail-fast +
+`store/kernel.redb`), with fsync-durable commits, materialized by-source +
+by-target adjacency (ADR-010), an anchor index, the append-only context
+event log as source of truth, and
+`rebuild_projections(derive)`/`compact_data_dir` as the replay/compaction
+tooling (derivation injected from
+`rehydration_application::projection_mutations_for_context_event`, so the
+adapter stays application-free). Exit criteria measured:
+- conformance suite green (arm c, 16/16, runs in the plain `test` job);
+- `kill -9` mid-write, reopen, replay: acknowledged events all survive, at
+  most one in-flight event beyond, no duplicates (`tests/crash_recovery.rs`);
+- 100k-event corpus (release, NVMe/btrfs): reopen+first-read **8.9ms**,
+  full projection rebuild **3.2s**, durable ingest 125 ev/s with two fsync
+  transactions per event, store size 816MB pre-compaction
+  (`tests/store_scale.rs`, `--ignored`). Size amplification from 200k tiny
+  commits is the known cost; batch ingest + compaction is the improvement
+  path.
 Depends on: E0 (engine decision), E1 (suite to develop against)
 
 Goal:

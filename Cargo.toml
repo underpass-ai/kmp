@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/rehydration-adapter-embedded",
     "crates/rehydration-adapter-nats",
     "crates/rehydration-adapter-neo4j",
     "crates/rehydration-adapter-valkey",
@@ -32,6 +33,7 @@ repository = "https://github.com/underpass-ai/rehydration-kernel"
 
 [workspace.dependencies]
 neo4rs = "0.8.0"
+rehydration-adapter-embedded = { path = "crates/rehydration-adapter-embedded" }
 rehydration-adapter-nats = { path = "crates/rehydration-adapter-nats" }
 rehydration-adapter-neo4j = { path = "crates/rehydration-adapter-neo4j" }
 rehydration-adapter-valkey = { path = "crates/rehydration-adapter-valkey" }
