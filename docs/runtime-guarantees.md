@@ -2,6 +2,19 @@
 
 What the kernel guarantees, what it delegates, and what it does not do.
 
+## Executable Definition: The Conformance Suite
+
+The storage semantics described in this document are pinned by the
+backend-independent conformance suite in `crates/rehydration-conformance`:
+scenario tests expressed only in terms of the domain ports and the KMP
+application services (write→read coherence, depth-bounded traversal, context
+paths, ingest idempotency, projection-event dedup, replay safety,
+known-at-time temporal navigation, relation proof). The same suite runs in CI
+against the in-memory kernel store (`test` job) and against the containerized
+Neo4j/Valkey adapters (`integration-conformance` job). A storage backend that
+passes the suite implements KMP storage semantics; a behavior difference
+between backends is a bug by definition.
+
 ## Consistency Model
 
 The kernel uses **optimistic concurrency with CAS (compare-and-swap)**:

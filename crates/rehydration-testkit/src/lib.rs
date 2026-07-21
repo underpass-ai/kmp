@@ -1,6 +1,7 @@
 mod container_runtime;
 pub mod dataset_generator;
 mod graph_batch_llm;
+mod in_memory_kernel_store;
 mod in_memory_stores;
 pub mod interpretation_plugins;
 pub mod kernel_operator;
@@ -29,6 +30,7 @@ pub use graph_batch_llm::{
     request_graph_batch_with_policy, request_graph_batch_with_repair_judge,
     request_graph_batch_with_retry,
 };
+pub use in_memory_kernel_store::InMemoryKernelStore;
 pub use in_memory_stores::{
     InMemoryContextEventStore, InMemoryGraphNeighborhoodReader, InMemoryNodeDetailReader,
     InMemoryProcessedEventStore, InMemoryProjectionCheckpointStore, InMemoryProjectionWriter,

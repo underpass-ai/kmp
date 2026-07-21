@@ -1,0 +1,16 @@
+[package]
+name = "rehydration-conformance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+rehydration-application.workspace = true
+rehydration-domain.workspace = true
+
+[dev-dependencies]
+rehydration-testkit.workspace = true
+tokio.workspace = true
