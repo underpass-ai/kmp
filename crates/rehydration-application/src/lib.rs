@@ -9,6 +9,7 @@ pub use application_error::ApplicationError;
 pub use commands::{
     AcceptedVersion, CommandApplicationService, NoopProjectionWriter, UpdateContextChange,
     UpdateContextCommand, UpdateContextOutcome, UpdateContextUseCase,
+    projection_mutations_for_context_event,
 };
 pub use memory::{
     AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, ExistingMemoryRefs, InspectMemoryQuery,

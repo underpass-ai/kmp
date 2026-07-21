@@ -12,5 +12,7 @@ rehydration-application.workspace = true
 rehydration-domain.workspace = true
 
 [dev-dependencies]
+rehydration-adapter-embedded.workspace = true
 rehydration-testkit.workspace = true
+tempfile = "3.26.0"
 tokio.workspace = true
