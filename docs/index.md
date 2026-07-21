@@ -61,6 +61,11 @@ Current integration stance:
 |:----|:---------|
 | [ADR-007](adr/ADR-007-quality-metrics-observability.md) | BundleQualityMetrics as domain VO + hexagonal observer port |
 | [ADR-008](adr/ADR-008-graph-batch-ingestion-boundary.md) | GraphBatch as the experimental ingestion boundary |
+| [ADR-009](adr/ADR-009-embedded-storage-engine.md) | redb as the embedded edition storage engine |
+| [ADR-010](adr/ADR-010-embedded-graph-representation.md) | Embedded graph as materialized adjacency, no in-memory rebuild |
+| [ADR-011](adr/ADR-011-embedded-concurrency-model.md) | Embedded single-writer lock, fail-fast; daemon as evolution |
+| [ADR-012](adr/ADR-012-embedded-data-directory.md) | Embedded data dir: env override, project `.kernel/`, XDG fallback |
+| [ADR-013](adr/ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `rehydration-mcp` |
 
 Six earlier decisions (command/query split, projection model, TLS, compatibility
 removal, multi-resolution tiers) are documented in PRs but not yet written as

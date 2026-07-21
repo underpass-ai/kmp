@@ -1,6 +1,6 @@
 # KMP Embedded Edition Roadmap
 
-Last updated: 2026-07-19
+Last updated: 2026-07-21
 Status: active planning document
 
 ## Product Direction
@@ -90,7 +90,18 @@ The embedded edition does not start from zero:
 ## Milestone E0: Definition, Decisions, ADRs
 
 Priority: P0
-Status: not started
+Status: **done (2026-07-21)** — delivered as five ADRs (the naming/packaging
+decision got its own record):
+[ADR-009](../adr/ADR-009-embedded-storage-engine.md) (storage engine: redb,
+with spike results),
+[ADR-010](../adr/ADR-010-embedded-graph-representation.md) (graph
+representation: materialized adjacency),
+[ADR-011](../adr/ADR-011-embedded-concurrency-model.md) (concurrency:
+single-writer fail-fast lock),
+[ADR-012](../adr/ADR-012-embedded-data-directory.md) (data directory
+contract),
+[ADR-013](../adr/ADR-013-embedded-packaging.md) (packaging: `embedded`
+backend in `rehydration-mcp`).
 
 Goal:
 
