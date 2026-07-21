@@ -8,7 +8,7 @@ use rehydration_proto::v1beta1::{
     GraphRelationshipExplanation, GraphRelationshipSemanticClass, Provenance as ProtoProvenance,
 };
 
-pub(crate) fn proto_graph_node_v1beta1(node: &GraphNodeView) -> GraphNode {
+pub fn proto_graph_node_v1beta1(node: &GraphNodeView) -> GraphNode {
     GraphNode {
         node_id: node.node_id.clone(),
         node_kind: node.node_kind.clone(),
@@ -21,7 +21,7 @@ pub(crate) fn proto_graph_node_v1beta1(node: &GraphNodeView) -> GraphNode {
     }
 }
 
-pub(crate) fn proto_bundle_node_v1beta1(node: &BundleNode) -> GraphNode {
+pub fn proto_bundle_node_v1beta1(node: &BundleNode) -> GraphNode {
     GraphNode {
         node_id: node.node_id().to_string(),
         node_kind: node.node_kind().to_string(),
@@ -52,9 +52,7 @@ fn proto_source_kind(kind: &SourceKind) -> rehydration_proto::v1beta1::SourceKin
     }
 }
 
-pub(crate) fn proto_bundle_relationship_v1beta1(
-    relationship: &BundleRelationship,
-) -> GraphRelationship {
+pub fn proto_bundle_relationship_v1beta1(relationship: &BundleRelationship) -> GraphRelationship {
     GraphRelationship {
         source_node_id: relationship.source_node_id().to_string(),
         target_node_id: relationship.target_node_id().to_string(),
@@ -66,7 +64,7 @@ pub(crate) fn proto_bundle_relationship_v1beta1(
     }
 }
 
-pub(crate) fn proto_bundle_node_detail_v1beta1(detail: &BundleNodeDetail) -> ProtoBundleNodeDetail {
+pub fn proto_bundle_node_detail_v1beta1(detail: &BundleNodeDetail) -> ProtoBundleNodeDetail {
     ProtoBundleNodeDetail {
         node_id: detail.node_id().to_string(),
         detail: detail.detail().to_string(),
@@ -75,7 +73,7 @@ pub(crate) fn proto_bundle_node_detail_v1beta1(detail: &BundleNodeDetail) -> Pro
     }
 }
 
-pub(crate) fn proto_node_detail_view_v1beta1(detail: &NodeDetailView) -> ProtoBundleNodeDetail {
+pub fn proto_node_detail_view_v1beta1(detail: &NodeDetailView) -> ProtoBundleNodeDetail {
     ProtoBundleNodeDetail {
         node_id: detail.node_id.clone(),
         detail: detail.detail.clone(),

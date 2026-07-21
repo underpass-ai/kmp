@@ -12,9 +12,7 @@ use super::common::{
     source_kind_from_field,
 };
 
-pub(in crate::grpc) fn ingest_request_from_arguments(
-    arguments: &Value,
-) -> Result<IngestRequest, String> {
+pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestRequest, String> {
     let arguments = object(arguments, "tool arguments")?;
     let about = required_string_field(arguments, "about", "about")?;
     let memory = memory_from_object(required_object_field(arguments, "memory", "memory")?)?;

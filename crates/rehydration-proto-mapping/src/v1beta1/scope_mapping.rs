@@ -1,7 +1,7 @@
 use rehydration_application::ScopeValidation;
 use rehydration_proto::v1beta1::ScopeValidationResult;
 
-pub(crate) fn proto_scope_validation_v1beta1(result: &ScopeValidation) -> ScopeValidationResult {
+pub fn proto_scope_validation_v1beta1(result: &ScopeValidation) -> ScopeValidationResult {
     ScopeValidationResult {
         allowed: result.allowed,
         required_scopes: result.required_scopes.clone(),

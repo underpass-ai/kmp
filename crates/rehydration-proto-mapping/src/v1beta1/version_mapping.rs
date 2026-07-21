@@ -4,9 +4,9 @@ use rehydration_application::AcceptedVersion;
 use rehydration_domain::BundleMetadata;
 use rehydration_proto::v1beta1::BundleVersion;
 
-use crate::transport::support::timestamp_from;
+use crate::v1beta1::support::timestamp_from;
 
-pub(crate) fn proto_accepted_version_v1beta1(version: &AcceptedVersion) -> BundleVersion {
+pub fn proto_accepted_version_v1beta1(version: &AcceptedVersion) -> BundleVersion {
     BundleVersion {
         revision: version.revision,
         content_hash: version.content_hash.clone(),
@@ -17,7 +17,7 @@ pub(crate) fn proto_accepted_version_v1beta1(version: &AcceptedVersion) -> Bundl
     }
 }
 
-pub(crate) fn proto_bundle_version_v1beta1(metadata: &BundleMetadata) -> BundleVersion {
+pub fn proto_bundle_version_v1beta1(metadata: &BundleMetadata) -> BundleVersion {
     BundleVersion {
         revision: metadata.revision,
         content_hash: metadata.content_hash.clone(),

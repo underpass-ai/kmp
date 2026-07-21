@@ -7,13 +7,13 @@ use rehydration_proto::v1beta1::{
 
 use super::rendered_mapping::proto_rendered_context_v1beta1;
 
-use crate::transport::proto_mapping_v1beta1::{
+use crate::v1beta1::support::timestamp_from;
+use crate::v1beta1::{
     proto_bundle_node_detail_v1beta1, proto_bundle_node_v1beta1, proto_bundle_relationship_v1beta1,
     proto_bundle_version_v1beta1,
 };
-use crate::transport::support::timestamp_from;
 
-pub(crate) fn proto_rehydrate_session_response_v1beta1(
+pub fn proto_rehydrate_session_response_v1beta1(
     result: &RehydrateSessionResult,
 ) -> RehydrateSessionResponse {
     RehydrateSessionResponse {
@@ -43,9 +43,7 @@ pub(crate) fn proto_rehydrate_session_response_v1beta1(
     }
 }
 
-pub(crate) fn proto_timing_breakdown_v1beta1(
-    timing: &QueryTimingBreakdown,
-) -> ProtoTimingBreakdown {
+pub fn proto_timing_breakdown_v1beta1(timing: &QueryTimingBreakdown) -> ProtoTimingBreakdown {
     ProtoTimingBreakdown {
         graph_load_seconds: timing.graph_load.as_secs_f64(),
         detail_load_seconds: timing.detail_load.as_secs_f64(),
@@ -55,9 +53,7 @@ pub(crate) fn proto_timing_breakdown_v1beta1(
     }
 }
 
-pub(crate) fn proto_bundle_from_single_role_v1beta1(
-    bundle: &RehydrationBundle,
-) -> ProtoRehydrationBundle {
+pub fn proto_bundle_from_single_role_v1beta1(bundle: &RehydrationBundle) -> ProtoRehydrationBundle {
     ProtoRehydrationBundle {
         root_node_id: bundle.root_node_id().as_str().to_string(),
         bundles: vec![proto_graph_role_bundle_v1beta1(bundle)],
