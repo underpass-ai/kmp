@@ -2129,6 +2129,7 @@ dependencies = [
  "redb",
  "rehydration-application",
  "rehydration-domain",
+ "rehydration-observability",
  "rehydration-ports",
  "serde",
  "serde_json",
@@ -2227,6 +2228,7 @@ dependencies = [
  "rehydration-adapter-embedded",
  "rehydration-application",
  "rehydration-domain",
+ "rehydration-observability",
  "tempfile",
  "tokio",
 ]
@@ -2245,6 +2247,7 @@ version = "0.1.0"
 dependencies = [
  "opentelemetry",
  "prost-types",
+ "rehydration-adapter-embedded",
  "rehydration-application",
  "rehydration-domain",
  "rehydration-embedded",

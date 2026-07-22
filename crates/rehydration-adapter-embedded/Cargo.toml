@@ -11,6 +11,7 @@ workspace = true
 [dependencies]
 redb = "4.1.0"
 rehydration-domain.workspace = true
+rehydration-observability.workspace = true
 rehydration-ports.workspace = true
 serde.workspace = true
 serde_json.workspace = true

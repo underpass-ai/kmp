@@ -12,6 +12,7 @@ workspace = true
 rehydration-adapter-embedded.workspace = true
 rehydration-application.workspace = true
 rehydration-domain.workspace = true
+rehydration-observability.workspace = true
 
 [dev-dependencies]
 tempfile = "3.26.0"

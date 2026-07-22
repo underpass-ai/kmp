@@ -8,7 +8,12 @@ mod runtime_state;
 mod serdes;
 mod snapshot_store;
 mod store;
+mod telemetry;
 
 pub use format_version::{SUPPORTED_FORMAT_VERSION, format_version_path};
 pub use replay::ProjectionRebuildReport;
 pub use store::EmbeddedKernelStore;
+pub use telemetry::{
+    QualityTelemetryRetention, RedbQualityTelemetryReader, RedbQualityTelemetryWriter,
+    quality_telemetry_path,
+};

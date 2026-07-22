@@ -24,6 +24,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [dev-dependencies]
+rehydration-adapter-embedded.workspace = true
 tempfile = "3.26.0"
 tokio-stream.workspace = true
 
