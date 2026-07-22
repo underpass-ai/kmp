@@ -39,6 +39,12 @@ impl KernelMcpServer {
         Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls))
     }
 
+    pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
+        Ok(Self::with_backend(
+            crate::embedded::EmbeddedKernelMcpBackend::open(data_dir)?,
+        ))
+    }
+
     pub fn with_backend(backend: impl KernelMcpToolBackend + 'static) -> Self {
         Self {
             backend: Arc::new(backend),
@@ -72,8 +78,18 @@ impl KernelMcpServer {
                 Ok(Self::grpc_with_tls(endpoint, tls))
             }
             "fixture" | "fixtures" => Ok(Self::fixture()),
+            "embedded" => {
+                let resolved = rehydration_embedded::resolve_data_dir_from_env()
+                    .map_err(|error| error.to_string())?;
+                tracing::info!(
+                    data_dir = %resolved.path().display(),
+                    rule = resolved.rule_name(),
+                    "embedded backend data dir resolved"
+                );
+                Self::embedded(resolved.path())
+            }
             other => Err(format!(
-                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `grpc` or `fixture`"
+                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `grpc`, `embedded` or `fixture`"
             )),
         }
     }

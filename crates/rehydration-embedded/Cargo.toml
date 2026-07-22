@@ -1,0 +1,18 @@
+[package]
+name = "rehydration-embedded"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Embedded edition composition root: the KMP kernel in-process over the redb store"
+
+[lints]
+workspace = true
+
+[dependencies]
+rehydration-adapter-embedded.workspace = true
+rehydration-application.workspace = true
+rehydration-domain.workspace = true
+
+[dev-dependencies]
+tempfile = "3.26.0"
+tokio.workspace = true

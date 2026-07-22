@@ -2221,6 +2221,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rehydration-embedded"
+version = "0.1.0"
+dependencies = [
+ "rehydration-adapter-embedded",
+ "rehydration-application",
+ "rehydration-domain",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "rehydration-interpretation"
 version = "0.1.0"
 dependencies = [
@@ -2234,8 +2245,11 @@ version = "0.1.0"
 dependencies = [
  "opentelemetry",
  "prost-types",
+ "rehydration-application",
  "rehydration-domain",
+ "rehydration-embedded",
  "rehydration-proto",
+ "rehydration-proto-mapping",
  "serde_json",
  "sha2",
  "tempfile",
@@ -2288,6 +2302,18 @@ dependencies = [
  "serde_json",
  "tonic 0.12.3",
  "tonic-build",
+]
+
+[[package]]
+name = "rehydration-proto-mapping"
+version = "0.1.0"
+dependencies = [
+ "prost-types",
+ "rehydration-application",
+ "rehydration-domain",
+ "rehydration-proto",
+ "serde_json",
+ "tonic 0.12.3",
 ]
 
 [[package]]
@@ -2410,6 +2436,7 @@ dependencies = [
  "rehydration-observability",
  "rehydration-ports",
  "rehydration-proto",
+ "rehydration-proto-mapping",
  "rehydration-testkit",
  "reqwest",
  "serde",

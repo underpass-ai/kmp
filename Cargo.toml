@@ -8,12 +8,14 @@ members = [
     "crates/rehydration-config",
     "crates/rehydration-conformance",
     "crates/rehydration-domain",
+    "crates/rehydration-embedded",
     "crates/rehydration-interpretation",
     "crates/rehydration-observability",
     "crates/rehydration-mcp",
     "crates/rehydration-plugin-api",
     "crates/rehydration-ports",
     "crates/rehydration-proto",
+    "crates/rehydration-proto-mapping",
     "crates/rehydration-server",
     "crates/rehydration-testkit",
     "crates/rehydration-tests-shared",
@@ -41,12 +43,14 @@ rehydration-application = { path = "crates/rehydration-application" }
 rehydration-config = { path = "crates/rehydration-config" }
 rehydration-conformance = { path = "crates/rehydration-conformance" }
 rehydration-domain = { path = "crates/rehydration-domain" }
+rehydration-embedded = { path = "crates/rehydration-embedded" }
 rehydration-interpretation = { path = "crates/rehydration-interpretation" }
 rehydration-mcp = { path = "crates/rehydration-mcp" }
 rehydration-observability = { path = "crates/rehydration-observability" }
 rehydration-plugin-api = { path = "crates/rehydration-plugin-api" }
 rehydration-ports = { path = "crates/rehydration-ports" }
 rehydration-proto = { path = "crates/rehydration-proto" }
+rehydration-proto-mapping = { path = "crates/rehydration-proto-mapping" }
 rehydration-testkit = { path = "crates/rehydration-testkit" }
 rehydration-tests-shared = { path = "crates/rehydration-tests-shared" }
 rehydration-transport-grpc = { path = "crates/rehydration-transport-grpc" }

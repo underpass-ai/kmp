@@ -19,7 +19,7 @@ use super::bundle_views::{
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::scalars::{proto_confidence, proto_direction, proto_semantic_class};
 
-pub(crate) fn wake_response_from_result(
+pub fn wake_response_from_result(
     intent: &str,
     max_entries: Option<usize>,
     result: GetContextResult,
@@ -87,7 +87,7 @@ fn cap_wake_evidence(
     }
 }
 
-pub(crate) fn ask_response_from_result(
+pub fn ask_response_from_result(
     question: &str,
     policy: MemoryAnswerPolicy,
     result: GetContextResult,
@@ -167,7 +167,7 @@ fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
     }
 }
 
-pub(crate) fn temporal_response_from_result(
+pub fn temporal_response_from_result(
     requested_cursor: rehydration_proto::v1beta1::TemporalCursor,
     direction: TemporalDirection,
     result: TemporalMemoryResult,
@@ -270,7 +270,7 @@ pub(crate) fn temporal_response_from_result(
     }
 }
 
-pub(crate) fn trace_response_from_result(
+pub fn trace_response_from_result(
     result: GetContextPathResult,
     page: TracePageRequest,
 ) -> TraceResponse {
@@ -408,7 +408,7 @@ fn distinct_relation_nodes(relationships: &[rehydration_proto::v1beta1::MemoryRe
     refs.len() as u32
 }
 
-pub(crate) fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
+pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
     let node_ref = result.detail.node.node_id.clone();
     let node_kind = result.detail.node.node_kind.clone();
     let text = if result.include_details {

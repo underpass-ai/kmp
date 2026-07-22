@@ -1,5 +1,5 @@
 mod channel;
-mod requests;
+pub(crate) mod requests;
 mod temporal;
 mod tools;
 

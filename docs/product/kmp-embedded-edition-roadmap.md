@@ -237,7 +237,19 @@ Exit criteria:
 ## Milestone E3: Embedded Backend in the MCP Binary
 
 Priority: P0
-Status: not started
+Status: **in progress** — core landed 2026-07-22: `REHYDRATION_MCP_BACKEND=embedded`
+runs the kernel in-process. `rehydration-embedded` composition root (ADR-012
+data-dir resolution env > project `.kernel/` self-gitignoring > XDG;
+single-writer fail-fast via the engine lock per ADR-011);
+`rehydration-proto-mapping` extracted from `transport-grpc` so the embedded
+backend reuses the exact live-mode JSON path (args → proto → application →
+proto → JSON: identical tool JSON by construction, no tonic server/neo4rs/nats
+in the MCP binary); e2e test proves cross-session memory recovery.
+Measured: 13.0MB stripped release binary carrying both `live` and `embedded`
+backends (above the single-digit target; the ADR-013 feature split is the
+lever if it matters). Pending in E3: local quality-telemetry journal
+(bounded buffered observer → `telemetry/quality.redb`, design agreed
+2026-07-22), log file in the data dir, binary-size/forbidden-deps CI gate.
 Depends on: E2
 
 Goal:

@@ -14,7 +14,7 @@ use super::scalars::{
     memory_detail_level, non_empty, proto_timestamp_to_sort_string,
 };
 
-pub(crate) fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMemoryQuery> {
+pub fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
     Ok(WakeMemoryQuery {
         about: request.about.clone(),
@@ -33,7 +33,7 @@ pub(crate) fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<
     })
 }
 
-pub(crate) fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemoryQuery> {
+pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
     Ok(AskMemoryQuery {
         about: request.about,
@@ -50,7 +50,7 @@ pub(crate) fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<As
     })
 }
 
-pub(crate) fn temporal_query_from_move_proto(
+pub fn temporal_query_from_move_proto(
     request: TemporalMoveRequest,
     direction: TemporalDirection,
 ) -> ProtoMappingResult<TemporalMemoryQuery> {
@@ -66,7 +66,7 @@ pub(crate) fn temporal_query_from_move_proto(
     })
 }
 
-pub(crate) fn temporal_query_from_near_proto(
+pub fn temporal_query_from_near_proto(
     request: TemporalNearRequest,
 ) -> ProtoMappingResult<TemporalMemoryQuery> {
     temporal_query(TemporalQueryParts {
@@ -81,9 +81,7 @@ pub(crate) fn temporal_query_from_near_proto(
     })
 }
 
-pub(crate) fn trace_query_from_proto(
-    request: TraceRequest,
-) -> ProtoMappingResult<TraceMemoryQuery> {
+pub fn trace_query_from_proto(request: TraceRequest) -> ProtoMappingResult<TraceMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
     Ok(TraceMemoryQuery {
         from: request.from,
@@ -98,9 +96,7 @@ pub(crate) fn trace_query_from_proto(
     })
 }
 
-pub(crate) fn inspect_query_from_proto(
-    request: InspectRequest,
-) -> ProtoMappingResult<InspectMemoryQuery> {
+pub fn inspect_query_from_proto(request: InspectRequest) -> ProtoMappingResult<InspectMemoryQuery> {
     let include = request.include.unwrap_or(InspectInclude {
         incoming: false,
         outgoing: false,

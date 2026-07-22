@@ -1,5 +1,6 @@
 mod args;
 mod backend;
+mod embedded;
 mod fixture;
 mod grpc;
 mod ingest;
@@ -14,6 +15,7 @@ pub use backend::{
     GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpBackend, KernelMcpGrpcTlsConfig,
     KernelMcpGrpcTlsMode, KernelMcpToolBackend, KernelMcpToolFuture, MCP_BACKEND_ENV,
 };
+pub use embedded::EmbeddedKernelMcpBackend;
 pub use fixture::FixtureKernelMcpBackend;
 pub use grpc::GrpcKernelMcpBackend;
 pub use server::KernelMcpServer;

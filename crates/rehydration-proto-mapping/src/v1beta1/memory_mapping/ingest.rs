@@ -12,7 +12,7 @@ use super::scalars::{
     proto_timestamp_to_sort_string, semantic_class_name, source_kind_name,
 };
 
-pub(crate) fn ingest_command_from_proto(
+pub fn ingest_command_from_proto(
     request: IngestRequest,
 ) -> ProtoMappingResult<MemoryIngestCommand> {
     let memory = request
@@ -45,7 +45,7 @@ pub(crate) fn ingest_command_from_proto(
     })
 }
 
-pub(crate) fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
+pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestResponse {
     IngestResponse {
         summary: format!(
             "Ingested {} {}, {} {}, and {} {} for {}.",

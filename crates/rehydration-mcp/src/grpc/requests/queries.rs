@@ -13,9 +13,7 @@ use super::temporal::{
     trace_page_from_arguments,
 };
 
-pub(in crate::grpc) fn wake_request_from_arguments(
-    arguments: &Value,
-) -> Result<WakeRequest, String> {
+pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeRequest, String> {
     validate_required_arguments(arguments, &["about"])?;
     Ok(WakeRequest {
         about: required_string(arguments, "about")?,
@@ -26,7 +24,7 @@ pub(in crate::grpc) fn wake_request_from_arguments(
     })
 }
 
-pub(in crate::grpc) fn ask_request_from_arguments(arguments: &Value) -> Result<AskRequest, String> {
+pub(crate) fn ask_request_from_arguments(arguments: &Value) -> Result<AskRequest, String> {
     validate_required_arguments(arguments, &["about", "question"])?;
     let arguments_object = object(arguments, "tool arguments")?;
     if arguments_object.contains_key("prefer") {
@@ -43,7 +41,7 @@ pub(in crate::grpc) fn ask_request_from_arguments(arguments: &Value) -> Result<A
     })
 }
 
-pub(in crate::grpc) fn temporal_move_request_from_arguments(
+pub(crate) fn temporal_move_request_from_arguments(
     arguments: &Value,
     direction: &str,
 ) -> Result<TemporalMoveRequest, String> {
@@ -65,7 +63,7 @@ pub(in crate::grpc) fn temporal_move_request_from_arguments(
     })
 }
 
-pub(in crate::grpc) fn temporal_near_request_from_arguments(
+pub(crate) fn temporal_near_request_from_arguments(
     arguments: &Value,
 ) -> Result<TemporalNearRequest, String> {
     validate_required_arguments(arguments, &["about"])?;
@@ -80,9 +78,7 @@ pub(in crate::grpc) fn temporal_near_request_from_arguments(
     })
 }
 
-pub(in crate::grpc) fn trace_request_from_arguments(
-    arguments: &Value,
-) -> Result<TraceRequest, String> {
+pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceRequest, String> {
     validate_required_arguments(arguments, &["from", "to"])?;
     Ok(TraceRequest {
         from: required_string(arguments, "from")?,
@@ -95,9 +91,7 @@ pub(in crate::grpc) fn trace_request_from_arguments(
     })
 }
 
-pub(in crate::grpc) fn inspect_request_from_arguments(
-    arguments: &Value,
-) -> Result<InspectRequest, String> {
+pub(crate) fn inspect_request_from_arguments(arguments: &Value) -> Result<InspectRequest, String> {
     validate_required_arguments(arguments, &["ref"])?;
     Ok(InspectRequest {
         r#ref: required_string(arguments, "ref")?,
