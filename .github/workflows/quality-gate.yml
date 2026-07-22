@@ -137,6 +137,29 @@ jobs:
       - name: Run Neo4j integration tests
         run: bash scripts/ci/integration-neo4j.sh
 
+  embedded-binary-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: 1.90.0
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+
+      - name: Enforce embedded binary gates
+        run: bash scripts/ci/embedded-binary-gates.sh
+
   integration-conformance:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -284,6 +307,7 @@ jobs:
       - integration-agentic-event-context
       - integration-mcp-real-kernel
       - integration-conformance
+      - embedded-binary-gates
       - container-image
       - helm-chart
     permissions:
