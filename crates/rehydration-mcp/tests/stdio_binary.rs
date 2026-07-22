@@ -111,3 +111,39 @@ fn run_binary(envs: &[(&str, &str)], stdin: &str) -> std::process::Output {
         .wait_with_output()
         .expect("stdio MCP binary should exit after stdin EOF")
 }
+
+#[test]
+fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let output = run_binary(
+        &[
+            ("REHYDRATION_MCP_BACKEND", "embedded"),
+            (
+                "REHYDRATION_MCP_DATA_DIR",
+                data_dir.path().to_str().expect("utf8 path"),
+            ),
+            ("RUST_LOG", "rehydration_mcp=info"),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n",
+    );
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("stdout is utf8");
+    assert!(
+        stdout.contains("\"backend\":\"embedded\""),
+        "initialize must report the embedded backend: {stdout}"
+    );
+    let stderr = String::from_utf8(output.stderr).expect("stderr is utf8");
+    assert!(
+        stderr.contains("embedded backend (kernel in-process)"),
+        "banner must announce embedded mode: {stderr}"
+    );
+
+    let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
+        .expect("logs dir exists in the data dir")
+        .count();
+    assert!(
+        log_entries > 0,
+        "embedded mode must journal logs into <data-dir>/logs/"
+    );
+}
