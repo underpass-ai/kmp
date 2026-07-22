@@ -7,6 +7,9 @@ produces metrics that flow through both OTel (Prometheus/Grafana) and structured
 
 Architecture reference: [ADR-007](adr/ADR-007-quality-metrics-observability.md)
 
+Embedded local-telemetry reference:
+[ADR-014](adr/ADR-014-embedded-quality-telemetry.md).
+
 Product direction reference:
 [Queryable Agentic Memory Layer](product/queryable-agentic-memory-layer.md).
 
@@ -31,6 +34,9 @@ Implemented:
 - projection processing latency via `rehydration.projection.lag` for NATS
   projection consumer loops;
 - OTel mTLS configuration support.
+- embedded quality observations for `kernel_wake`, `kernel_ask`, and
+  `kernel_trace`, buffered fail-open into a separate
+  `telemetry/quality.redb` journal with retention and time-window queries.
 
 Still important:
 
@@ -157,6 +163,7 @@ same code path as the kernel. Token count parity is verified by test.
 QualityMetricsObserver (domain port)
 ├── OTelQualityObserver      → OTLP histograms → Prometheus → Grafana
 ├── TracingQualityObserver   → structured JSON logs → Loki → Grafana
+├── BufferedQualityMetricsObserver → bounded local journal channel
 ├── CompositeQualityObserver → fan-out to N backends
 └── NoopQualityObserver      → tests / disabled
 ```
@@ -164,6 +171,27 @@ QualityMetricsObserver (domain port)
 The composition root creates `CompositeQualityObserver(OTel + Tracing)` by default.
 Both backends are always active. The composite observer spawns adapter calls via
 `tokio::spawn` (fire-and-forget) — observer I/O does not block the gRPC handler.
+
+## Embedded Local Journal
+
+Embedded mode does not require an OTel service. Its composition root connects a
+bounded `BufferedQualityMetricsObserver` to a runtime-neutral worker and a
+separate redb writer:
+
+```text
+kernel_wake | kernel_ask | kernel_trace
+        → QualityMetricsObserver
+        → bounded try_send (drop counter on overflow)
+        → batch worker
+        → <data-dir>/telemetry/quality.redb
+```
+
+`store/kernel.redb` remains canonical state with immediate durability.
+`telemetry/quality.redb` uses relaxed batch durability, a periodic durable
+checkpoint, a final clean-shutdown flush, and independent retention. Telemetry
+startup and write failures never fail the kernel. The reader supports bounded
+time windows, RPC filtering, latest observations, and counts without adding an
+embedded-only MCP operation.
 
 ## OTel Metrics
 

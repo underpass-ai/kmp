@@ -1,5 +1,8 @@
+mod buffered_quality_metrics_observer;
+mod embedded_telemetry_guard;
 pub mod metrics;
 pub mod quality_observers;
+mod quality_telemetry_observation;
 
 use opentelemetry::trace::TracerProvider as _;
 use opentelemetry_otlp::WithExportConfig;
@@ -9,7 +12,10 @@ use opentelemetry_sdk::metrics::SdkMeterProvider;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
+pub use buffered_quality_metrics_observer::BufferedQualityMetricsObserver;
+pub use embedded_telemetry_guard::EmbeddedTelemetryGuard;
 pub use metrics::KernelMetrics;
+pub use quality_telemetry_observation::QualityTelemetryObservation;
 
 /// Resources returned by `init_observability` for lifecycle management.
 pub struct ObservabilityGuard {

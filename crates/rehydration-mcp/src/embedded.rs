@@ -1,7 +1,6 @@
 use std::path::Path;
-use std::sync::Arc;
 
-use rehydration_domain::TemporalDirection;
+use rehydration_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use rehydration_embedded::{EmbeddedKernel, EmbeddedMemoryService};
 use rehydration_proto_mapping::v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
@@ -29,7 +28,7 @@ use crate::protocol::tool_success_result;
 /// shapes as live mode, with the application service called directly instead
 /// of a gRPC channel — identical tool JSON by construction.
 pub struct EmbeddedKernelMcpBackend {
-    service: Arc<EmbeddedMemoryService>,
+    kernel: EmbeddedKernel,
     data_dir: String,
 }
 
@@ -37,7 +36,7 @@ impl EmbeddedKernelMcpBackend {
     pub fn open(data_dir: &Path) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open(data_dir).map_err(|error| error.to_string())?;
         Ok(Self {
-            service: kernel.service(),
+            kernel,
             data_dir: data_dir.display().to_string(),
         })
     }
@@ -53,7 +52,11 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
-        Box::pin(async move { embedded_tool_result(&self.service, name, arguments).await })
+        let service = self.kernel.service();
+        let quality_observer = self.kernel.quality_observer();
+        Box::pin(async move {
+            embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await
+        })
     }
 }
 
@@ -68,8 +71,26 @@ fn kernel_error<'a>(
     move |error| format!("embedded kernel {operation} failed for `{about}`: {error}")
 }
 
+fn observe_quality(
+    observer: &dyn QualityMetricsObserver,
+    rpc: &str,
+    root_node_id: &str,
+    role: &str,
+    quality: &rehydration_domain::BundleQualityMetrics,
+) {
+    observer.observe(
+        quality,
+        &QualityObservationContext {
+            rpc: rpc.to_string(),
+            root_node_id: root_node_id.to_string(),
+            role: role.to_string(),
+        },
+    );
+}
+
 async fn embedded_tool_result(
     service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
     name: &str,
     arguments: &Value,
 ) -> Result<Value, String> {
@@ -77,8 +98,8 @@ async fn embedded_tool_result(
         "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             embedded_ingest(service, arguments).await
         }
-        "kernel_wake" => embedded_wake(service, arguments).await,
-        "kernel_ask" => embedded_ask(service, arguments).await,
+        "kernel_wake" => embedded_wake(service, observer, arguments).await,
+        "kernel_ask" => embedded_ask(service, observer, arguments).await,
         "kernel_goto" => {
             embedded_temporal(service, TemporalDirection::Goto, "goto", arguments).await
         }
@@ -89,7 +110,7 @@ async fn embedded_tool_result(
         "kernel_forward" => {
             embedded_temporal(service, TemporalDirection::Forward, "forward", arguments).await
         }
-        "kernel_trace" => embedded_trace(service, arguments).await,
+        "kernel_trace" => embedded_trace(service, observer, arguments).await,
         "kernel_inspect" => embedded_inspect(service, arguments).await,
         other => Err(format!("unknown KMP tool `{other}`")),
     }
@@ -117,6 +138,7 @@ async fn embedded_ingest(
 
 async fn embedded_wake(
     service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, String> {
     let request = wake_request_from_arguments(arguments)?;
@@ -128,12 +150,23 @@ async fn embedded_wake(
         .wake(query)
         .await
         .map_err(kernel_error("wake", &about))?;
+    observe_quality(
+        observer,
+        "kernel_wake",
+        result.bundle.root_node_id().as_str(),
+        result.bundle.role().as_str(),
+        &result.rendered.quality,
+    );
     Ok(tool_success_result(wake_from_response(
         wake_response_from_result(&intent, max_entries, result),
     )))
 }
 
-async fn embedded_ask(service: &EmbeddedMemoryService, arguments: &Value) -> Result<Value, String> {
+async fn embedded_ask(
+    service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
+    arguments: &Value,
+) -> Result<Value, String> {
     let request = ask_request_from_arguments(arguments)?;
     let query = ask_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
@@ -143,6 +176,13 @@ async fn embedded_ask(service: &EmbeddedMemoryService, arguments: &Value) -> Res
         .ask(query)
         .await
         .map_err(kernel_error("ask", &about))?;
+    observe_quality(
+        observer,
+        "kernel_ask",
+        result.bundle.root_node_id().as_str(),
+        result.bundle.role().as_str(),
+        &result.rendered.quality,
+    );
     Ok(tool_success_result(ask_from_response(
         ask_response_from_result(&question, policy, result),
     )))
@@ -187,6 +227,7 @@ async fn embedded_near(
 
 async fn embedded_trace(
     service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, String> {
     let request = trace_request_from_arguments(arguments)?;
@@ -197,6 +238,13 @@ async fn embedded_trace(
         .trace(query)
         .await
         .map_err(kernel_error("trace", &from))?;
+    observe_quality(
+        observer,
+        "kernel_trace",
+        result.path_bundle.root_node_id().as_str(),
+        result.path_bundle.role().as_str(),
+        &result.rendered.quality,
+    );
     Ok(tool_success_result(trace_from_response(
         trace_response_from_result(result, page),
     )))

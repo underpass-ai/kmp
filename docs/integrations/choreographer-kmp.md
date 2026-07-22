@@ -1,0 +1,159 @@
+# Choreographer ↔ KMP Integration Guide (Incident Resolution)
+
+Audience: the agent integrating **Choreographer** (incident-resolution
+system) with the rehydration kernel. Everything here exists in-repo today
+unless explicitly marked *planned*.
+
+## 1. What you are integrating with
+
+KMP (Kernel Memory Protocol) is a graph-temporal memory kernel with two
+editions of the **same product** (identical tool semantics, pinned by the
+conformance suite in `crates/rehydration-conformance` — a behavior
+difference between editions is a bug):
+
+| | Infrastructure edition | Embedded edition |
+| --- | --- | --- |
+| Runs as | gRPC service on Kubernetes (Neo4j/Valkey/NATS) | Single binary, MCP stdio, one local data dir |
+| Use for | Production incident memory, multi-agent | Local dev of this integration; per-machine memory |
+| Consistency | Async projection (bounded staleness on event path) | `read_after_write_ready=true` always |
+
+Switching editions is one env var — develop against embedded, promote to
+live without changing how you call the tools.
+
+## 2. Connecting
+
+**Embedded (start here):**
+
+```bash
+cargo install --path crates/rehydration-mcp   # or use the workspace binary
+REHYDRATION_MCP_BACKEND=embedded \
+REHYDRATION_MCP_DATA_DIR=/var/lib/choreographer/kmp \
+rehydration-mcp
+```
+
+- stdin/stdout is MCP JSON-RPC; **all logs go to stderr** — never parse stdout
+  as anything but JSON-RPC.
+- Data dir resolution when `REHYDRATION_MCP_DATA_DIR` is unset: project
+  `.kernel/` (walks up to `.git`, auto-gitignored) → `$XDG_DATA_HOME/rehydration-kernel/default`.
+  For a service like Choreographer, always set it explicitly.
+- **Single-writer** (ADR-011): one process per data dir; a second open
+  fails fast with an explicit error. Plan one kernel per Choreographer
+  instance.
+
+**Live (production):**
+
+```bash
+REHYDRATION_MCP_BACKEND=grpc \
+REHYDRATION_KERNEL_GRPC_ENDPOINT=https://kernel.example:50051 \
+REHYDRATION_KERNEL_GRPC_TLS_MODE=mtls \
+REHYDRATION_KERNEL_GRPC_TLS_CA_PATH=... \
+REHYDRATION_KERNEL_GRPC_TLS_CERT_PATH=... \
+REHYDRATION_KERNEL_GRPC_TLS_KEY_PATH=... \
+rehydration-mcp
+```
+
+Native gRPC is also available (proto contract in `crates/rehydration-proto`,
+`api/`); the MCP tool JSON is byte-equivalent across backends.
+
+## 3. Tool surface (10 tools + aliases)
+
+`kernel_ingest` (aliases `kernel_remember`, `kernel_ingest_context`),
+`kernel_write_memory`, `kernel_wake`, `kernel_ask`, `kernel_goto`,
+`kernel_near`, `kernel_rewind`, `kernel_forward`, `kernel_trace`,
+`kernel_inspect`. Canonical request/response examples:
+`api/examples/kernel/v1beta1/kmp/*.json`.
+
+### Incident-memory conventions
+
+- **about** = one incident: `incident:<id>` (e.g. `incident:INC-2431`).
+- **dimensions**: declare on first write, e.g. `timeline:<incident-id>`
+  (kind `timeline`) for the event sequence; add `service:<name>` scopes if
+  you partition observations per affected service.
+- **entries**: one entry per *decision, observation, constraint, or
+  outcome* — never transcripts. Every entry needs ≥1 coordinate
+  (`dimension` + `scope_id`, ideally `occurred_at` + `sequence`); the
+  coordinates are what make `goto/near/rewind/forward` (known-at-time
+  navigation) work later.
+- **relations**: typed with proof. Non-structural relations (e.g.
+  `caused_by`, `supports` with class `causal`/`evidential`) **require
+  `confidence` and `why` or `evidence`** — the kernel rejects anemic causal
+  claims by design.
+- **evidence**: attach log excerpts/links as evidence items supporting
+  entries; they surface later through `kernel_inspect` as proof.
+
+### Read playbook
+
+| Moment | Tool |
+| --- | --- |
+| Incident (re)opened / responder joins | `kernel_wake {about}` — full anchored context with proof |
+| Specific question ("did we restart X?") | `kernel_ask {about, question}` |
+| "What did we know at 03:20?" | `kernel_goto {about, cursor:{time}}` |
+| Context around a decision | `kernel_near {about, around:{ref}}` |
+| Step back/forward through the timeline | `kernel_rewind` / `kernel_forward` |
+| Why-chain between two refs | `kernel_trace {from, to}` |
+| Audit one claim + its proof | `kernel_inspect {ref, include_raw:true}` |
+
+## 4. Guarantees and sharp edges
+
+- Embedded ingest is synchronous: `read_after_write_ready=true` — wake
+  immediately after write sees the memory.
+- **Idempotency-key retry caveat**: retrying the same `idempotency_key`
+  *after* a successful ingest returns an explicit conflict (state intact) —
+  it is not an idempotent OK. Treat conflict-on-retry as "already applied";
+  generate one key per logical write (e.g. `ingest:<incident>:<step>`).
+- Fail-fast everywhere: locked store, corrupt layout, format-version
+  mismatch are explicit errors, never silent empty memory
+  (`docs/runtime-guarantees.md` + ADR-012).
+- The event log is append-only and auditable; projections are rebuildable
+  offline (replay tooling in `rehydration-adapter-embedded`).
+
+## 5. Quality telemetry for Choreographer (ADR-014)
+
+Every embedded `kernel_wake`/`kernel_ask`/`kernel_trace` journals a
+`QualityTelemetryObservation` (compression ratio, causal density, noise
+ratio, detail coverage, raw-equivalent tokens, rpc/about/role, timestamp)
+into `<data-dir>/telemetry/quality.redb` — a **separate, fail-open, bounded**
+journal (retention-capped; overflow drops observations and counts them, the
+kernel is never affected; relaxed durability, so the tail may be lost on
+crash — memory never is).
+
+Read surface **today** (in-process Rust):
+`rehydration_adapter_embedded::RedbQualityTelemetryReader::open(data_dir)`
+→ `query_since(millis, rpc, limit)`, `query_between(..)`, `latest(..)`,
+`count()`. *Planned*: a CLI query subcommand on the binary (deliberately
+**not** an MCP tool for now — the one-protocol rule forbids embedded-only
+tool semantics). If Choreographer needs it over MCP, that requires
+specifying it cross-edition first — raise it, don't add it unilaterally.
+
+Use it to detect degrading memory quality per incident (e.g. falling
+causal density → responders are logging observations without linking
+causes) and to feed Choreographer's own incident health dashboards.
+
+## 6. References
+
+- Runtime guarantees: `docs/runtime-guarantees.md`
+- Executable semantics: `crates/rehydration-conformance` (16 scenarios × 3 backends)
+- ADRs 009–014: `docs/adr/` (engine, graph, concurrency, data dir, packaging, telemetry)
+- Embedded roadmap: `docs/product/kmp-embedded-edition-roadmap.md`
+- MCP operations: `docs/operations/mcp-stdio.md`
+
+## 7. Open questions for the Choreographer side
+
+Answers shape the kernel backlog — reply inline or to the kernel team:
+
+1. **Topology**: one Choreographer process per data dir is the v1 contract
+   (single-writer). Do you need concurrent processes over one store? That
+   evidence triggers the documented daemon evolution (ADR-011).
+2. **Edition target**: per-node embedded memory, or a shared infrastructure
+   kernel for team-wide incident memory? If both, the export/import bundle
+   path (roadmap E6) becomes your promotion story — say so early.
+3. **Telemetry access**: is the in-process reader / planned CLI enough, or
+   do you need quality snapshots over MCP? The latter requires a
+   cross-edition contract change (one-protocol rule) — needs a real case.
+4. **Write cadence**: expected writes/sec during an active incident?
+   Embedded durable ingest is ~125 ev/s worst case (fsync-bound) — fine for
+   human-paced flows; automated observation streams would need batch ingest.
+5. **ID scheme**: can you guarantee stable incident/step IDs so idempotency
+   keys are `ingest:<incident>:<step>` and entry refs are deterministic?
+6. **Client runtime**: do you already speak MCP (which client), or is
+   native gRPC (`rehydration-proto`) the easier path for you?
