@@ -9,6 +9,12 @@ use tracing_subscriber::{EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cli_args = std::env::args().skip(1);
+    if let Some(command) = cli_args.next() {
+        let path = cli_args.next();
+        std::process::exit(run_cli_command(&command, path.as_deref()).await);
+    }
+
     let _log_guard = init_tracing();
 
     let server = match KernelMcpServer::try_from_env() {
@@ -106,4 +112,96 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
     let log_dir = resolved.path().join("logs");
     std::fs::create_dir_all(&log_dir).ok()?;
     Some(log_dir)
+}
+
+/// Non-MCP maintenance surface (everything is a process — no library):
+/// `export <file>` and `import <file>` move the append-only event log
+/// between embedded stores; stdout carries the command result only.
+async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
+    match command {
+        "export" | "import" => {}
+        "--version" | "-V" | "version" => {
+            println!(
+                "rehydration-mcp {} (store format {})",
+                env!("CARGO_PKG_VERSION"),
+                rehydration_embedded::SUPPORTED_FORMAT_VERSION
+            );
+            return 0;
+        }
+        other => {
+            eprintln!(
+                "rehydration-mcp: unknown command `{other}`; run without arguments for MCP \
+                 stdio mode, or use `export <file>` / `import <file>` / `--version`"
+            );
+            return 2;
+        }
+    }
+
+    let Some(path) = path else {
+        eprintln!("rehydration-mcp: {command} requires a bundle file path");
+        return 2;
+    };
+    let resolved = match rehydration_embedded::resolve_data_dir_from_env() {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            eprintln!("rehydration-mcp: {error}");
+            return 2;
+        }
+    };
+    let kernel = match rehydration_embedded::EmbeddedKernel::open(resolved.path()) {
+        Ok(kernel) => kernel,
+        Err(error) => {
+            eprintln!("rehydration-mcp: {error}");
+            return 2;
+        }
+    };
+    let store = kernel.store();
+
+    match command {
+        "export" => match store.export_bundle().await {
+            Ok(bundle) => {
+                if let Err(error) = std::fs::write(path, bundle) {
+                    eprintln!("rehydration-mcp: could not write `{path}`: {error}");
+                    return 2;
+                }
+                println!(
+                    "{{\"exported_to\":\"{path}\",\"data_dir\":\"{}\"}}",
+                    resolved.path().display()
+                );
+                0
+            }
+            Err(error) => {
+                eprintln!("rehydration-mcp: export failed: {error}");
+                2
+            }
+        },
+        _ => {
+            let bundle = match std::fs::read_to_string(path) {
+                Ok(bundle) => bundle,
+                Err(error) => {
+                    eprintln!("rehydration-mcp: could not read `{path}`: {error}");
+                    return 2;
+                }
+            };
+            match store
+                .import_bundle(
+                    &bundle,
+                    rehydration_application::projection_mutations_for_context_event,
+                )
+                .await
+            {
+                Ok(report) => {
+                    println!(
+                        "{{\"events_imported\":{},\"mutations_applied\":{}}}",
+                        report.events_imported, report.rebuild.mutations_applied
+                    );
+                    0
+                }
+                Err(error) => {
+                    eprintln!("rehydration-mcp: import failed: {error}");
+                    2
+                }
+            }
+        }
+    }
 }

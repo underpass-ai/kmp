@@ -8,3 +8,4 @@ mod kernel;
 
 pub use data_dir::{DATA_DIR_ENV, ResolvedDataDir, resolve_data_dir, resolve_data_dir_from_env};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
+pub use rehydration_adapter_embedded::SUPPORTED_FORMAT_VERSION;
