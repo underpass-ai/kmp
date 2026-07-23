@@ -153,12 +153,22 @@ KMP is moving toward two distributions that share the same protocol semantics:
 - **Infrastructure** (today) — the typed `KernelMemoryService` gRPC server with
   Neo4j / Valkey / NATS adapters, Helm/Kubernetes deployment, and full TLS/mTLS
   plus observability. For teams running shared, auditable agent memory at scale.
-- **Local / embedded** (planned) — a no-infrastructure build with embedded
-  storage, installable directly as an MCP server in coding agents such as
-  **Claude Code**, **Codex**, and **OpenCode**. Same KMP tools (`kernel_wake`,
-  `kernel_ask`, `kernel_near`, `kernel_trace`, `kernel_inspect`,
-  `kernel_write_memory`), with no separate graph / key-value / event backends to
-  operate.
+- **Local / embedded** (shipped, primary) — the kernel in-process inside the
+  MCP stdio binary: zero infrastructure, per-project `.kernel/` memory,
+  fsync-durable, verified live in **Claude Code** and **Codex**. Same KMP
+  tools (`kernel_wake`, `kernel_ask`, `kernel_near`, `kernel_trace`,
+  `kernel_inspect`, `kernel_write_memory`) with identical JSON by
+  construction. Quickstart:
+
+  ```bash
+  cargo install --path crates/rehydration-mcp --locked
+  claude mcp add kernel-memory --scope user \
+    --env REHYDRATION_MCP_BACKEND=embedded -- ~/.cargo/bin/rehydration-mcp
+  ```
+
+  Prebuilt binaries + install script: see
+  [embedded-release.md](docs/operations/embedded-release.md); host recipes in
+  [embedded-hosts.md](docs/operations/embedded-hosts.md).
 
 Both expose the identical KMP surface, so memory written through one is
 navigable through the other.

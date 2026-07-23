@@ -1,0 +1,104 @@
+name: release
+
+# E5 distribution: a version tag produces stripped, checksummed binaries for
+# every developer platform and attaches them to the GitHub release.
+# `workflow_dispatch` runs the same build matrix without publishing, so the
+# pipeline is verifiable without cutting a release.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - runner: macos-14
+            target: aarch64-apple-darwin
+          - runner: macos-13
+            target: x86_64-apple-darwin
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: 1.90.0
+          targets: ${{ matrix.target }}
+
+      - name: Install protoc (Linux)
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL -o protoc.zip \
+            https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-osx-universal_binary.zip
+          sudo unzip -o protoc.zip -d /usr/local bin/protoc include/*
+          protoc --version
+
+      - name: Install protoc (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip" -OutFile protoc.zip
+          Expand-Archive protoc.zip -DestinationPath "$env:USERPROFILE\protoc"
+          Add-Content $env:GITHUB_PATH "$env:USERPROFILE\protoc\bin"
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+
+      - name: Build release binary
+        shell: bash
+        run: cargo build --release -p rehydration-mcp --locked --target ${{ matrix.target }}
+
+      - name: Package and checksum
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          case "${{ runner.os }}" in
+            Windows) BIN="target/${{ matrix.target }}/release/rehydration-mcp.exe"
+                     OUT="rehydration-mcp-${VERSION}-${{ matrix.target }}.exe" ;;
+            *)       BIN="target/${{ matrix.target }}/release/rehydration-mcp"
+                     OUT="rehydration-mcp-${VERSION}-${{ matrix.target }}"
+                     strip "$BIN" || true ;;
+          esac
+          mkdir -p dist
+          cp "$BIN" "dist/${OUT}"
+          cd dist
+          if command -v sha256sum >/dev/null; then
+            sha256sum "${OUT}" > "${OUT}.sha256"
+          else
+            shasum -a 256 "${OUT}" > "${OUT}.sha256"
+          fi
+          ls -la
+
+      - name: Upload to release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes 2>/dev/null || true
+          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
