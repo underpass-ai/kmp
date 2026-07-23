@@ -371,8 +371,10 @@ empty-store-only import, exact revision reproduction) + round-trip test
 proving wake, known-at-time and relation-proof parity
 (`rehydration-embedded/tests/export_import_roundtrip.rs`) + live binary
 smoke. Conformance for all three adapter sets already permanent in CI (E1).
-Remaining: benchmark parity runs (MemoryArena/LongMemEval on the embedded
-backend).
+Benchmark parity: **LongMemEval deterministic recall run recorded**
+(2026-07-23, 470/470 full evidence hits on 500 oracle items in 112.6s —
+see [longmemeval-benchmark.md](../research/longmemeval-benchmark.md));
+MemoryArena/MemoryAgentBench runs remain optional follow-ups.
 Depends on: E2, E3
 
 Goal:

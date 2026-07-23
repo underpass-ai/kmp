@@ -1572,3 +1572,34 @@ validation because local 4x RTX 3090 capacity is not enough for the target
 Gemma long-context configuration. The first cloud step should be a short smoke
 that validates model loading, context length, tokens/s, TLS/API plumbing, and
 cost before running the full 500-question pass.
+
+## Embedded backend parity run (2026-07-23)
+
+First LongMemEval run against the **embedded edition** (in-process kernel
+over redb, `REHYDRATION_MCP_BACKEND=embedded`, fresh store; zero
+infrastructure, zero LLM — deterministic kernel-side scoring only):
+
+| Metric | Embedded run | Recorded infra reference |
+| --- | --- | --- |
+| Dataset | `longmemeval_oracle.json`, 500 items | 100-item scale run |
+| Ingested / asked | 500 / 500 | — |
+| Full evidence hits | **470/470 (100%)** — 0 partial, 0 missing | 99.28% recall, 98/100 full-hit |
+| Abstention items | 30/30 | — |
+| Lexical answer hits (reader-less) | 199/470 | reader is the bottleneck (34/46 adjusted lexical baseline) |
+| Wall clock | 112.6 s total | — |
+
+Reproduction (no code changes — the runners select the backend by env):
+
+```bash
+cargo build --release -p rehydration-testkit \
+  --bin longmemeval_kmp_adapter --bin longmemeval_kmp_runner
+target/release/longmemeval_kmp_adapter \
+  --input longmemeval_oracle.json --output <artifacts>
+REHYDRATION_MCP_BACKEND=embedded REHYDRATION_MCP_DATA_DIR=<fresh dir> \
+  target/release/longmemeval_kmp_runner --artifacts <artifacts> --output <run>
+```
+
+Conclusion: embedded storage recall is at parity with the infrastructure
+backend (E6 parity evidence, deterministic phase). End-to-end answer
+quality (LLM reader phase) remains a reader concern, identical across
+backends by construction.
