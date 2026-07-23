@@ -284,7 +284,14 @@ Exit criteria:
 ## Milestone E4: Host Integrations (Claude Code, Codex, OpenCode, Copilot)
 
 Priority: P0 (Claude Code, Codex), P1 (OpenCode, Copilot)
-Status: not started
+Status: **accepted (2026-07-23)** — initial product scope is Claude Code +
+Codex + Copilot (owner decision; OpenCode parked). Claude Code TESTED live
+(native `kernel_wake` in a real session recovered prior-session memory with
+proof); Codex TESTED live (session recovered the incident-resolution
+checkpoint); Copilot recipe documented, verification parked. Two-session
+demo `scripts/demo/embedded_two_sessions.sh` green; recipes + playbook in
+[embedded-hosts.md](../operations/embedded-hosts.md). First external
+consumer (incident-resolution agent) migrated to embedded and unblocked.
 Depends on: E3
 
 Goal:
@@ -321,7 +328,12 @@ Exit criteria:
 ## Milestone E5: Distribution
 
 Priority: P1
-Status: not started
+Status: **in progress (2026-07-23)** — release workflow (5-target matrix,
+checksummed artifacts on tag, dispatch-mode verification), checksum-verified
+install script printing per-host registration, and the binary↔format
+compatibility matrix in
+[embedded-release.md](../operations/embedded-release.md). Pending: macOS and
+Windows fresh-machine verification, crates.io decision.
 Depends on: E3 (can overlap E4)
 
 Goal:
