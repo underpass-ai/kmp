@@ -28,9 +28,10 @@ claude mcp add kernel-memory --scope user \
 own `.kernel/` store. Verify with `claude mcp list` and, inside a session,
 call `kernel_wake` on any about you have written.
 
-## Codex CLI — recipe
+## Codex CLI — registered 2026-07-23 (session-level verification pending)
 
-`~/.codex/config.toml`:
+`~/.codex/config.toml` (applied on this machine; note: Codex sessions started
+before the change keep the old MCP inventory — restart the session):
 
 ```toml
 [mcp_servers.kernel-memory]
@@ -38,7 +39,7 @@ command = "/home/YOU/.cargo/bin/rehydration-mcp"
 env = { REHYDRATION_MCP_BACKEND = "embedded" }
 ```
 
-## OpenCode — recipe
+## OpenCode — recipe (out of initial product scope)
 
 Project or global config (`opencode.json`):
 
@@ -54,7 +55,7 @@ Project or global config (`opencode.json`):
 }
 ```
 
-## GitHub Copilot (VS Code agent mode) — recipe
+## GitHub Copilot (VS Code agent mode) — recipe (pending verification)
 
 `.vscode/mcp.json`:
 
