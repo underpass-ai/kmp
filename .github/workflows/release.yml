@@ -53,7 +53,7 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          curl -sSfL -o protoc.zip \
+          curl --proto '=https' --tlsv1.2 -sSfL -o protoc.zip \
             https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-osx-universal_binary.zip
           sudo unzip -o protoc.zip -d /usr/local bin/protoc include/*
           protoc --version

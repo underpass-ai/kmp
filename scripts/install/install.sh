@@ -3,7 +3,7 @@
 # KMP Embedded Edition installer: drops the rehydration-mcp binary into
 # ~/.local/bin and prints the per-host registration snippets.
 #
-#   curl -sSfL https://raw.githubusercontent.com/underpass-ai/rehydration-kernel/main/scripts/install/install.sh | bash
+#   curl --proto '=https' --tlsv1.2 -sSfL https://raw.githubusercontent.com/underpass-ai/rehydration-kernel/main/scripts/install/install.sh | bash
 #
 # Pin a version with:  KMP_VERSION=v0.1.0 ./install.sh
 
@@ -25,7 +25,7 @@ case "${os}-${arch}" in
 esac
 
 if [ -z "${VERSION}" ]; then
-  VERSION="$(curl -sSfL "https://api.github.com/repos/${REPO}/releases/latest" \
+  VERSION="$(curl --proto '=https' --tlsv1.2 -sSfL "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)"
 fi
 if [ -z "${VERSION}" ]; then
@@ -38,8 +38,8 @@ URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
 
 echo "install: fetching ${ASSET}"
 tmp="$(mktemp -d)"
-curl -sSfL -o "${tmp}/${ASSET}" "${URL}"
-curl -sSfL -o "${tmp}/${ASSET}.sha256" "${URL}.sha256"
+curl --proto '=https' --tlsv1.2 -sSfL -o "${tmp}/${ASSET}" "${URL}"
+curl --proto '=https' --tlsv1.2 -sSfL -o "${tmp}/${ASSET}.sha256" "${URL}.sha256"
 (cd "${tmp}" && if command -v sha256sum >/dev/null; then sha256sum -c "${ASSET}.sha256"; else shasum -a 256 -c "${ASSET}.sha256"; fi)
 
 mkdir -p "${INSTALL_DIR}"
