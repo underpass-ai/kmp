@@ -1603,3 +1603,34 @@ Conclusion: embedded storage recall is at parity with the infrastructure
 backend (E6 parity evidence, deterministic phase). End-to-end answer
 quality (LLM reader phase) remains a reader concern, identical across
 backends by construction.
+
+## Embedded rich-graph A/B and derivation run (2026-07-23)
+
+Same 121 `multi-session` items (oracle mode, abstentions excluded), same
+official gpt-4o autoeval judge; the only variable is how memory was written:
+
+| Path | Official autoeval |
+| --- | --- |
+| Standard reader, flat graph (no writer relations) | 101/121 = **0.8347** |
+| Standard reader, rich graph (smart-writer, gpt-4o) | **105/121 = 0.8678** |
+| Derivation reader (embedding candidates top-30 + typed contract) | 91/118 = 0.7712 |
+
+Smart-writer quality on the slice: **323/323 rich relations, 0 anemic, 0
+invalid LLM outputs** (one `kernel_write_memory` relation per evidence
+candidate, dry-run → commit → `kernel_inspect` verification).
+
+Readings:
+
+- The official judge is far more tolerant than the lexical matcher (the
+  same flat run scored 66% lexical vs 83.5% official) — lexical remains a
+  local-analysis metric only.
+- Rich relations add **+3.3pp** with the standard reader; reader-side
+  `plugin_derivation_results` stayed 0, so the typed-operand layer is
+  untapped headroom rather than spent effort.
+- The winning path is now **rich graph + standard reader**, ahead of the
+  candidates+derivation architecture that produced the May baseline
+  (0.6304 on its 46-item aggregate sub-slice; 0.7712 here on the broader
+  slice).
+- Standing caveat: oracle mode (sessions provided). The
+  full-`longmemeval_s` haystack run (embedding candidates at K25-30 →
+  smart-writer → reader → judge) is the remaining market-facing number.
