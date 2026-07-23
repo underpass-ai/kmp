@@ -28,10 +28,15 @@ claude mcp add kernel-memory --scope user \
 own `.kernel/` store. Verify with `claude mcp list` and, inside a session,
 call `kernel_wake` on any about you have written.
 
-## Codex CLI — registered 2026-07-23 (session-level verification pending)
+## Codex CLI — tested 2026-07-23
 
-`~/.codex/config.toml` (applied on this machine; note: Codex sessions started
-before the change keep the old MCP inventory — restart the session):
+`~/.codex/config.toml` (applied and verified in a live Codex session:
+`kernel_wake` recovered a real checkpoint with proof). Two field notes from
+the verification: sessions started before a registration change keep the old
+MCP inventory (restart the session), and opening a host in a project whose
+`.kernel/` is held by another session fails fast per the single-writer
+contract — the tools then do not appear in the inventory (open the host in a
+project with a free store, or close the other session):
 
 ```toml
 [mcp_servers.kernel-memory]
