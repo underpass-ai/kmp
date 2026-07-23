@@ -33,3 +33,16 @@ matrix in the same PR.
 - Release pipeline: validated via `workflow_dispatch` build matrix.
 - Fresh-machine, install-to-first-recovered-context: verified on Linux
   (this machine); macOS and Windows pending real-hardware runs.
+
+## Backup and portability (E6)
+
+```bash
+rehydration-mcp export memory-backup.jsonl   # data dir per ADR-012 resolution
+rehydration-mcp import memory-backup.jsonl   # into an EMPTY store only
+rehydration-mcp --version                    # binary + store format
+```
+
+The bundle is the append-only event log (JSON Lines, header with format
+versions and event count). Import replays it reproducing exact revisions and
+rebuilding projections — temporal reads and relation proof survive the round
+trip. Merging into a non-empty store is deliberately unsupported.

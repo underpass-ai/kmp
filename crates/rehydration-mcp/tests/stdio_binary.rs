@@ -147,3 +147,90 @@ fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
         "embedded mode must journal logs into <data-dir>/logs/"
     );
 }
+
+#[test]
+fn cli_surface_version_export_import_and_errors() {
+    let bin = env!("CARGO_BIN_EXE_rehydration-mcp");
+
+    let version = Command::new(bin)
+        .arg("--version")
+        .output()
+        .expect("version runs");
+    assert!(version.status.success());
+    assert!(
+        String::from_utf8_lossy(&version.stdout).contains("store format"),
+        "--version must report binary and store format"
+    );
+
+    let unknown = Command::new(bin)
+        .arg("bogus")
+        .output()
+        .expect("unknown runs");
+    assert_eq!(unknown.status.code(), Some(2), "unknown commands exit 2");
+
+    let missing_path = Command::new(bin)
+        .arg("export")
+        .output()
+        .expect("export runs");
+    assert_eq!(
+        missing_path.status.code(),
+        Some(2),
+        "export without path exits 2"
+    );
+
+    // Full round trip through the binary: ingest (MCP mode) -> export -> import -> wake.
+    let source = tempfile::tempdir().expect("source dir");
+    let target = tempfile::tempdir().expect("target dir");
+    let bundle = tempfile::tempdir().expect("bundle dir");
+    let bundle_path = bundle.path().join("memory.jsonl");
+
+    let ingest = run_binary(
+        &[
+            ("REHYDRATION_MCP_BACKEND", "embedded"),
+            (
+                "REHYDRATION_MCP_DATA_DIR",
+                source.path().to_str().expect("utf8"),
+            ),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kernel_ingest\",\"arguments\":{\"about\":\"project:cli\",\"idempotency_key\":\"ingest:cli\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:cli\",\"kind\":\"decision\",\"text\":\"cli\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+    );
+    assert!(ingest.status.success());
+
+    let export = Command::new(bin)
+        .args(["export", bundle_path.to_str().expect("utf8")])
+        .env("REHYDRATION_MCP_DATA_DIR", source.path())
+        .output()
+        .expect("export runs");
+    assert!(export.status.success(), "export: {export:?}");
+
+    let import = Command::new(bin)
+        .args(["import", bundle_path.to_str().expect("utf8")])
+        .env("REHYDRATION_MCP_DATA_DIR", target.path())
+        .output()
+        .expect("import runs");
+    assert!(import.status.success(), "import: {import:?}");
+    assert!(String::from_utf8_lossy(&import.stdout).contains("\"events_imported\":1"));
+
+    let import_again = Command::new(bin)
+        .args(["import", bundle_path.to_str().expect("utf8")])
+        .env("REHYDRATION_MCP_DATA_DIR", target.path())
+        .output()
+        .expect("import runs");
+    assert_eq!(
+        import_again.status.code(),
+        Some(2),
+        "non-empty import exits 2"
+    );
+
+    let wake = run_binary(
+        &[
+            ("REHYDRATION_MCP_BACKEND", "embedded"),
+            (
+                "REHYDRATION_MCP_DATA_DIR",
+                target.path().to_str().expect("utf8"),
+            ),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"kernel_wake\",\"arguments\":{\"about\":\"project:cli\"}}}\n",
+    );
+    assert!(String::from_utf8_lossy(&wake.stdout).contains("decision:cli"));
+}

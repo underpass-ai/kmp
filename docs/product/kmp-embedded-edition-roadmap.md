@@ -362,7 +362,19 @@ Exit criteria:
 ## Milestone E6: Parity Evidence and Promotion Path
 
 Priority: P1
-Status: not started
+Status: **in progress (2026-07-23), reframed embedded-first** — with the
+infrastructure edition retired as a deployment target (owner decision),
+export/import is backup and portability between embedded stores, not
+cluster promotion. Delivered: `rehydration-mcp export/import <file>` CLI
+(the event log as a JSON-Lines bundle with fail-fast header checks,
+empty-store-only import, exact revision reproduction) + round-trip test
+proving wake, known-at-time and relation-proof parity
+(`rehydration-embedded/tests/export_import_roundtrip.rs`) + live binary
+smoke. Conformance for all three adapter sets already permanent in CI (E1).
+Benchmark parity: **LongMemEval deterministic recall run recorded**
+(2026-07-23, 470/470 full evidence hits on 500 oracle items in 112.6s —
+see [longmemeval-benchmark.md](../research/longmemeval-benchmark.md));
+MemoryArena/MemoryAgentBench runs remain optional follow-ups.
 Depends on: E2, E3
 
 Goal:
