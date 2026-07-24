@@ -17,6 +17,14 @@ if cargo tree -p rehydration-mcp --edges normal --prefix none --locked \
   exit 1
 fi
 
+EMBEDDED_FORBIDDEN='opentelemetry|opentelemetry-otlp|prost|reqwest|tonic'
+echo "embedded-gates: checking the in-process kernel observability boundary"
+if cargo tree -p rehydration-embedded --edges normal --prefix none --locked \
+  | grep -E "^(${EMBEDDED_FORBIDDEN}) v"; then
+  echo "embedded-gates: remote observability linked into the in-process kernel" >&2
+  exit 1
+fi
+
 echo "embedded-gates: building release binary"
 cargo build --release -p rehydration-mcp --locked
 strip -o target/release/rehydration-mcp.gates-stripped target/release/rehydration-mcp

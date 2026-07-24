@@ -27,6 +27,6 @@ tokio-stream.workspace = true
 tokio-rustls = "0.26.4"
 
 [dev-dependencies]
-rehydration-observability.workspace = true
+rehydration-observability = { workspace = true, features = ["otel"] }
 rehydration-testkit.workspace = true
 tempfile = "3.26.0"

@@ -46,7 +46,7 @@ rehydration-domain = { path = "crates/rehydration-domain" }
 rehydration-embedded = { path = "crates/rehydration-embedded" }
 rehydration-interpretation = { path = "crates/rehydration-interpretation" }
 rehydration-mcp = { path = "crates/rehydration-mcp" }
-rehydration-observability = { path = "crates/rehydration-observability" }
+rehydration-observability = { path = "crates/rehydration-observability", default-features = false }
 rehydration-plugin-api = { path = "crates/rehydration-plugin-api" }
 rehydration-ports = { path = "crates/rehydration-ports" }
 rehydration-proto = { path = "crates/rehydration-proto" }

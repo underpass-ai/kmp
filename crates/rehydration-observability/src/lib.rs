@@ -1,23 +1,34 @@
 mod buffered_quality_metrics_observer;
 mod embedded_telemetry_guard;
+#[cfg(feature = "otel")]
 pub mod metrics;
+#[cfg(feature = "otel")]
 pub mod quality_observers;
 mod quality_telemetry_observation;
 
+#[cfg(feature = "otel")]
 use opentelemetry::trace::TracerProvider as _;
+#[cfg(feature = "otel")]
 use opentelemetry_otlp::WithExportConfig;
+#[cfg(feature = "otel")]
 use opentelemetry_otlp::WithTonicConfig;
+#[cfg(feature = "otel")]
 use opentelemetry_otlp::tonic_types::transport::{Certificate, ClientTlsConfig, Identity};
+#[cfg(feature = "otel")]
 use opentelemetry_sdk::metrics::SdkMeterProvider;
+#[cfg(feature = "otel")]
 use opentelemetry_sdk::trace::SdkTracerProvider;
+#[cfg(feature = "otel")]
 use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub use buffered_quality_metrics_observer::BufferedQualityMetricsObserver;
 pub use embedded_telemetry_guard::EmbeddedTelemetryGuard;
+#[cfg(feature = "otel")]
 pub use metrics::KernelMetrics;
 pub use quality_telemetry_observation::QualityTelemetryObservation;
 
 /// Resources returned by `init_observability` for lifecycle management.
+#[cfg(feature = "otel")]
 pub struct ObservabilityGuard {
     trace_provider: Option<SdkTracerProvider>,
     meter_provider: Option<SdkMeterProvider>,
@@ -35,6 +46,7 @@ pub struct ObservabilityGuard {
 /// - `OTEL_TRACES_EXPORTER`: standard OTel traces exporter selector. When set
 ///   to `none`, trace export is disabled even if OTLP metrics remain enabled.
 ///   When unset, traces follow the OTLP endpoint configuration.
+#[cfg(feature = "otel")]
 pub fn init_observability(service_name: &str) -> ObservabilityGuard {
     let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let log_format = std::env::var("REHYDRATION_LOG_FORMAT").unwrap_or_default();
@@ -92,6 +104,7 @@ pub fn init_observability(service_name: &str) -> ObservabilityGuard {
     }
 }
 
+#[cfg(feature = "otel")]
 fn init_otel_tracer(service_name: &str) -> Option<SdkTracerProvider> {
     let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok()?;
     if !traces_export_enabled(
@@ -122,6 +135,7 @@ fn init_otel_tracer(service_name: &str) -> Option<SdkTracerProvider> {
     Some(provider)
 }
 
+#[cfg(feature = "otel")]
 fn traces_export_enabled(traces_exporter: Option<&str>, endpoint: Option<&str>) -> bool {
     let Some(endpoint) = endpoint.map(str::trim).filter(|value| !value.is_empty()) else {
         return false;
@@ -144,6 +158,7 @@ fn traces_export_enabled(traces_exporter: Option<&str>, endpoint: Option<&str>) 
 /// - `OTEL_EXPORTER_OTLP_KEY_PATH` — client key for mTLS
 ///
 /// Returns `None` if no TLS variables are set (plaintext mode).
+#[cfg(feature = "otel")]
 pub(crate) fn build_otlp_tls_config() -> Option<ClientTlsConfig> {
     let ca_path = std::env::var("OTEL_EXPORTER_OTLP_CA_PATH").ok();
     let cert_path = std::env::var("OTEL_EXPORTER_OTLP_CERT_PATH").ok();
@@ -170,6 +185,7 @@ pub(crate) fn build_otlp_tls_config() -> Option<ClientTlsConfig> {
 }
 
 /// Shuts down the OpenTelemetry providers, flushing pending data.
+#[cfg(feature = "otel")]
 pub fn shutdown_observability(guard: ObservabilityGuard) {
     if let Some(provider) = guard.trace_provider
         && let Err(error) = provider.shutdown()
@@ -183,7 +199,7 @@ pub fn shutdown_observability(guard: ObservabilityGuard) {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "otel"))]
 mod tests {
     use super::*;
 
