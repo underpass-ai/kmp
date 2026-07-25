@@ -420,44 +420,70 @@ jobs:
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
             while (Date.now() < deadline) {
-              const response = await github.rest.checks.listForRef({
+              // Code scanning default setup emits one run per configuration
+              // (security and code quality), so a single check name can map to
+              // several check runs on the same commit. Keeping only one of them
+              // would let a failing analysis hide behind a passing namesake, so
+              // every run under a required name has to be accounted for.
+              const checkRuns = await github.paginate(github.rest.checks.listForRef, {
                 owner,
                 repo,
                 ref,
                 per_page: 100,
               });
 
-              const checkRuns = response.data.check_runs;
-              const states = new Map(
-                checkRuns.map((run) => [run.name, { status: run.status, conclusion: run.conclusion }]),
-              );
+              const states = new Map();
+              for (const run of checkRuns) {
+                const runsForName = states.get(run.name) ?? [];
+                runsForName.push({ id: run.id, status: run.status, conclusion: run.conclusion });
+                states.set(run.name, runsForName);
+              }
 
               const pending = [];
               const failures = [];
 
+              const describe = (name, run) =>
+                (states.get(name) ?? []).length > 1
+                  ? `${name}#${run.id}=${run.conclusion}`
+                  : `${name}=${run.conclusion}`;
+
               for (const analysisName of codeQlAnalysisChecks) {
-                const analysisState = states.get(analysisName);
-                if (!analysisState || analysisState.status !== "completed") {
+                const runsForName = states.get(analysisName) ?? [];
+                if (runsForName.length === 0) {
                   pending.push(analysisName);
-                } else if (analysisState.conclusion !== "success") {
-                  failures.push(`${analysisName}=${analysisState.conclusion}`);
+                  continue;
+                }
+
+                for (const run of runsForName) {
+                  if (run.status !== "completed") {
+                    pending.push(analysisName);
+                  } else if (run.conclusion !== "success") {
+                    failures.push(describe(analysisName, run));
+                  }
                 }
               }
 
               for (const [name, expectedConclusion] of requiredChecks.entries()) {
-                const state = states.get(name);
-                if (!state || state.status !== "completed") {
+                const runsForName = states.get(name) ?? [];
+                if (runsForName.length === 0) {
                   pending.push(name);
                   continue;
                 }
 
-                if (name === "CodeQL" && state.conclusion === "neutral") {
-                  pending.push(name);
-                  continue;
-                }
+                for (const run of runsForName) {
+                  if (run.status !== "completed") {
+                    pending.push(name);
+                    continue;
+                  }
 
-                if (state.conclusion !== expectedConclusion) {
-                  failures.push(`${name}=${state.conclusion}`);
+                  if (name === "CodeQL" && run.conclusion === "neutral") {
+                    pending.push(name);
+                    continue;
+                  }
+
+                  if (run.conclusion !== expectedConclusion) {
+                    failures.push(describe(name, run));
+                  }
                 }
               }
 
