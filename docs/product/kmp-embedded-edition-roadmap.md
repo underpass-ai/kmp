@@ -1,7 +1,10 @@
 # KMP Embedded Edition Roadmap
 
-Last updated: 2026-07-21
+Last updated: 2026-07-25
 Status: active planning document
+Milestones: E0–E3 and E6 done. E4 accepted with narrowed scope (Claude Code
+and Codex verified live; OpenCode out of scope, Copilot verification parked).
+E5 (distribution) is the one still open — no release tag has been cut yet.
 
 ## Product Direction
 
@@ -237,8 +240,9 @@ Exit criteria:
 ## Milestone E3: Embedded Backend in the MCP Binary
 
 Priority: P0
-Status: **in progress** — core landed 2026-07-22: `REHYDRATION_MCP_BACKEND=embedded`
-runs the kernel in-process. `rehydration-embedded` composition root (ADR-012
+Status: **done (2026-07-24)** — core landed 2026-07-22:
+`REHYDRATION_MCP_BACKEND=embedded` runs the kernel in-process.
+`rehydration-embedded` composition root (ADR-012
 data-dir resolution env > project `.kernel/` self-gitignoring > XDG;
 single-writer fail-fast via the engine lock per ADR-011);
 `rehydration-proto-mapping` extracted from `transport-grpc` so the embedded
@@ -248,10 +252,17 @@ in the MCP binary); e2e test proves cross-session memory recovery.
 The local quality-telemetry journal landed under ADR-014: bounded buffered
 observer → `telemetry/quality.redb`, with OTEL dependencies compile-time
 excluded from `rehydration-embedded` and enforced by the dependency gate on
-2026-07-24. Measured: 13.0MB stripped release binary carrying both `live` and
-`embedded` backends (above the single-digit target; the ADR-013 feature split
-is the lever if it matters). Pending in E3: log file in the data dir and the
-remaining binary-size reduction decision.
+2026-07-24. The local log file landed with it: daily-rotating JSON lines under
+`<data-dir>/logs/rehydration-mcp.log.<date>`, stdout left to MCP JSON-RPC.
+Both exit criteria are met — embedded passes the MCP-level e2e flows, and the
+fresh-machine install → write → kill session → recover path is verified on
+Linux (E4/E5 evidence). Measured: 13.18MiB stripped release binary carrying
+both `live` and `embedded` backends (2026-07-25, linux x86_64, rustc 1.90.0),
+against the 16MiB budget enforced by `scripts/ci/embedded-binary-gates.sh`.
+That is still above the single-digit aspiration in ADR-013; the feature split
+is the lever, and ADR-013 already defers the call to E5, where real
+distribution artifacts make the trade-off concrete. Carried to E5 as the one
+open decision, not a blocker for E3.
 Depends on: E2
 
 Goal:
@@ -330,12 +341,20 @@ Exit criteria:
 ## Milestone E5: Distribution
 
 Priority: P1
-Status: **in progress (2026-07-23)** — release workflow (5-target matrix,
+Status: **in progress (2026-07-24)** — release workflow (5-target matrix,
 checksummed artifacts on tag, dispatch-mode verification), checksum-verified
 install script printing per-host registration, and the binary↔format
 compatibility matrix in
-[embedded-release.md](../operations/embedded-release.md). Pending: macOS and
-Windows fresh-machine verification, crates.io decision.
+[embedded-release.md](../operations/embedded-release.md). Since 2026-07-23:
+https-only transport enforced in the installer and the release curl calls, and
+macOS Intel cross-compiled on the arm64 runner, which took the build matrix to
+**5/5 green** on main (run 30045762267, 2026-07-23: linux x86_64/aarch64,
+macOS arm64/x86_64, windows x86_64). Pending: **no release tag has been cut
+yet** — that run was `workflow_dispatch`, so every target builds but the
+tag-triggered path in the "a tag produces all artifacts" exit criterion is
+still unexercised; macOS and Windows fresh-machine runs; the
+crates.io decision (deferred until naming/branding settles); and the ADR-013
+binary-size decision inherited from E3.
 Depends on: E3 (can overlap E4)
 
 Goal:
@@ -364,7 +383,7 @@ Exit criteria:
 ## Milestone E6: Parity Evidence and Promotion Path
 
 Priority: P1
-Status: **in progress (2026-07-23), reframed embedded-first** — with the
+Status: **done (2026-07-24), reframed embedded-first** — with the
 infrastructure edition retired as a deployment target (owner decision),
 export/import is backup and portability between embedded stores, not
 cluster promotion. Delivered: `rehydration-mcp export/import <file>` CLI
@@ -377,6 +396,16 @@ Benchmark parity: **LongMemEval deterministic recall run recorded**
 (2026-07-23, 470/470 full evidence hits on 500 oracle items in 112.6s —
 see [longmemeval-benchmark.md](../research/longmemeval-benchmark.md));
 MemoryArena/MemoryAgentBench runs remain optional follow-ups.
+Closed 2026-07-24 with binary-level CLI coverage (version, export/import
+round trip, error exits) and explicit fail-fast coverage for malformed
+bundles. The third exit criterion — the promotion walkthrough — is **void
+under the reframe**, not pending: with the infrastructure edition retired as
+a deployment target there is no cluster to promote into. The remaining two
+are met: round-trip parity is proven by
+`export_import_preserves_wake_temporal_and_proof` (wake node ids, known-at-time
+`kernel_goto`, and the `supports` relation with its evidence rationale all
+survive the bundle), and benchmark parity rests on the recorded LongMemEval
+run.
 Depends on: E2, E3
 
 Goal:
