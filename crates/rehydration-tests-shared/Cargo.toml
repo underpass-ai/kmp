@@ -21,7 +21,7 @@ rehydration-adapter-valkey.workspace = true
 rehydration-application.workspace = true
 rehydration-config.workspace = true
 rehydration-domain.workspace = true
-rehydration-observability.workspace = true
+rehydration-observability = { workspace = true, features = ["otel"] }
 rehydration-ports.workspace = true
 rehydration-proto.workspace = true
 rehydration-testkit.workspace = true

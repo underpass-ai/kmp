@@ -15,7 +15,7 @@ rehydration-application.workspace = true
 rehydration-config.workspace = true
 rehydration-domain.workspace = true
 opentelemetry.workspace = true
-rehydration-observability.workspace = true
+rehydration-observability = { workspace = true, features = ["otel"] }
 rehydration-transport-grpc.workspace = true
 tokio.workspace = true
 tokio-rustls = "0.26.4"

@@ -23,6 +23,13 @@ an OTel Collector, Prometheus, Loki, or any other service:
   adapter only emits successful `kernel_wake`, `kernel_ask`, and `kernel_trace`
   renders through the domain port.
 
+`rehydration-observability` keeps OTEL behind its `otel` Cargo feature. The
+crate enables that feature by default for direct deployed use, while workspace
+consumers opt in explicitly and the embedded adapter/composition remain on the
+local-only feature set. Therefore the in-process kernel does not link an OTLP
+client, `reqwest`, `tonic`, or protobuf code merely to obtain the buffered
+observer and telemetry guard.
+
 No embedded-only MCP tool is added. The KMP protocol surface remains identical
 between live and embedded editions. Local inspection starts as an out-of-band
 maintenance API; it can become a shared protocol operation only if every
@@ -64,6 +71,8 @@ operations, not domain state transitions.
 ## Consequences
 
 - **Positive:** local-first quality history is queryable with no services.
+- **Positive:** zero-infrastructure is also a binary dependency property, not
+  only a runtime configuration.
 - **Positive:** the kernel hot path remains non-blocking and fail-open.
 - **Positive:** canonical state and operational telemetry retain independent
   crash guarantees and retention policies.
@@ -72,4 +81,5 @@ operations, not domain state transitions.
 - **Trade-off:** the initial reader is a maintenance surface, not an MCP tool.
 - **Constraint:** future OTEL + local fan-out must use the existing
   `CompositeQualityObserver`; it must not introduce a second domain port.
-
+- **Constraint:** CI rejects remote observability dependencies in the
+  `rehydration-embedded` normal dependency graph.
