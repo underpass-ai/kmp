@@ -347,10 +347,12 @@ install script printing per-host registration, and the binary↔format
 compatibility matrix in
 [embedded-release.md](../operations/embedded-release.md). Since 2026-07-23:
 https-only transport enforced in the installer and the release curl calls, and
-macOS Intel cross-compiled on the arm64 runner. Pending: **no release tag has
-been cut yet** — the workflow has only run in `workflow_dispatch` verification
-mode (run 30045762267, 2026-07-23), so the "a tag produces all artifacts"
-exit criterion is unproven; macOS and Windows fresh-machine runs; the
+macOS Intel cross-compiled on the arm64 runner, which took the build matrix to
+**5/5 green** on main (run 30045762267, 2026-07-23: linux x86_64/aarch64,
+macOS arm64/x86_64, windows x86_64). Pending: **no release tag has been cut
+yet** — that run was `workflow_dispatch`, so every target builds but the
+tag-triggered path in the "a tag produces all artifacts" exit criterion is
+still unexercised; macOS and Windows fresh-machine runs; the
 crates.io decision (deferred until naming/branding settles); and the ADR-013
 binary-size decision inherited from E3.
 Depends on: E3 (can overlap E4)
