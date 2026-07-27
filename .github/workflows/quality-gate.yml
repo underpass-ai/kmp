@@ -397,7 +397,16 @@ jobs:
   wait-codeql-checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    if: always() && github.event_name == 'pull_request' && !(github.event.pull_request.head.repo.fork || false)
+    # Code scanning default setup does not run its per-language analyses on
+    # Dependabot pull requests; it publishes only a neutral `CodeQL` aggregate.
+    # Waiting for `Analyze (actions)` and `Analyze (rust)` there guarantees a
+    # 10-minute timeout and a red gate on every dependency bump, without adding
+    # any security signal. `dependency-review` is the gate that covers what
+    # those pull requests actually change, and it stays required.
+    if: >-
+      always() && github.event_name == 'pull_request'
+      && github.actor != 'dependabot[bot]'
+      && !(github.event.pull_request.head.repo.fork || false)
     needs:
       - sonarcloud
     permissions:
