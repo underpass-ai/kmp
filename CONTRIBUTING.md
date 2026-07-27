@@ -29,7 +29,7 @@ integrating product, not here.
 
 ## Toolchain
 
-- Rust `1.90.0`
+- Rust `1.97.1`
 - Docker or Podman for container-backed integration tests
 
 ## Local Checks

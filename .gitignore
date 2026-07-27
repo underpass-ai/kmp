@@ -7,5 +7,10 @@
 /.rehydration
 *.pyc
 
+# Per-developer agent settings and the temp files the harness writes beside
+# them. These carry local paths and internal hostnames; this repo is public.
+/.claude/settings.local.json
+/.claude/settings.local.json.tmp.*
+
 # Temporary public article draft.
 /docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md
