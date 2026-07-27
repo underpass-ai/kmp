@@ -32,7 +32,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
           components: rustfmt
 
       - name: Check formatting
@@ -50,7 +50,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
           components: clippy
 
       - name: Install protoc
@@ -74,7 +74,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -97,7 +97,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -123,7 +123,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -149,7 +149,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -172,7 +172,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -198,7 +198,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -224,7 +224,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -250,7 +250,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -349,7 +349,7 @@ jobs:
         if: steps.sonar-config.outputs.enabled == 'true'
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
-          toolchain: 1.90.0
+          toolchain: 1.97.1
           components: llvm-tools-preview
 
       - name: Install protoc

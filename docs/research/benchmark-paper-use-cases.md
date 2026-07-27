@@ -41,7 +41,7 @@ You do **not** need a Kubernetes cluster. You need:
 
 | Dependency | What it is | How to verify |
 |-----------|------------|---------------|
-| **Rust 1.90+** | Compiler | `rustc --version` |
+| **Rust 1.97+** | Compiler | `rustc --version` |
 | **Docker or Podman** | Container runtime for Neo4j, Valkey, NATS | `docker info` or `podman info` |
 | **ANTHROPIC_KEY** | API key for Claude (agent + judge) | `echo $ANTHROPIC_KEY` |
 | **OPENAI_KEY** | API key for GPT-5.x (agent + judge) | `echo $OPENAI_KEY` |

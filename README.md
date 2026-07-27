@@ -176,7 +176,7 @@ navigable through the other.
 ## Quickstart
 
 ```bash
-# Toolchain: Rust 1.90.0 (pinned in rust-toolchain.toml)
+# Toolchain: Rust 1.97.1 (pinned in rust-toolchain.toml)
 cargo test --workspace               # workspace unit tests, no infra needed
 bash scripts/ci/quality-gate.sh      # format + clippy + contract + tests
 ```
