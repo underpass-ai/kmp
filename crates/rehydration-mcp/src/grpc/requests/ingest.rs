@@ -1,22 +1,23 @@
 use rehydration_proto::v1beta1::{
     IngestRequest, Memory, MemoryConfidence, MemoryDimension, MemoryEntry, MemoryEvidence,
-    MemoryProvenance, MemoryRelation, MemorySemanticClass, TemporalCoordinate,
+    MemoryProvenance, MemoryRelation, MemoryRelationExplanation, MemorySemanticClass,
+    TemporalCoordinate,
 };
 use serde_json::{Map, Value};
 
 use super::common::{
     confidence_from_field, object, optional_array_field, optional_bool_field,
-    optional_metadata_field, optional_positive_u32_field, optional_string_array_field,
-    optional_string_field, optional_timestamp_field, required_array_field, required_object_field,
-    required_string_field, required_timestamp_field, semantic_class_from_field,
-    source_kind_from_field,
+    optional_metadata_field, optional_object_field, optional_positive_u32_field,
+    optional_string_array_field, optional_string_field, optional_timestamp_field,
+    required_array_field, required_object_field, required_string_field, required_timestamp_field,
+    semantic_class_from_field, source_kind_from_field,
 };
 
 pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestRequest, String> {
     let arguments = object(arguments, "tool arguments")?;
     let about = required_string_field(arguments, "about", "about")?;
     let memory = memory_from_object(required_object_field(arguments, "memory", "memory")?)?;
-    let provenance = super::common::optional_object_field(arguments, "provenance", "provenance")?
+    let provenance = optional_object_field(arguments, "provenance", "provenance")?
         .map(provenance_from_object)
         .transpose()?;
     let idempotency_key = required_string_field(arguments, "idempotency_key", "idempotency_key")?;
@@ -94,61 +95,41 @@ fn entry_from_value(value: &Value) -> Result<MemoryEntry, String> {
         text: required_string_field(value, "text", "memory.entries[].text")?,
         coordinates: coordinates
             .iter()
-            .map(coordinate_from_value)
+            .map(|coordinate| coordinate_from_value(coordinate, "memory.entries[].coordinates[]"))
             .collect::<Result<Vec<_>, _>>()?,
         metadata: optional_metadata_field(value, "metadata", "memory.entries[].metadata")?,
     })
 }
 
-fn coordinate_from_value(value: &Value) -> Result<TemporalCoordinate, String> {
-    let value = object(value, "memory.entries[].coordinates[]")?;
+fn coordinate_from_value(value: &Value, path: &str) -> Result<TemporalCoordinate, String> {
+    let value = object(value, path)?;
     Ok(TemporalCoordinate {
-        dimension: required_string_field(
-            value,
-            "dimension",
-            "memory.entries[].coordinates[].dimension",
-        )?,
-        scope_id: required_string_field(
-            value,
-            "scope_id",
-            "memory.entries[].coordinates[].scope_id",
-        )?,
+        dimension: required_string_field(value, "dimension", &format!("{path}.dimension"))?,
+        scope_id: required_string_field(value, "scope_id", &format!("{path}.scope_id"))?,
         occurred_at: optional_timestamp_field(
             value,
             "occurred_at",
-            "memory.entries[].coordinates[].occurred_at",
+            &format!("{path}.occurred_at"),
         )?,
         observed_at: optional_timestamp_field(
             value,
             "observed_at",
-            "memory.entries[].coordinates[].observed_at",
+            &format!("{path}.observed_at"),
         )?,
         ingested_at: optional_timestamp_field(
             value,
             "ingested_at",
-            "memory.entries[].coordinates[].ingested_at",
+            &format!("{path}.ingested_at"),
         )?,
-        valid_from: optional_timestamp_field(
-            value,
-            "valid_from",
-            "memory.entries[].coordinates[].valid_from",
-        )?,
+        valid_from: optional_timestamp_field(value, "valid_from", &format!("{path}.valid_from"))?,
         valid_until: optional_timestamp_field(
             value,
             "valid_until",
-            "memory.entries[].coordinates[].valid_until",
+            &format!("{path}.valid_until"),
         )?,
-        sequence: optional_positive_u32_field(
-            value,
-            "sequence",
-            "memory.entries[].coordinates[].sequence",
-        )?,
-        rank: optional_positive_u32_field(value, "rank", "memory.entries[].coordinates[].rank")?,
-        metadata: optional_metadata_field(
-            value,
-            "metadata",
-            "memory.entries[].coordinates[].metadata",
-        )?,
+        sequence: optional_positive_u32_field(value, "sequence", &format!("{path}.sequence"))?,
+        rank: optional_positive_u32_field(value, "rank", &format!("{path}.rank"))?,
+        metadata: optional_metadata_field(value, "metadata", &format!("{path}.metadata"))?,
     })
 }
 
@@ -159,6 +140,14 @@ fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
     let evidence = optional_string_field(value, "evidence", "memory.relations[].evidence")?
         .unwrap_or_default();
     let confidence = confidence_from_field(value, "confidence", "memory.relations[].confidence")?;
+    let coordinate = optional_object_field(value, "coordinate", "memory.relations[].coordinate")?
+        .map(|coordinate| {
+            coordinate_from_value(
+                &Value::Object(coordinate.clone()),
+                "memory.relations[].coordinate",
+            )
+        })
+        .transpose()?;
 
     if semantic_class != MemorySemanticClass::Structural as i32 {
         if confidence == MemoryConfidence::Unspecified as i32 {
@@ -178,6 +167,29 @@ fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
         evidence,
         confidence,
         sequence: optional_positive_u32_field(value, "sequence", "memory.relations[].sequence")?,
+        explanation: Some(MemoryRelationExplanation {
+            motivation: optional_string_field(
+                value,
+                "motivation",
+                "memory.relations[].motivation",
+            )?
+            .unwrap_or_default(),
+            method: optional_string_field(value, "method", "memory.relations[].method")?
+                .unwrap_or_default(),
+            decision_id: optional_string_field(
+                value,
+                "decision_id",
+                "memory.relations[].decision_id",
+            )?
+            .unwrap_or_default(),
+            caused_by_node_id: optional_string_field(
+                value,
+                "caused_by_node_id",
+                "memory.relations[].caused_by_node_id",
+            )?
+            .unwrap_or_default(),
+            coordinate,
+        }),
     })
 }
 

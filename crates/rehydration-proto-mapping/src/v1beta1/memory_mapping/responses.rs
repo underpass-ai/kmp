@@ -12,12 +12,15 @@ use rehydration_proto::v1beta1::{
 };
 
 use super::bundle_views::{
-    answer_evidence_from_bundle, memory_evidence_from_bundle, memory_relations_from_bundle, proof,
-    proto_coordinate_from_domain, rendered_current_state, rendered_summary,
-    temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    answer_evidence_from_bundle, bundle_memory_metadata, memory_evidence_from_bundle,
+    memory_relations_from_bundle, persisted_memory_metadata, persisted_memory_source, proof,
+    proto_coordinate_from_domain, proto_relation_explanation, rendered_current_state,
+    rendered_summary, temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
-use super::scalars::{proto_confidence, proto_direction, proto_semantic_class};
+use super::scalars::{
+    proto_confidence, proto_direction, proto_semantic_class, timestamp_from_sort_or_rfc3339,
+};
 
 pub fn wake_response_from_result(
     intent: &str,
@@ -185,6 +188,7 @@ pub fn temporal_response_from_result(
                 .iter()
                 .map(proto_coordinate_from_domain)
                 .collect(),
+            metadata: bundle_memory_metadata(&result.source_bundle, entry.ref_id()),
         })
         .collect::<Vec<_>>();
     let selected_refs = entries
@@ -333,8 +337,12 @@ fn causal_count(relationships: &[rehydration_proto::v1beta1::MemoryRelation]) ->
     relationships
         .iter()
         .filter(|relation| {
-            relation.semantic_class
-                == rehydration_proto::v1beta1::MemorySemanticClass::Causal as i32
+            matches!(
+                rehydration_proto::v1beta1::MemorySemanticClass::try_from(relation.semantic_class),
+                Ok(rehydration_proto::v1beta1::MemorySemanticClass::Causal
+                    | rehydration_proto::v1beta1::MemorySemanticClass::Motivational
+                    | rehydration_proto::v1beta1::MemorySemanticClass::Evidential)
+            )
         })
         .count() as u32
 }
@@ -411,6 +419,10 @@ fn distinct_relation_nodes(relationships: &[rehydration_proto::v1beta1::MemoryRe
 pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectResponse {
     let node_ref = result.detail.node.node_id.clone();
     let node_kind = result.detail.node.node_kind.clone();
+    let metadata = persisted_memory_metadata(&result.detail.node.properties);
+    let source = persisted_memory_source(&result.detail.node.properties)
+        .unwrap_or_default()
+        .to_string();
     let text = if result.include_details {
         result
             .detail
@@ -432,9 +444,20 @@ pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectRespo
                     id: format!("detail:{}", detail.node_id),
                     supports: vec![detail.node_id.clone()],
                     text: detail.detail.clone(),
-                    source: detail.node_id.clone(),
-                    time: None,
-                    metadata: Default::default(),
+                    source: if source.is_empty() {
+                        detail.node_id.clone()
+                    } else {
+                        source.clone()
+                    },
+                    time: timestamp_from_sort_or_rfc3339(
+                        result
+                            .detail
+                            .node
+                            .properties
+                            .get("payload_time")
+                            .map(String::as_str),
+                    ),
+                    metadata: metadata.clone(),
                 }]
             })
     } else {
@@ -500,6 +523,8 @@ pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectRespo
             r#ref: node_ref,
             kind: node_kind,
             text,
+            metadata,
+            source,
         }),
         links: Some(InspectedLinks { incoming, outgoing }),
         evidence,
@@ -558,6 +583,7 @@ fn memory_relation_from_graph_relationship(relationship: &GraphRelationshipView)
         evidence: explanation.evidence().unwrap_or_default().to_string(),
         confidence: proto_confidence(explanation.confidence()) as i32,
         sequence: explanation.sequence(),
+        explanation: proto_relation_explanation(explanation),
     }
 }
 
@@ -596,5 +622,22 @@ mod wake_cap_tests {
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0].source, "a");
         assert_eq!(withheld, vec!["b".to_string(), "c".to_string()]);
+    }
+
+    #[test]
+    fn causal_count_matches_domain_explanatory_relation_classes() {
+        let relation = |semantic_class| MemoryRelation {
+            semantic_class: semantic_class as i32,
+            ..Default::default()
+        };
+        let relations = vec![
+            relation(rehydration_proto::v1beta1::MemorySemanticClass::Structural),
+            relation(rehydration_proto::v1beta1::MemorySemanticClass::Causal),
+            relation(rehydration_proto::v1beta1::MemorySemanticClass::Motivational),
+            relation(rehydration_proto::v1beta1::MemorySemanticClass::Evidential),
+            relation(rehydration_proto::v1beta1::MemorySemanticClass::Procedural),
+        ];
+
+        assert_eq!(causal_count(&relations), 3);
     }
 }

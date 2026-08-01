@@ -70,6 +70,19 @@ message MemoryRelation {
   string evidence = 6;
   MemoryConfidence confidence = 7;
   optional uint32 sequence = 8;
+  MemoryRelationExplanation explanation = 9;
+}
+
+// Typed fields that qualify the relation itself. The top-level `why`,
+// `evidence`, `confidence`, and `sequence` fields remain for compatibility;
+// this message carries the rest of RelationExplanation, including the
+// relation's own temporal validity coordinate.
+message MemoryRelationExplanation {
+  string motivation = 1;
+  string method = 2;
+  string decision_id = 3;
+  string caused_by_node_id = 4;
+  TemporalCoordinate coordinate = 5;
 }
 
 message MemoryEvidence {
@@ -322,6 +335,7 @@ message TemporalEntry {
   string kind = 2;
   string text = 3;
   repeated TemporalCoordinate coordinates = 4;
+  map<string, string> metadata = 5;
 }
 
 message TraceRequest {
@@ -359,6 +373,8 @@ message InspectedObject {
   string ref = 1;
   string kind = 2;
   string text = 3;
+  map<string, string> metadata = 4;
+  string source = 5;
 }
 
 message InspectedLinks {

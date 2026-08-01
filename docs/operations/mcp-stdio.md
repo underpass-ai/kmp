@@ -93,14 +93,21 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
   it never generates an LLM answer.
 - Temporal tools return deterministic kernel-owned traversal slices with a
   `page` object, so bounded partial reads are visible to operators and
-  clients.
+  clients. `kernel_goto` defaults to at most 50 entries when no explicit
+  `limit.entries` is supplied.
 - Dimension scope is explicit and auditable: omitted → `current_about`;
   `abouts` requires a non-empty list; `all_abouts` traverses every memory
   anchor; `scope_ids` accepts local or namespaced
-  `about:<about>:dimension:<id>` ids.
+  `about:<about>:dimension:<id>` ids. Coordinate dimension kinds are checked
+  against their declarations during ingest.
 - `kernel_inspect` supports object/detail/incoming/outgoing/evidence lookup;
   `include.raw=true` returns typed raw audit refs including dimension
   coordinates. Temporal `include.raw_refs/evidence/relations` are supported.
+- Entry metadata and evidence metadata/source round-trip through typed reads;
+  evidence `supports` contains the refs reached by stored support relations.
+- Tool failures set `isError=true` and include
+  `structuredContent.error.{code,message}` while retaining textual MCP
+  content for compatibility.
 - Cross-mode parity is not aspirational: the embedded backend reuses the
   live JSON path (shared proto mapping), and the conformance suite pins the
   storage semantics across all backends in CI.

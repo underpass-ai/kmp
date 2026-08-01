@@ -84,6 +84,16 @@ pub struct MemoryRelationData {
     pub confidence: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sequence: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motivation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decision_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub caused_by_node_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub coordinate: Option<MemoryCoordinateData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -228,4 +238,5 @@ pub struct TemporalMemoryResult {
     pub traversal: rehydration_domain::TemporalTraversalResult,
     pub source_bundle: rehydration_domain::RehydrationBundle,
     pub include: TemporalIncludeOptions,
+    pub quality: rehydration_domain::BundleQualityMetrics,
 }

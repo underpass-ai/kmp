@@ -73,13 +73,20 @@ Native gRPC is also available (proto contract in `crates/rehydration-proto`,
   outcome* — never transcripts. Every entry needs ≥1 coordinate
   (`dimension` + `scope_id`, ideally `occurred_at` + `sequence`); the
   coordinates are what make `goto/near/rewind/forward` (known-at-time
-  navigation) work later.
+  navigation) work later. Coordinate `dimension` must match the declared
+  dimension `kind` for its `scope_id`; mismatches are rejected at ingest.
+  Entry `metadata` round-trips through temporal reads and inspect.
 - **relations**: typed with proof. Non-structural relations (e.g.
   `caused_by`, `supports` with class `causal`/`evidential`) **require
   `confidence` and `why` or `evidence`** — the kernel rejects anemic causal
-  claims by design.
+  claims by design. The writer vocabulary includes `triggers`, `authorizes`,
+  and `verified_by`; custom relation names remain open. In addition to the
+  compatibility fields (`why`, `evidence`, `confidence`, `sequence`), a
+  relation can carry `motivation`, `method`, `decision_id`,
+  `caused_by_node_id`, and its own temporal `coordinate`.
 - **evidence**: attach log excerpts/links as evidence items supporting
-  entries; they surface later through `kernel_inspect` as proof.
+  entries; their ingested `source`, metadata, and actual `supports` targets
+  surface later through temporal, context, and inspect proof views.
 
 ### Read playbook
 
@@ -97,6 +104,12 @@ Native gRPC is also available (proto contract in `crates/rehydration-proto`,
 
 - Embedded ingest is synchronous: `read_after_write_ready=true` — wake
   immediately after write sees the memory.
+- `kernel_goto` returns up to 50 entries by default. Every temporal result
+  includes `page.returned`, `page.total`, and `page.has_more`; set
+  `limit.entries` explicitly when the caller needs a different bound.
+- MCP tool failures retain human-readable `content` and also return
+  `structuredContent.error` with a stable category such as `not_found` or
+  `invalid_argument`.
 - **Idempotency-key retry caveat**: retrying the same `idempotency_key`
   *after* a successful ingest returns an explicit conflict (state intact) —
   it is not an idempotent OK. Treat conflict-on-retry as "already applied";
@@ -109,7 +122,9 @@ Native gRPC is also available (proto contract in `crates/rehydration-proto`,
 
 ## 5. Quality telemetry for Choreographer (ADR-014)
 
-Every embedded `kernel_wake`/`kernel_ask`/`kernel_trace` journals a
+Every embedded context, temporal, and trace read (`kernel_wake`, `kernel_ask`,
+`kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`, and
+`kernel_trace`) journals a
 `QualityTelemetryObservation` (compression ratio, causal density, noise
 ratio, detail coverage, raw-equivalent tokens, rpc/about/role, timestamp)
 into `<data-dir>/telemetry/quality.redb` — a **separate, fail-open, bounded**

@@ -75,6 +75,11 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 evidence: None,
                 confidence: Some("high".to_string()),
                 sequence: None,
+                motivation: None,
+                method: None,
+                decision_id: None,
+                caused_by_node_id: None,
+                coordinate: None,
             }],
             evidence: vec![MemoryEvidenceData {
                 id: "evidence:one".to_string(),
@@ -279,8 +284,8 @@ pub async fn temporal_moves_navigate_known_at_time_coordinates(
         .collect::<Vec<_>>();
     assert_eq!(
         goto_refs,
-        vec!["claim:two".to_string()],
-        "goto by time must resolve to the latest entry known at the cursor"
+        vec!["claim:one".to_string(), "claim:two".to_string()],
+        "goto by time must return the entries known at the cursor within its default page"
     );
 
     let forward = memory

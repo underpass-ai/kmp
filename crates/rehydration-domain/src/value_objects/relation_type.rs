@@ -21,6 +21,9 @@ const WRITER_RELATION_TYPES: &[KnownMemoryRelationType] = &[
     KnownMemoryRelationType::UsesBackground,
     KnownMemoryRelationType::DependsOn,
     KnownMemoryRelationType::ChosenBecause,
+    KnownMemoryRelationType::Triggers,
+    KnownMemoryRelationType::Authorizes,
+    KnownMemoryRelationType::VerifiedBy,
     KnownMemoryRelationType::SemanticDeltaFrom,
     KnownMemoryRelationType::UpdatesState,
     KnownMemoryRelationType::Supports,
@@ -117,6 +120,9 @@ pub enum KnownMemoryRelationType {
     UsesBackground,
     DependsOn,
     ChosenBecause,
+    Triggers,
+    Authorizes,
+    VerifiedBy,
     SemanticDeltaFrom,
     UpdatesState,
     Supports,
@@ -155,6 +161,9 @@ impl KnownMemoryRelationType {
             "uses_background" => Some(Self::UsesBackground),
             "depends_on" => Some(Self::DependsOn),
             "chosen_because" => Some(Self::ChosenBecause),
+            "triggers" => Some(Self::Triggers),
+            "authorizes" => Some(Self::Authorizes),
+            "verified_by" => Some(Self::VerifiedBy),
             "semantic_delta_from" => Some(Self::SemanticDeltaFrom),
             "updates_state" => Some(Self::UpdatesState),
             "supports" => Some(Self::Supports),
@@ -196,6 +205,9 @@ impl KnownMemoryRelationType {
             Self::UsesBackground => "uses_background",
             Self::DependsOn => "depends_on",
             Self::ChosenBecause => "chosen_because",
+            Self::Triggers => "triggers",
+            Self::Authorizes => "authorizes",
+            Self::VerifiedBy => "verified_by",
             Self::SemanticDeltaFrom => "semantic_delta_from",
             Self::UpdatesState => "updates_state",
             Self::Supports => "supports",
@@ -290,6 +302,24 @@ impl KnownMemoryRelationType {
                 MemoryRelationQuality::Rich,
                 MOTIVATIONAL_OR_CAUSAL_CLASSES,
                 "decision relation explains why a prior memory led to the current choice",
+            )),
+            Self::Triggers => Some(MemoryRelationSpec::new(
+                self,
+                MemoryRelationQuality::Rich,
+                CAUSAL_CLASSES,
+                "causal relation identifies the event or decision that triggered an action",
+            )),
+            Self::Authorizes => Some(MemoryRelationSpec::new(
+                self,
+                MemoryRelationQuality::Rich,
+                MOTIVATIONAL_OR_CAUSAL_CLASSES,
+                "authorization relation identifies the decision that permitted an action",
+            )),
+            Self::VerifiedBy => Some(MemoryRelationSpec::new(
+                self,
+                MemoryRelationQuality::Rich,
+                EVIDENTIAL_CLASSES,
+                "verification relation identifies the evidence or check that verified a claim",
             )),
             Self::SemanticDeltaFrom => Some(MemoryRelationSpec::new(
                 self,
@@ -511,6 +541,19 @@ mod tests {
         assert_eq!(relation.as_str(), "contradicts");
         assert_eq!(relation.known(), Some(KnownMemoryRelationType::Contradicts));
         assert!(relation.is_conflict());
+    }
+
+    #[test]
+    fn research_relation_examples_are_known_wire_types() {
+        for relation in ["triggers", "authorizes", "verified_by"] {
+            let relation_type = MemoryRelationType::new(relation).expect("valid relation");
+            assert!(
+                relation_type.is_known(),
+                "{relation} should be kernel-owned"
+            );
+            assert_eq!(relation_type.as_str(), relation);
+            assert!(relation_type.writer_spec().is_some());
+        }
     }
 
     #[test]

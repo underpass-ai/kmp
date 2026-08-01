@@ -234,11 +234,41 @@ fn memory_relation_mutation(change: &UpdateContextChange) -> Result<ProjectionMu
         .map(parse_semantic_class)
         .transpose()?
         .unwrap_or(RelationSemanticClass::Evidential);
+    let coordinate = payload.get("coordinate").filter(|value| value.is_object());
+    let sequence = coordinate
+        .and_then(|coordinate| payload_u32(coordinate, "sequence"))
+        .or_else(|| payload_u32(&payload, "sequence"));
     let explanation = RelationExplanation::new(semantic_class)
         .with_optional_rationale(payload_string(&payload, "why"))
+        .with_optional_motivation(payload_string(&payload, "motivation"))
+        .with_optional_method(payload_string(&payload, "method"))
+        .with_optional_decision_id(payload_string(&payload, "decision_id"))
+        .with_optional_caused_by_node_id(payload_string(&payload, "caused_by_node_id"))
         .with_optional_evidence(payload_string(&payload, "evidence"))
         .with_optional_confidence(payload_string(&payload, "confidence"))
-        .with_optional_sequence(payload_u32(&payload, "sequence"));
+        .with_optional_dimension(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "dimension")),
+        )
+        .with_optional_scope_id(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "scope_id")),
+        )
+        .with_optional_occurred_at(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "occurred_at")),
+        )
+        .with_optional_observed_at(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "observed_at")),
+        )
+        .with_optional_ingested_at(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "ingested_at")),
+        )
+        .with_optional_valid_from(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "valid_from")),
+        )
+        .with_optional_valid_until(
+            coordinate.and_then(|coordinate| payload_string(coordinate, "valid_until")),
+        )
+        .with_optional_sequence(sequence)
+        .with_optional_rank(coordinate.and_then(|coordinate| payload_u32(coordinate, "rank")));
 
     Ok(ProjectionMutation::UpsertNodeRelation(Box::new(
         NodeRelationProjection {
