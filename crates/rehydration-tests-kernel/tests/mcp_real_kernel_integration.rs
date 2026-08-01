@@ -164,7 +164,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_array_contains_evidence(
             ingested_wake_content,
             "/proof/evidence",
-            "claim:mcp-ingest-after",
+            "mcp_real_kernel_integration",
         );
 
         let temporal_forward = call_tool(
@@ -228,7 +228,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_array_contains_evidence(
             ingested_ask_content,
             "/proof/evidence",
-            "evidence:mcp-ingest-smoke",
+            "mcp_real_kernel_integration",
         );
 
         let wake = call_tool(
