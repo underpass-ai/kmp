@@ -7,6 +7,8 @@ use super::TemporalTraversalRequest;
 use super::axis_key::{TemporalAxisKey, primary_coordinate_key};
 use super::position::{ResolvedTemporalCursor, TemporalPosition};
 
+const DEFAULT_GOTO_ENTRIES: usize = 50;
+
 pub(super) struct TemporalSelection {
     pub positions: Vec<TemporalPosition>,
     pub total_unique_refs: usize,
@@ -59,7 +61,7 @@ pub(super) fn select_positions(
                 .collect::<Vec<_>>();
             select_limited(
                 candidates,
-                request.limit_entries().unwrap_or(1),
+                request.limit_entries().unwrap_or(DEFAULT_GOTO_ENTRIES),
                 PageSide::Before,
             )
         }

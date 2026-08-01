@@ -101,14 +101,35 @@ async fn embedded_tool_result(
         "kernel_wake" => embedded_wake(service, observer, arguments).await,
         "kernel_ask" => embedded_ask(service, observer, arguments).await,
         "kernel_goto" => {
-            embedded_temporal(service, TemporalDirection::Goto, "goto", arguments).await
+            embedded_temporal(
+                service,
+                observer,
+                TemporalDirection::Goto,
+                "goto",
+                arguments,
+            )
+            .await
         }
-        "kernel_near" => embedded_near(service, arguments).await,
+        "kernel_near" => embedded_near(service, observer, arguments).await,
         "kernel_rewind" => {
-            embedded_temporal(service, TemporalDirection::Rewind, "rewind", arguments).await
+            embedded_temporal(
+                service,
+                observer,
+                TemporalDirection::Rewind,
+                "rewind",
+                arguments,
+            )
+            .await
         }
         "kernel_forward" => {
-            embedded_temporal(service, TemporalDirection::Forward, "forward", arguments).await
+            embedded_temporal(
+                service,
+                observer,
+                TemporalDirection::Forward,
+                "forward",
+                arguments,
+            )
+            .await
         }
         "kernel_trace" => embedded_trace(service, observer, arguments).await,
         "kernel_inspect" => embedded_inspect(service, arguments).await,
@@ -190,6 +211,7 @@ async fn embedded_ask(
 
 async fn embedded_temporal(
     service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
     direction: TemporalDirection,
     direction_name: &str,
     arguments: &Value,
@@ -203,6 +225,13 @@ async fn embedded_temporal(
         .temporal(query)
         .await
         .map_err(kernel_error(direction_name, &about))?;
+    observe_quality(
+        observer,
+        &format!("kernel_{direction_name}"),
+        result.source_bundle.root_node_id().as_str(),
+        result.source_bundle.role().as_str(),
+        &result.quality,
+    );
     Ok(tool_success_result(temporal_from_response(
         temporal_response_from_result(requested_cursor, direction, result),
     )))
@@ -210,6 +239,7 @@ async fn embedded_temporal(
 
 async fn embedded_near(
     service: &EmbeddedMemoryService,
+    observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, String> {
     let request = temporal_near_request_from_arguments(arguments)?;
@@ -220,6 +250,13 @@ async fn embedded_near(
         .temporal(query)
         .await
         .map_err(kernel_error("near", &about))?;
+    observe_quality(
+        observer,
+        "kernel_near",
+        result.source_bundle.root_node_id().as_str(),
+        result.source_bundle.role().as_str(),
+        &result.quality,
+    );
     Ok(tool_success_result(temporal_from_response(
         temporal_response_from_result(requested_cursor, TemporalDirection::Near, result),
     )))

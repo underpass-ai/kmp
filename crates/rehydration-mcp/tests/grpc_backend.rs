@@ -779,6 +779,8 @@ impl KernelMemoryService for FakeMemoryService {
                 r#ref: request.r#ref.clone(),
                 kind: "claim".to_string(),
                 text: format!("Node detail for {}.", request.r#ref),
+                metadata: Default::default(),
+                source: String::new(),
             }),
             links: Some(InspectedLinks {
                 incoming: vec![relation("node:source", &request.r#ref, "supports")],
@@ -933,6 +935,7 @@ fn temporal_response(
             kind: "claim".to_string(),
             text: "Rachel later corrected the destination to Austin.".to_string(),
             coordinates: vec![coordinate(2)],
+            metadata: Default::default(),
         }],
         proof: Some(proof("claim:rachel-denver", "claim:rachel-austin")),
         warnings: Vec::new(),
@@ -968,6 +971,7 @@ fn relation(source_ref: &str, target_ref: &str, rel: &str) -> MemoryRelation {
         evidence: "Typed relation evidence.".to_string(),
         confidence: MemoryConfidence::High as i32,
         sequence: Some(1),
+        explanation: None,
     }
 }
 

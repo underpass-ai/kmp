@@ -351,6 +351,21 @@
         "sequence": {
           "type": "integer",
           "minimum": 1
+        },
+        "motivation": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "method": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "caused_by_node_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "coordinate": {
+          "$ref": "#/$defs/temporal_coordinate"
         }
       },
       "allOf": [
@@ -683,6 +698,9 @@
           "items": {
             "$ref": "#/$defs/temporal_coordinate"
           }
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
         }
       }
     },
@@ -954,6 +972,9 @@
         "uses_background",
         "depends_on",
         "chosen_because",
+        "triggers",
+        "authorizes",
+        "verified_by",
         "semantic_delta_from",
         "updates_state",
         "supports",
@@ -1804,6 +1825,12 @@
               "$ref": "#/$defs/non_empty_string"
             },
             "text": {
+              "$ref": "#/$defs/non_empty_string"
+            },
+            "metadata": {
+              "$ref": "#/$defs/metadata"
+            },
+            "source": {
               "$ref": "#/$defs/non_empty_string"
             }
           }

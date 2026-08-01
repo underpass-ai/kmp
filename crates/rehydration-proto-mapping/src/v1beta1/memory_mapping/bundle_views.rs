@@ -1,9 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use rehydration_application::RenderedContext;
-use rehydration_domain::{MemoryRelationType, RehydrationBundle, TemporalCoordinate};
+use rehydration_domain::{
+    BundleNodeDetail, MemoryRelationType, RehydrationBundle, RelationExplanation,
+    TemporalCoordinate,
+};
 use rehydration_proto::v1beta1::{
-    MemoryConfidence, MemoryEvidence, MemoryRelation, Proof,
+    MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation, Proof,
     TemporalCoordinate as ProtoTemporalCoordinate,
 };
 
@@ -24,6 +27,7 @@ pub(super) fn memory_relations_from_bundle(bundle: &RehydrationBundle) -> Vec<Me
                 evidence: explanation.evidence().unwrap_or_default().to_string(),
                 confidence: proto_confidence(explanation.confidence()) as i32,
                 sequence: explanation.sequence(),
+                explanation: proto_relation_explanation(explanation),
             }
         })
         .collect()
@@ -33,14 +37,7 @@ pub(super) fn memory_evidence_from_bundle(bundle: &RehydrationBundle) -> Vec<Mem
     bundle
         .node_details()
         .iter()
-        .map(|detail| MemoryEvidence {
-            id: format!("detail:{}", detail.node_id()),
-            supports: vec![detail.node_id().to_string()],
-            text: detail.detail().to_string(),
-            source: detail.node_id().to_string(),
-            time: None,
-            metadata: Default::default(),
-        })
+        .map(|detail| evidence_from_detail(bundle, detail, vec![detail.node_id().to_string()]))
         .collect()
 }
 
@@ -56,16 +53,12 @@ pub(super) fn answer_evidence_from_bundle(bundle: &RehydrationBundle) -> Vec<Mem
                 .get(detail.node_id())
                 .is_some_and(|kind| is_memory_evidence_kind(kind))
         })
-        .map(|detail| MemoryEvidence {
-            id: format!("detail:{}", detail.node_id()),
-            supports: support_targets
+        .map(|detail| {
+            let supports = support_targets
                 .get(detail.node_id())
                 .cloned()
-                .unwrap_or_else(|| vec![detail.node_id().to_string()]),
-            text: detail.detail().to_string(),
-            source: detail.node_id().to_string(),
-            time: None,
-            metadata: Default::default(),
+                .unwrap_or_else(|| vec![detail.node_id().to_string()]);
+            evidence_from_detail(bundle, detail, supports)
         })
         .collect()
 }
@@ -88,6 +81,7 @@ pub(super) fn temporal_evidence_from_bundle(
     selected_refs: &BTreeSet<String>,
 ) -> Vec<MemoryEvidence> {
     let node_kinds = bundle_node_kinds(bundle);
+    let support_targets = support_targets_by_source(bundle);
     let mut evidence_refs = selected_refs.clone();
     for relationship in bundle.relationships().iter().filter(|relationship| {
         relationship.relationship_type() == "supports"
@@ -103,15 +97,74 @@ pub(super) fn temporal_evidence_from_bundle(
         .node_details()
         .iter()
         .filter(|detail| evidence_refs.contains(detail.node_id()))
-        .map(|detail| MemoryEvidence {
-            id: format!("detail:{}", detail.node_id()),
-            supports: vec![detail.node_id().to_string()],
-            text: detail.detail().to_string(),
-            source: detail.node_id().to_string(),
-            time: None,
-            metadata: Default::default(),
+        .map(|detail| {
+            let supports = support_targets
+                .get(detail.node_id())
+                .cloned()
+                .unwrap_or_else(|| vec![detail.node_id().to_string()]);
+            evidence_from_detail(bundle, detail, supports)
         })
         .collect()
+}
+
+fn evidence_from_detail(
+    bundle: &RehydrationBundle,
+    detail: &BundleNodeDetail,
+    supports: Vec<String>,
+) -> MemoryEvidence {
+    let properties = bundle_node_properties(bundle, detail.node_id());
+    MemoryEvidence {
+        id: format!("detail:{}", detail.node_id()),
+        supports,
+        text: detail.detail().to_string(),
+        source: properties
+            .and_then(persisted_memory_source)
+            .unwrap_or(detail.node_id())
+            .to_string(),
+        time: timestamp_from_sort_or_rfc3339(
+            properties.and_then(|properties| properties.get("payload_time").map(String::as_str)),
+        ),
+        metadata: properties
+            .map(persisted_memory_metadata)
+            .unwrap_or_default(),
+    }
+}
+
+pub(super) fn bundle_memory_metadata(
+    bundle: &RehydrationBundle,
+    node_id: &str,
+) -> HashMap<String, String> {
+    bundle_node_properties(bundle, node_id)
+        .map(persisted_memory_metadata)
+        .unwrap_or_default()
+}
+
+pub(super) fn persisted_memory_metadata(
+    properties: &BTreeMap<String, String>,
+) -> HashMap<String, String> {
+    properties
+        .get("payload_metadata")
+        .or_else(|| properties.get("metadata"))
+        .and_then(|metadata| serde_json::from_str(metadata).ok())
+        .unwrap_or_default()
+}
+
+pub(super) fn persisted_memory_source(properties: &BTreeMap<String, String>) -> Option<&str> {
+    properties
+        .get("source")
+        .or_else(|| properties.get("payload_source"))
+        .map(String::as_str)
+        .filter(|source| !source.trim().is_empty())
+}
+
+fn bundle_node_properties<'a>(
+    bundle: &'a RehydrationBundle,
+    node_id: &str,
+) -> Option<&'a BTreeMap<String, String>> {
+    std::iter::once(bundle.root_node())
+        .chain(bundle.neighbor_nodes())
+        .find(|node| node.node_id() == node_id)
+        .map(|node| node.properties())
 }
 
 fn bundle_node_kinds(bundle: &RehydrationBundle) -> BTreeMap<&str, &str> {
@@ -242,6 +295,30 @@ pub(super) fn proto_coordinate_from_domain(
     }
 }
 
+pub(super) fn proto_relation_explanation(
+    explanation: &RelationExplanation,
+) -> Option<MemoryRelationExplanation> {
+    let value = MemoryRelationExplanation {
+        motivation: explanation.motivation().unwrap_or_default().to_string(),
+        method: explanation.method().unwrap_or_default().to_string(),
+        decision_id: explanation.decision_id().unwrap_or_default().to_string(),
+        caused_by_node_id: explanation
+            .caused_by_node_id()
+            .unwrap_or_default()
+            .to_string(),
+        coordinate: TemporalCoordinate::from_relation_explanation(explanation)
+            .ok()
+            .flatten()
+            .map(|coordinate| proto_coordinate_from_domain(&coordinate)),
+    };
+    (!value.motivation.is_empty()
+        || !value.method.is_empty()
+        || !value.decision_id.is_empty()
+        || !value.caused_by_node_id.is_empty()
+        || value.coordinate.is_some())
+    .then_some(value)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
@@ -360,6 +437,7 @@ mod tests {
                     evidence: String::new(),
                     confidence: MemoryConfidence::Medium as i32,
                     sequence: None,
+                    explanation: None,
                 },
                 MemoryRelation {
                     source_ref: "claim:a".to_string(),
@@ -370,6 +448,7 @@ mod tests {
                     evidence: String::new(),
                     confidence: MemoryConfidence::High as i32,
                     sequence: None,
+                    explanation: None,
                 },
                 MemoryRelation {
                     source_ref: "claim:a".to_string(),
@@ -380,6 +459,7 @@ mod tests {
                     evidence: String::new(),
                     confidence: MemoryConfidence::High as i32,
                     sequence: None,
+                    explanation: None,
                 },
             ],
             Vec::new(),

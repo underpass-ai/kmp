@@ -131,6 +131,7 @@ where
                 &render_options,
             )
             .await?;
+        let quality = context.rendered.quality.clone();
         let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
 
         let request = TemporalTraversalRequest::new(query.direction, query.cursor)
@@ -149,6 +150,7 @@ where
             traversal,
             source_bundle,
             include: query.include,
+            quality,
         })
     }
 

@@ -32,7 +32,7 @@ The object must have this shape:
   "connect_to": [
     {
       "ref": "string",
-      "rel": "follows|answers|uses_background|depends_on|chosen_because|semantic_delta_from|updates_state|supports|supersedes|contradicts|satisfies_constraint|violates_constraint|contributes_to|excluded_from|checked_against|derived_from|confirms_selection|contains|member_of|scoped_to",
+      "rel": "follows|answers|uses_background|depends_on|chosen_because|triggers|authorizes|verified_by|semantic_delta_from|updates_state|supports|supersedes|contradicts|satisfies_constraint|violates_constraint|contributes_to|excluded_from|checked_against|derived_from|confirms_selection|contains|member_of|scoped_to",
       "class": "structural|causal|motivational|procedural|evidential|constraint",
       "why": "string",
       "evidence": "string",
@@ -85,6 +85,9 @@ Hard rules:
 
 Relation selection:
 - `chosen_because`: a decision was selected because of prior evidence or tradeoff.
+- `triggers`: a prior memory causally initiates the current memory.
+- `authorizes`: a decision or policy permits the current action.
+- `verified_by`: the current memory is verified by an evidence-bearing memory.
 - `depends_on`: current memory depends on a prior memory.
 - `updates_state`: current memory changes the process state.
 - `semantic_delta_from`: current memory expresses a state change from prior memory.

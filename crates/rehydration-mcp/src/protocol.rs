@@ -97,7 +97,12 @@ pub(crate) fn tools_list_result() -> Value {
                                             "sequence": {
                                                 "type": "integer",
                                                 "minimum": 1
-                                            }
+                                            },
+                                            "motivation": string_schema("Optional motivation for the relation itself."),
+                                            "method": string_schema("Optional method by which the relation holds."),
+                                            "decision_id": string_schema("Optional decision ref associated with the relation."),
+                                            "caused_by_node_id": string_schema("Optional causal predecessor ref."),
+                                            "coordinate": temporal_coordinate_schema()
                                         }
                                     }
                                 },
@@ -644,8 +649,33 @@ pub(crate) fn tool_error_result(message: &str) -> Value {
                 "text": message
             }
         ],
+        "structuredContent": {
+            "error": {
+                "code": tool_error_code(message),
+                "message": message
+            }
+        },
         "isError": true
     })
+}
+
+fn tool_error_code(message: &str) -> &'static str {
+    let normalized = message.to_ascii_lowercase();
+    if normalized.contains("not found") {
+        "not_found"
+    } else if normalized.contains("unknown kmp tool") {
+        "unknown_tool"
+    } else if normalized.contains("failed to connect") || normalized.contains("unavailable") {
+        "unavailable"
+    } else if normalized.contains("missing")
+        || normalized.contains("required")
+        || normalized.contains("invalid")
+        || normalized.contains("must")
+    {
+        "invalid_argument"
+    } else {
+        "backend_error"
+    }
 }
 
 pub(crate) fn jsonrpc_result(id: Value, result: Value) -> String {
@@ -733,6 +763,10 @@ mod tests {
         let error = tool_error_result("no evidence");
         assert_eq!(error["isError"], true);
         assert_eq!(error["content"][0]["text"], "no evidence");
+        assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
+
+        let missing = tool_error_result("node `question:missing` not found");
+        assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
     }
 
     #[test]

@@ -126,13 +126,18 @@ fn except_dimension_removes_dimension_coordinates_from_output() {
     )
     .expect("goto should succeed");
 
-    assert_eq!(result.entries()[0].ref_id(), "claim:rachel-austin");
     assert!(
-        result.entries()[0]
+        result
+            .entries()
+            .iter()
+            .any(|entry| entry.ref_id() == "claim:rachel-austin")
+    );
+    assert!(result.entries().iter().all(|entry| {
+        entry
             .coordinates()
             .iter()
             .all(|coordinate| coordinate.dimension() != "entity")
-    );
+    }));
 }
 
 #[test]

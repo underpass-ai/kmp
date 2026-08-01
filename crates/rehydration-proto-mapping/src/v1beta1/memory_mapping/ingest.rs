@@ -112,6 +112,7 @@ fn coordinate_from_proto(value: ProtoTemporalCoordinate) -> MemoryCoordinateData
 fn relation_from_proto(value: MemoryRelation) -> MemoryRelationData {
     let semantic_class = semantic_class_name(value.semantic_class());
     let confidence = confidence_name(value.confidence());
+    let explanation = value.explanation.unwrap_or_default();
 
     MemoryRelationData {
         source_ref: value.source_ref,
@@ -122,6 +123,11 @@ fn relation_from_proto(value: MemoryRelation) -> MemoryRelationData {
         evidence: non_empty(value.evidence),
         confidence,
         sequence: value.sequence,
+        motivation: non_empty(explanation.motivation),
+        method: non_empty(explanation.method),
+        decision_id: non_empty(explanation.decision_id),
+        caused_by_node_id: non_empty(explanation.caused_by_node_id),
+        coordinate: explanation.coordinate.map(coordinate_from_proto),
     }
 }
 

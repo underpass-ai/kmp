@@ -160,15 +160,18 @@ pub(crate) fn inspect_from_response(response: InspectResponse) -> Value {
             json!({
                 "ref": "",
                 "kind": "",
-                "text": ""
+                "text": "",
+                "metadata": {}
             })
         },
         |object| {
-            json!({
-                "ref": object.r#ref,
-                "kind": object.kind,
-                "text": object.text
-            })
+            let mut value = Map::new();
+            value.insert("ref".to_string(), json!(object.r#ref));
+            value.insert("kind".to_string(), json!(object.kind));
+            value.insert("text".to_string(), json!(object.text));
+            value.insert("metadata".to_string(), json!(object.metadata));
+            insert_optional_string(&mut value, "source", &object.source);
+            Value::Object(value)
         },
     );
     let links = response.links.as_ref();
@@ -295,7 +298,8 @@ fn temporal_entry_json(entry: &TemporalEntry) -> Value {
         "ref": entry.r#ref,
         "kind": entry.kind,
         "text": entry.text,
-        "coordinates": entry.coordinates.iter().map(temporal_coordinate_json).collect::<Vec<_>>()
+        "coordinates": entry.coordinates.iter().map(temporal_coordinate_json).collect::<Vec<_>>(),
+        "metadata": entry.metadata
     })
 }
 
@@ -374,6 +378,22 @@ fn memory_relation_json(relation: &MemoryRelation) -> Value {
     );
     if let Some(sequence) = relation.sequence {
         object.insert("sequence".to_string(), json!(sequence));
+    }
+    if let Some(explanation) = relation.explanation.as_ref() {
+        insert_optional_string(&mut object, "motivation", &explanation.motivation);
+        insert_optional_string(&mut object, "method", &explanation.method);
+        insert_optional_string(&mut object, "decision_id", &explanation.decision_id);
+        insert_optional_string(
+            &mut object,
+            "caused_by_node_id",
+            &explanation.caused_by_node_id,
+        );
+        if let Some(coordinate) = explanation.coordinate.as_ref() {
+            object.insert(
+                "coordinate".to_string(),
+                temporal_coordinate_json(coordinate),
+            );
+        }
     }
     Value::Object(object)
 }
@@ -542,6 +562,9 @@ mod tests {
                 kind: "claim".to_string(),
                 text: "Target".to_string(),
                 coordinates: vec![coordinate()],
+                metadata: [("window".to_string(), "10:00-10:20".to_string())]
+                    .into_iter()
+                    .collect(),
             }],
             proof: None,
             warnings: Vec::new(),
@@ -567,6 +590,7 @@ mod tests {
         assert_eq!(value["temporal"]["direction"], "forward");
         assert_eq!(value["entries"][0]["ref"], "claim:target");
         assert_eq!(value["entries"][0]["coordinates"][0]["scope_id"], "scope");
+        assert_eq!(value["entries"][0]["metadata"]["window"], "10:00-10:20");
         assert_eq!(value["coverage"]["requested"]["scope"], "current_about");
         assert_eq!(
             value["coverage"]["requested"]["scope_ids"][0],
@@ -630,6 +654,7 @@ mod tests {
             evidence: "evidence".to_string(),
             confidence: MemoryConfidence::High as i32,
             sequence: Some(1),
+            explanation: None,
         }
     }
 

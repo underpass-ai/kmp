@@ -7,7 +7,8 @@ use rehydration_domain::{
 use crate::ApplicationError;
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
 use crate::memory::{
-    MemoryAcceptedCounts, MemoryData, MemoryDimensionData, MemoryIngestCommand, MemoryIngestOutcome,
+    MemoryAcceptedCounts, MemoryCoordinateData, MemoryData, MemoryDimensionData,
+    MemoryIngestCommand, MemoryIngestOutcome,
 };
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -91,6 +92,7 @@ fn namespaced_memory(
     known_refs.extend(existing.dimensions.iter().cloned());
     let mut dimension_ids = existing.dimensions.clone();
     let mut dimension_aliases = existing_dimension_aliases(about, existing);
+    let mut declared_dimension_kinds = BTreeMap::new();
     let mut declared_dimension_refs = BTreeSet::new();
     let mut dimensions = Vec::new();
     for dimension in &memory.dimensions {
@@ -98,6 +100,7 @@ fn namespaced_memory(
         require_non_empty(&dimension.kind, "memory.dimensions[].kind")?;
         let dimension_identity = dimension_identity(about, &dimension.id)?;
         let dimension_ref = dimension_identity.node_id();
+        declared_dimension_kinds.insert(dimension_ref.clone(), dimension.kind.clone());
         insert_unique(
             &mut declared_dimension_refs,
             &dimension_ref,
@@ -154,32 +157,14 @@ fn namespaced_memory(
 
         let mut coordinates = Vec::new();
         for coordinate in &entry.coordinates {
-            require_non_empty(
-                &coordinate.dimension,
-                "memory.entries[].coordinates[].dimension",
-            )?;
-            require_non_empty(
-                &coordinate.scope_id,
-                "memory.entries[].coordinates[].scope_id",
-            )?;
-            let scope_id = dimension_aliases
-                .get(&coordinate.scope_id)
-                .cloned()
-                .unwrap_or_else(|| coordinate.scope_id.clone());
-            if !dimension_ids.contains(&scope_id) {
-                return Err(ApplicationError::Validation(format!(
-                    "memory entry coordinate references unknown dimension scope `{}`",
-                    coordinate.scope_id
-                )));
-            }
-            validate_positive_optional(
-                coordinate.sequence,
-                "memory.entries[].coordinates[].sequence",
-            )?;
-            validate_positive_optional(coordinate.rank, "memory.entries[].coordinates[].rank")?;
-            let mut coordinate = coordinate.clone();
-            coordinate.scope_id = scope_id;
-            coordinates.push(coordinate);
+            coordinates.push(normalize_coordinate(
+                coordinate,
+                "memory.entries[].coordinates[]",
+                "memory entry",
+                &dimension_aliases,
+                &dimension_ids,
+                &declared_dimension_kinds,
+            )?);
         }
         let mut entry = entry.clone();
         entry.coordinates = coordinates;
@@ -227,10 +212,25 @@ fn namespaced_memory(
             }
         }
         validate_positive_optional(relation.sequence, "memory.relations[].sequence")?;
+        let coordinate = relation
+            .coordinate
+            .as_ref()
+            .map(|coordinate| {
+                normalize_coordinate(
+                    coordinate,
+                    "memory.relations[].coordinate",
+                    "memory relation",
+                    &dimension_aliases,
+                    &dimension_ids,
+                    &declared_dimension_kinds,
+                )
+            })
+            .transpose()?;
         let mut relation = relation.clone();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
         relation.rel = relation_type.as_str().to_string();
+        relation.coordinate = coordinate;
         relations.push(relation);
     }
 
@@ -294,6 +294,39 @@ fn normalize_ref(value: &str, dimension_aliases: &BTreeMap<String, String>) -> S
         .get(value)
         .cloned()
         .unwrap_or_else(|| value.to_string())
+}
+
+fn normalize_coordinate(
+    coordinate: &MemoryCoordinateData,
+    field: &str,
+    label: &str,
+    dimension_aliases: &BTreeMap<String, String>,
+    dimension_ids: &BTreeSet<String>,
+    declared_dimension_kinds: &BTreeMap<String, String>,
+) -> Result<MemoryCoordinateData, ApplicationError> {
+    require_non_empty(&coordinate.dimension, &format!("{field}.dimension"))?;
+    require_non_empty(&coordinate.scope_id, &format!("{field}.scope_id"))?;
+    let scope_id = normalize_ref(&coordinate.scope_id, dimension_aliases);
+    if !dimension_ids.contains(&scope_id) {
+        return Err(ApplicationError::Validation(format!(
+            "{label} coordinate references unknown dimension scope `{}`",
+            coordinate.scope_id
+        )));
+    }
+    if let Some(expected_kind) = declared_dimension_kinds.get(&scope_id)
+        && coordinate.dimension != *expected_kind
+    {
+        return Err(ApplicationError::Validation(format!(
+            "{label} coordinate dimension `{}` does not match declared kind `{expected_kind}` for scope `{}`",
+            coordinate.dimension, coordinate.scope_id
+        )));
+    }
+    validate_positive_optional(coordinate.sequence, &format!("{field}.sequence"))?;
+    validate_positive_optional(coordinate.rank, &format!("{field}.rank"))?;
+
+    let mut coordinate = coordinate.clone();
+    coordinate.scope_id = scope_id;
+    Ok(coordinate)
 }
 
 fn memory_changes(memory: &MemoryData) -> Result<Vec<UpdateContextChange>, ApplicationError> {
@@ -485,6 +518,30 @@ mod tests {
     }
 
     #[test]
+    fn translate_memory_ingest_rejects_coordinate_kind_mismatch() {
+        let mut command = sample_command();
+        command.memory.entries[0].coordinates[0].dimension = "ceremony".to_string();
+
+        let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect_err("coordinate kind mismatch should fail");
+
+        assert_validation_contains(error, "does not match declared kind `conversation`");
+    }
+
+    #[test]
+    fn translate_memory_ingest_rejects_relation_coordinate_kind_mismatch() {
+        let mut command = sample_command();
+        let mut coordinate = command.memory.entries[0].coordinates[0].clone();
+        coordinate.dimension = "ceremony".to_string();
+        command.memory.relations[0].coordinate = Some(coordinate);
+
+        let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect_err("relation coordinate kind mismatch should fail");
+
+        assert_validation_contains(error, "does not match declared kind `conversation`");
+    }
+
+    #[test]
     fn translate_memory_ingest_fails_fast_for_unknown_relation_endpoint() {
         let mut command = sample_command();
         command.memory.relations[0].target_ref = "claim:missing".to_string();
@@ -644,6 +701,11 @@ mod tests {
                     evidence: None,
                     confidence: None,
                     sequence: Some(1),
+                    motivation: None,
+                    method: None,
+                    decision_id: None,
+                    caused_by_node_id: None,
+                    coordinate: None,
                 }],
                 evidence: vec![MemoryEvidenceData {
                     id: "evidence:rachel-denver".to_string(),

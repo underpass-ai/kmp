@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 use serde_json::{Map, Value};
 
@@ -50,15 +50,14 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
     if let Some(provenance) = provenance {
         validate_provenance(provenance)?;
     }
-    let dimension_ids = dimensions
-        .iter()
-        .filter_map(|dimension| required_object_string(dimension, "memory.dimensions[].id").ok())
-        .collect::<BTreeSet<_>>();
-
+    let mut dimension_kinds = BTreeMap::new();
     let mut changes = Vec::new();
     for dimension in dimensions {
         let id = required_object_string(dimension, "memory.dimensions[].id")?;
-        let _kind = required_object_string(dimension, "memory.dimensions[].kind")?;
+        let kind = required_object_string(dimension, "memory.dimensions[].kind")?;
+        if dimension_kinds.insert(id, kind).is_some() {
+            return Err(format!("duplicate memory dimension `{id}`"));
+        }
         changes.push(KmpIngestChange {
             entity_kind: "memory_dimension".to_string(),
             entity_id: id.to_string(),
@@ -72,7 +71,7 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
         let id = required_object_string(entry, "memory.entries[].id")?;
         let _kind = required_object_string(entry, "memory.entries[].kind")?;
         let _text = required_object_string(entry, "memory.entries[].text")?;
-        validate_entry_positions(entry, &dimension_ids)?;
+        validate_entry_positions(entry, &dimension_kinds)?;
         changes.push(KmpIngestChange {
             entity_kind: "memory_entry".to_string(),
             entity_id: id.to_string(),
@@ -89,6 +88,13 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
         let semantic_class = required_object_string(relation, "memory.relations[].class")?;
         validate_semantic_class(semantic_class)?;
         validate_relation_explanation(relation, semantic_class)?;
+        if let Some(coordinate) = relation.get("coordinate") {
+            validate_coordinate(
+                coordinate,
+                &dimension_kinds,
+                "memory.relations[].coordinate",
+            )?;
+        }
         changes.push(KmpIngestChange {
             entity_kind: "memory_relation".to_string(),
             entity_id: format!("relation:{from}:{rel}:{to}"),
@@ -300,7 +306,10 @@ fn entry_scopes(entry: &Value) -> Vec<String> {
         .collect()
 }
 
-fn validate_entry_positions(entry: &Value, dimension_ids: &BTreeSet<&str>) -> Result<(), String> {
+fn validate_entry_positions(
+    entry: &Value,
+    dimension_kinds: &BTreeMap<&str, &str>,
+) -> Result<(), String> {
     let positions = entry
         .get("coordinates")
         .and_then(Value::as_array)
@@ -314,29 +323,39 @@ fn validate_entry_positions(entry: &Value, dimension_ids: &BTreeSet<&str>) -> Re
     }
 
     for position in positions {
-        let Some(dimension) = position.get("dimension").and_then(Value::as_str) else {
-            return Err(
-                "memory.entries[].coordinates[] is missing required `dimension`".to_string(),
-            );
-        };
-        if dimension.trim().is_empty() {
-            return Err("memory.entries[].coordinates[].dimension must not be empty".to_string());
-        }
-        let Some(scope_id) = position.get("scope_id").and_then(Value::as_str) else {
-            return Err(
-                "memory.entries[].coordinates[] is missing required `scope_id`".to_string(),
-            );
-        };
-        if scope_id.trim().is_empty() {
-            return Err("memory.entries[].coordinates[].scope_id must not be empty".to_string());
-        }
-        if !dimension_ids.contains(scope_id) {
-            return Err(format!(
-                "memory entry coordinate references unknown dimension scope `{scope_id}`"
-            ));
-        }
+        validate_coordinate(position, dimension_kinds, "memory.entries[].coordinates[]")?;
     }
 
+    Ok(())
+}
+
+fn validate_coordinate(
+    coordinate: &Value,
+    dimension_kinds: &BTreeMap<&str, &str>,
+    path: &str,
+) -> Result<(), String> {
+    let Some(dimension) = coordinate.get("dimension").and_then(Value::as_str) else {
+        return Err(format!("{path} is missing required `dimension`"));
+    };
+    if dimension.trim().is_empty() {
+        return Err(format!("{path}.dimension must not be empty"));
+    }
+    let Some(scope_id) = coordinate.get("scope_id").and_then(Value::as_str) else {
+        return Err(format!("{path} is missing required `scope_id`"));
+    };
+    if scope_id.trim().is_empty() {
+        return Err(format!("{path}.scope_id must not be empty"));
+    }
+    let Some(expected_kind) = dimension_kinds.get(scope_id) else {
+        return Err(format!(
+            "{path} references unknown dimension scope `{scope_id}`"
+        ));
+    };
+    if dimension != *expected_kind {
+        return Err(format!(
+            "{path}.dimension `{dimension}` does not match declared kind `{expected_kind}` for scope `{scope_id}`"
+        ));
+    }
     Ok(())
 }
 
@@ -450,7 +469,38 @@ mod tests {
 
         assert_eq!(
             error,
-            "memory entry coordinate references unknown dimension scope `conversation:missing`"
+            "memory.entries[].coordinates[] references unknown dimension scope `conversation:missing`"
+        );
+    }
+
+    #[test]
+    fn build_ingest_plan_rejects_coordinate_kind_mismatch() {
+        let mut request = sample_ingest_request();
+        request["memory"]["entries"][0]["coordinates"][0]["dimension"] = json!("ceremony");
+
+        let error = build_ingest_plan(&request).expect_err("coordinate kind mismatch should fail");
+
+        assert_eq!(
+            error,
+            "memory.entries[].coordinates[].dimension `ceremony` does not match declared kind `conversation` for scope `conversation:rachel`"
+        );
+    }
+
+    #[test]
+    fn build_ingest_plan_rejects_relation_coordinate_kind_mismatch() {
+        let mut request = sample_ingest_request();
+        request["memory"]["relations"][0]["coordinate"] = json!({
+            "dimension": "ceremony",
+            "scope_id": "conversation:rachel",
+            "valid_from": "2026-04-12T15:00:00Z"
+        });
+
+        let error =
+            build_ingest_plan(&request).expect_err("relation coordinate kind mismatch should fail");
+
+        assert_eq!(
+            error,
+            "memory.relations[].coordinate.dimension `ceremony` does not match declared kind `conversation` for scope `conversation:rachel`"
         );
     }
 
