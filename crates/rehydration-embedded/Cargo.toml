@@ -12,6 +12,7 @@ workspace = true
 rehydration-adapter-embedded.workspace = true
 rehydration-application.workspace = true
 rehydration-domain.workspace = true
+rehydration-memory-api.workspace = true
 rehydration-observability.workspace = true
 
 [dev-dependencies]

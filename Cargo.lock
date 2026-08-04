@@ -2310,6 +2310,7 @@ dependencies = [
  "rehydration-adapter-embedded",
  "rehydration-application",
  "rehydration-domain",
+ "rehydration-memory-api",
  "rehydration-observability",
  "tempfile",
  "tokio",
@@ -2345,6 +2346,14 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "rehydration-memory-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

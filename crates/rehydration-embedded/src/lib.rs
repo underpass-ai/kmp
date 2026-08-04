@@ -5,6 +5,7 @@
 
 mod data_dir;
 mod kernel;
+mod memory_api;
 
 pub use data_dir::{DATA_DIR_ENV, ResolvedDataDir, resolve_data_dir, resolve_data_dir_from_env};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};

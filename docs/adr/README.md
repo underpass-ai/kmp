@@ -12,6 +12,7 @@
 | [ADR-012](ADR-012-embedded-data-directory.md) | Embedded data dir: env override, project `.kernel/`, XDG fallback | — (2026-07-21) |
 | [ADR-013](ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `rehydration-mcp` | — (2026-07-21) |
 | [ADR-014](ADR-014-embedded-quality-telemetry.md) | Separate fail-open redb journal for embedded quality telemetry | — (2026-07-22) |
+| [ADR-015](ADR-015-consumer-memory-api-contract.md) | `rehydration-memory-api` — the contract an embedding product compiles against | — (2026-08-04) |
 
 ## Not Yet Written (decisions implicit in PRs)
 

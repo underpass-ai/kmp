@@ -12,6 +12,7 @@ members = [
     "crates/rehydration-interpretation",
     "crates/rehydration-observability",
     "crates/rehydration-mcp",
+    "crates/rehydration-memory-api",
     "crates/rehydration-plugin-api",
     "crates/rehydration-ports",
     "crates/rehydration-proto",
@@ -44,6 +45,7 @@ rehydration-config = { path = "crates/rehydration-config" }
 rehydration-conformance = { path = "crates/rehydration-conformance" }
 rehydration-domain = { path = "crates/rehydration-domain" }
 rehydration-embedded = { path = "crates/rehydration-embedded" }
+rehydration-memory-api = { path = "crates/rehydration-memory-api" }
 rehydration-interpretation = { path = "crates/rehydration-interpretation" }
 rehydration-mcp = { path = "crates/rehydration-mcp" }
 rehydration-observability = { path = "crates/rehydration-observability", default-features = false }
