@@ -390,3 +390,47 @@ async fn a_zero_rank_is_refused_by_the_kernels_own_validation() {
         .expect_err("rank is one-based in the kernel, and the contract inherits that");
     assert!(!error.is_transient());
 }
+
+#[tokio::test]
+async fn a_recall_names_the_snapshot_it_answered_from() {
+    let (_directory, kernel) = kernel_with_memory().await;
+
+    let first = kernel.wake(wake_request()).await.expect("the wake answers");
+    let second = kernel.wake(wake_request()).await.expect("the wake answers");
+
+    assert!(first.revision > 0, "a served recall has a real revision");
+    assert!(!first.content_hash.is_empty());
+    assert_eq!(
+        (first.revision, &first.content_hash),
+        (second.revision, &second.content_hash),
+        "an untouched memory answers twice from one snapshot — which is the \
+         check a consumer combining recalls performs instead of hoping"
+    );
+    assert_ne!(
+        first.content_hash, first.rendered.content_hash,
+        "the snapshot's identity and the rendered text's hash are different \
+         facts; a contract that reused one for the other would let a consumer \
+         verify the wrong thing"
+    );
+}
+
+#[tokio::test]
+async fn a_recall_accounts_for_the_quality_of_its_rendering() {
+    let (_directory, kernel) = kernel_with_memory().await;
+
+    let recall = kernel.wake(wake_request()).await.expect("the wake answers");
+    let quality = &recall.rendered.quality;
+    assert!(
+        quality.raw_equivalent_tokens > 0,
+        "a rendering of a non-empty memory stands in for something: {quality:?}"
+    );
+    for (name, value) in [
+        ("compression_ratio", quality.compression_ratio),
+        ("causal_density", quality.causal_density),
+        ("noise_ratio", quality.noise_ratio),
+        ("detail_coverage", quality.detail_coverage),
+    ] {
+        assert!(value.is_finite(), "{name} must be a number: {quality:?}");
+        assert!(value >= 0.0, "{name} must not be negative: {quality:?}");
+    }
+}

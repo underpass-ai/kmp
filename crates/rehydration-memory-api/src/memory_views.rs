@@ -35,23 +35,47 @@ pub struct MemoryDetailView {
     pub revision: u64,
 }
 
+/// How well the rendering served its budget.
+///
+/// The kernel's own account of the trade it made: how much raw memory the
+/// rendering stands in for, and what was kept against what was let go. Ratios
+/// are `f64`, which is why this view — and everything holding it — is
+/// `PartialEq` and not `Eq`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MemoryQualityView {
+    /// Tokens the un-rendered memory would have cost.
+    pub raw_equivalent_tokens: u32,
+    pub compression_ratio: f64,
+    pub causal_density: f64,
+    pub noise_ratio: f64,
+    pub detail_coverage: f64,
+}
+
 /// The rendered context, ready for a reader.
 ///
 /// `content_hash` covers `content` exactly: a consumer that hands the text to
 /// a model can verify the model received what the kernel rendered, and cite
 /// the hash instead of quoting itself.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RenderedMemoryView {
     pub content: String,
     pub content_hash: String,
     pub token_count: u32,
+    pub quality: MemoryQualityView,
 }
 
 /// What one recall returned.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MemoryRecallView {
     /// The about that was asked for, echoed back unchanged.
     pub about: String,
+    /// The revision of the memory this recall was answered from. Two recalls
+    /// answering with the same `revision` and `content_hash` saw one
+    /// snapshot; a consumer combining recalls checks this instead of hoping.
+    pub revision: u64,
+    /// Hash of the memory state behind this recall — the snapshot's identity,
+    /// distinct from `rendered.content_hash`, which covers the rendered text.
+    pub content_hash: String,
     pub root: MemoryNodeView,
     pub neighbors: Vec<MemoryNodeView>,
     pub relationships: Vec<MemoryRelationshipView>,
@@ -79,6 +103,8 @@ mod tests {
     fn a_recall_survives_the_wire() {
         let view = MemoryRecallView {
             about: "project:checkout".to_string(),
+            revision: 7,
+            content_hash: "snapshot-hash".to_string(),
             root: node("about:project:checkout"),
             neighbors: vec![node("decision:first")],
             relationships: vec![MemoryRelationshipView {
@@ -96,6 +122,13 @@ mod tests {
                 content: "# Context".to_string(),
                 content_hash: "def".to_string(),
                 token_count: 3,
+                quality: MemoryQualityView {
+                    raw_equivalent_tokens: 12,
+                    compression_ratio: 4.0,
+                    causal_density: 0.5,
+                    noise_ratio: 0.1,
+                    detail_coverage: 0.9,
+                },
             },
         };
         let bytes = serde_json::to_vec(&view).expect("serializes");

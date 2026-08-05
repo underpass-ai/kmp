@@ -216,6 +216,8 @@ fn recall_view(about: String, result: &GetContextResult) -> MemoryRecallView {
     let bundle = &result.bundle;
     MemoryRecallView {
         about,
+        revision: bundle.metadata().revision,
+        content_hash: bundle.metadata().content_hash.clone(),
         root: node_view(bundle.root_node()),
         neighbors: bundle.neighbor_nodes().iter().map(node_view).collect(),
         relationships: bundle
@@ -241,6 +243,13 @@ fn recall_view(about: String, result: &GetContextResult) -> MemoryRecallView {
             content: result.rendered.content.clone(),
             content_hash: result.rendered.content_hash.clone(),
             token_count: result.rendered.token_count,
+            quality: rehydration_memory_api::MemoryQualityView {
+                raw_equivalent_tokens: result.rendered.quality.raw_equivalent_tokens(),
+                compression_ratio: result.rendered.quality.compression_ratio(),
+                causal_density: result.rendered.quality.causal_density(),
+                noise_ratio: result.rendered.quality.noise_ratio(),
+                detail_coverage: result.rendered.quality.detail_coverage(),
+            },
         },
     }
 }

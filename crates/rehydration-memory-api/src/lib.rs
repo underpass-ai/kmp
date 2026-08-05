@@ -38,7 +38,8 @@ pub use memory_record_requests::{
 pub use memory_record_views::RecordedMemoryView;
 pub use memory_requests::{MemoryAnswerPolicy, MemoryAskRequest, MemoryTier, MemoryWakeRequest};
 pub use memory_views::{
-    MemoryDetailView, MemoryNodeView, MemoryRecallView, MemoryRelationshipView, RenderedMemoryView,
+    MemoryDetailView, MemoryNodeView, MemoryQualityView, MemoryRecallView, MemoryRelationshipView,
+    RenderedMemoryView,
 };
 
 /// The revision of this contract.
