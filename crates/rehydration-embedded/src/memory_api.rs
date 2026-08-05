@@ -43,6 +43,7 @@ impl MemoryRecallApi for EmbeddedKernel {
             max_entries: request.max_entries.map(|entries| entries as usize),
         };
         let result = self.service().wake(query).await.map_err(translate_error)?;
+        self.observe_recall_quality("kernel_wake", &result);
         Ok(recall_view(about, &result))
     }
 
@@ -58,7 +59,28 @@ impl MemoryRecallApi for EmbeddedKernel {
             max_tier: request.max_tier.map(tier),
         };
         let result = self.service().ask(query).await.map_err(translate_error)?;
+        self.observe_recall_quality("kernel_ask", &result);
         Ok(recall_view(about, &result))
+    }
+}
+
+impl EmbeddedKernel {
+    /// The kernel accounts for its own recalls.
+    ///
+    /// Observed here, at the contract, rather than left to the consumer:
+    /// a consumer that forgot would silently starve the kernel's quality
+    /// telemetry, and each consumer remembering is the same code written N
+    /// times. The rpc names keep the spelling the telemetry has always
+    /// carried.
+    fn observe_recall_quality(&self, rpc: &str, result: &GetContextResult) {
+        self.quality_observer().observe(
+            &result.rendered.quality,
+            &rehydration_domain::QualityObservationContext {
+                rpc: rpc.to_owned(),
+                root_node_id: result.bundle.root_node_id().as_str().to_owned(),
+                role: result.bundle.role().as_str().to_owned(),
+            },
+        );
     }
 }
 
@@ -227,6 +249,11 @@ fn recall_view(about: String, result: &GetContextResult) -> MemoryRecallView {
                 source_node_id: relationship.source_node_id().to_string(),
                 target_node_id: relationship.target_node_id().to_string(),
                 relationship_type: relationship.relationship_type().to_string(),
+                why: relationship
+                    .explanation()
+                    .rationale()
+                    .map(ToOwned::to_owned),
+                evidence: relationship.explanation().evidence().map(ToOwned::to_owned),
             })
             .collect(),
         details: bundle

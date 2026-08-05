@@ -24,6 +24,11 @@ pub struct MemoryRelationshipView {
     pub source_node_id: String,
     pub target_node_id: String,
     pub relationship_type: String,
+    /// The stated reason for the link, when its recorder gave one. A consumer
+    /// surfacing a conflict quotes this instead of inventing a rationale.
+    pub why: Option<String>,
+    /// The evidence the link cites, when its recorder cited any.
+    pub evidence: Option<String>,
 }
 
 /// Full detail for one node, with the hash that makes it citable.
@@ -111,6 +116,8 @@ mod tests {
                 source_node_id: "about:project:checkout".to_string(),
                 target_node_id: "decision:first".to_string(),
                 relationship_type: "contains".to_string(),
+                why: Some("the about holds its decisions".to_string()),
+                evidence: None,
             }],
             details: vec![MemoryDetailView {
                 node_id: "decision:first".to_string(),

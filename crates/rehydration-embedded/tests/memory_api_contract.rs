@@ -434,3 +434,30 @@ async fn a_recall_accounts_for_the_quality_of_its_rendering() {
         assert!(value >= 0.0, "{name} must not be negative: {quality:?}");
     }
 }
+
+#[tokio::test]
+async fn the_kernel_accounts_for_contract_recalls_in_its_own_telemetry() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    {
+        let kernel = EmbeddedKernel::open(directory.path()).expect("the kernel opens");
+        kernel
+            .service()
+            .ingest(corpus())
+            .await
+            .expect("the corpus ingests");
+        kernel.wake(wake_request()).await.expect("the wake answers");
+        // Dropping the kernel flushes its telemetry guard.
+    }
+
+    let reader = rehydration_adapter_embedded::RedbQualityTelemetryReader::open(directory.path())
+        .expect("the telemetry store opens");
+    let observed = reader.latest(10).expect("the telemetry reads");
+    assert!(
+        observed
+            .iter()
+            .any(|observation| observation.rpc() == "kernel_wake"),
+        "a recall served through the contract must appear in the kernel's own \
+         quality telemetry — no consumer remembered anything to make it so: \
+         {observed:?}"
+    );
+}
