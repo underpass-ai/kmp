@@ -64,6 +64,7 @@ impl ContextEventStore for EmbeddedKernelStore {
                         &IdempotentOutcome {
                             revision: new_revision,
                             content_hash: event.content_hash.clone(),
+                            logical_digest: event.logical_digest.clone(),
                         },
                     )?;
                     let mut idempotency = tx.open_table(IDEMPOTENCY).map_err(table_error)?;

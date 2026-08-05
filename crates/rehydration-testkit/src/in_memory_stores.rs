@@ -308,6 +308,7 @@ impl ContextEventStore for InMemoryContextEventStore {
                 IdempotentOutcome {
                     revision: new_revision,
                     content_hash: event.content_hash,
+                    logical_digest: event.logical_digest,
                 },
             );
         }

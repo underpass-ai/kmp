@@ -46,6 +46,7 @@ pub fn translate_memory_ingest(
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: Some(command.idempotency_key.clone()),
+            logical_digest: Some(logical_digest(command)),
             requested_by: command
                 .provenance
                 .as_ref()
@@ -438,6 +439,29 @@ fn validate_positive_optional(value: Option<u32>, field: &str) -> Result<(), App
     } else {
         Ok(())
     }
+}
+
+/// Digest of the logical ingest, taken before translation.
+///
+/// Translation consults existing state (a dimension already declared is not
+/// re-created), so the same command translates differently after its own
+/// first apply. This digest is computed from what the caller *said*, which is
+/// the thing that must be equal for a replay to deserve a replayed answer.
+fn logical_digest(command: &MemoryIngestCommand) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(command.about.as_bytes());
+    hasher.update([0]);
+    let memory = serde_json::to_vec(&command.memory)
+        .expect("memory data serializes: it holds only strings, maps and integers");
+    hasher.update(&memory);
+    hasher.update([0]);
+    if let Some(provenance) = &command.provenance {
+        let provenance =
+            serde_json::to_vec(provenance).expect("provenance serializes: it holds only strings");
+        hasher.update(&provenance);
+    }
+    format!("{:x}", hasher.finalize())
 }
 
 fn memory_id_from_idempotency_key(idempotency_key: &str) -> String {

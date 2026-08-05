@@ -85,7 +85,11 @@ impl ContextEventStore for ValkeyContextEventStore {
 
         if let Some(ref idem_key) = event.idempotency_key {
             let key = self.idempotency_key(idem_key);
-            let value = encode_idempotent_value(new_revision, &event.content_hash);
+            let value = encode_idempotent_value(
+                new_revision,
+                &event.content_hash,
+                event.logical_digest.as_deref(),
+            );
             execute_set_command(&self.endpoint, &key, &value, None).await?;
         }
 
@@ -121,8 +125,15 @@ impl ContextEventStore for ValkeyContextEventStore {
     }
 }
 
-fn encode_idempotent_value(revision: u64, content_hash: &str) -> String {
-    format!("{revision}:{content_hash}")
+fn encode_idempotent_value(
+    revision: u64,
+    content_hash: &str,
+    logical_digest: Option<&str>,
+) -> String {
+    match logical_digest {
+        Some(digest) => format!("{revision}:{content_hash}:{digest}"),
+        None => format!("{revision}:{content_hash}"),
+    }
 }
 
 fn parse_idempotent_outcome(value: &str) -> Result<IdempotentOutcome, PortError> {
@@ -132,9 +143,14 @@ fn parse_idempotent_outcome(value: &str) -> Result<IdempotentOutcome, PortError>
     let revision = revision_str.parse::<u64>().map_err(|error| {
         PortError::InvalidState(format!("invalid idempotency revision: {error}"))
     })?;
+    let (content_hash, logical_digest) = match content_hash.split_once(':') {
+        Some((hash, digest)) => (hash, Some(digest.to_string())),
+        None => (content_hash, None),
+    };
     Ok(IdempotentOutcome {
         revision,
         content_hash: content_hash.to_string(),
+        logical_digest,
     })
 }
 
@@ -168,12 +184,31 @@ mod tests {
 
     #[test]
     fn encode_and_parse_idempotent_value_roundtrips() {
-        let encoded = encode_idempotent_value(42, "abc123");
+        let encoded = encode_idempotent_value(42, "abc123", None);
         assert_eq!(encoded, "42:abc123");
 
         let parsed = parse_idempotent_outcome(&encoded).expect("should parse");
         assert_eq!(parsed.revision, 42);
         assert_eq!(parsed.content_hash, "abc123");
+        assert_eq!(parsed.logical_digest, None);
+    }
+
+    #[test]
+    fn a_logical_digest_rides_the_value_and_an_old_value_reads_as_none() {
+        let encoded = encode_idempotent_value(42, "abc123", Some("d1g3st"));
+        assert_eq!(encoded, "42:abc123:d1g3st");
+
+        let parsed = parse_idempotent_outcome(&encoded).expect("should parse");
+        assert_eq!(parsed.content_hash, "abc123");
+        assert_eq!(parsed.logical_digest.as_deref(), Some("d1g3st"));
+
+        let legacy = parse_idempotent_outcome("7:beef").expect("should parse");
+        assert_eq!(legacy.revision, 7);
+        assert_eq!(legacy.content_hash, "beef");
+        assert_eq!(
+            legacy.logical_digest, None,
+            "a value written before the digest existed must not invent one"
+        );
     }
 
     #[test]

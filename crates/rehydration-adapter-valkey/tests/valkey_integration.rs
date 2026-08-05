@@ -406,6 +406,7 @@ fn sample_cmd_event(root: &str, role: &str, revision: u64) -> ContextUpdatedEven
             scopes: vec![],
         }],
         idempotency_key: None,
+        logical_digest: None,
         requested_by: Some("test".to_string()),
         occurred_at: SystemTime::now(),
     }

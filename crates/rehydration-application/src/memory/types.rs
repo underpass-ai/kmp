@@ -17,7 +17,7 @@ pub struct MemoryIngestCommand {
     pub dry_run: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryData {
     pub dimensions: Vec<MemoryDimensionData>,
     pub entries: Vec<MemoryEntryData>,
@@ -109,7 +109,7 @@ pub struct MemoryEvidenceData {
     pub metadata: std::collections::BTreeMap<String, String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct MemoryProvenanceData {
     pub source_kind: String,
     pub source_agent: String,

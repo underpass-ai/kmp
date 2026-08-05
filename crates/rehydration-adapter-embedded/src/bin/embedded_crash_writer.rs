@@ -49,6 +49,7 @@ fn event_for(revision: u64) -> ContextUpdatedEvent {
             scopes: vec![SCOPE.to_string()],
         }],
         idempotency_key: Some(format!("ingest:crash-{revision}")),
+        logical_digest: None,
         requested_by: None,
         occurred_at: SystemTime::now(),
     }

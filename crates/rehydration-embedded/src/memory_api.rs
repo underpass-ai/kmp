@@ -6,13 +6,15 @@
 
 use rehydration_application::{
     ApplicationError, AskMemoryQuery, GetContextResult, MemoryAnswerPolicy as DomainAnswerPolicy,
-    WakeMemoryQuery,
+    MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
+    MemoryIngestCommand, MemoryProvenanceData, WakeMemoryQuery,
 };
-use rehydration_domain::{DimensionSelection, ResolutionTier};
+use rehydration_domain::{DimensionSelection, PortError, ResolutionTier};
 use rehydration_memory_api::{
     ApiCapabilities, ApiError, CONTRACT_VERSION, MemoryAnswerPolicy, MemoryAskRequest,
-    MemoryDetailView, MemoryNodeView, MemoryRecallApi, MemoryRecallView, MemoryRelationshipView,
-    MemoryTier, MemoryWakeRequest, RenderedMemoryView,
+    MemoryDetailView, MemoryNodeView, MemoryRecallApi, MemoryRecallView, MemoryRecordApi,
+    MemoryRecordRequest, MemoryRelationshipView, MemoryTier, MemoryWakeRequest, RecordedMemoryView,
+    RenderedMemoryView,
 };
 
 use crate::EmbeddedKernel;
@@ -21,7 +23,7 @@ use crate::EmbeddedKernel;
 ///
 /// Listed next to the implementation, so that adding a method to the trait
 /// without adding its name is a diff a reviewer sees in one place.
-const CAPABILITIES: [&str; 2] = ["wake", "ask"];
+const CAPABILITIES: [&str; 3] = ["wake", "ask", "record"];
 
 impl MemoryRecallApi for EmbeddedKernel {
     fn capabilities(&self) -> ApiCapabilities {
@@ -57,6 +59,108 @@ impl MemoryRecallApi for EmbeddedKernel {
         };
         let result = self.service().ask(query).await.map_err(translate_error)?;
         Ok(recall_view(about, &result))
+    }
+}
+
+impl MemoryRecordApi for EmbeddedKernel {
+    fn capabilities(&self) -> ApiCapabilities {
+        ApiCapabilities::new(CONTRACT_VERSION, env!("CARGO_PKG_VERSION"), CAPABILITIES)
+    }
+
+    async fn record(&self, request: MemoryRecordRequest) -> Result<RecordedMemoryView, ApiError> {
+        let outcome = self
+            .service()
+            .ingest(ingest_command(request))
+            .await
+            .map_err(translate_record_error)?;
+        Ok(RecordedMemoryView {
+            about: outcome.about,
+            memory_id: outcome.memory_id,
+            accepted_entries: outcome.accepted.entries,
+            accepted_evidence: outcome.accepted.evidence,
+            read_after_write_ready: outcome.read_after_write_ready,
+            warnings: outcome.warnings,
+        })
+    }
+}
+
+fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
+    MemoryIngestCommand {
+        about: request.about,
+        memory: MemoryData {
+            dimensions: request
+                .dimensions
+                .into_iter()
+                .map(|dimension| MemoryDimensionData {
+                    id: dimension.id,
+                    kind: dimension.kind,
+                    title: dimension.title,
+                    metadata: Default::default(),
+                })
+                .collect(),
+            entries: request
+                .entries
+                .into_iter()
+                .map(|entry| MemoryEntryData {
+                    id: entry.id,
+                    kind: entry.kind,
+                    text: entry.text,
+                    coordinates: entry
+                        .coordinates
+                        .into_iter()
+                        .map(|coordinate| MemoryCoordinateData {
+                            dimension: coordinate.dimension,
+                            scope_id: coordinate.scope_id,
+                            occurred_at: coordinate.occurred_at,
+                            observed_at: None,
+                            ingested_at: None,
+                            valid_from: None,
+                            valid_until: None,
+                            sequence: coordinate.sequence,
+                            rank: None,
+                            metadata: Default::default(),
+                        })
+                        .collect(),
+                    metadata: entry.metadata,
+                })
+                .collect(),
+            relations: Vec::new(),
+            evidence: request
+                .evidence
+                .into_iter()
+                .map(|evidence| MemoryEvidenceData {
+                    id: evidence.id,
+                    supports: evidence.supports,
+                    text: evidence.text,
+                    source: evidence.source,
+                    time: evidence.time,
+                    metadata: evidence.metadata,
+                })
+                .collect(),
+        },
+        provenance: request.provenance.map(|provenance| MemoryProvenanceData {
+            source_kind: provenance.source_kind,
+            source_agent: provenance.source_agent,
+            observed_at: provenance.observed_at,
+            correlation_id: provenance.correlation_id,
+            causation_id: provenance.causation_id,
+        }),
+        idempotency_key: request.idempotency_key,
+        dry_run: false,
+    }
+}
+
+/// The record side's error map.
+///
+/// One case more than the recall side's: a port `Conflict` here is the
+/// idempotency key reused with different content — the kernel looked at the
+/// request and said no, and retrying it unchanged earns the same answer. On
+/// the recall side a conflict cannot mean that, so the shared map's reading
+/// of ports-as-environment stays right there.
+fn translate_record_error(error: ApplicationError) -> ApiError {
+    match error {
+        ApplicationError::Ports(PortError::Conflict(reason)) => ApiError::Refused { reason },
+        other => translate_error(other),
     }
 }
 

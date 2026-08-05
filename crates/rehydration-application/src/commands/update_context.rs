@@ -28,6 +28,12 @@ pub struct UpdateContextCommand {
     pub expected_revision: Option<u64>,
     pub expected_content_hash: Option<String>,
     pub idempotency_key: Option<String>,
+    /// Digest of the logical command, computed by the caller *before* any
+    /// state-dependent translation. Optional: a caller that supplies none gets
+    /// idempotency compared on the translated changes, which refuses a replay
+    /// whenever translation saw different state — safe, but stricter than the
+    /// caller may mean.
+    pub logical_digest: Option<String>,
     pub requested_by: Option<String>,
 }
 
@@ -101,11 +107,18 @@ where
         // must replay the same logical command, not mask a conflicting payload.
         let content_hash = compute_content_hash(&command.changes);
 
-        // Idempotency check
+        // Idempotency check. The logical digest, when both sides carry one,
+        // is the honest comparison: the same logical command translated after
+        // its own first apply produces different changes (creates become
+        // updates), and comparing those would refuse a legitimate replay.
         if let Some(ref key) = command.idempotency_key
             && let Some(outcome) = self.event_store.find_by_idempotency_key(key).await?
         {
-            if outcome.content_hash != content_hash {
+            let same_logical_command = match (&command.logical_digest, &outcome.logical_digest) {
+                (Some(ours), Some(stored)) => ours == stored,
+                _ => outcome.content_hash == content_hash,
+            };
+            if !same_logical_command {
                 return Err(ApplicationError::Ports(
                     rehydration_domain::PortError::Conflict(format!(
                         "idempotency key '{key}' was already accepted with different content"
@@ -181,6 +194,7 @@ where
                 })
                 .collect(),
             idempotency_key: command.idempotency_key.clone(),
+            logical_digest: command.logical_digest.clone(),
             requested_by: command.requested_by.clone(),
             occurred_at: SystemTime::now(),
         };
@@ -302,6 +316,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -326,6 +341,7 @@ mod tests {
                 expected_revision: Some(99),
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await;
@@ -349,6 +365,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: Some("idem-1".to_string()),
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -363,6 +380,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: Some("idem-1".to_string()),
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -391,6 +409,7 @@ mod tests {
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: Some("idem-1".to_string()),
+            logical_digest: None,
             requested_by: None,
         })
         .await
@@ -407,6 +426,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: Some("idem-1".to_string()),
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -429,6 +449,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -452,6 +473,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -466,6 +488,7 @@ mod tests {
                 expected_revision: Some(1),
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -490,6 +513,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -505,6 +529,7 @@ mod tests {
                 expected_revision: Some(1),
                 expected_content_hash: Some("wrong-hash".to_string()),
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await;
@@ -523,6 +548,7 @@ mod tests {
                 expected_revision: Some(1),
                 expected_content_hash: Some(first.accepted_version.content_hash.clone()),
                 idempotency_key: None,
+                logical_digest: None,
                 requested_by: None,
             })
             .await
@@ -549,6 +575,7 @@ mod tests {
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: Some("ingest:mcp:1".to_string()),
+            logical_digest: None,
             requested_by: Some("mcp-test".to_string()),
         })
         .await
@@ -629,6 +656,7 @@ mod tests {
                 expected_revision: None,
                 expected_content_hash: None,
                 idempotency_key: Some("ingest:mcp:1".to_string()),
+                logical_digest: None,
                 requested_by: Some("mcp-test".to_string()),
             })
             .await

@@ -30,6 +30,7 @@ fn sample_event(
             scopes: vec![],
         }],
         idempotency_key: idem_key.map(str::to_string),
+        logical_digest: None,
         requested_by: Some("test".to_string()),
         occurred_at: SystemTime::now(),
     }

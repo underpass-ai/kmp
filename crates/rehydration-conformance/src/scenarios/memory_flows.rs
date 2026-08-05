@@ -214,7 +214,7 @@ pub async fn ingest_idempotency_replay_is_safe_and_conflicts_fail(
     let backend = factory.fresh().await;
     let memory = backend.memory_service();
 
-    memory
+    let first = memory
         .ingest(conversation_memory_command("ingest:conformance-idem"))
         .await
         .expect("first ingest should succeed");
@@ -226,16 +226,18 @@ pub async fn ingest_idempotency_replay_is_safe_and_conflicts_fail(
             .bundle,
     );
 
-    // Retrying the same logical ingest after it landed is not byte-identical
-    // at the command level (translation is aware of the now-existing refs), so
-    // the kernel surfaces an explicit idempotency conflict. The conformance
-    // property is that the retry is rejected loudly and leaves memory intact.
+    // Retrying the same logical ingest is not byte-identical after
+    // translation (the refs now exist), so the kernel compares the logical
+    // digest taken *before* translation. The conformance property is that an
+    // at-least-once pipeline can apply twice and store once: the replay
+    // answers with the recorded outcome and leaves memory unchanged.
     let replay = memory
         .ingest(conversation_memory_command("ingest:conformance-idem"))
-        .await;
-    assert!(
-        replay.is_err(),
-        "same-key retry after success must be rejected explicitly"
+        .await
+        .expect("same-key same-content retry must replay the recorded outcome");
+    assert_eq!(
+        replay.memory_id, first.memory_id,
+        "a replay answers for the same memory, not a second one"
     );
     let after_replay = bundle_node_ids(
         &memory
@@ -246,7 +248,7 @@ pub async fn ingest_idempotency_replay_is_safe_and_conflicts_fail(
     );
     assert_eq!(
         after_replay, baseline,
-        "rejected replay must not change readable memory"
+        "a replayed ingest must not change readable memory"
     );
 
     let mut conflicting = conversation_memory_command("ingest:conformance-idem");

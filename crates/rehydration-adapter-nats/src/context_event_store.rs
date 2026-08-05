@@ -161,6 +161,7 @@ impl ContextEventStore for NatsContextEventStore {
             let idem_outcome = IdempotentOutcome {
                 revision: new_revision,
                 content_hash: event.content_hash.clone(),
+                logical_digest: event.logical_digest.clone(),
             };
             let idem_payload = serde_json::to_vec(&idem_outcome).map_err(|error| {
                 PortError::Unavailable(format!("failed to serialize idempotent outcome: {error}"))

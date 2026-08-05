@@ -24,6 +24,7 @@ pub fn projection_mutations_for_context_event(
         root_node_id: event.root_node_id.clone(),
         role: event.role.clone(),
         work_item_id: event.idempotency_key.clone().unwrap_or_default(),
+        logical_digest: event.logical_digest.clone(),
         changes: event
             .changes
             .iter()
@@ -535,6 +536,7 @@ mod tests {
                 scopes: vec!["about:question:r:dimension:conversation:s1".to_string()],
             }],
             idempotency_key: Some("ingest:replay-test".to_string()),
+            logical_digest: None,
             requested_by: Some("agent-r".to_string()),
             occurred_at: SystemTime::UNIX_EPOCH,
         }
@@ -558,6 +560,7 @@ mod tests {
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: Some("ingest:replay-test".to_string()),
+            logical_digest: None,
             requested_by: Some("agent-r".to_string()),
         };
 

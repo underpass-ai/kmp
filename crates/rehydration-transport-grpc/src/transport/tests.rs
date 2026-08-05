@@ -847,6 +847,7 @@ async fn grpc_server_application_accessors_return_callable_services() {
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: None,
+            logical_digest: None,
             requested_by: None,
         })
         .await

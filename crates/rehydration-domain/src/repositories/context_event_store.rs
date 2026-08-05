@@ -15,6 +15,12 @@ pub struct ContextUpdatedEvent {
     pub content_hash: String,
     pub changes: Vec<ContextEventChange>,
     pub idempotency_key: Option<String>,
+    /// Digest of the logical command behind this event, when the caller
+    /// supplied one. `content_hash` covers the *translated* changes, which can
+    /// legitimately differ between a first apply and a replay of the same
+    /// logical command; this digest is what stays equal across that replay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logical_digest: Option<String>,
     pub requested_by: Option<String>,
     #[serde(with = "system_time_serde")]
     pub occurred_at: SystemTime,
@@ -39,6 +45,11 @@ pub struct ContextEventChange {
 pub struct IdempotentOutcome {
     pub revision: u64,
     pub content_hash: String,
+    /// The event's logical digest, when it carried one. `None` on records
+    /// written before this field existed — a comparison must fall back to
+    /// `content_hash`, never assume equality.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logical_digest: Option<String>,
 }
 
 /// Append-only event store for context update commands.

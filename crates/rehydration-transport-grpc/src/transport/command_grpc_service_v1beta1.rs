@@ -72,6 +72,7 @@ where
                         scopes: change.scopes,
                     })
                     .collect(),
+                logical_digest: None,
                 expected_revision: (precondition.expected_revision != 0)
                     .then_some(precondition.expected_revision),
                 expected_content_hash: (!precondition.expected_content_hash.is_empty())
