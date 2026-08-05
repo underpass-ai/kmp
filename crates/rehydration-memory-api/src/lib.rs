@@ -33,7 +33,7 @@ pub use memory_recall_api::MemoryRecallApi;
 pub use memory_record_api::MemoryRecordApi;
 pub use memory_record_requests::{
     MemoryCoordinateSpec, MemoryDimensionSpec, MemoryEntrySpec, MemoryEvidenceSpec,
-    MemoryProvenanceSpec, MemoryRecordRequest,
+    MemoryProvenanceSpec, MemoryRecordRequest, MemoryRelationSpec,
 };
 pub use memory_record_views::RecordedMemoryView;
 pub use memory_requests::{MemoryAnswerPolicy, MemoryAskRequest, MemoryTier, MemoryWakeRequest};

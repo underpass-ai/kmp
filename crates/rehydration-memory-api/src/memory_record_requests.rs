@@ -54,6 +54,28 @@ pub struct MemoryEvidenceSpec {
     pub metadata: BTreeMap<String, String>,
 }
 
+/// A directed link between two things the memory holds.
+///
+/// `from` and `to` name entry ids from this record, or ids the memory already
+/// holds — not evidence declared alongside, which the kernel resolves after
+/// relations. Arrived with its first consumer, like every field here: what
+/// the contract carries is the subset a consumer has needed, not the kernel's
+/// full relation vocabulary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryRelationSpec {
+    pub from: String,
+    pub to: String,
+    /// The relation, in the kernel's naming: `supports`, `conflicts_with`, …
+    pub rel: String,
+    /// `structural` or `evidential`. The kernel requires a non-structural
+    /// relation to carry `confidence` and a `why` — a claimed link without a
+    /// stated reason is exactly what a memory must not hold.
+    pub semantic_class: String,
+    pub why: Option<String>,
+    pub confidence: Option<String>,
+    pub sequence: Option<u32>,
+}
+
 /// Who put this into the memory, and on the strength of what.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemoryProvenanceSpec {
@@ -83,6 +105,7 @@ pub struct MemoryRecordRequest {
     pub about: String,
     pub dimensions: Vec<MemoryDimensionSpec>,
     pub entries: Vec<MemoryEntrySpec>,
+    pub relations: Vec<MemoryRelationSpec>,
     pub evidence: Vec<MemoryEvidenceSpec>,
     pub provenance: Option<MemoryProvenanceSpec>,
     /// Stable across retries of the same logical record.
@@ -113,6 +136,15 @@ mod tests {
                     sequence: Some(1),
                 }],
                 metadata: BTreeMap::new(),
+            }],
+            relations: vec![MemoryRelationSpec {
+                from: "evidence:first".to_string(),
+                to: "observation:first".to_string(),
+                rel: "supports".to_string(),
+                semantic_class: "evidential".to_string(),
+                why: Some("the reading backs the observation".to_string()),
+                confidence: Some("high".to_string()),
+                sequence: None,
             }],
             evidence: vec![MemoryEvidenceSpec {
                 id: "evidence:first".to_string(),

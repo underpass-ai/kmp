@@ -12,7 +12,7 @@ use rehydration_embedded::EmbeddedKernel;
 use rehydration_memory_api::{
     CONTRACT_VERSION, MemoryAnswerPolicy, MemoryAskRequest, MemoryCoordinateSpec,
     MemoryDimensionSpec, MemoryEntrySpec, MemoryEvidenceSpec, MemoryProvenanceSpec,
-    MemoryRecallApi, MemoryRecordApi, MemoryRecordRequest, MemoryWakeRequest,
+    MemoryRecallApi, MemoryRecordApi, MemoryRecordRequest, MemoryRelationSpec, MemoryWakeRequest,
 };
 
 const ABOUT: &str = "project:memory-api";
@@ -193,6 +193,7 @@ fn record_request(key: &str, text: &str) -> MemoryRecordRequest {
             }],
             metadata: Default::default(),
         }],
+        relations: Vec::new(),
         evidence: vec![MemoryEvidenceSpec {
             id: "evidence:first".to_string(),
             supports: vec!["observation:first".to_string()],
@@ -305,5 +306,71 @@ async fn a_record_without_an_idempotency_key_is_refused() {
         .record(record_request("", "The retries began."))
         .await
         .expect_err("an unkeyed record cannot be replayed safely");
+    assert!(!error.is_transient());
+}
+
+#[tokio::test]
+async fn a_recorded_relation_comes_back_as_a_relationship() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let kernel = EmbeddedKernel::open(directory.path()).expect("the kernel opens");
+
+    let mut request = record_request("record:contract:related", "The retries began.");
+    let mut second = request.entries[0].clone();
+    second.id = "observation:second".to_string();
+    second.text = "The deploy finished moments earlier.".to_string();
+    request.entries.push(second);
+    // Relations join entries — evidence declared alongside resolves later and
+    // cannot be an endpoint, which the spec's doc says out loud.
+    request.relations = vec![MemoryRelationSpec {
+        from: "observation:second".to_string(),
+        to: "observation:first".to_string(),
+        rel: "supports".to_string(),
+        semantic_class: "evidential".to_string(),
+        why: Some("the deploy timing explains the retries".to_string()),
+        confidence: Some("high".to_string()),
+        sequence: None,
+    }];
+    let recorded = kernel.record(request).await.expect("the record lands");
+    assert_eq!(recorded.accepted_relations, 1);
+
+    let recall = kernel
+        .wake(MemoryWakeRequest {
+            about: "project:recorded".to_string(),
+            ..wake_request()
+        })
+        .await
+        .expect("the wake answers");
+    assert!(
+        recall.relationships.iter().any(|relationship| relationship
+            .source_node_id
+            .contains("observation:second")
+            && relationship.target_node_id.contains("observation:first")),
+        "the recorded link must come back through the contract: {:?}",
+        recall.relationships
+    );
+}
+
+#[tokio::test]
+async fn a_claimed_link_without_a_stated_reason_is_refused() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let kernel = EmbeddedKernel::open(directory.path()).expect("the kernel opens");
+
+    let mut request = record_request("record:contract:unreasoned", "The retries began.");
+    let mut second = request.entries[0].clone();
+    second.id = "observation:second".to_string();
+    request.entries.push(second);
+    request.relations = vec![MemoryRelationSpec {
+        from: "observation:second".to_string(),
+        to: "observation:first".to_string(),
+        rel: "supports".to_string(),
+        semantic_class: "evidential".to_string(),
+        why: None,
+        confidence: None,
+        sequence: None,
+    }];
+    let error = kernel
+        .record(request)
+        .await
+        .expect_err("an evidential link with no reason and no confidence must not land");
     assert!(!error.is_transient());
 }

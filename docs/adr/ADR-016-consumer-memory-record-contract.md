@@ -21,11 +21,16 @@ to write through a published surface or the contract boundary is fiction.
    same `ApiCapabilities`; the capability name is `record`.
 
 2. **Plain specs in, plain view out.** `MemoryRecordRequest` carries
-   dimensions, entries, evidence and provenance as owned plain types
-   (`Memory*Spec`), deliberately smaller than the kernel's ingest command:
-   no relations, no dry-run, no temporal coordinate refinements until a
-   consumer needs them. The answer is `RecordedMemoryView` — memory id,
-   accepted counts, read-after-write readiness, warnings.
+   dimensions, entries, relations, evidence and provenance as owned plain
+   types (`Memory*Spec`), deliberately smaller than the kernel's ingest
+   command: no dry-run, no temporal coordinate refinements, and a relation
+   subset (from, to, rel, class, why, confidence, sequence) until a consumer
+   needs more. Relations joined the contract with their first consumer — the
+   precedent candidate index publisher — exactly as this ADR intended; a
+   relation may join entries of the record or refs the memory already holds,
+   not evidence declared alongside, which the kernel resolves after
+   relations. The answer is `RecordedMemoryView` — memory id, accepted
+   counts, read-after-write readiness, warnings.
 
 3. **Replay-idempotent by contract.** A retry with the same `idempotency_key`
    and the same content answers with the recorded outcome; the same key with

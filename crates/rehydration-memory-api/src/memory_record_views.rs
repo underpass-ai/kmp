@@ -9,6 +9,7 @@ pub struct RecordedMemoryView {
     /// key — which is why a retried record answers with the same one.
     pub memory_id: String,
     pub accepted_entries: usize,
+    pub accepted_relations: usize,
     pub accepted_evidence: usize,
     /// Whether a recall issued now would already see this record. False means
     /// the write is committed but a projection still has to catch up.
@@ -28,6 +29,7 @@ mod tests {
             about: "project:checkout".to_string(),
             memory_id: "memory:record:1".to_string(),
             accepted_entries: 1,
+            accepted_relations: 1,
             accepted_evidence: 2,
             read_after_write_ready: true,
             warnings: vec!["one coordinate had no occurred_at".to_string()],

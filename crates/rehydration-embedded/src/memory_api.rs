@@ -77,6 +77,7 @@ impl MemoryRecordApi for EmbeddedKernel {
             about: outcome.about,
             memory_id: outcome.memory_id,
             accepted_entries: outcome.accepted.entries,
+            accepted_relations: outcome.accepted.relations,
             accepted_evidence: outcome.accepted.evidence,
             read_after_write_ready: outcome.read_after_write_ready,
             warnings: outcome.warnings,
@@ -124,7 +125,25 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
                     metadata: entry.metadata,
                 })
                 .collect(),
-            relations: Vec::new(),
+            relations: request
+                .relations
+                .into_iter()
+                .map(|relation| rehydration_application::MemoryRelationData {
+                    source_ref: relation.from,
+                    target_ref: relation.to,
+                    rel: relation.rel,
+                    semantic_class: relation.semantic_class,
+                    why: relation.why,
+                    evidence: None,
+                    confidence: relation.confidence,
+                    sequence: relation.sequence,
+                    motivation: None,
+                    method: None,
+                    decision_id: None,
+                    caused_by_node_id: None,
+                    coordinate: None,
+                })
+                .collect(),
             evidence: request
                 .evidence
                 .into_iter()
