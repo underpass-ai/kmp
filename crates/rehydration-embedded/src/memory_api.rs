@@ -96,7 +96,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
                     id: dimension.id,
                     kind: dimension.kind,
                     title: dimension.title,
-                    metadata: Default::default(),
+                    metadata: dimension.metadata,
                 })
                 .collect(),
             entries: request
@@ -118,7 +118,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
                             valid_from: None,
                             valid_until: None,
                             sequence: coordinate.sequence,
-                            rank: None,
+                            rank: coordinate.rank,
                             metadata: Default::default(),
                         })
                         .collect(),

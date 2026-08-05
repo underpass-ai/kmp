@@ -180,6 +180,7 @@ fn record_request(key: &str, text: &str) -> MemoryRecordRequest {
             id: "timeline:observed".to_string(),
             kind: "timeline".to_string(),
             title: None,
+            metadata: Default::default(),
         }],
         entries: vec![MemoryEntrySpec {
             id: "observation:first".to_string(),
@@ -190,6 +191,7 @@ fn record_request(key: &str, text: &str) -> MemoryRecordRequest {
                 scope_id: "timeline:observed".to_string(),
                 occurred_at: Some("2026-08-04T10:00:00Z".to_string()),
                 sequence: Some(1),
+                rank: None,
             }],
             metadata: Default::default(),
         }],
@@ -372,5 +374,19 @@ async fn a_claimed_link_without_a_stated_reason_is_refused() {
         .record(request)
         .await
         .expect_err("an evidential link with no reason and no confidence must not land");
+    assert!(!error.is_transient());
+}
+
+#[tokio::test]
+async fn a_zero_rank_is_refused_by_the_kernels_own_validation() {
+    let directory = tempfile::tempdir().expect("temporary directory");
+    let kernel = EmbeddedKernel::open(directory.path()).expect("the kernel opens");
+
+    let mut request = record_request("record:contract:ranked", "The retries began.");
+    request.entries[0].coordinates[0].rank = Some(0);
+    let error = kernel
+        .record(request)
+        .await
+        .expect_err("rank is one-based in the kernel, and the contract inherits that");
     assert!(!error.is_transient());
 }

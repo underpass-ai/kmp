@@ -12,6 +12,7 @@ pub struct MemoryDimensionSpec {
     pub id: String,
     pub kind: String,
     pub title: Option<String>,
+    pub metadata: BTreeMap<String, String>,
 }
 
 /// Where an entry sits in one dimension.
@@ -25,6 +26,10 @@ pub struct MemoryCoordinateSpec {
     pub occurred_at: Option<String>,
     /// Order within the scope, for entries whose sequence matters.
     pub sequence: Option<u32>,
+    /// Standing within the scope, for entries that are ranked rather than
+    /// ordered — a distinct temporal axis in the kernel, not sequence's
+    /// synonym: sequence says *when among peers*, rank says *how high*.
+    pub rank: Option<u32>,
 }
 
 /// One thing the memory should hold.
@@ -124,6 +129,7 @@ mod tests {
                 id: "timeline:work".to_string(),
                 kind: "timeline".to_string(),
                 title: None,
+                metadata: BTreeMap::new(),
             }],
             entries: vec![MemoryEntrySpec {
                 id: "observation:first".to_string(),
@@ -134,6 +140,7 @@ mod tests {
                     scope_id: "timeline:work".to_string(),
                     occurred_at: Some("2026-08-04T10:00:00Z".to_string()),
                     sequence: Some(1),
+                    rank: Some(1),
                 }],
                 metadata: BTreeMap::new(),
             }],
