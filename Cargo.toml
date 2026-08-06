@@ -23,6 +23,7 @@ members = [
     "crates/rehydration-tests-kernel",
     "crates/rehydration-tests-paper",
     "crates/rehydration-transport-grpc",
+    "crates/rehydration-viewer",
 ]
 resolver = "3"
 
@@ -56,6 +57,7 @@ rehydration-proto-mapping = { path = "crates/rehydration-proto-mapping" }
 rehydration-testkit = { path = "crates/rehydration-testkit" }
 rehydration-tests-shared = { path = "crates/rehydration-tests-shared" }
 rehydration-transport-grpc = { path = "crates/rehydration-transport-grpc" }
+rehydration-viewer = { path = "crates/rehydration-viewer" }
 prost = "0.13.5"
 prost-types = "0.13.5"
 sha2 = "0.10"

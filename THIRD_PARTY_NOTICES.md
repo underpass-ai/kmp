@@ -31,6 +31,12 @@ their authors and contributors.
 | [prost-build](https://crates.io/crates/prost-build) | Apache-2.0 | Protocol Buffers code generation |
 | [tonic-build](https://crates.io/crates/tonic-build) | MIT | gRPC code generation |
 
+## Vendored Web Assets
+
+| Library | License | Purpose |
+|---------|---------|---------|
+| [pixi.js](https://pixijs.com) 8.19.0 | MIT | WebGL renderer for the embedded memory viewer; vendored bundle, hash-pinned and supply-chain-verified in `crates/rehydration-viewer/ui/vendor/VENDOR.md` |
+
 ## Dev/Test Dependencies
 
 | Crate | License | Purpose |

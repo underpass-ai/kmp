@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>KMP Memory Viewer</title>
+<link rel="stylesheet" href="/assets/viewer.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">KMP Memory</span>
+      <span id="data-dir" class="muted mono" title="data directory"></span>
+    </div>
+    <nav id="tabs" role="tablist">
+      <button class="tab active" data-tab="graph" role="tab" aria-selected="true">Graph</button>
+      <button class="tab" data-tab="timeline" role="tab" aria-selected="false">Timeline</button>
+      <button class="tab" data-tab="trace" role="tab" aria-selected="false">Trace</button>
+    </nav>
+    <div class="top-controls">
+      <label class="ctl">depth
+        <select id="ctl-depth">
+          <option>1</option><option selected>2</option><option>3</option><option>4</option>
+        </select>
+      </label>
+      <label class="ctl">budget
+        <select id="ctl-budget">
+          <option value="4096">4k</option>
+          <option value="16384" selected>16k</option>
+          <option value="65536">64k</option>
+        </select>
+      </label>
+      <label class="ctl">scope
+        <select id="ctl-scope">
+          <option value="current" selected>about</option>
+          <option value="all">all abouts</option>
+        </select>
+      </label>
+      <button id="btn-replay" class="btn" title="replay the memory in temporal order">▶ Replay</button>
+      <button id="btn-reload" class="btn" title="reload the graph">Reload</button>
+      <button id="btn-theme" class="btn" title="theme: auto / light / dark">Auto</button>
+    </div>
+  </header>
+
+  <aside id="sidebar">
+    <input id="search" type="search" placeholder="Search nodes and abouts…" autocomplete="off">
+    <h2 class="pane-title">Abouts</h2>
+    <ul id="about-list" class="item-list"></ul>
+    <h2 class="pane-title">Legend <span class="muted">(node kind)</span></h2>
+    <ul id="legend" class="legend-list"></ul>
+    <ul id="search-results" class="item-list"></ul>
+  </aside>
+
+  <main id="stage">
+    <canvas id="graph-canvas" role="img" aria-label="memory graph"></canvas>
+
+    <section id="timeline-panel" class="stage-panel" hidden>
+      <div class="panel-controls">
+        <label class="ctl">direction
+          <select id="tl-direction">
+            <option value="goto" selected>known at</option>
+            <option value="near">near</option>
+            <option value="rewind">rewind</option>
+            <option value="forward">forward</option>
+          </select>
+        </label>
+        <input id="tl-time" type="text" class="mono" placeholder="2026-08-06T12:00:00Z" size="22">
+        <button id="tl-now" class="btn">Now</button>
+        <label class="ctl">before <input id="tl-before" type="number" min="0" max="256" value="8"></label>
+        <label class="ctl">after <input id="tl-after" type="number" min="0" max="256" value="8"></label>
+        <button id="tl-apply" class="btn btn-primary">Apply</button>
+      </div>
+      <p id="tl-status" class="muted"></p>
+      <ol id="tl-entries" class="tl-list"></ol>
+    </section>
+
+    <section id="trace-panel" class="stage-panel" hidden>
+      <div class="panel-controls">
+        <label class="ctl wide">from <input id="tr-from" type="text" class="mono" placeholder="node id"></label>
+        <label class="ctl wide">to <input id="tr-to" type="text" class="mono" placeholder="node id"></label>
+        <button id="tr-use" class="btn" title="fill from the selected node">Use selection</button>
+        <button id="tr-apply" class="btn btn-primary">Trace</button>
+        <button id="tr-clear" class="btn">Clear</button>
+      </div>
+      <p id="tr-status" class="muted"></p>
+      <ol id="tr-path" class="tl-list"></ol>
+      <details id="tr-rendered-box"><summary>Rendered path context</summary>
+        <pre id="tr-rendered" class="rendered mono"></pre>
+      </details>
+    </section>
+
+    <div id="tooltip" class="tooltip" hidden></div>
+
+    <div id="playcaption" class="playcaption" hidden></div>
+    <div id="playbar" class="playbar" hidden>
+      <button id="pb-prev" class="btn" title="previous step">⏮</button>
+      <button id="pb-toggle" class="btn btn-primary" title="play / pause">⏸</button>
+      <button id="pb-next" class="btn" title="next step">⏭</button>
+      <input id="pb-scrub" type="range" min="0" max="0" value="0">
+      <span id="pb-label" class="muted mono"></span>
+      <button id="pb-close" class="btn" title="exit replay">✕</button>
+    </div>
+  </main>
+
+  <aside id="detail">
+    <p id="detail-empty" class="muted">Select a node to inspect it.</p>
+    <div id="detail-body" hidden>
+      <div class="node-head">
+        <span id="d-kind" class="pill"></span>
+        <span id="d-status" class="pill pill-muted"></span>
+      </div>
+      <h2 id="d-title"></h2>
+      <p id="d-id" class="mono muted"></p>
+      <p id="d-summary"></p>
+      <div id="d-labels" class="label-row"></div>
+      <details open><summary>Detail</summary><pre id="d-detail" class="rendered mono"></pre></details>
+      <details><summary>Properties</summary><table id="d-props" class="kv"></table></details>
+      <details><summary>Coordinates</summary><ul id="d-coords" class="coord-list mono"></ul></details>
+      <h3 class="pane-title">Incoming</h3>
+      <ul id="d-incoming" class="rel-list"></ul>
+      <h3 class="pane-title">Outgoing</h3>
+      <ul id="d-outgoing" class="rel-list"></ul>
+    </div>
+    <div id="context-body" hidden>
+      <h2>Rendered context</h2>
+      <p class="muted">What <span class="mono">kernel_wake</span> would hand a model,
+        verbatim; the hash below covers this text exactly.</p>
+      <p id="ctx-hash" class="mono muted"></p>
+      <pre id="ctx-content" class="rendered mono"></pre>
+    </div>
+  </aside>
+
+  <footer id="statusbar">
+    <div class="stat" title="revision of the memory this recall answered from">
+      <span class="stat-label">rev</span><span id="s-revision" class="stat-value mono">–</span>
+    </div>
+    <div class="stat" title="hash of the memory snapshot behind this recall">
+      <span class="stat-label">snapshot</span><span id="s-hash" class="stat-value mono">–</span>
+    </div>
+    <div class="stat"><span class="stat-label">nodes</span><span id="s-nodes" class="stat-value">–</span></div>
+    <div class="stat"><span class="stat-label">edges</span><span id="s-edges" class="stat-value">–</span></div>
+    <div class="stat" title="tokens of the rendered context">
+      <span class="stat-label">tokens</span><span id="s-tokens" class="stat-value">–</span>
+    </div>
+    <div class="stat" title="raw tokens the rendering stands in for ÷ tokens it costs">
+      <span class="stat-label">compression</span><span id="s-compression" class="stat-value">–</span>
+    </div>
+    <div class="stat" title="share of relations that carry causal explanation">
+      <span class="stat-label">causal</span><span id="s-causal" class="stat-value">–</span>
+    </div>
+    <div class="stat" title="share of the budget spent on low-signal content">
+      <span class="stat-label">noise</span><span id="s-noise" class="stat-value">–</span>
+    </div>
+    <button id="btn-context" class="btn">Context</button>
+    <span id="error-slot" class="error" role="alert"></span>
+  </footer>
+</div>
+<script src="/assets/pixi.min.js" defer></script>
+<script src="/assets/pixi-unsafe-eval.min.js" defer></script>
+<script src="/assets/viewer.js" defer></script>
+</body>
+</html>
