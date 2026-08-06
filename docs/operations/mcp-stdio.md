@@ -105,6 +105,13 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
   coordinates. Temporal `include.raw_refs/evidence/relations` are supported.
 - Entry metadata and evidence metadata/source round-trip through typed reads;
   evidence `supports` contains the refs reached by stored support relations.
+- The relation vocabulary is self-documenting: `tools/list` carries, on
+  `connect_to.rel` and the ingest `rel` field, a catalog generated from the
+  kernel's writer spec — every type with its quality tier (rich/anemic), its
+  allowed semantic classes, and when to use it. A model operating KMP reads
+  the doctrine in the schema itself; see the
+  [usage guide](../usage-guide.md#relations-carry-the-why) and
+  [RELATION_EXPLANATION_MODEL.md](../research/RELATION_EXPLANATION_MODEL.md).
 - Tool failures set `isError=true` and include
   `structuredContent.error.{code,message}` while retaining textual MCP
   content for compatibility.

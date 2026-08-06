@@ -496,6 +496,40 @@ Client                          Kernel
 event appends but the outcome publish fails (network issue), the next retry
 will be treated as a new request. The kernel logs a warning when this happens.
 
+## Relations Carry the Why
+
+The most important quality lever in KMP memory is not the nodes — it is the
+relations. A graph where every link says `related_to` or `supports_answer` is
+connected but explains nothing; a graph whose links carry their reason can be
+traversed to answer *what happened, in what order, and why each decision was
+taken*.
+
+The rules, enforced by the writer and taught by the MCP tool schema itself
+(the `connect_to.rel` documentation is generated from the kernel's own
+relation spec, so it cannot drift):
+
+- **Every non-structural relation requires `why`, `evidence` and
+  `confidence`.** A link you cannot justify is a link you should not write.
+- **Prefer rich types** — `triggers`, `chosen_because`, `contradicts`,
+  `supports`, `verified_by`, `supersedes`, `depends_on`, `derived_from`,
+  `satisfies_constraint`, `violates_constraint`, `confirms_selection`, … Each
+  type has a fixed set of allowed semantic classes (causal, motivational,
+  evidential, procedural, constraint) and a documented reason to exist.
+- **Anemic types (`follows`, `answers`, `uses_background`) are an honest
+  fallback**, the explicit signal that the writer could not prove a richer
+  semantic dependency. They are never a default, and never to be upgraded
+  into causal or motivational language without proof.
+- **Read before you link.** A rich relation to existing memory declares the
+  refs it inspected (`read_context.inspected_refs`); `kernel_write_memory`
+  reports per-relation quality (`rich`/`anemic`/`suspect`, `proof_complete`)
+  so the writer — human or model — is accountable for every link.
+- Richer explanation fields are available where the semantics earn them:
+  `motivation`, `method`, `decision_id`, `caused_by_node_id`, and the
+  relation's own temporal coordinate.
+
+The full model is specified in
+[research/RELATION_EXPLANATION_MODEL.md](research/RELATION_EXPLANATION_MODEL.md).
+
 ## Further Reading
 
 - [GraphBatch Quickstart](graph-batch-quickstart.md) — fastest model-driven path
