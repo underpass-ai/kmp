@@ -169,10 +169,16 @@ function upsertNode(view) {
 }
 
 function placeNear(node, anchor) {
-  const angle = Math.random() * 2 * Math.PI;
-  const radius = 60 + Math.random() * 60;
+  const angle = randomUnit() * 2 * Math.PI;
+  const radius = 60 + randomUnit() * 60;
   node.x = (anchor ? anchor.x : 0) + Math.cos(angle) * radius;
   node.y = (anchor ? anchor.y : 0) + Math.sin(angle) * radius;
+}
+
+function randomUnit() {
+  const sample = new Uint32Array(1);
+  crypto.getRandomValues(sample);
+  return sample[0] / 0x100000000;
 }
 
 function addEdges(edges) {
@@ -283,8 +289,8 @@ function simTick() {
       let dy = a.y - b.y;
       let d2 = dx * dx + dy * dy;
       if (d2 < 1) {
-        dx = Math.random() - 0.5;
-        dy = Math.random() - 0.5;
+        dx = randomUnit() - 0.5;
+        dy = randomUnit() - 0.5;
         d2 = 1;
       }
       const force = (SIM.repulsion * alpha) / d2;
@@ -967,7 +973,7 @@ function renderDetail(inspect) {
   $("d-detail").textContent =
     (inspect.detail && inspect.detail.detail) || graph.details.get(node.id) || "(no detail recorded)";
 
-  const props = $("d-props");
+  const props = $("d-props-body");
   props.textContent = "";
   for (const [key, value] of Object.entries(node.properties)) {
     const row = el("tr");

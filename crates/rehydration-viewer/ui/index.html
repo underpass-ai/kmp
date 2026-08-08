@@ -45,7 +45,8 @@
     </div>
   </header>
 
-  <aside id="sidebar">
+  <aside id="sidebar" aria-label="Memory navigation">
+    <label class="sr-only" for="search">Search nodes and abouts</label>
     <input id="search" type="search" placeholder="Search nodes and abouts…" autocomplete="off">
     <h2 class="pane-title">Abouts</h2>
     <ul id="about-list" class="item-list"></ul>
@@ -55,7 +56,9 @@
   </aside>
 
   <main id="stage">
-    <canvas id="graph-canvas" role="img" aria-label="memory graph"></canvas>
+    <canvas id="graph-canvas" aria-label="Interactive memory graph">
+      Interactive memory graph. Use the navigation and detail panels to inspect nodes.
+    </canvas>
 
     <section id="timeline-panel" class="stage-panel" hidden>
       <div class="panel-controls">
@@ -67,6 +70,7 @@
             <option value="forward">forward</option>
           </select>
         </label>
+        <label class="sr-only" for="tl-time">Timeline timestamp</label>
         <input id="tl-time" type="text" class="mono" placeholder="2026-08-06T12:00:00Z" size="22">
         <button id="tl-now" class="btn">Now</button>
         <label class="ctl">before <input id="tl-before" type="number" min="0" max="256" value="8"></label>
@@ -99,25 +103,29 @@
       <button id="pb-prev" class="btn" title="previous step">⏮</button>
       <button id="pb-toggle" class="btn btn-primary" title="play / pause">⏸</button>
       <button id="pb-next" class="btn" title="next step">⏭</button>
+      <label class="sr-only" for="pb-scrub">Replay position</label>
       <input id="pb-scrub" type="range" min="0" max="0" value="0">
       <span id="pb-label" class="muted mono"></span>
       <button id="pb-close" class="btn" title="exit replay">✕</button>
     </div>
   </main>
 
-  <aside id="detail">
+  <aside id="detail" aria-label="Memory detail">
     <p id="detail-empty" class="muted">Select a node to inspect it.</p>
     <div id="detail-body" hidden>
       <div class="node-head">
         <span id="d-kind" class="pill"></span>
         <span id="d-status" class="pill pill-muted"></span>
       </div>
-      <h2 id="d-title"></h2>
+      <h2 id="d-title">Selected node</h2>
       <p id="d-id" class="mono muted"></p>
       <p id="d-summary"></p>
       <div id="d-labels" class="label-row"></div>
       <details open><summary>Detail</summary><pre id="d-detail" class="rendered mono"></pre></details>
-      <details><summary>Properties</summary><table id="d-props" class="kv"></table></details>
+      <details><summary>Properties</summary><table id="d-props" class="kv">
+        <thead class="sr-only"><tr><th scope="col">Property</th><th scope="col">Value</th></tr></thead>
+        <tbody id="d-props-body"></tbody>
+      </table></details>
       <details><summary>Coordinates</summary><ul id="d-coords" class="coord-list mono"></ul></details>
       <h3 class="pane-title">Incoming</h3>
       <ul id="d-incoming" class="rel-list"></ul>
