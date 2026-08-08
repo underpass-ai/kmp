@@ -835,6 +835,10 @@ function updateTooltip(sx, sy) {
     tooltip.append(el("div", "tt-title", `${edge.rel} (${edge.class})`));
     tooltip.append(el("div", "tt-sub", `${edge.source} → ${edge.target}`));
     if (edge.why) tooltip.append(el("div", "tt-quote", edge.why));
+    if (edge.motivation) tooltip.append(el("div", "tt-quote", `motivación: ${edge.motivation}`));
+    if (edge.method) tooltip.append(el("div", "tt-sub", `método: ${edge.method}`));
+    if (edge.evidence) tooltip.append(el("div", "tt-sub", `evidencia: ${edge.evidence}`));
+    if (edge.confidence) tooltip.append(el("div", "tt-sub", `confianza: ${edge.confidence}`));
   }
   tooltip.hidden = false;
   positionTooltip(sx, sy);
@@ -991,24 +995,56 @@ function renderDetail(inspect) {
   renderRelationList($("d-outgoing"), inspect.outgoing, "target");
 }
 
+/* The relation is where KMP carries the why: render the WHOLE explanation
+   the recorder gave — rationale, evidence, confidence, method, motivation,
+   causal anchors and the relation's own temporal coordinate. */
 function renderRelationList(list, relations, counterpart) {
   list.textContent = "";
   if (!relations.length) {
     list.append(el("li", "muted", "none"));
     return;
   }
+  const nodeLink = (id) => {
+    const link = el("a", "rel-target mono", id);
+    link.addEventListener("click", () => {
+      selectNode(id).then(() => centerOn(id));
+    });
+    return link;
+  };
   for (const relation of relations) {
     const item = el("li");
     const head = el("div", "rel-head");
     head.append(el("span", "rel-type", relation.rel), el("span", "pill pill-muted", relation.class));
-    const target = el("a", "rel-target mono", relation[counterpart]);
-    target.addEventListener("click", () => {
-      selectNode(relation[counterpart]).then(() => centerOn(relation[counterpart]));
-    });
-    head.append(target);
+    if (relation.confidence) {
+      head.append(el("span", "pill pill-muted", `confidence: ${relation.confidence}`));
+    }
+    head.append(nodeLink(relation[counterpart]));
+    if (relation.coordinate || relation.dimension) {
+      const c = relation.coordinate || relation;
+      head.append(
+        el(
+          "span",
+          "pill pill-muted mono",
+          `${c.dimension}${c.sequence !== undefined ? " #" + c.sequence : ""}${
+            c.occurred_at ? " " + c.occurred_at.slice(11, 16) : ""
+          }`
+        )
+      );
+    }
     item.append(head);
     if (relation.why) item.append(el("p", "rel-why", relation.why));
-    if (relation.evidence) item.append(el("p", "rel-evidence", `evidence: ${relation.evidence}`));
+    if (relation.motivation) item.append(el("p", "rel-why", `motivación: ${relation.motivation}`));
+    if (relation.method) item.append(el("p", "rel-evidence", `método: ${relation.method}`));
+    if (relation.evidence) item.append(el("p", "rel-evidence", `evidencia: ${relation.evidence}`));
+    const anchors = el("p", "rel-evidence");
+    if (relation.decision_id) {
+      anchors.append(document.createTextNode("decisión: "), nodeLink(relation.decision_id));
+    }
+    if (relation.caused_by) {
+      if (anchors.childNodes.length) anchors.append(document.createTextNode(" · "));
+      anchors.append(document.createTextNode("causado por: "), nodeLink(relation.caused_by));
+    }
+    if (anchors.childNodes.length) item.append(anchors);
     list.append(item);
   }
 }
