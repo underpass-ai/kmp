@@ -1,6 +1,7 @@
 use rehydration_mcp::{
-    GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,
-    GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpServer, MCP_BACKEND_ENV,
+    EmbeddedKernelMcpBackend, GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV,
+    GRPC_TLS_DOMAIN_NAME_ENV, GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpServer,
+    MCP_BACKEND_ENV,
 };
 use std::io::{self, BufRead, Write};
 use tracing_subscriber::layer::SubscriberExt;
@@ -17,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _log_guard = init_tracing();
 
-    let server = match KernelMcpServer::try_from_env() {
+    let server = match server_from_env().await {
         Ok(server) => server,
         Err(message) => {
             eprintln!("rehydration-mcp: {message}");
@@ -58,6 +59,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    Ok(())
+}
+
+/// Builds the MCP server, mounting the local web viewer over the embedded
+/// backend when `REHYDRATION_VIEWER_ADDR` asks for it. The viewer must share
+/// this process's kernel: the embedded store is single-writer (ADR-011), so
+/// an in-process mount is the only way to watch a live session.
+async fn server_from_env() -> Result<KernelMcpServer, String> {
+    let viewer_addr = std::env::var(rehydration_viewer::VIEWER_ADDR_ENV)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+    let backend_is_embedded = std::env::var(MCP_BACKEND_ENV)
+        .map(|value| value.trim().eq_ignore_ascii_case("embedded"))
+        .unwrap_or(false);
+
+    let Some(addr) = viewer_addr else {
+        return KernelMcpServer::try_from_env();
+    };
+    if !backend_is_embedded {
+        return Err(format!(
+            "{} is set but {MCP_BACKEND_ENV} is not `embedded`; the viewer mounts over the \
+             in-process kernel only",
+            rehydration_viewer::VIEWER_ADDR_ENV
+        ));
+    }
+
+    let resolved = rehydration_embedded::resolve_data_dir_from_env().map_err(|e| e.to_string())?;
+    let backend = EmbeddedKernelMcpBackend::open(resolved.path())?;
+    spawn_viewer(backend.kernel(), &addr).await?;
+    Ok(KernelMcpServer::with_backend(backend))
+}
+
+/// Binds the viewer on `addr` (loopback only) and serves it in the
+/// background for the life of this process.
+async fn spawn_viewer(
+    kernel: &rehydration_embedded::EmbeddedKernel,
+    addr: &str,
+) -> Result<(), String> {
+    let viewer = std::sync::Arc::new(rehydration_viewer::MemoryViewerServer::new(
+        kernel.service(),
+        Some(kernel.data_dir().display().to_string()),
+    ));
+    let listener = rehydration_viewer::bind_loopback(addr)
+        .await
+        .map_err(|error| format!("viewer could not bind `{addr}`: {error}"))?;
+    let local_addr = listener
+        .local_addr()
+        .map_err(|error| format!("viewer listener has no local address: {error}"))?;
+    eprintln!("rehydration-mcp: memory viewer at http://{local_addr}/");
+    tokio::spawn(async move {
+        if let Err(error) = viewer.serve(listener).await {
+            tracing::error!(%error, "memory viewer stopped");
+        }
+    });
     Ok(())
 }
 
@@ -116,10 +172,12 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
 
 /// Non-MCP maintenance surface (everything is a process — no library):
 /// `export <file>` and `import <file>` move the append-only event log
-/// between embedded stores; stdout carries the command result only.
+/// between embedded stores, `viewer [addr]` serves the local web viewer over
+/// the store; stdout carries the command result only.
 async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
     match command {
         "export" | "import" => {}
+        "viewer" => return run_viewer_command(path).await,
         "--version" | "-V" | "version" => {
             println!(
                 "rehydration-mcp {} (store format {})",
@@ -131,7 +189,8 @@ async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
         other => {
             eprintln!(
                 "rehydration-mcp: unknown command `{other}`; run without arguments for MCP \
-                 stdio mode, or use `export <file>` / `import <file>` / `--version`"
+                 stdio mode, or use `export <file>` / `import <file>` / `viewer [addr]` / \
+                 `--version`"
             );
             return 2;
         }
@@ -204,4 +263,38 @@ async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
             }
         }
     }
+}
+
+/// Standalone viewer over the env-resolved data dir (same resolution as
+/// `export`/`import`). Only works while no agent session holds the store —
+/// the embedded engine is single-writer per ADR-011; to watch a live session,
+/// set `REHYDRATION_VIEWER_ADDR` on that session instead.
+async fn run_viewer_command(addr: Option<&str>) -> i32 {
+    // `viewer` with no argument honours the same env the MCP mode uses.
+    let addr = addr
+        .map(ToString::to_string)
+        .or_else(|| std::env::var(rehydration_viewer::VIEWER_ADDR_ENV).ok())
+        .unwrap_or_else(|| rehydration_viewer::DEFAULT_VIEWER_ADDR.to_string());
+    let resolved = match rehydration_embedded::resolve_data_dir_from_env() {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            eprintln!("rehydration-mcp: {error}");
+            return 2;
+        }
+    };
+    let kernel = match rehydration_embedded::EmbeddedKernel::open(resolved.path()) {
+        Ok(kernel) => kernel,
+        Err(error) => {
+            eprintln!("rehydration-mcp: {error}");
+            return 2;
+        }
+    };
+    if let Err(message) = spawn_viewer(&kernel, &addr).await {
+        eprintln!("rehydration-mcp: {message}");
+        return 2;
+    }
+    eprintln!("rehydration-mcp: serving the viewer until this process is stopped (Ctrl-C)");
+    // The viewer task owns the listener; keep the process alive for it.
+    std::future::pending::<()>().await;
+    0
 }

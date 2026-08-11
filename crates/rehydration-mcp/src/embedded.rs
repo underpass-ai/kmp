@@ -44,6 +44,13 @@ impl EmbeddedKernelMcpBackend {
     pub fn data_dir(&self) -> &str {
         &self.data_dir
     }
+
+    /// The opened kernel, for composition roots that mount additional
+    /// in-process surfaces (the viewer) over this same session's store —
+    /// the only way to observe it live under the ADR-011 single-writer lock.
+    pub fn kernel(&self) -> &EmbeddedKernel {
+        &self.kernel
+    }
 }
 
 impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {

@@ -52,6 +52,7 @@ Current integration stance:
 | [kubernetes-deploy.md](operations/kubernetes-deploy.md) | Helm deployment, values, TLS, observability stack |
 | [container-image.md](operations/container-image.md) | OCI image, environment variables, tags |
 | [mcp-stdio.md](operations/mcp-stdio.md) | Local stdio MCP adapter for Kernel Memory Protocol tools |
+| [viewer.md](operations/viewer.md) | Local web viewer: graph, notes, timeline, traces over the embedded kernel |
 | [kubernetes-transport-smoke.md](operations/kubernetes-transport-smoke.md) | In-cluster TLS smoke test |
 | [deployment-boundary.md](operations/deployment-boundary.md) | What this repo owns vs. what it does not |
 
@@ -66,6 +67,10 @@ Current integration stance:
 | [ADR-011](adr/ADR-011-embedded-concurrency-model.md) | Embedded single-writer lock, fail-fast; daemon as evolution |
 | [ADR-012](adr/ADR-012-embedded-data-directory.md) | Embedded data dir: env override, project `.kernel/`, XDG fallback |
 | [ADR-013](adr/ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `rehydration-mcp` |
+| [ADR-014](adr/ADR-014-embedded-quality-telemetry.md) | Separate fail-open redb journal for embedded quality telemetry |
+| [ADR-015](adr/ADR-015-consumer-memory-api-contract.md) | `rehydration-memory-api` — the contract an embedding product compiles against |
+| [ADR-016](adr/ADR-016-consumer-memory-record-contract.md) | The consumer contract gains a record surface |
+| [ADR-017](adr/ADR-017-embedded-memory-viewer.md) | In-process web viewer over the embedded kernel |
 
 Six earlier decisions (command/query split, projection model, TLS, compatibility
 removal, multi-resolution tiers) are documented in PRs but not yet written as

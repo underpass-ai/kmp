@@ -2336,6 +2336,7 @@ dependencies = [
  "rehydration-embedded",
  "rehydration-proto",
  "rehydration-proto-mapping",
+ "rehydration-viewer",
  "serde_json",
  "sha2",
  "tempfile",
@@ -2542,6 +2543,19 @@ dependencies = [
  "tokio-stream",
  "tonic 0.12.3",
  "tracing",
+]
+
+[[package]]
+name = "rehydration-viewer"
+version = "0.1.0"
+dependencies = [
+ "rehydration-application",
+ "rehydration-domain",
+ "rehydration-embedded",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]

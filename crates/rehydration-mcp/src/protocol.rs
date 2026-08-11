@@ -83,11 +83,16 @@ pub(crate) fn tools_list_result() -> Value {
                                         "properties": {
                                             "from": string_schema("Source memory entry id."),
                                             "to": string_schema("Target memory entry id."),
-                                            "rel": string_schema("Relationship type."),
-                                            "class": {
+                                            "rel": {
                                                 "type": "string",
-                                                "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"]
+                                                "minLength": 1,
+                                                "description": relation_vocabulary_description(
+                                                    "Relationship type. Unknown extension types \
+                                                     are preserved but carry no writer spec; \
+                                                     prefer the cataloged vocabulary."
+                                                )
                                             },
+                                            "class": semantic_class_schema(),
                                             "why": string_schema("Optional relation rationale; required for non-structural relations unless evidence is set."),
                                             "evidence": string_schema("Optional relation evidence; required for non-structural relations unless why is set."),
                                             "confidence": {
@@ -339,12 +344,12 @@ fn write_memory_schema() -> Value {
                         "ref": string_schema("Existing memory ref this new memory connects to."),
                         "rel": {
                             "type": "string",
-                            "enum": writer_relation_names()
+                            "enum": writer_relation_names(),
+                            "description": relation_vocabulary_description(
+                                "Relation type for this link."
+                            )
                         },
-                        "class": {
-                            "type": "string",
-                            "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"]
-                        },
+                        "class": semantic_class_schema(),
                         "why": string_schema("Why this relation exists. Required for non-structural relations."),
                         "evidence": string_schema("Evidence for this relation. Required for non-structural relations."),
                         "confidence": {
@@ -601,6 +606,52 @@ fn writer_relation_names() -> Vec<&'static str> {
         .collect()
 }
 
+/// The relation vocabulary, projected from the kernel's own writer spec so
+/// this documentation can never drift from what the kernel validates. The
+/// relation is where KMP carries the why; a model that only sees a bare enum
+/// writes connected-but-unexplained memory, which is the failure mode the
+/// spec exists to prevent.
+fn relation_vocabulary_description(header: &str) -> String {
+    let mut description = format!(
+        "{header} The relation carries the explanation: non-structural classes require why, \
+         evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
+         when no richer semantic dependency can be proven, never a default. Vocabulary \
+         (quality; allowed classes; when to use):"
+    );
+    for spec in KnownMemoryRelationType::writer_relation_types()
+        .iter()
+        .filter_map(|relation_type| relation_type.writer_spec())
+    {
+        let classes = spec
+            .allowed_classes()
+            .iter()
+            .map(|class| class.as_str())
+            .collect::<Vec<_>>()
+            .join("|");
+        description.push_str(&format!(
+            " {} ({}; {}; {}).",
+            spec.relation_type().as_str(),
+            spec.quality().as_str(),
+            classes,
+            spec.reason()
+        ));
+    }
+    description
+}
+
+fn semantic_class_schema() -> Value {
+    json!({
+        "type": "string",
+        "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"],
+        "description": "What the link explains: structural = containment/membership, no proof \
+                        required; causal = one memory triggered or produced another; \
+                        motivational = one memory justifies or authorizes another; procedural = \
+                        how something was executed, or plain succession; evidential = validates, \
+                        proves, contradicts or verifies; constraint = limits or shapes another \
+                        memory."
+    })
+}
+
 fn budget_schema() -> Value {
     json!({
         "type": "object",
@@ -746,6 +797,46 @@ mod tests {
         );
         assert_eq!(tools[4]["name"], "kernel_goto");
         assert_eq!(tools[4]["inputSchema"]["required"][1], "at");
+    }
+
+    /// The tool documentation is generated from the writer spec; this pins
+    /// that every cataloged type appears with its quality tier, in both the
+    /// writer's and the batch surface, so a model reading `tools/list` learns
+    /// the vocabulary the kernel will actually validate.
+    #[test]
+    fn relation_vocabulary_documentation_matches_the_writer_spec() {
+        let tools = tools_list_result();
+        let writer_doc = tools["tools"][1]["inputSchema"]["properties"]["connect_to"]["items"]
+            ["properties"]["rel"]["description"]
+            .as_str()
+            .expect("writer rel carries generated documentation")
+            .to_string();
+        let ingest_doc = tools["tools"][0]["inputSchema"]["properties"]["memory"]["properties"]
+            ["relations"]["items"]["properties"]["rel"]["description"]
+            .as_str()
+            .expect("ingest rel carries generated documentation")
+            .to_string();
+
+        for relation_type in KnownMemoryRelationType::writer_relation_types() {
+            let spec = relation_type
+                .writer_spec()
+                .expect("writer relation types carry a spec");
+            for doc in [&writer_doc, &ingest_doc] {
+                assert!(
+                    doc.contains(&format!(
+                        "{} ({};",
+                        spec.relation_type().as_str(),
+                        spec.quality().as_str()
+                    )),
+                    "documentation names `{}` with its quality tier",
+                    spec.relation_type().as_str()
+                );
+            }
+        }
+        assert!(
+            writer_doc.contains("anemic types are an honest fallback"),
+            "documentation states the anemic-fallback doctrine"
+        );
     }
 
     #[test]

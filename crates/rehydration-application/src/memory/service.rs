@@ -71,6 +71,12 @@ where
         Ok(outcome)
     }
 
+    /// The abouts the memory currently indexes, for consumers that render an
+    /// index of what can be recalled — a viewer's sidebar, a CLI listing.
+    pub async fn list_abouts(&self) -> Result<Vec<String>, ApplicationError> {
+        self.query_application.list_memory_abouts().await
+    }
+
     pub async fn wake(&self, query: WakeMemoryQuery) -> Result<GetContextResult, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
