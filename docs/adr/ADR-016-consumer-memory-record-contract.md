@@ -4,11 +4,11 @@ Date: 2026-08-05. Status: accepted.
 
 ## Context
 
-ADR-015 published `rehydration-memory-api` as the consumer contract, reads
+ADR-015 published `kmp-memory-api` as the consumer contract, reads
 only: `wake` and `ask`. Its doc said ingestion "has its own commands,
 idempotency and provenance inside the kernel; a consumer reaches them through
 the kernel's own surfaces" — which, for an embedding product, meant deep
-imports of `rehydration-application` types. The first real consumer pipeline
+imports of `kmp-application` types. The first real consumer pipeline
 (an embedding product applying its own durable outbox into the kernel) needs
 to write through a published surface or the contract boundary is fiction.
 

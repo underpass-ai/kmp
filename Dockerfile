@@ -11,30 +11,30 @@ COPY api ./api
 COPY crates ./crates
 
 RUN cargo build --locked --release \
-    -p rehydration-server --bin rehydration-server \
-    -p rehydration-transport-grpc --bin runtime_reference_client
+    -p kmp-server --bin kmp-server \
+    -p kmp-transport-grpc --bin runtime_reference_client
 
 FROM debian:bookworm-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tini \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --create-home --home-dir /home/rehydration --shell /usr/sbin/nologin rehydration
+    && useradd --system --create-home --home-dir /home/kmp --shell /usr/sbin/nologin kmp
 
-COPY --from=builder /workspace/target/release/rehydration-server /usr/local/bin/rehydration-server
+COPY --from=builder /workspace/target/release/kmp-server /usr/local/bin/kmp-server
 COPY --from=builder /workspace/target/release/runtime_reference_client /usr/local/bin/runtime-reference-client
 
-ENV REHYDRATION_SERVICE_NAME=rehydration-kernel \
-    REHYDRATION_GRPC_BIND=0.0.0.0:50054 \
-    REHYDRATION_GRAPH_URI=neo4j://neo4j:7687 \
-    REHYDRATION_DETAIL_URI=redis://valkey:6379 \
-    REHYDRATION_SNAPSHOT_URI=redis://valkey:6379 \
-    REHYDRATION_RUNTIME_STATE_URI=redis://valkey:6379 \
-    REHYDRATION_EVENTS_PREFIX=rehydration \
+ENV KMP_SERVICE_NAME=kmp \
+    KMP_GRPC_BIND=0.0.0.0:50054 \
+    KMP_GRAPH_URI=neo4j://neo4j:7687 \
+    KMP_DETAIL_URI=redis://valkey:6379 \
+    KMP_SNAPSHOT_URI=redis://valkey:6379 \
+    KMP_RUNTIME_STATE_URI=redis://valkey:6379 \
+    KMP_EVENTS_PREFIX=rehydration \
     NATS_URL=nats://nats:4222
 
 EXPOSE 50054
 
-USER rehydration
+USER kmp
 
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/rehydration-server"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/kmp-server"]

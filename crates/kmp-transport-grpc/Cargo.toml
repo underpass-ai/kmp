@@ -1,0 +1,32 @@
+[package]
+name = "kmp-transport-grpc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+async-nats = "0.46.0"
+kmp-application.workspace = true
+kmp-config.workspace = true
+kmp-domain.workspace = true
+kmp-ports.workspace = true
+kmp-proto.workspace = true
+kmp-proto-mapping.workspace = true
+prost-types.workspace = true
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
+serde.workspace = true
+serde_json.workspace = true
+tonic.workspace = true
+tokio.workspace = true
+opentelemetry.workspace = true
+tracing.workspace = true
+tokio-stream.workspace = true
+tokio-rustls = "0.26.4"
+
+[dev-dependencies]
+kmp-observability = { workspace = true, features = ["otel"] }
+kmp-testkit.workspace = true
+tempfile = "3.26.0"

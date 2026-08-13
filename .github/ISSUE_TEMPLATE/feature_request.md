@@ -16,7 +16,7 @@ Describe the proposed change.
 
 ## Kernel Ownership Check
 
-Explain why this belongs in `rehydration-kernel` and not in an integrating
+Explain why this belongs in `kmp` and not in an integrating
 product.
 
 ## Contract Impact

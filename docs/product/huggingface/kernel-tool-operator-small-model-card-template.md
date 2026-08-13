@@ -18,7 +18,7 @@ language:
   - en
 ---
 
-# Underpass Kernel Tool Operator Small
+# KMP Tool Operator Small
 
 > **Publication note (2026-05-29):** v8.x training (through the 2026-05-29 Tier-4
 > run) was done **without ref anonymization** (a design divergence vs the opaque-ref
@@ -37,27 +37,27 @@ is complete.
 
 ## Model Summary
 
-Underpass Kernel Tool Operator Small is a specialist model for operating Kernel
+KMP Tool Operator Small is a specialist model for operating Kernel
 Memory Protocol tools. It predicts one bounded memory-navigation action at a
 time from visible tool state.
 
 The model is not a general assistant, a QA model, a benchmark solver, or part
 of kernel core. It is intended to reduce the cost and variance of memory tool
-operation around an existing Underpass Kernel deployment.
+operation around an existing KMP deployment.
 
 Minimum public claim after the release gate:
 
 ```text
 This model predicts bounded Kernel Memory Protocol tool actions from visible
 memory-navigation state. It was evaluated on held-out audited trajectories and
-then replayed through live MCP/gRPC against a deployed Underpass Kernel.
+then replayed through live MCP/gRPC against a deployed KMP.
 ```
 
 ## Intended Use
 
 Use this model when an application already has:
 
-- an Underpass Kernel or KMP-compatible memory backend;
+- an KMP or KMP-compatible memory backend;
 - bounded MCP/gRPC memory tools;
 - visible tool state;
 - a policy that checks predicted actions before execution.
@@ -156,7 +156,7 @@ separate evaluation.
 
 ## Training Data
 
-Training data comes from audited Underpass Kernel tool trajectories.
+Training data comes from audited KMP tool trajectories.
 
 Planned public dataset:
 
@@ -274,14 +274,14 @@ Minimum sequence:
 python scripts/operator/prepare_operator_sft_dataset.py ...
 python scripts/operator/train_operator_sft_lora.py ...
 python scripts/operator/predict_operator_sft.py ...
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- ...
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- ...
 python scripts/operator/deanonymize_operator_predictions.py ...
-cargo run -p rehydration-testkit --bin kernel_operator_mcp_replay -- ...
+cargo run -p kmp-testkit --bin kernel_operator_mcp_replay -- ...
 ```
 
 ## Project Links
 
-- Kernel repository: https://github.com/underpass-ai/rehydration-kernel
+- Kernel repository: https://github.com/underpass-ai/kmp
 - Dataset: https://huggingface.co/datasets/underpass-ai/kernel-operator-trajectories
 - Article: https://dev.to/tirsogarcia/building-kernel-memory-protocol-navigable-memory-for-ai-agents-315j
 
@@ -290,9 +290,9 @@ cargo run -p rehydration-testkit --bin kernel_operator_mcp_replay -- ...
 ```bibtex
 @software{underpass_kernel_2026,
   author = {Tirso Garcia Ibanez},
-  title = {Underpass Kernel: Kernel Memory Protocol for navigable agent memory},
+  title = {KMP: Kernel Memory Protocol for navigable agent memory},
   year = {2026},
-  url = {https://github.com/underpass-ai/rehydration-kernel},
+  url = {https://github.com/underpass-ai/kmp},
   license = {Apache-2.0}
 }
 ```

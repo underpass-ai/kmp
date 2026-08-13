@@ -11,12 +11,12 @@ on:
       release:
         description: Helm release name
         required: true
-        default: rehydration-kernel
+        default: kmp
         type: string
       values_file:
         description: Values file path relative to the repo
         required: true
-        default: charts/rehydration-kernel/values.underpass-runtime.yaml
+        default: charts/kmp/values.underpass-runtime.yaml
         type: string
       image_tag:
         description: Image tag to deploy when not using a digest

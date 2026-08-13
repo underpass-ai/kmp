@@ -18,7 +18,7 @@ Domain Layer
 └── QualityMetricsObserver     (port trait)
     └── observe(metrics, ctx)
 
-Observability Adapters (rehydration-observability)
+Observability Adapters (kmp-observability)
 ├── OTelQualityObserver        (OTLP histograms → Prometheus/Grafana)
 ├── TracingQualityObserver     (structured JSON logs → Loki/Grafana)
 ├── CompositeQualityObserver   (fan-out to N backends)
@@ -107,7 +107,7 @@ The `TracingQualityObserver` emits structured JSON via `tracing::info!`:
 
 Query in Grafana via LogQL:
 ```logql
-{app_kubernetes_io_name="rehydration-kernel"} | json | quality_compression_ratio > 0
+{app_kubernetes_io_name="kmp"} | json | quality_compression_ratio > 0
 ```
 
 ### OTel (metrics)

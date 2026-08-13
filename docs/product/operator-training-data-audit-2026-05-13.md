@@ -394,7 +394,7 @@ same strict parser, `--stop-after-json`, policy eval, and MCP replay gates.
 The first public Operator claim should be MemoryArena-first:
 
 > Operator is trained to choose bounded KMP/MCP navigation actions from visible
-> memory state and is replayed against live Underpass Kernel.
+> memory state and is replayed against live KMP.
 
 LongMemEval remains useful as a secondary stress test for chat-style memory,
 but it should not drive the first public model release until its adapter

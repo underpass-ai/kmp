@@ -1353,6 +1353,360 @@ dependencies = [
 ]
 
 [[package]]
+name = "kmp-adapter-embedded"
+version = "0.1.0"
+dependencies = [
+ "kmp-application",
+ "kmp-domain",
+ "kmp-observability",
+ "kmp-ports",
+ "redb",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-adapter-nats"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-domain",
+ "kmp-testkit",
+ "opentelemetry",
+ "serde",
+ "serde_json",
+ "testcontainers",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tracing",
+]
+
+[[package]]
+name = "kmp-adapter-neo4j"
+version = "0.1.0"
+dependencies = [
+ "kmp-domain",
+ "kmp-ports",
+ "kmp-testkit",
+ "neo4rs",
+ "serde_json",
+ "testcontainers",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-adapter-valkey"
+version = "0.1.0"
+dependencies = [
+ "kmp-domain",
+ "kmp-ports",
+ "kmp-testkit",
+ "rustls-native-certs 0.8.3",
+ "rustls-pemfile",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "testcontainers",
+ "tokio",
+ "tokio-rustls",
+]
+
+[[package]]
+name = "kmp-application"
+version = "0.1.0"
+dependencies = [
+ "kmp-domain",
+ "kmp-testkit",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tiktoken-rs",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-config"
+version = "0.1.0"
+
+[[package]]
+name = "kmp-conformance"
+version = "0.1.0"
+dependencies = [
+ "kmp-adapter-embedded",
+ "kmp-application",
+ "kmp-domain",
+ "kmp-testkit",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-domain"
+version = "0.1.0"
+dependencies = [
+ "kmp-plugin-api",
+ "serde",
+]
+
+[[package]]
+name = "kmp-embedded"
+version = "0.1.0"
+dependencies = [
+ "kmp-adapter-embedded",
+ "kmp-application",
+ "kmp-domain",
+ "kmp-memory-api",
+ "kmp-observability",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-interpretation"
+version = "0.1.0"
+dependencies = [
+ "kmp-plugin-api",
+ "serde",
+]
+
+[[package]]
+name = "kmp-mcp"
+version = "0.1.0"
+dependencies = [
+ "kmp-adapter-embedded",
+ "kmp-application",
+ "kmp-domain",
+ "kmp-embedded",
+ "kmp-proto",
+ "kmp-proto-mapping",
+ "kmp-viewer",
+ "opentelemetry",
+ "prost-types 0.13.5",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tonic 0.12.3",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "kmp-memory-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "kmp-observability"
+version = "0.1.0"
+dependencies = [
+ "kmp-domain",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tonic 0.12.3",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "kmp-plugin-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "kmp-ports"
+version = "0.1.0"
+dependencies = [
+ "kmp-domain",
+ "tokio",
+]
+
+[[package]]
+name = "kmp-proto"
+version = "0.1.0"
+dependencies = [
+ "prost 0.13.5",
+ "prost-types 0.13.5",
+ "serde_json",
+ "tonic 0.12.3",
+ "tonic-build",
+]
+
+[[package]]
+name = "kmp-proto-mapping"
+version = "0.1.0"
+dependencies = [
+ "kmp-application",
+ "kmp-domain",
+ "kmp-proto",
+ "prost-types 0.13.5",
+ "serde_json",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "kmp-server"
+version = "0.1.0"
+dependencies = [
+ "kmp-adapter-nats",
+ "kmp-adapter-neo4j",
+ "kmp-adapter-valkey",
+ "kmp-application",
+ "kmp-config",
+ "kmp-domain",
+ "kmp-observability",
+ "kmp-transport-grpc",
+ "opentelemetry",
+ "tokio",
+ "tokio-rustls",
+ "tracing",
+]
+
+[[package]]
+name = "kmp-testkit"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-application",
+ "kmp-domain",
+ "kmp-interpretation",
+ "kmp-mcp",
+ "kmp-proto",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "tiktoken-rs",
+ "tokio",
+ "tokio-rustls",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "kmp-tests-kernel"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-adapter-nats",
+ "kmp-adapter-neo4j",
+ "kmp-adapter-valkey",
+ "kmp-application",
+ "kmp-config",
+ "kmp-conformance",
+ "kmp-domain",
+ "kmp-mcp",
+ "kmp-proto",
+ "kmp-testkit",
+ "kmp-tests-shared",
+ "kmp-transport-grpc",
+ "prost-types 0.13.5",
+ "serde_json",
+ "testcontainers",
+ "tokio",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "kmp-tests-paper"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-proto",
+ "kmp-testkit",
+ "kmp-tests-shared",
+ "kmp-transport-grpc",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tokio",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "kmp-tests-shared"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-adapter-nats",
+ "kmp-adapter-neo4j",
+ "kmp-adapter-valkey",
+ "kmp-application",
+ "kmp-config",
+ "kmp-domain",
+ "kmp-observability",
+ "kmp-ports",
+ "kmp-proto",
+ "kmp-testkit",
+ "kmp-transport-grpc",
+ "neo4rs",
+ "prost-types 0.13.5",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "testcontainers",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tonic 0.12.3",
+]
+
+[[package]]
+name = "kmp-transport-grpc"
+version = "0.1.0"
+dependencies = [
+ "async-nats",
+ "kmp-application",
+ "kmp-config",
+ "kmp-domain",
+ "kmp-observability",
+ "kmp-ports",
+ "kmp-proto",
+ "kmp-proto-mapping",
+ "kmp-testkit",
+ "opentelemetry",
+ "prost-types 0.13.5",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tokio-rustls",
+ "tokio-stream",
+ "tonic 0.12.3",
+ "tracing",
+]
+
+[[package]]
+name = "kmp-viewer"
+version = "0.1.0"
+dependencies = [
+ "kmp-application",
+ "kmp-domain",
+ "kmp-embedded",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2203,360 +2557,6 @@ name = "regex-syntax"
 version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
-
-[[package]]
-name = "rehydration-adapter-embedded"
-version = "0.1.0"
-dependencies = [
- "redb",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-observability",
- "rehydration-ports",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-adapter-nats"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "opentelemetry",
- "rehydration-domain",
- "rehydration-testkit",
- "serde",
- "serde_json",
- "testcontainers",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tracing",
-]
-
-[[package]]
-name = "rehydration-adapter-neo4j"
-version = "0.1.0"
-dependencies = [
- "neo4rs",
- "rehydration-domain",
- "rehydration-ports",
- "rehydration-testkit",
- "serde_json",
- "testcontainers",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-adapter-valkey"
-version = "0.1.0"
-dependencies = [
- "rehydration-domain",
- "rehydration-ports",
- "rehydration-testkit",
- "rustls-native-certs 0.8.3",
- "rustls-pemfile",
- "serde",
- "serde_json",
- "tempfile",
- "testcontainers",
- "tokio",
- "tokio-rustls",
-]
-
-[[package]]
-name = "rehydration-application"
-version = "0.1.0"
-dependencies = [
- "rehydration-domain",
- "rehydration-testkit",
- "serde",
- "serde_json",
- "sha2",
- "tiktoken-rs",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-config"
-version = "0.1.0"
-
-[[package]]
-name = "rehydration-conformance"
-version = "0.1.0"
-dependencies = [
- "rehydration-adapter-embedded",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-testkit",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-domain"
-version = "0.1.0"
-dependencies = [
- "rehydration-plugin-api",
- "serde",
-]
-
-[[package]]
-name = "rehydration-embedded"
-version = "0.1.0"
-dependencies = [
- "rehydration-adapter-embedded",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-memory-api",
- "rehydration-observability",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-interpretation"
-version = "0.1.0"
-dependencies = [
- "rehydration-plugin-api",
- "serde",
-]
-
-[[package]]
-name = "rehydration-mcp"
-version = "0.1.0"
-dependencies = [
- "opentelemetry",
- "prost-types 0.13.5",
- "rehydration-adapter-embedded",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-embedded",
- "rehydration-proto",
- "rehydration-proto-mapping",
- "rehydration-viewer",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tonic 0.12.3",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "rehydration-memory-api"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "rehydration-observability"
-version = "0.1.0"
-dependencies = [
- "opentelemetry",
- "opentelemetry-otlp",
- "opentelemetry_sdk",
- "rehydration-domain",
- "serde",
- "serde_json",
- "tokio",
- "tonic 0.12.3",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "rehydration-plugin-api"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "rehydration-ports"
-version = "0.1.0"
-dependencies = [
- "rehydration-domain",
- "tokio",
-]
-
-[[package]]
-name = "rehydration-proto"
-version = "0.1.0"
-dependencies = [
- "prost 0.13.5",
- "prost-types 0.13.5",
- "serde_json",
- "tonic 0.12.3",
- "tonic-build",
-]
-
-[[package]]
-name = "rehydration-proto-mapping"
-version = "0.1.0"
-dependencies = [
- "prost-types 0.13.5",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-proto",
- "serde_json",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "rehydration-server"
-version = "0.1.0"
-dependencies = [
- "opentelemetry",
- "rehydration-adapter-nats",
- "rehydration-adapter-neo4j",
- "rehydration-adapter-valkey",
- "rehydration-application",
- "rehydration-config",
- "rehydration-domain",
- "rehydration-observability",
- "rehydration-transport-grpc",
- "tokio",
- "tokio-rustls",
- "tracing",
-]
-
-[[package]]
-name = "rehydration-testkit"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "rehydration-application",
- "rehydration-domain",
- "rehydration-interpretation",
- "rehydration-mcp",
- "rehydration-proto",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "serde_yaml",
- "sha2",
- "tiktoken-rs",
- "tokio",
- "tokio-rustls",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "rehydration-tests-kernel"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "prost-types 0.13.5",
- "rehydration-adapter-nats",
- "rehydration-adapter-neo4j",
- "rehydration-adapter-valkey",
- "rehydration-application",
- "rehydration-config",
- "rehydration-conformance",
- "rehydration-domain",
- "rehydration-mcp",
- "rehydration-proto",
- "rehydration-testkit",
- "rehydration-tests-shared",
- "rehydration-transport-grpc",
- "serde_json",
- "testcontainers",
- "tokio",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "rehydration-tests-paper"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "rehydration-proto",
- "rehydration-testkit",
- "rehydration-tests-shared",
- "rehydration-transport-grpc",
- "serde",
- "serde_json",
- "serde_yaml",
- "tokio",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "rehydration-tests-shared"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "neo4rs",
- "prost-types 0.13.5",
- "rehydration-adapter-nats",
- "rehydration-adapter-neo4j",
- "rehydration-adapter-valkey",
- "rehydration-application",
- "rehydration-config",
- "rehydration-domain",
- "rehydration-observability",
- "rehydration-ports",
- "rehydration-proto",
- "rehydration-testkit",
- "rehydration-transport-grpc",
- "serde",
- "serde_json",
- "tempfile",
- "testcontainers",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "rehydration-transport-grpc"
-version = "0.1.0"
-dependencies = [
- "async-nats",
- "opentelemetry",
- "prost-types 0.13.5",
- "rehydration-application",
- "rehydration-config",
- "rehydration-domain",
- "rehydration-observability",
- "rehydration-ports",
- "rehydration-proto",
- "rehydration-proto-mapping",
- "rehydration-testkit",
- "reqwest 0.12.28",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tonic 0.12.3",
- "tracing",
-]
-
-[[package]]
-name = "rehydration-viewer"
-version = "0.1.0"
-dependencies = [
- "rehydration-application",
- "rehydration-domain",
- "rehydration-embedded",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
 
 [[package]]
 name = "reqwest"

@@ -1,0 +1,85 @@
+[package]
+name = "kmp-tests-kernel"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Kernel integration tests: golden contracts, E2E journeys, agentic context"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+container-tests = []
+
+[dependencies]
+
+[dev-dependencies]
+async-nats = "0.46.0"
+kmp-adapter-nats.workspace = true
+kmp-adapter-neo4j.workspace = true
+kmp-adapter-valkey.workspace = true
+kmp-application.workspace = true
+kmp-config.workspace = true
+kmp-conformance.workspace = true
+kmp-domain.workspace = true
+kmp-mcp.workspace = true
+kmp-proto.workspace = true
+kmp-testkit.workspace = true
+kmp-tests-shared.workspace = true
+kmp-transport-grpc.workspace = true
+prost-types.workspace = true
+serde_json.workspace = true
+testcontainers = "0.24.0"
+tokio.workspace = true
+tonic.workspace = true
+
+[[test]]
+name = "agentic_integration"
+path = "tests/agentic_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "agentic_event_integration"
+path = "tests/agentic_event_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "kernel_full_journey_integration"
+path = "tests/kernel_full_journey_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "kernel_full_journey_tls_integration"
+path = "tests/kernel_full_journey_tls_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "kernel_golden_integration"
+path = "tests/kernel_golden_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "kernel_p1_performance_measurement"
+path = "tests/kernel_p1_performance_measurement.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "tier_resolution_integration"
+path = "tests/tier_resolution_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "llm_graph_materialization_integration"
+path = "tests/llm_graph_materialization_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "mcp_real_kernel_integration"
+path = "tests/mcp_real_kernel_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "conformance_integration"
+path = "tests/conformance_integration.rs"
+required-features = ["container-tests"]

@@ -84,7 +84,7 @@ Current contract-coverage status:
 Coverage command:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_contract_coverage -- \
+cargo run -p kmp-testkit --bin kernel_operator_contract_coverage -- \
   --profile read \
   --trajectories /tmp/kernel-operator-sft-100-with-writer-by-task-anon-visible-candidate-details-holdout20/eval_trajectories.jsonl
 ```
@@ -92,11 +92,11 @@ cargo run -p rehydration-testkit --bin kernel_operator_contract_coverage -- \
 Conformance trajectory command:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_conformance_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_conformance_trajectory_export -- \
   --output /tmp/kernel-operator-conformance-full-v5 \
   --force
 
-cargo run -p rehydration-testkit --bin kernel_operator_contract_coverage -- \
+cargo run -p kmp-testkit --bin kernel_operator_contract_coverage -- \
   --profile full \
   --trajectories /tmp/kernel-operator-conformance-full-v5/trajectories.jsonl \
   --fail-under 100
@@ -311,13 +311,13 @@ Use a separate profile for smart-writer pre-read. This prevents normal
 writer pre-read rows from blocking a read-profile claim:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_conformance_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_conformance_trajectory_export -- \
   --suite writer-pre-read-v2 \
   --run-id kmp-operator-writer-pre-read-v2-YYYYMMDD \
   --output <writer-pre-read-conformance-dir> \
   --force
 
-cargo run -p rehydration-testkit --bin kernel_operator_contract_coverage -- \
+cargo run -p kmp-testkit --bin kernel_operator_contract_coverage -- \
   --profile writer-pre-read \
   --trajectories <writer-pre-read-conformance-dir>/trajectories.jsonl \
   --fail-under 100
@@ -515,7 +515,7 @@ MemoryArena exporter; both exporters emit the same
 them together.
 
 ```bash
-cargo run -p rehydration-testkit --bin longmemeval_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin longmemeval_operator_trajectory_export -- \
   --run <longmemeval-run-dir> \
   --artifacts <longmemeval-adapter-artifacts-dir> \
   --output <longmemeval-operator-trajectories-dir> \
@@ -526,7 +526,7 @@ cargo run -p rehydration-testkit --bin longmemeval_operator_trajectory_export --
 For LongMemEval smart-writer runs, include writer context reads:
 
 ```bash
-cargo run -p rehydration-testkit --bin longmemeval_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin longmemeval_operator_trajectory_export -- \
   --run <longmemeval-smart-writer-run-dir> \
   --artifacts <longmemeval-smart-writer-artifacts-dir> \
   --output <longmemeval-smart-writer-operator-trajectories-dir> \
@@ -587,7 +587,7 @@ python scripts/operator/predict_operator_sft.py \
 ## 4. Evaluate
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories /tmp/kernel-operator-sft-100-with-writer-by-task-anon-visible-candidate-details/eval_model_trajectories.jsonl \
   --predictions /tmp/kernel-operator-qwen05-predictions-v5/predictions.jsonl \
   --output /tmp/kernel-operator-qwen05-predictions-v5-policy-eval.json \
@@ -764,7 +764,7 @@ mapping.
 Raw-ref evaluation:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories /tmp/kernel-operator-sft-100-with-writer-by-task-anon-visible-candidate-details-holdout20/eval_trajectories.jsonl \
   --predictions /tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-raw/predictions.jsonl \
   --output /tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-raw-policy-eval.json
@@ -794,11 +794,11 @@ kernel through the real MCP adapter and typed gRPC service.
 Use `kernel_operator_mcp_replay` after de-anonymization:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_mcp_replay -- \
+cargo run -p kmp-testkit --bin kernel_operator_mcp_replay -- \
   --trajectories /tmp/kernel-operator-sft-100-with-writer-by-task-anon-visible-candidate-details-holdout20/eval_trajectories.jsonl \
   --predictions /tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-raw/predictions.jsonl \
   --output /tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-mcp-replay-100 \
-  --endpoint https://rehydration-kernel.underpassai.com \
+  --endpoint https://kmp.underpassai.com \
   --limit 100 \
   --log-progress-every 25 \
   --force
@@ -913,7 +913,7 @@ marks rows with `partial_result=true` when `page.has_more=true`, and reports
 partial-result counts in `summary.json`.
 
 ```bash
-cargo run -p rehydration-testkit --bin memoryarena_kmp_run_audit -- \
+cargo run -p kmp-testkit --bin memoryarena_kmp_run_audit -- \
   --run <memoryarena-run-dir> \
   --endpoint <public-kernel-url> \
   --inspect \
@@ -928,7 +928,7 @@ cargo run -p rehydration-testkit --bin memoryarena_kmp_run_audit -- \
 # For the next audit page, use inspect.next_offset from <audit.json> or the
 # last progress event's next_offset as the new --offset.
 
-cargo run -p rehydration-testkit --bin kernel_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_trajectory_export -- \
   --run <memoryarena-run-dir> \
   --output <operator-trajectories-dir> \
   --include-writer-reads \
@@ -962,7 +962,7 @@ python scripts/operator/predict_operator_sft.py \
   --batch-size 8 \
   --force
 
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories <operator-sft-dir>/eval_model_trajectories.jsonl \
   --predictions <operator-predictions-dir>/predictions.jsonl \
   --output <operator-policy-eval>.json

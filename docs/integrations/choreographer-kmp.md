@@ -8,7 +8,7 @@ unless explicitly marked *planned*.
 
 KMP (Kernel Memory Protocol) is a graph-temporal memory kernel with two
 editions of the **same product** (identical tool semantics, pinned by the
-conformance suite in `crates/rehydration-conformance` — a behavior
+conformance suite in `crates/kmp-conformance` — a behavior
 difference between editions is a bug):
 
 | | Infrastructure edition | Embedded edition |
@@ -25,16 +25,16 @@ live without changing how you call the tools.
 **Embedded (start here):**
 
 ```bash
-cargo install --path crates/rehydration-mcp   # or use the workspace binary
-REHYDRATION_MCP_BACKEND=embedded \
-REHYDRATION_MCP_DATA_DIR=/var/lib/choreographer/kmp \
-rehydration-mcp
+cargo install --path crates/kmp-mcp   # or use the workspace binary
+KMP_MCP_BACKEND=embedded \
+KMP_MCP_DATA_DIR=/var/lib/choreographer/kmp \
+kmp-mcp
 ```
 
 - stdin/stdout is MCP JSON-RPC; **all logs go to stderr** — never parse stdout
   as anything but JSON-RPC.
-- Data dir resolution when `REHYDRATION_MCP_DATA_DIR` is unset: project
-  `.kernel/` (walks up to `.git`, auto-gitignored) → `$XDG_DATA_HOME/rehydration-kernel/default`.
+- Data dir resolution when `KMP_MCP_DATA_DIR` is unset: project
+  `.kernel/` (walks up to `.git`, auto-gitignored) → `$XDG_DATA_HOME/kmp/default`.
   For a service like Choreographer, always set it explicitly.
 - **Single-writer** (ADR-011): one process per data dir; a second open
   fails fast with an explicit error. Plan one kernel per Choreographer
@@ -43,16 +43,16 @@ rehydration-mcp
 **Live (production):**
 
 ```bash
-REHYDRATION_MCP_BACKEND=grpc \
-REHYDRATION_KERNEL_GRPC_ENDPOINT=https://kernel.example:50051 \
-REHYDRATION_KERNEL_GRPC_TLS_MODE=mtls \
-REHYDRATION_KERNEL_GRPC_TLS_CA_PATH=... \
-REHYDRATION_KERNEL_GRPC_TLS_CERT_PATH=... \
-REHYDRATION_KERNEL_GRPC_TLS_KEY_PATH=... \
-rehydration-mcp
+KMP_MCP_BACKEND=grpc \
+KMP_KERNEL_GRPC_ENDPOINT=https://kernel.example:50051 \
+KMP_KERNEL_GRPC_TLS_MODE=mtls \
+KMP_KERNEL_GRPC_TLS_CA_PATH=... \
+KMP_KERNEL_GRPC_TLS_CERT_PATH=... \
+KMP_KERNEL_GRPC_TLS_KEY_PATH=... \
+kmp-mcp
 ```
 
-Native gRPC is also available (proto contract in `crates/rehydration-proto`,
+Native gRPC is also available (proto contract in `crates/kmp-proto`,
 `api/`); the MCP tool JSON is byte-equivalent across backends.
 
 ## 3. Tool surface (10 tools + aliases)
@@ -118,7 +118,7 @@ Native gRPC is also available (proto contract in `crates/rehydration-proto`,
   mismatch are explicit errors, never silent empty memory
   (`docs/runtime-guarantees.md` + ADR-012).
 - The event log is append-only and auditable; projections are rebuildable
-  offline (replay tooling in `rehydration-adapter-embedded`).
+  offline (replay tooling in `kmp-adapter-embedded`).
 
 ## 5. Quality telemetry for Choreographer (ADR-014)
 
@@ -133,7 +133,7 @@ kernel is never affected; relaxed durability, so the tail may be lost on
 crash — memory never is).
 
 Read surface **today** (in-process Rust):
-`rehydration_adapter_embedded::RedbQualityTelemetryReader::open(data_dir)`
+`kmp_adapter_embedded::RedbQualityTelemetryReader::open(data_dir)`
 → `query_since(millis, rpc, limit)`, `query_between(..)`, `latest(..)`,
 `count()`. *Planned*: a CLI query subcommand on the binary (deliberately
 **not** an MCP tool for now — the one-protocol rule forbids embedded-only
@@ -147,7 +147,7 @@ causes) and to feed Choreographer's own incident health dashboards.
 ## 6. References
 
 - Runtime guarantees: `docs/runtime-guarantees.md`
-- Executable semantics: `crates/rehydration-conformance` (16 scenarios × 3 backends)
+- Executable semantics: `crates/kmp-conformance` (16 scenarios × 3 backends)
 - ADRs 009–014: `docs/adr/` (engine, graph, concurrency, data dir, packaging, telemetry)
 - Embedded roadmap: `docs/product/kmp-embedded-edition-roadmap.md`
 - MCP operations: `docs/operations/mcp-stdio.md`
@@ -171,4 +171,4 @@ Answers shape the kernel backlog — reply inline or to the kernel team:
 5. **ID scheme**: can you guarantee stable incident/step IDs so idempotency
    keys are `ingest:<incident>:<step>` and entry refs are deterministic?
 6. **Client runtime**: do you already speak MCP (which client), or is
-   native gRPC (`rehydration-proto`) the easier path for you?
+   native gRPC (`kmp-proto`) the easier path for you?

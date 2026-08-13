@@ -23,7 +23,7 @@ an OTel Collector, Prometheus, Loki, or any other service:
   adapter only emits successful `kernel_wake`, `kernel_ask`, and `kernel_trace`
   renders through the domain port.
 
-`rehydration-observability` keeps OTEL behind its `otel` Cargo feature. The
+`kmp-observability` keeps OTEL behind its `otel` Cargo feature. The
 crate enables that feature by default for direct deployed use, while workspace
 consumers opt in explicitly and the embedded adapter/composition remain on the
 local-only feature set. Therefore the in-process kernel does not link an OTLP
@@ -82,4 +82,4 @@ operations, not domain state transitions.
 - **Constraint:** future OTEL + local fan-out must use the existing
   `CompositeQualityObserver`; it must not introduce a second domain port.
 - **Constraint:** CI rejects remote observability dependencies in the
-  `rehydration-embedded` normal dependency graph.
+  `kmp-embedded` normal dependency graph.

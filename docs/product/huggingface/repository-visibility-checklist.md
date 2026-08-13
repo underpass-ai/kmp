@@ -14,7 +14,7 @@ The first screen of the repository should answer four questions:
 
 | Question | Desired answer |
 | --- | --- |
-| What is this? | Underpass Kernel implements Kernel Memory Protocol for navigable agent memory. |
+| What is this? | KMP is the Kernel Memory Protocol for navigable agent memory. |
 | Why does it matter? | Agents can query, traverse, inspect, and audit memory instead of only retrieving chunks. |
 | How do I try it? | Quickstart with one write/read/trace/inspect flow. |
 | What is proven? | Benchmarks and live replay results, separated by methodology. |
@@ -26,7 +26,7 @@ movement, relations, evidence, and inspection.
 ## README Changes Before Public Model Release
 
 - Rename the top-level framing from generic "context rehydration" to
-  Underpass Kernel / Kernel Memory Protocol.
+  KMP / Kernel Memory Protocol.
 - Show one compact KMP lifecycle:
   `ingest -> near -> trace -> inspect`.
 - Include an architecture diagram focused on KMP boundaries:

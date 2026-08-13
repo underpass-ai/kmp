@@ -10,7 +10,7 @@
 #
 # Command:
 #   EVAL_MATRIX_PATH=paper-recalc-gpt54.yaml \
-#   cargo test -p rehydration-tests-paper --features container-tests \
+#   cargo test -p kmp-tests-paper --features container-tests \
 #     --test llm_judge_prompt_evaluation -- --nocapture --test-threads=1
 
 keys:

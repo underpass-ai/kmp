@@ -19,10 +19,10 @@ the MCP server config:
 {
   "mcpServers": {
     "kernel-memory": {
-      "command": "rehydration-mcp",
+      "command": "kmp-mcp",
       "env": {
-        "REHYDRATION_MCP_BACKEND": "embedded",
-        "REHYDRATION_VIEWER_ADDR": "127.0.0.1:7317"
+        "KMP_MCP_BACKEND": "embedded",
+        "KMP_VIEWER_ADDR": "127.0.0.1:7317"
       }
     }
   }
@@ -36,8 +36,8 @@ the viewer sees it immediately.
 ## Standalone (no session running)
 
 ```bash
-REHYDRATION_MCP_DATA_DIR=~/.local/share/kernel rehydration-mcp viewer          # 127.0.0.1:7317
-REHYDRATION_MCP_DATA_DIR=~/.local/share/kernel rehydration-mcp viewer 127.0.0.1:9000
+KMP_MCP_DATA_DIR=~/.local/share/kernel kmp-mcp viewer          # 127.0.0.1:7317
+KMP_MCP_DATA_DIR=~/.local/share/kernel kmp-mcp viewer 127.0.0.1:9000
 ```
 
 Data-dir resolution is the same as `export`/`import`
@@ -67,4 +67,4 @@ GET only, JSON errors, loopback only: `/api/info`, `/api/abouts`,
 UI and its render engine are compiled into the binary; nothing is fetched at
 runtime. Vendored-asset provenance and the supply-chain verification record
 live in
-[`crates/rehydration-viewer/ui/vendor/VENDOR.md`](../../crates/rehydration-viewer/ui/vendor/VENDOR.md).
+[`crates/kmp-viewer/ui/vendor/VENDOR.md`](../../crates/kmp-viewer/ui/vendor/VENDOR.md).

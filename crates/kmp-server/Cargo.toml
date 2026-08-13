@@ -1,0 +1,26 @@
+[package]
+name = "kmp-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kmp-adapter-nats.workspace = true
+kmp-adapter-neo4j.workspace = true
+kmp-adapter-valkey.workspace = true
+kmp-application.workspace = true
+kmp-config.workspace = true
+kmp-domain.workspace = true
+opentelemetry.workspace = true
+kmp-observability = { workspace = true, features = ["otel"] }
+kmp-transport-grpc.workspace = true
+tokio.workspace = true
+tokio-rustls = "0.26.4"
+tracing.workspace = true
+
+[[bin]]
+name = "kmp-neo4j-migrate"
+path = "src/bin/kmp_neo4j_migrate.rs"

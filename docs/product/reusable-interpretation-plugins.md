@@ -12,7 +12,7 @@ to reuse from readers, agents, and evaluation harnesses.
 
 Current integration status, 2026-05-09:
 
-- `rehydration-plugin-api` and `rehydration-interpretation` are implemented.
+- `kmp-plugin-api` and `kmp-interpretation` are implemented.
 - `ComposedEvidenceReader` is implemented for in-process readers and benchmark
   adapters.
 - KMP/gRPC/MCP `kernel_ask` does not automatically run interpretation plugins.
@@ -74,21 +74,21 @@ a reader, agent, or explicit upstream event marks it as such.
 The boundary is split into a lightweight API crate, a domain re-export, and
 implementation crates:
 
-- `crates/rehydration-plugin-api`: kernel-owned public crate for plugin
+- `crates/kmp-plugin-api`: kernel-owned public crate for plugin
   authors. It defines evidence fragments, spans, interpreted values, derivation
   requests/results, plugin traits, and plugin errors. External plugins should
   depend on this crate, not on the whole kernel.
-- `crates/rehydration-domain/src/plugins`: internal domain-facing re-export as
-  `rehydration_domain::plugins`. Use this path only when a kernel crate already
-  depends on `rehydration-domain`.
-- `crates/rehydration-interpretation`: plugin implementations that import and
-  implement `rehydration-plugin-api`.
-- `crates/rehydration-testkit`: benchmark and fixture consumers. It may
+- `crates/kmp-domain/src/plugins`: internal domain-facing re-export as
+  `kmp_domain::plugins`. Use this path only when a kernel crate already
+  depends on `kmp-domain`.
+- `crates/kmp-interpretation`: plugin implementations that import and
+  implement `kmp-plugin-api`.
+- `crates/kmp-testkit`: benchmark and fixture consumers. It may
   re-export the interpretation APIs temporarily for compatibility, but it is
   not the owner of the plugin contract or implementations.
 
 Text normalization lives in
-`crates/rehydration-interpretation/src/text_normalization.rs`. The first cut is only a
+`crates/kmp-interpretation/src/text_normalization.rs`. The first cut is only a
 deterministic span segmenter:
 
 - normal text spans;
@@ -148,7 +148,7 @@ request that labels each candidate as `include`, `exclude`, or `context`.
 
 ## Composed Reader
 
-`rehydration-interpretation` exposes `ComposedEvidenceReader` as the generic
+`kmp-interpretation` exposes `ComposedEvidenceReader` as the generic
 reader base for in-process kernel consumers. It composes plugin lists instead
 of hard-coding a benchmark or domain flow:
 
@@ -200,7 +200,7 @@ remain outside the kernel plugin base.
 Example shape:
 
 ```rust
-use rehydration_interpretation::{
+use kmp_interpretation::{
     CurrencyDerivationPlugin, DerivationOperand, DerivationOperation,
     DerivationRequest, EvidenceFragment, EvidenceInterpretationInput,
 };

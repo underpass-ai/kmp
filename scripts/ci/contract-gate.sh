@@ -37,4 +37,4 @@ buf lint api
     --path proto/underpass/rehydration/kernel/v1beta1
 )
 bash scripts/ci/check-kernel-contract-policy.sh
-cargo test -p rehydration-proto --locked
+cargo test -p kmp-proto --locked

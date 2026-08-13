@@ -1,0 +1,28 @@
+[package]
+name = "kmp-adapter-neo4j"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+container-tests = []
+
+[dependencies]
+neo4rs.workspace = true
+kmp-domain.workspace = true
+kmp-ports.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+kmp-testkit.workspace = true
+testcontainers = "0.24.0"
+
+[[test]]
+name = "neo4j_integration"
+path = "tests/neo4j_integration.rs"
+required-features = ["container-tests"]

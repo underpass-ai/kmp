@@ -22,20 +22,20 @@ Two constraints shape where such a viewer can live:
 
 ## Decision
 
-- A new **`rehydration-viewer`** crate serves a read-only web UI over
+- A new **`kmp-viewer`** crate serves a read-only web UI over
   [`KernelMemoryApplicationService`], generic over the same store parameters,
   so it mounts over the embedded composition today without owning a parallel
   read model: `/api/graph` is `wake`, `/api/node` is `inspect`,
   `/api/timeline` is `temporal`, `/api/trace` is `trace`, `/api/abouts` is the
   facade's about index.
-- **Mounted in-process** in `rehydration-mcp`: setting
-  `REHYDRATION_VIEWER_ADDR` on an embedded session serves the viewer over
+- **Mounted in-process** in `kmp-mcp`: setting
+  `KMP_VIEWER_ADDR` on an embedded session serves the viewer over
   that session's already-open kernel — the only live-view arrangement ADR-011
   admits. A `viewer [addr]` subcommand covers the offline case (no agent
   session holding the store), resolving the data dir exactly as
   `export`/`import` do.
 - **Off by default, env-gated, not feature-gated.** ADR-013 describes a cargo
-  feature discipline, but the current tree ships `rehydration-mcp` with a
+  feature discipline, but the current tree ships `kmp-mcp` with a
   single dependency set and no CI dependency budget; a `viewer` feature would
   add build-matrix cost without an enforcement mechanism. The env var is the
   gate; revisiting a compile-time gate belongs with the ADR-013 CI work.
@@ -47,7 +47,7 @@ Two constraints shape where such a viewer can live:
   forbids all non-self sources.
 - **UI compiled into the binary** (`include_str!`): hand-written HTML/CSS/JS
   plus one vendored render engine, **pixi.js 8.19.0**, pinned by hash and
-  supply-chain-verified in [`ui/vendor/VENDOR.md`](../../crates/rehydration-viewer/ui/vendor/VENDOR.md)
+  supply-chain-verified in [`ui/vendor/VENDOR.md`](../../crates/kmp-viewer/ui/vendor/VENDOR.md)
   — obtained as a plain registry artifact, never via `npm` (no lifecycle
   scripts execute; that was the propagation vector of the 2025–2026
   Shai-Hulud worm waves), checked against OSV/GitHub advisories and the

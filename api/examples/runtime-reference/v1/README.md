@@ -1,7 +1,7 @@
 # Runtime Reference Examples
 
 These examples describe a reference runtime shape for consumers that use
-`rehydration-kernel` as a context engine.
+`kmp` as a context engine.
 
 They are intentionally separate from the kernel-owned contract examples under:
 
@@ -18,9 +18,9 @@ The shape is:
 
 The shared reference implementation lives in:
 
-- [`runtime_http_client.rs`](../../../../crates/rehydration-transport-grpc/src/agentic_reference/runtime_http_client.rs)
-- [`main.rs`](../../../../crates/rehydration-transport-grpc/src/bin/runtime_reference_client/main.rs)
+- [`runtime_http_client.rs`](../../../../crates/kmp-transport-grpc/src/agentic_reference/runtime_http_client.rs)
+- [`main.rs`](../../../../crates/kmp-transport-grpc/src/bin/runtime_reference_client/main.rs)
 
 The fake server used by the E2E lives in:
 
-- [`fake_underpass.rs`](../../../../crates/rehydration-tests-shared/src/runtime/fake_underpass.rs)
+- [`fake_underpass.rs`](../../../../crates/kmp-tests-shared/src/runtime/fake_underpass.rs)

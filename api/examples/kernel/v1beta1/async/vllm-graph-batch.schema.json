@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://underpass.ai/schemas/rehydration-kernel/v1beta1/vllm-graph-batch.schema.json",
+  "$id": "https://underpass.ai/schemas/kmp/v1beta1/vllm-graph-batch.schema.json",
   "title": "LlmGraphBatch",
   "description": "Bounded aggregate update around one root node for translation into kernel projection events.",
   "type": "object",

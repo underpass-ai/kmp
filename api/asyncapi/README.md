@@ -12,7 +12,7 @@ This AsyncAPI contract is the generic kernel-owned async boundary.
 
 The contract gate validates that this boundary stays free of product-specific
 legacy nouns and remains aligned with the descriptor tests in
-`rehydration-proto`.
+`kmp-proto`.
 
 Reference event fixtures live under:
 

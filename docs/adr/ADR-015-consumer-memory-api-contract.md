@@ -1,4 +1,4 @@
-# ADR-015: `rehydration-memory-api` is the contract an embedding product compiles against
+# ADR-015: `kmp-memory-api` is the contract an embedding product compiles against
 
 **Status:** Accepted
 **Date:** 2026-08-04
@@ -6,15 +6,15 @@
 
 ## Decision
 
-Products that embed the kernel have been importing `rehydration-embedded` and,
-with it, the domain: `rehydration-domain` aggregates and
-`rehydration-application` queries crossing into a consumer's dependency graph,
+Products that embed the kernel have been importing `kmp-embedded` and,
+with it, the domain: `kmp-domain` aggregates and
+`kmp-application` queries crossing into a consumer's dependency graph,
 where every internal change of ours is a possible break of theirs. The kernel
 promised its consumers stability, but there was no artifact whose version that
 promise attached to.
 
-`rehydration-memory-api` is a leaf crate holding the published consumer
-contract, and nothing else. It is the sibling of `rehydration-plugin-api`,
+`kmp-memory-api` is a leaf crate holding the published consumer
+contract, and nothing else. It is the sibling of `kmp-plugin-api`,
 pointing the other way: that crate is what a plugin may know about the kernel,
 this one is what an embedding product may know.
 
@@ -42,7 +42,7 @@ consumer that needs them coordinates through the kernel's own surfaces. The
 contract grows by adding named capabilities, never by widening what an
 existing one means.
 
-The crate depends on nothing of the kernel. `rehydration-embedded` implements
+The crate depends on nothing of the kernel. `kmp-embedded` implements
 the trait for `EmbeddedKernel`; the dependency arrow points from
 implementation to contract, never back.
 
@@ -53,13 +53,13 @@ it by name.
 
 ## Consequences
 
-- A consumer compiles against `rehydration-memory-api` plus an implementation
+- A consumer compiles against `kmp-memory-api` plus an implementation
   crate, and is testable against a stub of the trait alone.
 - The recall tiers are named in the contract (`Summary`, `CausalSpine`,
   `EvidencePack`) without exporting the domain's resolution ladder; what each
   rung costs remains the implementation's business.
 - Everything the kernel does beyond this contract remains reachable through
-  `rehydration-embedded`'s own surfaces, unversioned and unpromised. A
+  `kmp-embedded`'s own surfaces, unversioned and unpromised. A
   consumer that keeps using those is choosing coupling, and the line between
   the two is now visible in its `Cargo.toml`.
 - The known first consumer can bind its own memory port to this trait and stop

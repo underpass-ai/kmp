@@ -150,13 +150,13 @@ KMP behavior should follow the existing hexagonal boundaries:
 Domain owns memory traversal concepts and rules:
 
 ```text
-crates/rehydration-domain/src/value_objects/
+crates/kmp-domain/src/value_objects/
   dimension_selection.rs
   memory_dimension_identity.rs
   temporal_coordinate.rs
   temporal_cursor.rs
 
-crates/rehydration-domain/src/model/temporal_memory/
+crates/kmp-domain/src/model/temporal_memory/
   mod.rs
   axis_key.rs
   extract.rs
@@ -173,7 +173,7 @@ dimension ids as global.
 Application owns orchestration over existing ports:
 
 ```text
-crates/rehydration-application/src/memory/
+crates/kmp-application/src/memory/
   mod.rs
   types.rs
   ingest.rs
@@ -192,8 +192,8 @@ Responsibilities:
 Transport code should stay thin:
 
 ```text
-crates/rehydration-transport-grpc/src/transport/memory_grpc_service_v1beta1.rs
-crates/rehydration-transport-grpc/src/transport/proto_mapping_v1beta1/memory_mapping.rs
+crates/kmp-transport-grpc/src/transport/memory_grpc_service_v1beta1.rs
+crates/kmp-transport-grpc/src/transport/proto_mapping_v1beta1/memory_mapping.rs
 ```
 
 Responsibilities:
@@ -332,7 +332,7 @@ MCP live mode does not make direct client calls to:
 - `ContextCommandServiceClient`;
 - `ContextQueryServiceClient`.
 
-Fixture mode remains explicit with `REHYDRATION_MCP_BACKEND=fixture`.
+Fixture mode remains explicit with `KMP_MCP_BACKEND=fixture`.
 
 ## Test Plan
 
@@ -414,7 +414,7 @@ and assert typed temporal/inspect raw audit refs.
 The public endpoint smoke target remains:
 
 ```text
-https://rehydration-kernel.underpassai.com
+https://kmp.underpassai.com
 ```
 
 ## Documentation Status
@@ -426,7 +426,7 @@ Implemented documentation updates:
   additive service and states that lower-level query/command services remain.
 - `docs/operations/mcp-stdio.md` describes live MCP as
   `KernelMemoryService`-backed.
-- `crates/rehydration-mcp/README.md` removes the old live binding table.
+- `crates/kmp-mcp/README.md` removes the old live binding table.
 - KMP fixtures reference `memory.proto` as the typed gRPC binding.
 
 ## Non-Goals

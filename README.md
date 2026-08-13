@@ -1,4 +1,4 @@
-# Underpass Kernel
+# KMP by Underpass
 
 > Part of [Underpass AI](https://underpassai.com) — memory and execution infrastructure for reliable AI agents.
 
@@ -10,9 +10,8 @@ to give your AI agent graph-aware context with sequence diagrams and examples.
 
 ## What This Repo Is
 
-Underpass Kernel implements Kernel Memory Protocol (KMP): an API-first memory
-layer for agents, tools, and humans that need to query, traverse, inspect, and
-audit process memory.
+KMP (Kernel Memory Protocol) is an API-first memory layer for agents, tools,
+and humans that need to query, traverse, inspect, and audit process memory.
 
 The kernel models memory around six ideas:
 
@@ -67,7 +66,7 @@ For real agentic work, useful questions look like this:
 
 ```mermaid
 graph LR
-    A[Agent / LLM / Human tool] -- gRPC / MCP --> K[Underpass Kernel<br/>KMP]
+    A[Agent / LLM / Human tool] -- gRPC / MCP --> K[KMP<br/>KMP]
     K -. context / trace / inspect .-> A
 
     K --> GP[(Graph persistence)]
@@ -98,7 +97,7 @@ no required intermediary, and a frontier model would not route through a smaller
 graph LR
     A["Frontier model / agent<br/>(Codex, Claude Code, Opus, GPT-5.x)<br/>understands the message · reasons"]
     MCP["MCP — KMP tool surface"]
-    K["Underpass Kernel / KMP<br/>memory · traversal · proof · validation"]
+    K["KMP / KMP<br/>memory · traversal · proof · validation"]
     A -->|"kernel_wake / ask / near / trace / inspect / write_memory"| MCP
     MCP --> K
     K -->|"evidence · refs · proof · or fail-fast"| A
@@ -161,9 +160,9 @@ KMP is moving toward two distributions that share the same protocol semantics:
   construction. Quickstart:
 
   ```bash
-  cargo install --path crates/rehydration-mcp --locked
+  cargo install --path crates/kmp-mcp --locked
   claude mcp add kernel-memory --scope user \
-    --env REHYDRATION_MCP_BACKEND=embedded -- ~/.cargo/bin/rehydration-mcp
+    --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
   ```
 
   Prebuilt binaries + install script: see
@@ -182,7 +181,7 @@ bash scripts/ci/quality-gate.sh      # format + clippy + contract + tests
 ```
 
 ```bash
-docker pull ghcr.io/underpass-ai/rehydration-kernel:latest
+docker pull ghcr.io/underpass-ai/kmp:latest
 ```
 
 `latest` is for a quick trial; pin a `sha-<short-commit>` or `v*` tag (or a digest) in production.
@@ -195,15 +194,15 @@ Full guides: [usage](./docs/usage-guide.md) | [testing](./docs/testing.md) |
 
 ```bash
 # Enable E2E tests and run against live cluster
-helm upgrade rehydration-kernel charts/rehydration-kernel \
+helm upgrade kmp charts/kmp \
   --reuse-values --set e2e.enabled=true
 
-helm test rehydration-kernel --timeout 5m
+helm test kmp --timeout 5m
 # Helm hooks cover transport/mTLS smoke plus the typed KernelMemoryService lifecycle.
 ```
 
 Tests require the `e2e-client-tls` secret (same CA used by the kernel).
-See `charts/rehydration-kernel/values.yaml` for full E2E configuration.
+See `charts/kmp/values.yaml` for full E2E configuration.
 
 ## Architecture
 
@@ -315,13 +314,13 @@ api/proto/          gRPC contracts (v1beta1)
 api/asyncapi/       async contracts (NATS JetStream)
 api/examples/       request, response, and event fixtures
 crates/
-  rehydration-domain/       domain model, value objects, invariants
-  rehydration-application/  use cases, rendering pipeline
+  kmp-domain/       domain model, value objects, invariants
+  kmp-application/  use cases, rendering pipeline
   rehydration-adapter-*/    Neo4j, Valkey, NATS adapters
   rehydration-transport-*/  gRPC server, proto mapping
-  rehydration-observability/ OTel + Loki quality observers
-  rehydration-server/       composition root
-  rehydration-testkit/      dataset generator, evaluation harness
+  kmp-observability/ OTel + Loki quality observers
+  kmp-server/       composition root
+  kmp-testkit/      dataset generator, evaluation harness
   rehydration-tests-*/      integration + benchmark tests
 charts/             Helm chart (kernel + optional sidecars)
 docs/               guides, operations, security, observability, testing

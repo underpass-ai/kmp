@@ -15,7 +15,7 @@ inferred from those observations, and what remains unproven.
 
 Test exercised:
 
-- [`pir_graph_batch_incremental_context_consumption_smoke_succeeds_against_live_kernel`](../../crates/rehydration-testkit/tests/pir_graph_batch_roundtrip_smoke.rs)
+- [`pir_graph_batch_incremental_context_consumption_smoke_succeeds_against_live_kernel`](../../crates/kmp-testkit/tests/pir_graph_batch_roundtrip_smoke.rs)
 
 Fixtures used:
 
@@ -40,8 +40,8 @@ Cluster endpoints used during the run:
 
 - primary LLM: `http://vllm-qwen35-9b:8000/v1/chat/completions`
 - semantic reranker: `http://vllm-semantic-reranker:8000/score`
-- kernel gRPC: `https://rehydration-kernel:50054`
-- kernel NATS: `nats://rehydration-kernel-nats:4222`
+- kernel gRPC: `https://kmp:50054`
+- kernel NATS: `nats://kmp-nats:4222`
 
 Run namespace:
 

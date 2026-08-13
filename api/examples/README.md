@@ -16,7 +16,7 @@ They are split by transport and version:
 - `runtime-reference/v1`: consumer-side runtime examples used by the agentic
   integration reference
 
-They are validated by `rehydration-proto` contract tests and the contract gate:
+They are validated by `kmp-proto` contract tests and the contract gate:
 
 ```bash
 bash scripts/ci/contract-gate.sh

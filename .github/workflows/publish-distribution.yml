@@ -9,10 +9,10 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ghcr.io/underpass-ai/rehydration-kernel
-  CHART_NAME: rehydration-kernel
+  IMAGE_NAME: ghcr.io/underpass-ai/kmp
+  CHART_NAME: kmp
   CHART_REGISTRY: oci://ghcr.io/underpass-ai/charts
-  CHART_PATH: charts/rehydration-kernel
+  CHART_PATH: charts/kmp
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:

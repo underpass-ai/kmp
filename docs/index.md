@@ -66,9 +66,9 @@ Current integration stance:
 | [ADR-010](adr/ADR-010-embedded-graph-representation.md) | Embedded graph as materialized adjacency, no in-memory rebuild |
 | [ADR-011](adr/ADR-011-embedded-concurrency-model.md) | Embedded single-writer lock, fail-fast; daemon as evolution |
 | [ADR-012](adr/ADR-012-embedded-data-directory.md) | Embedded data dir: env override, project `.kernel/`, XDG fallback |
-| [ADR-013](adr/ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `rehydration-mcp` |
+| [ADR-013](adr/ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `kmp-mcp` |
 | [ADR-014](adr/ADR-014-embedded-quality-telemetry.md) | Separate fail-open redb journal for embedded quality telemetry |
-| [ADR-015](adr/ADR-015-consumer-memory-api-contract.md) | `rehydration-memory-api` — the contract an embedding product compiles against |
+| [ADR-015](adr/ADR-015-consumer-memory-api-contract.md) | `kmp-memory-api` — the contract an embedding product compiles against |
 | [ADR-016](adr/ADR-016-consumer-memory-record-contract.md) | The consumer contract gains a record surface |
 | [ADR-017](adr/ADR-017-embedded-memory-viewer.md) | In-process web viewer over the embedded kernel |
 

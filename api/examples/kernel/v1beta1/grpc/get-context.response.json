@@ -20,7 +20,7 @@
           },
           "provenance": {
             "sourceKind": "SOURCE_KIND_PROJECTION",
-            "sourceAgent": "rehydration-kernel",
+            "sourceAgent": "kmp",
             "observedAt": "2026-03-10T10:00:00Z"
           }
         },
@@ -82,7 +82,7 @@
       "schemaVersion": "v1beta1",
       "projectionWatermark": "evt-4242",
       "generatedAt": "2026-03-10T10:00:00Z",
-      "generatorVersion": "rehydration-kernel/1.0.0"
+      "generatorVersion": "kmp/1.0.0"
     }
   },
   "rendered": {

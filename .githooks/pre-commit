@@ -10,8 +10,8 @@ if [[ "${SKIP_NEO4J_SCHEMA_HOOK:-}" == "1" ]]; then
   echo "pre-commit: skipping Neo4j schema migration checks because SKIP_NEO4J_SCHEMA_HOOK=1"
 else
   echo "pre-commit: running Neo4j schema migration fast checks"
-  cargo test -p rehydration-adapter-neo4j --locked schema_migration
-  cargo check -p rehydration-server --bin rehydration-neo4j-migrate --locked
+  cargo test -p kmp-adapter-neo4j --locked schema_migration
+  cargo check -p kmp-server --bin kmp-neo4j-migrate --locked
 fi
 
 if [[ "${SKIP_CLIPPY_HOOK:-}" == "1" ]]; then

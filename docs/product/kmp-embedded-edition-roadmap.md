@@ -61,16 +61,16 @@ backend-independent semantics" ([documentation-catalog.md](../documentation-cata
 The embedded edition does not start from zero:
 
 - **Hexagonal seam already exists.** All persistence is behind traits in
-  `rehydration-domain`, re-exported by `rehydration-ports`:
+  `kmp-domain`, re-exported by `kmp-ports`:
   `GraphNeighborhoodReader`, `NodeDetailReader`, `NodeRelationshipReader`,
   `MemoryAboutIndexReader`, `ProjectionWriter`, `ProcessedEventStore`,
   `ProjectionCheckpointStore`, `SnapshotStore`, `ContextEventStore`,
   `TokenEstimator`.
 - **In-memory port implementations exist** in
-  `crates/rehydration-testkit/src/in_memory_stores.rs`. They are test-grade
+  `crates/kmp-testkit/src/in_memory_stores.rs`. They are test-grade
   (fixture lookups, partial traversal), but they prove the ports are
   implementable without Cypher or external services.
-- **The MCP stdio binary exists** (`crates/rehydration-mcp`) with an explicit
+- **The MCP stdio binary exists** (`crates/kmp-mcp`) with an explicit
   backend switch (`src/backend.rs`): `live` (gRPC) and `fixture`. The embedded
   edition is a third backend, not a new binary.
 - **Replay-safe projections.** Runtime guarantees already require event
@@ -104,7 +104,7 @@ single-writer fail-fast lock),
 [ADR-012](../adr/ADR-012-embedded-data-directory.md) (data directory
 contract),
 [ADR-013](../adr/ADR-013-embedded-packaging.md) (packaging: `embedded`
-backend in `rehydration-mcp`).
+backend in `kmp-mcp`).
 
 Goal:
 
@@ -132,8 +132,8 @@ Deliverables:
   vs per-user (XDG data dir keyed by project path), env override, precedence
   rules.
 - **Edition naming and packaging.** One binary with backends
-  (`rehydration-mcp` gains `embedded`) vs a separate `kmp` binary. Default
-  recommendation: extend `rehydration-mcp`; revisit branding at E5.
+  (`kmp-mcp` gains `embedded`) vs a separate `kmp` binary. Default
+  recommendation: extend `kmp-mcp`; revisit branding at E5.
 
 Exit criteria:
 
@@ -144,19 +144,19 @@ Exit criteria:
 ## Milestone E1: Backend-Independent Conformance Suite
 
 Priority: P0
-Status: **done (2026-07-21)** — `crates/rehydration-conformance`: 16 scenarios
+Status: **done (2026-07-21)** — `crates/kmp-conformance`: 16 scenarios
 expressed only in ports + application services (write→read coherence,
 depth-bounded traversal, context paths, ingest idempotency, projection-event
 dedup, replay safety, known-at-time temporal navigation, relation proof).
 Runs green against (a) the coherent in-memory kernel store
-(`rehydration-testkit::InMemoryKernelStore`, new — the fixture-style stores
+(`kmp-testkit::InMemoryKernelStore`, new — the fixture-style stores
 had no write→read coherence) in the `test` job, and (b) the containerized
 Neo4j/Valkey adapters in the `integration-conformance` job. Linked as the
 executable definition of storage semantics from
 [runtime-guarantees.md](../runtime-guarantees.md). Port-leakage audit: clean
 on Cypher/Neo4j/Valkey categories; one finding ticketed
-([#128](https://github.com/underpass-ai/rehydration-kernel/issues/128),
-NATS publisher + `async-nats` dependency in `rehydration-transport-grpc`).
+([#128](https://github.com/underpass-ai/kmp/issues/128),
+NATS publisher + `async-nats` dependency in `kmp-transport-grpc`).
 
 This is the keystone: it is what lets the embedded edition claim "same
 product" instead of "similar product", and it protects both editions from
@@ -169,7 +169,7 @@ application services, runnable against any adapter set.
 
 Deliverables:
 
-- `rehydration-conformance` crate (or module in `rehydration-tests-shared`):
+- `kmp-conformance` crate (or module in `kmp-tests-shared`):
   scenario-based tests covering ingest → projection → wake/ask/near/goto/
   rewind/forward/trace/inspect, idempotency, event dedup, replay, known-at-
   time reads, relation proof;
@@ -187,7 +187,7 @@ Exit criteria:
 ## Milestone E2: Embedded Storage Adapters
 
 Priority: P0
-Status: **done (2026-07-21)** — `crates/rehydration-adapter-embedded`:
+Status: **done (2026-07-21)** — `crates/kmp-adapter-embedded`:
 `EmbeddedKernelStore` implements every persistence port on one redb file
 (ADR-009 layout under the ADR-012 data dir: `FORMAT_VERSION` fail-fast +
 `store/kernel.redb`), with fsync-durable commits, materialized by-source +
@@ -195,7 +195,7 @@ by-target adjacency (ADR-010), an anchor index, the append-only context
 event log as source of truth, and
 `rebuild_projections(derive)`/`compact_data_dir` as the replay/compaction
 tooling (derivation injected from
-`rehydration_application::projection_mutations_for_context_event`, so the
+`kmp_application::projection_mutations_for_context_event`, so the
 adapter stays application-free). Exit criteria measured:
 - conformance suite green (arm c, 16/16, runs in the plain `test` job);
 - `kill -9` mid-write, reopen, replay: acknowledged events all survive, at
@@ -210,7 +210,7 @@ Depends on: E0 (engine decision), E1 (suite to develop against)
 
 Goal:
 
-`rehydration-adapter-embedded`: production-grade local persistence
+`kmp-adapter-embedded`: production-grade local persistence
 implementing every port, in one data directory.
 
 Deliverables:
@@ -222,7 +222,7 @@ Deliverables:
   `MemoryAboutIndexReader`, `ProjectionCheckpointStore`, `SnapshotStore` on
   the chosen engine;
 - **synchronous projection runtime**: in-process equivalent of
-  `rehydration-server/src/projection_nats_runtime.rs` that applies projection
+  `kmp-server/src/projection_nats_runtime.rs` that applies projection
   mutations inline on ingest — this is what makes
   `read_after_write_ready=true` unconditional in embedded mode;
 - store versioning: format version stamped in the data dir, fail-fast on
@@ -241,19 +241,19 @@ Exit criteria:
 
 Priority: P0
 Status: **done (2026-07-24)** — core landed 2026-07-22:
-`REHYDRATION_MCP_BACKEND=embedded` runs the kernel in-process.
-`rehydration-embedded` composition root (ADR-012
+`KMP_MCP_BACKEND=embedded` runs the kernel in-process.
+`kmp-embedded` composition root (ADR-012
 data-dir resolution env > project `.kernel/` self-gitignoring > XDG;
 single-writer fail-fast via the engine lock per ADR-011);
-`rehydration-proto-mapping` extracted from `transport-grpc` so the embedded
+`kmp-proto-mapping` extracted from `transport-grpc` so the embedded
 backend reuses the exact live-mode JSON path (args → proto → application →
 proto → JSON: identical tool JSON by construction, no tonic server/neo4rs/nats
 in the MCP binary); e2e test proves cross-session memory recovery.
 The local quality-telemetry journal landed under ADR-014: bounded buffered
 observer → `telemetry/quality.redb`, with OTEL dependencies compile-time
-excluded from `rehydration-embedded` and enforced by the dependency gate on
+excluded from `kmp-embedded` and enforced by the dependency gate on
 2026-07-24. The local log file landed with it: daily-rotating JSON lines under
-`<data-dir>/logs/rehydration-mcp.log.<date>`, stdout left to MCP JSON-RPC.
+`<data-dir>/logs/kmp-mcp.log.<date>`, stdout left to MCP JSON-RPC.
 Both exit criteria are met — embedded passes the MCP-level e2e flows, and the
 fresh-machine install → write → kill session → recover path is verified on
 Linux (E4/E5 evidence). Measured: 13.18MiB stripped release binary carrying
@@ -267,15 +267,15 @@ Depends on: E2
 
 Goal:
 
-`REHYDRATION_MCP_BACKEND=embedded` — the existing stdio binary runs the full
+`KMP_MCP_BACKEND=embedded` — the existing stdio binary runs the full
 kernel in-process.
 
 Deliverables:
 
-- composition root (`rehydration-embedded` crate or feature-gated module):
-  wires `rehydration-application` + embedded adapters + synchronous
+- composition root (`kmp-embedded` crate or feature-gated module):
+  wires `kmp-application` + embedded adapters + synchronous
   projection, no tonic/gRPC in the dependency graph;
-- third backend in `rehydration-mcp/src/backend.rs` next to `live` and
+- third backend in `kmp-mcp/src/backend.rs` next to `live` and
   `fixture`, with data-dir resolution per the E0 contract and fail-fast
   errors (locked store, corrupt store, version mismatch);
 - cargo feature split so `--features embedded` (default for the installable
@@ -283,13 +283,13 @@ Deliverables:
   (target: single-digit MB stripped, measured not promised);
 - local observability: structured log file in the data dir (rotation, no
   stdout pollution — stdout belongs to MCP JSON-RPC), optional OTLP export
-  reusing `rehydration-observability`;
+  reusing `kmp-observability`;
 - `kernel_ingest`/`kernel_write_memory` responses report
   `read_after_write_ready=true` in embedded mode.
 
 Exit criteria:
 
-- `rehydration-mcp` with backend=embedded passes the MCP-level e2e flows that
+- `kmp-mcp` with backend=embedded passes the MCP-level e2e flows that
   live mode passes today (fixture flows already exist as the template);
 - fresh machine test: install binary, register in one MCP client, write
   memory, kill session, new session recovers it — no other process running.
@@ -366,7 +366,7 @@ Deliverables:
 - release CI producing prebuilt, stripped, checksummed binaries:
   linux x86_64/aarch64 (musl if the E0 engine choice allows), macOS
   arm64/x86_64, Windows x86_64;
-- `cargo install rehydration-mcp` path kept working (already documented in
+- `cargo install kmp-mcp` path kept working (already documented in
   [mcp-stdio.md](../operations/mcp-stdio.md)); crates.io publication decision;
 - install script that drops the binary and prints the per-host registration
   snippet;
@@ -386,11 +386,11 @@ Priority: P1
 Status: **done (2026-07-24), reframed embedded-first** — with the
 infrastructure edition retired as a deployment target (owner decision),
 export/import is backup and portability between embedded stores, not
-cluster promotion. Delivered: `rehydration-mcp export/import <file>` CLI
+cluster promotion. Delivered: `kmp-mcp export/import <file>` CLI
 (the event log as a JSON-Lines bundle with fail-fast header checks,
 empty-store-only import, exact revision reproduction) + round-trip test
 proving wake, known-at-time and relation-proof parity
-(`rehydration-embedded/tests/export_import_roundtrip.rs`) + live binary
+(`kmp-embedded/tests/export_import_roundtrip.rs`) + live binary
 smoke. Conformance for all three adapter sets already permanent in CI (E1).
 Benchmark parity: **LongMemEval deterministic recall run recorded**
 (2026-07-23, 470/470 full evidence hits on 500 oracle items in 112.6s —
@@ -422,7 +422,7 @@ Deliverables:
   ingest, and back (grow `seed_to_bundle` into a supported
   `kernel export` / `kernel import` flow with provenance preserved);
 - documented promotion story: same MCP client config, switch
-  `REHYDRATION_MCP_BACKEND=embedded` → `live` + endpoint, import the bundle —
+  `KMP_MCP_BACKEND=embedded` → `live` + endpoint, import the bundle —
   a team graduates from laptop memory to shared incident memory without
   changing how agents use the tools;
 - conformance suite in CI for all three adapter sets permanently (in-memory,
@@ -441,7 +441,7 @@ Exit criteria:
 E0 (decisions/ADRs)
   └── E1 (conformance suite)  ── keystone, unblocks honest parallel work
         └── E2 (embedded adapters + sync projection)
-              └── E3 (embedded backend in rehydration-mcp)
+              └── E3 (embedded backend in kmp-mcp)
                     ├── E4 (host integrations: Claude Code, Codex, OpenCode, Copilot)
                     ├── E5 (distribution)
                     └── E6 (parity evidence + promotion path)

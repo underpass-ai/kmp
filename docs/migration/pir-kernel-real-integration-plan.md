@@ -42,7 +42,7 @@ Operational support already in place:
 - in-cluster contract runner for sync and async paths:
   [`e2e/kernel-runner/`](../../e2e/kernel-runner/)
 - example job manifest:
-  [`k8s/rehydration-kernel-e2e-runner.example.yaml`](../../k8s/rehydration-kernel-e2e-runner.example.yaml)
+  [`k8s/kmp-e2e-runner.example.yaml`](../../k8s/kmp-e2e-runner.example.yaml)
 
 ## What We Are Validating First
 

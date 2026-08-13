@@ -265,7 +265,7 @@ embedded-only MCP operation.
 
 ## Structured Logs (Loki)
 
-When `REHYDRATION_LOG_FORMAT=json`, the `TracingQualityObserver` emits:
+When `KMP_LOG_FORMAT=json`, the `TracingQualityObserver` emits:
 
 ```json
 {
@@ -321,28 +321,28 @@ Error logs include:
 
 ```logql
 # All quality metrics events
-{app_kubernetes_io_name="rehydration-kernel"} | json | quality_compression_ratio > 0
+{app_kubernetes_io_name="kmp"} | json | quality_compression_ratio > 0
 
 # High compression renders
-{app_kubernetes_io_name="rehydration-kernel"} | json | quality_compression_ratio > 2.0
+{app_kubernetes_io_name="kmp"} | json | quality_compression_ratio > 2.0
 
 # Low causal density (structural-heavy graphs)
-{app_kubernetes_io_name="rehydration-kernel"} | json | quality_causal_density < 0.3
+{app_kubernetes_io_name="kmp"} | json | quality_causal_density < 0.3
 
 # Quality by RPC
-{app_kubernetes_io_name="rehydration-kernel"} | json | rpc = "GetContext"
+{app_kubernetes_io_name="kmp"} | json | rpc = "GetContext"
 
 # KMP calls scoped to the current memory anchor
-{app_kubernetes_io_name="rehydration-kernel"} | json | message = "kernel memory grpc request" | dimension_scope = "current_about"
+{app_kubernetes_io_name="kmp"} | json | message = "kernel memory grpc request" | dimension_scope = "current_about"
 
 # Intentional all-about KMP reads
-{app_kubernetes_io_name="rehydration-kernel"} | json | message = "kernel memory grpc request" | dimension_scope = "all_abouts"
+{app_kubernetes_io_name="kmp"} | json | message = "kernel memory grpc request" | dimension_scope = "all_abouts"
 
 # Resolved memory anchors for all-about KMP reads
-{app_kubernetes_io_name="rehydration-kernel"} | json | message = "kernel memory grpc response" | selected_abouts != ""
+{app_kubernetes_io_name="kmp"} | json | message = "kernel memory grpc response" | selected_abouts != ""
 
 # KMP fail-fast or storage conflict errors
-{app_kubernetes_io_name="rehydration-kernel"} | json | message = "kernel memory grpc error"
+{app_kubernetes_io_name="kmp"} | json | message = "kernel memory grpc error"
 ```
 
 ### PromQL Examples
@@ -408,7 +408,7 @@ kubectl port-forward svc/<release>-grafana 3000:3000 -n <namespace>
 
 | Variable | Default | Description |
 |:---------|:--------|:------------|
-| `REHYDRATION_LOG_FORMAT` | `compact` | Log format: `json` (for Loki), `pretty`, `compact` |
+| `KMP_LOG_FORMAT` | `compact` | Log format: `json` (for Loki), `pretty`, `compact` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP gRPC endpoint (auto-set when otelCollector enabled) |
 | `OTEL_TRACES_EXPORTER` | — | Standard OTel traces exporter selector. Set to `none` to disable trace export while keeping metrics enabled |
 | `OTEL_EXPORTER_OTLP_CA_PATH` | — | CA certificate for OTLP server verification |

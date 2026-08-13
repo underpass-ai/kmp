@@ -1,15 +1,15 @@
 # Kernel Agentic Integration E2E
 
 > **Path update**: Test files referenced below moved from
-> `crates/rehydration-transport-grpc/tests/` to `crates/rehydration-tests-kernel/tests/`
-> and support modules to `crates/rehydration-tests-shared/src/`. See the
+> `crates/kmp-transport-grpc/tests/` to `crates/kmp-tests-kernel/tests/`
+> and support modules to `crates/kmp-tests-shared/src/`. See the
 > [benchmark docs](../research/benchmark-paper-use-cases.md) for current paths.
 
 Status: Active
 
 ## Goal
 
-Prove that `rehydration-kernel` is consumable by agentic systems through a
+Prove that `kmp` is consumable by agentic systems through a
 generic node-centric contract, without embedding product-specific nouns into
 the core.
 
@@ -23,7 +23,7 @@ This milestone demonstrates an end-to-end path where:
 ## What Is Implemented
 
 The repository now contains a container-backed agentic integration suite in
-[`agentic_integration.rs`](../../crates/rehydration-tests-kernel/tests/agentic_integration.rs).
+[`agentic_integration.rs`](../../crates/kmp-tests-kernel/tests/agentic_integration.rs).
 
 The suite proves two runtime modes:
 
@@ -36,14 +36,14 @@ The suite proves two runtime modes:
 The test infrastructure is split into small files:
 
 - runtime-agnostic agent logic:
-  - [`basic_context_agent.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/basic_context_agent.rs)
+  - [`basic_context_agent.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/basic_context_agent.rs)
 - kernel fixture and projection seeding:
-  - [`projection_runtime.rs`](../../crates/rehydration-adapter-nats/src/runtime/projection_runtime.rs)
+  - [`projection_runtime.rs`](../../crates/kmp-adapter-nats/src/runtime/projection_runtime.rs)
 - runtime abstractions and implementations:
-  - [`workspace.rs`](../../crates/rehydration-tests-shared/src/runtime/workspace.rs)
-  - [`runtime_http_client.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/runtime_http_client.rs)
-  - [`fake_underpass.rs`](../../crates/rehydration-tests-shared/src/runtime/fake_underpass.rs)
-  - [`main.rs`](../../crates/rehydration-transport-grpc/src/bin/runtime_reference_client/main.rs)
+  - [`workspace.rs`](../../crates/kmp-tests-shared/src/runtime/workspace.rs)
+  - [`runtime_http_client.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/runtime_http_client.rs)
+  - [`fake_underpass.rs`](../../crates/kmp-tests-shared/src/runtime/fake_underpass.rs)
+  - [`main.rs`](../../crates/kmp-transport-grpc/src/bin/runtime_reference_client/main.rs)
 
 ## What The E2E Proves
 

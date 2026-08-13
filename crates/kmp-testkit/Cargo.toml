@@ -1,0 +1,25 @@
+[package]
+name = "kmp-testkit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+async-nats = "0.46.0"
+kmp-application.workspace = true
+kmp-domain.workspace = true
+kmp-interpretation.workspace = true
+kmp-mcp.workspace = true
+kmp-proto.workspace = true
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+sha2.workspace = true
+tiktoken-rs.workspace = true
+tokio.workspace = true
+tokio-rustls = "0.26.4"
+tonic.workspace = true

@@ -9,7 +9,7 @@ cd "${ROOT_DIR}"
 mkdir -p target/llvm-cov
 
 COVERAGE_MIN_LINES="${COVERAGE_MIN_LINES:-80}"
-COVERAGE_IGNORE_FILENAME_REGEX="${COVERAGE_IGNORE_FILENAME_REGEX:-rehydration-conformance/.*|rehydration-testkit/.*|rehydration-tests-shared/.*|rehydration-tests-kernel/.*|rehydration-tests-paper/.*|rehydration-transport-grpc/src/agentic_reference/.*}"
+COVERAGE_IGNORE_FILENAME_REGEX="${COVERAGE_IGNORE_FILENAME_REGEX:-kmp-conformance/.*|kmp-testkit/.*|kmp-tests-shared/.*|kmp-tests-kernel/.*|kmp-tests-paper/.*|kmp-transport-grpc/src/agentic_reference/.*}"
 
 if [[ -z "${LLVM_COV:-}" ]] && command -v llvm-cov >/dev/null 2>&1; then
   export LLVM_COV
@@ -47,13 +47,13 @@ run_container_coverage_test() {
   return 0
 }
 
-run_container_coverage_test rehydration-adapter-valkey valkey_integration
-run_container_coverage_test rehydration-adapter-neo4j neo4j_integration
-run_container_coverage_test rehydration-adapter-nats runtime_integration
-run_container_coverage_test rehydration-tests-kernel agentic_integration
-run_container_coverage_test rehydration-tests-kernel agentic_event_integration
-run_container_coverage_test rehydration-tests-kernel kernel_full_journey_integration
-run_container_coverage_test rehydration-tests-kernel kernel_full_journey_tls_integration
+run_container_coverage_test kmp-adapter-valkey valkey_integration
+run_container_coverage_test kmp-adapter-neo4j neo4j_integration
+run_container_coverage_test kmp-adapter-nats runtime_integration
+run_container_coverage_test kmp-tests-kernel agentic_integration
+run_container_coverage_test kmp-tests-kernel agentic_event_integration
+run_container_coverage_test kmp-tests-kernel kernel_full_journey_integration
+run_container_coverage_test kmp-tests-kernel kernel_full_journey_tls_integration
 
 cargo llvm-cov report \
   --locked \

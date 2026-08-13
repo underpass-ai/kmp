@@ -10,9 +10,9 @@
 | [ADR-010](ADR-010-embedded-graph-representation.md) | Embedded graph as materialized adjacency, no in-memory rebuild | — (2026-07-21) |
 | [ADR-011](ADR-011-embedded-concurrency-model.md) | Embedded single-writer lock, fail-fast; daemon as evolution | — (2026-07-21) |
 | [ADR-012](ADR-012-embedded-data-directory.md) | Embedded data dir: env override, project `.kernel/`, XDG fallback | — (2026-07-21) |
-| [ADR-013](ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `rehydration-mcp` | — (2026-07-21) |
+| [ADR-013](ADR-013-embedded-packaging.md) | One binary: `embedded` backend feature in `kmp-mcp` | — (2026-07-21) |
 | [ADR-014](ADR-014-embedded-quality-telemetry.md) | Separate fail-open redb journal for embedded quality telemetry | — (2026-07-22) |
-| [ADR-015](ADR-015-consumer-memory-api-contract.md) | `rehydration-memory-api` — the contract an embedding product compiles against | — (2026-08-04) |
+| [ADR-015](ADR-015-consumer-memory-api-contract.md) | `kmp-memory-api` — the contract an embedding product compiles against | — (2026-08-04) |
 | [ADR-016](ADR-016-consumer-memory-record-contract.md) | The consumer contract gains a record surface | — (2026-08-05) |
 | [ADR-017](ADR-017-embedded-memory-viewer.md) | In-process web viewer over the embedded kernel | — (2026-08-06) |
 

@@ -8,10 +8,10 @@ documentation and pending verification.
 Install once:
 
 ```bash
-cargo install --path crates/rehydration-mcp --locked   # → ~/.cargo/bin/rehydration-mcp
+cargo install --path crates/kmp-mcp --locked   # → ~/.cargo/bin/kmp-mcp
 ```
 
-Without `REHYDRATION_MCP_DATA_DIR`, memory is **per-project by default**:
+Without `KMP_MCP_DATA_DIR`, memory is **per-project by default**:
 the binary walks up from its working directory to the `.git` root and keeps
 memory in `<project>/.kernel/` (auto-gitignored). Set the variable only to
 pin a fixed store.
@@ -20,8 +20,8 @@ pin a fixed store.
 
 ```bash
 claude mcp add kernel-memory --scope user \
-  --env REHYDRATION_MCP_BACKEND=embedded \
-  -- ~/.cargo/bin/rehydration-mcp
+  --env KMP_MCP_BACKEND=embedded \
+  -- ~/.cargo/bin/kmp-mcp
 ```
 
 `--scope user` registers it for every project; each project still gets its
@@ -40,8 +40,8 @@ project with a free store, or close the other session):
 
 ```toml
 [mcp_servers.kernel-memory]
-command = "/home/YOU/.cargo/bin/rehydration-mcp"
-env = { REHYDRATION_MCP_BACKEND = "embedded" }
+command = "/home/YOU/.cargo/bin/kmp-mcp"
+env = { KMP_MCP_BACKEND = "embedded" }
 ```
 
 ## OpenCode — recipe (out of initial product scope)
@@ -53,8 +53,8 @@ Project or global config (`opencode.json`):
   "mcp": {
     "kernel-memory": {
       "type": "local",
-      "command": ["/home/YOU/.cargo/bin/rehydration-mcp"],
-      "environment": { "REHYDRATION_MCP_BACKEND": "embedded" }
+      "command": ["/home/YOU/.cargo/bin/kmp-mcp"],
+      "environment": { "KMP_MCP_BACKEND": "embedded" }
     }
   }
 }
@@ -68,8 +68,8 @@ Project or global config (`opencode.json`):
 {
   "servers": {
     "kernel-memory": {
-      "command": "/home/YOU/.cargo/bin/rehydration-mcp",
-      "env": { "REHYDRATION_MCP_BACKEND": "embedded" }
+      "command": "/home/YOU/.cargo/bin/kmp-mcp",
+      "env": { "KMP_MCP_BACKEND": "embedded" }
     }
   }
 }
@@ -94,7 +94,7 @@ Project or global config (`opencode.json`):
 The embedded store is single-writer (ADR-011): a second host session on the
 same data dir fails fast with an explicit "store is in use" error rather
 than corrupting memory. Close the other session, or point the second one at
-a different `REHYDRATION_MCP_DATA_DIR`. If concurrent sessions on one store
+a different `KMP_MCP_DATA_DIR`. If concurrent sessions on one store
 become a common workflow, the documented evolution is a local daemon.
 
 ## Scripted acceptance demo

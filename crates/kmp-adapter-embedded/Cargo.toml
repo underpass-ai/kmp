@@ -1,0 +1,22 @@
+[package]
+name = "kmp-adapter-embedded"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Embedded edition storage adapters: every kernel port on a single local redb file"
+
+[lints]
+workspace = true
+
+[dependencies]
+redb = "4.1.0"
+kmp-domain.workspace = true
+kmp-observability.workspace = true
+kmp-ports.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+kmp-application.workspace = true
+tempfile = "3.26.0"

@@ -1,8 +1,8 @@
 asyncapi: 2.6.0
-id: urn:underpass:rehydration-kernel:context-projection:v1beta1
+id: urn:underpass:kmp:context-projection:v1beta1
 defaultContentType: application/json
 info:
-  title: Rehydration Kernel Projection Events
+  title: KMP Projection Events
   version: 0.1.0
   description: >
     Versioned event contract for the deterministic context rehydration kernel.

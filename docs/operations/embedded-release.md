@@ -3,7 +3,7 @@
 ## How a release happens
 
 Push a tag `vX.Y.Z` → the `release` workflow builds, strips and checksums
-`rehydration-mcp` for linux x86_64/aarch64, macOS arm64/x86_64 and Windows
+`kmp-mcp` for linux x86_64/aarch64, macOS arm64/x86_64 and Windows
 x86_64, and attaches every artifact (+ `.sha256`) to the GitHub release.
 `workflow_dispatch` runs the same matrix without publishing (pipeline
 verification). The embedded edition releases from the same tags as the
@@ -13,7 +13,7 @@ kernel — one version for the whole product.
 
 - One command: `scripts/install/install.sh` (checksum-verified download,
   prints per-host registration snippets).
-- From source: `cargo install --path crates/rehydration-mcp --locked`
+- From source: `cargo install --path crates/kmp-mcp --locked`
   (kept working; crates.io publication deferred until the name/branding
   decision of ADR-013 is revisited).
 
@@ -37,9 +37,9 @@ matrix in the same PR.
 ## Backup and portability (E6)
 
 ```bash
-rehydration-mcp export memory-backup.jsonl   # data dir per ADR-012 resolution
-rehydration-mcp import memory-backup.jsonl   # into an EMPTY store only
-rehydration-mcp --version                    # binary + store format
+kmp-mcp export memory-backup.jsonl   # data dir per ADR-012 resolution
+kmp-mcp import memory-backup.jsonl   # into an EMPTY store only
+kmp-mcp --version                    # binary + store format
 ```
 
 The bundle is the append-only event log (JSON Lines, header with format

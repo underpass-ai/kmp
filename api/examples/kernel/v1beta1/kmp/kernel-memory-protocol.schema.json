@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://underpass.ai/schemas/rehydration-kernel/v1beta1/kernel-memory-protocol.schema.json",
+  "$id": "https://underpass.ai/schemas/kmp/v1beta1/kernel-memory-protocol.schema.json",
   "title": "KernelMemoryProtocol",
   "description": "Transport-neutral Kernel Memory Protocol contract fixtures for ingest, write-memory, wake, ask, goto, near, rewind, forward, trace, and inspect moves.",
   "oneOf": [

@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 
-SYSTEM_PROMPT = """You operate Underpass Kernel Memory Protocol tools.
+SYSTEM_PROMPT = """You operate KMP Memory Protocol tools.
 
 Return exactly one JSON object with an `action` field.
 Do not explain. Do not include markdown. Do not invent refs, scopes, or hidden memory.

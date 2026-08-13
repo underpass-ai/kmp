@@ -5,7 +5,7 @@ Status: product direction
 
 ## Thesis
 
-Underpass Kernel should expose temporal, multidimensional memory as a queryable
+KMP should expose temporal, multidimensional memory as a queryable
 persistence layer for agentic processes.
 
 The product is not a graph database API, a vector database API, or a chat QA
@@ -414,7 +414,7 @@ Worth it, but scoped.
 LangGraph and Temporal prove the value of checkpointing, replay, durable state,
 and time-travel debugging.
 
-For Underpass Kernel, this should mean:
+For KMP, this should mean:
 
 - inspect memory at checkpoint/ref/time;
 - replay memory context, not necessarily re-execute external side effects;
@@ -583,9 +583,9 @@ The medium-term goal is infrastructure independence:
 The public formulation should be:
 
 ```text
-Underpass Kernel is not Neo4j plus NATS plus Valkey.
+KMP is not Neo4j plus NATS plus Valkey.
 That is one distribution.
-Underpass Kernel is the memory model, traversal semantics, proof contract,
+KMP is the memory model, traversal semantics, proof contract,
 ports, and Kernel Memory Protocol.
 ```
 

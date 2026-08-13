@@ -48,7 +48,7 @@ answer benchmark questions directly.
 
 ## Why This Dataset Exists
 
-Underpass Kernel exposes memory as navigable state: about scopes, dimensions,
+KMP exposes memory as navigable state: about scopes, dimensions,
 temporal movement, graph relations, evidence, and inspection. A general LLM can
 operate those tools, but its tool-use policy can be expensive and inconsistent.
 
@@ -151,7 +151,7 @@ This dataset is intended for:
 - training a small KMP/MCP tool operator;
 - benchmarking memory tool-use policies;
 - comparing deterministic, generalist LLM, and specialist model operators;
-- reproducing live replay checks against an Underpass Kernel deployment.
+- reproducing live replay checks against an KMP deployment.
 
 ## Not Intended For
 
@@ -184,6 +184,6 @@ documented in the repository.
 
 ## Project Links
 
-- Kernel repository: https://github.com/underpass-ai/rehydration-kernel
+- Kernel repository: https://github.com/underpass-ai/kmp
 - Model: https://huggingface.co/underpass-ai/kernel-tool-operator-small
 - Article: https://dev.to/tirsogarcia/building-kernel-memory-protocol-navigable-memory-for-ai-agents-315j

@@ -88,9 +88,9 @@ Outbound TLS with server-side gRPC TLS:
 ```bash
 IMAGE_TAG=main \
 NATS_TLS_MODE=server \
-NATS_TLS_SECRET_NAME=rehydration-kernel-nats-tls \
+NATS_TLS_SECRET_NAME=kmp-nats-tls \
 VALKEY_TLS_ENABLED=true \
-VALKEY_TLS_SECRET_NAME=rehydration-kernel-valkey-tls \
+VALKEY_TLS_SECRET_NAME=kmp-valkey-tls \
 bash scripts/ci/kubernetes-transport-smoke.sh outbound
 ```
 
@@ -100,9 +100,9 @@ Outbound TLS with inbound gRPC mTLS:
 IMAGE_TAG=main \
 GRPC_SMOKE_MODE=mutual \
 NATS_TLS_MODE=mutual \
-NATS_TLS_SECRET_NAME=rehydration-kernel-nats-tls \
+NATS_TLS_SECRET_NAME=kmp-nats-tls \
 VALKEY_TLS_ENABLED=true \
-VALKEY_TLS_SECRET_NAME=rehydration-kernel-valkey-tls \
+VALKEY_TLS_SECRET_NAME=kmp-valkey-tls \
 bash scripts/ci/kubernetes-transport-smoke.sh outbound
 ```
 
@@ -111,9 +111,9 @@ Full sequence:
 ```bash
 IMAGE_TAG=main \
 NATS_TLS_MODE=server \
-NATS_TLS_SECRET_NAME=rehydration-kernel-nats-tls \
+NATS_TLS_SECRET_NAME=kmp-nats-tls \
 VALKEY_TLS_ENABLED=true \
-VALKEY_TLS_SECRET_NAME=rehydration-kernel-valkey-tls \
+VALKEY_TLS_SECRET_NAME=kmp-valkey-tls \
 bash scripts/ci/kubernetes-transport-smoke.sh all
 ```
 
@@ -123,11 +123,11 @@ Full mTLS with OTel Collector and Loki:
 IMAGE_TAG=mtls \
 GRPC_SMOKE_MODE=mutual \
 NATS_TLS_MODE=mutual \
-NATS_TLS_SECRET_NAME=rehydration-kernel-nats-tls \
+NATS_TLS_SECRET_NAME=kmp-nats-tls \
 VALKEY_TLS_ENABLED=true \
-VALKEY_TLS_SECRET_NAME=rehydration-kernel-valkey-tls \
+VALKEY_TLS_SECRET_NAME=kmp-valkey-tls \
 OTEL_TLS_ENABLED=true \
-OTEL_TLS_SECRET_NAME=rehydration-kernel-otel-tls \
+OTEL_TLS_SECRET_NAME=kmp-otel-tls \
 bash scripts/ci/kubernetes-transport-smoke.sh outbound
 ```
 
@@ -157,11 +157,11 @@ CLEANUP_RELEASE=true \
 IMAGE_TAG=mtls \
 GRPC_SMOKE_MODE=mutual \
 NATS_TLS_MODE=mutual \
-NATS_TLS_SECRET_NAME=rehydration-kernel-nats-tls \
+NATS_TLS_SECRET_NAME=kmp-nats-tls \
 VALKEY_TLS_ENABLED=true \
-VALKEY_TLS_SECRET_NAME=rehydration-kernel-valkey-tls \
+VALKEY_TLS_SECRET_NAME=kmp-valkey-tls \
 OTEL_TLS_ENABLED=true \
-OTEL_TLS_SECRET_NAME=rehydration-kernel-otel-tls \
+OTEL_TLS_SECRET_NAME=kmp-otel-tls \
 bash scripts/ci/kubernetes-transport-smoke.sh outbound
 ```
 
@@ -177,8 +177,8 @@ This verifies:
 General:
 
 - `NAMESPACE` (default: `underpass-runtime`)
-- `RELEASE_PREFIX` (default: `rehydration-kernel-smoke`)
-- `VALUES_FILE` (default: `charts/rehydration-kernel/values.underpass-runtime.yaml`)
+- `RELEASE_PREFIX` (default: `kmp-smoke`)
+- `VALUES_FILE` (default: `charts/kmp/values.underpass-runtime.yaml`)
 - `IMAGE_TAG`
 - `IMAGE_DIGEST`
 - `HELM_TIMEOUT` (default: `10m`)

@@ -1,0 +1,302 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/underpass-ai/kmp
+  pullPolicy: IfNotPresent
+  tag: ""
+  digest: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  runAsGroup: 999
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+service:
+  type: ClusterIP
+  grpcPort: 50054
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+tls:
+  mode: disabled
+  existingSecret: ""
+  mountPath: /var/run/kmp/tls
+  keys:
+    cert: tls.crt
+    key: tls.key
+    clientCa: ca.crt
+
+natsTls:
+  mode: disabled
+  existingSecret: ""
+  mountPath: /var/run/kmp/nats-tls
+  tlsFirst: false
+  keys:
+    ca: ""
+    cert: ""
+    key: ""
+
+valkeyTls:
+  enabled: false
+  existingSecret: ""
+  mountPath: /var/run/kmp/valkey-tls
+  keys:
+    ca: ""
+    cert: ""
+    key: ""
+
+neo4jTls:
+  enabled: false
+  existingSecret: ""
+  mountPath: /var/run/kmp/neo4j-tls
+  keys:
+    ca: ""
+    cert: ""
+    key: ""
+
+observability:
+  logFormat: json
+  otlpEndpoint: ""
+  serviceName: ""
+
+config:
+  serviceName: kmp
+  grpcBind: 0.0.0.0:50054
+  eventsPrefix: rehydration
+
+connections:
+  graphUri: ""
+  detailUri: ""
+  snapshotUri: ""
+  runtimeStateUri: ""
+  natsUrl: ""
+
+secrets:
+  existingSecret: ""
+  keys:
+    graphUri: graphUri
+    detailUri: detailUri
+    snapshotUri: snapshotUri
+    runtimeStateUri: runtimeStateUri
+    natsUrl: natsUrl
+
+development:
+  allowMutableImageTags: false
+  allowInlineConnections: false
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+extraEnv: []
+extraEnvFrom: []
+
+# Optional Loki log aggregation managed by this chart.
+loki:
+  enabled: false
+  image:
+    repository: docker.io/grafana/loki
+    tag: "3.4.2"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# DEPRECATED: Use the centralized Grafana in the monitoring namespace instead.
+# This embedded Grafana is kept for backward compatibility but should not be
+# enabled in new deployments. See cluster-observability/grafana/.
+grafana:
+  enabled: false
+  adminPassword: admin
+  anonymousAccess: false
+  anonymousRole: Viewer
+  image:
+    repository: docker.io/grafana/grafana
+    tag: "11.6.0"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Optional OpenTelemetry Collector managed by this chart.
+# Receives OTLP from the kernel and exports metrics as Prometheus.
+otelCollector:
+  enabled: false
+  traces:
+    enabled: false
+  image:
+    repository: docker.io/otel/opentelemetry-collector-contrib
+    tag: "0.127.0"
+  tls:
+    enabled: false
+    existingSecret: ""
+    mountPath: /var/run/kmp/otel-tls
+    keys:
+      ca: ca.crt
+      cert: tls.crt
+      key: tls.key
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+# Optional graph database managed by this chart. When enabled together with
+# development.allowInlineConnections=true, the kernel can omit connections.graphUri
+# and will connect to the release-scoped Neo4j service automatically.
+neo4j:
+  enabled: false
+  # Override via --set neo4j.auth=neo4j/<password> at install time
+  auth: "neo4j/changeme"
+  image:
+    repository: docker.io/library/neo4j
+    tag: "5.14"
+  memory:
+    pagecache: "512M"
+    heapInitial: "512M"
+    heapMax: "1G"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  persistence:
+    storageClass: local-path
+    size: 10Gi
+  tls:
+    enabled: false
+    existingSecret: ""
+    caSecret: ""
+  # NOTE: Neo4j Community Edition does not support Prometheus metrics.
+  # Exporter config removed — monitor Neo4j via logs (Loki) and health checks.
+
+# Optional NATS server managed by this chart.
+nats:
+  enabled: false
+  image:
+    repository: docker.io/library/nats
+    tag: "2.10-alpine"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    storageClass: local-path
+    size: 5Gi
+  tls:
+    enabled: false
+    existingSecret: ""
+    caSecret: ""
+  exporter:
+    enabled: false
+    image:
+      repository: docker.io/natsio/prometheus-nats-exporter
+      tag: "0.16.0"
+    port: 7777
+
+# Optional Valkey server managed by this chart.
+valkey:
+  enabled: false
+  image:
+    repository: docker.io/valkey/valkey
+    tag: "8.1-alpine"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    storageClass: local-path
+    size: 5Gi
+  tls:
+    enabled: false
+    existingSecret: ""
+    caSecret: ""
+  exporter:
+    enabled: false
+    image:
+      repository: docker.io/oliver006/redis_exporter
+      tag: "v1.67.0"
+    port: 9121
+
+# ---------------------------------------------------------------------------
+# E2E Tests (helm test)
+# ---------------------------------------------------------------------------
+
+e2e:
+  # -- Enable E2E test Pods (created as helm.sh/hook: test)
+  enabled: false
+  image:
+    # -- E2E runner image (grpcurl + scripts)
+    repository: ghcr.io/underpass-ai/kmp/e2e-runner
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image tag (defaults to Chart appVersion)
+    tag: ""
+  # -- Existing Secret with client TLS certs for gRPC (ca.crt, tls.crt, tls.key)
+  clientTlsSecret: e2e-client-tls
+  # -- Additional env entries for helm test Pods
+  extraEnv: []
+  # -- Additional envFrom entries for helm test Pods (ConfigMapRef / SecretRef)
+  extraEnvFrom: []
+  # -- Tests to run
+  tests:
+    - id: "01"
+      name: health
+      timeout: 60
+    - id: "02"
+      name: rehydrate-session
+      timeout: 120
+    - id: "03"
+      name: get-context
+      timeout: 120
+    - id: "04"
+      name: connectivity
+      timeout: 60
+    - id: "05"
+      name: kernel-memory-service
+      timeout: 180

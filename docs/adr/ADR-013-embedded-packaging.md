@@ -1,4 +1,4 @@
-# ADR-013: One binary — `rehydration-mcp` gains an `embedded` backend behind a cargo feature
+# ADR-013: One binary — `kmp-mcp` gains an `embedded` backend behind a cargo feature
 
 **Status:** Accepted
 **Date:** 2026-07-21
@@ -6,18 +6,18 @@
 
 ## Decision
 
-The embedded edition ships as the **existing `rehydration-mcp` binary with a
+The embedded edition ships as the **existing `kmp-mcp` binary with a
 third backend**, not as a separate binary or fork:
 
-- `REHYDRATION_MCP_BACKEND=embedded` joins `live` (gRPC) and `fixture` in
-  `rehydration-mcp/src/backend.rs`, implementing the same
+- `KMP_MCP_BACKEND=embedded` joins `live` (gRPC) and `fixture` in
+  `kmp-mcp/src/backend.rs`, implementing the same
   `KernelMcpToolBackend` seam;
 - the in-process kernel composition (application services + embedded
-  adapters + synchronous projection) lives in a new **`rehydration-embedded`
-  composition-root crate**, so `rehydration-mcp` stays a thin protocol
+  adapters + synchronous projection) lives in a new **`kmp-embedded`
+  composition-root crate**, so `kmp-mcp` stays a thin protocol
   binary and the wiring is testable on its own;
 - the backend is gated by a cargo feature **`embedded`**, enabled by default
-  for the installable binary (`cargo install rehydration-mcp` gets it), so
+  for the installable binary (`cargo install kmp-mcp` gets it), so
   the embedded dependency graph is compile-time excluded from server-only
   builds;
 - **forbidden-dependency budget, enforced in CI (E3):** with `embedded` on
@@ -52,9 +52,9 @@ third backend**, not as a separate binary or fork:
 - **Positive:** zero new public surface — hosts, docs, and the existing
   [mcp-stdio](../operations/mcp-stdio.md) operations story extend rather than
   duplicate.
-- **Positive:** `rehydration-embedded` gives E2/E3 a home for data-dir
+- **Positive:** `kmp-embedded` gives E2/E3 a home for data-dir
   resolution (ADR-012), locking (ADR-011), and synchronous projection wiring
-  without widening `rehydration-mcp`'s responsibilities.
+  without widening `kmp-mcp`'s responsibilities.
 - **Trade-off:** feature flags add build-matrix complexity; contained by CI
   jobs building both feature sets plus the forbidden-dependency check.
 - **Trade-off:** default-on `embedded` grows the default build slightly for
@@ -63,6 +63,6 @@ third backend**, not as a separate binary or fork:
 
 ## Next Step
 
-E3 lands the `embedded` arm in `backend.rs`, the `rehydration-embedded`
+E3 lands the `embedded` arm in `backend.rs`, the `kmp-embedded`
 crate, the feature split, and the CI size + forbidden-dependency gates; E5
 revisits naming with real distribution artifacts on the table.

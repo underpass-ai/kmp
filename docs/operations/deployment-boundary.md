@@ -9,8 +9,8 @@ This repo owns:
 - kernel integration examples and reference fixtures
 - kernel quality gates (CI workflows, contract checks, coverage)
 - kernel-focused documentation
-- standalone kernel container image (`ghcr.io/underpass-ai/rehydration-kernel`)
-- standalone kernel Helm chart (`charts/rehydration-kernel`)
+- standalone kernel container image (`ghcr.io/underpass-ai/kmp`)
+- standalone kernel Helm chart (`charts/kmp`)
 
 The Helm chart includes **optional infrastructure sidecars** for self-contained
 development and testing:

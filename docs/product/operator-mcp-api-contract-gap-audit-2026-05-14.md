@@ -28,14 +28,14 @@ MCP tools schema
 | Capa | Archivo |
 | --- | --- |
 | API gRPC canonica | `api/proto/underpass/rehydration/kernel/v1beta1/memory.proto` |
-| MCP tools schema | `crates/rehydration-mcp/src/protocol.rs` |
-| MCP -> gRPC request mapping | `crates/rehydration-mcp/src/grpc/requests/*.rs` |
-| MCP structured output mapping | `crates/rehydration-mcp/src/kmp.rs` |
-| Operator Rust contract validator | `crates/rehydration-testkit/src/kernel_operator.rs` |
+| MCP tools schema | `crates/kmp-mcp/src/protocol.rs` |
+| MCP -> gRPC request mapping | `crates/kmp-mcp/src/grpc/requests/*.rs` |
+| MCP structured output mapping | `crates/kmp-mcp/src/kmp.rs` |
+| Operator Rust contract validator | `crates/kmp-testkit/src/kernel_operator.rs` |
 | Operator Python predictor validator | `scripts/operator/predict_operator_sft.py` |
-| Operator trajectories exporter | `crates/rehydration-testkit/src/bin/kernel_operator_trajectory_export.rs` |
-| Operator policy evaluator | `crates/rehydration-testkit/src/bin/kernel_operator_policy_eval.rs` |
-| Operator live replay | `crates/rehydration-testkit/src/bin/kernel_operator_mcp_replay.rs` |
+| Operator trajectories exporter | `crates/kmp-testkit/src/bin/kernel_operator_trajectory_export.rs` |
+| Operator policy evaluator | `crates/kmp-testkit/src/bin/kernel_operator_policy_eval.rs` |
+| Operator live replay | `crates/kmp-testkit/src/bin/kernel_operator_mcp_replay.rs` |
 
 ## Situacion Actual
 
@@ -1184,11 +1184,11 @@ Create a small "KMP operator conformance" dataset before scaling benchmarks.
 Implemented exporter:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_conformance_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_conformance_trajectory_export -- \
   --output /tmp/kernel-operator-conformance-full-v4 \
   --force
 
-cargo run -p rehydration-testkit --bin kernel_operator_contract_coverage -- \
+cargo run -p kmp-testkit --bin kernel_operator_contract_coverage -- \
   --profile full \
   --trajectories /tmp/kernel-operator-conformance-full-v4/trajectories.jsonl \
   --fail-under 100

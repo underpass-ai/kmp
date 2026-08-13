@@ -1,0 +1,17 @@
+[package]
+name = "kmp-proto-mapping"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "v1beta1 proto contract mapping shared by transports and the embedded backend"
+
+[lints]
+workspace = true
+
+[dependencies]
+prost-types.workspace = true
+kmp-application.workspace = true
+kmp-domain.workspace = true
+kmp-proto.workspace = true
+serde_json.workspace = true
+tonic.workspace = true

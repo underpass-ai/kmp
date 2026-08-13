@@ -4,11 +4,11 @@ The projection graph schema is managed by an explicit operator-run migration
 binary. It is not executed automatically during server startup, so production
 schema changes remain auditable and gated.
 
-Run the migration from this repository with the same `REHYDRATION_GRAPH_URI`
+Run the migration from this repository with the same `KMP_GRAPH_URI`
 used by the kernel server:
 
 ```bash
-cargo run -p rehydration-server --bin rehydration-neo4j-migrate
+cargo run -p kmp-server --bin kmp-neo4j-migrate
 ```
 
 The migration is idempotent. It ensures:

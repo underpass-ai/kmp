@@ -30,7 +30,7 @@ Owner: `Tirso / Codex / other`
 | Profile | `operator-read / prepared-write / writer-teacher / mixed` |
 | Base model | `<model id>` |
 | Adapter output | `<path or hub id>` |
-| Artifact root | `../rehydration-kernel-artifacts/operator/<attempt-id>/` |
+| Artifact root | `../kmp-artifacts/operator/<attempt-id>/` |
 | Branch | `<branch>` |
 | Commit | `<sha>` |
 | Dirty worktree at start | `yes/no + summary` |

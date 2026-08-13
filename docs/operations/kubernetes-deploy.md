@@ -10,7 +10,7 @@ Document the manual deployment workflow for the standalone kernel Helm chart.
 - trigger: `workflow_dispatch`
 
 The workflow deploys the chart in
-[`charts/rehydration-kernel`](../../charts/rehydration-kernel) with
+[`charts/kmp`](../../charts/kmp) with
 `helm upgrade --install`.
 
 ## Required Secret
@@ -45,7 +45,7 @@ Set either `image_tag` or `image_digest`.
 
 The default values file is:
 
-- [`charts/rehydration-kernel/values.underpass-runtime.yaml`](../../charts/rehydration-kernel/values.underpass-runtime.yaml)
+- [`charts/kmp/values.underpass-runtime.yaml`](../../charts/kmp/values.underpass-runtime.yaml)
 
 The chart deploys all infrastructure self-contained within the target namespace:
 Neo4j, Valkey, and NATS are managed as in-chart optional components (`neo4j.enabled`,
@@ -54,7 +54,7 @@ release name. There are no cross-namespace dependencies.
 
 The secure follow-up profile is:
 
-- [`charts/rehydration-kernel/values.underpass-runtime.secure.example.yaml`](../../charts/rehydration-kernel/values.underpass-runtime.secure.example.yaml)
+- [`charts/kmp/values.underpass-runtime.secure.example.yaml`](../../charts/kmp/values.underpass-runtime.secure.example.yaml)
 
 That file captures the intended target once TLS is enabled across all
 connections.
@@ -65,15 +65,15 @@ The workflow delegates to:
 
 - [`scripts/ci/deploy-kubernetes.sh`](../../scripts/ci/deploy-kubernetes.sh)
 
-`IMAGE_TAG` refers to a tag on `ghcr.io/underpass-ai/rehydration-kernel`.
+`IMAGE_TAG` refers to a tag on `ghcr.io/underpass-ai/kmp`.
 CI publishes `main`, `latest`, `sha-<short>`, and `v*` tags automatically.
 For development, build and push a `dev-<sha>` tag first (see [container-image.md](container-image.md)).
 
 ```bash
 # Deploy the latest CI build
-RELEASE_NAME=rehydration-kernel \
+RELEASE_NAME=kmp \
 NAMESPACE=underpass-runtime \
-VALUES_FILE=charts/rehydration-kernel/values.underpass-runtime.yaml \
+VALUES_FILE=charts/kmp/values.underpass-runtime.yaml \
 IMAGE_TAG=main \
 bash scripts/ci/deploy-kubernetes.sh
 ```
@@ -82,19 +82,19 @@ Development cycle (local changes):
 
 ```bash
 # 1. Build + push
-bash scripts/ci/container-image.sh ghcr.io/underpass-ai/rehydration-kernel:dev-$(git rev-parse --short HEAD)
-docker push ghcr.io/underpass-ai/rehydration-kernel:dev-$(git rev-parse --short HEAD)
+bash scripts/ci/container-image.sh ghcr.io/underpass-ai/kmp:dev-$(git rev-parse --short HEAD)
+docker push ghcr.io/underpass-ai/kmp:dev-$(git rev-parse --short HEAD)
 
 # 2. Deploy
-RELEASE_NAME=rehydration-kernel \
+RELEASE_NAME=kmp \
 NAMESPACE=underpass-runtime \
-VALUES_FILE=charts/rehydration-kernel/values.underpass-runtime.yaml \
+VALUES_FILE=charts/kmp/values.underpass-runtime.yaml \
 IMAGE_TAG=dev-$(git rev-parse --short HEAD) \
 bash scripts/ci/deploy-kubernetes.sh
 
 # 3. Run E2E benchmark against the cluster
 EVAL_MATRIX_PATH=smoke-run.yaml FILTER_SCALES=micro \
-cargo test -p rehydration-tests-paper --features container-tests \
+cargo test -p kmp-tests-paper --features container-tests \
   --test vllm_benchmark_integration -- --nocapture --test-threads=1
 ```
 
@@ -103,7 +103,7 @@ of reapplying the default values file. This avoids accidentally dropping mTLS,
 Ingress, `imagePullSecrets`, or cluster-specific secrets:
 
 ```bash
-helm upgrade --install rehydration-kernel charts/rehydration-kernel \
+helm upgrade --install kmp charts/kmp \
   -n underpass-runtime \
   --reuse-values \
   --set image.tag=dev-$(git rev-parse --short HEAD) \
@@ -115,7 +115,7 @@ helm upgrade --install rehydration-kernel charts/rehydration-kernel \
 To force a restart with the same image tag, add a simple pod annotation:
 
 ```bash
-helm upgrade --install rehydration-kernel charts/rehydration-kernel \
+helm upgrade --install kmp charts/kmp \
   -n underpass-runtime \
   --reuse-values \
   --set image.tag=dev-$(git rev-parse --short HEAD) \
@@ -141,7 +141,7 @@ outbound NATS and Valkey TLS against a TLS-enabled environment.
 
 After deploying graph-explorer changes, use the starship explorer end-to-end test:
 
-- [`crates/rehydration-transport-grpc/src/starship_e2e.rs`](../../crates/rehydration-transport-grpc/src/starship_e2e.rs)
+- [`crates/kmp-transport-grpc/src/starship_e2e.rs`](../../crates/kmp-transport-grpc/src/starship_e2e.rs)
 
 That path validates the explorer journey itself: root load, node detail,
 mid-level zoom, and leaf rehydration against the deployed release.
@@ -169,7 +169,7 @@ Expected secret data:
 Example:
 
 ```bash
-kubectl create secret generic rehydration-kernel-grpc-tls \
+kubectl create secret generic kmp-grpc-tls \
   -n underpass-runtime \
   --from-file=tls.crt=server.crt \
   --from-file=tls.key=server.key \
@@ -181,7 +181,7 @@ Example values override:
 ```yaml
 tls:
   mode: mutual
-  existingSecret: rehydration-kernel-grpc-tls
+  existingSecret: kmp-grpc-tls
 ```
 
 ## Ingress Exposure
@@ -210,14 +210,14 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-body-size: 10m
   hosts:
-    - host: rehydration-kernel.example.com
+    - host: kmp.example.com
       paths:
         - path: /
           pathType: Prefix
   tls:
     - hosts:
-        - rehydration-kernel.example.com
-      secretName: rehydration-kernel-ingress-tls
+        - kmp.example.com
+      secretName: kmp-ingress-tls
 ```
 
 Controller-specific annotations stay with the operator because gRPC ingress
@@ -230,7 +230,7 @@ This is the current `underpass-runtime` exposure profile.
 Use this when the kernel pod listens with `tls.mode=disabled` and NGINX is the
 public TLS boundary:
 
-- external clients call `https://rehydration-kernel.underpassai.com`
+- external clients call `https://kmp.underpassai.com`
 - NGINX terminates the public certificate from `ingress.tls`
 - NGINX forwards gRPC to the kernel service using plaintext upstream h2c
 - the required backend annotation is
@@ -242,10 +242,10 @@ itself to run with `tls.mode=server` or `tls.mode=mutual`.
 
 The sibling runtime profile enables this directly with:
 
-- host: `rehydration-kernel.underpassai.com`
+- host: `kmp.underpassai.com`
 - class: `nginx`
 - annotation: `nginx.ingress.kubernetes.io/backend-protocol: GRPC`
-- TLS secret: `rehydration-kernel-tls-prod`
+- TLS secret: `kmp-tls-prod`
 - NGINX gRPC timeouts: 30s connect and 300s read/send, so synchronous
   `kernel_write_memory` commits with `read_after_write_ready` are not cut at the
   controller default 60s timeout.
@@ -293,7 +293,7 @@ Expected secret data when using private trust or client identity:
 Example:
 
 ```bash
-kubectl create secret generic rehydration-kernel-nats-tls \
+kubectl create secret generic kmp-nats-tls \
   -n underpass-runtime \
   --from-file=ca.crt=nats-ca.crt \
   --from-file=tls.crt=client.crt \
@@ -305,7 +305,7 @@ Example values override:
 ```yaml
 natsTls:
   mode: mutual
-  existingSecret: rehydration-kernel-nats-tls
+  existingSecret: kmp-nats-tls
   tlsFirst: true
   keys:
     ca: ca.crt
@@ -336,7 +336,7 @@ Expected secret data when using private trust or client identity:
 Example:
 
 ```bash
-kubectl create secret generic rehydration-kernel-valkey-tls \
+kubectl create secret generic kmp-valkey-tls \
   -n underpass-runtime \
   --from-file=ca.crt=valkey-ca.crt \
   --from-file=tls.crt=client.crt \
@@ -352,7 +352,7 @@ Example values override:
 ```yaml
 valkeyTls:
   enabled: true
-  existingSecret: rehydration-kernel-valkey-tls
+  existingSecret: kmp-valkey-tls
   keys:
     ca: ca.crt
     cert: tls.crt
@@ -378,7 +378,7 @@ The chart now supports first-class mounting of a custom Neo4j CA for inline
 
 The self-contained Neo4j serves over plaintext `neo4j://` by default. The
 staged secure target lives in
-[`charts/rehydration-kernel/values.underpass-runtime.secure.example.yaml`](../../charts/rehydration-kernel/values.underpass-runtime.secure.example.yaml)
+[`charts/kmp/values.underpass-runtime.secure.example.yaml`](../../charts/kmp/values.underpass-runtime.secure.example.yaml)
 and switches the graph connection to `neo4j+s://...` plus `neo4jTls.*`.
 
 Example values override:
@@ -386,7 +386,7 @@ Example values override:
 ```yaml
 neo4jTls:
   enabled: true
-  existingSecret: rehydration-kernel-neo4j-tls
+  existingSecret: kmp-neo4j-tls
   keys:
     ca: ca.crt
 
@@ -394,7 +394,7 @@ connections:
   graphUri: bolt+s://neo4j.example.internal:7687
 ```
 
-That renders `REHYDRATION_GRAPH_URI` with the matching `tls_ca_path` query
+That renders `KMP_GRAPH_URI` with the matching `tls_ca_path` query
 parameter that points at the mounted CA file.
 
 Current boundary:
@@ -455,9 +455,9 @@ and architecture details.
 For a deployment with mutual TLS on supported boundaries:
 
 ```bash
-helm upgrade --install rehydration-kernel charts/rehydration-kernel \
+helm upgrade --install kmp charts/kmp \
   -n underpass-runtime \
-  -f charts/rehydration-kernel/values.underpass-runtime.mtls.example.yaml \
+  -f charts/kmp/values.underpass-runtime.mtls.example.yaml \
   --set image.tag=<your-tag>
 ```
 
@@ -472,7 +472,7 @@ This configures:
 - Grafana with anonymous access disabled
 
 Requires secrets pre-created in the namespace. See
-[`values.underpass-runtime.mtls.example.yaml`](../../charts/rehydration-kernel/values.underpass-runtime.mtls.example.yaml)
+[`values.underpass-runtime.mtls.example.yaml`](../../charts/kmp/values.underpass-runtime.mtls.example.yaml)
 for the full values file with secret names and cert paths.
 
 ## Notes

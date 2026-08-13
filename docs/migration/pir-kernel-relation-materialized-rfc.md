@@ -39,8 +39,8 @@ The previous kernel boundary was node-centric in a very specific way:
 This is visible in:
 
 - [api/asyncapi/context-projection.v1beta1.yaml](../../api/asyncapi/context-projection.v1beta1.yaml)
-- [llm_graph.rs](../../crates/rehydration-testkit/src/llm_graph.rs)
-- [projection_application_service.rs](../../crates/rehydration-application/src/projection/projection_application_service.rs)
+- [llm_graph.rs](../../crates/kmp-testkit/src/llm_graph.rs)
+- [projection_application_service.rs](../../crates/kmp-application/src/projection/projection_application_service.rs)
 
 That shape works well for:
 
@@ -68,9 +68,9 @@ than desired.
 The difficulty is not Neo4j itself. The internal projection model already
 supports relation upserts independently:
 
-- [projection_mutation.rs](../../crates/rehydration-domain/src/projection/projection_mutation.rs)
-- [node_relation_projection.rs](../../crates/rehydration-domain/src/projection/node_relation_projection.rs)
-- [upsert_relation_projection_query.rs](../../crates/rehydration-adapter-neo4j/src/adapter/queries/upsert_relation_projection_query.rs)
+- [projection_mutation.rs](../../crates/kmp-domain/src/projection/projection_mutation.rs)
+- [node_relation_projection.rs](../../crates/kmp-domain/src/projection/node_relation_projection.rs)
+- [upsert_relation_projection_query.rs](../../crates/kmp-adapter-neo4j/src/adapter/queries/upsert_relation_projection_query.rs)
 
 The actual constraint is the public async boundary and its translator:
 
@@ -185,7 +185,7 @@ But the kernel also needs an honest answer for this case:
 
 The current Neo4j writer already tolerates this:
 
-- [upsert_relation_projection_query.rs](../../crates/rehydration-adapter-neo4j/src/adapter/queries/upsert_relation_projection_query.rs)
+- [upsert_relation_projection_query.rs](../../crates/kmp-adapter-neo4j/src/adapter/queries/upsert_relation_projection_query.rs)
 
 It creates placeholder nodes if either side is missing, then later node upserts
 fill in the real node data.
@@ -436,7 +436,7 @@ Neo4j + Valkey + NATS + gRPC harness style.
 
 Suggested location:
 
-- `crates/rehydration-tests-kernel/tests/`
+- `crates/kmp-tests-kernel/tests/`
 
 #### `relation_materialization_integration`
 
@@ -559,9 +559,9 @@ Suggested locations:
 - cluster smoke wrappers:
   `e2e/kernel-runner/tests/`
 - live testkit-backed roundtrip tests:
-  `crates/rehydration-testkit/tests/`
+  `crates/kmp-testkit/tests/`
 - optional helper binaries:
-  `crates/rehydration-testkit/src/bin/`
+  `crates/kmp-testkit/src/bin/`
 
 #### `graph_relation_roundtrip_smoke`
 

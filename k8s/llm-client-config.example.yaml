@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: rehydration-kernel-llm-client
+  name: kmp-llm-client
   namespace: underpass-runtime
 data:
   LLM_ENDPOINT: http://vllm-qwen35-9b:8000/v1/chat/completions
@@ -25,7 +25,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: rehydration-kernel-llm-client-secrets
+  name: kmp-llm-client-secrets
   namespace: underpass-runtime
 type: Opaque
 stringData:

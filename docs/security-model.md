@@ -37,7 +37,7 @@ the OTLP endpoint and certificate paths are configured.
 
 ```mermaid
 graph LR
-    C[Callers] -- gRPC + mTLS --> K[rehydration-kernel]
+    C[Callers] -- gRPC + mTLS --> K[kmp]
     K -- TLS --> N4[(Neo4j)]
     K -- TLS + mTLS --> VK[(Valkey)]
     K -- TLS --> NT[(NATS)]
@@ -55,7 +55,7 @@ graph LR
 ### Boundary 1: gRPC Transport → Kernel
 
 - **TLS**: Full support for server TLS and mutual TLS via
-  `REHYDRATION_GRPC_TLS_MODE` (`disabled`, `server`, `mutual`).
+  `KMP_GRPC_TLS_MODE` (`disabled`, `server`, `mutual`).
 - **mTLS**: When `mode=mutual`, the kernel validates client certificates
   against a trusted CA. Only callers presenting a valid certificate are
   accepted. Configured via `tls.existingSecret` and `tls.keys.clientCa`
