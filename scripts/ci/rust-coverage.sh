@@ -22,7 +22,7 @@ if [[ -z "${LLVM_PROFDATA:-}" ]] && command -v llvm-profdata >/dev/null 2>&1; th
 fi
 
 # Merge coverage from the fast workspace suite plus container-backed adapter
-# tests so Sonar sees the real exercised read/write paths.
+# tests so the reported number reflects the real exercised read/write paths.
 cargo llvm-cov clean --workspace
 
 cargo llvm-cov --workspace --locked --no-report
