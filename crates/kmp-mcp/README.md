@@ -1,6 +1,9 @@
-# Rehydration MCP
+# KMP MCP
 
 Installable stdio MCP adapter for Kernel Memory Protocol (KMP).
+
+For a one-command setup that also teaches the tool surface and diagnoses a
+broken wiring, see the [KMP plugin](../../plugins/kmp/README.md).
 
 Current status:
 

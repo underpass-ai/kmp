@@ -145,6 +145,22 @@ crate is not on crates.io yet (pending the ADR-013 branding revisit).
 
 ## Client configuration
 
+The [KMP plugin](../../plugins/kmp/README.md) does all of this for you and
+adds the discovery aids on top — a skill that teaches the agent when to reach
+for memory, and `/kmp:doctor` to diagnose a setup that is not answering:
+
+```
+# Claude Code
+/plugin marketplace add underpass-ai/kmp
+/plugin install kmp@underpass
+
+# Codex CLI
+bash scripts/mcp/install-kmp-plugin.sh --codex
+```
+
+The manual registrations below remain valid for hosts the plugin does not
+cover, or when you want the server without the plugin.
+
 Embedded (recommended default — per-project memory, zero infrastructure):
 
 ```toml

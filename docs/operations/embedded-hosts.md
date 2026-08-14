@@ -5,6 +5,11 @@ Status per host is explicit: **tested** means executed against the real
 host on a real machine; **recipe** means derived from the host's MCP
 documentation and pending verification.
 
+For Claude Code and Codex CLI, the [KMP plugin](../../plugins/kmp/README.md)
+performs the registration below for you and adds the discovery aids — the
+agent-facing skill and `/kmp:doctor`. The recipes here stay authoritative for
+every other host, and for registering the server without the plugin.
+
 Install once:
 
 ```bash
@@ -76,6 +81,11 @@ Project or global config (`opencode.json`):
 ```
 
 ## Context-recovery playbook (paste into CLAUDE.md / AGENTS.md / rules)
+
+The [KMP plugin](../../plugins/kmp/README.md) ships this playbook already —
+as the `kmp-memory` skill in Claude Code, and written into
+`~/.codex/AGENTS.md` by the Codex installer. Paste it by hand only for hosts
+the plugin does not cover.
 
 ```markdown
 ## Kernel memory (KMP)
