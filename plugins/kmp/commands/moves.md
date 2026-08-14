@@ -1,0 +1,43 @@
+---
+description: Show the ten KMP moves and when to use each one
+argument-hint: "[read|write|time|audit]"
+---
+
+Show the user the KMP tool surface. If `$ARGUMENTS` names a group, show only
+that group in depth; otherwise show the whole map compactly.
+
+Prefer the live surface over this file: call `tools/list` on the
+`kernel-memory` MCP server if it is available in this session, and describe
+what is actually exposed — including the relation vocabulary carried on
+`connect_to.rel`, which is generated from the kernel's own writer spec and is
+the authority on relation types. Fall back to the map below only if the
+server is not reachable, and say that you are doing so.
+
+**Entry** — start here when resuming work
+- `kernel_wake {about}` — compact packet: state, decisions, open threads.
+  Call it before re-deriving context by reading files.
+- `kernel_ask` — deterministic evidence answer, or `UNKNOWN`. Never generated.
+
+**Time** — each takes a timestamp, a sequence number, or a ref
+- `kernel_goto` — the state at a point (defaults to 50 entries)
+- `kernel_near` — the neighborhood around a point
+- `kernel_rewind` — how we got here
+- `kernel_forward` — what happened next
+
+**Audit**
+- `kernel_trace` — the proof path between two refs
+- `kernel_inspect` — one ref: stored object, links, evidence
+
+**Write**
+- `kernel_write_memory` — the default. Validates intent and relation quality,
+  then compiles to canonical ingest. Supports `options.dry_run`.
+- `kernel_ingest` — canonical low-level form, when you are producing the
+  exact graph yourself.
+
+Close with the one rule that decides whether this memory is worth anything
+later: **write decisions, constraints and outcomes — never transcripts** —
+and the one the kernel enforces: **rich relations carry both `why` and
+`evidence`**, so a vague `related_to` is a bug, not a shortcut.
+
+If the user asked about writing, point them at `options.dry_run=true` as the
+safe way to see what a write would commit before committing it.

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "kernel-memory": {
+      "command": "kmp-mcp",
+      "env": {
+        "KMP_MCP_BACKEND": "embedded"
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+---
+description: Diagnose the KMP agent-memory setup — binary, backend, data directory, tool surface and host wiring
+allowed-tools: Bash(bash:*), Bash(claude mcp list:*), Bash(kmp-mcp:*)
+---
+
+Run the KMP doctor and report what it found:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-doctor.sh"
+```
+
+Then tell the user, in a few lines:
+
+- whether KMP memory is usable right now, plainly — yes or no;
+- if not, the **single** thing blocking it and the exact command that fixes
+  it, taken from the doctor output rather than invented;
+- any warning that will bite later even though nothing is broken yet — a
+  `fixture` backend (memory that looks real and is not), or a registration
+  that exists but has not been picked up because the session predates it.
+
+If the doctor reports the tools answering but this session still has no
+`kernel_*` tools in its inventory, say so directly: the registration is
+correct and the session is stale, so it needs restarting. That is the one
+failure the doctor cannot fix from inside the session.
+
+Do not paraphrase the whole output. The user wants the verdict and the next
+command, not a transcript of the checks.

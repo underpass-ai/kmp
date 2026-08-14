@@ -1,0 +1,21 @@
+{
+  "name": "kmp",
+  "displayName": "KMP by Underpass",
+  "version": "0.1.0",
+  "description": "Discover and operate KMP agent memory: wires the kernel-memory MCP server, teaches the ten moves, and diagnoses a broken setup.",
+  "author": {
+    "name": "Underpass AI",
+    "url": "https://underpassai.com"
+  },
+  "homepage": "https://github.com/underpass-ai/kmp/blob/main/plugins/kmp/README.md",
+  "repository": "https://github.com/underpass-ai/kmp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "memory",
+    "mcp",
+    "kmp",
+    "graph",
+    "temporal",
+    "context-recovery"
+  ]
+}
