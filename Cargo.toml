@@ -1,29 +1,29 @@
 [workspace]
 members = [
-    "crates/rehydration-adapter-embedded",
-    "crates/rehydration-adapter-nats",
-    "crates/rehydration-adapter-neo4j",
-    "crates/rehydration-adapter-valkey",
-    "crates/rehydration-application",
-    "crates/rehydration-config",
-    "crates/rehydration-conformance",
-    "crates/rehydration-domain",
-    "crates/rehydration-embedded",
-    "crates/rehydration-interpretation",
-    "crates/rehydration-observability",
-    "crates/rehydration-mcp",
-    "crates/rehydration-memory-api",
-    "crates/rehydration-plugin-api",
-    "crates/rehydration-ports",
-    "crates/rehydration-proto",
-    "crates/rehydration-proto-mapping",
-    "crates/rehydration-server",
-    "crates/rehydration-testkit",
-    "crates/rehydration-tests-shared",
-    "crates/rehydration-tests-kernel",
-    "crates/rehydration-tests-paper",
-    "crates/rehydration-transport-grpc",
-    "crates/rehydration-viewer",
+    "crates/kmp-adapter-embedded",
+    "crates/kmp-adapter-nats",
+    "crates/kmp-adapter-neo4j",
+    "crates/kmp-adapter-valkey",
+    "crates/kmp-application",
+    "crates/kmp-config",
+    "crates/kmp-conformance",
+    "crates/kmp-domain",
+    "crates/kmp-embedded",
+    "crates/kmp-interpretation",
+    "crates/kmp-observability",
+    "crates/kmp-mcp",
+    "crates/kmp-memory-api",
+    "crates/kmp-plugin-api",
+    "crates/kmp-ports",
+    "crates/kmp-proto",
+    "crates/kmp-proto-mapping",
+    "crates/kmp-server",
+    "crates/kmp-testkit",
+    "crates/kmp-tests-shared",
+    "crates/kmp-tests-kernel",
+    "crates/kmp-tests-paper",
+    "crates/kmp-transport-grpc",
+    "crates/kmp-viewer",
 ]
 resolver = "3"
 
@@ -32,32 +32,32 @@ edition = "2024"
 rust-version = "1.97"
 version = "0.1.0"
 license = "Apache-2.0"
-description = "Node-centric context rehydration engine for agentic systems"
-repository = "https://github.com/underpass-ai/rehydration-kernel"
+description = "KMP by Underpass — node-centric context rehydration engine for agentic systems"
+repository = "https://github.com/underpass-ai/kmp"
 
 [workspace.dependencies]
 neo4rs = "0.8.0"
-rehydration-adapter-embedded = { path = "crates/rehydration-adapter-embedded" }
-rehydration-adapter-nats = { path = "crates/rehydration-adapter-nats" }
-rehydration-adapter-neo4j = { path = "crates/rehydration-adapter-neo4j" }
-rehydration-adapter-valkey = { path = "crates/rehydration-adapter-valkey" }
-rehydration-application = { path = "crates/rehydration-application" }
-rehydration-config = { path = "crates/rehydration-config" }
-rehydration-conformance = { path = "crates/rehydration-conformance" }
-rehydration-domain = { path = "crates/rehydration-domain" }
-rehydration-embedded = { path = "crates/rehydration-embedded" }
-rehydration-memory-api = { path = "crates/rehydration-memory-api" }
-rehydration-interpretation = { path = "crates/rehydration-interpretation" }
-rehydration-mcp = { path = "crates/rehydration-mcp" }
-rehydration-observability = { path = "crates/rehydration-observability", default-features = false }
-rehydration-plugin-api = { path = "crates/rehydration-plugin-api" }
-rehydration-ports = { path = "crates/rehydration-ports" }
-rehydration-proto = { path = "crates/rehydration-proto" }
-rehydration-proto-mapping = { path = "crates/rehydration-proto-mapping" }
-rehydration-testkit = { path = "crates/rehydration-testkit" }
-rehydration-tests-shared = { path = "crates/rehydration-tests-shared" }
-rehydration-transport-grpc = { path = "crates/rehydration-transport-grpc" }
-rehydration-viewer = { path = "crates/rehydration-viewer" }
+kmp-adapter-embedded = { path = "crates/kmp-adapter-embedded" }
+kmp-adapter-nats = { path = "crates/kmp-adapter-nats" }
+kmp-adapter-neo4j = { path = "crates/kmp-adapter-neo4j" }
+kmp-adapter-valkey = { path = "crates/kmp-adapter-valkey" }
+kmp-application = { path = "crates/kmp-application" }
+kmp-config = { path = "crates/kmp-config" }
+kmp-conformance = { path = "crates/kmp-conformance" }
+kmp-domain = { path = "crates/kmp-domain" }
+kmp-embedded = { path = "crates/kmp-embedded" }
+kmp-memory-api = { path = "crates/kmp-memory-api" }
+kmp-interpretation = { path = "crates/kmp-interpretation" }
+kmp-mcp = { path = "crates/kmp-mcp" }
+kmp-observability = { path = "crates/kmp-observability", default-features = false }
+kmp-plugin-api = { path = "crates/kmp-plugin-api" }
+kmp-ports = { path = "crates/kmp-ports" }
+kmp-proto = { path = "crates/kmp-proto" }
+kmp-proto-mapping = { path = "crates/kmp-proto-mapping" }
+kmp-testkit = { path = "crates/kmp-testkit" }
+kmp-tests-shared = { path = "crates/kmp-tests-shared" }
+kmp-transport-grpc = { path = "crates/kmp-transport-grpc" }
+kmp-viewer = { path = "crates/kmp-viewer" }
 prost = "0.13.5"
 prost-types = "0.13.5"
 sha2 = "0.10"

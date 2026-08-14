@@ -4,8 +4,8 @@ set -euo pipefail
 
 MODE="${1:-all}"
 NAMESPACE="${NAMESPACE:-underpass-runtime}"
-RELEASE_PREFIX="${RELEASE_PREFIX:-rehydration-kernel-smoke}"
-VALUES_FILE="${VALUES_FILE:-charts/rehydration-kernel/values.underpass-runtime.yaml}"
+RELEASE_PREFIX="${RELEASE_PREFIX:-kmp-smoke}"
+VALUES_FILE="${VALUES_FILE:-charts/kmp/values.underpass-runtime.yaml}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 IMAGE_DIGEST="${IMAGE_DIGEST:-}"
 HELM_TIMEOUT="${HELM_TIMEOUT:-10m}"
@@ -295,11 +295,11 @@ loki:
   enabled: true
 extraEnv:
   - name: OTEL_EXPORTER_OTLP_CA_PATH
-    value: /var/run/rehydration-kernel/otel-tls/${OTEL_TLS_CA_KEY}
+    value: /var/run/kmp/otel-tls/${OTEL_TLS_CA_KEY}
   - name: OTEL_EXPORTER_OTLP_CERT_PATH
-    value: /var/run/rehydration-kernel/otel-tls/${OTEL_TLS_CERT_KEY}
+    value: /var/run/kmp/otel-tls/${OTEL_TLS_CERT_KEY}
   - name: OTEL_EXPORTER_OTLP_KEY_PATH
-    value: /var/run/rehydration-kernel/otel-tls/${OTEL_TLS_KEY_KEY}
+    value: /var/run/kmp/otel-tls/${OTEL_TLS_KEY_KEY}
 EOF
   fi
 
@@ -318,7 +318,7 @@ helm_deploy() {
     set_image_args=(--set "image.tag=${IMAGE_TAG}" --set "image.digest=")
   fi
 
-  helm upgrade --install "${release_name}" charts/rehydration-kernel \
+  helm upgrade --install "${release_name}" charts/kmp \
     --namespace "${NAMESPACE}" \
     --create-namespace \
     -f "${VALUES_FILE}" \

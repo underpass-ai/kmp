@@ -143,13 +143,13 @@ api/examples/inference-prompts/vllm-graph-materialization.request.json
 
 The repo now ships a minimal translator for that contract:
 
-- `rehydration_testkit::parse_graph_batch`
-- `rehydration_testkit::graph_batch_to_projection_events`
+- `kmp_testkit::parse_graph_batch`
+- `kmp_testkit::graph_batch_to_projection_events`
 
 Legacy helper names remain available for compatibility:
 
-- `rehydration_testkit::parse_llm_graph_batch`
-- `rehydration_testkit::llm_graph_to_projection_events`
+- `kmp_testkit::parse_llm_graph_batch`
+- `kmp_testkit::llm_graph_to_projection_events`
 
 That keeps the LLM focused on graph semantics while the translator owns
 envelopes, hashing, validation, and subject naming.

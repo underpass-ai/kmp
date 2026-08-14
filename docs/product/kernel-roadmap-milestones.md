@@ -5,7 +5,7 @@ Status: active planning document
 
 ## Product Direction
 
-Underpass Kernel is a queryable, temporal, multidimensional memory layer for
+KMP is a queryable, temporal, multidimensional memory layer for
 agentic processes.
 
 The kernel should let humans and LLMs search memory, inspect what was known at
@@ -69,7 +69,7 @@ Priority: P0
 
 Status: started. The first MemoryArena-to-KMP artifact adapter, live
 stage-aware runner, and paper-aligned local scorecard are available in
-`rehydration-testkit` as `memoryarena_kmp_adapter`,
+`kmp-testkit` as `memoryarena_kmp_adapter`,
 `memoryarena_kmp_runner`, and `memoryarena_kmp_scorecard`. The first
 MemoryAgentBench-to-KMP adapter and live runner are available as
 `memoryagentbench_kmp_adapter` and `memoryagentbench_kmp_runner`.
@@ -94,9 +94,9 @@ First slices:
 
 Deliverables:
 
-- MemoryArena dataset loader in `rehydration-testkit`;
+- MemoryArena dataset loader in `kmp-testkit`;
 - adapter from MemoryArena tasks to KMP memory artifacts;
-- MemoryAgentBench dataset loader in `rehydration-testkit`;
+- MemoryAgentBench dataset loader in `kmp-testkit`;
 - adapter from MemoryAgentBench rows to KMP inject-once/query-many artifacts;
 - baseline runner without kernel;
 - kernel-backed stage-aware runner;
@@ -117,7 +117,7 @@ Current proof:
 
 - a fixture MemoryArena task generates staged KMP artifacts;
 - the live runner replays the artifact stream against
-  `http://rehydration-kernel.underpassai.com`;
+  `http://kmp.underpassai.com`;
 - the smoke run reached 7/7 successful events, 2/2 known-at-clean asks, 0 future
   answer leaks, and complete observed refs for the allowed known-at evidence.
 - a real `progressive_search` slice from `ZexueHe/memoryarena` reached 81/81
@@ -142,7 +142,7 @@ Current proof:
   known-at snapshots.
 - the MemoryAgentBench fixture live runner reached 3/3 successful events, 2/2
   known-at-clean asks, 2/2 lexical answer hits, 0 unexpected refs, and 0
-  missing refs against `http://rehydration-kernel.underpassai.com`.
+  missing refs against `http://kmp.underpassai.com`.
 - a real official MemoryAgentBench `Conflict_Resolution` /
   `factconsolidation_mh_6k` smoke reached 4/4 successful KMP events, 3/3
   known-at-clean asks, 0 unexpected refs, and 0 missing refs with a 64-fact /
@@ -342,9 +342,9 @@ Priority: P1
 Current status:
 
 - reusable plugin contract implemented in the exportable lightweight crate
-  `rehydration-plugin-api`, with a kernel-domain re-export at
-  `rehydration_domain::plugins`;
-- reusable plugin implementations live in `rehydration_interpretation`;
+  `kmp-plugin-api`, with a kernel-domain re-export at
+  `kmp_domain::plugins`;
+- reusable plugin implementations live in `kmp_interpretation`;
 - documented in `docs/product/kernel-plugin-architecture.md` and
   `docs/product/reusable-interpretation-plugins.md`;
 - current scope treats currency and dates as domain plugins with their own
@@ -506,7 +506,7 @@ Execution order:
 This roadmap validates the strongest product claim:
 
 ```text
-Underpass Kernel is an observable, auditable, secure memory substrate for
+KMP is an observable, auditable, secure memory substrate for
 agentic processes. It preserves enough temporal and multidimensional structure
 to replay what happened, why it happened, what failed, and what finally worked.
 ```

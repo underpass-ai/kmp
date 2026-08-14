@@ -1,0 +1,18 @@
+[package]
+name = "kmp-conformance"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kmp-application.workspace = true
+kmp-domain.workspace = true
+
+[dev-dependencies]
+kmp-adapter-embedded.workspace = true
+kmp-testkit.workspace = true
+tempfile = "3.26.0"
+tokio.workspace = true

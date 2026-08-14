@@ -4,7 +4,7 @@ package underpass.rehydration.kernel.v1beta1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/underpass-ai/rehydration-kernel/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
 
 service KernelMemoryService {
   rpc Ingest(IngestRequest) returns (IngestResponse);

@@ -40,7 +40,7 @@ It is:
 
 Correct public positioning:
 
-> A small specialist model trained to operate Underpass Kernel memory tools
+> A small specialist model trained to operate KMP memory tools
 > through bounded, auditable trajectories.
 
 ## Release Gate
@@ -154,7 +154,7 @@ Minimum honest claim:
 ```text
 This model predicts bounded Kernel Memory Protocol tool actions from visible
 memory-navigation state. It was evaluated on held-out audited trajectories and
-then replayed through live MCP/gRPC against a deployed Underpass Kernel.
+then replayed through live MCP/gRPC against a deployed KMP.
 ```
 
 Claims to avoid:
@@ -174,7 +174,7 @@ Hugging Face, Dev.to, LinkedIn, or GitHub search.
 
 Repo visibility checklist:
 
-- top README explains Underpass Kernel / KMP in the first screen;
+- top README explains KMP / KMP in the first screen;
 - quickstart shows one real KMP write/read/trace flow;
 - architecture image links to the multidimensional temporal memory article;
 - benchmark table separates official scores, local scorecards, reader checks,

@@ -65,7 +65,7 @@ spec:
       volumes:
         - name: repo
           hostPath:
-            path: /home/tirso/ai/developents/rehydration-kernel
+            path: /home/tirso/ai/developents/kmp
             type: Directory
         - name: host-tmp
           hostPath:

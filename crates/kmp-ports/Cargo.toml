@@ -1,0 +1,14 @@
+[package]
+name = "kmp-ports"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+kmp-domain.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

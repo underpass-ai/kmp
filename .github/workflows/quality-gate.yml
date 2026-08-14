@@ -294,121 +294,54 @@ jobs:
       - name: Lint Helm chart
         run: bash scripts/ci/helm-lint.sh
 
-  sonarcloud:
+  coverage:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    needs:
-      - rustfmt
-      - clippy
-      - test
-      - integration-valkey
-      - integration-neo4j
-      - integration-agentic-context
-      - integration-agentic-event-context
-      - integration-mcp-real-kernel
-      - integration-conformance
-      - embedded-binary-gates
-      - container-image
-      - helm-chart
+    timeout-minutes: 60
     permissions:
       contents: read
-      pull-requests: read
-    env:
-      SONAR_HOST_URL: https://sonarcloud.io
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      PR_FROM_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork || false }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
-        with:
-          fetch-depth: 0
-
-      - name: Evaluate Sonar configuration
-        id: sonar-config
-        shell: bash
-        run: |
-          enabled=true
-          reason=""
-
-          if [ -z "${SONAR_TOKEN}" ]; then
-            enabled=false
-            reason="SONAR_TOKEN secret is not configured"
-          elif [ "${PR_FROM_FORK}" = "true" ]; then
-            enabled=false
-            reason="SonarCloud scan is disabled for forked pull requests"
-          fi
-
-          echo "enabled=${enabled}" >> "${GITHUB_OUTPUT}"
-          echo "reason=${reason}" >> "${GITHUB_OUTPUT}"
-
-      - name: Skip SonarCloud
-        if: steps.sonar-config.outputs.enabled != 'true'
-        run: echo "::notice::Skipping SonarCloud. ${{ steps.sonar-config.outputs.reason }}"
 
       - name: Install Rust toolchain
-        if: steps.sonar-config.outputs.enabled == 'true'
         uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
         with:
           toolchain: 1.97.1
           components: llvm-tools-preview
 
       - name: Install protoc
-        if: steps.sonar-config.outputs.enabled == 'true'
         run: bash scripts/ci/install-protoc.sh
 
       - name: Install cargo-llvm-cov
-        if: steps.sonar-config.outputs.enabled == 'true'
         uses: taiki-e/install-action@b81531fd070ace482ba6b315eb6c35611e1c37d3
+        with:
+          tool: cargo-llvm-cov
 
       - name: Cache Rust build artifacts
-        if: steps.sonar-config.outputs.enabled == 'true'
         uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
 
-      - name: Cache Sonar packages
-        if: steps.sonar-config.outputs.enabled == 'true'
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: |
-            ${{ runner.os }}-sonar
-
       - name: Verify Docker
-        if: steps.sonar-config.outputs.enabled == 'true'
         run: docker version
 
-      - name: Generate Rust coverage
-        if: steps.sonar-config.outputs.enabled == 'true'
+      # The script owns the threshold: it ends in `cargo llvm-cov report
+      # --fail-under-lines`, so the gate is self-contained and needs no
+      # external service to decide pass or fail.
+      - name: Run coverage gate
         run: bash scripts/ci/rust-coverage.sh
-
-      - name: SonarCloud scan
-        if: steps.sonar-config.outputs.enabled == 'true'
-        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          projectBaseDir: ${{ github.workspace }}
-          args: >
-            -Dsonar.qualitygate.wait=true
-            -Dsonar.qualitygate.timeout=300
 
   wait-codeql-checks:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Code scanning default setup does not run its per-language analyses on
     # Dependabot pull requests; it publishes only a neutral `CodeQL` aggregate.
-    # Waiting for `Analyze (actions)` and `Analyze (rust)` there guarantees a
-    # 10-minute timeout and a red gate on every dependency bump, without adding
-    # any security signal. `dependency-review` is the gate that covers what
-    # those pull requests actually change, and it stays required.
+    # Waiting for named per-language analyses there guarantees a 10-minute
+    # timeout and a red gate on every dependency bump, without adding any
+    # security signal. `dependency-review` is the gate that covers what those
+    # pull requests actually change, and it stays required.
     if: >-
       always() && github.event_name == 'pull_request'
       && github.actor != 'dependabot[bot]'
       && !(github.event.pull_request.head.repo.fork || false)
-    needs:
-      - sonarcloud
     permissions:
       checks: read
       contents: read
@@ -423,7 +356,7 @@ jobs:
             const requiredChecks = new Map([
               ["CodeQL", "success"],
             ]);
-            const codeQlAnalysisChecks = ["Analyze (actions)", "Analyze (rust)"];
+            const isCodeQlAnalysis = (name) => name.startsWith("Analyze (");
 
             const deadline = Date.now() + (10 * 60 * 1000);
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -456,10 +389,14 @@ jobs:
                   ? `${name}#${run.id}=${run.conclusion}`
                   : `${name}=${run.conclusion}`;
 
-              for (const analysisName of codeQlAnalysisChecks) {
-                const runsForName = states.get(analysisName) ?? [];
-                if (runsForName.length === 0) {
-                  pending.push(analysisName);
+              // Which per-language analyses run depends on how code scanning
+              // default setup is configured for this repository, so discover
+              // them from the checks themselves rather than naming them here.
+              // A hard-coded language that is not enabled never publishes a
+              // check, and the wait can only end in a timeout. The `CodeQL`
+              // aggregate below is what decides when the analysis is done.
+              for (const [analysisName, runsForName] of states) {
+                if (!isCodeQlAnalysis(analysisName)) {
                   continue;
                 }
 

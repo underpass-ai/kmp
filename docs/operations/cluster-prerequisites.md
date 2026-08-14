@@ -137,7 +137,7 @@ aws route53 change-resource-record-sets --hosted-zone-id $ZONE_ID --change-batch
   \"Changes\": [{
     \"Action\": \"UPSERT\",
     \"ResourceRecordSet\": {
-      \"Name\": \"rehydration-kernel.underpassai.com\",
+      \"Name\": \"kmp.underpassai.com\",
       \"Type\": \"A\",
       \"TTL\": 300,
       \"ResourceRecords\": [{\"Value\": \"$METALLB_IP\"}]
@@ -150,7 +150,7 @@ aws route53 change-resource-record-sets --hosted-zone-id $ZONE_ID --change-batch
 
 ```bash
 aws route53 list-resource-record-sets --hosted-zone-id $ZONE_ID \
-  --query "ResourceRecordSets[?Name=='rehydration-kernel.underpassai.com.']"
+  --query "ResourceRecordSets[?Name=='kmp.underpassai.com.']"
 ```
 
 ## AWS CLI
@@ -189,7 +189,7 @@ After these prerequisites, you should have:
 | MetalLB | External IPs for LoadBalancer services | `kubectl get svc -n ingress-nginx` shows EXTERNAL-IP |
 | NGINX Ingress | gRPC TLS termination + routing | Ingress controller pod running |
 | cert-manager | Certificate issuance + auto-rotation | `kubectl get clusterissuer` shows Ready=True |
-| Route 53 | DNS resolution for ingress hostname | `dig rehydration-kernel.underpassai.com` resolves |
+| Route 53 | DNS resolution for ingress hostname | `dig kmp.underpassai.com` resolves |
 | AWS CLI | Route 53 management | `aws route53 list-hosted-zones` works |
 
 Next: [mTLS Deployment Guide](mtls-deployment.md)

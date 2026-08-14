@@ -488,7 +488,7 @@ kernel_operator_trajectory_export
 Implemented binary:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_trajectory_export -- \
   --run <memoryarena-run-dir> \
   --output <output-dir> \
   [--include-writer-reads] \
@@ -575,7 +575,7 @@ recorded target action and final trajectory quality.
 Implemented binary:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories <trajectories.jsonl> \
   [--predictions <predictions.jsonl>] \
   [--baseline deterministic|oracle] \
@@ -679,7 +679,7 @@ usage, invalid calls, and latency while preserving ref quality.
 Implemented binary:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_llm_baseline -- \
+cargo run -p kmp-testkit --bin kernel_operator_llm_baseline -- \
   --trajectories <trajectory-dir>/trajectories.jsonl \
   --output <output-dir> \
   --endpoint <openai-compatible-chat-completions-url> \
@@ -716,7 +716,7 @@ Guardrails:
 Evaluation command after a run:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories <trajectory-dir>/trajectories.jsonl \
   --predictions <llm-baseline-dir>/predictions.jsonl \
   --output <llm-baseline-dir>/policy-eval.json \
@@ -859,7 +859,7 @@ Prediction output:
 Policy evaluation:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories /tmp/kernel-operator-sft-100/eval_trajectories.jsonl \
   --predictions /tmp/kernel-operator-qwen05-predictions/predictions.jsonl \
   --output /tmp/kernel-operator-qwen05-policy-eval.json
@@ -1121,7 +1121,7 @@ compaction.
 Candidate-visible export:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_trajectory_export -- \
   --run /tmp/memoryarena-smart-writer-paged-100tasks-20260508-1407-run \
   --output /tmp/kernel-operator-trajectories-100-with-writer-candidates \
   --include-writer-reads \
@@ -1258,7 +1258,7 @@ fields reach `visible_state`.
 Candidate-detail export:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_trajectory_export -- \
+cargo run -p kmp-testkit --bin kernel_operator_trajectory_export -- \
   --run /tmp/memoryarena-smart-writer-paged-100tasks-20260508-1407-run \
   --output /tmp/kernel-operator-trajectories-100-with-writer-candidate-details \
   --include-writer-reads \
@@ -1495,7 +1495,7 @@ through the real MCP adapter against the deployed kernel.
 P1.10 adds:
 
 ```text
-cargo run -p rehydration-testkit --bin kernel_operator_mcp_replay
+cargo run -p kmp-testkit --bin kernel_operator_mcp_replay
 ```
 
 The replayer takes:
@@ -1503,7 +1503,7 @@ The replayer takes:
 - raw audit trajectories;
 - raw-ref predictions from the de-anonymizer;
 - a live kernel endpoint, usually
-  `https://rehydration-kernel.underpassai.com`.
+  `https://kmp.underpassai.com`.
 
 For long runs, `--log-progress-every N` emits compact JSONL progress events to
 stderr so the operator can see which trajectory step is being replayed without
@@ -1709,7 +1709,7 @@ Post-deploy P1.11.0 checks on 2026-05-12:
 
 | Check | Result |
 | --- | ---: |
-| Deployed image | `ghcr.io/underpass-ai/rehydration-kernel:dev-78e9a9f` |
+| Deployed image | `ghcr.io/underpass-ai/kmp:dev-78e9a9f` |
 | MCP temporal page smoke | `kernel_forward` page 1 `has_more=true`, page 2 `has_more=false` |
 | Remote inspect audit smoke | 100 / 100 refs found |
 | Remote inspect audit errors | 0 |
@@ -1722,7 +1722,7 @@ Post-deploy P1.11.0 checks on 2026-05-12:
 | Regenerated eval deterministic exact accuracy | 0.264 |
 
 The local artifact cache for this cut is outside the repository tree at
-`../rehydration-kernel-artifacts/operator/p111-pageinfo-221-20260512/`. It
+`../kmp-artifacts/operator/p111-pageinfo-221-20260512/`. It
 contains large benchmark runs, JSONL trajectories, SFT splits, logs, and audit
 outputs copied from `/tmp`.
 
@@ -1933,7 +1933,7 @@ Recommended artifacts:
 
 Correct positioning:
 
-> A small specialist model trained to operate Underpass Kernel memory tools
+> A small specialist model trained to operate KMP memory tools
 > through bounded, auditable trajectories.
 
 Avoid claims that it is a general QA model, a memory database, or a replacement
@@ -1949,7 +1949,7 @@ LongMemEval rows are exported by a separate binary,
 Current preserved local cache:
 
 ```text
-../rehydration-kernel-artifacts/operator/longmemeval-valid-20260512/
+../kmp-artifacts/operator/longmemeval-valid-20260512/
 ```
 
 Exported LongMemEval trajectory counts:
@@ -1963,7 +1963,7 @@ Exported LongMemEval trajectory counts:
 Mixed MemoryArena P1.11 + LongMemEval SFT output:
 
 ```text
-../rehydration-kernel-artifacts/operator/longmemeval-valid-20260512/kernel-operator-sft-mixed-memoryarena-longmemeval-20260512/
+../kmp-artifacts/operator/longmemeval-valid-20260512/kernel-operator-sft-mixed-memoryarena-longmemeval-20260512/
 ```
 
 Summary:
@@ -1996,7 +1996,7 @@ The cleaned LongMemEval-S file was restored from Hugging Face and preserved
 outside the repo:
 
 ```text
-../rehydration-kernel-artifacts/operator/longmemeval-valid-20260512/datasets/longmemeval_s_cleaned.json
+../kmp-artifacts/operator/longmemeval-valid-20260512/datasets/longmemeval_s_cleaned.json
 ```
 
 The 500-item adapter pass completed:
@@ -2015,7 +2015,7 @@ server but valkeyTls was disabled for the kernel client.
 ```
 
 The deployed release was corrected with Helm revision 128 by enabling
-`valkeyTls.enabled=true` and mounting `rehydration-kernel-valkey-tls`.
+`valkeyTls.enabled=true` and mounting `kmp-valkey-tls`.
 
 After redeploy, a one-item full-history smoke against the public TLS endpoint
 completed:

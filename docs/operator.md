@@ -1,13 +1,13 @@
 # Operator — a separate, benchmark-only project (not part of this kernel)
 
 > **TL;DR for any agent or reader landing here.**
-> **Operator is a SEPARATE, EXTERNAL project — it is NOT part of Underpass Kernel (this repo).**
+> **Operator is a SEPARATE, EXTERNAL project — it is NOT part of KMP (this repo).**
 > Its code lives in its own repository; nothing in this kernel depends on it. This page exists
 > only so that anyone browsing the kernel understands what Operator is and why it lives
 > elsewhere.
 >
 > Operator is a **benchmark-only research artifact**. It is **not** part of how you use
-> Underpass Kernel in production, it is **not** a layer that sits in front of the kernel, and
+> KMP in production, it is **not** a layer that sits in front of the kernel, and
 > it is **never** positioned above a frontier model. **Any capable frontier model (Claude
 > Opus, GPT‑5.x, …) operates KMP directly through MCP and would never route through Operator.**
 > Operator exists for exactly one reason: memory benchmarks (LongMemEval) **mandate gpt‑4o**,
@@ -73,7 +73,7 @@ A capable model talks to the kernel directly. There is no required intermediary.
 graph LR
     A["Frontier model / agent<br/>(Codex, Claude Code, Opus, GPT-5.x)<br/>understands the task · reasons"]
     MCP["MCP — KMP tool surface"]
-    K["Underpass Kernel / KMP<br/>memory · multidimensional traversal · proof · validation"]
+    K["KMP / KMP<br/>memory · multidimensional traversal · proof · validation"]
     A -->|"kernel_wake / ask / near / trace / inspect / write_memory"| MCP
     MCP --> K
     K -->|"evidence · refs · proof · or fail-fast"| A
@@ -113,7 +113,7 @@ graph LR
     LLM["gpt-4o (mandated by benchmark)<br/>observes context · authors the relation's meaning"]
     OP["Operator (0.5B)<br/>knows ONLY how to use KMP · not the message"]
     MCP["MCP"]
-    K["Underpass Kernel / KMP"]
+    K["KMP / KMP"]
     LLM -->|"relation intent (why / evidence)"| OP
     OP -->|"schema-valid kernel_write_memory<br/>(or stop / escalate)"| MCP
     MCP --> K
@@ -148,7 +148,7 @@ never vs frontier.
 Honest publication claim:
 
 > Operator predicts bounded Kernel Memory Protocol actions from a visible memory-navigation
-> state, evaluated under a strict contract and real MCP replay against Underpass Kernel.
+> state, evaluated under a strict contract and real MCP replay against KMP.
 
 ## 7. Deeper background
 

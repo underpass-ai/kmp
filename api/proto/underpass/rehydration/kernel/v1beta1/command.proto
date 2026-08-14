@@ -5,7 +5,7 @@ package underpass.rehydration.kernel.v1beta1;
 import "google/protobuf/timestamp.proto";
 import "underpass/rehydration/kernel/v1beta1/common.proto";
 
-option go_package = "github.com/underpass-ai/rehydration-kernel/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
 
 service ContextCommandService {
   rpc UpdateContext(UpdateContextRequest) returns (UpdateContextResponse);

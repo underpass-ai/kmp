@@ -12,11 +12,11 @@ source "$SCRIPT_DIR/lib.sh"
 parse_common_flags "$@"
 
 NAMESPACE=${NAMESPACE:-underpass-runtime}
-KERNEL_RELEASE=${KERNEL_RELEASE:-rehydration-kernel}
-KERNEL_POD_SELECTOR=${KERNEL_POD_SELECTOR:-app.kubernetes.io/name=rehydration-kernel,app.kubernetes.io/component=server}
-NEO4J_POD_SELECTOR=${NEO4J_POD_SELECTOR:-app.kubernetes.io/name=rehydration-kernel,app.kubernetes.io/component=neo4j}
-KMP_PUBLIC_ENDPOINT=${KMP_PUBLIC_ENDPOINT:-https://rehydration-kernel.underpassai.com}
-KMP_GRPCURL_TARGET=${KMP_GRPCURL_TARGET:-rehydration-kernel.underpassai.com:443}
+KERNEL_RELEASE=${KERNEL_RELEASE:-kmp}
+KERNEL_POD_SELECTOR=${KERNEL_POD_SELECTOR:-app.kubernetes.io/name=kmp,app.kubernetes.io/component=server}
+NEO4J_POD_SELECTOR=${NEO4J_POD_SELECTOR:-app.kubernetes.io/name=kmp,app.kubernetes.io/component=neo4j}
+KMP_PUBLIC_ENDPOINT=${KMP_PUBLIC_ENDPOINT:-https://kmp.underpassai.com}
+KMP_GRPCURL_TARGET=${KMP_GRPCURL_TARGET:-kmp.underpassai.com:443}
 CLIENT_CERT=${CLIENT_CERT:-/tmp/client.crt}
 CLIENT_KEY=${CLIENT_KEY:-/tmp/client.key}
 REAL_ANCHOR=${REAL_ANCHOR:-article:incident:checkout-latency:20260504T233722Z:frontend}
@@ -25,24 +25,24 @@ if [[ "$ALLOW_REDEPLOY" == "1" ]]; then
   warn "redeploy flag" "--redeploy accepted but this script is preflight-only; deploy via existing runbooks"
 fi
 if [[ "$ALLOW_REINSTALL_ADAPTERS" == "1" ]]; then
-  warn "adapter reinstall flag" "not applicable in rehydration-kernel"
+  warn "adapter reinstall flag" "not applicable in kmp"
 fi
 
 install_rehydration_mcp() {
-  if [[ -d crates/rehydration-mcp-bin ]]; then
-    cargo install --path crates/rehydration-mcp-bin --force
-  elif [[ -d crates/rehydration-mcp ]]; then
-    cargo install --path crates/rehydration-mcp --force
+  if [[ -d crates/kmp-mcp-bin ]]; then
+    cargo install --path crates/kmp-mcp-bin --force
+  elif [[ -d crates/kmp-mcp ]]; then
+    cargo install --path crates/kmp-mcp --force
   else
-    printf 'No rehydration-mcp crate path found\n' >&2
+    printf 'No kmp-mcp crate path found\n' >&2
     return 1
   fi
 }
 
 check_branch_state "$REPO_ROOT" "git state"
 run_checked "cargo release build" "workspace release build completed" cargo build --workspace --release
-run_checked "cargo install mcp" "rehydration-mcp installed to user cargo bin" install_rehydration_mcp
-check_binary_freshness "rehydration-mcp" "$REPO_ROOT" "rehydration-mcp freshness"
+run_checked "cargo install mcp" "kmp-mcp installed to user cargo bin" install_rehydration_mcp
+check_binary_freshness "kmp-mcp" "$REPO_ROOT" "kmp-mcp freshness"
 
 live_image=$(kubectl -n "$NAMESPACE" get deploy "$KERNEL_RELEASE" -o jsonpath='{.spec.template.spec.containers[*].image}' 2>/tmp/kernel-live-image.err || true)
 manifest_image=$(helm get manifest "$KERNEL_RELEASE" -n "$NAMESPACE" 2>/tmp/kernel-helm-manifest.err | awk '/image:/ {gsub(/"/, "", $2); print $2; exit}' || true)
@@ -85,19 +85,19 @@ else
   fi
 fi
 
-if command -v rehydration-mcp >/dev/null 2>&1; then
+if command -v kmp-mcp >/dev/null 2>&1; then
   request=$(printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kernel_wake","arguments":{"about":"%s"}}}' "$REAL_ANCHOR")
-  if response=$(printf '%s\n' "$request" | REHYDRATION_MCP_BACKEND=grpc REHYDRATION_KERNEL_GRPC_ENDPOINT="$KMP_PUBLIC_ENDPOINT" rehydration-mcp 2>&1); then
+  if response=$(printf '%s\n' "$request" | KMP_MCP_BACKEND=grpc KMP_KERNEL_GRPC_ENDPOINT="$KMP_PUBLIC_ENDPOINT" kmp-mcp 2>&1); then
     if printf '%s' "$response" | grep -Fq '"isError":false'; then
-      ok "rehydration-mcp smoke" "kernel_wake succeeded for $REAL_ANCHOR"
+      ok "kmp-mcp smoke" "kernel_wake succeeded for $REAL_ANCHOR"
     else
-      fail "rehydration-mcp smoke" "kernel_wake did not return isError=false: $response"
+      fail "kmp-mcp smoke" "kernel_wake did not return isError=false: $response"
     fi
   else
-    fail "rehydration-mcp smoke" "rehydration-mcp command failed: $response"
+    fail "kmp-mcp smoke" "kmp-mcp command failed: $response"
   fi
 else
-  fail "rehydration-mcp smoke" "rehydration-mcp not on PATH after install"
+  fail "kmp-mcp smoke" "kmp-mcp not on PATH after install"
 fi
 
 finish_summary

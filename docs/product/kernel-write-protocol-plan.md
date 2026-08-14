@@ -308,7 +308,7 @@ the first writer helper.
 ## Relation Vocabulary
 
 The canonical relation vocabulary is a core kernel contract implemented in
-`rehydration-domain` as relation type/value-object semantics. Adapters,
+`kmp-domain` as relation type/value-object semantics. Adapters,
 benchmarks, MCP, and readers must consume that contract instead of carrying
 their own ad hoc relation lists.
 
@@ -649,7 +649,7 @@ P0.1:
 P0.2:
 
 - [x] add `kernel_write_memory` to MCP `tools/list`;
-- [x] implement a writer planner module in `rehydration-mcp`;
+- [x] implement a writer planner module in `kmp-mcp`;
 - [x] support `dry_run=true`;
 - [x] reject vague or unsupported relation names in strict mode;
 - [x] fail fast when the writer cannot justify at least one target relation for the

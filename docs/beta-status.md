@@ -87,7 +87,7 @@ Event channels defined in [`context-projection.v1beta1.yaml`](../api/asyncapi/co
 All channels use the shared `EventEnvelope` schema: `event_id`, `correlation_id`,
 `causation_id`, `occurred_at`, `aggregate_id`, `aggregate_type`, `schema_version`.
 
-Subject prefix is configurable via `REHYDRATION_EVENTS_PREFIX` (default: `rehydration`).
+Subject prefix is configurable via `KMP_EVENTS_PREFIX` (default: `rehydration`).
 
 ## Experimental Ingestion Boundary
 

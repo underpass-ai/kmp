@@ -9,7 +9,7 @@
 The embedded backend resolves its data directory at startup, in this
 precedence order, and logs which rule won:
 
-1. **Explicit override:** `REHYDRATION_MCP_DATA_DIR` (absolute path). Set →
+1. **Explicit override:** `KMP_MCP_DATA_DIR` (absolute path). Set →
    used as-is, created if missing. This is also the escape hatch for hosts
    that launch MCP servers with an unpredictable working directory.
 2. **Per-project (the default experience):** walk up from the process
@@ -19,7 +19,7 @@ precedence order, and logs which rule won:
    directory), so project memory stays local-first and never enters version
    control by accident.
 3. **Per-user fallback (no project root found):** the platform user data
-   directory — `$XDG_DATA_HOME/rehydration-kernel/default` (Linux, with the
+   directory — `$XDG_DATA_HOME/kmp/default` (Linux, with the
    usual `~/.local/share` fallback) and its macOS/Windows equivalents via a
    platform-dirs crate.
 
@@ -60,7 +60,7 @@ Contract rules:
   worktree memory isolated — consistent with the single-writer model
   (ADR-011) since worktrees are typically parallel sessions.
 - **Env-first** keeps the promotion story one variable away
-  (`REHYDRATION_MCP_BACKEND` switches edition, `REHYDRATION_MCP_DATA_DIR`
+  (`KMP_MCP_BACKEND` switches edition, `KMP_MCP_DATA_DIR`
   pins storage), and makes CI/tests hermetic.
 - **XDG fallback** means launching the binary outside any repo still yields
   working, durable memory rather than an error — the "one developer, many
@@ -80,7 +80,7 @@ Contract rules:
 - **Trade-off:** resolution depends on process CWD when the env var is
   unset; hosts that launch servers from `$HOME` would silently fall back to
   the user store. Mitigated: the E4 per-host recipes must pin either CWD or
-  `REHYDRATION_MCP_DATA_DIR`, and the resolved directory + winning rule are
+  `KMP_MCP_DATA_DIR`, and the resolved directory + winning rule are
   logged at startup.
 
 ## Next Step

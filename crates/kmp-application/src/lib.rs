@@ -1,0 +1,42 @@
+pub mod application_error;
+pub mod commands;
+pub mod kmp_application;
+pub mod memory;
+pub mod projection;
+pub mod queries;
+
+pub use application_error::ApplicationError;
+pub use commands::{
+    AcceptedVersion, CommandApplicationService, NoopProjectionWriter, UpdateContextChange,
+    UpdateContextCommand, UpdateContextOutcome, UpdateContextUseCase,
+    projection_mutations_for_context_event,
+};
+pub use kmp_application::KmpApplication;
+pub use memory::{
+    AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, ExistingMemoryRefs, InspectMemoryQuery,
+    InspectMemoryResult, KernelMemoryApplicationService, MAX_TRACE_PAGE_ENTRIES,
+    MemoryAcceptedCounts, MemoryAnswerPolicy, MemoryCoordinateData, MemoryData,
+    MemoryDimensionData, MemoryEntryData, MemoryEvidenceData, MemoryIngestCommand,
+    MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData, TemporalIncludeOptions,
+    TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
+    translate_memory_ingest,
+};
+pub use projection::{
+    GraphNodeMaterializedData, GraphNodeMaterializedEvent, GraphRelationMaterializedData,
+    GraphRelationMaterializedEvent, NodeDetailMaterializedData, NodeDetailMaterializedEvent,
+    ProjectionApplicationService, ProjectionEnvelope, ProjectionEvent, ProjectionEventHandler,
+    ProjectionHandlingRequest, ProjectionHandlingResult, RelatedNodeExplanationData,
+    RelatedNodeReference, RoutingProjectionWriter,
+};
+pub use queries::{
+    BundleAssembler, ContextRenderOptions, DEFAULT_NATIVE_GRAPH_TRAVERSAL_DEPTH, EndpointHint,
+    GetContextPathQuery, GetContextPathResult, GetContextPathUseCase, GetContextQuery,
+    GetContextResult, GetContextUseCase, GetGraphRelationshipsQuery, GetGraphRelationshipsResult,
+    GetGraphRelationshipsUseCase, GetNodeDetailQuery, GetNodeDetailResult, GetNodeDetailUseCase,
+    GetNodeRelationshipsQuery, GetNodeRelationshipsResult, GetNodeRelationshipsUseCase,
+    GraphNodeView, GraphRelationshipView, MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH,
+    MIN_NATIVE_GRAPH_TRAVERSAL_DEPTH, NodeCentricProjectionReader, NodeDetailView,
+    QueryApplicationService, QueryTimingBreakdown, RehydrateSessionQuery, RehydrateSessionResult,
+    RehydrateSessionUseCase, RenderedContext, RenderedTier, ScopeValidation, ValidateScopeQuery,
+    ValidateScopeUseCase, clamp_native_graph_traversal_depth, render_graph_bundle_with_options,
+};

@@ -62,9 +62,9 @@ The adapter should do exactly this:
 
 The reusable pieces already live in the repo:
 
-- `rehydration_testkit::parse_graph_batch`
-- `rehydration_testkit::graph_batch_to_projection_events`
-- [`publish_llm_graph.rs`](../../crates/rehydration-testkit/src/bin/publish_llm_graph.rs)
+- `kmp_testkit::parse_graph_batch`
+- `kmp_testkit::graph_batch_to_projection_events`
+- [`publish_llm_graph.rs`](../../crates/kmp-testkit/src/bin/publish_llm_graph.rs)
 
 ### 4. Keep the read path minimal
 
@@ -114,7 +114,7 @@ Operational rule:
 
 The repo now includes a generic consumer-side smoke binary:
 
-- [`graph_batch_roundtrip.rs`](../../crates/rehydration-testkit/src/bin/graph_batch_roundtrip.rs)
+- [`graph_batch_roundtrip.rs`](../../crates/kmp-testkit/src/bin/graph_batch_roundtrip.rs)
 
 What it does:
 
@@ -127,7 +127,7 @@ What it does:
 ### Local plaintext example
 
 ```bash
-cargo run -p rehydration-testkit --bin graph_batch_roundtrip -- \
+cargo run -p kmp-testkit --bin graph_batch_roundtrip -- \
   --input api/examples/kernel/v1beta1/async/incident-graph-batch.json \
   --nats-url nats://127.0.0.1:4222 \
   --grpc-endpoint http://127.0.0.1:50054 \
@@ -144,17 +144,17 @@ kernel TLS material mounted. In `underpass-runtime`, use TLS with the mounted
 CA/cert/key paths, but do not enable `--nats-tls-first`.
 
 ```bash
-cargo run -p rehydration-testkit --bin graph_batch_roundtrip -- \
+cargo run -p kmp-testkit --bin graph_batch_roundtrip -- \
   --input api/examples/kernel/v1beta1/async/incident-graph-batch.json \
-  --nats-url nats://rehydration-kernel-nats:4222 \
-  --nats-tls-ca-path /var/run/rehydration-kernel/nats-tls/ca.crt \
-  --nats-tls-cert-path /var/run/rehydration-kernel/nats-tls/tls.crt \
-  --nats-tls-key-path /var/run/rehydration-kernel/nats-tls/tls.key \
-  --grpc-endpoint https://rehydration-kernel:50054 \
-  --grpc-tls-ca-path /var/run/rehydration-kernel/tls/ca.crt \
-  --grpc-tls-cert-path /var/run/rehydration-kernel/tls/tls.crt \
-  --grpc-tls-key-path /var/run/rehydration-kernel/tls/tls.key \
-  --grpc-tls-domain-name rehydration-kernel \
+  --nats-url nats://kmp-nats:4222 \
+  --nats-tls-ca-path /var/run/kmp/nats-tls/ca.crt \
+  --nats-tls-cert-path /var/run/kmp/nats-tls/tls.crt \
+  --nats-tls-key-path /var/run/kmp/nats-tls/tls.key \
+  --grpc-endpoint https://kmp:50054 \
+  --grpc-tls-ca-path /var/run/kmp/tls/ca.crt \
+  --grpc-tls-cert-path /var/run/kmp/tls/tls.crt \
+  --grpc-tls-key-path /var/run/kmp/tls/tls.key \
+  --grpc-tls-domain-name kmp \
   --run-id pir-wave-1 \
   --role incident-commander \
   --requested-scope graph \

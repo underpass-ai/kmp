@@ -37,7 +37,7 @@ export FILTER_SCALES="${FILTER_SCALES:-micro}"
 export FILTER_NOISE="${FILTER_NOISE:-clean}"
 export FILTER_PROMPTS="${FILTER_PROMPTS:-default}"
 
-cargo test -p rehydration-tests-paper --features container-tests \
+cargo test -p kmp-tests-paper --features container-tests \
   --test llm_judge_prompt_evaluation -- --nocapture --test-threads=1
 
 # Find the latest run directory

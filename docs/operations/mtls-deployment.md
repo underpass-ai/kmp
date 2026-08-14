@@ -25,7 +25,7 @@ kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: rehydration-kernel-ca-issuer
+  name: kmp-ca-issuer
   namespace: $NS
 spec:
   selfSigned: {}
@@ -33,25 +33,25 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: rehydration-kernel-internal-ca
+  name: kmp-internal-ca
   namespace: $NS
 spec:
   isCA: true
-  commonName: rehydration-kernel-internal-ca
-  secretName: rehydration-kernel-internal-ca
+  commonName: kmp-internal-ca
+  secretName: kmp-internal-ca
   issuerRef:
-    name: rehydration-kernel-ca-issuer
+    name: kmp-ca-issuer
     kind: Issuer
   duration: 8760h
 ---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: rehydration-kernel-internal-issuer
+  name: kmp-internal-issuer
   namespace: $NS
 spec:
   ca:
-    secretName: rehydration-kernel-internal-ca
+    secretName: kmp-internal-ca
 EOF
 ```
 
@@ -63,21 +63,21 @@ kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: rehydration-kernel-${svc}-cert
+  name: kmp-${svc}-cert
   namespace: $NS
 spec:
-  secretName: rehydration-kernel-${svc}-tls
+  secretName: kmp-${svc}-tls
   issuerRef:
-    name: rehydration-kernel-internal-issuer
+    name: kmp-internal-issuer
     kind: Issuer
-  commonName: rehydration-kernel-${svc}
+  commonName: kmp-${svc}
   dnsNames:
-    - rehydration-kernel
-    - rehydration-kernel-${svc}
-    - rehydration-kernel.${NS}.svc
-    - rehydration-kernel-${svc}.${NS}.svc
-    - rehydration-kernel.${NS}.svc.cluster.local
-    - rehydration-kernel-${svc}.${NS}.svc.cluster.local
+    - kmp
+    - kmp-${svc}
+    - kmp.${NS}.svc
+    - kmp-${svc}.${NS}.svc
+    - kmp.${NS}.svc.cluster.local
+    - kmp-${svc}.${NS}.svc.cluster.local
   usages:
     - server auth
     - client auth
@@ -98,15 +98,15 @@ kubectl apply -f - <<EOF
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: rehydration-kernel-tls
+  name: kmp-tls
   namespace: $NS
 spec:
-  secretName: rehydration-kernel-tls-prod
+  secretName: kmp-tls-prod
   issuerRef:
     name: letsencrypt-prod-r53
     kind: ClusterIssuer
   dnsNames:
-    - rehydration-kernel.underpassai.com
+    - kmp.underpassai.com
 EOF
 ```
 
@@ -115,7 +115,7 @@ Requires a DNS A record pointing to your ingress controller (MetalLB IP):
 ```bash
 aws route53 change-resource-record-sets --hosted-zone-id <ZONE_ID> --change-batch '{
   "Changes": [{"Action":"UPSERT","ResourceRecordSet":{
-    "Name":"rehydration-kernel.underpassai.com","Type":"A","TTL":300,
+    "Name":"kmp.underpassai.com","Type":"A","TTL":300,
     "ResourceRecords":[{"Value":"<METALLB_IP>"}]
   }}]
 }'
@@ -130,8 +130,8 @@ upstream TLS directives. The upstream client secret must contain `ca.crt`,
 ingress:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: GRPCS
-    nginx.ingress.kubernetes.io/proxy-ssl-secret: underpass-runtime/rehydration-kernel-client-tls
-    nginx.ingress.kubernetes.io/proxy-ssl-name: rehydration-kernel-grpc
+    nginx.ingress.kubernetes.io/proxy-ssl-secret: underpass-runtime/kmp-client-tls
+    nginx.ingress.kubernetes.io/proxy-ssl-name: kmp-grpc
     nginx.ingress.kubernetes.io/proxy-ssl-server-name: "on"
     nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
     nginx.ingress.kubernetes.io/proxy-ssl-verify-depth: "2"
@@ -146,12 +146,12 @@ controller config:
 helm upgrade ingress-nginx ingress-nginx/ingress-nginx \
   -n ingress-nginx \
   --reuse-values \
-  --set-string controller.config.http-snippet='grpc_ssl_trusted_certificate /etc/ingress-controller/ssl/underpass-runtime-rehydration-kernel-client-tls.pem;
-grpc_ssl_certificate /etc/ingress-controller/ssl/underpass-runtime-rehydration-kernel-client-tls.pem;
-grpc_ssl_certificate_key /etc/ingress-controller/ssl/underpass-runtime-rehydration-kernel-client-tls.pem;
+  --set-string controller.config.http-snippet='grpc_ssl_trusted_certificate /etc/ingress-controller/ssl/underpass-runtime-kmp-client-tls.pem;
+grpc_ssl_certificate /etc/ingress-controller/ssl/underpass-runtime-kmp-client-tls.pem;
+grpc_ssl_certificate_key /etc/ingress-controller/ssl/underpass-runtime-kmp-client-tls.pem;
 grpc_ssl_verify on;
 grpc_ssl_verify_depth 2;
-grpc_ssl_name rehydration-kernel-grpc;
+grpc_ssl_name kmp-grpc;
 grpc_ssl_server_name on;
 grpc_ssl_protocols TLSv1.2 TLSv1.3;'
 ```
@@ -166,15 +166,15 @@ For environments without cert-manager.
 mkdir -p /tmp/kernel-certs && cd /tmp/kernel-certs
 
 openssl req -x509 -newkey rsa:2048 -days 365 -nodes \
-  -keyout ca.key -out ca.crt -subj "/CN=rehydration-kernel-ca"
+  -keyout ca.key -out ca.crt -subj "/CN=kmp-ca"
 
 for svc in grpc nats valkey otel; do
   openssl req -newkey rsa:2048 -nodes \
     -keyout ${svc}.key -out ${svc}.csr \
-    -subj "/CN=rehydration-kernel-${svc}"
+    -subj "/CN=kmp-${svc}"
   cat > ${svc}.ext <<EXTEOF
 [v3_req]
-subjectAltName=DNS:rehydration-kernel-${svc},DNS:rehydration-kernel-${svc}.underpass-runtime.svc,DNS:rehydration-kernel-${svc}.underpass-runtime.svc.cluster.local,DNS:rehydration-kernel
+subjectAltName=DNS:kmp-${svc},DNS:kmp-${svc}.underpass-runtime.svc,DNS:kmp-${svc}.underpass-runtime.svc.cluster.local,DNS:kmp
 extendedKeyUsage=serverAuth,clientAuth
 EXTEOF
   openssl x509 -req -in ${svc}.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
@@ -187,7 +187,7 @@ done
 ```bash
 NS=underpass-runtime
 for svc in grpc nats valkey otel; do
-  kubectl create secret generic rehydration-kernel-${svc}-tls \
+  kubectl create secret generic kmp-${svc}-tls \
     -n $NS --from-file=tls.crt=${svc}.crt --from-file=tls.key=${svc}.key --from-file=ca.crt=ca.crt
 done
 ```
@@ -195,9 +195,9 @@ done
 ## Step 3 — Deploy with Helm
 
 ```bash
-helm upgrade --install rehydration-kernel charts/rehydration-kernel \
+helm upgrade --install kmp charts/kmp \
   -n underpass-runtime \
-  -f charts/rehydration-kernel/values.underpass-runtime.mtls.example.yaml \
+  -f charts/kmp/values.underpass-runtime.mtls.example.yaml \
   --set image.tag=mtls \
   --timeout 120s
 ```
@@ -206,29 +206,29 @@ The values file configures:
 
 | Boundary | Mode | Secret |
 |:---------|:-----|:-------|
-| gRPC inbound | mutual TLS | `rehydration-kernel-grpc-tls` |
-| Kernel → NATS | mutual TLS | `rehydration-kernel-nats-tls` |
-| Kernel → Valkey | mutual TLS (rediss://) | `rehydration-kernel-valkey-tls` |
-| Kernel → Neo4j | plaintext in this self-contained profile | in-chart `rehydration-kernel-neo4j` |
-| Kernel → OTel Collector | mTLS via env vars | `rehydration-kernel-otel-tls` |
-| OTel Collector receiver | mTLS with client CA | `rehydration-kernel-otel-tls` |
-| OTel Collector → Loki | mTLS (HTTPS) | `rehydration-kernel-otel-tls` |
+| gRPC inbound | mutual TLS | `kmp-grpc-tls` |
+| Kernel → NATS | mutual TLS | `kmp-nats-tls` |
+| Kernel → Valkey | mutual TLS (rediss://) | `kmp-valkey-tls` |
+| Kernel → Neo4j | plaintext in this self-contained profile | in-chart `kmp-neo4j` |
+| Kernel → OTel Collector | mTLS via env vars | `kmp-otel-tls` |
+| OTel Collector receiver | mTLS with client CA | `kmp-otel-tls` |
+| OTel Collector → Loki | mTLS (HTTPS) | `kmp-otel-tls` |
 | Grafana | anonymous disabled | — |
 
 ## Step 4 — Verify
 
 ```bash
 # Check all pods are running
-kubectl -n underpass-runtime get pods | grep rehydration-kernel
+kubectl -n underpass-runtime get pods | grep kmp
 
 # Check kernel logs for TLS initialization
-kubectl -n underpass-runtime logs deploy/rehydration-kernel --tail=20
+kubectl -n underpass-runtime logs deploy/kmp --tail=20
 
 # Check NATS connection is TLS
-kubectl -n underpass-runtime logs deploy/rehydration-kernel | grep -i "tls\|connected"
+kubectl -n underpass-runtime logs deploy/kmp | grep -i "tls\|connected"
 
 # Check OTel Collector receives data
-kubectl -n underpass-runtime logs deploy/rehydration-kernel-otel-collector --tail=10
+kubectl -n underpass-runtime logs deploy/kmp-otel-collector --tail=10
 ```
 
 ## Troubleshooting
@@ -267,6 +267,6 @@ Certificates in this guide are valid for 365 days. To rotate:
 
 1. Generate new certs with the same CA (or a new CA if compromised)
 2. Update the Kubernetes secrets
-3. Restart the affected pods: `kubectl rollout restart deploy/rehydration-kernel -n underpass-runtime`
+3. Restart the affected pods: `kubectl rollout restart deploy/kmp -n underpass-runtime`
 
 The kernel does not support hot-reload of certificates — a restart is required.

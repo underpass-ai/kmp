@@ -72,17 +72,17 @@ jobs:
 
       - name: Build release binary
         shell: bash
-        run: cargo build --release -p rehydration-mcp --locked --target ${{ matrix.target }}
+        run: cargo build --release -p kmp-mcp --locked --target ${{ matrix.target }}
 
       - name: Package and checksum
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME:-dev}"
           case "${{ runner.os }}" in
-            Windows) BIN="target/${{ matrix.target }}/release/rehydration-mcp.exe"
-                     OUT="rehydration-mcp-${VERSION}-${{ matrix.target }}.exe" ;;
-            *)       BIN="target/${{ matrix.target }}/release/rehydration-mcp"
-                     OUT="rehydration-mcp-${VERSION}-${{ matrix.target }}"
+            Windows) BIN="target/${{ matrix.target }}/release/kmp-mcp.exe"
+                     OUT="kmp-mcp-${VERSION}-${{ matrix.target }}.exe" ;;
+            *)       BIN="target/${{ matrix.target }}/release/kmp-mcp"
+                     OUT="kmp-mcp-${VERSION}-${{ matrix.target }}"
                      strip "$BIN" || true ;;
           esac
           mkdir -p dist

@@ -29,10 +29,10 @@ The plugin contract is owned by the kernel but exported as a lightweight crate:
 
 | Crate or module | Responsibility | External plugin dependency? |
 |:----------------|:---------------|:----------------------------|
-| `rehydration-plugin-api` | Public plugin API: evidence fragments, spans, typed values, derivation requests/results, plugin traits, plugin errors. | Yes. This is the preferred dependency for plugin crates. |
-| `rehydration-domain::plugins` | Kernel-domain re-export of `rehydration-plugin-api` for internal cohesion. | Optional. Use only when already depending on domain. |
-| `rehydration-interpretation` | First reusable plugin implementations: money, date, value operations, text segmentation. | Optional. Use as reference or dependency when those implementations fit. |
-| `rehydration-testkit` | Benchmark probes and compatibility re-exports. | No. Testkit is not the plugin contract owner. |
+| `kmp-plugin-api` | Public plugin API: evidence fragments, spans, typed values, derivation requests/results, plugin traits, plugin errors. | Yes. This is the preferred dependency for plugin crates. |
+| `kmp-domain::plugins` | Kernel-domain re-export of `kmp-plugin-api` for internal cohesion. | Optional. Use only when already depending on domain. |
+| `kmp-interpretation` | First reusable plugin implementations: money, date, value operations, text segmentation. | Optional. Use as reference or dependency when those implementations fit. |
+| `kmp-testkit` | Benchmark probes and compatibility re-exports. | No. Testkit is not the plugin contract owner. |
 | kernel application/adapters | Retrieve evidence, persist memories, expose gRPC/MCP, emit traces, write derived results. | No direct dependency from plugin implementations unless a plugin is deliberately application-owned. |
 
 Dependency direction:
@@ -41,23 +41,23 @@ Dependency direction:
 external plugin crate
         |
         v
-rehydration-plugin-api
+kmp-plugin-api
 
-rehydration-interpretation
+kmp-interpretation
         |
         v
-rehydration-plugin-api
+kmp-plugin-api
 
-rehydration-domain::plugins
+kmp-domain::plugins
         |
         v
-rehydration-plugin-api
+kmp-plugin-api
 ```
 
 External plugins should not depend on:
 
-- `rehydration-application`;
-- `rehydration-domain`, unless they intentionally need broader domain types;
+- `kmp-application`;
+- `kmp-domain`, unless they intentionally need broader domain types;
 - storage adapters such as Neo4j, Valkey, NATS, or Postgres;
 - gRPC/MCP transport crates;
 - benchmark/testkit crates.
@@ -74,7 +74,7 @@ They receive evidence fragments retrieved by the kernel and return typed value
 mentions with byte spans and source refs.
 
 ```rust
-use rehydration_plugin_api::{
+use kmp_plugin_api::{
     EvidenceInterpretationInput, EvidenceInterpretationOutput, EvidenceValuePlugin,
     InterpretationError,
 };
@@ -112,7 +112,7 @@ They receive a `DerivationRequest` with an explicit operation and explicit
 operands. Each operand is labeled as `include`, `exclude`, or `context`.
 
 ```rust
-use rehydration_plugin_api::{
+use kmp_plugin_api::{
     DerivationRequest, DerivationResult, EvidenceDerivationPlugin, InterpretationError,
 };
 
@@ -172,21 +172,21 @@ edition = "2024"
 rust-version = "1.90"
 
 [dependencies]
-rehydration-plugin-api = { git = "https://github.com/underpass-ai/rehydration-kernel" }
+kmp-plugin-api = { git = "https://github.com/underpass-ai/kmp" }
 serde = { version = "1", features = ["derive"] }
 ```
 
 When developing inside the workspace, use the path dependency:
 
 ```toml
-rehydration-plugin-api = { path = "../rehydration-plugin-api" }
+kmp-plugin-api = { path = "../kmp-plugin-api" }
 ```
 
 A plugin implementation should expose concrete types and keep construction
 simple:
 
 ```rust
-pub use rehydration_plugin_api::{
+pub use kmp_plugin_api::{
     EvidenceDerivationPlugin, EvidenceValuePlugin, InterpretationError,
 };
 
@@ -206,7 +206,7 @@ the kernel domain, storage, transport, or testkit crates.
 ```rust
 use std::collections::BTreeSet;
 
-use rehydration_plugin_api::{
+use kmp_plugin_api::{
     DerivationOperation, DerivationRequest, DerivationResult, EvidenceDerivationPlugin,
     InterpretationError, InterpretedValue, OperandLabel,
 };
@@ -274,7 +274,7 @@ impl EvidenceDerivationPlugin for UniqueEntityCountPlugin {
 Host-side invocation stays explicit:
 
 ```rust
-use rehydration_plugin_api::{
+use kmp_plugin_api::{
     DerivationOperand, DerivationOperation, DerivationRequest, EvidenceDerivationPlugin,
     InterpretedValue, OperandRole,
 };
@@ -313,7 +313,7 @@ There is no runtime registry in this slice. A host wires plugins at compile
 time or application startup.
 
 ```rust
-use rehydration_plugin_api::{EvidenceDerivationPlugin, EvidenceValuePlugin};
+use kmp_plugin_api::{EvidenceDerivationPlugin, EvidenceValuePlugin};
 
 pub struct PluginSet {
     pub value_plugins: Vec<Box<dyn EvidenceValuePlugin>>,
@@ -321,7 +321,7 @@ pub struct PluginSet {
 }
 ```
 
-For the common in-process path, `rehydration-interpretation` provides
+For the common in-process path, `kmp-interpretation` provides
 `ComposedEvidenceReader` plus `EvidenceReaderPluginConfigurator`. This is the
 kernel-owned reference reader for this slice: the configurator owns which
 plugins are enabled and in which order, then the reader applies value plugins,
@@ -329,7 +329,7 @@ aggregates typed mentions and diagnostics, and routes explicit derivation
 requests to the named derivation plugin.
 
 ```rust
-use rehydration_interpretation::{
+use kmp_interpretation::{
     ComposedEvidenceReader, EvidenceFragment, EvidenceInterpretationInput, EvidenceReaderRequest,
     UrlValuePlugin, MoneyValuePlugin,
 };
@@ -448,7 +448,7 @@ domain operators.
 
 ## Existing Implementations
 
-`rehydration-interpretation` currently provides the reference implementations:
+`kmp-interpretation` currently provides the reference implementations:
 
 - `ComposedEvidenceReader`;
 - `MoneyValuePlugin`;

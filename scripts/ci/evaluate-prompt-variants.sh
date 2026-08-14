@@ -20,7 +20,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-RESOURCES="${ROOT_DIR}/crates/rehydration-testkit/resources"
+RESOURCES="${ROOT_DIR}/crates/kmp-testkit/resources"
 MATRIX_FILE="${1:-${RESOURCES}/evaluation-matrix.yaml}"
 
 cd "${ROOT_DIR}"
@@ -28,7 +28,7 @@ cd "${ROOT_DIR}"
 
 # Pre-compile once
 cargo test \
-  -p rehydration-tests-paper \
+  -p kmp-tests-paper \
   --features container-tests \
   --test llm_judge_prompt_evaluation \
   --no-run 2>&1 | tail -1
@@ -105,7 +105,7 @@ for i, cell in enumerate(cells, 1):
 
     result = subprocess.run(
         ['cargo', 'test',
-         '-p', 'rehydration-tests-paper',
+         '-p', 'kmp-tests-paper',
          '--features', 'container-tests',
          '--test', 'llm_judge_prompt_evaluation',
          '--', '--nocapture', '--test-threads=1'],

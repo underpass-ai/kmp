@@ -14,8 +14,8 @@ structural usefulness of the emitted relations.
 
 Tests exercised:
 
-- [`vllm_blind_graph_prompt_smoke_returns_valid_bounded_batch`](../../crates/rehydration-testkit/tests/vllm_graph_blind_prompt_smoke.rs)
-- [`vllm_blind_structural_smoke_reports_primary_and_reranked_scorecard`](../../crates/rehydration-testkit/tests/vllm_graph_blind_structural_smoke.rs)
+- [`vllm_blind_graph_prompt_smoke_returns_valid_bounded_batch`](../../crates/kmp-testkit/tests/vllm_graph_blind_prompt_smoke.rs)
+- [`vllm_blind_structural_smoke_reports_primary_and_reranked_scorecard`](../../crates/kmp-testkit/tests/vllm_graph_blind_structural_smoke.rs)
 
 Fixture used:
 

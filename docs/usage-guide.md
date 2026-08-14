@@ -52,7 +52,7 @@ Optional stabilizer:
 The repo includes a minimal adapter for that path:
 
 ```rust
-use rehydration_testkit::{graph_batch_to_projection_events, parse_graph_batch};
+use kmp_testkit::{graph_batch_to_projection_events, parse_graph_batch};
 
 let batch = parse_graph_batch(llm_json_payload)?;
 let messages = graph_batch_to_projection_events(&batch, "rehydration", "incident-42")?;
@@ -421,8 +421,8 @@ The kernel supports two event store backends for `UpdateContext`:
 
 | Backend | Config | Behavior |
 |:--------|:-------|:---------|
-| **Valkey** (default) | `REHYDRATION_EVENT_STORE_BACKEND=valkey` | Events stored as RESP keys, idempotency via key lookup |
-| **NATS JetStream** | `REHYDRATION_EVENT_STORE_BACKEND=nats` | Events stored in `CONTEXT_EVENTS` stream, file-backed |
+| **Valkey** (default) | `KMP_EVENT_STORE_BACKEND=valkey` | Events stored as RESP keys, idempotency via key lookup |
+| **NATS JetStream** | `KMP_EVENT_STORE_BACKEND=nats` | Events stored in `CONTEXT_EVENTS` stream, file-backed |
 
 Both implement the same `ContextEventStore` port with:
 - **Atomic CAS** — NATS uses `Nats-Expected-Last-Subject-Sequence` header; Valkey uses a Lua EVAL script. Concurrent writes to the same `(root_node_id, role)` are rejected with `ABORTED`
@@ -439,7 +439,7 @@ Both implement the same `ContextEventStore` port with:
 | `{prefix}.cmd.evt.{root_node_id}.{role}` | Event store: command events |
 | `{prefix}.cmd.idem.{key}` | Event store: idempotency outcomes |
 
-Prefix is configured via `REHYDRATION_EVENTS_PREFIX` (default: `rehydration`).
+Prefix is configured via `KMP_EVENTS_PREFIX` (default: `rehydration`).
 
 ### Operational notes
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-IMAGE_TAG="${1:-rehydration-kernel:ci}"
+IMAGE_TAG="${1:-kmp:ci}"
 : "${CONTAINER_RUNTIME:=auto}"
 
 select_container_cli() {

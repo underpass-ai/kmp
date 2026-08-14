@@ -6,10 +6,10 @@
 
 set -euo pipefail
 
-BIN="${REHYDRATION_MCP_BIN:-target/release/rehydration-mcp}"
+BIN="${KMP_MCP_BIN:-target/release/kmp-mcp}"
 DATA_DIR="${1:-$(mktemp -d)}"
-export REHYDRATION_MCP_BACKEND=embedded
-export REHYDRATION_MCP_DATA_DIR="${DATA_DIR}"
+export KMP_MCP_BACKEND=embedded
+export KMP_MCP_DATA_DIR="${DATA_DIR}"
 
 call() { # $1 = json-rpc line; runs ONE fresh binary session per call
   printf '%s\n' "$1" | "${BIN}" 2>/dev/null

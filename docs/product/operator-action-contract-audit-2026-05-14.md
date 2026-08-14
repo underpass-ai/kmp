@@ -489,9 +489,9 @@ El contrato se aplica ahora en:
 
 | Pieza | Estado |
 | --- | --- |
-| `crates/rehydration-testkit/src/kernel_operator.rs` | Fuente compartida del contrato estricto en Rust. |
-| `crates/rehydration-testkit/src/bin/kernel_operator_policy_eval.rs` | Usa el contrato estricto para contar invalid predictions. |
-| `crates/rehydration-testkit/src/bin/kernel_operator_llm_baseline.rs` | Usa el contrato estricto antes de aceptar acciones LLM. |
+| `crates/kmp-testkit/src/kernel_operator.rs` | Fuente compartida del contrato estricto en Rust. |
+| `crates/kmp-testkit/src/bin/kernel_operator_policy_eval.rs` | Usa el contrato estricto para contar invalid predictions. |
+| `crates/kmp-testkit/src/bin/kernel_operator_llm_baseline.rs` | Usa el contrato estricto antes de aceptar acciones LLM. |
 | `scripts/operator/predict_operator_sft.py` | Replica el contrato para rechazar outputs antes de escribir `predictions.jsonl`. |
 | `docs/product/kernel-tool-operator-model-plan.md` | Documenta el resultado v10 corregido. |
 
@@ -502,9 +502,9 @@ python -m py_compile \
   scripts/operator/predict_operator_sft.py \
   scripts/operator/prepare_operator_sft_dataset.py
 
-cargo test -p rehydration-testkit kernel_operator -- --nocapture
+cargo test -p kmp-testkit kernel_operator -- --nocapture
 
-cargo test -p rehydration-testkit \
+cargo test -p kmp-testkit \
   --bin kernel_operator_policy_eval \
   -- --nocapture
 ```
@@ -512,7 +512,7 @@ cargo test -p rehydration-testkit \
 Reevaluacion ejecutada:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories /tmp/kernel-operator-sft-longmemeval-legacy-v10-operator-state-20260513/eval_model_trajectories.jsonl \
   --predictions /tmp/kernel-operator-qwen05-predictions-lme-v10-operator-state-20260513/predictions.jsonl \
   --output /tmp/kernel-operator-qwen05-predictions-lme-v10-operator-state-20260513-policy-eval-strict.json
@@ -723,7 +723,7 @@ La release publica del Operator requiere ahora:
 Revalidar predicciones existentes:
 
 ```bash
-cargo run -p rehydration-testkit --bin kernel_operator_policy_eval -- \
+cargo run -p kmp-testkit --bin kernel_operator_policy_eval -- \
   --trajectories <operator-sft-dir>/eval_model_trajectories.jsonl \
   --predictions <operator-predictions-dir>/predictions.jsonl \
   --output <operator-policy-eval-strict>.json

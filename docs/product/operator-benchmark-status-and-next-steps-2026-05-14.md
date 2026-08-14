@@ -149,8 +149,8 @@ Hay tres niveles distintos:
 | Nivel | Fuente |
 | --- | --- |
 | API canonica | `KernelMemoryService` gRPC en `api/proto/.../memory.proto` |
-| Entrada agentica | MCP tools en `crates/rehydration-mcp/src/protocol.rs` |
-| Contrato del Operator | validador estricto en `crates/rehydration-testkit/src/kernel_operator.rs` |
+| Entrada agentica | MCP tools en `crates/kmp-mcp/src/protocol.rs` |
+| Contrato del Operator | validador estricto en `crates/kmp-testkit/src/kernel_operator.rs` |
 
 ### Gap 1: Herramientas MCP Que El Operator No Cubre
 
@@ -707,7 +707,7 @@ Claim permitido:
 
 ```text
 Operator aprende a elegir acciones KMP/MCP acotadas desde estado visible de
-memoria y esas acciones se reproducen contra un Underpass Kernel real.
+memoria y esas acciones se reproducen contra un KMP real.
 ```
 
 Claim no permitido:

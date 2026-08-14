@@ -8,7 +8,7 @@ cd "${ROOT_DIR}"
 . "${ROOT_DIR}/scripts/ci/testcontainers-runtime.sh"
 
 cargo test \
-  -p rehydration-adapter-valkey \
+  -p kmp-adapter-valkey \
   --features container-tests \
   --test valkey_integration \
   --locked \

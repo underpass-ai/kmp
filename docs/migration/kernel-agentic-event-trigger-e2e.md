@@ -1,8 +1,8 @@
 # Kernel Agentic Event Trigger E2E
 
 > **Path update**: Test files referenced below moved from
-> `crates/rehydration-transport-grpc/tests/` to `crates/rehydration-tests-kernel/tests/`
-> and support modules to `crates/rehydration-tests-shared/src/`. See the
+> `crates/kmp-transport-grpc/tests/` to `crates/kmp-tests-kernel/tests/`
+> and support modules to `crates/kmp-tests-shared/src/`. See the
 > [benchmark docs](../research/benchmark-paper-use-cases.md) for current paths.
 
 Status: Active
@@ -23,7 +23,7 @@ This milestone extends the existing agentic proof with an async entrypoint:
 ## What Is Implemented
 
 The repository now contains a dedicated container-backed suite in
-[`agentic_event_integration.rs`](../../crates/rehydration-transport-grpc/tests/agentic_event_integration.rs).
+[`agentic_event_integration.rs`](../../crates/kmp-transport-grpc/tests/agentic_event_integration.rs).
 
 The suite proves two runtime modes:
 
@@ -35,13 +35,13 @@ The suite proves two runtime modes:
 The event-driven support stays split into small files:
 
 - event publisher and parser:
-  - [`context_bundle_generated_event.rs`](../../crates/rehydration-transport-grpc/tests/support/context_bundle_generated_event.rs)
+  - [`context_bundle_generated_event.rs`](../../crates/kmp-transport-grpc/tests/support/context_bundle_generated_event.rs)
 - trigger consumer:
-  - [`event_driven_runtime_trigger.rs`](../../crates/rehydration-transport-grpc/tests/support/event_driven_runtime_trigger.rs)
+  - [`event_driven_runtime_trigger.rs`](../../crates/kmp-transport-grpc/tests/support/event_driven_runtime_trigger.rs)
 - shared agent logic:
-  - [`basic_context_agent.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/basic_context_agent.rs)
+  - [`basic_context_agent.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/basic_context_agent.rs)
 - shared runtime client:
-  - [`runtime_http_client.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/runtime_http_client.rs)
+  - [`runtime_http_client.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/runtime_http_client.rs)
 
 ## What The E2E Proves
 

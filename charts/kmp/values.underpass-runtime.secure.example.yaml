@@ -1,0 +1,43 @@
+# Secure sibling-runtime profile once the shared Neo4j endpoint exposes TLS and
+# a namespace-local CA secret has been provisioned for the kernel release.
+image:
+  pullPolicy: Always
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: GRPC
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  hosts:
+    - host: kmp.underpassai.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - kmp.underpassai.com
+      secretName: kmp-ingress-tls
+
+neo4jTls:
+  enabled: true
+  existingSecret: kmp-neo4j-tls
+  keys:
+    ca: ca.crt
+
+config:
+  enableNats: false
+  enableProjectionNats: true
+
+connections:
+  graphUri: neo4j+s://neo4j:underpassai@neo4j.swe-ai-fleet.svc.cluster.local:7687
+  detailUri: redis://valkey.underpass-runtime.svc.cluster.local:6379
+  snapshotUri: redis://valkey.underpass-runtime.svc.cluster.local:6379
+  runtimeStateUri: redis://valkey.underpass-runtime.svc.cluster.local:6379
+  natsUrl: nats://nats.underpass-runtime.svc.cluster.local:4222
+
+development:
+  allowInlineConnections: true

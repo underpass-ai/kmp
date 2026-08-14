@@ -35,7 +35,7 @@ their authors and contributors.
 
 | Library | License | Purpose |
 |---------|---------|---------|
-| [pixi.js](https://pixijs.com) 8.19.0 | MIT | WebGL renderer for the embedded memory viewer; vendored bundle, hash-pinned and supply-chain-verified in `crates/rehydration-viewer/ui/vendor/VENDOR.md` |
+| [pixi.js](https://pixijs.com) 8.19.0 | MIT | WebGL renderer for the embedded memory viewer; vendored bundle, hash-pinned and supply-chain-verified in `crates/kmp-viewer/ui/vendor/VENDOR.md` |
 
 ## Dev/Test Dependencies
 

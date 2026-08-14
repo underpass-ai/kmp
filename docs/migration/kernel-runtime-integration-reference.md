@@ -6,7 +6,7 @@ Scope: reference contract for external runtimes that consume the kernel
 ## Intent
 
 Document the smallest practical integration shape for an agent runtime that
-uses `rehydration-kernel` as its context engine.
+uses `kmp` as its context engine.
 
 This is not a kernel-owned transport contract. The owned kernel boundary is:
 
@@ -33,9 +33,9 @@ The reference runtime exposes three endpoints:
 
 Implemented in:
 
-- [`runtime_http_client.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/runtime_http_client.rs)
-- [`fake_underpass.rs`](../../crates/rehydration-tests-shared/src/runtime/fake_underpass.rs)
-- [`main.rs`](../../crates/rehydration-transport-grpc/src/bin/runtime_reference_client/main.rs)
+- [`runtime_http_client.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/runtime_http_client.rs)
+- [`fake_underpass.rs`](../../crates/kmp-tests-shared/src/runtime/fake_underpass.rs)
+- [`main.rs`](../../crates/kmp-transport-grpc/src/bin/runtime_reference_client/main.rs)
 
 Reference payloads: [`api/examples/runtime-reference/v1/README.md`](../../api/examples/runtime-reference/v1/README.md)
 
@@ -51,8 +51,8 @@ The reference agent (`basic_context_agent.rs`) follows this sequence:
 
 Implemented in:
 
-- [`basic_context_agent.rs`](../../crates/rehydration-transport-grpc/src/agentic_reference/basic_context_agent.rs)
-- [`config.rs`](../../crates/rehydration-transport-grpc/src/bin/runtime_reference_client/config.rs)
+- [`basic_context_agent.rs`](../../crates/kmp-transport-grpc/src/agentic_reference/basic_context_agent.rs)
+- [`config.rs`](../../crates/kmp-transport-grpc/src/bin/runtime_reference_client/config.rs)
 
 ## Reference Client
 
@@ -62,7 +62,7 @@ The repository contains a runnable reference client:
 KERNEL_GRPC_ENDPOINT=http://localhost:50054 \
 RUNTIME_BASE_URL=http://localhost:8080 \
 ROOT_NODE_ID=node:workspace:my-project \
-cargo run -p rehydration-transport-grpc --bin runtime_reference_client
+cargo run -p kmp-transport-grpc --bin runtime_reference_client
 ```
 
 | Variable | Required | Description |

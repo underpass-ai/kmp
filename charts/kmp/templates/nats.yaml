@@ -1,0 +1,142 @@
+{{- if .Values.nats.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kmp.fullname" . }}-nats
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "kmp.fullname" . }}-nats
+  ports:
+    - port: 4222
+      targetPort: 4222
+      protocol: TCP
+      name: client
+    {{- if .Values.nats.exporter.enabled }}
+    - port: {{ .Values.nats.exporter.port }}
+      targetPort: {{ .Values.nats.exporter.port }}
+      protocol: TCP
+      name: metrics
+    {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "kmp.fullname" . }}-nats-data
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.nats.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.nats.persistence.size }}
+---
+{{- if .Values.nats.tls.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kmp.fullname" . }}-nats-config
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+data:
+  nats.conf: |
+    listen: 0.0.0.0:4222
+    jetstream {
+      store_dir: /data/jetstream
+    }
+    tls {
+      cert_file: /etc/nats-tls/tls.crt
+      key_file: /etc/nats-tls/tls.key
+      ca_file: /etc/nats-tls-ca/ca.crt
+      verify: true
+    }
+---
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kmp.fullname" . }}-nats
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "kmp.fullname" . }}-nats
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "kmp.fullname" . }}-nats
+    spec:
+      containers:
+        - name: nats
+          image: "{{ .Values.nats.image.repository }}:{{ .Values.nats.image.tag }}"
+          {{- if .Values.nats.tls.enabled }}
+          args: ["-c", "/etc/nats/nats.conf"{{- if .Values.nats.exporter.enabled }}, "-m", "8222"{{- end }}]
+          {{- else }}
+          args: ["-js", "--store_dir=/data/jetstream"{{- if .Values.nats.exporter.enabled }}, "-m", "8222"{{- end }}]
+          {{- end }}
+          ports:
+            - containerPort: 4222
+            {{- if .Values.nats.exporter.enabled }}
+            - containerPort: 8222
+              name: monitoring
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            {{- if .Values.nats.tls.enabled }}
+            - name: nats-tls
+              mountPath: /etc/nats-tls
+              readOnly: true
+            - name: nats-tls-ca
+              mountPath: /etc/nats-tls-ca
+              readOnly: true
+            - name: nats-config
+              mountPath: /etc/nats
+              readOnly: true
+            {{- end }}
+          resources:
+            {{- toYaml .Values.nats.resources | nindent 12 }}
+        {{- if .Values.nats.exporter.enabled }}
+        - name: nats-exporter
+          image: "{{ .Values.nats.exporter.image.repository }}:{{ .Values.nats.exporter.image.tag }}"
+          args:
+            - "-connz"
+            - "-routez"
+            - "-subz"
+            - "-varz"
+            - "-jsz=all"
+            - "-port={{ .Values.nats.exporter.port }}"
+            - "http://localhost:8222"
+          ports:
+            - containerPort: {{ .Values.nats.exporter.port }}
+              name: metrics
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+        {{- end }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "kmp.fullname" . }}-nats-data
+        {{- if .Values.nats.tls.enabled }}
+        - name: nats-tls
+          secret:
+            secretName: {{ .Values.nats.tls.existingSecret | quote }}
+        - name: nats-tls-ca
+          secret:
+            secretName: {{ .Values.nats.tls.caSecret | quote }}
+        - name: nats-config
+          configMap:
+            name: {{ include "kmp.fullname" . }}-nats-config
+        {{- end }}
+{{- end }}

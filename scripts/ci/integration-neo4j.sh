@@ -8,7 +8,7 @@ cd "${ROOT_DIR}"
 . "${ROOT_DIR}/scripts/ci/testcontainers-runtime.sh"
 
 cargo test \
-  -p rehydration-adapter-neo4j \
+  -p kmp-adapter-neo4j \
   --features container-tests \
   --test neo4j_integration \
   --locked \

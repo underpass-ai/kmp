@@ -1,0 +1,195 @@
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::time::Duration;
+
+use kmp_adapter_embedded::{
+    EmbeddedKernelStore, QualityTelemetryRetention, RedbQualityTelemetryWriter,
+};
+use kmp_application::{
+    CommandApplicationService, KernelMemoryApplicationService, QueryApplicationService,
+    RoutingProjectionWriter, UpdateContextUseCase,
+};
+use kmp_domain::{PortError, QualityMetricsObserver};
+use kmp_observability::{BufferedQualityMetricsObserver, EmbeddedTelemetryGuard};
+
+const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// The KMP memory facade composed over the embedded store: every port is the
+/// same single-file redb store, and ingest projects synchronously in-process,
+/// which is what makes `read_after_write_ready` unconditionally true.
+pub type EmbeddedMemoryService = KernelMemoryApplicationService<
+    EmbeddedKernelStore,
+    EmbeddedKernelStore,
+    EmbeddedKernelStore,
+    EmbeddedKernelStore,
+    RoutingProjectionWriter<Arc<EmbeddedKernelStore>, Arc<EmbeddedKernelStore>>,
+>;
+
+/// One opened embedded kernel: the composed service plus the store handle
+/// for operational tooling (replay, stats, compaction).
+pub struct EmbeddedKernel {
+    data_dir: PathBuf,
+    store: EmbeddedKernelStore,
+    service: Arc<EmbeddedMemoryService>,
+    quality_observer: Arc<BufferedQualityMetricsObserver>,
+    telemetry_guard: Option<EmbeddedTelemetryGuard>,
+    telemetry_writer: Option<Arc<RedbQualityTelemetryWriter>>,
+    quality_telemetry_error: Option<String>,
+}
+
+impl EmbeddedKernel {
+    /// Opens the store at `data_dir` (fail-fast per ADR-012) and composes the
+    /// kernel. A second session on the same data dir fails here with an
+    /// explicit single-writer error (ADR-011; the engine holds the lock).
+    pub fn open(data_dir: &Path) -> Result<Self, PortError> {
+        let store = EmbeddedKernelStore::open(data_dir).map_err(|error| match error {
+            PortError::Unavailable(message) if message.contains("could not open") => {
+                PortError::Unavailable(format!(
+                    "{message}; if another agent session is using this data dir, close it first \
+                     (the embedded store is single-writer per ADR-011)"
+                ))
+            }
+            other => other,
+        })?;
+
+        let graph = Arc::new(store.clone());
+        let detail = Arc::new(store.clone());
+        let query_application = Arc::new(QueryApplicationService::new(
+            Arc::clone(&graph),
+            Arc::clone(&detail),
+            Arc::new(store.clone()),
+            GENERATOR_VERSION,
+        ));
+        let update_context = Arc::new(UpdateContextUseCase::new_with_projection_writer(
+            Arc::new(store.clone()),
+            RoutingProjectionWriter::new(graph, detail),
+            GENERATOR_VERSION,
+        ));
+        let service = Arc::new(KernelMemoryApplicationService::new(
+            query_application,
+            Arc::new(CommandApplicationService::new(update_context)),
+        ));
+        let (quality_observer, telemetry_guard, telemetry_writer, quality_telemetry_error) =
+            compose_quality_telemetry(data_dir);
+
+        Ok(Self {
+            data_dir: data_dir.to_path_buf(),
+            store,
+            service,
+            quality_observer,
+            telemetry_guard,
+            telemetry_writer,
+            quality_telemetry_error,
+        })
+    }
+
+    pub fn data_dir(&self) -> &Path {
+        &self.data_dir
+    }
+
+    pub fn store(&self) -> &EmbeddedKernelStore {
+        &self.store
+    }
+
+    pub fn service(&self) -> Arc<EmbeddedMemoryService> {
+        Arc::clone(&self.service)
+    }
+
+    pub fn quality_observer(&self) -> Arc<dyn QualityMetricsObserver> {
+        self.quality_observer.clone()
+    }
+
+    pub fn quality_telemetry_dropped_observations(&self) -> u64 {
+        self.quality_observer.dropped_observations()
+    }
+
+    pub fn quality_telemetry_write_failures(&self) -> u64 {
+        self.telemetry_writer
+            .as_ref()
+            .map_or(0, |writer| writer.write_failures())
+    }
+
+    pub fn quality_telemetry_error(&self) -> Option<&str> {
+        self.quality_telemetry_error.as_deref()
+    }
+
+    pub fn quality_telemetry_active(&self) -> bool {
+        self.telemetry_guard.is_some()
+    }
+}
+
+fn compose_quality_telemetry(
+    data_dir: &Path,
+) -> (
+    Arc<BufferedQualityMetricsObserver>,
+    Option<EmbeddedTelemetryGuard>,
+    Option<Arc<RedbQualityTelemetryWriter>>,
+    Option<String>,
+) {
+    let (observer, receiver) = BufferedQualityMetricsObserver::with_capacity(1_024);
+    let observer = Arc::new(observer);
+    let writer =
+        match RedbQualityTelemetryWriter::open(data_dir, QualityTelemetryRetention::default()) {
+            Ok(writer) => Arc::new(writer),
+            Err(error) => {
+                drop(receiver);
+                return (observer, None, None, Some(error.to_string()));
+            }
+        };
+    let batch_writer = Arc::clone(&writer);
+    let final_writer = Arc::clone(&writer);
+    let guard = match EmbeddedTelemetryGuard::try_spawn(
+        receiver,
+        64,
+        Duration::from_millis(250),
+        move |batch| {
+            let _ = batch_writer.write_batch(&batch);
+        },
+        move || {
+            let _ = final_writer.flush_durable();
+        },
+    ) {
+        Ok(guard) => guard,
+        Err(error) => {
+            return (
+                observer,
+                None,
+                Some(writer),
+                Some(format!("quality telemetry worker could not start: {error}")),
+            );
+        }
+    };
+    (observer, Some(guard), Some(writer), None)
+}
+
+#[cfg(test)]
+mod tests {
+    use kmp_domain::{BundleQualityMetrics, QualityMetricsObserver, QualityObservationContext};
+
+    use super::EmbeddedKernel;
+
+    #[test]
+    fn telemetry_startup_failure_never_prevents_the_kernel_from_opening() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        std::fs::write(
+            data_dir.path().join("telemetry"),
+            b"blocks directory creation",
+        )
+        .expect("blocking file");
+
+        let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel remains available");
+        assert!(!kernel.quality_telemetry_active());
+        assert!(kernel.quality_telemetry_error().is_some());
+        let metrics = BundleQualityMetrics::new(1, 1.0, 0.0, 0.0, 0.0).expect("valid metrics");
+        kernel.quality_observer.observe(
+            &metrics,
+            &QualityObservationContext {
+                rpc: "kernel_wake".to_string(),
+                root_node_id: "question:fail-open".to_string(),
+                role: "resumer".to_string(),
+            },
+        );
+        assert_eq!(kernel.quality_telemetry_dropped_observations(), 1);
+        assert_eq!(kernel.quality_telemetry_write_failures(), 0);
+    }
+}

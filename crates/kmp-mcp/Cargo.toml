@@ -1,0 +1,34 @@
+[package]
+name = "kmp-mcp"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+license.workspace = true
+description = "Stdio MCP adapter for Kernel Memory Protocol"
+repository.workspace = true
+
+[dependencies]
+opentelemetry.workspace = true
+prost-types.workspace = true
+kmp-domain.workspace = true
+kmp-application.workspace = true
+kmp-embedded.workspace = true
+kmp-proto.workspace = true
+kmp-proto-mapping.workspace = true
+kmp-viewer.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tokio-rustls = "0.26.4"
+tonic.workspace = true
+tracing.workspace = true
+tracing-appender = "0.2.3"
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+kmp-adapter-embedded.workspace = true
+tempfile = "3.26.0"
+tokio-stream.workspace = true
+
+[lints]
+workspace = true

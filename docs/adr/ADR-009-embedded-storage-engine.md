@@ -8,7 +8,7 @@
 
 The embedded edition's storage engine is **redb** (pure-Rust, single-file,
 MVCC, typed B-tree tables). All embedded port implementations in
-`rehydration-adapter-embedded` (E2) persist through one redb database file.
+`kmp-adapter-embedded` (E2) persist through one redb database file.
 
 SQLite (via `rusqlite`) is the documented fallback if redb hits a wall during
 E2; fjall is rejected for this use case.
@@ -99,7 +99,7 @@ root should not have to own.
   store format version is stamped and fail-fast checked
   ([ADR-012](ADR-012-embedded-data-directory.md)).
 - **Bounded blast radius:** all redb types stay inside
-  `rehydration-adapter-embedded`; the conformance suite (E1) is
+  `kmp-adapter-embedded`; the conformance suite (E1) is
   engine-agnostic, so revisiting this decision is an adapter swap, not a
   redesign.
 

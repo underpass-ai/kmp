@@ -12,9 +12,9 @@ COPY crates ./crates
 COPY vendor ./vendor
 
 RUN cargo build --locked --release \
-    -p rehydration-testkit --bin graph_batch_roundtrip \
-    -p rehydration-testkit --bin graph_relation_roundtrip \
-    -p rehydration-testkit --bin graph_batch_vllm_request
+    -p kmp-testkit --bin graph_batch_roundtrip \
+    -p kmp-testkit --bin graph_relation_roundtrip \
+    -p kmp-testkit --bin graph_batch_vllm_request
 
 FROM docker.io/fullstorydev/grpcurl:v1.9.3 AS grpcurl
 

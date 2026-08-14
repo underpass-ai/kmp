@@ -54,7 +54,7 @@ The model should stay focused on graph semantics:
 5. Query the kernel with `GetContext` or `GetNodeDetail`.
 
 ```rust
-use rehydration_testkit::{graph_batch_to_projection_events, parse_graph_batch};
+use kmp_testkit::{graph_batch_to_projection_events, parse_graph_batch};
 
 let batch = parse_graph_batch(llm_json_payload)?;
 let messages = graph_batch_to_projection_events(&batch, "rehydration", "incident-42")?;

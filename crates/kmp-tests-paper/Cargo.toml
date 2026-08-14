@@ -1,0 +1,47 @@
+[package]
+name = "kmp-tests-paper"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Paper research tests: LLM evaluation, benchmarks, use case metrics"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+container-tests = []
+
+[dependencies]
+
+[dev-dependencies]
+async-nats = "0.46.0"
+kmp-proto.workspace = true
+kmp-testkit.workspace = true
+kmp-tests-shared.workspace = true
+kmp-transport-grpc.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+
+[[test]]
+name = "relationship_use_case_integration"
+path = "tests/relationship_use_case_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "relationship_use_case_ablation_integration"
+path = "tests/relationship_use_case_ablation_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "vllm_benchmark_integration"
+path = "tests/vllm_benchmark_integration.rs"
+required-features = ["container-tests"]
+
+[[test]]
+name = "llm_judge_prompt_evaluation"
+path = "tests/llm_judge_prompt_evaluation.rs"
+required-features = ["container-tests"]

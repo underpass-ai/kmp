@@ -9,7 +9,7 @@
 v1 of the embedded edition uses **one exclusive owner process per data
 directory** (roadmap option a):
 
-- the first `rehydration-mcp` embedded process to open a data directory takes
+- the first `kmp-mcp` embedded process to open a data directory takes
   an exclusive advisory lock on a `lock` file at the data-dir root and owns
   the store (reads and writes) until exit;
 - a second process opening the same data directory **fails fast at startup**
@@ -75,7 +75,7 @@ documents it per host).
 
 ## Next Step
 
-E2 implements the lock in `rehydration-adapter-embedded`'s composition
+E2 implements the lock in `kmp-adapter-embedded`'s composition
 surface with the error taxonomy (locked / corrupt / version mismatch); E4
 validates the two-session UX on Claude Code and Codex CLI and records the
 daemon trigger evidence.

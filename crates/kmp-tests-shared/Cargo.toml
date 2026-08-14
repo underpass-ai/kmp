@@ -1,0 +1,37 @@
+[package]
+name = "kmp-tests-shared"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Hexagonal test infrastructure: containers, fixtures, seed strategies"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+container-tests = []
+
+[dependencies]
+async-nats = "0.46.0"
+neo4rs.workspace = true
+kmp-adapter-nats.workspace = true
+kmp-adapter-neo4j.workspace = true
+kmp-adapter-valkey.workspace = true
+kmp-application.workspace = true
+kmp-config.workspace = true
+kmp-domain.workspace = true
+kmp-observability = { workspace = true, features = ["otel"] }
+kmp-ports.workspace = true
+kmp-proto.workspace = true
+kmp-testkit.workspace = true
+kmp-transport-grpc.workspace = true
+prost-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile = "3.26.0"
+testcontainers = "0.24.0"
+tokio.workspace = true
+tokio-rustls = "0.26.4"
+tokio-stream.workspace = true
+tonic.workspace = true

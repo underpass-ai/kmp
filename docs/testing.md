@@ -11,7 +11,7 @@ cargo test --workspace
 
 # Integration tests (requires container runtime)
 bash scripts/ci/testcontainers-runtime.sh
-cargo test -p rehydration-tests-kernel --features container-tests -- --nocapture --test-threads=1
+cargo test -p kmp-tests-kernel --features container-tests -- --nocapture --test-threads=1
 
 # Quality gate (pre-merge: format + clippy + contract + tests)
 bash scripts/ci/quality-gate.sh
@@ -29,20 +29,20 @@ needed.
 
 | Crate | What it validates |
 |:------|:------------------|
-| rehydration-application | Rendering pipeline, quality metrics, tier classification, mode heuristic |
-| rehydration-domain | Value objects, invariants, BundleQualityMetrics, aggregate validation |
-| rehydration-adapter-valkey | RESP protocol, endpoint parsing, TLS config, detail and snapshot stores |
-| rehydration-testkit | Dataset generator, GraphBatch extraction, retry and repair flows |
-| rehydration-transport-grpc | gRPC roundtrip, TLS and mTLS handshake, proto mapping |
-| rehydration-adapter-neo4j | Endpoint parsing, TLS CA config, projection store |
-| rehydration-proto | Contract stability, fixture compliance, AsyncAPI |
-| rehydration-config | AppConfig defaults, gRPC TLS modes, NATS TLS validation |
-| rehydration-observability | OTel, tracing, and composite quality observers |
-| rehydration-ports | Port trait delegation through Arc |
+| kmp-application | Rendering pipeline, quality metrics, tier classification, mode heuristic |
+| kmp-domain | Value objects, invariants, BundleQualityMetrics, aggregate validation |
+| kmp-adapter-valkey | RESP protocol, endpoint parsing, TLS config, detail and snapshot stores |
+| kmp-testkit | Dataset generator, GraphBatch extraction, retry and repair flows |
+| kmp-transport-grpc | gRPC roundtrip, TLS and mTLS handshake, proto mapping |
+| kmp-adapter-neo4j | Endpoint parsing, TLS CA config, projection store |
+| kmp-proto | Contract stability, fixture compliance, AsyncAPI |
+| kmp-config | AppConfig defaults, gRPC TLS modes, NATS TLS validation |
+| kmp-observability | OTel, tracing, and composite quality observers |
+| kmp-ports | Port trait delegation through Arc |
 
 Run a specific crate:
 ```bash
-cargo test -p rehydration-domain
+cargo test -p kmp-domain
 ```
 
 ## Integration Tests
@@ -77,7 +77,7 @@ bash scripts/ci/testcontainers-runtime.sh
 ### Running individual tests
 
 ```bash
-cargo test -p rehydration-tests-kernel \
+cargo test -p kmp-tests-kernel \
   --features container-tests \
   --test kernel_full_journey_integration \
   -- --nocapture --test-threads=1
@@ -134,104 +134,104 @@ Design rule for those tests:
 Suggested homes:
 
 - contract/unit tests:
-  `crates/rehydration-proto/`, `crates/rehydration-adapter-nats/`,
-  `crates/rehydration-application/`
+  `crates/kmp-proto/`, `crates/kmp-adapter-nats/`,
+  `crates/kmp-application/`
 - container E2E:
-  `crates/rehydration-tests-kernel/tests/`
+  `crates/kmp-tests-kernel/tests/`
 - live roundtrip and smoke orchestration:
-  `crates/rehydration-testkit/tests/`, `crates/rehydration-testkit/src/bin/`,
+  `crates/kmp-testkit/tests/`, `crates/kmp-testkit/src/bin/`,
   `e2e/kernel-runner/tests/`
 
 Commands:
 
 ```bash
 # Local translator + schema invariants
-cargo test -p rehydration-testkit llm_graph -- --nocapture
+cargo test -p kmp-testkit llm_graph -- --nocapture
 
 # Container E2E: minimal + incremental GraphBatch materialization
-cargo test -p rehydration-tests-kernel \
+cargo test -p kmp-tests-kernel \
   --features container-tests \
   --test llm_graph_materialization_integration \
   -- --nocapture --test-threads=1
 
 # Container E2E: PIR-style republish idempotency + incremental incident waves
-cargo test -p rehydration-tests-kernel \
+cargo test -p kmp-tests-kernel \
   --features container-tests \
   --test pir_graph_batch_integration \
   -- --nocapture --test-threads=1
 
 # Live vLLM smoke (requires endpoint + mTLS env vars)
-RUN_VLLM_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_prompt_smoke -- --nocapture
 
 # Live blind vLLM smoke: weaker fixture, still bounded GraphBatch contract
-RUN_VLLM_BLIND_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_BLIND_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_blind_prompt_smoke -- --nocapture
 
 # Live blind structural smoke: evaluate graph structure before/after reranker
-RUN_VLLM_BLIND_STRUCTURAL_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_BLIND_STRUCTURAL_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_blind_structural_smoke -- --nocapture
 
 # Optional: exercise the dedicated repair judge too
 RUN_VLLM_SMOKE=1 \
 LLM_GRAPH_BATCH_USE_REPAIR_JUDGE=1 \
-cargo test -p rehydration-testkit \
+cargo test -p kmp-testkit \
   vllm_graph_prompt_smoke -- --nocapture
 
 # Dedicated live repair smoke: invalid primary output -> repair judge -> valid GraphBatch
-RUN_VLLM_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_repair_judge_smoke -- --nocapture
 
 # Live PIR-style roundtrip smoke against a real kernel/NATS deployment
-RUN_PIR_GRAPH_BATCH_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_PIR_GRAPH_BATCH_SMOKE=1 cargo test -p kmp-testkit \
   pir_graph_batch_roundtrip_smoke -- --nocapture
 
 # Live PIR incremental consumption smoke: two stable-ID waves -> kernel -> rendered context -> vLLM answer
-RUN_PIR_GRAPH_BATCH_CONTEXT_CONSUMPTION_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_PIR_GRAPH_BATCH_CONTEXT_CONSUMPTION_SMOKE=1 cargo test -p kmp-testkit \
   pir_graph_batch_incremental_context_consumption_smoke_succeeds_against_live_kernel -- --nocapture
 
 # Live combined smoke: vLLM -> GraphBatch -> NATS -> projection -> read model
-RUN_VLLM_GRAPH_BATCH_ROUNDTRIP_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_GRAPH_BATCH_ROUNDTRIP_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_batch_roundtrip_smoke -- --nocapture
 
 # PIR-style consumption smoke: vLLM -> GraphBatch -> kernel -> rendered context -> vLLM answer
-RUN_VLLM_GRAPH_BATCH_CONTEXT_CONSUMPTION_SMOKE=1 cargo test -p rehydration-testkit \
+RUN_VLLM_GRAPH_BATCH_CONTEXT_CONSUMPTION_SMOKE=1 cargo test -p kmp-testkit \
   vllm_graph_batch_roundtrip_smoke_consumes_rehydrated_context -- --nocapture
 
 # Larger 15-20 minute soak: same incident, primary + semantic reranker
 RUN_VLLM_GRAPH_BATCH_ROUNDTRIP_SOAK=1 \
 VLLM_GRAPH_BATCH_ROUNDTRIP_SOAK_ITERATIONS=2 \
-cargo test -p rehydration-testkit \
+cargo test -p kmp-testkit \
   vllm_graph_batch_roundtrip_large_incident_soak -- --nocapture
 
 # Manual equivalent for cluster pods
 graph_batch_vllm_request --run-id vllm-live-roundtrip-001 --namespace-node-ids \
   | graph_batch_roundtrip --input - \
-      --nats-url nats://rehydration-kernel-nats:4222 \
+      --nats-url nats://kmp-nats:4222 \
       --grpc-endpoint https://127.0.0.1:50054 \
       --run-id vllm-live-roundtrip-001 \
-      --grpc-tls-ca-path /var/run/rehydration-kernel/tls/ca.crt \
-      --grpc-tls-cert-path /var/run/rehydration-kernel/tls/tls.crt \
-      --grpc-tls-key-path /var/run/rehydration-kernel/tls/tls.key \
-      --grpc-tls-domain-name rehydration-kernel \
-      --nats-tls-ca-path /var/run/rehydration-kernel/nats-tls/ca.crt \
-      --nats-tls-cert-path /var/run/rehydration-kernel/nats-tls/tls.crt \
-      --nats-tls-key-path /var/run/rehydration-kernel/nats-tls/tls.key
+      --grpc-tls-ca-path /var/run/kmp/tls/ca.crt \
+      --grpc-tls-cert-path /var/run/kmp/tls/tls.crt \
+      --grpc-tls-key-path /var/run/kmp/tls/tls.key \
+      --grpc-tls-domain-name kmp \
+      --nats-tls-ca-path /var/run/kmp/nats-tls/ca.crt \
+      --nats-tls-cert-path /var/run/kmp/nats-tls/tls.crt \
+      --nats-tls-key-path /var/run/kmp/nats-tls/tls.key
 
 # Manual large incident variant.
 graph_batch_vllm_request --large-incident --run-id vllm-live-large-001 \
   --use-semantic-classifier --namespace-node-ids \
   | graph_batch_roundtrip --input - \
-      --nats-url nats://rehydration-kernel-nats:4222 \
+      --nats-url nats://kmp-nats:4222 \
       --grpc-endpoint https://127.0.0.1:50054 \
       --run-id vllm-live-large-001 \
-      --grpc-tls-ca-path /var/run/rehydration-kernel/tls/ca.crt \
-      --grpc-tls-cert-path /var/run/rehydration-kernel/tls/tls.crt \
-      --grpc-tls-key-path /var/run/rehydration-kernel/tls/tls.key \
-      --grpc-tls-domain-name rehydration-kernel \
-      --nats-tls-ca-path /var/run/rehydration-kernel/nats-tls/ca.crt \
-      --nats-tls-cert-path /var/run/rehydration-kernel/nats-tls/tls.crt \
-      --nats-tls-key-path /var/run/rehydration-kernel/nats-tls/tls.key \
+      --grpc-tls-ca-path /var/run/kmp/tls/ca.crt \
+      --grpc-tls-cert-path /var/run/kmp/tls/tls.crt \
+      --grpc-tls-key-path /var/run/kmp/tls/tls.key \
+      --grpc-tls-domain-name kmp \
+      --nats-tls-ca-path /var/run/kmp/nats-tls/ca.crt \
+      --nats-tls-cert-path /var/run/kmp/nats-tls/tls.crt \
+      --nats-tls-key-path /var/run/kmp/nats-tls/tls.key \
       --rehydration-mode reason_preserving \
       --include-rendered-content
 
@@ -257,12 +257,12 @@ use the new runner in [`e2e/kernel-runner/`](../e2e/kernel-runner/).
 Build the image:
 
 ```bash
-bash scripts/ci/e2e-kernel-runner-image.sh rehydration-kernel-e2e-runner:dev
+bash scripts/ci/e2e-kernel-runner-image.sh kmp-e2e-runner:dev
 ```
 
 Cluster job template:
 
-- [`k8s/rehydration-kernel-e2e-runner.example.yaml`](../k8s/rehydration-kernel-e2e-runner.example.yaml)
+- [`k8s/kmp-e2e-runner.example.yaml`](../k8s/kmp-e2e-runner.example.yaml)
 
 Supported `TEST_ID` values:
 
@@ -283,15 +283,15 @@ Example async fixture-driven run inside the cluster:
 
 ```bash
 TEST_ID=async-graph-batch-roundtrip
-PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222
-PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://rehydration-kernel:50054
-PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/rehydration-kernel/tls/ca.crt
-PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/rehydration-kernel/tls/tls.crt
-PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/rehydration-kernel/tls/tls.key
-PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=rehydration-kernel
-PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/rehydration-kernel/nats-tls/ca.crt
-PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/rehydration-kernel/nats-tls/tls.crt
-PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/rehydration-kernel/nats-tls/tls.key
+PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222
+PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://kmp:50054
+PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/kmp/tls/ca.crt
+PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/kmp/tls/tls.crt
+PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/kmp/tls/tls.key
+PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=kmp
+PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/kmp/nats-tls/ca.crt
+PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/kmp/nats-tls/tls.crt
+PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/kmp/nats-tls/tls.key
 ```
 
 Example raw relation-materialization run inside the cluster:
@@ -299,15 +299,15 @@ Example raw relation-materialization run inside the cluster:
 ```bash
 TEST_ID=async-graph-relation-roundtrip
 GRAPH_RELATION_INPUT=/app/api/examples/kernel/v1beta1/async/pir-sequential-spine.relation-roundtrip.json
-PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222
-PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://rehydration-kernel:50054
-PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/rehydration-kernel/tls/ca.crt
-PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/rehydration-kernel/tls/tls.crt
-PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/rehydration-kernel/tls/tls.key
-PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=rehydration-kernel
-PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/rehydration-kernel/nats-tls/ca.crt
-PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/rehydration-kernel/nats-tls/tls.crt
-PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/rehydration-kernel/nats-tls/tls.key
+PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222
+PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://kmp:50054
+PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/kmp/tls/ca.crt
+PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/kmp/tls/tls.crt
+PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/kmp/tls/tls.key
+PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=kmp
+PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/kmp/nats-tls/ca.crt
+PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/kmp/nats-tls/tls.crt
+PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/kmp/nats-tls/tls.key
 ```
 
 Example legacy-vs-spine A/B comparison with `vLLM` plus a judge:
@@ -324,15 +324,15 @@ LLM_ENABLE_THINKING=false
 LLM_JUDGE_ENDPOINT=http://vllm-judge:8000/v1/chat/completions
 LLM_JUDGE_MODEL=Qwen/Qwen3.5-9B
 LLM_JUDGE_PROVIDER=openai
-PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222
-PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://rehydration-kernel:50054
-PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/rehydration-kernel/tls/ca.crt
-PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/rehydration-kernel/tls/tls.crt
-PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/rehydration-kernel/tls/tls.key
-PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=rehydration-kernel
-PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/rehydration-kernel/nats-tls/ca.crt
-PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/rehydration-kernel/nats-tls/tls.crt
-PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/rehydration-kernel/nats-tls/tls.key
+PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222
+PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://kmp:50054
+PIR_GRAPH_BATCH_GRPC_TLS_CA_PATH=/var/run/kmp/tls/ca.crt
+PIR_GRAPH_BATCH_GRPC_TLS_CERT_PATH=/var/run/kmp/tls/tls.crt
+PIR_GRAPH_BATCH_GRPC_TLS_KEY_PATH=/var/run/kmp/tls/tls.key
+PIR_GRAPH_BATCH_GRPC_TLS_DOMAIN_NAME=kmp
+PIR_GRAPH_BATCH_NATS_TLS_CA_PATH=/var/run/kmp/nats-tls/ca.crt
+PIR_GRAPH_BATCH_NATS_TLS_CERT_PATH=/var/run/kmp/nats-tls/tls.crt
+PIR_GRAPH_BATCH_NATS_TLS_KEY_PATH=/var/run/kmp/nats-tls/tls.key
 ```
 
 Example model-driven async run inside the cluster:
@@ -350,8 +350,8 @@ LLM_SEMANTIC_CLASSIFIER_ENDPOINT=http://vllm-semantic-reranker:8000/score
 LLM_SEMANTIC_CLASSIFIER_MODEL=Qwen/Qwen3-Reranker-0.6B
 LLM_SEMANTIC_CLASSIFIER_PROVIDER=openai
 LLM_SEMANTIC_CLASSIFIER_MODE=score
-PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222
-PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://rehydration-kernel:50054
+PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222
+PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://kmp:50054
 ```
 
 Example model-driven blind context-consumption run inside the cluster:
@@ -371,13 +371,13 @@ LLM_SEMANTIC_CLASSIFIER_ENDPOINT=http://vllm-semantic-reranker:8000/score
 LLM_SEMANTIC_CLASSIFIER_MODEL=Qwen/Qwen3-Reranker-0.6B
 LLM_SEMANTIC_CLASSIFIER_PROVIDER=openai
 LLM_SEMANTIC_CLASSIFIER_MODE=score
-PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222
-PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://rehydration-kernel:50054
+PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222
+PIR_GRAPH_BATCH_GRPC_ENDPOINT=https://kmp:50054
 ```
 
 For `underpass-runtime`, the live PIR smoke should use:
 
-- `PIR_GRAPH_BATCH_NATS_URL=nats://rehydration-kernel-nats:4222`
+- `PIR_GRAPH_BATCH_NATS_URL=nats://kmp-nats:4222`
 - mounted NATS TLS certs/keys/CA
 - mounted gRPC TLS certs/keys/CA
 - no `PIR_GRAPH_BATCH_NATS_TLS_FIRST`
@@ -507,8 +507,8 @@ The benchmark is driven by two YAML files:
 
 | File | Purpose |
 |:-----|:--------|
-| `crates/rehydration-testkit/resources/evaluation-matrix.yaml` | **Single source of truth**: agents, judges, prompt variants, scales, noise modes, seeds |
-| `crates/rehydration-testkit/resources/llm_prompts.yaml` | Default inference + judge prompt templates (v2, causal-chain-aware) |
+| `crates/kmp-testkit/resources/evaluation-matrix.yaml` | **Single source of truth**: agents, judges, prompt variants, scales, noise modes, seeds |
+| `crates/kmp-testkit/resources/llm_prompts.yaml` | Default inference + judge prompt templates (v2, causal-chain-aware) |
 
 Both can be overridden at runtime:
 
@@ -520,9 +520,9 @@ Both can be overridden at runtime:
 This means you can create a custom YAML for a specific run without editing the defaults:
 
 ```bash
-cp crates/rehydration-testkit/resources/evaluation-matrix.yaml my-run.yaml
+cp crates/kmp-testkit/resources/evaluation-matrix.yaml my-run.yaml
 # Edit my-run.yaml: change models, scales, seeds...
-EVAL_MATRIX_PATH=my-run.yaml cargo test -p rehydration-tests-paper \
+EVAL_MATRIX_PATH=my-run.yaml cargo test -p kmp-tests-paper \
   --features container-tests --test llm_judge_prompt_evaluation \
   -- --nocapture --test-threads=1
 ```
@@ -654,7 +654,7 @@ this repo, map them explicitly in the Helm test Pod values. Example:
 e2e:
   extraEnvFrom:
     - configMapRef:
-        name: rehydration-kernel-llm-client
+        name: kmp-llm-client
   extraEnv:
     - name: LLM_JUDGE_API_KEY
       valueFrom:
@@ -833,13 +833,13 @@ FILTER_PROMPTS="default" \
 FILTER_SCALES="micro" \
 FILTER_NOISE="clean" \
 bash -c '. scripts/ci/testcontainers-runtime.sh 2>/dev/null && \
-cargo test -p rehydration-tests-paper \
+cargo test -p kmp-tests-paper \
   --features container-tests \
   --test llm_judge_prompt_evaluation \
   -- --nocapture --test-threads=1'
 ```
 
-Uses [`crates/rehydration-testkit/resources/evaluation-matrix.smoke.yaml`](../crates/rehydration-testkit/resources/evaluation-matrix.smoke.yaml).
+Uses [`crates/kmp-testkit/resources/evaluation-matrix.smoke.yaml`](../crates/kmp-testkit/resources/evaluation-matrix.smoke.yaml).
 
 6 evals: 1 scale × 2 domains × 3 mixes × 1 noise (clean) × 1 seed. This is
 the smallest config-only run that still exercises the full harness path.
@@ -854,7 +854,7 @@ FILTER_JUDGES="sonnet-4.6" \
 FILTER_PROMPTS="default" \
 FILTER_SCALES="micro,meso" \
 bash -c '. scripts/ci/testcontainers-runtime.sh 2>/dev/null && \
-cargo test -p rehydration-tests-paper \
+cargo test -p kmp-tests-paper \
   --features container-tests \
   --test llm_judge_prompt_evaluation \
   -- --nocapture --test-threads=1'
@@ -873,7 +873,7 @@ FILTER_JUDGES="sonnet-4.6" \
 FILTER_PROMPTS="default" \
 FILTER_SCALES="micro,meso" \
 bash -c '. scripts/ci/testcontainers-runtime.sh 2>/dev/null && \
-cargo test -p rehydration-tests-paper \
+cargo test -p kmp-tests-paper \
   --features container-tests \
   --test llm_judge_prompt_evaluation \
   -- --nocapture --test-threads=1'
@@ -957,7 +957,7 @@ Use `BENCHMARK_TOKEN_BUDGET` to exercise the planner under token pressure:
 
 ```bash
 BENCHMARK_TOKEN_BUDGET=512 EVAL_MATRIX_PATH=pressure-test.yaml \
-cargo test -p rehydration-tests-paper --features container-tests \
+cargo test -p kmp-tests-paper --features container-tests \
   --test vllm_benchmark_integration -- --nocapture --test-threads=1
 ```
 
@@ -981,8 +981,8 @@ At 512 tokens with stress-scale graphs (49 nodes), the planner activates:
 Isolated tests for individual adapters:
 
 ```bash
-cargo test -p rehydration-adapter-neo4j --features container-tests --test neo4j_integration
-cargo test -p rehydration-adapter-valkey --features container-tests --test valkey_integration
+cargo test -p kmp-adapter-neo4j --features container-tests --test neo4j_integration
+cargo test -p kmp-adapter-valkey --features container-tests --test valkey_integration
 ```
 
 ## CI Scripts Reference
