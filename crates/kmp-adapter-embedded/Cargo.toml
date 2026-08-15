@@ -16,6 +16,7 @@ workspace = true
 
 [dependencies]
 redb = "4.1.0"
+sha2.workspace = true
 kmp-domain.workspace = true
 kmp-observability.workspace = true
 kmp-ports.workspace = true

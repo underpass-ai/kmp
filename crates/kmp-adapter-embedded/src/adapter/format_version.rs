@@ -13,6 +13,27 @@ pub fn format_version_path(data_dir: &Path) -> PathBuf {
     data_dir.join(FORMAT_VERSION_FILE)
 }
 
+/// The version stamped in `data_dir`, without applying the gate.
+///
+/// The migration needs to know what it is looking at precisely when
+/// [`check_or_stamp`] would refuse to open it.
+pub(crate) fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
+    let version_path = format_version_path(data_dir);
+    let raw = fs::read_to_string(&version_path).map_err(|error| {
+        PortError::Unavailable(format!(
+            "could not read FORMAT_VERSION at `{}`: {error}",
+            version_path.display()
+        ))
+    })?;
+    raw.trim().parse().map_err(|_| {
+        PortError::InvalidState(format!(
+            "FORMAT_VERSION at `{}` is corrupt (`{}`)",
+            version_path.display(),
+            raw.trim()
+        ))
+    })
+}
+
 pub(crate) fn store_file_path(data_dir: &Path) -> PathBuf {
     data_dir.join("store").join("kernel.redb")
 }
@@ -41,7 +62,8 @@ pub(crate) fn check_or_stamp(data_dir: &Path) -> Result<(), PortError> {
             if version < SUPPORTED_FORMAT_VERSION {
                 return Err(PortError::InvalidState(format!(
                     "embedded store at `{}` uses format version {version}, older than this \
-                     binary supports ({SUPPORTED_FORMAT_VERSION}); run the migration tool",
+                     binary supports ({SUPPORTED_FORMAT_VERSION}); migrate it with \
+                     `kmp-mcp migrate <this-dir> <new-dir>` — the source is left untouched",
                     data_dir.display()
                 )));
             }
@@ -99,7 +121,7 @@ mod tests {
         fs::write(format_version_path(dir.path()), "0\n").expect("write");
 
         let error = check_or_stamp(dir.path()).expect_err("older version must fail");
-        assert!(error.to_string().contains("migration"));
+        assert!(error.to_string().contains("kmp-mcp migrate"));
     }
 
     #[test]

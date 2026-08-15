@@ -10,10 +10,10 @@ use tracing_subscriber::{EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cli_args = std::env::args().skip(1);
-    if let Some(command) = cli_args.next() {
-        let path = cli_args.next();
-        std::process::exit(run_cli_command(&command, path.as_deref()).await);
+    let cli_args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some((command, rest)) = cli_args.split_first() {
+        let rest: Vec<&str> = rest.iter().map(String::as_str).collect();
+        std::process::exit(run_cli_command(command, &rest).await);
     }
 
     let _log_guard = init_tracing();
@@ -168,11 +168,15 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
 
 /// Non-MCP maintenance surface (everything is a process — no library):
 /// `export <file>` and `import <file>` move the append-only event log
-/// between embedded stores, `viewer [addr]` serves the local web viewer over
-/// the store; stdout carries the command result only.
-async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
+/// between embedded stores, `migrate <source-dir> <destination-dir>` moves a
+/// store this binary refuses to open into one it does, and `viewer [addr]`
+/// serves the local web viewer over the store; stdout carries the command
+/// result only.
+async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
+    let path = args.first().copied();
     match command {
         "export" | "import" => {}
+        "migrate" => return run_migrate_command(args).await,
         "viewer" => return run_viewer_command(path).await,
         "--version" | "-V" | "version" => {
             println!(
@@ -185,8 +189,8 @@ async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
         other => {
             eprintln!(
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
-                 stdio mode, or use `export <file>` / `import <file>` / `viewer [addr]` / \
-                 `--version`"
+                 stdio mode, or use `export <file>` / `import <file>` / \
+                 `migrate <source-dir> <destination-dir>` / `viewer [addr]` / `--version`"
             );
             return 2;
         }
@@ -257,6 +261,43 @@ async fn run_cli_command(command: &str, path: Option<&str>) -> i32 {
                     2
                 }
             }
+        }
+    }
+}
+
+/// `migrate <source-dir> <destination-dir>`: replays the source's history
+/// into a new store this binary can open.
+///
+/// Both directories are explicit on purpose. This command runs precisely
+/// when the environment-resolved store is the one that will not open, and
+/// asking an operator to fix that by exporting an environment variable is
+/// how the wrong directory gets migrated over the right one.
+async fn run_migrate_command(args: &[&str]) -> i32 {
+    let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
+        eprintln!("kmp-mcp: migrate requires <source-dir> <destination-dir>");
+        return 2;
+    };
+    match kmp_embedded::migrate_data_dir(
+        std::path::Path::new(source),
+        std::path::Path::new(destination),
+    )
+    .await
+    {
+        Ok(receipt) => {
+            match serde_json::to_string(&receipt) {
+                Ok(json) => println!("{json}"),
+                Err(error) => {
+                    eprintln!(
+                        "kmp-mcp: migration succeeded but its receipt is unprintable: {error}"
+                    );
+                    return 2;
+                }
+            }
+            0
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: migration failed: {error}");
+            2
         }
     }
 }
