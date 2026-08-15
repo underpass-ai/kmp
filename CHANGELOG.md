@@ -10,6 +10,25 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-15
+
+### Fixed
+
+- The crate chain publishes in an order cargo can actually resolve.
+  `kmp-adapter-embedded` dev-depends on `kmp-application`, and because the
+  internal pins are shared with the normal dependencies that edge carries a
+  version — so cargo insisted on resolving it, and 0.1.0 stopped there with
+  five crates published. `kmp-application` now goes first, and
+  `check-publish-chain.sh` simulates the publish (walking the chain while
+  carrying the set of crates already on the registry) instead of assuming
+  dev-dependencies never matter, which is the assumption that let this
+  through.
+
+Crates published at 0.1.0 — `kmp-plugin-api`, `kmp-domain`, `kmp-ports`,
+`kmp-observability`, `kmp-memory-api` — stay published at that version;
+registry versions are immutable. 0.1.1 is the first version where the whole
+chain, `kmp-mcp` included, is on crates.io.
+
 ## [0.1.0] - 2026-08-15
 
 First release. The kernel and everything around it existed before this tag;
@@ -18,7 +37,8 @@ what this version adds is a way to get it.
 ### Distribution
 
 - **crates.io.** `cargo install kmp-mcp` installs the MCP adapter, with the
-  twelve crates behind it published in dependency order:
+  twelve crates behind it published in dependency order (0.1.0 published the
+  first five and failed on the sixth; see 0.1.1):
   `kmp-plugin-api`, `kmp-domain`, `kmp-ports`, `kmp-observability`,
   `kmp-memory-api`, `kmp-adapter-embedded`, `kmp-application`,
   `kmp-embedded`, `kmp-proto`, `kmp-proto-mapping`, `kmp-viewer`, `kmp-mcp`.
@@ -56,5 +76,6 @@ what this version adds is a way to get it.
   the reference examples. A published crate can only ship what lives inside
   it; both copies are diffed against `api/` on every CI run.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.0
