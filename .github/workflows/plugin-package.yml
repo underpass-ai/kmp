@@ -1,0 +1,110 @@
+name: plugin-package
+
+# Builds the Codex / Claude Code plugin bundle on every supported host
+# class, smoke-tests it against the real binary, and attaches the
+# tarballs to the GitHub Release when a `v*` tag is pushed. The version
+# inside the package is stamped from the workspace Cargo.toml by
+# scripts/plugin/package-kmp-plugin.sh — on a tag, tag and workspace
+# version must agree or the job fails.
+
+on:
+  pull_request:
+    paths:
+      - "plugins/kmp/**"
+      - "scripts/plugin/**"
+      - "scripts/ci/kmp-plugin-smoke.sh"
+      - "tests/plugin/**"
+      - "crates/kmp-mcp/**"
+      - ".github/workflows/plugin-package.yml"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            label: linux-x86_64
+          - os: ubuntu-24.04-arm
+            label: linux-arm64
+          - os: macos-latest
+            label: macos-arm64
+          - os: windows-latest
+            label: windows-x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: 1.97.1
+
+      - name: Install protoc (Linux)
+        if: runner.os == 'Linux'
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL -o protoc.zip \
+            https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-osx-universal_binary.zip
+          sudo unzip -o protoc.zip -d /usr/local bin/protoc include/*
+          protoc --version
+
+      - name: Install protoc (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip" -OutFile protoc.zip
+          Expand-Archive protoc.zip -DestinationPath "$env:USERPROFILE\protoc"
+          Add-Content $env:GITHUB_PATH "$env:USERPROFILE\protoc\bin"
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        with:
+          shared-key: plugin-package
+
+      - name: Smoke-test the plugin bundle
+        shell: bash
+        run: bash scripts/ci/kmp-plugin-smoke.sh
+
+      - name: Package the plugin bundle
+        shell: bash
+        run: bash scripts/plugin/package-kmp-plugin.sh
+
+      - name: Upload package as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmp-plugin-${{ matrix.label }}
+          path: |
+            dist/plugin/*.tar.gz
+            dist/plugin/*.sha256
+          if-no-files-found: error
+
+      - name: Attach package to the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          gh release create "${TAG}" dist/plugin/*.tar.gz dist/plugin/*.sha256 \
+            --title "${TAG}" --generate-notes --verify-tag \
+            || gh release upload "${TAG}" dist/plugin/*.tar.gz dist/plugin/*.sha256 --clobber

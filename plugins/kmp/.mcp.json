@@ -1,10 +1,8 @@
 {
   "mcpServers": {
     "kernel-memory": {
-      "command": "kmp-mcp",
-      "env": {
-        "KMP_MCP_BACKEND": "embedded"
-      }
+      "cwd": ".",
+      "command": "./scripts/run-embedded-mcp.sh"
     }
   }
 }

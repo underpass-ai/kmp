@@ -10,6 +10,24 @@ into `CLAUDE.md` or `AGENTS.md` by hand. The plugin does all three.
 
 ## Install
 
+**From a release package** — each GitHub Release attaches
+`kmp-plugin-<version>-<os>-<arch>.tar.gz` with a per-archive `.sha256`
+checksum. The bundle is self-contained: it carries the `kmp-mcp` binary in
+`bin/`, both host manifests, the skill, the commands and the launcher
+scripts. Verify, unpack, and point the host at the resulting `kmp/`
+directory:
+
+```bash
+sha256sum -c kmp-plugin-<version>-<os>-<arch>.sha256
+tar -xzf kmp-plugin-<version>-<os>-<arch>.tar.gz
+```
+
+Codex reads `.codex-plugin/plugin.json`, Claude Code reads
+`.claude-plugin/plugin.json`, and both start the MCP server through
+`.mcp.json` → `scripts/run-embedded-mcp.sh`. On Windows hosts, register
+`scripts\run-embedded-mcp.cmd` instead. To build the package from a
+checkout: `bash scripts/plugin/package-kmp-plugin.sh`.
+
 **Claude Code** — native, brings the MCP server with it:
 
 ```
