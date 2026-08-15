@@ -3,6 +3,13 @@ name = "kmp-ports"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Command and query ports the KMP kernel drives its adapters through"
+readme = "README.md"
+keywords = ["kmp", "ports", "hexagonal", "memory", "kernel"]
+categories = ["data-structures"]
+publish = true
 
 [lints]
 workspace = true

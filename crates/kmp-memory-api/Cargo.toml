@@ -4,8 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Published consumer contract of the embedded Rehydration Kernel: versioned views, capabilities and errors"
+description = "Published consumer contract of the embedded KMP kernel: versioned views, capabilities and errors"
 repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "memory", "context", "agents", "api"]
+categories = ["api-bindings"]
+publish = true
 
 [lints]
 workspace = true

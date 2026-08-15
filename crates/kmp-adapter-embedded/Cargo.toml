@@ -3,7 +3,13 @@ name = "kmp-adapter-embedded"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Embedded edition storage adapters: every kernel port on a single local redb file"
+description = "Embedded edition storage adapters: every KMP kernel port on a single local redb file"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "redb", "embedded", "storage", "memory"]
+categories = ["database"]
+publish = true
 
 [lints]
 workspace = true

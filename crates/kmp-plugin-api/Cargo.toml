@@ -4,8 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Lightweight public plugin API for the Rehydration Kernel"
+description = "Public plugin API for the KMP kernel: evidence value and derivation traits, free of kernel internals"
 repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "plugin", "memory", "agents", "kernel"]
+categories = ["api-bindings", "development-tools"]
+publish = true
 
 [lints]
 workspace = true

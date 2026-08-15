@@ -5,24 +5,28 @@ use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::ingest::build_ingest_plan;
 use crate::protocol::tool_success_result;
 
+// The fixture backend answers with the reference examples from the contract.
+// They are embedded from `fixtures/`, a vendored copy of
+// `api/examples/kernel/v1beta1/kmp` — a published crate can only embed what
+// ships inside it, and `scripts/ci/check-vendored-contract.sh` keeps the copy
+// honest.
 const INGEST_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/ingest.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/ingest.response.json");
 const WAKE_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/wake.response.json");
-const ASK_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/ask.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/wake.response.json");
+const ASK_RESPONSE_FIXTURE: &str = include_str!("../fixtures/kernel/v1beta1/kmp/ask.response.json");
 const GOTO_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/goto.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/goto.response.json");
 const NEAR_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/near.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/near.response.json");
 const REWIND_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/rewind.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/rewind.response.json");
 const FORWARD_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/forward.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/forward.response.json");
 const TRACE_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/trace.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/trace.response.json");
 const INSPECT_RESPONSE_FIXTURE: &str =
-    include_str!("../../../api/examples/kernel/v1beta1/kmp/inspect.response.json");
+    include_str!("../fixtures/kernel/v1beta1/kmp/inspect.response.json");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FixtureKernelMcpBackend;

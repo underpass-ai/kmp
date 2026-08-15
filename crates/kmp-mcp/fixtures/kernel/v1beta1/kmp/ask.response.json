@@ -1,0 +1,38 @@
+{
+  "summary": "Deterministic memory answer from 1 evidence item for: Where did Rachel move after her recent relocation?",
+  "answer": "Later she corrected it: the move is to Austin.",
+  "because": [
+    {
+      "claim": "Rachel later corrected the destination to Austin.",
+      "evidence": "Later she corrected it: the move is to Austin.",
+      "ref": "claim:rachel-austin"
+    }
+  ],
+  "proof": {
+    "path": [
+      {
+        "from": "claim:rachel-austin",
+        "to": "claim:rachel-denver",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The later statement corrects the earlier destination.",
+        "evidence": "Later she corrected it: the move is to Austin.",
+        "confidence": "high"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "evidence:rachel-turn-2",
+        "supports": [
+          "claim:rachel-austin"
+        ],
+        "text": "Later she corrected it: the move is to Austin.",
+        "source": "conversation turn 2"
+      }
+    ],
+    "conflicts": [],
+    "missing": [],
+    "confidence": "high"
+  },
+  "warnings": []
+}

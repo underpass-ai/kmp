@@ -3,6 +3,8 @@ name = "kmp-server"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+# Not on crates.io: distributed as a container image and a Helm chart.
+publish = false
 
 [lints]
 workspace = true

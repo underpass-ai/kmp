@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package underpass.rehydration.kernel.v1beta1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "underpass/rehydration/kernel/v1beta1/common.proto";
+
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+
+service ContextQueryService {
+  rpc GetContext(GetContextRequest) returns (GetContextResponse);
+  rpc GetContextPath(GetContextPathRequest) returns (GetContextPathResponse);
+  rpc GetNodeDetail(GetNodeDetailRequest) returns (GetNodeDetailResponse);
+  rpc RehydrateSession(RehydrateSessionRequest) returns (RehydrateSessionResponse);
+  rpc ValidateScope(ValidateScopeRequest) returns (ValidateScopeResponse);
+}
+
+message GetContextRequest {
+  string root_node_id = 1;
+  string role = 2;
+  reserved 3, 4, 7, 8;
+  reserved "phase", "work_item_id", "render_format", "include_debug_sections";
+  uint32 token_budget = 5;
+  repeated string requested_scopes = 6;
+  uint32 depth = 9;
+  // Maximum resolution tier to include. UNSPECIFIED (0) = all tiers.
+  ResolutionTier max_tier = 10;
+  // Rehydration mode. UNSPECIFIED (0) = Auto (kernel selects based on token pressure).
+  RehydrationMode rehydration_mode = 11;
+}
+
+message GetContextResponse {
+  RehydrationBundle bundle = 1;
+  RenderedContext rendered = 2;
+  ScopeValidationResult scope_validation = 3;
+  google.protobuf.Timestamp served_at = 4;
+  QueryTimingBreakdown timing = 5;
+}
+
+message GetContextPathRequest {
+  string root_node_id = 1;
+  string target_node_id = 2;
+  string role = 3;
+  uint32 token_budget = 4;
+}
+
+message GetContextPathResponse {
+  RehydrationBundle path_bundle = 1;
+  RenderedContext rendered = 2;
+  google.protobuf.Timestamp served_at = 3;
+  QueryTimingBreakdown timing = 4;
+}
+
+message GetNodeDetailRequest {
+  string node_id = 1;
+}
+
+message GetNodeDetailResponse {
+  GraphNode node = 1;
+  BundleNodeDetail detail = 2;
+}
+
+message RehydrateSessionRequest {
+  string root_node_id = 1;
+  repeated string roles = 2;
+  reserved 3, 4;
+  reserved "include_timeline", "include_summaries";
+  uint32 timeline_window = 5;
+  bool persist_snapshot = 6;
+  google.protobuf.Duration snapshot_ttl = 7;
+}
+
+message RehydrateSessionResponse {
+  RehydrationBundle bundle = 1;
+  bool snapshot_persisted = 2;
+  string snapshot_id = 3;
+  google.protobuf.Timestamp generated_at = 4;
+  // Timing breakdown for observability. Present when the kernel captures
+  // per-phase durations (e.g. multi-role shared-read path).
+  QueryTimingBreakdown timing = 5;
+}
+
+// Per-phase timing breakdown returned by RehydrateSession for observability.
+message QueryTimingBreakdown {
+  // Time spent loading graph neighborhood (seconds).
+  double graph_load_seconds = 1;
+  // Time spent batch-loading node details (seconds).
+  double detail_load_seconds = 2;
+  // Time spent assembling bundles for all roles (seconds).
+  double bundle_assembly_seconds = 3;
+  // Number of roles requested.
+  uint32 role_count = 4;
+  // Number of unique nodes in the batch detail load.
+  uint32 batch_size = 5;
+}
+
+message ValidateScopeRequest {
+  reserved 1, 2;
+  reserved "role", "phase";
+  repeated string required_scopes = 3;
+  repeated string provided_scopes = 4;
+}
+
+message ValidateScopeResponse {
+  ScopeValidationResult result = 1;
+}

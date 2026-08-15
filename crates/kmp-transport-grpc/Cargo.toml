@@ -3,6 +3,8 @@ name = "kmp-transport-grpc"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+# Not on crates.io: distributed with the server image, not the crate chain.
+publish = false
 
 [lints]
 workspace = true

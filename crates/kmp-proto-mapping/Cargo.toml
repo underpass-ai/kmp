@@ -4,6 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "v1beta1 proto contract mapping shared by transports and the embedded backend"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "grpc", "protobuf", "mapping", "kernel"]
+categories = ["api-bindings"]
+publish = true
 
 [lints]
 workspace = true

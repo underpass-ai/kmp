@@ -3,6 +3,13 @@ name = "kmp-observability"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OpenTelemetry wiring and quality observers for the KMP kernel"
+readme = "README.md"
+keywords = ["kmp", "telemetry", "opentelemetry", "metrics", "tracing"]
+categories = ["development-tools"]
+publish = true
 
 [lints]
 workspace = true
@@ -23,7 +30,7 @@ otel = [
 opentelemetry = { workspace = true, optional = true }
 opentelemetry-otlp = { workspace = true, optional = true }
 opentelemetry_sdk = { workspace = true, optional = true }
-kmp-domain = { path = "../kmp-domain" }
+kmp-domain.workspace = true
 tokio = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true

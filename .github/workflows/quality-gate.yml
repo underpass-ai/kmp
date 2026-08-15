@@ -20,6 +20,42 @@ jobs:
   # contract: temporarily removed while proto field pruning baseline stabilizes.
   # Restore from git history (commit af4c6a6) once breaking change window closes.
 
+  # Parts of the contract live twice — authored under api/, vendored into
+  # the crates that have to be publishable. This keeps them one contract.
+  # No toolchain, no protoc: it is a diff, and it runs in seconds.
+  vendored-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Vendored proto and fixtures match the contract
+        run: bash scripts/ci/check-vendored-contract.sh
+
+  # The release publishes a fixed chain of crates to crates.io. This is what
+  # keeps that chain honest between releases, when a crate is added or its
+  # dependencies move — a check on a pull request, rather than a discovery
+  # halfway through a publish that cannot be rolled back.
+  publish-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: 1.97.1
+
+      - name: Publish chain matches the workspace
+        run: bash scripts/ci/check-publish-chain.sh
+
   rustfmt:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

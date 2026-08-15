@@ -3,6 +3,8 @@ name = "kmp-testkit"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+# Not on crates.io: test infrastructure for this workspace.
+publish = false
 
 [lints]
 workspace = true

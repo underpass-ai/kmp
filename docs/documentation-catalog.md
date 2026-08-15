@@ -21,6 +21,7 @@ These documents are the current source of truth for users and maintainers:
 | Choreographer incident-memory integration | [integrations/choreographer-kmp.md](integrations/choreographer-kmp.md) |
 | Embedded host recipes + playbook | [operations/embedded-hosts.md](operations/embedded-hosts.md) |
 | Embedded releases + format compatibility | [operations/embedded-release.md](operations/embedded-release.md) |
+| Release process (tags, crates.io, artefacts) | [release.md](release.md) |
 | KMP product/API design | [product/kernel-context-api-design.md](product/kernel-context-api-design.md) |
 | Typed KMS/gRPC status | [product/kernel-memory-service-grpc-plan.md](product/kernel-memory-service-grpc-plan.md) |
 | Writer helper protocol | [product/kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md) |

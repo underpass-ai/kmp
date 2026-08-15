@@ -1,0 +1,44 @@
+{
+  "summary": "Found claim:rachel-austin with 1 outgoing link and 1 evidence item.",
+  "object": {
+    "ref": "claim:rachel-austin",
+    "kind": "claim",
+    "text": "Rachel later corrected the destination to Austin."
+  },
+  "links": {
+    "incoming": [],
+    "outgoing": [
+      {
+        "from": "claim:rachel-austin",
+        "to": "claim:rachel-denver",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The later statement corrects the earlier destination.",
+        "evidence": "Later she corrected it: the move is to Austin.",
+        "confidence": "high"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "evidence:rachel-turn-2",
+      "supports": [
+        "claim:rachel-austin"
+      ],
+      "text": "Later she corrected it: the move is to Austin.",
+      "source": "conversation turn 2"
+    }
+  ],
+  "warnings": [],
+  "raw": [
+    {
+      "ref": "claim:rachel-austin",
+      "kind": "claim",
+      "text": "Rachel later corrected the destination to Austin.",
+      "coordinates": [],
+      "detail": "Rachel later corrected the destination to Austin.",
+      "content_hash": "sha256:rachel-austin",
+      "revision": 1
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "summary": "Ingested 2 entries, 1 relation, and 1 evidence item for question:830ce83f.",
+  "memory": {
+    "about": "question:830ce83f",
+    "memory_id": "memory:830ce83f:1",
+    "accepted": {
+      "entries": 2,
+      "relations": 1,
+      "evidence": 1
+    },
+    "read_after_write_ready": false
+  },
+  "warnings": []
+}

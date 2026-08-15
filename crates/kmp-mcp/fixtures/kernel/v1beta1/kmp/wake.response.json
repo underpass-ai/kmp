@@ -1,0 +1,37 @@
+{
+  "summary": "Continue with Kernel Memory Protocol. The current direction is memory moves first and transports second.",
+  "wake": {
+    "objective": "Design a public memory API that is simple for humans and LLMs while still binding to MCP, gRPC, and NATS.",
+    "current_state": [
+      "Kernel 1.0 already has gRPC reads, async projection subjects, graph traversal, and detail retrieval.",
+      "The public surface should expose memory moves instead of CRUD naming."
+    ],
+    "causal_spine": [
+      {
+        "claim": "MCP, gRPC, and NATS should be bindings, not the product shape.",
+        "because": "The product needs to feel like a memory protocol, not a standards checklist.",
+        "evidence_ref": "evidence:kmp-design-direction"
+      }
+    ],
+    "open_loops": [
+      "Freeze exact schema field names.",
+      "Prototype local MCP read tools over existing gRPC query services."
+    ],
+    "next_actions": [
+      "Add JSON schemas and fixtures for the five memory moves.",
+      "Implement kernel_wake, kernel_ask, kernel_trace, and kernel_inspect before write-side ingestion."
+    ],
+    "guardrails": [
+      "Do not claim benchmark success before implementation and measurement.",
+      "Do not let the kernel invent relation meaning silently during reads."
+    ]
+  },
+  "proof": {
+    "path": [],
+    "evidence": [],
+    "conflicts": [],
+    "missing": [],
+    "confidence": "medium"
+  },
+  "warnings": []
+}

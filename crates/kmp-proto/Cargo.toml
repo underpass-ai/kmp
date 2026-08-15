@@ -4,6 +4,25 @@ edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 build = "build.rs"
+license.workspace = true
+repository.workspace = true
+description = "Protobuf and tonic bindings for the underpass.rehydration.kernel.v1beta1 contract"
+readme = "README.md"
+keywords = ["kmp", "grpc", "protobuf", "tonic", "kernel"]
+categories = ["api-bindings", "network-programming"]
+publish = true
+# What ships to crates.io. The contract tests next to `lib.rs` read their
+# fixtures from `api/` at the repository root, which is not part of any
+# package: they are gates for this repo, not for the tarball, and they are
+# `#[cfg(test)]` so leaving them out changes nothing about what a consumer
+# builds.
+include = [
+    "src/lib.rs",
+    "proto/**/*.proto",
+    "build.rs",
+    "Cargo.toml",
+    "README.md",
+]
 
 [dependencies]
 prost.workspace = true

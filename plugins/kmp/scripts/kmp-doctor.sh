@@ -46,7 +46,7 @@ fi
 if [ -z "$BIN" ] || [ ! -x "$BIN" ]; then
   fail "kmp-mcp not found"
   info "install it with:"
-  info "  cargo install --git https://github.com/underpass-ai/kmp kmp-mcp --locked"
+  info "  cargo install kmp-mcp"
   info "or, in a checkout:  bash scripts/mcp/install-kmp-mcp.sh"
   printf '\n%sNothing else can be checked without the binary.%s\n' "$R" "$Z"
   exit 1
