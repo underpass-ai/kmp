@@ -108,16 +108,16 @@ impl EmbeddedKernelStore {
                 Ok(store) => store.migration_receipt().await.ok().flatten(),
                 Err(_) => None,
             };
-            if let Some(receipt) = already {
-                if receipt.source_sha256 == source_sha256 {
-                    return Err(PortError::Conflict(format!(
-                        "migration destination `{}` was already migrated from this exact \
-                         source ({} events, source sha256 {}); nothing to do",
-                        destination_dir.display(),
-                        receipt.events_migrated,
-                        receipt.source_sha256
-                    )));
-                }
+            if let Some(receipt) = already
+                && receipt.source_sha256 == source_sha256
+            {
+                return Err(PortError::Conflict(format!(
+                    "migration destination `{}` was already migrated from this exact \
+                     source ({} events, source sha256 {}); nothing to do",
+                    destination_dir.display(),
+                    receipt.events_migrated,
+                    receipt.source_sha256
+                )));
             }
             return Err(PortError::Conflict(format!(
                 "migration destination `{}` already holds a store; migrate into a new \
