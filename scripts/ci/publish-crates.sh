@@ -6,9 +6,17 @@ set -euo pipefail
 # Order is not a preference: cargo refuses to upload a crate whose
 # requirements it cannot resolve on the registry, so a dependency that is
 # not there yet fails the whole release. The list below is the transitive
-# closure needed by `kmp-mcp`, deepest first. Everything outside it —
-# the server and its transport, the adapters it deploys with, the test
-# crates — is marked `publish = false` in its own manifest.
+# closure needed by `kmp-mcp`, deepest first.
+#
+# Dev-dependencies count. A dev-dependency with no version is dropped from
+# the published manifest, but these share the workspace's pins with the
+# normal dependencies, so they carry a version and cargo insists on
+# resolving them — which is why `kmp-application` is published before
+# `kmp-adapter-embedded`, whose only edge to it is a dev-dependency.
+#
+# Everything outside the chain — the server and its transport, the adapters
+# it deploys with, the test crates — is marked `publish = false` in its own
+# manifest.
 #
 # Two properties this script guarantees:
 #
@@ -29,8 +37,8 @@ CRATES=(
   kmp-ports
   kmp-observability
   kmp-memory-api
-  kmp-adapter-embedded
   kmp-application
+  kmp-adapter-embedded
   kmp-embedded
   kmp-proto
   kmp-proto-mapping

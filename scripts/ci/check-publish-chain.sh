@@ -4,17 +4,17 @@ set -euo pipefail
 
 # The release publishes a fixed list of crates, in dependency order
 # (scripts/ci/publish-crates.sh). This checks that the list still describes
-# the workspace:
+# the workspace, on pull requests, where a mistake is still free —
+# crates.io versions are immutable, and a release that discovers a bad
+# order halfway leaves some crates published and the rest not.
 #
-#   * every crate that is publishable appears in the chain — a new crate
-#     added without `publish = false` and without a place in the chain is a
-#     release that fails halfway, after some crates are already on the
-#     registry and immutable;
-#   * every crate in the chain is publishable;
-#   * the order respects dependencies — cargo cannot upload a crate whose
-#     siblings are not on the registry yet;
-#   * every published crate carries a version requirement on its internal
-#     dependencies, since a path alone does not resolve on crates.io.
+# The check is a simulation, not a rule of thumb: walk the chain in order,
+# carrying the set of crates already on the registry, and require that
+# every internal dependency carrying a version requirement is in that set
+# by the time its dependent is published. That is exactly what cargo does,
+# and it is deliberately blind to dependency kind — a dev-dependency is
+# only dropped from the published manifest when it has no version, and the
+# ones here inherit the workspace's pins.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
@@ -58,34 +58,35 @@ extra = set(chain) - publishable
 if extra:
     problems.append("in the chain but not publishable: " + ", ".join(sorted(extra)))
 
-position = {name: i for i, name in enumerate(chain)}
+on_registry = set()
 for name in chain:
     package = packages.get(name)
     if package is None:
         problems.append(f"{name} is in the chain but not in the workspace")
         continue
     for dependency in package["dependencies"]:
-        if dependency["kind"] == "dev":
-            # Dev-dependencies without a version are stripped from the
-            # published manifest, so they may point anywhere in the workspace.
-            continue
-        if dependency["name"] in packages and dependency["name"] not in publishable:
-            problems.append(
-                f"{name} depends on {dependency['name']}, which is publish = false"
-            )
-            continue
+        if dependency["name"] not in packages:
+            continue  # external, already on the registry
         if dependency["name"] not in publishable:
+            if dependency["kind"] != "dev" or dependency["req"] != "*":
+                problems.append(
+                    f"{name} depends on {dependency['name']}, which is publish = false"
+                )
             continue
-        if dependency["name"] not in position:
-            continue
-        if position[dependency["name"]] > position[name]:
-            problems.append(
-                f"{name} is published before its dependency {dependency['name']}"
-            )
         if dependency["req"] == "*":
+            if dependency["kind"] == "dev":
+                # Version-less dev-dependencies are stripped on publish.
+                continue
             problems.append(
                 f"{name} depends on {dependency['name']} with no version requirement"
             )
+            continue
+        if dependency["name"] not in on_registry:
+            kind = dependency["kind"] or "normal"
+            problems.append(
+                f"{name} is published before its {kind} dependency {dependency['name']}"
+            )
+    on_registry.add(name)
 
 if problems:
     for problem in problems:
