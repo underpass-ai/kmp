@@ -8,7 +8,7 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
-async-nats = "0.46.0"
+async-nats = "0.50.0"
 kmp-application.workspace = true
 kmp-config.workspace = true
 kmp-domain.workspace = true

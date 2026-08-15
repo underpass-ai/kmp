@@ -24,7 +24,7 @@ tokio-rustls = "0.26.4"
 [dev-dependencies]
 kmp-testkit.workspace = true
 tempfile = "3.26.0"
-testcontainers = "0.24.0"
+testcontainers = "0.28.0"
 
 [[test]]
 name = "valkey_integration"

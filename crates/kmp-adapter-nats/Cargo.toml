@@ -12,7 +12,7 @@ default = []
 container-tests = []
 
 [dependencies]
-async-nats = "0.46.0"
+async-nats = "0.50.0"
 opentelemetry.workspace = true
 kmp-domain.workspace = true
 serde.workspace = true
@@ -23,7 +23,7 @@ tracing.workspace = true
 
 [dev-dependencies]
 kmp-testkit.workspace = true
-testcontainers = "0.24.0"
+testcontainers = "0.28.0"
 tokio.workspace = true
 tokio-rustls = "0.26.4"
 
