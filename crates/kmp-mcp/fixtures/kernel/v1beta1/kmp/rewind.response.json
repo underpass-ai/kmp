@@ -1,0 +1,68 @@
+{
+  "summary": "Before claim:rachel-austin, the active supported location was Denver across conversation and entity dimensions.",
+  "temporal": {
+    "direction": "rewind",
+    "requested": {
+      "ref": "claim:rachel-austin"
+    },
+    "resolved": {
+      "dimension": "conversation",
+      "scope_id": "about:question:830ce83f:dimension:conversation:rachel-2026-04-12",
+      "sequence": 2,
+      "occurred_at": "2026-04-12T15:05:00Z"
+    }
+  },
+  "coverage": {
+    "requested": {
+      "mode": "only",
+      "include": [
+        "conversation",
+        "entity"
+      ],
+      "scope": "current_about"
+    },
+    "included": [
+      "conversation",
+      "entity"
+    ],
+    "missing": []
+  },
+  "entries": [
+    {
+      "ref": "claim:rachel-denver",
+      "kind": "claim",
+      "text": "Rachel said she was moving to Denver.",
+      "coordinates": [
+        {
+          "dimension": "conversation",
+          "scope_id": "about:question:830ce83f:dimension:conversation:rachel-2026-04-12",
+          "sequence": 1,
+          "occurred_at": "2026-04-12T15:00:00Z"
+        },
+        {
+          "dimension": "entity",
+          "scope_id": "about:question:830ce83f:dimension:person:rachel",
+          "valid_from": "2026-04-12T15:00:00Z"
+        }
+      ]
+    }
+  ],
+  "proof": {
+    "path": [
+      {
+        "from": "claim:rachel-austin",
+        "to": "claim:rachel-denver",
+        "rel": "supersedes",
+        "class": "evidential",
+        "why": "The later statement corrects the earlier destination.",
+        "confidence": "high"
+      }
+    ],
+    "evidence": [],
+    "conflicts": [],
+    "missing": [],
+    "confidence": "medium"
+  },
+  "warnings": [],
+  "raw_refs": []
+}

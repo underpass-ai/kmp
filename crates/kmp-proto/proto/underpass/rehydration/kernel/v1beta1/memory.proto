@@ -1,0 +1,542 @@
+syntax = "proto3";
+
+package underpass.rehydration.kernel.v1beta1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+
+service KernelMemoryService {
+  rpc Ingest(IngestRequest) returns (IngestResponse);
+  rpc Wake(WakeRequest) returns (WakeResponse);
+  rpc Ask(AskRequest) returns (AskResponse);
+  rpc Goto(GotoRequest) returns (GotoResponse);
+  rpc Near(NearRequest) returns (NearResponse);
+  rpc Rewind(RewindRequest) returns (RewindResponse);
+  rpc Forward(ForwardRequest) returns (ForwardResponse);
+  rpc Trace(TraceRequest) returns (TraceResponse);
+  rpc Inspect(InspectRequest) returns (InspectResponse);
+}
+
+message IngestRequest {
+  string about = 1;
+  Memory memory = 2;
+  MemoryProvenance provenance = 3;
+  string idempotency_key = 4;
+  bool dry_run = 5;
+}
+
+message Memory {
+  repeated MemoryDimension dimensions = 1;
+  repeated MemoryEntry entries = 2;
+  repeated MemoryRelation relations = 3;
+  repeated MemoryEvidence evidence = 4;
+}
+
+message MemoryDimension {
+  string id = 1;
+  string kind = 2;
+  string title = 3;
+  map<string, string> metadata = 4;
+}
+
+message MemoryEntry {
+  string id = 1;
+  string kind = 2;
+  string text = 3;
+  repeated TemporalCoordinate coordinates = 4;
+  map<string, string> metadata = 5;
+}
+
+message TemporalCoordinate {
+  string dimension = 1;
+  string scope_id = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+  google.protobuf.Timestamp observed_at = 4;
+  google.protobuf.Timestamp ingested_at = 5;
+  google.protobuf.Timestamp valid_from = 6;
+  google.protobuf.Timestamp valid_until = 7;
+  optional uint32 sequence = 8;
+  optional uint32 rank = 9;
+  map<string, string> metadata = 10;
+}
+
+message MemoryRelation {
+  string source_ref = 1;
+  string target_ref = 2;
+  string rel = 3;
+  MemorySemanticClass semantic_class = 4;
+  string why = 5;
+  string evidence = 6;
+  MemoryConfidence confidence = 7;
+  optional uint32 sequence = 8;
+  MemoryRelationExplanation explanation = 9;
+}
+
+// Typed fields that qualify the relation itself. The top-level `why`,
+// `evidence`, `confidence`, and `sequence` fields remain for compatibility;
+// this message carries the rest of RelationExplanation, including the
+// relation's own temporal validity coordinate.
+message MemoryRelationExplanation {
+  string motivation = 1;
+  string method = 2;
+  string decision_id = 3;
+  string caused_by_node_id = 4;
+  TemporalCoordinate coordinate = 5;
+}
+
+message MemoryEvidence {
+  string id = 1;
+  repeated string supports = 2;
+  string text = 3;
+  string source = 4;
+  google.protobuf.Timestamp time = 5;
+  map<string, string> metadata = 6;
+}
+
+message MemoryProvenance {
+  MemorySourceKind source_kind = 1;
+  string source_agent = 2;
+  google.protobuf.Timestamp observed_at = 3;
+  string correlation_id = 4;
+  string causation_id = 5;
+}
+
+message IngestResponse {
+  string summary = 1;
+  IngestedMemory memory = 2;
+  repeated string warnings = 3;
+}
+
+message IngestedMemory {
+  string about = 1;
+  string memory_id = 2;
+  AcceptedCounts accepted = 3;
+  bool read_after_write_ready = 4;
+}
+
+message AcceptedCounts {
+  uint32 entries = 1;
+  uint32 relations = 2;
+  uint32 evidence = 3;
+}
+
+message WakeRequest {
+  string about = 1;
+  string role = 2;
+  string intent = 3;
+  MemoryBudget budget = 4;
+  DimensionSelection dimensions = 5;
+}
+
+message WakeResponse {
+  string summary = 1;
+  WakePacket wake = 2;
+  Proof proof = 3;
+  repeated string warnings = 4;
+}
+
+message WakePacket {
+  string objective = 1;
+  repeated string current_state = 2;
+  repeated WakeClaim causal_spine = 3;
+  repeated string open_loops = 4;
+  repeated string next_actions = 5;
+  repeated string guardrails = 6;
+}
+
+message WakeClaim {
+  string claim = 1;
+  string because = 2;
+  string evidence_ref = 3;
+}
+
+message AskRequest {
+  string about = 1;
+  string question = 2;
+  AnswerPolicy answer_policy = 3;
+  MemoryBudget budget = 4;
+  DimensionSelection dimensions = 5;
+}
+
+message AskResponse {
+  string summary = 1;
+  string answer = 2;
+  repeated AnswerReason because = 3;
+  Proof proof = 4;
+  repeated string warnings = 5;
+}
+
+message AnswerReason {
+  string claim = 1;
+  string evidence = 2;
+  string ref = 3;
+}
+
+// Shared temporal movement payload shape used by transport adapters. Public
+// RPCs use method-specific request messages so gRPC contracts stay explicit.
+message TemporalMoveRequest {
+  string about = 1;
+  TemporalCursor cursor = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+message GotoRequest {
+  string about = 1;
+  TemporalCursor cursor = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+message RewindRequest {
+  string about = 1;
+  TemporalCursor cursor = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+message ForwardRequest {
+  string about = 1;
+  TemporalCursor cursor = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+// Shared temporal neighborhood payload shape used by transport adapters. Public
+// RPCs use NearRequest.
+message TemporalNearRequest {
+  string about = 1;
+  TemporalCursor around = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+message NearRequest {
+  string about = 1;
+  TemporalCursor around = 2;
+  DimensionSelection dimensions = 3;
+  TemporalWindow window = 4;
+  TemporalLimit limit = 5;
+  TemporalInclude include = 6;
+  MemoryBudget budget = 7;
+}
+
+// Shared temporal response payload shape used by transport adapters. Public
+// RPCs use method-specific response messages.
+message TemporalMoveResponse {
+  string summary = 1;
+  TemporalState temporal = 2;
+  TemporalCoverage coverage = 3;
+  repeated TemporalEntry entries = 4;
+  Proof proof = 5;
+  repeated string warnings = 6;
+  repeated RawMemoryRef raw_refs = 7;
+  PageInfo page = 8;
+  ResponseQuality quality = 9;
+}
+
+message GotoResponse {
+  string summary = 1;
+  TemporalState temporal = 2;
+  TemporalCoverage coverage = 3;
+  repeated TemporalEntry entries = 4;
+  Proof proof = 5;
+  repeated string warnings = 6;
+  repeated RawMemoryRef raw_refs = 7;
+  PageInfo page = 8;
+  ResponseQuality quality = 9;
+}
+
+message NearResponse {
+  string summary = 1;
+  TemporalState temporal = 2;
+  TemporalCoverage coverage = 3;
+  repeated TemporalEntry entries = 4;
+  Proof proof = 5;
+  repeated string warnings = 6;
+  repeated RawMemoryRef raw_refs = 7;
+  PageInfo page = 8;
+  ResponseQuality quality = 9;
+}
+
+message RewindResponse {
+  string summary = 1;
+  TemporalState temporal = 2;
+  TemporalCoverage coverage = 3;
+  repeated TemporalEntry entries = 4;
+  Proof proof = 5;
+  repeated string warnings = 6;
+  repeated RawMemoryRef raw_refs = 7;
+  PageInfo page = 8;
+  ResponseQuality quality = 9;
+}
+
+message ForwardResponse {
+  string summary = 1;
+  TemporalState temporal = 2;
+  TemporalCoverage coverage = 3;
+  repeated TemporalEntry entries = 4;
+  Proof proof = 5;
+  repeated string warnings = 6;
+  repeated RawMemoryRef raw_refs = 7;
+  PageInfo page = 8;
+  ResponseQuality quality = 9;
+}
+
+message TemporalState {
+  TemporalDirection direction = 1;
+  TemporalCursor requested = 2;
+  TemporalCoordinate resolved = 3;
+}
+
+message TemporalCoverage {
+  DimensionSelection requested = 1;
+  repeated string included = 2;
+  repeated string missing = 3;
+  // Per-dimension coverage detail, for online context-coverage feedback: lets a
+  // client measure the per-dimension shortfall of the retrieved context without
+  // gold labels.
+  repeated DimensionCoverage dimensions = 4;
+}
+
+// Per-dimension slice of TemporalCoverage. `returned` counts the entries in this
+// page that carry the dimension; `present` is true when the dimension appeared
+// in `included` (false when it was requested but absent).
+message DimensionCoverage {
+  string dimension = 1;
+  uint32 returned = 2;
+  bool present = 3;
+}
+
+message TemporalCursor {
+  string ref = 1;
+  google.protobuf.Timestamp time = 2;
+  optional uint32 sequence = 3;
+}
+
+message TemporalEntry {
+  string ref = 1;
+  string kind = 2;
+  string text = 3;
+  repeated TemporalCoordinate coordinates = 4;
+  map<string, string> metadata = 5;
+}
+
+message TraceRequest {
+  string from = 1;
+  string to = 2;
+  string goal = 3;
+  MemoryBudget budget = 4;
+  PageRequest page = 5;
+}
+
+message TraceResponse {
+  string summary = 1;
+  repeated MemoryRelation trace = 2;
+  repeated string warnings = 3;
+  PageInfo page = 4;
+  ResponseQuality quality = 5;
+}
+
+message InspectRequest {
+  string ref = 1;
+  InspectInclude include = 2;
+}
+
+message InspectResponse {
+  string summary = 1;
+  InspectedObject object = 2;
+  InspectedLinks links = 3;
+  repeated MemoryEvidence evidence = 4;
+  repeated string warnings = 5;
+  repeated RawMemoryRef raw = 6;
+  ResponseQuality quality = 7;
+}
+
+message InspectedObject {
+  string ref = 1;
+  string kind = 2;
+  string text = 3;
+  map<string, string> metadata = 4;
+  string source = 5;
+}
+
+message InspectedLinks {
+  repeated MemoryRelation incoming = 1;
+  repeated MemoryRelation outgoing = 2;
+}
+
+message RawMemoryRef {
+  string ref = 1;
+  string kind = 2;
+  string text = 3;
+  repeated TemporalCoordinate coordinates = 4;
+  string detail = 5;
+  string content_hash = 6;
+  uint64 revision = 7;
+}
+
+message Proof {
+  repeated MemoryRelation path = 1;
+  repeated MemoryEvidence evidence = 2;
+  repeated string conflicts = 3;
+  repeated string missing = 4;
+  MemoryConfidence confidence = 5;
+  // Count of unresolved required-context nodes the proof still depends on
+  // (currently the size of `missing`). A non-zero frontier means necessary
+  // context has not yet been reached.
+  uint32 frontier_size = 6;
+}
+
+// Per-response quality/composition summary, promoted from OTel so a client can
+// read it in-band and feed an online context-coverage estimator. Counts and
+// ratios describe THIS response only (not aggregate system health). Ratios are
+// in [0.0, 1.0].
+message ResponseQuality {
+  uint32 nodes = 1;
+  uint32 relationships = 2;
+  uint32 details = 3;
+  double detail_coverage = 4;
+  double causal_density = 5;
+  bool truncated = 6;
+}
+
+message MemoryBudget {
+  uint32 tokens = 1;
+  MemoryDetailLevel detail = 2;
+  uint32 depth = 3;
+  // Cap on the number of entries Wake surfaces in proof.evidence (0 = unbounded,
+  // the default and existing behavior). When set and the about has more entries,
+  // Wake returns the first max_entries (graph-traversal order, closest to the
+  // about) and sets proof.frontier_size to the count withheld, signaling the
+  // client to kernel_near-expand to cover the rest. Only Wake honors this.
+  uint32 max_entries = 4;
+}
+
+message DimensionSelection {
+  DimensionSelectionMode mode = 1;
+  repeated string include = 2;
+  repeated string exclude = 3;
+  DimensionScopeMode scope = 4;
+  repeated string abouts = 5;
+  // Optional exact dimension scope filter. Values may be local dimension ids
+  // from MemoryDimension.id or fully namespaced ids shaped as
+  // about:<about>:dimension:<dimension_id>.
+  repeated string scope_ids = 6;
+}
+
+message TemporalWindow {
+  uint32 before_entries = 1;
+  uint32 after_entries = 2;
+}
+
+message TemporalLimit {
+  uint32 entries = 1;
+  uint32 tokens = 2;
+}
+
+message PageRequest {
+  // Maximum number of items to return in this page. Zero means service default.
+  uint32 entries = 1;
+  // Opaque continuation cursor returned by PageInfo.next_cursor.
+  string cursor = 2;
+}
+
+message PageInfo {
+  uint32 returned = 1;
+  uint32 total = 2;
+  bool has_more = 3;
+  string next_cursor = 4;
+}
+
+message TemporalInclude {
+  bool evidence = 1;
+  bool relations = 2;
+  bool raw_refs = 3;
+}
+
+message InspectInclude {
+  bool incoming = 1;
+  bool outgoing = 2;
+  bool details = 3;
+  bool raw = 4;
+}
+
+enum MemoryConfidence {
+  MEMORY_CONFIDENCE_UNSPECIFIED = 0;
+  MEMORY_CONFIDENCE_HIGH = 1;
+  MEMORY_CONFIDENCE_MEDIUM = 2;
+  MEMORY_CONFIDENCE_LOW = 3;
+  MEMORY_CONFIDENCE_UNKNOWN = 4;
+}
+
+enum MemorySemanticClass {
+  MEMORY_SEMANTIC_CLASS_UNSPECIFIED = 0;
+  MEMORY_SEMANTIC_CLASS_STRUCTURAL = 1;
+  MEMORY_SEMANTIC_CLASS_CAUSAL = 2;
+  MEMORY_SEMANTIC_CLASS_MOTIVATIONAL = 3;
+  MEMORY_SEMANTIC_CLASS_PROCEDURAL = 4;
+  MEMORY_SEMANTIC_CLASS_EVIDENTIAL = 5;
+  MEMORY_SEMANTIC_CLASS_CONSTRAINT = 6;
+}
+
+enum MemorySourceKind {
+  MEMORY_SOURCE_KIND_UNSPECIFIED = 0;
+  MEMORY_SOURCE_KIND_HUMAN = 1;
+  MEMORY_SOURCE_KIND_AGENT = 2;
+  MEMORY_SOURCE_KIND_PROJECTION = 3;
+  MEMORY_SOURCE_KIND_DERIVED = 4;
+}
+
+enum DimensionSelectionMode {
+  DIMENSION_SELECTION_MODE_UNSPECIFIED = 0;
+  DIMENSION_SELECTION_MODE_ALL = 1;
+  DIMENSION_SELECTION_MODE_ONLY = 2;
+  DIMENSION_SELECTION_MODE_EXCEPT = 3;
+}
+
+enum DimensionScopeMode {
+  DIMENSION_SCOPE_MODE_UNSPECIFIED = 0;
+  DIMENSION_SCOPE_MODE_CURRENT_ABOUT = 1;
+  DIMENSION_SCOPE_MODE_ABOUTS = 2;
+  // Uses the kernel memory about index to traverse every memory anchor.
+  DIMENSION_SCOPE_MODE_ALL_ABOUTS = 3;
+}
+
+enum TemporalDirection {
+  TEMPORAL_DIRECTION_UNSPECIFIED = 0;
+  TEMPORAL_DIRECTION_GOTO = 1;
+  TEMPORAL_DIRECTION_NEAR = 2;
+  TEMPORAL_DIRECTION_REWIND = 3;
+  TEMPORAL_DIRECTION_FORWARD = 4;
+}
+
+enum MemoryDetailLevel {
+  MEMORY_DETAIL_LEVEL_UNSPECIFIED = 0;
+  MEMORY_DETAIL_LEVEL_COMPACT = 1;
+  MEMORY_DETAIL_LEVEL_BALANCED = 2;
+  MEMORY_DETAIL_LEVEL_FULL = 3;
+}
+
+enum AnswerPolicy {
+  ANSWER_POLICY_UNSPECIFIED = 0;
+  ANSWER_POLICY_EVIDENCE_OR_UNKNOWN = 1;
+  ANSWER_POLICY_SHOW_CONFLICTS = 2;
+  ANSWER_POLICY_BEST_EFFORT = 3;
+}

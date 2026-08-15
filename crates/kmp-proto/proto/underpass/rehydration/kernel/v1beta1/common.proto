@@ -1,0 +1,245 @@
+syntax = "proto3";
+
+package underpass.rehydration.kernel.v1beta1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+
+enum BundleRenderFormat {
+  BUNDLE_RENDER_FORMAT_UNSPECIFIED = 0;
+  BUNDLE_RENDER_FORMAT_STRUCTURED = 1;
+  BUNDLE_RENDER_FORMAT_LLM_PROMPT = 2;
+  BUNDLE_RENDER_FORMAT_DEBUG_JSON = 3;
+}
+
+enum GraphRelationshipSemanticClass {
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_UNSPECIFIED = 0;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_STRUCTURAL = 1;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_CAUSAL = 2;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_MOTIVATIONAL = 3;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_PROCEDURAL = 4;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_EVIDENTIAL = 5;
+  GRAPH_RELATIONSHIP_SEMANTIC_CLASS_CONSTRAINT = 6;
+}
+
+message BundleVersion {
+  uint64 revision = 1;
+  string content_hash = 2;
+  string schema_version = 3;
+  string projection_watermark = 4;
+  google.protobuf.Timestamp generated_at = 5;
+  string generator_version = 6;
+}
+
+message BundleSection {
+  string key = 1;
+  string title = 2;
+  string content = 3;
+  uint32 token_count = 4;
+  repeated string scopes = 5;
+}
+
+message BundleNodeDetail {
+  string node_id = 1;
+  string detail = 2;
+  string content_hash = 3;
+  uint64 revision = 4;
+}
+
+message GraphRoleBundle {
+  string role = 1;
+  GraphNode root_node = 2;
+  repeated GraphNode neighbor_nodes = 3;
+  repeated GraphRelationship relationships = 4;
+  repeated BundleNodeDetail node_details = 5;
+  // Per-role rendered context with quality metrics. Present in RehydrateSession
+  // responses; empty in GetContext (which returns a single top-level RenderedContext).
+  RenderedContext rendered = 6;
+}
+
+message RehydrationStats {
+  uint32 roles = 1;
+  uint32 nodes = 2;
+  uint32 relationships = 3;
+  uint32 detailed_nodes = 4;
+  uint32 timeline_events = 5;
+}
+
+message RehydrationBundle {
+  string root_node_id = 1;
+  repeated GraphRoleBundle bundles = 2;
+  RehydrationStats stats = 3;
+  BundleVersion version = 4;
+}
+
+// Rehydration mode controlling how context is rendered under budget pressure.
+// UNSPECIFIED = Auto (kernel decides based on token pressure heuristic).
+enum RehydrationMode {
+  REHYDRATION_MODE_UNSPECIFIED = 0;
+  REHYDRATION_MODE_RESUME_FOCUSED = 1;
+  REHYDRATION_MODE_REASON_PRESERVING = 2;
+  REHYDRATION_MODE_TEMPORAL_DELTA = 3;  // Reserved, not yet implemented
+  REHYDRATION_MODE_GLOBAL_SUMMARY = 4;  // Reserved, not yet implemented
+}
+
+// Resolution tiers for multi-resolution bundle rendering.
+// L0 is a compact summary (~100 tokens). L1 is the causal spine (~500 tokens).
+// L2 fills remaining budget with evidence, details, and structural data.
+enum ResolutionTier {
+  RESOLUTION_TIER_UNSPECIFIED = 0;
+  RESOLUTION_TIER_L0_SUMMARY = 1;
+  RESOLUTION_TIER_L1_CAUSAL_SPINE = 2;
+  RESOLUTION_TIER_L2_EVIDENCE_PACK = 3;
+}
+
+// A single tier of the multi-resolution rendered context.
+message RenderedTier {
+  ResolutionTier tier = 1;
+  string content = 2;
+  uint32 token_count = 3;
+  repeated BundleSection sections = 4;
+}
+
+message RenderedContext {
+  BundleRenderFormat format = 1;
+  // Flat concatenation of all tiers (backward compatible).
+  string content = 2;
+  uint32 token_count = 3;
+  // Flat sections ordered by salience (backward compatible).
+  repeated BundleSection sections = 4;
+  // Multi-resolution tiers. Empty when max_tier is not supported
+  // by the server version. Callers should fall back to flat content/sections.
+  repeated RenderedTier tiers = 5;
+  // The mode actually used for tiered rendering. UNSPECIFIED when auto-detected.
+  RehydrationMode resolved_mode = 6;
+  // Quality and efficiency metrics for this render.
+  BundleQualityMetrics quality = 7;
+  // Truncation metadata. Present when a token budget was applied.
+  TruncationMetadata truncation = 8;
+  // Deterministic hash of the flat rendered content for audit verification.
+  string content_hash = 9;
+}
+
+// Truncation metadata when a token budget constrains the render.
+message TruncationMetadata {
+  uint32 budget_requested = 1;
+  uint32 budget_used = 2;
+  uint32 total_before_truncation = 3;
+  uint32 sections_kept = 4;
+  uint32 sections_dropped = 5;
+  string token_estimator = 6;
+}
+
+// Quality and efficiency metrics computed during rendering.
+// These are first-class observability signals — not benchmark artifacts.
+message BundleQualityMetrics {
+  // Token count for a flat text dump of the same data (no structure).
+  uint32 raw_equivalent_tokens = 1;
+  // raw_equivalent_tokens / rendered_token_count. >1.0 means compression.
+  double compression_ratio = 2;
+  // Fraction of relationships with causal/motivational/evidential class.
+  double causal_density = 3;
+  // Fraction of nodes from noise/distractor branches.
+  double noise_ratio = 4;
+  // Fraction of nodes with extended detail attached.
+  double detail_coverage = 5;
+}
+
+message ScopeValidationResult {
+  bool allowed = 1;
+  repeated string required_scopes = 2;
+  repeated string provided_scopes = 3;
+  repeated string missing_scopes = 4;
+  repeated string extra_scopes = 5;
+  string reason = 6;
+  repeated string diagnostics = 7;
+}
+
+message BundleSnapshot {
+  string snapshot_id = 1;
+  string root_node_id = 2;
+  string role = 3;
+  RehydrationBundle bundle = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Duration ttl = 7;
+}
+
+message ProjectionStatus {
+  string consumer_name = 1;
+  string stream_name = 2;
+  string projection_watermark = 3;
+  uint64 processed_events = 4;
+  uint64 pending_events = 5;
+  google.protobuf.Timestamp last_event_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  bool healthy = 8;
+  repeated string warnings = 9;
+}
+
+// Classification of the system or actor that produced a fact.
+enum SourceKind {
+  SOURCE_KIND_UNSPECIFIED = 0;
+  SOURCE_KIND_HUMAN = 1;
+  SOURCE_KIND_AGENT = 2;
+  SOURCE_KIND_PROJECTION = 3;
+  SOURCE_KIND_DERIVED = 4;
+}
+
+// Provenance metadata: who produced this fact and when.
+message Provenance {
+  SourceKind source_kind = 1;
+  string source_agent = 2;   // e.g. "diagnostics-agent"
+  string observed_at = 3;    // ISO-8601
+}
+
+message GraphNode {
+  string node_id = 1;
+  string node_kind = 2;
+  string title = 3;
+  string summary = 4;
+  string status = 5;
+  repeated string labels = 6;
+  map<string, string> properties = 7;
+  Provenance provenance = 8;
+}
+
+message GraphRelationship {
+  string source_node_id = 1;
+  string target_node_id = 2;
+  string relationship_type = 3;
+  GraphRelationshipExplanation explanation = 4;
+  Provenance provenance = 5;
+}
+
+message GraphRelationshipExplanation {
+  GraphRelationshipSemanticClass semantic_class = 1;
+  string rationale = 2;
+  string motivation = 3;
+  string method = 4;
+  string decision_id = 5;
+  string caused_by_node_id = 6;
+  string evidence = 7;
+  string confidence = 8;
+  uint32 sequence = 9;
+  string dimension = 10;
+  string scope_id = 11;
+  string occurred_at = 12;
+  string observed_at = 13;
+  string ingested_at = 14;
+  string valid_from = 15;
+  string valid_until = 16;
+  uint32 rank = 17;
+}
+
+message RehydrationDiagnostic {
+  string role = 1;
+  BundleVersion version = 2;
+  uint32 selected_nodes = 3;
+  uint32 selected_relationships = 4;
+  uint32 detailed_nodes = 5;
+  uint32 estimated_tokens = 6;
+  repeated string notes = 7;
+}

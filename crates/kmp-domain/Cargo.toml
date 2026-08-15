@@ -3,6 +3,13 @@ name = "kmp-domain"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Domain model of the Kernel Memory Protocol: aggregates, value objects, repositories and projections, with no IO"
+readme = "README.md"
+keywords = ["kmp", "memory", "graph", "kernel", "ddd"]
+categories = ["data-structures"]
+publish = true
 
 [lints]
 workspace = true

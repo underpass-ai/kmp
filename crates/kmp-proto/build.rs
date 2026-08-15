@@ -1,9 +1,15 @@
 use std::env;
 use std::path::PathBuf;
 
+// The kernel contract lives twice on purpose. `api/proto` is where the
+// contract is authored, linted and checked for breakage; this crate keeps
+// a vendored copy under `proto/` because `cargo publish` only ships files
+// inside the package directory, and a crate that compiles its protos from
+// `../../api` builds here and nowhere else. `scripts/ci/contract-gate.sh`
+// diffs the two so the copy can never quietly become a different wire.
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let proto_root = manifest_dir.join("../../api/proto");
+    let proto_root = manifest_dir.join("proto");
     let query_proto = proto_root.join("underpass/rehydration/kernel/v1beta1/query.proto");
     let command_proto = proto_root.join("underpass/rehydration/kernel/v1beta1/command.proto");
     let memory_proto = proto_root.join("underpass/rehydration/kernel/v1beta1/memory.proto");

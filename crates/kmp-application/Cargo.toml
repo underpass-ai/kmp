@@ -3,6 +3,13 @@ name = "kmp-application"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Application services of the KMP kernel: the use cases behind ingest, wake, ask, near, rewind and trace"
+readme = "README.md"
+keywords = ["kmp", "memory", "context", "agents", "kernel"]
+categories = ["development-tools"]
+publish = true
 
 [lints]
 workspace = true

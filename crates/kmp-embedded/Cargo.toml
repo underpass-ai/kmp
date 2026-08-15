@@ -4,6 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Embedded edition composition root: the KMP kernel in-process over the redb store"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "embedded", "memory", "context", "redb"]
+categories = ["database"]
+publish = true
 
 [lints]
 workspace = true

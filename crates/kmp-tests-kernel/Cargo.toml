@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Kernel integration tests: golden contracts, E2E journeys, agentic context"
+# Not on crates.io: test suite, not a library.
+publish = false
 
 [lints]
 workspace = true

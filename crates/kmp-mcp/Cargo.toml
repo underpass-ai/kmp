@@ -4,8 +4,12 @@ edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 license.workspace = true
-description = "Stdio MCP adapter for Kernel Memory Protocol"
+description = "Stdio MCP adapter for the Kernel Memory Protocol: durable agent memory over an embedded or remote kernel"
 repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "mcp", "memory", "context", "agents"]
+categories = ["command-line-utilities", "development-tools"]
+publish = true
 
 [dependencies]
 opentelemetry.workspace = true

@@ -1,0 +1,15 @@
+{
+  "summary": "claim:rachel-austin supersedes claim:rachel-denver.",
+  "trace": [
+    {
+      "from": "claim:rachel-austin",
+      "to": "claim:rachel-denver",
+      "rel": "supersedes",
+      "class": "evidential",
+      "why": "The later statement corrects the earlier destination.",
+      "evidence": "Later she corrected it: the move is to Austin.",
+      "confidence": "high"
+    }
+  ],
+  "warnings": []
+}

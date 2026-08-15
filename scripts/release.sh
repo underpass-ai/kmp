@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Release helper for KMP.
+#
+# Two verbs:
+#   version <X.Y.Z>   — rewrite every versioned artefact in the repo so
+#                       Cargo.toml and Chart.yaml stay in lockstep.
+#                       Idempotent; safe to re-run.
+#
+#   release <X.Y.Z>   — verify the tree is clean and the versions already
+#                       point at X.Y.Z, then create an annotated `vX.Y.Z`
+#                       tag at HEAD and push it. publish-distribution takes
+#                       it from there: container image, Helm chart and the
+#                       crates.io chain. plugin-package attaches the plugin
+#                       bundles to the release.
+#
+# Typical flow:
+#   bash scripts/release.sh version 0.2.0
+#   bash scripts/ci/quality-gate.sh
+#   git commit -am "chore: v0.2.0" && gh pr create --fill
+#   # merge via CI
+#   git checkout main && git pull
+#   bash scripts/release.sh release 0.2.0
+
+usage() {
+    cat <<'USAGE' >&2
+release.sh version <X.Y.Z>
+release.sh release <X.Y.Z>
+USAGE
+    exit 2
+}
+
+semver_check() {
+    local version="$1"
+    if ! echo "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$'; then
+        echo "error: version '${version}' is not valid semver" >&2
+        exit 1
+    fi
+}
+
+cmd_version() {
+    local version="$1"
+    semver_check "${version}"
+
+    local root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    cd "${root}"
+
+    python3 - "${version}" <<'PY'
+import pathlib, re, sys
+
+version = sys.argv[1]
+
+# Cargo.toml: the [workspace.package] version (first occurrence only, so
+# dependency requirements further down are not caught by this pattern).
+cargo = pathlib.Path("Cargo.toml")
+text = cargo.read_text()
+new_text, count = re.subn(
+    r'(^version = )"[^"]+"',
+    rf'\1"{version}"',
+    text,
+    count=1,
+    flags=re.MULTILINE,
+)
+if count == 0:
+    sys.exit("Cargo.toml: no workspace version line matched")
+
+# Internal path dependencies carry a literal version next to their path —
+# cargo has no way to inherit it — and a published crate whose sibling
+# requirement still points at the previous release cannot resolve on
+# crates.io. They move with the workspace or the release is broken.
+new_text, pinned = re.subn(
+    r'(^kmp-[a-z-]+ = \{ path = "crates/[^"]+", version = )"[^"]+"',
+    rf'\1"{version}"',
+    new_text,
+    flags=re.MULTILINE,
+)
+if pinned == 0:
+    sys.exit("Cargo.toml: no internal dependency pins matched")
+cargo.write_text(new_text)
+
+# Chart.yaml: both `version:` (chart) and `appVersion:` (app) track the
+# release. CI overrides them when packaging from a tag; keeping them
+# correct here is what makes `helm lint` and a local `helm package` tell
+# the truth.
+chart = pathlib.Path("charts/kmp/Chart.yaml")
+text = chart.read_text()
+text, c1 = re.subn(r'^version:.*$', f'version: {version}', text, count=1, flags=re.MULTILINE)
+text, c2 = re.subn(r'^appVersion:.*$', f'appVersion: "{version}"', text, count=1, flags=re.MULTILINE)
+if c1 == 0 or c2 == 0:
+    sys.exit("Chart.yaml: version / appVersion line missing")
+chart.write_text(text)
+
+print(f"bumped to {version}: Cargo.toml ({pinned} internal pins), charts/kmp/Chart.yaml")
+PY
+
+    # Cargo.lock records the workspace members' own versions.
+    cargo metadata --format-version 1 >/dev/null
+
+    # Surface what changed — the caller reviews before committing.
+    git --no-pager diff --stat -- Cargo.toml Cargo.lock charts/kmp/Chart.yaml
+}
+
+cmd_release() {
+    local version="$1"
+    semver_check "${version}"
+
+    local root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    cd "${root}"
+
+    # A dirty tree would tag a commit that does not contain what was built.
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "error: working tree is dirty — commit or stash first" >&2
+        git status --short >&2
+        exit 1
+    fi
+
+    # Versions must already match: `version` is where you bump, `release`
+    # only tags. The plugin package job enforces the same equality, and
+    # finding out there instead of here means a failed release.
+    local cargo_version chart_version chart_app_version
+    cargo_version="$(grep -m1 '^version = ' Cargo.toml | sed -E 's/version = "([^"]+)"/\1/')"
+    chart_version="$(grep -m1 '^version:' charts/kmp/Chart.yaml | awk '{print $2}')"
+    chart_app_version="$(grep -m1 '^appVersion:' charts/kmp/Chart.yaml | awk '{print $2}' | tr -d '"')"
+
+    for field in cargo_version chart_version chart_app_version; do
+        if [ "${!field}" != "${version}" ]; then
+            echo "error: ${field}='${!field}' does not match target '${version}'" >&2
+            echo "  hint: run 'bash scripts/release.sh version ${version}' and commit first" >&2
+            exit 1
+        fi
+    done
+
+    local tag="v${version}"
+    if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+        echo "error: tag ${tag} already exists" >&2
+        exit 1
+    fi
+
+    # Release tags come off reviewed history only.
+    local branch
+    branch="$(git rev-parse --abbrev-ref HEAD)"
+    if [ "${branch}" != "main" ]; then
+        echo "error: not on main (currently '${branch}')" >&2
+        exit 1
+    fi
+
+    git tag -a "${tag}" -m "Release ${tag}"
+    git push origin "${tag}"
+    echo "tagged ${tag} and pushed."
+    echo "publish-distribution: image + chart + crates.io chain."
+    echo "plugin-package: bundles attached to the release."
+}
+
+if [ $# -lt 1 ]; then
+    usage
+fi
+
+verb="$1"
+shift
+
+case "${verb}" in
+    version)
+        [ $# -eq 1 ] || usage
+        cmd_version "$1"
+        ;;
+    release)
+        [ $# -eq 1 ] || usage
+        cmd_release "$1"
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -160,7 +160,7 @@ KMP is moving toward two distributions that share the same protocol semantics:
   construction. Quickstart:
 
   ```bash
-  cargo install --path crates/kmp-mcp --locked
+  cargo install kmp-mcp                      # or --path crates/kmp-mcp --locked
   claude mcp add kernel-memory --scope user \
     --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
   ```

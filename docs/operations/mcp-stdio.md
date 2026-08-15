@@ -134,6 +134,8 @@ Prebuilt binaries + one-command installer: see
 [embedded-release.md](embedded-release.md). From source:
 
 ```bash
+cargo install kmp-mcp
+# or, for the unreleased tip:
 cargo install --git https://github.com/underpass-ai/kmp kmp-mcp --locked
 # or, in a checkout:
 cargo install --path crates/kmp-mcp --locked

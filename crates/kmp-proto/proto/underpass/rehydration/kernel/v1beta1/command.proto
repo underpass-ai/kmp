@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package underpass.rehydration.kernel.v1beta1;
+
+import "google/protobuf/timestamp.proto";
+import "underpass/rehydration/kernel/v1beta1/common.proto";
+
+option go_package = "github.com/underpass-ai/kmp/api/gen/go/underpass/rehydration/kernel/v1beta1;rehydrationkernelv1beta1";
+
+service ContextCommandService {
+  rpc UpdateContext(UpdateContextRequest) returns (UpdateContextResponse);
+}
+
+enum ContextChangeOperation {
+  CONTEXT_CHANGE_OPERATION_UNSPECIFIED = 0;
+  CONTEXT_CHANGE_OPERATION_CREATE = 1;
+  CONTEXT_CHANGE_OPERATION_UPDATE = 2;
+  CONTEXT_CHANGE_OPERATION_DELETE = 3;
+  CONTEXT_CHANGE_OPERATION_UPSERT = 4;
+}
+
+message CommandMetadata {
+  string idempotency_key = 1;
+  string correlation_id = 2;
+  string causation_id = 3;
+  string requested_by = 4;
+  google.protobuf.Timestamp requested_at = 5;
+}
+
+message RevisionPrecondition {
+  uint64 expected_revision = 1;
+  string expected_content_hash = 2;
+}
+
+message ContextChange {
+  ContextChangeOperation operation = 1;
+  string entity_kind = 2;
+  string entity_id = 3;
+  string payload_json = 4;
+  string reason = 5;
+  repeated string scopes = 6;
+}
+
+message UpdateContextRequest {
+  string root_node_id = 1;
+  string role = 2;
+  string work_item_id = 3;
+  repeated ContextChange changes = 4;
+  CommandMetadata metadata = 5;
+  RevisionPrecondition precondition = 6;
+  reserved 7;
+}
+
+message UpdateContextResponse {
+  BundleVersion accepted_version = 1;
+  repeated string warnings = 2;
+  reserved 3, 4;
+}

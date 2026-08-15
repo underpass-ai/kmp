@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Paper research tests: LLM evaluation, benchmarks, use case metrics"
+# Not on crates.io: test suite, not a library.
+publish = false
 
 [lints]
 workspace = true

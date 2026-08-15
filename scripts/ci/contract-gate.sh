@@ -36,5 +36,6 @@ buf lint api
     --limit-to-input-files \
     --path proto/underpass/rehydration/kernel/v1beta1
 )
+bash scripts/ci/check-vendored-contract.sh
 bash scripts/ci/check-kernel-contract-policy.sh
 cargo test -p kmp-proto --locked

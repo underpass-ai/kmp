@@ -15,6 +15,12 @@ STAGE_DIR="${DIST_DIR}/stage"
 
 cd "${ROOT_DIR}"
 
+# The release job globs `dist/plugin/*`, so anything left here from an
+# earlier build would be published as if it belonged to this version. Start
+# from an empty directory so the archives that leave this script are exactly
+# the ones it made.
+rm -rf "${DIST_DIR}"
+
 WORKSPACE_VERSION="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)"
 if [[ -z "${WORKSPACE_VERSION}" ]]; then
   echo "KMP plugin package: could not read the workspace version" >&2

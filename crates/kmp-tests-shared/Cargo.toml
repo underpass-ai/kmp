@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Hexagonal test infrastructure: containers, fixtures, seed strategies"
+# Not on crates.io: test infrastructure for this workspace.
+publish = false
 
 [lints]
 workspace = true

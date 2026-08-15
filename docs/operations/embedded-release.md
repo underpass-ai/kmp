@@ -11,11 +11,11 @@ kernel — one version for the whole product.
 
 ## Install paths
 
+- From crates.io: `cargo install kmp-mcp` — the whole chain beneath it is
+  published with every release (see [../release.md](../release.md)).
 - One command: `scripts/install/install.sh` (checksum-verified download,
   prints per-host registration snippets).
-- From source: `cargo install --path crates/kmp-mcp --locked`
-  (kept working; crates.io publication deferred until the name/branding
-  decision of ADR-013 is revisited).
+- From source: `cargo install --path crates/kmp-mcp --locked`.
 
 ## Binary ↔ store format compatibility
 

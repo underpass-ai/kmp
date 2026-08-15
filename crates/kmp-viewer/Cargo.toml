@@ -4,6 +4,12 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 description = "Local read-only web viewer for KMP memory: graph, notes, timeline and trace over the in-process kernel"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["kmp", "viewer", "graph", "memory", "agents"]
+categories = ["visualization", "web-programming"]
+publish = true
 
 [lints]
 workspace = true

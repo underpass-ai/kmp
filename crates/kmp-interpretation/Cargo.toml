@@ -3,6 +3,8 @@ name = "kmp-interpretation"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+# Not on crates.io: in-repo gate, not a consumer contract.
+publish = false
 
 [lints]
 workspace = true

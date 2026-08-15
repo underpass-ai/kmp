@@ -18,8 +18,10 @@ Then act on what it reported.
 user is inside a checkout, because it pins refs:
 
 ```bash
+cargo install kmp-mcp
+# inside a checkout, to pin refs:
 bash scripts/mcp/install-kmp-mcp.sh
-# outside a checkout:
+# for the unreleased tip:
 cargo install --git https://github.com/underpass-ai/kmp kmp-mcp --locked
 ```
 
