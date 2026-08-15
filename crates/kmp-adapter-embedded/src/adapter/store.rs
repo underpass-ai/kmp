@@ -67,7 +67,15 @@ impl EmbeddedKernelStore {
             },
         )?;
 
-        let database = Database::create(&store_file).map_err(|error| {
+        Self::open_store_file(&store_file)
+    }
+
+    /// Opens a bare redb file, without the data-directory layout or its
+    /// format gate. Only two callers may want this: `open`, which has just
+    /// applied the gate itself, and the migration, which reads a *copy* of a
+    /// store whose format this binary refuses to open in place.
+    pub(crate) fn open_store_file(store_file: &Path) -> Result<Self, PortError> {
+        let database = Database::create(store_file).map_err(|error| {
             PortError::Unavailable(format!(
                 "embedded store could not open `{}`: {error}",
                 store_file.display()

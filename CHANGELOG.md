@@ -10,6 +10,31 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Added
+
+- `kmp-mcp migrate <source-dir> <destination-dir>`: the way out of the
+  fail-fast rule. A store whose `FORMAT_VERSION` this binary refuses to open
+  can be replayed into a new one — history first, projections rebuilt from
+  it, since projections are derived state and their shape is what a format
+  bump would change. The source is hashed, copied and never opened for
+  writing, so redb's own crash recovery cannot touch the operator's evidence;
+  the hash is verified again at the end. The destination cannot already hold
+  a store, and a re-run of a finished migration says so instead of reading as
+  a conflict. The result carries a receipt — source format, source sha256,
+  events migrated, mutations applied, kernel version — persisted in the
+  destination and readable afterwards.
+
+  Today one store format exists, so a migration is a faithful replay; the
+  translation step for a future format lands in the same module, and the
+  compatibility matrix moves in the same pull request. The scaffolding ships
+  tested rather than promised, including against a store stamped with an
+  older format.
+
+### Fixed
+
+- The refusal to open an older store no longer points at a "migration tool"
+  that did not exist. It names the command that does.
+
 ## [0.1.1] - 2026-08-15
 
 ### Fixed

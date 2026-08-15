@@ -84,24 +84,11 @@ impl EmbeddedKernelStore {
             )));
         }
 
-        let mut events_imported = 0u64;
+        let mut events = Vec::new();
         for line in lines {
-            let event: ContextUpdatedEvent = decode_line("bundle event", line)?;
-            let exported_revision = event.revision;
-            let expected_previous = exported_revision.checked_sub(1).ok_or_else(|| {
-                PortError::InvalidState(
-                    "bundle event carries revision 0; the log is corrupt".to_string(),
-                )
-            })?;
-            let assigned = self.append(event, expected_previous).await?;
-            if assigned != exported_revision {
-                return Err(PortError::Conflict(format!(
-                    "import integrity violation: replay assigned revision {assigned}, \
-                     bundle recorded {exported_revision}"
-                )));
-            }
-            events_imported += 1;
+            events.push(decode_line::<ContextUpdatedEvent>("bundle event", line)?);
         }
+        let events_imported = self.replay_event_stream(events).await?;
         if events_imported != header.event_count {
             return Err(PortError::InvalidState(format!(
                 "bundle header declares {} events but {} were present",
@@ -114,6 +101,37 @@ impl EmbeddedKernelStore {
             events_imported,
             rebuild,
         })
+    }
+}
+
+impl EmbeddedKernelStore {
+    /// Replays a history into this store, in order, checking that every
+    /// event lands on the revision it was recorded with.
+    ///
+    /// That check is the whole point: a replay that silently renumbers
+    /// history would produce a store that reads plausibly and cites
+    /// revisions that never existed. Shared by import and migration, which
+    /// are the same operation seen from two different distances.
+    pub(crate) async fn replay_event_stream<I>(&self, events: I) -> Result<u64, PortError>
+    where
+        I: IntoIterator<Item = ContextUpdatedEvent>,
+    {
+        let mut replayed = 0u64;
+        for event in events {
+            let recorded_revision = event.revision;
+            let expected_previous = recorded_revision.checked_sub(1).ok_or_else(|| {
+                PortError::InvalidState("event carries revision 0; the log is corrupt".to_string())
+            })?;
+            let assigned = self.append(event, expected_previous).await?;
+            if assigned != recorded_revision {
+                return Err(PortError::Conflict(format!(
+                    "replay integrity violation: assigned revision {assigned}, \
+                     history recorded {recorded_revision}"
+                )));
+            }
+            replayed += 1;
+        }
+        Ok(replayed)
     }
 }
 
