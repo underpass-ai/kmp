@@ -20,7 +20,7 @@ tokio.workspace = true
 
 [dev-dependencies]
 kmp-testkit.workspace = true
-testcontainers = "0.24.0"
+testcontainers = "0.28.0"
 
 [[test]]
 name = "neo4j_integration"
