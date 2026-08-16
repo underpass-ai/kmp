@@ -24,4 +24,14 @@ cargo test -p kmp-adapter-embedded --features sqlite --locked
 echo "sqlite-gates: kmp-embedded and kmp-mcp still build and pass with the engine in"
 cargo test -p kmp-embedded -p kmp-mcp --features sqlite --locked
 
+# `cargo install` is how a user gets this binary, and it resolves features
+# without the workspace and without dev-dependencies. A feature that names a
+# dev-dependency builds and tests green and then fails the one command that
+# matters. This is the check that would have caught it.
+echo "sqlite-gates: cargo install with the engine, the way a user gets it"
+INSTALL_ROOT="$(mktemp -d)"
+trap 'rm -rf "${INSTALL_ROOT}"' EXIT
+cargo install --path crates/kmp-mcp --features sqlite --locked --root "${INSTALL_ROOT}" --quiet
+"${INSTALL_ROOT}/bin/kmp-mcp" --version
+
 echo "sqlite-gates: passed"
