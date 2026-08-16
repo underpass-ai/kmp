@@ -92,14 +92,41 @@ if c1 == 0 or c2 == 0:
     sys.exit("Chart.yaml: version / appVersion line missing")
 chart.write_text(text)
 
-print(f"bumped to {version}: Cargo.toml ({pinned} internal pins), charts/kmp/Chart.yaml")
+# The plugin host manifests. The packaging script stamps these when it
+# builds a release bundle, but the marketplace installs straight from this
+# repository, so whatever is committed here is the version every
+# marketplace user sees. Left behind, it pins them at the first release
+# forever: `claude plugin update` reports "already at the latest version"
+# no matter what ships, because the number never moves.
+manifests = [
+    pathlib.Path("plugins/kmp/.claude-plugin/plugin.json"),
+    pathlib.Path("plugins/kmp/.codex-plugin/plugin.json"),
+]
+for manifest in manifests:
+    text = manifest.read_text()
+    text, c = re.subn(
+        r'(^  "version": )"[^"]+"',
+        rf'\1"{version}"',
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+    if c == 0:
+        sys.exit(f"{manifest}: no version line matched")
+    manifest.write_text(text)
+
+print(
+    f"bumped to {version}: Cargo.toml ({pinned} internal pins), "
+    f"charts/kmp/Chart.yaml, {len(manifests)} plugin manifests"
+)
 PY
 
     # Cargo.lock records the workspace members' own versions.
     cargo metadata --format-version 1 >/dev/null
 
     # Surface what changed — the caller reviews before committing.
-    git --no-pager diff --stat -- Cargo.toml Cargo.lock charts/kmp/Chart.yaml
+    git --no-pager diff --stat -- Cargo.toml Cargo.lock charts/kmp/Chart.yaml \
+        plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json
 }
 
 cmd_release() {
