@@ -34,11 +34,26 @@ pub struct EmbeddedKernelMcpBackend {
 
 impl EmbeddedKernelMcpBackend {
     pub fn open(data_dir: &Path) -> Result<Self, String> {
-        let kernel = EmbeddedKernel::open(data_dir).map_err(|error| error.to_string())?;
+        Self::open_with_engine(data_dir, None)
+    }
+
+    /// `engine` is what a fresh directory gets; an existing one must agree
+    /// (ADR-018). `None` defers to the directory, or the default.
+    pub fn open_with_engine(
+        data_dir: &Path,
+        engine: Option<kmp_embedded::StorageEngine>,
+    ) -> Result<Self, String> {
+        let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
+            .map_err(|error| error.to_string())?;
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
         })
+    }
+
+    /// The storage engine this session's store is on.
+    pub fn engine(&self) -> kmp_embedded::StorageEngine {
+        self.kernel.engine()
     }
 
     pub fn data_dir(&self) -> &str {
@@ -46,8 +61,9 @@ impl EmbeddedKernelMcpBackend {
     }
 
     /// The opened kernel, for composition roots that mount additional
-    /// in-process surfaces (the viewer) over this same session's store —
-    /// the only way to observe it live under the ADR-011 single-writer lock.
+    /// in-process surfaces (the viewer) over this same session's store — on
+    /// the redb engine the only way to observe it live under the ADR-011
+    /// single-writer lock.
     pub fn kernel(&self) -> &EmbeddedKernel {
         &self.kernel
     }

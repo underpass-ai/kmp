@@ -111,10 +111,12 @@ there. It separates them:
 - **host registration** — whether Claude Code and Codex actually have it.
 
 Two failures it names rather than leaving you to guess: another session
-holding the store, which is the single-writer contract (ADR-011) doing its
-job, and a session that started before the registration changed and is still
-carrying the old inventory. The second one cannot be fixed from inside the
-session — you have to restart it.
+holding a redb store, which is the single-writer contract (ADR-011) doing its
+job — the doctor says which engine the store is on, and names the `migrate
+--engine sqlite` command that lets two hosts share it — and a session that
+started before the registration changed and is still carrying the old
+inventory. The second one cannot be fixed from inside the session — you have
+to restart it.
 
 Run it directly, without a host:
 

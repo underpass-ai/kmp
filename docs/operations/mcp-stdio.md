@@ -35,12 +35,54 @@ KMP_MCP_BACKEND=embedded kmp-mcp
 - **Data directory resolution** (ADR-012, winning rule logged at startup):
   `KMP_MCP_DATA_DIR` → project `.kernel/` (walks up to the `.git`
   root; auto-gitignored) → `$XDG_DATA_HOME/kmp/default`.
-- **Layout**: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`,
-  `logs/` (rotating JSON logs; stderr also — stdout is JSON-RPC only),
-  `telemetry/quality.redb` (bounded fail-open quality journal, ADR-014).
-- **Single writer**: a second session on the same data dir fails fast with
-  an explicit error; the tools then do not appear in the host's inventory.
-  Open the host in a project with a free store or close the other session.
+- **Layout**: `FORMAT_VERSION` (fail-fast on mismatch; names the engine),
+  `store/kernel.redb` or `store/kernel.sqlite3`, `logs/` (rotating JSON
+  logs; stderr also — stdout is JSON-RPC only), `telemetry/quality.redb`
+  (bounded fail-open quality journal, ADR-014).
+- **Storage engine** (ADR-018): redb by default — pure Rust, one file, **one
+  process at a time**. A second session on the same data dir fails fast with
+  an explicit error and the tools do not appear in that host's inventory.
+  To share one store between hosts, use the sqlite engine — see below.
+
+### Sharing one memory between two agent hosts
+
+The default engine is single-process: if Claude Code and Codex CLI both open
+the same data directory, whichever started first owns it and the other gets
+no memory. The sqlite engine (WAL mode) lets both work on the same store —
+readers never block the writer, a second writer waits for the commit lock
+instead of being refused.
+
+It is opt-in, because it brings a C toolchain into the build; the crates.io
+binary and the plugin bundles are built without it. Three steps:
+
+```bash
+# 1. a binary that carries the engine
+cargo install kmp-mcp --features sqlite
+kmp-mcp --version              # -> kmp-mcp 0.1.x (store formats 1, 2 (sqlite))
+
+# 2a. starting fresh: ask for sqlite when the directory is created
+KMP_MCP_ENGINE=sqlite KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR=~/.local/share/kmp/shared kmp-mcp
+
+# 2b. already have history: convert it — the source is left untouched
+kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
+
+# 3. point BOTH hosts' KMP_MCP_DATA_DIR at the shared directory
+```
+
+`KMP_MCP_ENGINE` only decides what a **fresh** directory becomes. An
+existing directory always opens with the engine it was created with; asking
+for a different one is refused by name (with the `migrate` command in the
+message) rather than quietly opened as the other — that is how a user ends
+up on the wrong engine without knowing. `/kmp:doctor` reports which engine a
+store is on and whether another process has it open.
+
+What it costs, plainly: ~5× slower point reads and ~30 % slower batched
+writes than redb (both far above interactive rates), a slightly larger
+binary, and a C dependency in the build. What it buys: two hosts, one
+memory, and 2.5× smaller stores. A binary without the feature that meets a
+sqlite store refuses it by name and says which feature to enable; a binary
+older than the layout refuses it as "newer than this binary supports". No
+binary ever opens an empty store beside a real one.
 
 ### Maintenance CLI (embedded stores)
 
@@ -48,9 +90,10 @@ Everything is consumed as a process — memory over MCP stdio, maintenance
 over CLI subcommands:
 
 ```bash
-kmp-mcp --version                 # binary + store format version
+kmp-mcp --version                 # binary + the store formats it opens
 kmp-mcp export memory.jsonl      # event log -> portable bundle
 kmp-mcp import memory.jsonl      # bundle -> EMPTY store (fail-fast)
+kmp-mcp migrate <old> <new> [--engine redb|sqlite]   # replay history into a fresh store
 ```
 
 See [embedded-release.md](embedded-release.md) for the bundle format and the

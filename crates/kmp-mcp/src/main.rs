@@ -22,9 +22,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(server) => server,
         Err(message) => {
             eprintln!("kmp-mcp: {message}");
-            eprintln!(
-                "kmp-mcp: set {GRPC_ENDPOINT_ENV} for live gRPC, or set {MCP_BACKEND_ENV}=fixture explicitly for fixture mode"
-            );
+            // Only a backend-selection failure is fixed by choosing a
+            // backend. After a store that refused to open — wrong engine,
+            // locked, too new — this line sent people to look exactly where
+            // the problem was not.
+            if !message.starts_with("embedded store")
+                && !message.starts_with("unknown storage engine")
+            {
+                eprintln!(
+                    "kmp-mcp: set {GRPC_ENDPOINT_ENV} for live gRPC, or set {MCP_BACKEND_ENV}=fixture explicitly for fixture mode"
+                );
+            }
             std::process::exit(2);
         }
     };
@@ -42,7 +50,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
     } else if server.backend_name() == "embedded" {
-        eprintln!("kmp-mcp: using embedded backend (kernel in-process)");
+        match server.embedded_engine() {
+            Some(engine) => {
+                eprintln!("kmp-mcp: using embedded backend (kernel in-process, {engine} engine)")
+            }
+            None => eprintln!("kmp-mcp: using embedded backend (kernel in-process)"),
+        }
     } else {
         eprintln!("kmp-mcp: using explicit fixture backend");
     }
@@ -87,9 +100,10 @@ async fn server_from_env() -> Result<KernelMcpServer, String> {
     }
 
     let resolved = kmp_embedded::resolve_data_dir_from_env().map_err(|e| e.to_string())?;
-    let backend = EmbeddedKernelMcpBackend::open(resolved.path())?;
+    let engine = kmp_embedded::resolve_engine_from_env().map_err(|e| e.to_string())?;
+    let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)?;
     spawn_viewer(backend.kernel(), &addr).await?;
-    Ok(KernelMcpServer::with_backend(backend))
+    Ok(KernelMcpServer::with_embedded_backend(backend))
 }
 
 /// Binds the viewer on `addr` (loopback only) and serves it in the
@@ -179,10 +193,21 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "migrate" => return run_migrate_command(args).await,
         "viewer" => return run_viewer_command(path).await,
         "--version" | "-V" | "version" => {
+            // The layouts this build opens, so a user can tell at a glance
+            // whether their binary carries the sqlite engine (ADR-018).
+            use kmp_embedded::StorageEngine;
+            let mut formats = vec![format!("{}", StorageEngine::Redb.format_version())];
+            if StorageEngine::Sqlite.is_compiled() {
+                formats.push(format!(
+                    "{} (sqlite)",
+                    StorageEngine::Sqlite.format_version()
+                ));
+            }
             println!(
-                "kmp-mcp {} (store format {})",
+                "kmp-mcp {} (store format{} {})",
                 env!("CARGO_PKG_VERSION"),
-                kmp_embedded::SUPPORTED_FORMAT_VERSION
+                if formats.len() > 1 { "s" } else { "" },
+                formats.join(", ")
             );
             return 0;
         }
