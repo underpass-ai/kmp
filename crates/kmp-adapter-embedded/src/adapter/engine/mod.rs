@@ -23,6 +23,8 @@ use std::fmt;
 use kmp_domain::PortError;
 
 pub(crate) mod redb;
+#[cfg(feature = "sqlite")]
+pub(crate) mod sqlite;
 
 /// The tables a kernel store consists of. Every engine materializes all of
 /// them; the key shape of each is fixed and recorded on the variant.

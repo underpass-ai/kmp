@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::engine::{Key, Table};
-use super::format_version::{self, SUPPORTED_FORMAT_VERSION};
+use super::format_version::{self, SUPPORTED_FORMAT_VERSION, StorageEngine};
 use super::store::EmbeddedKernelStore;
 
 /// The scratch copy the migration reads. Lives inside the destination so a
@@ -71,14 +71,37 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
-        let source_store_file = format_version::store_file_path(source_dir);
-        let destination_store_file = format_version::store_file_path(destination_dir);
-
-        if same_file(&source_store_file, &destination_store_file) {
+        if same_file(source_dir, destination_dir) {
             return Err(PortError::InvalidState(
                 "migration source and destination are the same data directory".to_string(),
             ));
         }
+        let source_format = format_version::read_stamped_version(source_dir)?;
+        if source_format > StorageEngine::NEWEST_KNOWN_FORMAT_VERSION {
+            return Err(PortError::InvalidState(format!(
+                "migration source `{}` uses format version {source_format}, newer than this \
+                 binary supports ({}); upgrade the binary",
+                source_dir.display(),
+                StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
+            )));
+        }
+        // Every layout before 1 was a redb file; reading those is what this
+        // migration exists for, so an unknown-but-older number is redb.
+        let source_engine =
+            StorageEngine::from_format_version(source_format).unwrap_or(StorageEngine::Redb);
+        // A SQLite store in WAL mode keeps committed data in a sidecar until
+        // checkpointed, so "copy the store file and read the copy" would
+        // silently drop the newest events. Reading it safely needs a
+        // consistent snapshot (`VACUUM INTO`), which is its own piece of
+        // work; until it lands, say so rather than migrate incompletely.
+        if source_engine != StorageEngine::Redb {
+            return Err(PortError::Unavailable(format!(
+                "migration from a {source_engine} store is not supported yet; the source at `{}` \
+                 is left untouched",
+                source_dir.display()
+            )));
+        }
+        let source_store_file = format_version::store_file_path_for(source_dir, source_engine);
         if !source_store_file.exists() {
             return Err(PortError::InvalidState(format!(
                 "migration source `{}` holds no store file at `{}`",
@@ -86,17 +109,9 @@ impl EmbeddedKernelStore {
                 source_store_file.display()
             )));
         }
-        let source_format = format_version::read_stamped_version(source_dir)?;
-        if source_format > SUPPORTED_FORMAT_VERSION {
-            return Err(PortError::InvalidState(format!(
-                "migration source `{}` uses format version {source_format}, newer than this \
-                 binary supports ({SUPPORTED_FORMAT_VERSION}); upgrade the binary",
-                source_dir.display()
-            )));
-        }
         let source_sha256 = sha256_of(&source_store_file)?;
 
-        if destination_store_file.exists() {
+        if format_version::existing_store_file(destination_dir).is_some() {
             // Re-running a migration is a normal operator reflex, and
             // "already holds a store" is a frightening thing to read when
             // the truth is that the work is already done. Say which it is.
@@ -121,7 +136,7 @@ impl EmbeddedKernelStore {
                 destination_dir.display()
             )));
         }
-        let events = read_source_events(&source_store_file, destination_dir)?;
+        let events = read_source_events(&source_store_file, source_engine, destination_dir)?;
 
         let destination = Self::open(destination_dir)?;
         let events_migrated = destination.replay_event_stream(events).await?;
@@ -163,7 +178,7 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
-        if format_version::store_file_path(destination_dir).exists() {
+        if format_version::existing_store_file(destination_dir).is_some() {
             let store = Self::open(destination_dir)?;
             let receipt = store.migration_receipt().await?;
             return Ok((store, receipt));
@@ -220,6 +235,7 @@ impl EmbeddedKernelStore {
 /// copy is removed before the destination store is created.
 fn read_source_events(
     source_store_file: &Path,
+    source_engine: StorageEngine,
     destination_dir: &Path,
 ) -> Result<Vec<ContextUpdatedEvent>, PortError> {
     fs::create_dir_all(destination_dir).map_err(|error| {
@@ -237,7 +253,7 @@ fn read_source_events(
     })?;
 
     let events = {
-        let source = EmbeddedKernelStore::open_store_file(&copy_path)?;
+        let source = EmbeddedKernelStore::open_store_file(&copy_path, source_engine)?;
         source.read_event_log_blocking()
     };
 

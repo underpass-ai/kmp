@@ -25,6 +25,18 @@ if cargo tree -p kmp-embedded --edges normal --prefix none --locked \
   exit 1
 fi
 
+# ADR-018: the SQLite engine is opt-in precisely so the default binary stays
+# pure Rust. A C dependency reaching the default build — through a feature
+# unification accident, a `default = ["sqlite"]` slip, anything — is the
+# regression this line exists to catch.
+DEFAULT_BUILD_FORBIDDEN='rusqlite|libsqlite3-sys'
+echo "embedded-gates: checking the default build carries no C engine"
+if cargo tree -p kmp-mcp --edges normal --prefix none --locked \
+  | grep -E "^(${DEFAULT_BUILD_FORBIDDEN}) v"; then
+  echo "embedded-gates: the SQLite engine leaked into the default build; it must stay behind --features sqlite" >&2
+  exit 1
+fi
+
 echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
 strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp

@@ -14,9 +14,30 @@ const ROLE: &str = "memory";
 #[tokio::test]
 async fn kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanly() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
+    kill_nine_and_recover(data_dir.path()).await;
+}
 
+/// The same contract on the SQLite engine (ADR-018): WAL with
+/// `synchronous=FULL` must give the redb crash guarantee, not something
+/// weaker. The directory is stamped for SQLite before the writer starts, so
+/// the writer's plain `open` picks that engine.
+#[cfg(feature = "sqlite")]
+#[tokio::test]
+async fn kill_nine_mid_write_on_sqlite_loses_at_most_the_inflight_event_and_replays_cleanly() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    drop(
+        EmbeddedKernelStore::open_with_engine(
+            data_dir.path(),
+            kmp_adapter_embedded::StorageEngine::Sqlite,
+        )
+        .expect("stamp the directory for sqlite"),
+    );
+    kill_nine_and_recover(data_dir.path()).await;
+}
+
+async fn kill_nine_and_recover(data_dir: &std::path::Path) {
     let mut writer = Command::new(env!("CARGO_BIN_EXE_embedded_crash_writer"))
-        .arg(data_dir.path())
+        .arg(data_dir)
         .arg("100000")
         .stdout(Stdio::piped())
         .spawn()
@@ -42,7 +63,7 @@ async fn kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanl
         .expect("drain writer stdout");
     let acknowledged = observed + rest.lines().count() as u64;
 
-    let store = EmbeddedKernelStore::open(data_dir.path()).expect("store reopens after crash");
+    let store = EmbeddedKernelStore::open(data_dir).expect("store reopens after crash");
 
     let revision = store
         .current_revision(ABOUT, ROLE)

@@ -14,6 +14,12 @@ publish = true
 [lints]
 workspace = true
 
+[features]
+default = []
+# The SQLite engine for the embedded store (ADR-018): lets two agent hosts
+# share one memory. Off by default so the default build stays pure Rust.
+sqlite = ["kmp-adapter-embedded/sqlite"]
+
 [dependencies]
 kmp-adapter-embedded.workspace = true
 kmp-application.workspace = true

@@ -11,6 +11,12 @@ keywords = ["kmp", "mcp", "memory", "context", "agents"]
 categories = ["command-line-utilities", "development-tools"]
 publish = true
 
+[features]
+default = []
+# The SQLite engine for the embedded store (ADR-018): lets two agent hosts
+# share one memory. Off by default so the default build stays pure Rust.
+sqlite = ["kmp-embedded/sqlite", "kmp-adapter-embedded/sqlite"]
+
 [dependencies]
 opentelemetry.workspace = true
 prost-types.workspace = true

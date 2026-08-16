@@ -196,6 +196,34 @@ jobs:
       - name: Enforce embedded binary gates
         run: bash scripts/ci/embedded-binary-gates.sh
 
+  embedded-sqlite-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: 1.97.1
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        with:
+          shared-key: sqlite-gates
+
+      # The opt-in SQLite engine (ADR-018): conformance, crash recovery and
+      # the two-process scenario, with the feature compiled in. The default
+      # build's gates above prove the engine did not leak into it.
+      - name: Enforce embedded SQLite engine gates
+        run: bash scripts/ci/embedded-sqlite-gates.sh
+
   integration-conformance:
     runs-on: ubuntu-24.04
     timeout-minutes: 25

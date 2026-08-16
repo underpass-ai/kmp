@@ -12,7 +12,7 @@ use kmp_domain::{
     NodeProjection, ProjectionMutation, ProjectionWriter,
 };
 
-const ABOUT: &str = "crash:test";
+const DEFAULT_ABOUT: &str = "crash:test";
 const ROLE: &str = "memory";
 const SCOPE: &str = "about:crash:test:dimension:conversation:s1";
 
@@ -20,7 +20,7 @@ fn entry_id(revision: u64) -> String {
     format!("claim:{revision:06}")
 }
 
-fn event_for(revision: u64) -> ContextUpdatedEvent {
+fn event_for(about: &str, revision: u64) -> ContextUpdatedEvent {
     let entry = entry_id(revision);
     let payload = serde_json::json!({
         "id": entry,
@@ -36,7 +36,7 @@ fn event_for(revision: u64) -> ContextUpdatedEvent {
     .to_string();
 
     ContextUpdatedEvent {
-        root_node_id: ABOUT.to_string(),
+        root_node_id: about.to_string(),
         role: ROLE.to_string(),
         revision,
         content_hash: format!("hash-{revision}"),
@@ -85,9 +85,13 @@ async fn main() {
         .expect("usage: embedded_crash_writer <data-dir> <count>");
     let count: u64 = args
         .next()
-        .expect("usage: embedded_crash_writer <data-dir> <count>")
+        .expect("usage: embedded_crash_writer <data-dir> <count> [about]")
         .parse()
         .expect("count must be a positive integer");
+    // A third argument picks the aggregate. Two writers on one store need
+    // two aggregates: the revision check is per aggregate, and that is what
+    // lets both of them commit instead of one conflicting the other out.
+    let about = args.next().unwrap_or_else(|| DEFAULT_ABOUT.to_string());
 
     let store = EmbeddedKernelStore::open(std::path::Path::new(&data_dir))
         .expect("embedded store should open");
@@ -95,7 +99,7 @@ async fn main() {
 
     for revision in 1..=count {
         let committed = store
-            .append(event_for(revision), revision - 1)
+            .append(event_for(&about, revision), revision - 1)
             .await
             .expect("append should succeed");
         store

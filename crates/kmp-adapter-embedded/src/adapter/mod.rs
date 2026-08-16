@@ -13,7 +13,9 @@ mod snapshot_store;
 mod store;
 mod telemetry;
 
-pub use format_version::{SUPPORTED_FORMAT_VERSION, format_version_path};
+pub use format_version::{
+    EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,
+};
 pub use migration::StoreMigrationReceipt;
 pub use portability::{BUNDLE_FORMAT_VERSION, BundleHeader, ImportReport};
 pub use replay::ProjectionRebuildReport;
