@@ -8,6 +8,19 @@ pub const DATA_DIR_ENV: &str = "KMP_MCP_DATA_DIR";
 
 const PROJECT_DIR_NAME: &str = ".kernel";
 
+/// Where a project keeps the committed copy of its memory, relative to the
+/// project root.
+///
+/// The store itself (`.kernel/`) is machine state and is auto-gitignored. A
+/// bundle is the event log in one text file, which is a different thing: it
+/// belongs to the repository the same way a migration or a fixture does, so
+/// memory branches, reviews and reverts with the code that produced it.
+///
+/// The path is a convention rather than a setting so that `export` and
+/// `import` with no argument mean the same thing in every checkout, and so a
+/// reviewer knows where to look.
+pub const PROJECT_BUNDLE_PATH: &str = ".kmp/memory.jsonl";
+
 /// Where the data directory came from — logged at startup so the winning
 /// resolution rule is always visible.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,6 +86,20 @@ fn resolve_with_project_marker(
     ResolvedDataDir::UserDefault(user_data_home.join("kmp").join("default"))
 }
 
+/// The conventional bundle path for the project `data_dir` belongs to.
+///
+/// Only a project-scoped store has one: an explicit `KMP_MCP_DATA_DIR` or the
+/// per-user default has no repository to be committed to, and guessing one
+/// would put memory somewhere the operator did not choose.
+pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
+    match resolved {
+        ResolvedDataDir::Project(path) => path
+            .parent()
+            .map(|project_root| project_root.join(PROJECT_BUNDLE_PATH)),
+        ResolvedDataDir::Explicit(_) | ResolvedDataDir::UserDefault(_) => None,
+    }
+}
+
 /// Resolves from the process environment and prepares the directory: creates
 /// it and, for project-scoped dirs, drops a self-ignoring `.gitignore` so
 /// local memory never enters version control by accident.
@@ -129,6 +156,27 @@ fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn only_a_project_store_has_a_conventional_bundle_path() {
+        let project = ResolvedDataDir::Project(PathBuf::from("/repo/.kernel"));
+        assert_eq!(
+            project_bundle_path(&project),
+            Some(PathBuf::from("/repo/.kmp/memory.jsonl")),
+            "the bundle sits beside the store's project root, not inside the store"
+        );
+
+        // Neither of these belongs to a repository, and picking one for them
+        // would write memory somewhere nobody chose.
+        assert_eq!(
+            project_bundle_path(&ResolvedDataDir::Explicit(PathBuf::from("/tmp/dir"))),
+            None
+        );
+        assert_eq!(
+            project_bundle_path(&ResolvedDataDir::UserDefault(PathBuf::from("/home/u/kmp"))),
+            None
+        );
+    }
 
     #[test]
     fn env_override_wins_over_everything() {

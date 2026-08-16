@@ -4,6 +4,7 @@ use kmp_mcp::{
     MCP_BACKEND_ENV,
 };
 use std::io::{self, BufRead, Write};
+use std::path::PathBuf;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, Layer};
@@ -222,10 +223,6 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         }
     }
 
-    let Some(path) = path else {
-        eprintln!("kmp-mcp: {command} requires a bundle file path");
-        return 2;
-    };
     let resolved = match kmp_embedded::resolve_data_dir_from_env() {
         Ok(resolved) => resolved,
         Err(error) => {
@@ -233,6 +230,28 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             return 2;
         }
     };
+    // No path means the project's committed copy. Only a project-scoped store
+    // has one — an explicit data dir or the per-user default belongs to no
+    // repository, and picking a file for them would write memory somewhere
+    // the operator did not choose.
+    let path = match path.map(PathBuf::from) {
+        Some(path) => path,
+        None => match kmp_embedded::project_bundle_path(&resolved) {
+            Some(path) => path,
+            None => {
+                eprintln!(
+                    "kmp-mcp: {command} needs a bundle file path here. The default \
+                     `{}` is the project's committed memory, and this store is not \
+                     project-scoped: it resolved to `{}` by the `{}` rule.",
+                    kmp_embedded::PROJECT_BUNDLE_PATH,
+                    resolved.path().display(),
+                    resolved.rule_name()
+                );
+                return 2;
+            }
+        },
+    };
+    let path = path.as_path();
     let kernel = match kmp_embedded::EmbeddedKernel::open(resolved.path()) {
         Ok(kernel) => kernel,
         Err(error) => {
@@ -245,12 +264,23 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     match command {
         "export" => match store.export_bundle().await {
             Ok(bundle) => {
+                // `.kmp/` will not exist on the first save, and failing on
+                // that would make the convention useless exactly once per
+                // repository — at the moment someone tries it.
+                if let Some(parent) = path.parent()
+                    && !parent.as_os_str().is_empty()
+                    && let Err(error) = std::fs::create_dir_all(parent)
+                {
+                    eprintln!("kmp-mcp: could not create `{}`: {error}", parent.display());
+                    return 2;
+                }
                 if let Err(error) = std::fs::write(path, bundle) {
-                    eprintln!("kmp-mcp: could not write `{path}`: {error}");
+                    eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
                     return 2;
                 }
                 println!(
-                    "{{\"exported_to\":\"{path}\",\"data_dir\":\"{}\"}}",
+                    "{{\"exported_to\":\"{}\",\"data_dir\":\"{}\"}}",
+                    path.display(),
                     resolved.path().display()
                 );
                 0
@@ -264,7 +294,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             let bundle = match std::fs::read_to_string(path) {
                 Ok(bundle) => bundle,
                 Err(error) => {
-                    eprintln!("kmp-mcp: could not read `{path}`: {error}");
+                    eprintln!("kmp-mcp: could not read `{}`: {error}", path.display());
                     return 2;
                 }
             };
