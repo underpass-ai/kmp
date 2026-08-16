@@ -161,10 +161,15 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Str
     let task_scope = optional_map_string(scope, "task");
     let episode_scope = optional_map_string(scope, "episode");
     let options = arguments.get("options").and_then(Value::as_object);
+    // A tool called write_memory commits. Previewing was the default here,
+    // so every caller that did not know to pass `dry_run: false` got
+    // `isError: false` back and wrote nothing — the skill and the write
+    // protocol doc both describe the opposite, and `accepted: false` is easy
+    // to miss in a tool result. Opt in to the preview, not out of it.
     let dry_run = options
         .and_then(|options| options.get("dry_run"))
         .and_then(Value::as_bool)
-        .unwrap_or(true);
+        .unwrap_or(false);
     let strict = options
         .and_then(|options| options.get("strict"))
         .and_then(Value::as_bool)
@@ -920,6 +925,28 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn write_commits_unless_a_preview_is_requested() {
+        // No `options` at all is the shape a caller reaches for first, and it
+        // must commit: previewing by default meant `isError: false` on a call
+        // that wrote nothing.
+        let mut request = sample_write_request();
+        request.as_object_mut().expect("object").remove("options");
+        let plan = build_write_plan(&request).expect("write should plan");
+        assert!(
+            !plan.dry_run,
+            "write_memory must commit by default; previewing is opt-in"
+        );
+
+        let mut strict_only = sample_write_request();
+        strict_only["options"] = json!({ "strict": true });
+        let plan = build_write_plan(&strict_only).expect("write should plan");
+        assert!(
+            !plan.dry_run,
+            "setting an unrelated option must not turn a write into a preview"
+        );
+    }
 
     #[test]
     fn dry_run_generates_canonical_ingest_preview() {

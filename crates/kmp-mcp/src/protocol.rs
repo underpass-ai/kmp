@@ -367,7 +367,7 @@ fn write_memory_schema() -> Value {
                 "properties": {
                     "dry_run": {
                         "type": "boolean",
-                        "description": "When true, only return the compiled canonical kernel_ingest preview."
+                        "description": "When true, only return the compiled canonical kernel_ingest preview and write nothing. Defaults to false: the call commits."
                     },
                     "strict": {
                         "type": "boolean",
