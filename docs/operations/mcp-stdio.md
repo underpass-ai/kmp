@@ -91,10 +91,41 @@ over CLI subcommands:
 
 ```bash
 kmp-mcp --version                 # binary + the store formats it opens
-kmp-mcp export memory.jsonl      # event log -> portable bundle
-kmp-mcp import memory.jsonl      # bundle -> EMPTY store (fail-fast)
+kmp-mcp export                   # event log -> .kmp/memory.jsonl (project default)
+kmp-mcp export memory.jsonl      # ...or an explicit path
+kmp-mcp import                   # .kmp/memory.jsonl -> EMPTY store (fail-fast)
+kmp-mcp import memory.jsonl      # ...or an explicit path
 kmp-mcp migrate <old> <new> [--engine redb|sqlite]   # replay history into a fresh store
 ```
+
+### Memory in the repository
+
+With no path, `export` and `import` use `.kmp/memory.jsonl` at the project
+root — the same root the data-directory rule walks up to find. The store
+(`.kernel/`) stays machine state and auto-gitignored; the bundle is the event
+log in one text file, and committing it is what makes a fresh clone arrive
+with the project's decisions rather than an empty memory.
+
+```bash
+kmp-mcp export && git add .kmp/memory.jsonl   # after a session that decided things
+kmp-mcp import                                # in a fresh clone
+```
+
+Because it is one JSON object per line in sequence order, an append-only log
+diffs as appended lines: a session that recorded three decisions is three new
+lines plus the header's `event_count`. Each line carries `requested_by` and
+each change its `reason`, so a reviewer reads the rationale of every relation
+without leaving the diff.
+
+The default only applies to a project-scoped store. An explicit
+`KMP_MCP_DATA_DIR` or the per-user default belongs to no repository, and both
+commands say so and ask for a path rather than guessing one.
+
+Two limits, stated rather than discovered. **Import requires an empty store**
+— it is restore, not merge, because replaying a bundle over existing memory
+could duplicate history or interleave two timelines, and neither has an answer
+the kernel could pick for you. And **a bundle carries payloads as written**:
+a secret in memory is a secret in the committed file.
 
 See [embedded-release.md](embedded-release.md) for the bundle format and the
 binary↔store-format compatibility matrix, and

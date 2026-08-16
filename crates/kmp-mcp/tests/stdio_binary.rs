@@ -164,14 +164,69 @@ fn cli_surface_version_export_import_and_errors() {
         .expect("unknown runs");
     assert_eq!(unknown.status.code(), Some(2), "unknown commands exit 2");
 
-    let missing_path = Command::new(bin)
+    // With no path, export means the project's committed memory. Outside a
+    // project there is no repository to commit to, so it refuses and says
+    // which resolution rule won rather than guessing a file.
+    let outside_project = tempfile::tempdir().expect("non-project dir");
+    let no_path_no_project = Command::new(bin)
         .arg("export")
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env("KMP_MCP_DATA_DIR", outside_project.path())
         .output()
         .expect("export runs");
     assert_eq!(
-        missing_path.status.code(),
+        no_path_no_project.status.code(),
         Some(2),
-        "export without path exits 2"
+        "export without a path outside a project exits 2"
+    );
+    let refusal = String::from_utf8_lossy(&no_path_no_project.stderr);
+    assert!(
+        refusal.contains(".kmp/memory.jsonl"),
+        "the refusal names the default it could not use: {refusal}"
+    );
+
+    // Inside a project it writes that default, creating .kmp/ on first save.
+    let project = tempfile::tempdir().expect("project dir");
+    std::fs::create_dir_all(project.path().join(".git")).expect("project marker");
+    let seeded = Command::new(bin)
+        .arg("export")
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env("KMP_MCP_DATA_DIR", project.path().join(".kernel"))
+        .output()
+        .expect("export runs");
+    // KMP_MCP_DATA_DIR is explicit, so this is still not project-scoped.
+    assert_eq!(
+        seeded.status.code(),
+        Some(2),
+        "an explicit data dir belongs to no repository, even inside one"
+    );
+
+    // And the case the default exists for: a project-scoped store, resolved by
+    // walking up to .git from the working directory, writes the committed copy
+    // and creates .kmp/ on the way. Run from a subdirectory, because that is
+    // where anyone actually is.
+    let nested = project.path().join("crates").join("thing");
+    std::fs::create_dir_all(&nested).expect("nested dir");
+    let in_project = Command::new(bin)
+        .arg("export")
+        .current_dir(&nested)
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("export runs");
+    assert!(
+        in_project.status.success(),
+        "export with no path must write the project default: {}",
+        String::from_utf8_lossy(&in_project.stderr)
+    );
+    let committed = project.path().join(".kmp").join("memory.jsonl");
+    assert!(
+        committed.is_file(),
+        "the bundle lands at the project root, not beside the working directory"
+    );
+    assert!(
+        String::from_utf8_lossy(&in_project.stdout).contains(".kmp/memory.jsonl"),
+        "and the command says where it wrote"
     );
 
     // Full round trip through the binary: ingest (MCP mode) -> export -> import -> wake.

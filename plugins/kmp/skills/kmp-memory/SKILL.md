@@ -85,6 +85,27 @@ Temporal reads return a `page` object. A bounded partial read is visible, not
 silent — if `page` says the slice was truncated, say so rather than treating
 it as the whole history.
 
+## Memory can live in the repository
+
+`kmp-mcp export` with no argument writes the event log to
+`.kmp/memory.jsonl` at the project root; `kmp-mcp import` reads it back. The
+store itself (`.kernel/`) is machine state and stays gitignored — the bundle
+is a different thing, and committing it is what makes a fresh clone arrive
+with the project's decisions instead of an empty memory.
+
+It is one JSON object per line in sequence order, so an append-only log
+appears in `git diff` as appended lines. A session that recorded three
+decisions is three new lines plus the header's `event_count`, and each line
+carries who wrote it and the rationale of every relation, verbatim. A pull
+request that also settled three questions shows them in review.
+
+Two limits to state rather than discover. **Import requires an empty store**:
+it is restore, not merge, because replaying a bundle over existing memory
+could duplicate history or interleave two timelines and neither has an answer
+the kernel could pick. And **a bundle carries the payloads as written** — a
+secret in memory is a secret in the committed file, so the hygiene of the
+bundle is the hygiene of the store.
+
 ## What to write, and what never to write
 
 Write when something is **decided, constrained, or concluded**. Decisions,
