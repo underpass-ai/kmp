@@ -35,7 +35,7 @@ impl EmbeddedKernelStore {
         let events = self.run(EmbeddedKernelStore::read_event_log).await?;
         let header = BundleHeader {
             bundle_format: BUNDLE_FORMAT_VERSION,
-            store_format: super::format_version::SUPPORTED_FORMAT_VERSION,
+            store_format: super::format_version::EVENT_FORMAT_VERSION,
             event_count: events.len() as u64,
             kernel_version: env!("CARGO_PKG_VERSION").to_string(),
         };
@@ -76,11 +76,11 @@ impl EmbeddedKernelStore {
                 header.bundle_format, BUNDLE_FORMAT_VERSION
             )));
         }
-        if header.store_format != super::format_version::SUPPORTED_FORMAT_VERSION {
+        if header.store_format != super::format_version::EVENT_FORMAT_VERSION {
             return Err(PortError::InvalidState(format!(
                 "bundle was exported from store format {}, this binary supports {}",
                 header.store_format,
-                super::format_version::SUPPORTED_FORMAT_VERSION
+                super::format_version::EVENT_FORMAT_VERSION
             )));
         }
 

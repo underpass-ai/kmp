@@ -9,6 +9,11 @@ publish = false
 [lints]
 workspace = true
 
+[features]
+default = []
+# Runs the embedded arm against the SQLite engine as well (ADR-018).
+sqlite = ["kmp-adapter-embedded/sqlite"]
+
 [dependencies]
 kmp-application.workspace = true
 kmp-domain.workspace = true
