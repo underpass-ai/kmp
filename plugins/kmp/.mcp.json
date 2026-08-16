@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "kernel-memory": {
-      "cwd": ".",
-      "command": "./scripts/run-embedded-mcp.sh"
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-embedded-mcp.sh"
     }
   }
 }
