@@ -22,6 +22,30 @@ python3 -m json.tool "${PLUGIN_DIR}/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "${PLUGIN_DIR}/.claude-plugin/plugin.json" >/dev/null
 python3 -m json.tool "${PLUGIN_DIR}/.mcp.json" >/dev/null
 
+# The demo bundle ships inside the plugin, so a packaging change that drops it
+# would leave /kmp:demo broken on every new install. That it *loads* is a Rust
+# test (tests/demo_bundle.rs); that it is *there* belongs here, where the
+# bundle's presence in the package is what is being proved.
+if [ ! -f "${PLUGIN_DIR}/demo/checkout-latency.jsonl" ]; then
+  echo "KMP plugin smoke: the demo bundle is missing from the plugin" >&2
+  exit 1
+fi
+python3 - "${PLUGIN_DIR}/demo/checkout-latency.jsonl" <<'PY'
+import json, sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    lines = [line for line in handle if line.strip()]
+header = json.loads(lines[0])
+events = len(lines) - 1
+if header["event_count"] != events:
+    sys.exit(
+        f"demo bundle header declares {header['event_count']} events, file has {events}"
+    )
+for line in lines[1:]:
+    json.loads(line)
+PY
+
 # Both host manifests must carry the same version: a bundle that tells
 # Codex one version and Claude Code another is a packaging defect.
 python3 - <<'EOF'

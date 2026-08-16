@@ -114,6 +114,21 @@ else
   say "   doctor installed at $DOCTOR"
 fi
 
+# Shared demo. The script resolves its own plugin root from its location, so
+# installing it beside the doctor with the bundle one directory over is all it
+# needs — no plugin-root variable, which Codex does not have.
+DEMO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/kmp"
+DEMO="$DEMO_HOME/bin/kmp-demo.sh"
+if [ "$DRY_RUN" -eq 1 ]; then
+  act "install the demo at $DEMO"
+else
+  mkdir -p "$DEMO_HOME/bin" "$DEMO_HOME/demo"
+  fetch_asset "scripts/kmp-demo.sh" "$DEMO"
+  chmod +x "$DEMO"
+  fetch_asset "demo/checkout-latency.jsonl" "$DEMO_HOME/demo/checkout-latency.jsonl"
+  say "   demo installed at $DEMO"
+fi
+
 # ----------------------------------------------------------------- codex ----
 if [ "$DO_CODEX" -eq 1 ]; then
   step "Codex CLI"
@@ -139,16 +154,17 @@ EOF
   fi
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    act "install /kmp-doctor and /kmp-moves into $CODEX_HOME/prompts"
+    act "install /kmp-doctor, /kmp-moves and /kmp-demo into $CODEX_HOME/prompts"
   else
     mkdir -p "$CODEX_HOME/prompts"
-    for p in kmp-doctor kmp-moves; do
+    for p in kmp-doctor kmp-moves kmp-demo; do
       fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
       # The Codex prompts have no plugin-root variable to lean on.
-      sed -i.bak "s#@@DOCTOR@@#$DOCTOR#g" "$CODEX_HOME/prompts/$p.md"
+      sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
+        "$CODEX_HOME/prompts/$p.md"
       rm -f "$CODEX_HOME/prompts/$p.md.bak"
     done
-    say "   prompts — /kmp-doctor and /kmp-moves installed"
+    say "   prompts — /kmp-doctor, /kmp-moves and /kmp-demo installed"
   fi
 
   # The memory doctrine. Codex has no skills, so it lives in AGENTS.md,
