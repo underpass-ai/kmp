@@ -2,8 +2,8 @@ apiVersion: v2
 name: kmp
 description: Node-centric context rehydration engine for agentic systems
 type: application
-version: 0.1.4
-appVersion: "0.1.4"
+version: 0.1.5
+appVersion: "0.1.5"
 home: https://github.com/underpass-ai/kmp
 sources:
   - https://github.com/underpass-ai/kmp

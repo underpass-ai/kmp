@@ -10,6 +10,8 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-08-17
+
 ### Fixed
 
 - Two agent hosts starting at the same instant against a store that does not
@@ -269,7 +271,10 @@ what this version adds is a way to get it.
   the reference examples. A published crate can only ship what lives inside
   it; both copies are diffed against `api/` on every CI run.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.5
+[0.1.4]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.4
+[0.1.3]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.3
 [0.1.2]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.2
 [0.1.1]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.1
 [0.1.0]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.0
