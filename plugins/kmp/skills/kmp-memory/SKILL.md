@@ -117,6 +117,31 @@ durable shape of the work. A transcript makes later traversal worthless.
 Use one `idempotency_key` per logical write. If a retry conflicts, the write
 was already applied — that is success, not an error to retry around.
 
+## Undoing is a write, not a delete
+
+There is no delete, on purpose: a memory that can be quietly edited is a
+memory nobody can trust as evidence later. A decision that stopped being right
+is reverted by recording that it was — a new entry saying what is true now,
+connected with `supersedes` (evidential) carrying **why** the earlier one
+stopped holding, and the evidence that showed it.
+
+Write the new entry so it stands on its own. "Reverting X" is not a summary;
+someone reading it a year from now may never see X. And never write a
+supersession without a reason — a supersession with no why is a deletion with
+extra steps, and it destroys the one thing the record was for.
+
+What this buys is visible only if you show it: after reverting, the current
+answer leads with the new state, and `kernel_rewind` to before the reversal
+still returns the old decision with the evidence it had. Both are true, at
+different times, and that is the whole point of keeping a log.
+
+**Current limit, worth knowing before you rely on it.** A superseded entry is
+not yet flagged as superseded in `kernel_wake` or `kernel_ask` output. The
+supersession is on the relation — visible through `kernel_inspect` on the
+older entry, and by rewinding — but a reader who does neither can still act on
+a decision that was replaced. Until that changes, say what superseded what
+rather than assuming the next reader will notice.
+
 ## Relations carry the why
 
 This is the part most writers get wrong, and the kernel enforces it.
