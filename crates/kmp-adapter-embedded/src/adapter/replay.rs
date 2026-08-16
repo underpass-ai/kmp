@@ -1,10 +1,8 @@
 use kmp_domain::{ContextUpdatedEvent, PortError, ProjectionMutation};
 
+use super::engine::Table;
 use super::projection_write::apply_mutations_in_transaction;
-use super::store::{
-    ANCHORS, DETAILS, EmbeddedKernelStore, NODES, RELATIONS, RELATIONS_BY_TARGET, commit_error,
-    table_error,
-};
+use super::store::EmbeddedKernelStore;
 
 /// Outcome of a projection rebuild from the append-only event log.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,15 +36,15 @@ impl EmbeddedKernelStore {
         let events_replayed = events.len() as u64;
 
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            tx.delete_table(NODES).map_err(table_error)?;
-            tx.delete_table(RELATIONS).map_err(table_error)?;
-            tx.delete_table(RELATIONS_BY_TARGET).map_err(table_error)?;
-            tx.delete_table(DETAILS).map_err(table_error)?;
-            tx.delete_table(ANCHORS).map_err(table_error)?;
+            let mut tx = store.begin_write()?;
+            tx.clear(Table::Nodes)?;
+            tx.clear(Table::Relations)?;
+            tx.clear(Table::RelationsByTarget)?;
+            tx.clear(Table::Details)?;
+            tx.clear(Table::Anchors)?;
 
-            let mutations_applied = apply_mutations_in_transaction(&tx, mutations)?;
-            tx.commit().map_err(commit_error)?;
+            let mutations_applied = apply_mutations_in_transaction(tx.as_mut(), mutations)?;
+            tx.commit()?;
 
             Ok(ProjectionRebuildReport {
                 events_replayed,

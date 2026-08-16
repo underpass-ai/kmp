@@ -3,18 +3,12 @@ use std::collections::BTreeMap;
 use kmp_domain::{
     NodeProjection, NodeRelationProjection, PortError, ProjectionMutation, ProjectionWriter,
 };
-use redb::{ReadableTable, WriteTransaction};
 
+use super::engine::{Key, Table, WriteTx};
 use super::serdes::{DetailRecord, NodeRecord, encode, encode_explanation};
-use super::store::{
-    ANCHORS, DETAILS, EmbeddedKernelStore, NODES, RELATIONS, RELATIONS_BY_TARGET, commit_error,
-    storage_error, table_error,
-};
+use super::store::EmbeddedKernelStore;
 
 pub(crate) const MEMORY_ANCHOR_KIND: &str = "memory_anchor";
-
-type NodeTable<'txn> = redb::Table<'txn, &'static str, &'static [u8]>;
-type AnchorTable<'txn> = redb::Table<'txn, &'static str, ()>;
 
 /// Mirrors the Neo4j relation-upsert `MERGE ... ON CREATE` placeholder so the
 /// conformance suite observes identical semantics across backends.
@@ -41,62 +35,39 @@ fn placeholder_node(node_id: &str) -> NodeProjection {
     }
 }
 
-fn write_node(
-    nodes: &mut NodeTable<'_>,
-    anchors: &mut AnchorTable<'_>,
-    node: NodeProjection,
-) -> Result<(), PortError> {
+fn write_node(tx: &mut dyn WriteTx, node: NodeProjection) -> Result<(), PortError> {
     let node_id = node.node_id.clone();
     let is_anchor = node.node_kind == MEMORY_ANCHOR_KIND;
     let bytes = encode("graph node", &NodeRecord::from(node))?;
-    nodes
-        .insert(node_id.as_str(), bytes.as_slice())
-        .map_err(storage_error)?;
+    tx.insert(Table::Nodes, Key::Str(&node_id), &bytes)?;
     if is_anchor {
-        anchors
-            .insert(node_id.as_str(), ())
-            .map_err(storage_error)?;
+        tx.insert(Table::Anchors, Key::Str(&node_id), &[])
     } else {
-        anchors.remove(node_id.as_str()).map_err(storage_error)?;
+        tx.remove(Table::Anchors, Key::Str(&node_id))
     }
-    Ok(())
 }
 
-fn ensure_node(
-    nodes: &mut NodeTable<'_>,
-    anchors: &mut AnchorTable<'_>,
-    node: NodeProjection,
-) -> Result<(), PortError> {
-    if nodes
-        .get(node.node_id.as_str())
-        .map_err(storage_error)?
-        .is_some()
-    {
+fn ensure_node(tx: &mut dyn WriteTx, node: NodeProjection) -> Result<(), PortError> {
+    if tx.get(Table::Nodes, Key::Str(&node.node_id))?.is_some() {
         return Ok(());
     }
-    write_node(nodes, anchors, node)
+    write_node(tx, node)
 }
 
 /// Applies a mutation batch inside one transaction. Shared by the live write
 /// path and the replay tool so both apply byte-identical projections.
 pub(crate) fn apply_mutations_in_transaction(
-    tx: &WriteTransaction,
+    tx: &mut dyn WriteTx,
     mutations: Vec<ProjectionMutation>,
 ) -> Result<u64, PortError> {
-    let mut nodes = tx.open_table(NODES).map_err(table_error)?;
-    let mut anchors = tx.open_table(ANCHORS).map_err(table_error)?;
-    let mut relations = tx.open_table(RELATIONS).map_err(table_error)?;
-    let mut relations_by_target = tx.open_table(RELATIONS_BY_TARGET).map_err(table_error)?;
-    let mut details = tx.open_table(DETAILS).map_err(table_error)?;
-
     let mut applied = 0u64;
     for mutation in mutations {
         match mutation {
             ProjectionMutation::EnsureNode(node) => {
-                ensure_node(&mut nodes, &mut anchors, node)?;
+                ensure_node(tx, node)?;
             }
             ProjectionMutation::UpsertNode(node) => {
-                write_node(&mut nodes, &mut anchors, node)?;
+                write_node(tx, node)?;
             }
             ProjectionMutation::UpsertNodeRelation(relation) => {
                 let NodeRelationProjection {
@@ -105,36 +76,24 @@ pub(crate) fn apply_mutations_in_transaction(
                     relation_type,
                     explanation,
                 } = *relation;
-                ensure_node(&mut nodes, &mut anchors, placeholder_node(&source_node_id))?;
-                ensure_node(&mut nodes, &mut anchors, placeholder_node(&target_node_id))?;
+                ensure_node(tx, placeholder_node(&source_node_id))?;
+                ensure_node(tx, placeholder_node(&target_node_id))?;
                 let bytes = encode_explanation(&explanation)?;
-                relations
-                    .insert(
-                        (
-                            source_node_id.as_str(),
-                            target_node_id.as_str(),
-                            relation_type.as_str(),
-                        ),
-                        bytes.as_slice(),
-                    )
-                    .map_err(storage_error)?;
-                relations_by_target
-                    .insert(
-                        (
-                            target_node_id.as_str(),
-                            source_node_id.as_str(),
-                            relation_type.as_str(),
-                        ),
-                        (),
-                    )
-                    .map_err(storage_error)?;
+                tx.insert(
+                    Table::Relations,
+                    Key::Str3(&source_node_id, &target_node_id, &relation_type),
+                    &bytes,
+                )?;
+                tx.insert(
+                    Table::RelationsByTarget,
+                    Key::Str3(&target_node_id, &source_node_id, &relation_type),
+                    &[],
+                )?;
             }
             ProjectionMutation::UpsertNodeDetail(detail) => {
                 let node_id = detail.node_id.clone();
                 let bytes = encode("node detail", &DetailRecord::from(detail))?;
-                details
-                    .insert(node_id.as_str(), bytes.as_slice())
-                    .map_err(storage_error)?;
+                tx.insert(Table::Details, Key::Str(&node_id), &bytes)?;
             }
         }
         applied += 1;
@@ -149,9 +108,9 @@ impl ProjectionWriter for EmbeddedKernelStore {
             return Ok(());
         }
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            apply_mutations_in_transaction(&tx, mutations)?;
-            tx.commit().map_err(commit_error)
+            let mut tx = store.begin_write()?;
+            apply_mutations_in_transaction(tx.as_mut(), mutations)?;
+            tx.commit()
         })
         .await
     }

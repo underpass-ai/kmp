@@ -1,6 +1,7 @@
 use kmp_domain::{KmpBundle, PortError, SnapshotSaveOptions, SnapshotStore};
 
-use super::store::{EmbeddedKernelStore, SNAPSHOTS, commit_error, storage_error, table_error};
+use super::engine::{Key, Table};
+use super::store::EmbeddedKernelStore;
 
 impl SnapshotStore for EmbeddedKernelStore {
     async fn save_bundle_with_options(
@@ -32,14 +33,9 @@ impl SnapshotStore for EmbeddedKernelStore {
         })?;
 
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            {
-                let mut snapshots = tx.open_table(SNAPSHOTS).map_err(table_error)?;
-                snapshots
-                    .insert((root_node_id.as_str(), role.as_str()), bytes.as_slice())
-                    .map_err(storage_error)?;
-            }
-            tx.commit().map_err(commit_error)
+            let mut tx = store.begin_write()?;
+            tx.insert(Table::Snapshots, Key::Str2(&root_node_id, &role), &bytes)?;
+            tx.commit()
         })
         .await
     }

@@ -8,8 +8,8 @@ use redb::{Database, Durability, ReadableDatabase, ReadableTable, ReadableTableM
 
 use super::quality_telemetry_retention::QualityTelemetryRetention;
 use super::storage::{OBSERVATIONS, quality_telemetry_path};
+use crate::adapter::engine::redb::{commit_error, range_error, storage_error, table_error};
 use crate::adapter::serdes::encode;
-use crate::adapter::store::{commit_error, range_error, storage_error, table_error};
 
 const DEFAULT_DURABLE_EVERY_BATCHES: u64 = 16;
 

@@ -1,9 +1,8 @@
 use kmp_domain::{PortError, ProcessedEventStore, ProjectionCheckpoint, ProjectionCheckpointStore};
 
+use super::engine::{Key, Table};
 use super::serdes::{CheckpointRecord, decode, encode};
-use super::store::{
-    CHECKPOINTS, EmbeddedKernelStore, PROCESSED, commit_error, storage_error, table_error,
-};
+use super::store::EmbeddedKernelStore;
 
 impl ProcessedEventStore for EmbeddedKernelStore {
     async fn has_processed(&self, consumer_name: &str, event_id: &str) -> Result<bool, PortError> {
@@ -11,10 +10,8 @@ impl ProcessedEventStore for EmbeddedKernelStore {
         let event_id = event_id.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let processed = tx.open_table(PROCESSED).map_err(table_error)?;
-            Ok(processed
-                .get((consumer_name.as_str(), event_id.as_str()))
-                .map_err(storage_error)?
+            Ok(tx
+                .get(Table::Processed, Key::Str2(&consumer_name, &event_id))?
                 .is_some())
         })
         .await
@@ -24,14 +21,9 @@ impl ProcessedEventStore for EmbeddedKernelStore {
         let consumer_name = consumer_name.to_string();
         let event_id = event_id.to_string();
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            {
-                let mut processed = tx.open_table(PROCESSED).map_err(table_error)?;
-                processed
-                    .insert((consumer_name.as_str(), event_id.as_str()), ())
-                    .map_err(storage_error)?;
-            }
-            tx.commit().map_err(commit_error)
+            let mut tx = store.begin_write()?;
+            tx.insert(Table::Processed, Key::Str2(&consumer_name, &event_id), &[])?;
+            tx.commit()
         })
         .await
     }
@@ -47,13 +39,9 @@ impl ProjectionCheckpointStore for EmbeddedKernelStore {
         let stream_name = stream_name.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let checkpoints = tx.open_table(CHECKPOINTS).map_err(table_error)?;
-            match checkpoints
-                .get((consumer_name.as_str(), stream_name.as_str()))
-                .map_err(storage_error)?
-            {
-                Some(guard) => Ok(Some(
-                    decode::<CheckpointRecord>("projection checkpoint", guard.value())?.into(),
+            match tx.get(Table::Checkpoints, Key::Str2(&consumer_name, &stream_name))? {
+                Some(raw) => Ok(Some(
+                    decode::<CheckpointRecord>("projection checkpoint", &raw)?.into(),
                 )),
                 None => Ok(None),
             }
@@ -63,19 +51,16 @@ impl ProjectionCheckpointStore for EmbeddedKernelStore {
 
     async fn save_checkpoint(&self, checkpoint: ProjectionCheckpoint) -> Result<(), PortError> {
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            {
-                let key = (
-                    checkpoint.consumer_name.clone(),
-                    checkpoint.stream_name.clone(),
-                );
-                let bytes = encode("projection checkpoint", &CheckpointRecord::from(checkpoint))?;
-                let mut checkpoints = tx.open_table(CHECKPOINTS).map_err(table_error)?;
-                checkpoints
-                    .insert((key.0.as_str(), key.1.as_str()), bytes.as_slice())
-                    .map_err(storage_error)?;
-            }
-            tx.commit().map_err(commit_error)
+            let consumer_name = checkpoint.consumer_name.clone();
+            let stream_name = checkpoint.stream_name.clone();
+            let bytes = encode("projection checkpoint", &CheckpointRecord::from(checkpoint))?;
+            let mut tx = store.begin_write()?;
+            tx.insert(
+                Table::Checkpoints,
+                Key::Str2(&consumer_name, &stream_name),
+                &bytes,
+            )?;
+            tx.commit()
         })
         .await
     }
