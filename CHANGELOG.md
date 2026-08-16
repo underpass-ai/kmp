@@ -10,6 +10,119 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-16
+
+### Added
+
+- **Two agent hosts can share one memory.** The embedded store now has a
+  second engine behind a storage seam
+  ([ADR-018](docs/adr/ADR-018-multi-process-embedded-store.md)): WAL-mode
+  SQLite, opt-in through the `sqlite` cargo feature. redb remains the default
+  and the default build is unchanged — pure Rust, one file, no C toolchain,
+  and nobody's existing store is touched.
+
+  The default engine takes one process at a time, so running Claude Code and
+  Codex CLI on the same project meant whichever started first owned the memory
+  and the other got nothing. The concurrency spike measured it: redb admits
+  one of two processes and writes 300 of 600 events; SQLite admits both and
+  writes all 600, and a reader alongside a live writer saw 31,843 consistent
+  snapshots.
+
+  ```bash
+  cargo install kmp-mcp --features sqlite
+  kmp-mcp migrate <old-dir> <new-dir> --engine sqlite   # existing memory
+  KMP_MCP_ENGINE=sqlite ...                            # a fresh store
+  ```
+
+  Costs, stated: point reads about 5× slower, batched writes about 30%
+  slower — both far above interactive rates — a C dependency in the opt-in
+  build, and ~1.8MB of binary. It buys 2.5× smaller stores and 10× faster
+  reopen.
+
+- **`kmp-mcp migrate --engine`** converts a store between engines by replaying
+  its event log into a fresh directory. The source is left byte-for-byte as it
+  was and the receipt records both layouts. Migrating *from* a SQLite source
+  is refused for now with the reason: WAL keeps commits in a sidecar until
+  checkpointed, so a naive file copy would silently drop the newest events.
+
+- **`KMP_MCP_ENGINE`** chooses the engine for a *fresh* data directory. An
+  existing directory always opens with the engine it was created with, and
+  asking for a different one is refused by name with the migrate command in
+  the message — never quietly opened as the other.
+
+- **Memory can live in the repository.** `kmp-mcp export` and `import` with no
+  path now mean `.kmp/memory.jsonl` at the project root. The store
+  (`.kernel/`) stays machine state and stays gitignored; the bundle is the
+  event log in one text file, so a fresh clone arrives with the project's
+  decisions instead of an empty memory. Because it is one JSON object per line
+  in sequence order, adding a decision is a two-line diff, and each line
+  carries who wrote it and the rationale of every relation — a pull request
+  that also settled three questions shows them in review.
+
+- **An example memory, and `/kmp:demo` to load it.** The plugin ships a bundle
+  of a real-shaped incident and imports it into a data directory of its own,
+  never the project's. The incident contains a wrong turn on purpose: the
+  obvious cause is rolled back, the rollback does not help, and the real cause
+  turns out to be elsewhere. That is what makes "what did we believe at 15:05"
+  worth asking.
+
+- **`/kmp:catchup`**, `/kmp:save`, `/kmp:restore` and `/kmp:revert`, with the
+  matching Codex prompts. Catching up needed no new move — `kernel_rewind`
+  for the frontier and `kernel_forward` for the delta already did it, with
+  parameters nobody would guess — so the commands and a new skill section make
+  the patterns reachable rather than adding an eleventh move.
+
+### Fixed
+
+- **`kernel_write_memory` now commits.** `options.dry_run` defaulted to true,
+  so every call that did not know to pass `dry_run: false` compiled the ingest,
+  returned it as a preview, and wrote nothing — with `isError: false`, so an
+  agent reported success and a later `kernel_wake` failed with
+  `node not found`. The schema stated no default, and both the skill and the
+  write-protocol doc described committing as the normal path. A tool named
+  `write_memory` commits; previewing is opt-in.
+
+- **The plugin's MCP server starts.** `.mcp.json` declared `cwd: "."` with a
+  relative command, and `cwd` does not resolve to the plugin directory, so the
+  host spawned the launcher from wherever the session began and got `ENOENT`.
+  The plugin installed, validated and loaded its skills; only the memory never
+  came up. The command is now absolute via `${CLAUDE_PLUGIN_ROOT}`.
+
+- **`cargo install kmp-mcp --features sqlite` works.** The feature named a
+  dev-dependency, which resolves inside the workspace and fails for anyone
+  installing from a registry.
+
+- The plugin marketplace moved to
+  [underpass-ai/plugins](https://github.com/underpass-ai/plugins), which
+  carries both Underpass plugins. `/plugin marketplace add underpass-ai/kmp`
+  no longer works; use `underpass-ai/plugins`.
+
+### Changed
+
+- `FORMAT_VERSION` now names the store *layout* — 1 is redb, 2 is SQLite —
+  rather than the logical event format, which has its own constant and is
+  unchanged. A binary older than a layout refuses it as "newer than this
+  binary supports" instead of creating an empty store beside the real one; a
+  binary without the sqlite feature recognises layout 2 and names the feature
+  to enable.
+- `kmp-mcp --version` lists the layouts the build can open.
+- The startup line names the engine: `kernel in-process, sqlite engine`.
+- `/kmp:doctor` reports which engine a store is on, and on redb ends the
+  single-writer warning with the migrate command, data directory filled in.
+
+### Internal
+
+- A storage seam between the kernel ports and the engine, with the 16
+  conformance scenarios as the proof it is faithful: same tests, same on-disk
+  layout, a 100k-event store byte-identical to before.
+- A new CI job runs the conformance suite, crash recovery and a
+  two-processes-one-store scenario against the SQLite engine; the default
+  binary gate fails if the C dependency ever reaches the default build.
+- An install-shaped plugin gate that reproduces a marketplace install — no
+  bundled binary, started through `.mcp.json` from an unrelated working
+  directory — and checks all ten tools answer. It fails on three defects this
+  release fixes, which is why it exists.
+
 ## [0.1.3] - 2026-08-16
 
 ### Fixed
