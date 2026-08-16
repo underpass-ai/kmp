@@ -113,8 +113,10 @@ open at once:
 kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
 ```
 
-Needs a `kmp-mcp` built with `--features sqlite`; the full recipe, and what
-the engine costs, is in [mcp-stdio.md](mcp-stdio.md#sharing-one-memory-between-two-agent-hosts).
+Needs a `kmp-mcp` built with `--features sqlite`, and — if the hosts run KMP
+through the plugin — `KMP_MCP_BIN` naming it, because the bundle ships its own
+binary built without the engine. The full recipe, and what the engine costs,
+is in [mcp-stdio.md](mcp-stdio.md#sharing-one-memory-between-two-agent-hosts).
 
 ## Scripted acceptance demo
 
