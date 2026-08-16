@@ -119,6 +119,25 @@ well, the seam makes adopting it a backend change rather than a rewrite, and
 the SQLite backend can be retired or kept for the platforms where it wins. If
 it stalls, the second engine is already shipping.
 
+### The layout is the gate
+
+A SQLite store stamps `FORMAT_VERSION = 2`. Not because the logical event
+format changed — it did not, and bundles from either engine are byte-identical
+— but because the version number is the only thing a binary that predates
+this decision honours. A 0.1.x binary opening a SQLite directory would read
+`1`, look for `store/kernel.redb`, not find it, and create an empty one beside
+the real store: silent empty memory, the exact failure ADR-012 exists to
+prevent. With `2` it stops with "newer than this binary supports; upgrade the
+binary", which is the truth. So `FORMAT_VERSION` names the *layout* — which
+engine wrote `store/`, and how — and the logical event format lives in its
+own constant, `EVENT_FORMAT_VERSION`, which is what bundles and migrations
+carry.
+
+A store is never reopened as another engine's: opening a redb directory as
+SQLite, or the reverse, is refused by name. Switching engines is a migration
+into a fresh directory, replaying the event log — the same operation a format
+bump has always been.
+
 ### Staging
 
 The seam is the risk, not the engine. Three steps, each one green before the
