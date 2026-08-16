@@ -22,7 +22,7 @@ memory persists locally per project or per user.
 
 The embedded edition is **the same product, not a fork**:
 
-| Property | Infrastructure edition | Embedded edition |
+| Property | Cluster edition | Embedded edition |
 | --- | --- | --- |
 | Protocol | KMP over gRPC + MCP adapter | Same KMP semantics, MCP stdio in-process |
 | Memory model | Abouts, dimensions, temporal moves, typed relations, proof | Identical — enforced by shared application core |

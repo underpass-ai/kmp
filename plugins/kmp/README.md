@@ -28,12 +28,18 @@ Codex reads `.codex-plugin/plugin.json`, Claude Code reads
 `scripts\run-embedded-mcp.cmd` instead. To build the package from a
 checkout: `bash scripts/plugin/package-kmp-plugin.sh`.
 
-**Claude Code** — native, brings the MCP server with it:
+**Claude Code** — native install from the marketplace:
 
 ```
 /plugin marketplace add underpass-ai/kmp
 /plugin install kmp@underpass
 ```
+
+This installs the skill and the commands. It does **not** bring the binary: the
+launcher runs `bin/kmp-mcp` inside the plugin directory, and that path is
+gitignored, so it exists only in a release package or a locally built bundle.
+After a marketplace install, run `/kmp:setup` — it diagnoses what is missing and
+wires the `kernel-memory` server against an installed `kmp-mcp`.
 
 **Codex CLI** — no plugin system, so a script does the wiring:
 

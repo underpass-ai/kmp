@@ -18,6 +18,7 @@ Current integration stance:
 
 | Document | Content |
 |:---------|:--------|
+| [editions.md](editions.md) | **Start here**: embedded vs cluster — which one to run, what each guarantees, how to move |
 | [usage-guide.md](usage-guide.md) | Getting started: 3 steps to graph-aware LLM context |
 | [documentation-catalog.md](documentation-catalog.md) | Authoritative docs, historical docs, active roadmap, and documentation hygiene rules |
 | [graph-batch-quickstart.md](graph-batch-quickstart.md) | Fastest path for model-driven graph ingestion |
@@ -47,14 +48,34 @@ Current integration stance:
 
 ## Operations
 
+Grouped by edition — see [editions.md](editions.md) for the comparison.
+
+### Both editions
+
 | Document | Content |
 |:---------|:--------|
+| [mcp-stdio.md](operations/mcp-stdio.md) | The `kmp-mcp` binary: tool surface, the three backends, and how each is selected |
+| [deployment-boundary.md](operations/deployment-boundary.md) | What this repo owns vs. what it does not |
+
+### Embedded edition — in-process, no infrastructure
+
+| Document | Content |
+|:---------|:--------|
+| [embedded-hosts.md](operations/embedded-hosts.md) | Per-host registration recipes (Claude Code and Codex CLI are tested; others are marked pending) plus the context-recovery playbook |
+| [embedded-release.md](operations/embedded-release.md) | Prebuilt binaries, install script, bundle format, binary↔store-format compatibility |
+| [viewer.md](operations/viewer.md) | Local read-only web viewer: graph, notes, timeline, traces |
+
+### Cluster edition — deployed service
+
+| Document | Content |
+|:---------|:--------|
+| [cluster-prerequisites.md](operations/cluster-prerequisites.md) | What the cluster must provide before installing |
 | [kubernetes-deploy.md](operations/kubernetes-deploy.md) | Helm deployment, values, TLS, observability stack |
 | [container-image.md](operations/container-image.md) | OCI image, environment variables, tags |
-| [mcp-stdio.md](operations/mcp-stdio.md) | Local stdio MCP adapter for Kernel Memory Protocol tools |
-| [viewer.md](operations/viewer.md) | Local web viewer: graph, notes, timeline, traces over the embedded kernel |
+| [mtls-deployment.md](operations/mtls-deployment.md) | Mutual TLS across the infrastructure boundaries |
+| [neo4j-schema-migrations.md](operations/neo4j-schema-migrations.md) | Graph schema migration procedure |
 | [kubernetes-transport-smoke.md](operations/kubernetes-transport-smoke.md) | In-cluster TLS smoke test |
-| [deployment-boundary.md](operations/deployment-boundary.md) | What this repo owns vs. what it does not |
+| [preflight.md](operations/preflight.md) | Version preflight before live E2E or infra-touching checks |
 
 ## Architecture Decisions
 

@@ -1,8 +1,15 @@
-# Choreographer ↔ KMP Integration Guide (Incident Resolution)
+# MADE ↔ KMP Integration Guide (Incident Resolution)
 
-Audience: the agent integrating **Choreographer** (incident-resolution
-system) with the rehydration kernel. Everything here exists in-repo today
-unless explicitly marked *planned*.
+Audience: the agent integrating **MADE by Underpass** (as the
+incident-resolution coordination plane) with KMP. Everything here exists
+in-repo today unless explicitly marked *planned*.
+
+> Supersedes `choreographer-kmp.md`. MADE shipped as *Underpass Choreographer*
+> until the rename; that was a naming change only.
+
+> Edition vocabulary used here is the one in [`../editions.md`](../editions.md):
+> **embedded** (in-process, one local data dir) and **cluster** (deployed
+> `KernelMemoryService` over gRPC).
 
 ## 1. What you are integrating with
 
@@ -11,7 +18,7 @@ editions of the **same product** (identical tool semantics, pinned by the
 conformance suite in `crates/kmp-conformance` — a behavior
 difference between editions is a bug):
 
-| | Infrastructure edition | Embedded edition |
+| | Cluster edition | Embedded edition |
 | --- | --- | --- |
 | Runs as | gRPC service on Kubernetes (Neo4j/Valkey/NATS) | Single binary, MCP stdio, one local data dir |
 | Use for | Production incident memory, multi-agent | Local dev of this integration; per-machine memory |
@@ -27,7 +34,7 @@ live without changing how you call the tools.
 ```bash
 cargo install --path crates/kmp-mcp   # or use the workspace binary
 KMP_MCP_BACKEND=embedded \
-KMP_MCP_DATA_DIR=/var/lib/choreographer/kmp \
+KMP_MCP_DATA_DIR=/var/lib/made/kmp \
 kmp-mcp
 ```
 
@@ -35,17 +42,17 @@ kmp-mcp
   as anything but JSON-RPC.
 - Data dir resolution when `KMP_MCP_DATA_DIR` is unset: project
   `.kernel/` (walks up to `.git`, auto-gitignored) → `$XDG_DATA_HOME/kmp/default`.
-  For a service like Choreographer, always set it explicitly.
+  For a service like MADE, always set it explicitly.
 - **Single-writer** (ADR-011): one process per data dir; a second open
-  fails fast with an explicit error. Plan one kernel per Choreographer
+  fails fast with an explicit error. Plan one kernel per MADE
   instance.
 
-**Live (production):**
+**Cluster (production):**
 
 ```bash
 KMP_MCP_BACKEND=grpc \
 KMP_KERNEL_GRPC_ENDPOINT=https://kernel.example:50051 \
-KMP_KERNEL_GRPC_TLS_MODE=mtls \
+KMP_KERNEL_GRPC_TLS_MODE=mutual \
 KMP_KERNEL_GRPC_TLS_CA_PATH=... \
 KMP_KERNEL_GRPC_TLS_CERT_PATH=... \
 KMP_KERNEL_GRPC_TLS_KEY_PATH=... \
@@ -120,7 +127,7 @@ Native gRPC is also available (proto contract in `crates/kmp-proto`,
 - The event log is append-only and auditable; projections are rebuildable
   offline (replay tooling in `kmp-adapter-embedded`).
 
-## 5. Quality telemetry for Choreographer (ADR-014)
+## 5. Quality telemetry for MADE (ADR-014)
 
 Every embedded context, temporal, and trace read (`kernel_wake`, `kernel_ask`,
 `kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`, and
@@ -137,12 +144,12 @@ Read surface **today** (in-process Rust):
 → `query_since(millis, rpc, limit)`, `query_between(..)`, `latest(..)`,
 `count()`. *Planned*: a CLI query subcommand on the binary (deliberately
 **not** an MCP tool for now — the one-protocol rule forbids embedded-only
-tool semantics). If Choreographer needs it over MCP, that requires
+tool semantics). If MADE needs it over MCP, that requires
 specifying it cross-edition first — raise it, don't add it unilaterally.
 
 Use it to detect degrading memory quality per incident (e.g. falling
 causal density → responders are logging observations without linking
-causes) and to feed Choreographer's own incident health dashboards.
+causes) and to feed MADE's own incident health dashboards.
 
 ## 6. References
 
@@ -152,14 +159,14 @@ causes) and to feed Choreographer's own incident health dashboards.
 - Embedded roadmap: `docs/product/kmp-embedded-edition-roadmap.md`
 - MCP operations: `docs/operations/mcp-stdio.md`
 
-## 7. Open questions for the Choreographer side
+## 7. Open questions for the MADE side
 
 Answers shape the kernel backlog — reply inline or to the kernel team:
 
-1. **Topology**: one Choreographer process per data dir is the v1 contract
+1. **Topology**: one MADE process per data dir is the v1 contract
    (single-writer). Do you need concurrent processes over one store? That
    evidence triggers the documented daemon evolution (ADR-011).
-2. **Edition target**: per-node embedded memory, or a shared infrastructure
+2. **Edition target**: per-node embedded memory, or a shared cluster
    kernel for team-wide incident memory? If both, the export/import bundle
    path (roadmap E6) becomes your promotion story — say so early.
 3. **Telemetry access**: is the in-process reader / planned CLI enough, or
