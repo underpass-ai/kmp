@@ -40,6 +40,7 @@ function el(tag, className, text) {
 }
 
 const shortHash = (hash) => (hash && hash.length > 12 ? hash.slice(0, 12) + "…" : hash || "–");
+const REPLAY_WINDOW = 256;
 const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, "Z");
 
 /* ---------------- theme ---------------- */
@@ -581,12 +582,16 @@ function entryOrderKey(entry) {
 async function startReplay() {
   if (!graph.about) return;
   try {
+    // `near` around now, wide in both directions: it is the only cursor that
+    // needs nothing selected and still returns the whole line. `goto` with a
+    // bare sequence resolves no dimension and no scope, so it always came
+    // back empty and this button reported an empty memory that was not.
     const view = await api("/api/timeline", {
       about: graph.about,
-      direction: "goto",
-      seq: 4294967295,
-      before: 256,
-      after: 0,
+      direction: "near",
+      time: nowIso(),
+      before: REPLAY_WINDOW,
+      after: REPLAY_WINDOW,
     });
     const entries = [...view.entries].sort((a, b) => {
       const ka = entryOrderKey(a);
@@ -595,7 +600,9 @@ async function startReplay() {
       return ka.time < kb.time ? -1 : ka.time > kb.time ? 1 : 0;
     });
     if (!entries.length) {
-      showError("this about has no temporal entries to replay");
+      showError(
+        `nothing to replay: ${graph.about} has no entries carrying a temporal coordinate`
+      );
       return;
     }
     playback.entries = entries;
@@ -1133,22 +1140,57 @@ $("tl-now").addEventListener("click", () => {
   $("tl-time").value = nowIso();
 });
 
+// `goto` and `rewind` walk by temporal position. Given a ref they resolve the
+// position from that entry and always work; given only a timestamp they need
+// the entries themselves to carry one, and `sequence` is optional at ingest —
+// so on memory written without it they answer 0/0 and said nothing at all.
+// A selected entry is therefore the reliable cursor, and its absence is worth
+// explaining rather than silently answering nothing.
+const POSITION_DIRECTIONS = new Set(["goto", "rewind"]);
+
 $("tl-apply").addEventListener("click", () => {
   if (!graph.about) return;
+  const direction = $("tl-direction").value;
   const params = {
     about: graph.about,
-    direction: $("tl-direction").value,
+    direction,
     before: $("tl-before").value,
     after: $("tl-after").value,
   };
-  const time = $("tl-time").value.trim();
-  if (time) params.time = time;
-  else if (selectedId) params.ref = selectedId;
-  else params.time = nowIso();
-  runTimeline(params);
+  if (POSITION_DIRECTIONS.has(direction) && selectedId) {
+    params.ref = selectedId;
+  } else {
+    params.time = $("tl-time").value.trim() || nowIso();
+  }
+  runTimeline(params, { direction, positioned: Boolean(params.ref) });
 });
 
-async function runTimeline(params) {
+/// Why an empty answer is empty, in the reader's terms.
+///
+/// The distinction that matters: a window with nothing in it is ordinary, but
+/// a walk-by-position direction over entries that carry no position is a
+/// property of how the memory was written, and no widening of the window will
+/// ever help. Saying "no entries" to both is how this panel looked broken.
+function emptyTimelineReason(view, context) {
+  if (POSITION_DIRECTIONS.has(context.direction) && !context.positioned) {
+    return (
+      `“${directionLabel(context.direction)}” walks from a temporal position, and nothing here ` +
+      `carries one — these entries were written without a sequence. Select an entry in the ` +
+      `graph to walk from it, or use “around a time”.`
+    );
+  }
+  if (view.missing.length) {
+    return `The cursor resolved nothing (${view.missing.join(", ")}).`;
+  }
+  return "No entry sits in that window. Try widening it, or another direction.";
+}
+
+function directionLabel(value) {
+  const option = $("tl-direction").querySelector(`option[value="${value}"]`);
+  return option ? option.textContent : value;
+}
+
+async function runTimeline(params, context = {}) {
   try {
     const view = await api("/api/timeline", params);
     const cursor = view.resolved_cursor;
@@ -1163,6 +1205,10 @@ async function runTimeline(params) {
     $("tl-status").textContent = cursorBits.join(" ");
     const list = $("tl-entries");
     list.textContent = "";
+    if (!view.entries.length) {
+      list.append(el("li", "tl-notice", emptyTimelineReason(view, context)));
+      return;
+    }
     for (const entry of view.entries) {
       const item = el("li");
       const meta = el("div", "tl-meta");

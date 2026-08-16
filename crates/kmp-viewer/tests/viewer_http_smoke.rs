@@ -265,6 +265,104 @@ fn loopback_binding_refuses_public_addresses() {
     assert!(error.to_string().contains("loopback"));
 }
 
+/// The queries the UI issues have to be queries that answer.
+///
+/// Replay used to ask for `direction=goto` with a bare sequence, which
+/// resolves no dimension and no scope: it came back empty on memory that had
+/// entries, and the button reported the memory as empty. The timeline panel
+/// defaulted to the same direction and rendered nothing at all. Neither
+/// failure was visible from the server side, because a cursor that resolves
+/// nothing is a 200 with an empty page — so this pins the shapes instead.
+#[tokio::test(flavor = "multi_thread")]
+async fn the_cursors_the_ui_issues_return_the_entries_they_should() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    kernel
+        .service()
+        .ingest(corpus())
+        .await
+        .expect("memory ingests");
+
+    let viewer = Arc::new(MemoryViewerServer::new(
+        kernel.service(),
+        Some(data_dir.path().display().to_string()),
+    ));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    // What Replay asks for: `near`, wide in both directions, anchored on a
+    // time. It needs nothing selected and must return the whole line.
+    let (status, replay) = get(
+        port,
+        &format!(
+            "/api/timeline?about={}&direction=near&time={}&before=256&after=256",
+            urlencode(ABOUT),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "replay query failed: {replay}");
+    let returned = replay["page"]["returned"].as_u64().expect("returned count");
+    assert_eq!(
+        returned,
+        replay["page"]["total"].as_u64().expect("total count"),
+        "a wide `near` window must return the whole line, got {replay}"
+    );
+    assert!(
+        returned > 0,
+        "replay would report an empty memory: {replay}"
+    );
+
+    // `goto` walks by temporal position. A ref hands it one directly, so it
+    // answers whatever the entries look like.
+    let (status, at_entry) = get(
+        port,
+        &format!(
+            "/api/timeline?about={}&direction=goto&ref={}&before=8&after=8",
+            urlencode(ABOUT),
+            urlencode("decision:first")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "goto-by-ref failed: {at_entry}");
+    assert!(
+        at_entry["page"]["returned"].as_u64().is_some_and(|n| n > 0),
+        "`goto` with a ref must answer, got {at_entry}"
+    );
+
+    // The same direction with only a timestamp works *here* because this
+    // corpus writes a `sequence` on every coordinate. `sequence` is optional
+    // at ingest, and on memory written without it these directions answer
+    // 0/0 — which is the case the UI has to explain rather than render blank.
+    let (status, at_time) = get(
+        port,
+        &format!(
+            "/api/timeline?about={}&direction=goto&time={}&before=8&after=8",
+            urlencode(ABOUT),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "goto-by-time failed: {at_time}");
+    assert!(
+        at_time["page"]["returned"].as_u64().is_some_and(|n| n > 0),
+        "sequenced entries must be reachable by time as well: {at_time}"
+    );
+    assert!(
+        at_time["entries"]
+            .as_array()
+            .expect("entries")
+            .iter()
+            .all(|entry| entry["coordinates"]
+                .as_array()
+                .expect("coordinates")
+                .iter()
+                .any(|c| c["sequence"].is_number())),
+        "the property that makes it work is the sequence on the coordinate: {at_time}"
+    );
+}
+
 fn urlencode(value: &str) -> String {
     value
         .bytes()
