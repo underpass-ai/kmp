@@ -269,3 +269,117 @@ async fn a_store_nobody_migrated_has_no_receipt() {
         "an ordinary store must not claim a migration"
     );
 }
+
+/// ADR-018: a redb store becomes a SQLite store by replaying its history.
+/// The strong check is the last one — the two stores export byte-identical
+/// bundles, because the event log is the source of truth and a bundle is
+/// engine-agnostic. If that holds, nothing was lost or reordered in transit.
+#[cfg(feature = "sqlite")]
+#[tokio::test]
+async fn migration_converts_a_redb_store_into_a_sqlite_store() {
+    use kmp_adapter_embedded::StorageEngine;
+    use kmp_domain::GraphNeighborhoodReader;
+
+    let source = seeded_source(SEEDED_EVENTS);
+    let destination = tempfile::tempdir().expect("temp destination dir");
+    let destination_path = destination.path().join("shared");
+
+    let source_before = digest(&store_file(source.path()));
+    let (store, receipt) = EmbeddedKernelStore::migrate_data_dir_to(
+        source.path(),
+        &destination_path,
+        StorageEngine::Sqlite,
+        projection_mutations_for_context_event,
+    )
+    .await
+    .expect("conversion succeeds");
+    drop(store);
+
+    // The receipt is the audit trail of what happened: from which layout, to
+    // which, and how much history made the trip.
+    assert_eq!(receipt.source_format, 1, "source was redb");
+    assert_eq!(receipt.destination_format, 2, "destination is sqlite");
+    assert_eq!(receipt.events_migrated, SEEDED_EVENTS);
+    assert_eq!(receipt.source_sha256, source_before);
+
+    // The destination is a sqlite directory and nothing else: stamped 2,
+    // sqlite file present, no redb file that an older binary could mistake
+    // for the store.
+    let stamp = fs::read_to_string(format_version_path(&destination_path)).expect("stamp");
+    assert_eq!(stamp.trim(), "2");
+    assert!(
+        destination_path
+            .join("store")
+            .join("kernel.sqlite3")
+            .exists()
+    );
+    assert!(
+        !store_file(&destination_path).exists(),
+        "no redb file in a sqlite directory"
+    );
+    assert_eq!(
+        EmbeddedKernelStore::engine_of(&destination_path).expect("engine reads"),
+        StorageEngine::Sqlite
+    );
+
+    // The source is exactly as it was.
+    assert_eq!(digest(&store_file(source.path())), source_before);
+
+    // A plain `open` — no engine named — finds the sqlite store and reads
+    // the full history through it.
+    let converted = EmbeddedKernelStore::open(&destination_path).expect("plain open dispatches");
+    let revision = converted
+        .current_revision("crash:test", "memory")
+        .await
+        .expect("revision reads");
+    assert_eq!(revision, SEEDED_EVENTS, "history must arrive complete");
+    let (log_length, last_sequence) = converted.event_log_stats().await.expect("log stats");
+    assert_eq!((log_length, last_sequence), (SEEDED_EVENTS, SEEDED_EVENTS));
+    let neighborhood = converted
+        .load_neighborhood("crash:test", 1)
+        .await
+        .expect("neighborhood reads")
+        .expect("anchor exists");
+    assert_eq!(
+        neighborhood.neighbors.len() as u64,
+        SEEDED_EVENTS,
+        "projections were rebuilt on the new engine, one entry per event"
+    );
+
+    // And the strong check: same history, byte for byte, engine aside.
+    let original = EmbeddedKernelStore::open(source.path()).expect("source opens");
+    let source_bundle = original.export_bundle().await.expect("source exports");
+    let converted_bundle = converted.export_bundle().await.expect("converted exports");
+    assert_eq!(
+        source_bundle, converted_bundle,
+        "a bundle is the event log and knows no engine: the two must be identical"
+    );
+}
+
+/// Asking for an engine this build does not carry is refused up front, by
+/// name, before anything is copied or created.
+#[cfg(not(feature = "sqlite"))]
+#[tokio::test]
+async fn migration_to_an_uncompiled_engine_is_refused_by_name() {
+    use kmp_adapter_embedded::StorageEngine;
+
+    let source = seeded_source(3);
+    let destination = tempfile::tempdir().expect("temp destination dir");
+    let destination_path = destination.path().join("shared");
+
+    let error = EmbeddedKernelStore::migrate_data_dir_to(
+        source.path(),
+        &destination_path,
+        StorageEngine::Sqlite,
+        projection_mutations_for_context_event,
+    )
+    .await
+    .expect_err("sqlite is not compiled in");
+    let message = error.to_string();
+    assert!(message.contains("sqlite engine"), "{message}");
+    assert!(message.contains("--features sqlite"), "{message}");
+    assert!(
+        !destination_path.join("store").exists(),
+        "nothing may be created for an engine that cannot open it"
+    );
+}

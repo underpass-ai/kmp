@@ -8,10 +8,11 @@
 
 use std::path::Path;
 
-use kmp_adapter_embedded::{EmbeddedKernelStore, StoreMigrationReceipt};
+use kmp_adapter_embedded::{EmbeddedKernelStore, StorageEngine, StoreMigrationReceipt};
 use kmp_domain::PortError;
 
 /// Migrates `source_dir` into `destination_dir`, returning what was moved.
+/// The destination is created with the default engine.
 ///
 /// The source is never opened for writing and its bytes are verified
 /// unchanged when the migration finishes; the destination must not already
@@ -20,9 +21,22 @@ pub async fn migrate_data_dir(
     source_dir: &Path,
     destination_dir: &Path,
 ) -> Result<StoreMigrationReceipt, PortError> {
-    let (_store, receipt) = EmbeddedKernelStore::migrate_data_dir(
+    migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb).await
+}
+
+/// [`migrate_data_dir`] with the destination engine chosen — how a store
+/// changes engines (ADR-018). A redb store becomes a SQLite one that two
+/// agent hosts can share by replaying its history into a fresh directory;
+/// the source stays as it was and the receipt records both layouts.
+pub async fn migrate_data_dir_to(
+    source_dir: &Path,
+    destination_dir: &Path,
+    destination_engine: StorageEngine,
+) -> Result<StoreMigrationReceipt, PortError> {
+    let (_store, receipt) = EmbeddedKernelStore::migrate_data_dir_to(
         source_dir,
         destination_dir,
+        destination_engine,
         kmp_application::projection_mutations_for_context_event,
     )
     .await?;
