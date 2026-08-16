@@ -48,7 +48,31 @@ One flaw worth recording, because it is a trap for the implementation:
 `busy_timeout` must be armed **before** `journal_mode=WAL`. Switching
 journal mode takes a brief exclusive lock, so two processes opening at the
 same instant collide there — before WAL is in effect. The first run of this
-spike crashed exactly that way, and the fix is ordering, not retry logic.
+spike crashed exactly that way.
+
+### Correction, 2026-08-16: ordering is necessary and not sufficient
+
+This spike concluded "the fix is ordering, not retry logic". That is wrong,
+and the implementation inherited it. Measured against the switch while
+another connection holds the database:
+
+| the other connection | switching to WAL |
+| --- | --- |
+| holds a **write** lock, database still in its default journal mode | fails **immediately** — `busy_timeout` is not consulted |
+| holds a **read** lock, database still in its default journal mode | waits the whole timeout, then fails |
+| holds any lock, database **already** in WAL | succeeds; the switch is a no-op |
+| merely connected, no lock | succeeds |
+
+So the trap is narrower and worse than recorded: it is only the window
+between a store file being created and its switch to WAL, and inside that
+window an armed timeout buys nothing. The fix is ordering **and** a bounded
+retry (`enter_wal`), which waits for the holder — another agent host doing
+what this engine exists to allow — and still reports rather than hanging.
+
+The row that matters for tests: once a store is in WAL, every later open
+takes the no-op path. A test that creates the store before racing two
+processes therefore cannot see this defect, which is why kmp#34 stayed
+invisible while the two-writer test passed.
 
 ## Why this did not become a PR to redb
 
