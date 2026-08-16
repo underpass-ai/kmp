@@ -1,6 +1,6 @@
-# ADR-018: Let two agent hosts share one embedded memory
+# ADR-018: A second embedded engine, so two agent hosts can share one memory
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-08-16
 **Revisits:** the concurrency model in
 [ADR-011](ADR-011-embedded-concurrency-model.md) and, conditionally, the
@@ -83,58 +83,80 @@ for a while after it lands.
 
 ## Options
 
-**A — Port to SQLite now.** Solves it today. Costs ~2,300 lines in
-`kmp-adapter-embedded`, a one-time import of existing stores, ~5× slower
-point reads, ~30% slower batched writes, ~+1.4MB binary, and the return of a
-C toolchain that complicates the static musl and Windows targets ADR-009 kept
-simple. Buys 2.5× smaller stores and 10× faster reopen.
+**A — Port to SQLite, replacing redb.** Solves it today, and forces the cost
+on everyone: a C toolchain in every build, a store migration for every user,
+~5× slower point reads, ~+1.4MB binary.
 
-**B — Wait for redb, mitigate now.** Costs almost nothing today and keeps the
-pure-Rust story. The mitigation is documentation plus a per-host store path
-for people who hit it, which means the two hosts do not share memory — the
-value we are trying to deliver — so it is relief, not a fix. Timeline is not
-ours: the piece we need is unscheduled.
+**B — Wait for redb, mitigate with documentation.** Costs nothing today and
+delivers nothing either: the two hosts still do not share memory, and the
+timeline is not ours.
 
-**C — Contribute the reader-attach work to redb.** Best outcome for everyone
-and the worst fit for a product with a launch to run. The remaining design is
-the hard 60%, on a maintainer's roadmap, for a feature that ships behind an
-experimental flag.
+**C — Contribute the reader-attach work to redb.** Best outcome for everyone,
+worst fit for a product with a launch to run: the remaining design is the
+hard part, on a maintainer's roadmap, shipping behind an experimental flag.
 
-## Recommendation
+**D — Both engines. redb stays the default; SQLite is opt-in.** Chosen.
 
-**B, with a scheduled re-decision.** Not because A is wrong on the merits —
-the spike says it works — but because of what we would be buying it with.
-The embedded edition's pitch is a single pure-Rust binary that runs anywhere;
-paying a C dependency and a store migration to solve a problem upstream is
-visibly working on, for a user base that is currently near zero, spends the
-wrong currency at the wrong time.
+## Decision
 
-Concretely:
+`kmp-adapter-embedded` grows a storage seam and a second implementation
+behind a `sqlite` cargo feature. redb remains the default engine and the
+default build: pure Rust, one file, static musl and Windows unchanged, no C
+toolchain, no migration, nobody's store touched.
 
-- ship the per-host path escape and say plainly in the docs that two hosts
-  cannot share one store yet, and why;
-- watch #1375/#1376/#1377 and whatever follows them;
-- re-decide when the reader-attach work lands, or when it has visibly
-  stalled, or when a user who is not us reports this — whichever is first.
+A user running two agent hosts opts into SQLite and gets a memory both can
+share. The cost lands only on the people who choose it, which is the whole
+argument — A charges everyone for a problem some have, B charges the people
+who have it, and D charges the people who fix it.
 
-If any of those arrive and the answer is still no, A is on the shelf with its
-numbers already measured, and ADR-009 already promised the swap is an adapter
-change rather than a redesign.
+The 16 conformance scenarios are engine-agnostic and become the acceptance
+criteria for the second engine, plus a new scenario the suite has never had:
+two processes, one store, both writing, no lost events. An engine that cannot
+pass it is not a valid backend.
+
+This also keeps every earlier option open. If redb's multi-process work lands
+well, the seam makes adopting it a backend change rather than a rewrite, and
+the SQLite backend can be retired or kept for the platforms where it wins. If
+it stalls, the second engine is already shipping.
+
+### Staging
+
+The seam is the risk, not the engine. Three steps, each one green before the
+next:
+
+1. Introduce the storage seam and move the redb implementation behind it, no
+   behaviour change. Conformance stays green — that is the proof the seam is
+   faithful.
+2. Add the SQLite backend behind the feature. Conformance runs against both.
+3. Engine selection, the multi-process conformance scenario, and the docs
+   that say which engine to pick and why.
+
+The port surface makes this tractable: 49 call sites across six operations
+(`insert`, `get`, `iter`, `len`, `range`, `remove`, `last`) over eleven
+tables that are all key-to-JSON maps. There is no relational query to
+rewrite.
 
 ## Consequences
 
-- **Accepted for now:** two agent hosts still cannot share one memory. This
-  is a real product gap and the docs must say so rather than let a user
-  discover it by start order.
-- **Unchanged:** pure Rust, one file, static musl and Windows stay simple.
-- **If we later take A:** the append-only event log is the source of truth
-  and projections are rebuildable, so the import replays rather than
-  translating pages; store format is stamped and fail-fast checked
-  ([ADR-012](ADR-012-embedded-data-directory.md)), so an old store is
-  imported or refused, never opened with the wrong engine; and the 16
-  engine-agnostic conformance scenarios are the acceptance criteria, plus a
-  new one for two processes writing without lost events.
-- **Either way**, [ADR-017](ADR-017-embedded-memory-viewer.md)'s reasoning
-  for an in-process viewer — "the embedded store is single-writer, so a
-  separate viewer process could never watch a live agent session" — stops
-  being true the day this changes, and a standalone viewer becomes possible.
+- **Positive:** two agent hosts can share one memory, for anyone who opts in.
+- **Positive:** the default build is unchanged — pure Rust, one file, no C
+  toolchain, no migration, static musl and Windows still simple.
+- **Positive:** the seam turns the engine into a decision we can revisit
+  cheaply, which is what ADR-009 promised and never had to prove.
+- **Cost:** a storage abstraction that did not exist, and two engines to keep
+  green instead of one. The conformance suite already carries most of that
+  weight; the new multi-process scenario is what stops the second engine from
+  silently regressing.
+- **Cost, on the opt-in path only:** ~5× slower point reads, ~30% slower
+  batched writes, ~+1.4MB binary, a C toolchain. Bought back with 2.5×
+  smaller stores and 10× faster reopen.
+- **Migration:** moving an existing store between engines replays the
+  append-only event log rather than translating pages — it is the source of
+  truth and projections are rebuildable. Store format is stamped and
+  fail-fast checked ([ADR-012](ADR-012-embedded-data-directory.md)), so a
+  store is never opened by the wrong engine.
+- **[ADR-017](ADR-017-embedded-memory-viewer.md) loosens.** Its reasoning for
+  an in-process viewer — "the embedded store is single-writer, so a separate
+  viewer process could never watch a live agent session" — stops holding on
+  the SQLite engine. In-process stays the default; a standalone viewer
+  becomes possible there and is out of scope here.
