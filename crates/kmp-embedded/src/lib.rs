@@ -10,5 +10,5 @@ mod migration;
 
 pub use data_dir::{DATA_DIR_ENV, ResolvedDataDir, resolve_data_dir, resolve_data_dir_from_env};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
-pub use kmp_adapter_embedded::{SUPPORTED_FORMAT_VERSION, StoreMigrationReceipt};
-pub use migration::{migrate_data_dir, open_or_migrate_data_dir};
+pub use kmp_adapter_embedded::{SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt};
+pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};

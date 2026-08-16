@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::engine::{Key, Table};
-use super::format_version::{self, SUPPORTED_FORMAT_VERSION, StorageEngine};
+use super::format_version::{self, StorageEngine};
 use super::store::EmbeddedKernelStore;
 
 /// The scratch copy the migration reads. Lives inside the destination so a
@@ -59,6 +59,7 @@ impl StoreMigrationReceipt {
 
 impl EmbeddedKernelStore {
     /// Migrates `source_dir` into `destination_dir` and opens the result.
+    /// The destination is created with the default engine.
     ///
     /// `derive` is the projection derivation the composition root owns
     /// (`kmp_application::projection_mutations_for_context_event`), kept
@@ -66,6 +67,25 @@ impl EmbeddedKernelStore {
     pub async fn migrate_data_dir<F>(
         source_dir: &Path,
         destination_dir: &Path,
+        derive: F,
+    ) -> Result<(Self, StoreMigrationReceipt), PortError>
+    where
+        F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
+    {
+        Self::migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb, derive).await
+    }
+
+    /// [`migrate_data_dir`](Self::migrate_data_dir) with the destination
+    /// engine chosen. This is how a store changes engines
+    /// ([ADR-018](../../../../docs/adr/ADR-018-multi-process-embedded-store.md)):
+    /// the event log is the source of truth and projections are derived, so
+    /// a redb store becomes a SQLite store by replaying its history into a
+    /// fresh SQLite directory — the same operation a format bump has always
+    /// been. The source is not modified; the receipt records both formats.
+    pub async fn migrate_data_dir_to<F>(
+        source_dir: &Path,
+        destination_dir: &Path,
+        destination_engine: StorageEngine,
         derive: F,
     ) -> Result<(Self, StoreMigrationReceipt), PortError>
     where
@@ -138,7 +158,7 @@ impl EmbeddedKernelStore {
         }
         let events = read_source_events(&source_store_file, source_engine, destination_dir)?;
 
-        let destination = Self::open(destination_dir)?;
+        let destination = Self::open_with_engine(destination_dir, destination_engine)?;
         let events_migrated = destination.replay_event_stream(events).await?;
         let rebuild = destination.rebuild_projections(derive).await?;
 
@@ -156,7 +176,7 @@ impl EmbeddedKernelStore {
         let receipt = StoreMigrationReceipt {
             source_format,
             source_sha256,
-            destination_format: SUPPORTED_FORMAT_VERSION,
+            destination_format: destination_engine.format_version(),
             events_migrated,
             mutations_applied: rebuild.mutations_applied,
             kernel_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -178,12 +198,31 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
+        Self::open_or_migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb, derive)
+            .await
+    }
+
+    /// [`open_or_migrate_data_dir`](Self::open_or_migrate_data_dir) with the
+    /// destination engine chosen. The engine only matters on the call that
+    /// migrates; a destination that already holds a store opens as whatever
+    /// it is.
+    pub async fn open_or_migrate_data_dir_to<F>(
+        source_dir: &Path,
+        destination_dir: &Path,
+        destination_engine: StorageEngine,
+        derive: F,
+    ) -> Result<(Self, Option<StoreMigrationReceipt>), PortError>
+    where
+        F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
+    {
         if format_version::existing_store_file(destination_dir).is_some() {
             let store = Self::open(destination_dir)?;
             let receipt = store.migration_receipt().await?;
             return Ok((store, receipt));
         }
-        let (store, receipt) = Self::migrate_data_dir(source_dir, destination_dir, derive).await?;
+        let (store, receipt) =
+            Self::migrate_data_dir_to(source_dir, destination_dir, destination_engine, derive)
+                .await?;
         Ok((store, Some(receipt)))
     }
 

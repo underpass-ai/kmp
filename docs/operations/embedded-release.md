@@ -21,7 +21,14 @@ kernel — one version for the whole product.
 
 | Binary version | `FORMAT_VERSION` read/written | On older format | On newer format |
 | --- | --- | --- | --- |
-| 0.1.x | 1 | refuses to open, names `kmp-mcp migrate` | refuses to open, "upgrade the binary" |
+| 0.1.0 – 0.1.3 | 1 | refuses to open, names `kmp-mcp migrate` | refuses to open, "upgrade the binary" |
+| 0.1.4+ | 1 (redb, default); 2 (SQLite, `--features sqlite`) | refuses to open, names `kmp-mcp migrate` | refuses to open, "upgrade the binary" |
+
+`FORMAT_VERSION` names the *layout* — which engine wrote `store/` — not the
+logical event format, which is 1 on both and is what bundles carry
+(ADR-018). A 0.1.4+ binary built without the SQLite feature recognises `2`
+and refuses it by name, saying which feature to enable. No binary of any
+version opens an empty store beside a real one.
 
 Rules (ADR-012): the store stamps `FORMAT_VERSION` at creation; the binary
 fails fast on any mismatch — never silent empty memory. A format bump
@@ -35,6 +42,27 @@ kmp-mcp migrate ~/.local/state/kmp/old ~/.local/state/kmp/new
 {"source_format":0,"source_sha256":"1a5a…","destination_format":1,
  "events_migrated":1,"mutations_applied":11,"kernel_version":"0.1.1"}
 ```
+
+### Changing engines: letting two agent hosts share one memory
+
+The same command with `--engine sqlite` converts a redb store into a SQLite
+one (ADR-018). Point both hosts' `KMP_MCP_DATA_DIR` at the new directory and
+they share it — readers never block the writer, a second writer waits for the
+commit lock instead of being refused. Needs a binary built with
+`--features sqlite`.
+
+```bash
+kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
+{"source_format":1,"source_sha256":"…","destination_format":2,
+ "events_migrated":2,"mutations_applied":22,"kernel_version":"0.1.4"}
+```
+
+The source is left exactly as it was — the receipt's `source_format: 1,
+destination_format: 2` is the audit trail — and a bundle exported from either
+side is byte-identical, because the event log is the source of truth and knows
+no engine. Migrating in the other direction, from a SQLite source, is refused
+for now with the reason: WAL keeps commits in a sidecar until checkpointed and
+a naive file copy would drop the newest ones.
 
 The migration replays the source's event log into a new store and rebuilds
 projections from it, rather than copying materialized tables — projections

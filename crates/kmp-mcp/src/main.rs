@@ -190,7 +190,8 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             eprintln!(
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `export <file>` / `import <file>` / \
-                 `migrate <source-dir> <destination-dir>` / `viewer [addr]` / `--version`"
+                 `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
+                 `viewer [addr]` / `--version`"
             );
             return 2;
         }
@@ -274,12 +275,25 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
 /// how the wrong directory gets migrated over the right one.
 async fn run_migrate_command(args: &[&str]) -> i32 {
     let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
-        eprintln!("kmp-mcp: migrate requires <source-dir> <destination-dir>");
+        eprintln!(
+            "kmp-mcp: migrate requires <source-dir> <destination-dir> [--engine redb|sqlite]"
+        );
         return 2;
     };
-    match kmp_embedded::migrate_data_dir(
+    // `--engine` picks the destination's engine; without it the destination
+    // keeps the default. `--engine sqlite` is how a store that one agent host
+    // owns becomes one that two can share (ADR-018).
+    let engine = match parse_engine_flag(&args[2..]) {
+        Ok(engine) => engine,
+        Err(message) => {
+            eprintln!("kmp-mcp: {message}");
+            return 2;
+        }
+    };
+    match kmp_embedded::migrate_data_dir_to(
         std::path::Path::new(source),
         std::path::Path::new(destination),
+        engine,
     )
     .await
     {
@@ -299,6 +313,24 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
             eprintln!("kmp-mcp: migration failed: {error}");
             2
         }
+    }
+}
+
+/// Parses the optional `--engine <name>` that follows the two directories.
+fn parse_engine_flag(rest: &[&str]) -> Result<kmp_embedded::StorageEngine, String> {
+    use kmp_embedded::StorageEngine;
+    match rest {
+        [] => Ok(StorageEngine::Redb),
+        ["--engine", "redb"] => Ok(StorageEngine::Redb),
+        ["--engine", "sqlite"] => Ok(StorageEngine::Sqlite),
+        ["--engine", other] => Err(format!(
+            "unknown engine `{other}`; expected `redb` or `sqlite`"
+        )),
+        ["--engine"] => Err("--engine needs a value: `redb` or `sqlite`".to_string()),
+        [other, ..] => Err(format!(
+            "unexpected argument `{other}`; migrate takes <source-dir> <destination-dir> \
+             [--engine redb|sqlite]"
+        )),
     }
 }
 
