@@ -167,16 +167,42 @@ semantic classes, and when to use it. Read the schema in front of you rather
 than guessing from these examples — the schema is the authority, and it moves
 with the kernel.
 
-## Scope is explicit
+## Reading across projects
 
-Dimension scope is auditable, never implicit:
+Abouts are **not** joined by relations, and that is the design rather than a
+gap. An edge between two projects would bake the link into the graph: anyone
+traversing MADE would drag KMP along whether they wanted it or not, and the
+frontier an about exists to bound would stop being bounded.
+
+So the join lives with the reader, at read time, and `dimensions.scope` is
+where you make it:
+
+```json
+{
+  "about": "project:made",
+  "question": "Why does the store conversion copy rows instead of replaying?",
+  "dimensions": { "scope": "abouts", "abouts": ["project:made", "project:kmp"] }
+}
+```
+
+One call, both projects, and the evidence comes back attributed to each — the
+ADR-018 reasoning that lives in `project:kmp` delivered into a conversation
+about MADE, without either project's graph growing an edge it did not ask for.
+
+Reach for this whenever a decision made in one project governs work in
+another: a shared contract, an ADR that both sides implement, a constraint one
+repository imposes on its sibling.
+
+Scope is auditable, never implicit:
 
 - omitted → `current_about`
 - `abouts` → requires a non-empty list
 - `all_abouts` → traverses every memory anchor, explicitly
 
-Widen scope deliberately. `all_abouts` on a large store is a real cost, and
-an unscoped sweep buries the answer you wanted.
+Widen deliberately. `all_abouts` on a large store is a real cost, and an
+unscoped sweep buries the answer you wanted — but scoping to the two or three
+abouts that actually bear on the question costs almost nothing and is the
+whole point of the mechanism.
 
 ## When the tools are not there
 

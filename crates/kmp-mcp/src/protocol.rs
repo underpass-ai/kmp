@@ -530,10 +530,12 @@ fn dimensions_schema() -> Value {
             },
             "scope": {
                 "type": "string",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": ["current_about", "abouts", "all_abouts"]
             },
             "abouts": {
                 "type": "array",
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
                 "items": string_schema("Memory about id.")
             }
         }
