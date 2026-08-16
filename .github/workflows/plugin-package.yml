@@ -13,6 +13,7 @@ on:
       - "plugins/kmp/**"
       - "scripts/plugin/**"
       - "scripts/ci/kmp-plugin-smoke.sh"
+      - "scripts/ci/kmp-plugin-install-smoke.sh"
       - "tests/plugin/**"
       - "crates/kmp-mcp/**"
       - ".github/workflows/plugin-package.yml"
@@ -84,6 +85,15 @@ jobs:
       - name: Smoke-test the plugin bundle
         shell: bash
         run: bash scripts/ci/kmp-plugin-smoke.sh
+
+      # The bundle smoke proves what we package. This one proves what a host
+      # gets: no bundled binary, started through .mcp.json, from an unrelated
+      # working directory. Runs before packaging so a broken install fails
+      # the job whether or not the bundle builds.
+      - name: Smoke-test a marketplace-shaped install
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash scripts/ci/kmp-plugin-install-smoke.sh
 
       - name: Package the plugin bundle
         shell: bash
