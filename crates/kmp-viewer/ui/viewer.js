@@ -1067,7 +1067,9 @@ $("btn-context").addEventListener("click", () => {
   $("detail-empty").hidden = true;
   $("detail-body").hidden = true;
   $("context-body").hidden = false;
-  $("ctx-hash").textContent = `sha256 ${graph.rendered.content_hash}`;
+  $("ctx-hash").textContent = graph.rendered.content_hash
+    ? `sha256 ${graph.rendered.content_hash}`
+    : "no snapshot hash for this recall";
   $("ctx-content").textContent = graph.rendered.content;
 });
 
@@ -1075,7 +1077,10 @@ $("btn-context").addEventListener("click", () => {
 
 function renderStats(view) {
   $("s-revision").textContent = String(view.revision);
+  // No hash means none has been computed — the field is hidden rather than
+  // filled with a word that looks like a state it will never leave.
   $("s-hash").textContent = shortHash(view.content_hash);
+  $("s-hash").closest(".stat").hidden = !view.content_hash;
   $("s-nodes").textContent = String(graph.nodes.size);
   $("s-edges").textContent = String(graph.edges.length);
   $("s-tokens").textContent = String(view.rendered.token_count);

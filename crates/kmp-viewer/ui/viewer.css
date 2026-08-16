@@ -339,6 +339,9 @@ summary { cursor: pointer; color: var(--text-secondary); }
   overflow-x: auto;
 }
 .stat { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+/* `display` on the rule above beats the [hidden] attribute, so a stat the
+   script hides would otherwise stay on screen. */
+.stat[hidden] { display: none; }
 .stat-label {
   font-size: 11px;
   text-transform: uppercase;
