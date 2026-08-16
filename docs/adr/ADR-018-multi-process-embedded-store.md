@@ -179,3 +179,12 @@ rewrite.
   viewer process could never watch a live agent session" — stops holding on
   the SQLite engine. In-process stays the default; a standalone viewer
   becomes possible there and is out of scope here.
+
+**Correction, 2026-08-16.** Switching a store into WAL is retried under a
+bounded deadline, not merely ordered after `busy_timeout`. The spike recorded
+ordering as the whole fix; it is not. Inside the window between a store file
+being created and its switch to WAL, a connection holding a write lock makes
+the switch fail immediately, with the busy handler never consulted — so two
+hosts starting against a store that does not exist yet could still lose one.
+The [spike's correction](spikes/e-concurrency-spike/README.md) has the
+measurements; kmp#34 has the fix and the test that pins it.
