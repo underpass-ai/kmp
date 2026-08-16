@@ -18,7 +18,7 @@ These documents are the current source of truth for users and maintainers:
 | v1beta1 maturity and limitations | [beta-status.md](beta-status.md) |
 | Product roadmap | [product/kernel-roadmap-milestones.md](product/kernel-roadmap-milestones.md) |
 | Embedded edition roadmap | [product/kmp-embedded-edition-roadmap.md](product/kmp-embedded-edition-roadmap.md) |
-| Choreographer incident-memory integration | [integrations/choreographer-kmp.md](integrations/choreographer-kmp.md) |
+| MADE incident-memory integration | [integrations/made-kmp.md](integrations/made-kmp.md) |
 | Embedded host recipes + playbook | [operations/embedded-hosts.md](operations/embedded-hosts.md) |
 | Embedded releases + format compatibility | [operations/embedded-release.md](operations/embedded-release.md) |
 | Release process (tags, crates.io, artefacts) | [release.md](release.md) |

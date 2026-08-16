@@ -1,12 +1,74 @@
 # KMP by Underpass
 
-> Part of [Underpass AI](https://underpassai.com) — memory and execution infrastructure for reliable AI agents.
+> Part of [Underpass AI](https://underpassai.com) — memory, coordination, and execution infrastructure for reliable AI agents.
 
 Kernel Memory Protocol for navigable, temporal, multidimensional AI agent
 memory.
 
-**New here?** Start with the [Usage Guide](./docs/usage-guide.md) — 3 steps
-to give your AI agent graph-aware context with sequence diagrams and examples.
+## Start here — pick an edition
+
+KMP ships as **two editions of one protocol**. They expose the identical tool
+surface with identical JSON, so memory written through one is navigable through
+the other. Full comparison: **[docs/editions.md](./docs/editions.md)**.
+
+### Embedded edition — inside your coding agent
+
+The kernel runs in-process inside the MCP stdio binary. No database, no
+service, no API key. Memory lands in a per-project `.kernel/` store. Verified
+live in **Claude Code** and **Codex CLI**.
+
+```bash
+cargo install kmp-mcp
+```
+
+**Claude Code** — register the server against the installed binary:
+
+```bash
+claude mcp add kernel-memory --scope user \
+  --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
+```
+
+`--scope user` registers it for every project; each project still keeps its own
+`.kernel/` store. Verify with `claude mcp list`, then call `kernel_wake` on an
+about you have written.
+
+**Codex CLI** — no plugin system, so a script does the whole wiring (binary,
+`~/.codex/config.toml`, prompts, and the memory doctrine in
+`~/.codex/AGENTS.md` behind replace-in-place markers). Re-running is safe;
+`--dry-run` shows the changes first:
+
+```bash
+bash scripts/mcp/install-kmp-plugin.sh --codex
+```
+
+**Want the discovery aids too** — the `kmp-memory` skill and the `/kmp:doctor`,
+`/kmp:moves`, `/kmp:setup` commands — install the
+[KMP plugin](./plugins/kmp/README.md) from a GitHub Release package. The
+release archive carries the `kmp-mcp` binary in `bin/`, which is what the
+plugin launcher executes; a checkout does not (that path is gitignored).
+
+Every other host: [embedded-hosts.md](./docs/operations/embedded-hosts.md).
+Prebuilt binaries and the one-command installer:
+[embedded-release.md](./docs/operations/embedded-release.md).
+
+### Cluster edition — shared memory for a team
+
+The typed `KernelMemoryService` over gRPC, with graph, key-value and event
+persistence behind ports. Helm chart, TLS/mTLS on the boundaries, OpenTelemetry
+and Loki.
+
+```bash
+docker pull ghcr.io/underpass-ai/kmp:latest   # trial only; pin a digest or v* tag in production
+```
+
+Deploy guide: [kubernetes-deploy.md](./docs/operations/kubernetes-deploy.md).
+
+### Building the kernel itself
+
+Contributor loop, not a user path — see [Developing this repo](#developing-this-repo).
+
+**Then read** the [Usage Guide](./docs/usage-guide.md) — 3 steps to give your
+agent graph-aware context, with sequence diagrams and examples.
 
 ## What This Repo Is
 
@@ -113,7 +175,7 @@ graph LR
 > models (Claude Opus, GPT-5.x), which operate KMP directly and would never route through it.
 > Honest claim: *it predicts bounded KMP actions from a visible memory state, under a strict
 > contract and real MCP replay against the kernel.* See
-> [Entrenando un modelo pequeño para operar KMP](./docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md).
+> [docs/operator.md](./docs/operator.md).
 
 ## Current Status
 
@@ -145,46 +207,35 @@ What is out of scope:
 - Product-side integration adapters, shadow mode, or rollout logic
 - Authorization backend (scope validation is set-comparison only)
 
-## Distributions
+## Editions
 
-KMP is moving toward two distributions that share the same protocol semantics:
+| | Embedded edition | Cluster edition |
+|:--|:--|:--|
+| Who it is for | one developer, one project | a team sharing and auditing memory |
+| Kernel runs | in-process, inside `kmp-mcp` | remote `KernelMemoryService` over gRPC |
+| Storage | one local data dir (`.kernel/`, redb) | Neo4j · Valkey · NATS JetStream |
+| Requires | nothing | a deployed kernel plus TLS configuration |
+| Concurrency | single writer per data dir | server-side |
+| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
 
-- **Infrastructure** (today) — the typed `KernelMemoryService` gRPC server with
-  Neo4j / Valkey / NATS adapters, Helm/Kubernetes deployment, and full TLS/mTLS
-  plus observability. For teams running shared, auditable agent memory at scale.
-- **Local / embedded** (shipped, primary) — the kernel in-process inside the
-  MCP stdio binary: zero infrastructure, per-project `.kernel/` memory,
-  fsync-durable, verified live in **Claude Code** and **Codex**. Same KMP
-  tools (`kernel_wake`, `kernel_ask`, `kernel_near`, `kernel_trace`,
-  `kernel_inspect`, `kernel_write_memory`) with identical JSON by
-  construction. Quickstart:
+Both expose the identical KMP surface with identical JSON by construction — the
+embedded backend reuses the live JSON path through shared proto mapping, and a
+conformance suite pins storage semantics across backends in CI. Switching is an
+environment change, not a code change.
 
-  ```bash
-  cargo install kmp-mcp                      # or --path crates/kmp-mcp --locked
-  claude mcp add kernel-memory --scope user \
-    --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
-  ```
+Which one to run, what each guarantees, and how to move between them:
+**[docs/editions.md](./docs/editions.md)**.
 
-  Prebuilt binaries + install script: see
-  [embedded-release.md](docs/operations/embedded-release.md); host recipes in
-  [embedded-hosts.md](docs/operations/embedded-hosts.md).
+## Developing this repo
 
-Both expose the identical KMP surface, so memory written through one is
-navigable through the other.
-
-## Quickstart
+The commands below build and verify the kernel itself. To *use* KMP, see
+[Start here](#start-here--pick-an-edition) instead.
 
 ```bash
 # Toolchain: Rust 1.97.1 (pinned in rust-toolchain.toml)
 cargo test --workspace               # workspace unit tests, no infra needed
 bash scripts/ci/quality-gate.sh      # format + clippy + contract + tests
 ```
-
-```bash
-docker pull ghcr.io/underpass-ai/kmp:latest
-```
-
-`latest` is for a quick trial; pin a `sha-<short-commit>` or `v*` tag (or a digest) in production.
 
 Full guides: [usage](./docs/usage-guide.md) | [testing](./docs/testing.md) |
 [container image](./docs/operations/container-image.md) |
