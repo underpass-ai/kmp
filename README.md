@@ -21,7 +21,22 @@ live in **Claude Code** and **Codex CLI**.
 cargo install kmp-mcp
 ```
 
-**Claude Code** — register the server against the installed binary:
+**Claude Code** — install the [plugin](./plugins/kmp/README.md). It registers
+the MCP server, installs the `kmp-memory` skill that teaches the agent *when*
+to reach for memory, and adds `/kmp:doctor`, `/kmp:moves` and `/kmp:setup`:
+
+```text
+/plugin marketplace add underpass-ai/kmp
+/plugin install kmp@underpass
+```
+
+The plugin launcher runs `bin/kmp-mcp` from a release package when there is
+one, and otherwise falls back to the `kmp-mcp` you just installed on `PATH`.
+Run `/kmp:doctor` if anything looks wrong — it diagnoses the setup end to end
+and names the one thing to fix.
+
+<details>
+<summary>Register the MCP server by hand, without the plugin</summary>
 
 ```bash
 claude mcp add kernel-memory --scope user \
@@ -29,8 +44,9 @@ claude mcp add kernel-memory --scope user \
 ```
 
 `--scope user` registers it for every project; each project still keeps its own
-`.kernel/` store. Verify with `claude mcp list`, then call `kernel_wake` on an
-about you have written.
+`.kernel/` store. Verify with `claude mcp list`.
+
+</details>
 
 **Codex CLI** — no plugin system, so a script does the whole wiring (binary,
 `~/.codex/config.toml`, prompts, and the memory doctrine in
@@ -40,12 +56,6 @@ about you have written.
 ```bash
 bash scripts/mcp/install-kmp-plugin.sh --codex
 ```
-
-**Want the discovery aids too** — the `kmp-memory` skill and the `/kmp:doctor`,
-`/kmp:moves`, `/kmp:setup` commands — install the
-[KMP plugin](./plugins/kmp/README.md) from a GitHub Release package. The
-release archive carries the `kmp-mcp` binary in `bin/`, which is what the
-plugin launcher executes; a checkout does not (that path is gitignored).
 
 Every other host: [embedded-hosts.md](./docs/operations/embedded-hosts.md).
 Prebuilt binaries and the one-command installer:

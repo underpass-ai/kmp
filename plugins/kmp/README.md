@@ -35,11 +35,19 @@ checkout: `bash scripts/plugin/package-kmp-plugin.sh`.
 /plugin install kmp@underpass
 ```
 
-This installs the skill and the commands. It does **not** bring the binary: the
-launcher runs `bin/kmp-mcp` inside the plugin directory, and that path is
-gitignored, so it exists only in a release package or a locally built bundle.
-After a marketplace install, run `/kmp:setup` — it diagnoses what is missing and
-wires the `kernel-memory` server against an installed `kmp-mcp`.
+A marketplace install brings the skill, the commands and the launcher, but not
+the binary — `bin/kmp-mcp` is gitignored, so it exists only in a release
+package. The launcher handles that: it prefers `bin/kmp-mcp` when a release
+bundle provides it, and otherwise falls back to `kmp-mcp` on `PATH`. So either
+of these works:
+
+```bash
+cargo install kmp-mcp        # then install the plugin from the marketplace
+```
+
+or install the plugin from a release package, which carries a pinned binary and
+needs nothing else. If neither is present the launcher fails with an explicit
+message naming both places it looked; `/kmp:setup` fixes it.
 
 **Codex CLI** — no plugin system, so a script does the wiring:
 
