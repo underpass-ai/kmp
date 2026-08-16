@@ -128,9 +128,11 @@ fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
         "initialize must report the embedded backend: {stdout}"
     );
     let stderr = String::from_utf8(output.stderr).expect("stderr is utf8");
+    // The banner names the engine (ADR-018): a user reading stderr should
+    // know whether this store can be shared with a second host.
     assert!(
-        stderr.contains("embedded backend (kernel in-process)"),
-        "banner must announce embedded mode: {stderr}"
+        stderr.contains("embedded backend (kernel in-process, redb engine)"),
+        "banner must announce embedded mode and the engine: {stderr}"
     );
 
     let log_entries = std::fs::read_dir(data_dir.path().join("logs"))

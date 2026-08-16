@@ -111,15 +111,22 @@ else
   info "chosen by: $ORIGIN"
 
   if [ -d "$DATA_DIR" ]; then
-    if [ -f "$DATA_DIR/FORMAT_VERSION" ]; then
-      info "store format: $(cat "$DATA_DIR/FORMAT_VERSION" 2>/dev/null)"
-    fi
+    # FORMAT_VERSION names the layout, which names the engine (ADR-018):
+    # 1 is redb, 2 is sqlite. The engine decides whether a second host can
+    # share this store, so say which one it is.
+    ENGINE="redb"
     STORE_FILE="$DATA_DIR/store/kernel.redb"
+    if [ -f "$DATA_DIR/FORMAT_VERSION" ]; then
+      FORMAT="$(cat "$DATA_DIR/FORMAT_VERSION" 2>/dev/null | tr -d '[:space:]')"
+      case "$FORMAT" in
+        1) ENGINE="redb" ;;
+        2) ENGINE="sqlite"; STORE_FILE="$DATA_DIR/store/kernel.sqlite3" ;;
+        *) ENGINE="unknown" ;;
+      esac
+      info "store format: $FORMAT ($ENGINE engine)"
+    fi
     if [ -f "$STORE_FILE" ]; then
       info "store size: $(du -h "$STORE_FILE" 2>/dev/null | cut -f1)"
-      # Single-writer contract (ADR-011). Checked by looking, never by
-      # opening: acquiring the lock to test it would be the very conflict
-      # this is meant to report.
       HOLDER=""
       if command -v fuser >/dev/null 2>&1; then
         HOLDER="$(fuser "$STORE_FILE" 2>/dev/null | tr -s ' ')"
@@ -127,10 +134,22 @@ else
         HOLDER="$(lsof -t "$STORE_FILE" 2>/dev/null | tr '\n' ' ')"
       fi
       if [ -n "$(printf '%s' "$HOLDER" | tr -d ' ')" ]; then
-        warn "another process holds this store (pid$HOLDER)"
-        info "the embedded store is single-writer (ADR-011): a second host"
-        info "session on the same data dir gets no tools at all. Close that"
-        info "session, or point this one at a different KMP_MCP_DATA_DIR."
+        if [ "$ENGINE" = "sqlite" ]; then
+          # WAL-mode sqlite is shared by design: another holder is a
+          # second host at work, not a conflict.
+          ok "another process has this store open (pid$HOLDER) — sqlite shares it"
+        else
+          # Single-writer contract (ADR-011). Checked by looking, never by
+          # opening: acquiring the lock to test it would be the very
+          # conflict this is meant to report.
+          warn "another process holds this store (pid$HOLDER)"
+          info "the redb engine is single-writer (ADR-011): a second host"
+          info "session on the same data dir gets no tools at all. Close that"
+          info "session, point this one at a different KMP_MCP_DATA_DIR, or"
+          info "share the store between hosts by moving it to the sqlite engine:"
+          info "  kmp-mcp migrate $DATA_DIR <new-dir> --engine sqlite"
+          info "(needs a kmp-mcp built with --features sqlite)"
+        fi
       else
         ok "store is free — no other process holds it"
       fi

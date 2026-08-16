@@ -223,9 +223,9 @@ What is out of scope:
 |:--|:--|:--|
 | Who it is for | one developer, one project | a team sharing and auditing memory |
 | Kernel runs | in-process, inside `kmp-mcp` | remote `KernelMemoryService` over gRPC |
-| Storage | one local data dir (`.kernel/`, redb) | Neo4j · Valkey · NATS JetStream |
+| Storage | one local data dir (`.kernel/`; redb, or sqlite opt-in) | Neo4j · Valkey · NATS JetStream |
 | Requires | nothing | a deployed kernel plus TLS configuration |
-| Concurrency | single writer per data dir | server-side |
+| Concurrency | one host per data dir on redb; two hosts share one store on sqlite | server-side |
 | Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
 
 Both expose the identical KMP surface with identical JSON by construction — the

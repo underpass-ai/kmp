@@ -18,6 +18,9 @@ use crate::write::{build_write_plan, write_commit_result, write_dry_run_result};
 
 pub struct KernelMcpServer {
     backend: Arc<dyn KernelMcpToolBackend>,
+    /// The storage engine under an embedded backend, for the startup line
+    /// and the doctor. `None` for the other backends.
+    embedded_engine: Option<kmp_embedded::StorageEngine>,
 }
 
 impl Default for KernelMcpServer {
@@ -40,19 +43,48 @@ impl KernelMcpServer {
     }
 
     pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
-        Ok(Self::with_backend(
-            crate::embedded::EmbeddedKernelMcpBackend::open(data_dir)?,
-        ))
+        Self::embedded_with_engine(data_dir, None)
+    }
+
+    pub fn embedded_with_engine(
+        data_dir: &std::path::Path,
+        engine: Option<kmp_embedded::StorageEngine>,
+    ) -> Result<Self, String> {
+        let backend =
+            crate::embedded::EmbeddedKernelMcpBackend::open_with_engine(data_dir, engine)?;
+        let opened_engine = backend.engine();
+        let mut server = Self::with_backend(backend);
+        server.embedded_engine = Some(opened_engine);
+        Ok(server)
     }
 
     pub fn with_backend(backend: impl KernelMcpToolBackend + 'static) -> Self {
         Self {
             backend: Arc::new(backend),
+            embedded_engine: None,
         }
     }
 
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
-        Self { backend }
+        Self {
+            backend,
+            embedded_engine: None,
+        }
+    }
+
+    /// A server over an embedded backend that the caller already opened —
+    /// the viewer path, which needs the kernel handle before wrapping it.
+    pub fn with_embedded_backend(backend: crate::embedded::EmbeddedKernelMcpBackend) -> Self {
+        let engine = backend.engine();
+        let mut server = Self::with_backend(backend);
+        server.embedded_engine = Some(engine);
+        server
+    }
+
+    /// The storage engine this server's embedded store is on, if the backend
+    /// is embedded.
+    pub fn embedded_engine(&self) -> Option<kmp_embedded::StorageEngine> {
+        self.embedded_engine
     }
 
     pub fn from_env() -> Self {
@@ -81,12 +113,15 @@ impl KernelMcpServer {
             "embedded" => {
                 let resolved =
                     kmp_embedded::resolve_data_dir_from_env().map_err(|error| error.to_string())?;
+                let engine =
+                    kmp_embedded::resolve_engine_from_env().map_err(|error| error.to_string())?;
                 tracing::info!(
                     data_dir = %resolved.path().display(),
                     rule = resolved.rule_name(),
+                    requested_engine = engine.map(|engine| engine.name()),
                     "embedded backend data dir resolved"
                 );
-                Self::embedded(resolved.path())
+                Self::embedded_with_engine(resolved.path(), engine)
             }
             other => Err(format!(
                 "unsupported {MCP_BACKEND_ENV} value `{other}`; use `grpc`, `embedded` or `fixture`"

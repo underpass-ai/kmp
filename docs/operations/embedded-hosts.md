@@ -101,11 +101,20 @@ the plugin does not cover.
 
 ## Two sessions at once
 
-The embedded store is single-writer (ADR-011): a second host session on the
-same data dir fails fast with an explicit "store is in use" error rather
-than corrupting memory. Close the other session, or point the second one at
-a different `KMP_MCP_DATA_DIR`. If concurrent sessions on one store
-become a common workflow, the documented evolution is a local daemon.
+On the default engine (redb) the store is single-writer (ADR-011): a second
+host session on the same data dir fails fast with an explicit "store is in
+use" error rather than corrupting memory. Close the other session, point the
+second one at a different `KMP_MCP_DATA_DIR`, or — if two hosts sharing one
+memory is your normal day, Claude Code and Codex CLI on the same project —
+move the store to the sqlite engine (ADR-018), which several processes can
+open at once:
+
+```bash
+kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
+```
+
+Needs a `kmp-mcp` built with `--features sqlite`; the full recipe, and what
+the engine costs, is in [mcp-stdio.md](mcp-stdio.md#sharing-one-memory-between-two-agent-hosts).
 
 ## Scripted acceptance demo
 

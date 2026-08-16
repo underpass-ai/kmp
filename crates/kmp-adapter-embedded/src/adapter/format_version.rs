@@ -165,8 +165,9 @@ pub(crate) fn check_or_stamp_as(
             {
                 return Err(PortError::InvalidState(format!(
                     "embedded store at `{}` is a {stamped} store (format version {}), not {wanted}; \
-                     a store is never reopened with another engine — use a fresh directory for a \
-                     {wanted} store",
+                     a store is never reopened with another engine — to change engines, migrate it: \
+                     `kmp-mcp migrate <this-dir> <new-dir> --engine {wanted}`, or unset the engine \
+                     to open it as it is",
                     data_dir.display(),
                     stamped.format_version()
                 )));
