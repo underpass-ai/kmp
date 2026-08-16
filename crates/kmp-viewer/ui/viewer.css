@@ -412,3 +412,13 @@ summary { cursor: pointer; color: var(--text-secondary); }
     grid-template-columns: 200px 1fr 280px;
   }
 }
+
+/* A timeline that returns nothing says so here, rather than leaving the
+   panel bare and letting the reader conclude their memory is empty. */
+.tl-notice {
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  list-style: none;
+}
