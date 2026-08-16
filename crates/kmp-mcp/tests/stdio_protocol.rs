@@ -45,7 +45,10 @@ async fn initialize_declares_tools_capability() {
 
     assert_eq!(response["jsonrpc"], "2.0");
     assert_eq!(response["id"], 1);
-    assert_eq!(response["result"]["serverInfo"]["name"], "kmp-kmp");
+    assert_eq!(
+        response["result"]["serverInfo"]["name"],
+        "underpass-kmp-mcp"
+    );
     assert_eq!(response["result"]["metadata"]["backend"], "fixture");
     assert!(response["result"]["capabilities"].get("tools").is_some());
 }

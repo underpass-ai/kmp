@@ -2,7 +2,7 @@ use kmp_domain::KnownMemoryRelationType;
 use serde_json::{Value, json};
 
 const PROTOCOL_VERSION: &str = "2024-11-05";
-const SERVER_NAME: &str = "kmp-kmp";
+const SERVER_NAME: &str = "underpass-kmp-mcp";
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
