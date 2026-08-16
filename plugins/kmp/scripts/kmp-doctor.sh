@@ -214,7 +214,7 @@ if command -v claude >/dev/null 2>&1; then
   else
     warn "Claude Code — kernel-memory not in 'claude mcp list'"
     info "installing the kmp plugin wires it automatically:"
-    info "  /plugin marketplace add underpass-ai/kmp"
+    info "  /plugin marketplace add underpass-ai/plugins"
     info "  /plugin install kmp@underpass"
     info "or register the server directly:"
     info "  claude mcp add kernel-memory --scope user \\"

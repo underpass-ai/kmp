@@ -26,7 +26,7 @@ the MCP server, installs the `kmp-memory` skill that teaches the agent *when*
 to reach for memory, and adds `/kmp:doctor`, `/kmp:moves` and `/kmp:setup`:
 
 ```text
-/plugin marketplace add underpass-ai/kmp
+/plugin marketplace add underpass-ai/plugins
 /plugin install kmp@underpass
 ```
 

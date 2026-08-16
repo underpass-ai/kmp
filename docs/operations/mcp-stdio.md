@@ -153,7 +153,7 @@ for memory, and `/kmp:doctor` to diagnose a setup that is not answering:
 
 ```
 # Claude Code
-/plugin marketplace add underpass-ai/kmp
+/plugin marketplace add underpass-ai/plugins
 /plugin install kmp@underpass
 
 # Codex CLI

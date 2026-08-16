@@ -28,10 +28,12 @@ Codex reads `.codex-plugin/plugin.json`, Claude Code reads
 `scripts\run-embedded-mcp.cmd` instead. To build the package from a
 checkout: `bash scripts/plugin/package-kmp-plugin.sh`.
 
-**Claude Code** — native install from the marketplace:
+**Claude Code** — native install from the marketplace. The manifest lives in
+[underpass-ai/plugins](https://github.com/underpass-ai/plugins), which carries
+both Underpass plugins, so the same source also offers `made@underpass`:
 
 ```
-/plugin marketplace add underpass-ai/kmp
+/plugin marketplace add underpass-ai/plugins
 /plugin install kmp@underpass
 ```
 
