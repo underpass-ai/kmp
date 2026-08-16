@@ -30,16 +30,12 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use kmp_domain::{ContextUpdatedEvent, PortError, ProjectionMutation};
-use redb::TableDefinition;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use super::engine::{Key, Table};
 use super::format_version::{self, SUPPORTED_FORMAT_VERSION};
-use super::store::{EmbeddedKernelStore, commit_error, storage_error, table_error};
-
-/// Migration receipts: `migration_id -> StoreMigrationReceipt` (JSON).
-pub(crate) const MIGRATIONS: TableDefinition<&str, &[u8]> =
-    TableDefinition::new("store_migrations");
+use super::store::EmbeddedKernelStore;
 
 /// The scratch copy the migration reads. Lives inside the destination so a
 /// half-finished migration leaves nothing behind in the source directory.
@@ -180,19 +176,16 @@ impl EmbeddedKernelStore {
     pub async fn migration_receipt(&self) -> Result<Option<StoreMigrationReceipt>, PortError> {
         self.run(|store| {
             let tx = store.begin_read()?;
-            let table = match tx.open_table(MIGRATIONS) {
-                Ok(table) => table,
-                // A store nobody migrated simply has no such table.
-                Err(redb::TableError::TableDoesNotExist(_)) => return Ok(None),
-                Err(error) => return Err(table_error(error)),
-            };
-            let Some(raw) = table
-                .get(StoreMigrationReceipt::MIGRATION_ID)
-                .map_err(storage_error)?
+            // A store nobody migrated has no such table; the seam reads a
+            // never-written table as empty.
+            let Some(raw) = tx.get(
+                Table::Migrations,
+                Key::Str(StoreMigrationReceipt::MIGRATION_ID),
+            )?
             else {
                 return Ok(None);
             };
-            let receipt = serde_json::from_slice(raw.value()).map_err(|error| {
+            let receipt = serde_json::from_slice(&raw).map_err(|error| {
                 PortError::InvalidState(format!("migration receipt is unreadable: {error}"))
             })?;
             Ok(Some(receipt))
@@ -208,14 +201,13 @@ impl EmbeddedKernelStore {
             PortError::InvalidState(format!("migration receipt is not encodable: {error}"))
         })?;
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            {
-                let mut table = tx.open_table(MIGRATIONS).map_err(table_error)?;
-                table
-                    .insert(StoreMigrationReceipt::MIGRATION_ID, encoded.as_slice())
-                    .map_err(storage_error)?;
-            }
-            tx.commit().map_err(commit_error)
+            let mut tx = store.begin_write()?;
+            tx.insert(
+                Table::Migrations,
+                Key::Str(StoreMigrationReceipt::MIGRATION_ID),
+                &encoded,
+            )?;
+            tx.commit()
         })
         .await
     }

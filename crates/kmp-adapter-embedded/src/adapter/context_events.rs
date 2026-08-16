@@ -1,11 +1,8 @@
 use kmp_domain::{ContextEventStore, ContextUpdatedEvent, IdempotentOutcome, PortError};
-use redb::ReadableTable;
 
+use super::engine::{Key, Table};
 use super::serdes::{AggregateRecord, decode, encode};
-use super::store::{
-    AGGREGATES, EVENT_LOG, EmbeddedKernelStore, IDEMPOTENCY, aggregate_key, commit_error,
-    range_error, storage_error, table_error,
-};
+use super::store::{EmbeddedKernelStore, aggregate_key};
 
 impl ContextEventStore for EmbeddedKernelStore {
     async fn append(
@@ -14,66 +11,58 @@ impl ContextEventStore for EmbeddedKernelStore {
         expected_revision: u64,
     ) -> Result<u64, PortError> {
         self.run(move |store| {
-            let tx = store.begin_write()?;
-            let new_revision;
-            {
-                let mut aggregates = tx.open_table(AGGREGATES).map_err(table_error)?;
-                let key = aggregate_key(&event.root_node_id, &event.role);
-                let current = match aggregates.get(key.as_str()).map_err(storage_error)? {
-                    Some(guard) => {
-                        decode::<AggregateRecord>("aggregate head", guard.value())?.revision
-                    }
-                    None => 0,
-                };
-                if current != expected_revision {
-                    return Err(PortError::Conflict(format!(
-                        "expected revision {expected_revision}, current is {current}"
-                    )));
-                }
-                new_revision = current + 1;
+            let mut tx = store.begin_write()?;
 
-                // Stamp the assigned revision on the stored event so replay
-                // derives projections with the same revision the aggregate
-                // recorded.
-                let mut event = event;
-                event.revision = new_revision;
+            let key = aggregate_key(&event.root_node_id, &event.role);
+            let current = match tx.get(Table::Aggregates, Key::Str(&key))? {
+                Some(raw) => decode::<AggregateRecord>("aggregate head", &raw)?.revision,
+                None => 0,
+            };
+            if current != expected_revision {
+                return Err(PortError::Conflict(format!(
+                    "expected revision {expected_revision}, current is {current}"
+                )));
+            }
+            let new_revision = current + 1;
 
-                let aggregate_bytes = encode(
-                    "aggregate head",
-                    &AggregateRecord {
+            // Stamp the assigned revision on the stored event so replay
+            // derives projections with the same revision the aggregate
+            // recorded.
+            let mut event = event;
+            event.revision = new_revision;
+
+            let aggregate_bytes = encode(
+                "aggregate head",
+                &AggregateRecord {
+                    revision: new_revision,
+                    content_hash: event.content_hash.clone(),
+                },
+            )?;
+            tx.insert(Table::Aggregates, Key::Str(&key), &aggregate_bytes)?;
+
+            let next_sequence = tx
+                .last_u64(Table::EventLog)?
+                .map_or(1, |(sequence, _)| sequence + 1);
+            let event_bytes = encode("context event", &event)?;
+            tx.insert(Table::EventLog, Key::U64(next_sequence), &event_bytes)?;
+
+            if let Some(idempotency_key) = event.idempotency_key.as_deref() {
+                let outcome_bytes = encode(
+                    "idempotency outcome",
+                    &IdempotentOutcome {
                         revision: new_revision,
                         content_hash: event.content_hash.clone(),
+                        logical_digest: event.logical_digest.clone(),
                     },
                 )?;
-                aggregates
-                    .insert(key.as_str(), aggregate_bytes.as_slice())
-                    .map_err(storage_error)?;
-
-                let mut log = tx.open_table(EVENT_LOG).map_err(table_error)?;
-                let next_sequence = match log.last().map_err(storage_error)? {
-                    Some((key, _)) => key.value() + 1,
-                    None => 1,
-                };
-                let event_bytes = encode("context event", &event)?;
-                log.insert(next_sequence, event_bytes.as_slice())
-                    .map_err(storage_error)?;
-
-                if let Some(idempotency_key) = event.idempotency_key.as_deref() {
-                    let outcome_bytes = encode(
-                        "idempotency outcome",
-                        &IdempotentOutcome {
-                            revision: new_revision,
-                            content_hash: event.content_hash.clone(),
-                            logical_digest: event.logical_digest.clone(),
-                        },
-                    )?;
-                    let mut idempotency = tx.open_table(IDEMPOTENCY).map_err(table_error)?;
-                    idempotency
-                        .insert(idempotency_key, outcome_bytes.as_slice())
-                        .map_err(storage_error)?;
-                }
+                tx.insert(
+                    Table::Idempotency,
+                    Key::Str(idempotency_key),
+                    &outcome_bytes,
+                )?;
             }
-            tx.commit().map_err(commit_error)?;
+
+            tx.commit()?;
             Ok(new_revision)
         })
         .await
@@ -83,11 +72,8 @@ impl ContextEventStore for EmbeddedKernelStore {
         let key = aggregate_key(root_node_id, role);
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let aggregates = tx.open_table(AGGREGATES).map_err(table_error)?;
-            match aggregates.get(key.as_str()).map_err(storage_error)? {
-                Some(guard) => {
-                    Ok(decode::<AggregateRecord>("aggregate head", guard.value())?.revision)
-                }
+            match tx.get(Table::Aggregates, Key::Str(&key))? {
+                Some(raw) => Ok(decode::<AggregateRecord>("aggregate head", &raw)?.revision),
                 None => Ok(0),
             }
         })
@@ -102,10 +88,9 @@ impl ContextEventStore for EmbeddedKernelStore {
         let key = aggregate_key(root_node_id, role);
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let aggregates = tx.open_table(AGGREGATES).map_err(table_error)?;
-            match aggregates.get(key.as_str()).map_err(storage_error)? {
-                Some(guard) => Ok(Some(
-                    decode::<AggregateRecord>("aggregate head", guard.value())?.content_hash,
+            match tx.get(Table::Aggregates, Key::Str(&key))? {
+                Some(raw) => Ok(Some(
+                    decode::<AggregateRecord>("aggregate head", &raw)?.content_hash,
                 )),
                 None => Ok(None),
             }
@@ -120,9 +105,8 @@ impl ContextEventStore for EmbeddedKernelStore {
         let key = key.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let idempotency = tx.open_table(IDEMPOTENCY).map_err(table_error)?;
-            match idempotency.get(key.as_str()).map_err(storage_error)? {
-                Some(guard) => Ok(Some(decode("idempotency outcome", guard.value())?)),
+            match tx.get(Table::Idempotency, Key::Str(&key))? {
+                Some(raw) => Ok(Some(decode("idempotency outcome", &raw)?)),
                 None => Ok(None),
             }
         })
@@ -131,22 +115,19 @@ impl ContextEventStore for EmbeddedKernelStore {
 }
 
 impl EmbeddedKernelStore {
-    /// Reads the full append-only event log in sequence order (audit and
-    /// replay surface).
     /// The event log, read synchronously. The migration path uses this
     /// before any runtime exists around the source copy.
     pub(crate) fn read_event_log_blocking(&self) -> Result<Vec<ContextUpdatedEvent>, PortError> {
         self.read_event_log()
     }
 
+    /// Reads the full append-only event log in sequence order (audit and
+    /// replay surface).
     pub(crate) fn read_event_log(&self) -> Result<Vec<ContextUpdatedEvent>, PortError> {
         let tx = self.begin_read()?;
-        let log = tx.open_table(EVENT_LOG).map_err(table_error)?;
-        let mut events = Vec::new();
-        for row in log.iter().map_err(range_error)? {
-            let (_, value) = row.map_err(range_error)?;
-            events.push(decode("context event", value.value())?);
-        }
-        Ok(events)
+        tx.scan_u64(Table::EventLog)?
+            .into_iter()
+            .map(|(_, raw)| decode("context event", &raw))
+            .collect()
     }
 }

@@ -1,4 +1,5 @@
 mod context_events;
+mod engine;
 mod format_version;
 mod graph_read;
 mod migration;

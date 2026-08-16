@@ -6,8 +6,8 @@ use kmp_observability::QualityTelemetryObservation;
 use redb::{Database, ReadableDatabase, ReadableTable, ReadableTableMetadata};
 
 use super::storage::{OBSERVATIONS, quality_telemetry_path};
+use crate::adapter::engine::redb::{range_error, table_error};
 use crate::adapter::serdes::decode;
-use crate::adapter::store::{range_error, table_error};
 
 /// Read-only query adapter for the local quality journal.
 #[derive(Debug, Clone)]

@@ -4,64 +4,45 @@ use kmp_domain::{
     ContextPathNeighborhood, GraphNeighborhoodReader, MemoryAboutIndexReader, NodeNeighborhood,
     NodeProjection, NodeRelationProjection, NodeRelationshipReader, NodeRelationships, PortError,
 };
-use redb::{ReadOnlyTable, ReadableTable};
 
+use super::engine::{Key, ReadTx, Table};
 use super::projection_write::MEMORY_ANCHOR_KIND;
 use super::serdes::{NodeRecord, decode, decode_explanation};
-use super::store::{
-    ANCHORS, EmbeddedKernelStore, NODES, RELATIONS, RELATIONS_BY_TARGET, range_error,
-    storage_error, table_error,
-};
+use super::store::EmbeddedKernelStore;
 
-type NodeReadTable = ReadOnlyTable<&'static str, &'static [u8]>;
-type RelationReadTable = ReadOnlyTable<(&'static str, &'static str, &'static str), &'static [u8]>;
-
-fn load_node(nodes: &NodeReadTable, node_id: &str) -> Result<Option<NodeProjection>, PortError> {
-    match nodes.get(node_id).map_err(storage_error)? {
-        Some(guard) => Ok(Some(
-            decode::<NodeRecord>("graph node", guard.value())?.into_projection()?,
+fn load_node(tx: &dyn ReadTx, node_id: &str) -> Result<Option<NodeProjection>, PortError> {
+    match tx.get(Table::Nodes, Key::Str(node_id))? {
+        Some(raw) => Ok(Some(
+            decode::<NodeRecord>("graph node", &raw)?.into_projection()?,
         )),
         None => Ok(None),
     }
 }
 
-fn outgoing_rows(
-    relations: &RelationReadTable,
-    source: &str,
-) -> Result<Vec<NodeRelationProjection>, PortError> {
-    let upper = format!("{source}\u{0}");
-    let mut rows = Vec::new();
-    for row in relations
-        .range((source, "", "")..(upper.as_str(), "", ""))
-        .map_err(range_error)?
-    {
-        let (key, value) = row.map_err(range_error)?;
-        let (source_node_id, target_node_id, relation_type) = key.value();
-        rows.push(NodeRelationProjection {
-            source_node_id: source_node_id.to_string(),
-            target_node_id: target_node_id.to_string(),
-            relation_type: relation_type.to_string(),
-            explanation: decode_explanation(value.value())?,
-        });
-    }
-    Ok(rows)
+fn outgoing_rows(tx: &dyn ReadTx, source: &str) -> Result<Vec<NodeRelationProjection>, PortError> {
+    tx.scan_str3_by_first(Table::Relations, source)?
+        .into_iter()
+        .map(|((source_node_id, target_node_id, relation_type), raw)| {
+            Ok(NodeRelationProjection {
+                source_node_id,
+                target_node_id,
+                relation_type,
+                explanation: decode_explanation(&raw)?,
+            })
+        })
+        .collect()
 }
 
-fn outgoing_targets(relations: &RelationReadTable, source: &str) -> Result<Vec<String>, PortError> {
-    let upper = format!("{source}\u{0}");
-    let mut targets = Vec::new();
-    for row in relations
-        .range((source, "", "")..(upper.as_str(), "", ""))
-        .map_err(range_error)?
-    {
-        let (key, _) = row.map_err(range_error)?;
-        targets.push(key.value().1.to_string());
-    }
-    Ok(targets)
+fn outgoing_targets(tx: &dyn ReadTx, source: &str) -> Result<Vec<String>, PortError> {
+    Ok(tx
+        .scan_str3_by_first(Table::Relations, source)?
+        .into_iter()
+        .map(|((_, target, _), _)| target)
+        .collect())
 }
 
 fn reachable_outward(
-    relations: &RelationReadTable,
+    tx: &dyn ReadTx,
     root_node_id: &str,
     depth: u32,
 ) -> Result<BTreeSet<String>, PortError> {
@@ -73,7 +54,7 @@ fn reachable_outward(
         if hops == depth {
             continue;
         }
-        for target in outgoing_targets(relations, &node_id)? {
+        for target in outgoing_targets(tx, &node_id)? {
             if visited.insert(target.clone()) {
                 reachable.insert(target.clone());
                 frontier.push_back((target, hops + 1));
@@ -86,12 +67,12 @@ fn reachable_outward(
 }
 
 fn relations_among(
-    relations: &RelationReadTable,
+    tx: &dyn ReadTx,
     selected: &BTreeSet<String>,
 ) -> Result<Vec<NodeRelationProjection>, PortError> {
     let mut rows = Vec::new();
     for source in selected {
-        for relation in outgoing_rows(relations, source)? {
+        for relation in outgoing_rows(tx, source)? {
             if selected.contains(&relation.target_node_id) {
                 rows.push(relation);
             }
@@ -101,7 +82,7 @@ fn relations_among(
 }
 
 fn selected_projections(
-    nodes: &NodeReadTable,
+    tx: &dyn ReadTx,
     selected: &BTreeSet<String>,
     root_node_id: &str,
 ) -> Result<Vec<NodeProjection>, PortError> {
@@ -110,7 +91,7 @@ fn selected_projections(
         if node_id == root_node_id {
             continue;
         }
-        if let Some(projection) = load_node(nodes, node_id)? {
+        if let Some(projection) = load_node(tx, node_id)? {
             projections.push(projection);
         }
     }
@@ -118,7 +99,7 @@ fn selected_projections(
 }
 
 fn shortest_outward_path(
-    relations: &RelationReadTable,
+    tx: &dyn ReadTx,
     root_node_id: &str,
     target_node_id: &str,
 ) -> Result<Option<Vec<String>>, PortError> {
@@ -127,7 +108,7 @@ fn shortest_outward_path(
     let mut frontier = VecDeque::from([root_node_id.to_string()]);
 
     while let Some(node_id) = frontier.pop_front() {
-        for target in outgoing_targets(relations, &node_id)? {
+        for target in outgoing_targets(tx, &node_id)? {
             if !visited.insert(target.clone()) {
                 continue;
             }
@@ -158,14 +139,13 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         let root_node_id = root_node_id.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let nodes = tx.open_table(NODES).map_err(table_error)?;
-            let relations = tx.open_table(RELATIONS).map_err(table_error)?;
+            let tx = tx.as_ref();
 
-            let Some(root) = load_node(&nodes, &root_node_id)? else {
+            let Some(root) = load_node(tx, &root_node_id)? else {
                 return Ok(None);
             };
 
-            let reachable = reachable_outward(&relations, &root_node_id, depth)?;
+            let reachable = reachable_outward(tx, &root_node_id, depth)?;
             // Mirrors the Neo4j neighborhood query: an empty neighborhood
             // reports no relations, even for self-referential root edges.
             let relation_rows = if reachable.is_empty() {
@@ -173,11 +153,11 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
             } else {
                 let mut selected = reachable.clone();
                 selected.insert(root_node_id.clone());
-                relations_among(&relations, &selected)?
+                relations_among(tx, &selected)?
             };
 
             Ok(Some(NodeNeighborhood {
-                neighbors: selected_projections(&nodes, &reachable, &root_node_id)?,
+                neighbors: selected_projections(tx, &reachable, &root_node_id)?,
                 relations: relation_rows,
                 root,
             }))
@@ -195,32 +175,26 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         let target_node_id = target_node_id.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let nodes = tx.open_table(NODES).map_err(table_error)?;
-            let relations = tx.open_table(RELATIONS).map_err(table_error)?;
+            let tx = tx.as_ref();
 
-            let Some(root) = load_node(&nodes, &root_node_id)? else {
+            let Some(root) = load_node(tx, &root_node_id)? else {
                 return Ok(None);
             };
-            if load_node(&nodes, &target_node_id)?.is_none() {
+            if load_node(tx, &target_node_id)?.is_none() {
                 return Ok(None);
             }
-            let Some(path_node_ids) =
-                shortest_outward_path(&relations, &root_node_id, &target_node_id)?
+            let Some(path_node_ids) = shortest_outward_path(tx, &root_node_id, &target_node_id)?
             else {
                 return Ok(None);
             };
 
             let mut selected = path_node_ids.iter().cloned().collect::<BTreeSet<_>>();
             selected.insert(target_node_id.clone());
-            selected.extend(reachable_outward(
-                &relations,
-                &target_node_id,
-                subtree_depth,
-            )?);
+            selected.extend(reachable_outward(tx, &target_node_id, subtree_depth)?);
 
             Ok(Some(ContextPathNeighborhood {
-                neighbors: selected_projections(&nodes, &selected, &root_node_id)?,
-                relations: relations_among(&relations, &selected)?,
+                neighbors: selected_projections(tx, &selected, &root_node_id)?,
+                relations: relations_among(tx, &selected)?,
                 path_node_ids,
                 root,
             }))
@@ -237,24 +211,19 @@ impl NodeRelationshipReader for EmbeddedKernelStore {
         let node_id = node_id.to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let nodes = tx.open_table(NODES).map_err(table_error)?;
-            if load_node(&nodes, &node_id)?.is_none() {
+            let tx = tx.as_ref();
+            if load_node(tx, &node_id)?.is_none() {
                 return Ok(None);
             }
-            let relations = tx.open_table(RELATIONS).map_err(table_error)?;
-            let by_target = tx.open_table(RELATIONS_BY_TARGET).map_err(table_error)?;
 
             let mut incoming = Vec::new();
-            let upper = format!("{node_id}\u{0}");
-            for row in by_target
-                .range((node_id.as_str(), "", "")..(upper.as_str(), "", ""))
-                .map_err(range_error)?
+            for ((target, source, relation_type), _) in
+                tx.scan_str3_by_first(Table::RelationsByTarget, &node_id)?
             {
-                let (key, _) = row.map_err(range_error)?;
-                let (target, source, relation_type) = key.value();
-                let Some(value) = relations
-                    .get((source, target, relation_type))
-                    .map_err(storage_error)?
+                let Some(raw) = tx.get(
+                    Table::Relations,
+                    Key::Str3(&source, &target, &relation_type),
+                )?
                 else {
                     return Err(PortError::InvalidState(format!(
                         "embedded store adjacency index points at missing relation \
@@ -262,16 +231,16 @@ impl NodeRelationshipReader for EmbeddedKernelStore {
                     )));
                 };
                 incoming.push(NodeRelationProjection {
-                    source_node_id: source.to_string(),
-                    target_node_id: target.to_string(),
-                    relation_type: relation_type.to_string(),
-                    explanation: decode_explanation(value.value())?,
+                    explanation: decode_explanation(&raw)?,
+                    source_node_id: source,
+                    target_node_id: target,
+                    relation_type,
                 });
             }
 
             Ok(Some(NodeRelationships {
                 incoming,
-                outgoing: outgoing_rows(&relations, &node_id)?,
+                outgoing: outgoing_rows(tx, &node_id)?,
             }))
         })
         .await
@@ -282,13 +251,11 @@ impl MemoryAboutIndexReader for EmbeddedKernelStore {
     async fn list_memory_abouts(&self) -> Result<Vec<String>, PortError> {
         self.run(|store| {
             let tx = store.begin_read()?;
-            let anchors = tx.open_table(ANCHORS).map_err(table_error)?;
-            let mut abouts = Vec::new();
-            for row in anchors.iter().map_err(range_error)? {
-                let (key, _) = row.map_err(range_error)?;
-                abouts.push(key.value().to_string());
-            }
-            Ok(abouts)
+            Ok(tx
+                .scan_str(Table::Anchors)?
+                .into_iter()
+                .map(|(anchor, _)| anchor)
+                .collect())
         })
         .await
     }
@@ -300,25 +267,21 @@ impl MemoryAboutIndexReader for EmbeddedKernelStore {
         let dimension_ids = dimension_ids.to_vec();
         self.run(move |store| {
             let tx = store.begin_read()?;
-            let anchors = tx.open_table(ANCHORS).map_err(table_error)?;
-            let nodes = tx.open_table(NODES).map_err(table_error)?;
-            let relations = tx.open_table(RELATIONS).map_err(table_error)?;
+            let tx = tx.as_ref();
 
             let mut abouts = BTreeSet::new();
-            for row in anchors.iter().map_err(range_error)? {
-                let (key, _) = row.map_err(range_error)?;
-                let anchor = key.value().to_string();
-                let is_anchor = load_node(&nodes, &anchor)?
+            for (anchor, _) in tx.scan_str(Table::Anchors)? {
+                let is_anchor = load_node(tx, &anchor)?
                     .is_some_and(|node| node.node_kind == MEMORY_ANCHOR_KIND);
                 if !is_anchor {
                     continue;
                 }
-                for relation in outgoing_rows(&relations, &anchor)? {
+                for relation in outgoing_rows(tx, &anchor)? {
                     if relation.relation_type != "has_dimension" {
                         continue;
                     }
                     let matches =
-                        load_node(&nodes, &relation.target_node_id)?.is_some_and(|dimension| {
+                        load_node(tx, &relation.target_node_id)?.is_some_and(|dimension| {
                             dimension.node_kind == "memory_dimension"
                                 && dimension_ids.iter().any(|dimension_id| {
                                     dimension.node_id == *dimension_id
