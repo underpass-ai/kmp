@@ -45,6 +45,28 @@ That is the signal to start writing one, not to keep guessing.
 | `kernel_rewind` | Walk backward: how did we get here. |
 | `kernel_forward` | Walk forward: what happened after this. |
 
+### Catching up
+
+"What happened since I last looked" is two of those moves, not a separate
+feature, and it is the second thing to reach for after `kernel_wake` on work
+that has been touched by someone else — another session, another host, a
+colleague who imported a bundle.
+
+The frontier first: `kernel_rewind` from now with `limit: { entries: 1 }` and
+`budget: { detail: "full" }` returns the newest entry with its
+`coordinates[].observed_at`, and `page.total` for how much the memory holds.
+That timestamp is the bookmark.
+
+Then the delta: `kernel_forward` from that timestamp — or from a plain
+"since Friday" the user gives you — returns exactly what came after, in order.
+`page.has_more` says whether the slice was cut; a truncated delta reported as
+the whole one is worse than no delta.
+
+Carry the newest timestamp forward into your own notes or your next write. The
+kernel does not remember where each reader got to, on purpose: a memory that
+tracked its readers would be keeping state about you rather than about the
+work.
+
 **Audit**
 
 | Move | Use it when |
