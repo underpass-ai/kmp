@@ -21,6 +21,23 @@ implemented, with deprecated fields removed in `v1`.
   the same bounded deadline. The spike's conclusion that "the fix is ordering,
   not retry logic" is corrected in place with the measurements. (#34)
 
+- The plugin launchers can now run a binary an operator built themselves,
+  named by `KMP_MCP_BIN`. They prefer the bundled `bin/kmp-mcp` over anything
+  on `PATH` — a release bundle pins the binary that plugin version was tested
+  against — and that bundle is built without the sqlite engine, so
+  `cargo install kmp-mcp --features sqlite` was installed and never used: the
+  shared store was refused by a binary that could not open it. The variable
+  selects the executable and nothing else; the backend and the kernel's own
+  data-directory resolution are unchanged. `kmp-doctor` already read the same
+  variable, so a doctor that diagnosed one binary while the launcher ran
+  another now agrees with itself. Gated by two hosts started through the real
+  launcher against one shared store. (#35)
+
+- The Windows launcher no longer forwards host arguments to the binary. It ran
+  `"%BINARY%" %*`, and a leading argument is read as a maintenance command
+  (`migrate`, `--version`), so a host that passed anything would get exit 2 and
+  no tools — on Windows only. The POSIX launcher already dropped them.
+
 ## [0.1.4] - 2026-08-16
 
 ### Added

@@ -67,7 +67,18 @@ KMP_MCP_ENGINE=sqlite KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR=~/.local/share/k
 kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
 
 # 3. point BOTH hosts' KMP_MCP_DATA_DIR at the shared directory
+#    ...and, if they run KMP through the plugin, KMP_MCP_BIN at the binary
+#    from step 1: the bundle ships its own, built without the engine
 ```
+
+`KMP_MCP_BIN` is only needed by the plugin launchers, and only for this. They
+prefer the bundled `bin/kmp-mcp` over anything on `PATH` — a release bundle
+pins the binary that plugin version was tested against — so without it step 1
+is installed and never used, and the shared directory is refused by a binary
+that cannot open it. It selects the executable and nothing else: the backend
+and the data-directory resolution below are unchanged. A marketplace install
+straight from the repository has no `bin/`, so there `PATH` is already used
+and this is unnecessary.
 
 `KMP_MCP_ENGINE` only decides what a **fresh** directory becomes. An
 existing directory always opens with the engine it was created with; asking

@@ -148,7 +148,8 @@ else
           info "session, point this one at a different KMP_MCP_DATA_DIR, or"
           info "share the store between hosts by moving it to the sqlite engine:"
           info "  kmp-mcp migrate $DATA_DIR <new-dir> --engine sqlite"
-          info "(needs a kmp-mcp built with --features sqlite)"
+          info "(needs a kmp-mcp built with --features sqlite, and KMP_MCP_BIN"
+          info " pointing the plugin at it: the bundled binary has no engine)"
         fi
       else
         ok "store is free — no other process holds it"

@@ -113,7 +113,9 @@ there. It separates them:
 Two failures it names rather than leaving you to guess: another session
 holding a redb store, which is the single-writer contract (ADR-011) doing its
 job — the doctor says which engine the store is on, and names the `migrate
---engine sqlite` command that lets two hosts share it — and a session that
+--engine sqlite` command that lets two hosts share it, along with the
+`KMP_MCP_BIN` this launcher needs to run a binary that carries that engine,
+since the bundled one does not — and a session that
 started before the registration changed and is still carrying the old
 inventory. The second one cannot be fixed from inside the session — you have
 to restart it.
