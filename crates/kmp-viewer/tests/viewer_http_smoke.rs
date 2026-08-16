@@ -363,6 +363,113 @@ async fn the_cursors_the_ui_issues_return_the_entries_they_should() {
     );
 }
 
+/// A parameter the caller got wrong is answered, not absorbed.
+///
+/// `depth=abc` used to come back 200 as though it read `depth=2`, while
+/// `scope=nonsense` next door refused by name. This codebase argues the
+/// opposite everywhere else — an unknown kind is refused rather than guessed —
+/// and a typo that answers as if it were correct is the one failure a reader
+/// cannot see.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_parameter_that_is_not_a_number_is_refused_rather_than_defaulted() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    kernel
+        .service()
+        .ingest(corpus())
+        .await
+        .expect("memory ingests");
+
+    let viewer = Arc::new(MemoryViewerServer::new(
+        kernel.service(),
+        Some(data_dir.path().display().to_string()),
+    ));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    for (query, key) in [
+        ("depth=abc", "depth"),
+        ("budget=lots", "budget"),
+        ("depth=2.5", "depth"),
+    ] {
+        let (status, body) = get(
+            port,
+            &format!("/api/graph?about={}&{query}", urlencode(ABOUT)),
+        )
+        .await;
+        assert_eq!(status, 400, "`{query}` was absorbed: {body}");
+        assert!(
+            body["error"].as_str().is_some_and(|e| e.contains(key)),
+            "the refusal must name the parameter, got {body}"
+        );
+    }
+
+    // Out of range is still a policy, not a mistake: it clamps and answers.
+    let (status, wide) = get(
+        port,
+        &format!("/api/graph?about={}&depth=9999", urlencode(ABOUT)),
+    )
+    .await;
+    assert_eq!(status, 200, "an out-of-range depth clamps: {wide}");
+
+    // And an absent parameter still means "use the default".
+    let (status, plain) = get(port, &format!("/api/graph?about={}", urlencode(ABOUT))).await;
+    assert_eq!(status, 200, "no parameters at all must still work: {plain}");
+}
+
+/// HEAD is GET without the body (RFC 9110 §9.3.2). It answered 405, so a
+/// health check or link checker pointed at the viewer reported it down.
+#[tokio::test(flavor = "multi_thread")]
+async fn head_answers_the_same_head_as_get_and_no_body() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    let head = raw_request(port, "HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
+    let get_response = raw_request(port, "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
+
+    assert!(head.starts_with("HTTP/1.1 200"), "HEAD refused: {head}");
+    let head_length = content_length(&head);
+    assert_eq!(
+        head_length,
+        content_length(&get_response),
+        "HEAD must report the length GET would send"
+    );
+    assert!(head_length > 0, "the page is not empty");
+    let body = head.split("\r\n\r\n").nth(1).unwrap_or("");
+    assert!(body.is_empty(), "HEAD sent a body: {body:?}");
+
+    // Everything else is still refused.
+    let post = raw_request(port, "POST / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
+    assert!(post.starts_with("HTTP/1.1 405"), "POST allowed: {post}");
+}
+
+fn content_length(response: &str) -> usize {
+    response
+        .lines()
+        .find_map(|line| line.strip_prefix("Content-Length: "))
+        .and_then(|value| value.trim().parse().ok())
+        .expect("a Content-Length header")
+}
+
+async fn raw_request(port: u16, request: &str) -> String {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .expect("connects");
+    stream
+        .write_all(request.as_bytes())
+        .await
+        .expect("request writes");
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).await.expect("response reads");
+    String::from_utf8_lossy(&raw).to_string()
+}
+
 fn urlencode(value: &str) -> String {
     value
         .bytes()

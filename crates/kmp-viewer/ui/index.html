@@ -26,7 +26,7 @@
           <option>1</option><option selected>2</option><option>3</option><option>4</option>
         </select>
       </label>
-      <label class="ctl">budget
+      <label class="ctl" title="token budget for the rendered context behind the Context button — the graph is drawn whole either way">context budget
         <select id="ctl-budget">
           <option value="4096">4k</option>
           <option value="16384" selected>16k</option>
@@ -150,16 +150,16 @@
     </div>
     <div class="stat"><span class="stat-label">nodes</span><span id="s-nodes" class="stat-value">–</span></div>
     <div class="stat"><span class="stat-label">edges</span><span id="s-edges" class="stat-value">–</span></div>
-    <div class="stat" title="tokens of the rendered context">
-      <span class="stat-label">tokens</span><span id="s-tokens" class="stat-value">–</span>
+    <div class="stat" title="tokens of the rendered context — not of the graph beside it">
+      <span class="stat-label">context tokens</span><span id="s-tokens" class="stat-value">–</span>
     </div>
-    <div class="stat" title="raw tokens the rendering stands in for ÷ tokens it costs">
-      <span class="stat-label">compression</span><span id="s-compression" class="stat-value">–</span>
+    <div class="stat" title="raw tokens the rendered context stands in for ÷ tokens it costs">
+      <span class="stat-label">context compression</span><span id="s-compression" class="stat-value">–</span>
     </div>
     <div class="stat" title="share of relations that carry causal explanation">
       <span class="stat-label">causal</span><span id="s-causal" class="stat-value">–</span>
     </div>
-    <div class="stat" title="share of the budget spent on low-signal content">
+    <div class="stat" title="share of the context budget spent on low-signal content">
       <span class="stat-label">noise</span><span id="s-noise" class="stat-value">–</span>
     </div>
     <button id="btn-context" class="btn">Context</button>
