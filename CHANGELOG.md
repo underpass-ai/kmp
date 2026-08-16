@@ -10,6 +10,17 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Two agent hosts starting at the same instant against a store that does not
+  exist yet could still lose one of them. Switching a new store into WAL takes
+  a brief exclusive lock, and when the loser's connection holds a write lock
+  the switch fails *immediately* — `busy_timeout`, armed before it exactly as
+  [ADR-018](docs/adr/ADR-018-multi-process-embedded-store.md)'s spike
+  prescribed, is never consulted for that one. The switch is now retried under
+  the same bounded deadline. The spike's conclusion that "the fix is ordering,
+  not retry logic" is corrected in place with the measurements. (#34)
+
 ## [0.1.4] - 2026-08-16
 
 ### Added

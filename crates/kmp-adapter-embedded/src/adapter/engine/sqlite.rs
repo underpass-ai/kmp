@@ -143,13 +143,42 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
     connection
         .busy_timeout(BUSY_TIMEOUT)
         .map_err(|error| pragma_error(store_file, "busy_timeout", &error))?;
-    connection
-        .pragma_update(None, "journal_mode", "WAL")
-        .map_err(|error| pragma_error(store_file, "journal_mode", &error))?;
+    enter_wal(&connection, store_file)?;
     connection
         .pragma_update(None, "synchronous", "FULL")
         .map_err(|error| pragma_error(store_file, "synchronous", &error))?;
     Ok(connection)
+}
+
+/// Switches the store into WAL, waiting out a holder rather than giving up.
+///
+/// `busy_timeout` above is necessary and not sufficient. Switching the
+/// journal mode takes a brief exclusive lock, and when another connection
+/// already holds a write lock the switch fails *immediately*: the busy
+/// handler is not consulted for this one. The holder is another agent host
+/// doing exactly what this engine exists to allow, so the only correct answer
+/// is to wait for it — bounded by the same timeout every other wait uses, so
+/// a genuinely stuck store still reports rather than hanging.
+fn enter_wal(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
+    let deadline = std::time::Instant::now() + BUSY_TIMEOUT;
+    let mut backoff = Duration::from_millis(2);
+    loop {
+        match connection.pragma_update(None, "journal_mode", "WAL") {
+            Ok(()) => return Ok(()),
+            Err(error) if is_busy(&error) && std::time::Instant::now() < deadline => {
+                std::thread::sleep(backoff);
+                backoff = (backoff * 2).min(Duration::from_millis(64));
+            }
+            Err(error) => return Err(pragma_error(store_file, "journal_mode", &error)),
+        }
+    }
+}
+
+fn is_busy(error: &rusqlite::Error) -> bool {
+    matches!(
+        error.sqlite_error_code(),
+        Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)
+    )
 }
 
 fn create_tables(connection: &Connection) -> Result<(), PortError> {
@@ -537,4 +566,54 @@ fn read_error(table: Table, error: &rusqlite::Error) -> PortError {
 
 fn write_error(table: Table, error: &rusqlite::Error) -> PortError {
     PortError::Unavailable(format!("embedded store write on `{table}` failed: {error}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Losing the race to switch a store into WAL must not end the open.
+    ///
+    /// The switch takes a brief exclusive lock. A connection that holds a
+    /// write lock while the database is still in its default journal mode
+    /// makes that switch fail — and `busy_timeout`, armed as it already is,
+    /// is not consulted for it: the error comes back immediately. Waiting is
+    /// the only correct answer, because the holder is another agent host
+    /// doing exactly what this engine exists to allow.
+    #[test]
+    fn an_open_waits_out_a_conversion_it_lost_rather_than_failing() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store_file = dir.path().join("kernel.sqlite3");
+
+        let holder = Connection::open(&store_file).expect("holder opens");
+        holder
+            .pragma_update(None, "journal_mode", "delete")
+            .expect("holder keeps the default journal mode");
+        holder
+            .execute_batch("CREATE TABLE t (k INTEGER PRIMARY KEY)")
+            .expect("holder creates something to lock");
+        holder
+            .execute_batch("BEGIN IMMEDIATE")
+            .expect("holder takes the write lock");
+
+        let releasing = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(250));
+            holder.execute_batch("ROLLBACK").expect("holder lets go");
+            drop(holder);
+        });
+
+        let started = std::time::Instant::now();
+        let connection = open_connection(&store_file).expect("the open waits and then succeeds");
+        let waited = started.elapsed();
+        releasing.join().expect("holder thread finishes");
+
+        let mode: String = connection
+            .pragma_query_value(None, "journal_mode", |row| row.get(0))
+            .expect("journal mode reads back");
+        assert_eq!(mode, "wal", "the store must end up in WAL, not merely open");
+        assert!(
+            waited >= Duration::from_millis(200),
+            "it must have waited for the holder rather than racing past it, waited {waited:?}"
+        );
+    }
 }
