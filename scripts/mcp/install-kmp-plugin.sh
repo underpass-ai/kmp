@@ -193,7 +193,7 @@ if [ "$DO_CLAUDE" -eq 1 ]; then
   say "   Claude Code installs this natively, and the plugin ships the MCP"
   say "   server with it. Inside a session, run:"
   say ""
-  say "     /plugin marketplace add underpass-ai/kmp"
+  say "     /plugin marketplace add underpass-ai/plugins"
   say "     /plugin install kmp@underpass"
   say ""
   say "   That gives you /kmp:doctor, /kmp:moves and /kmp:setup, the"
