@@ -10,6 +10,31 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-16
+
+### Fixed
+
+- The plugin launcher no longer dies on a marketplace install. It execs
+  `bin/kmp-mcp` inside the plugin directory, and that path is gitignored, so
+  it only exists in a release package — a marketplace install produced a
+  plugin whose MCP server exited 127 telling the user to "build the local
+  plugin bundle", which is not something they can do. Both launchers still
+  prefer the bundled binary, since a release package pins the one that plugin
+  version was tested against, and now fall back to `kmp-mcp` on `PATH`. When
+  neither exists the error names both places it looked and how to get one.
+- `serverInfo.name` in the MCP `initialize` response was `kmp-kmp`, an
+  artifact of a blanket rename. It is now `underpass-kmp-mcp`, matching the
+  sibling `underpass-made-mcp`.
+
+### Changed
+
+- The README opens with the two editions and the install for each host
+  instead of a contributor quickstart, and leads with the plugin for Claude
+  Code. New `docs/editions.md` is the canonical embedded-vs-cluster
+  comparison; the operations index is grouped by edition.
+- The Choreographer integration guide is now `docs/integrations/made-kmp.md`
+  after the MADE rename.
+
 ## [0.1.2] - 2026-08-16
 
 ### Added
