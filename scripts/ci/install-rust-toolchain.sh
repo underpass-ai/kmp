@@ -16,17 +16,21 @@ install_args=(
   --no-self-update
 )
 
-IFS=', ' read -r -a requested_components <<< "${KMP_RUST_COMPONENTS:-}"
-for component in "${requested_components[@]}"; do
-  [[ -z "${component}" ]] && continue
-  install_args+=(--component "${component}")
-done
+if [[ -n "${KMP_RUST_COMPONENTS:-}" ]]; then
+  IFS=', ' read -r -a requested_components <<< "${KMP_RUST_COMPONENTS}"
+  for component in "${requested_components[@]}"; do
+    [[ -z "${component}" ]] && continue
+    install_args+=(--component "${component}")
+  done
+fi
 
-IFS=', ' read -r -a requested_targets <<< "${KMP_RUST_TARGETS:-}"
-for target in "${requested_targets[@]}"; do
-  [[ -z "${target}" ]] && continue
-  install_args+=(--target "${target}")
-done
+if [[ -n "${KMP_RUST_TARGETS:-}" ]]; then
+  IFS=', ' read -r -a requested_targets <<< "${KMP_RUST_TARGETS}"
+  for target in "${requested_targets[@]}"; do
+    [[ -z "${target}" ]] && continue
+    install_args+=(--target "${target}")
+  done
+fi
 
 for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
   if rustup "${install_args[@]}"; then
