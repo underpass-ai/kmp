@@ -150,6 +150,70 @@ async fn relation_materialized_before_both_nodes_converges_after_the_nodes_arriv
     );
 }
 
+#[tokio::test]
+async fn repeated_relation_materialization_updates_one_edge_in_place() {
+    let _guard = container_test_guard().lock().await;
+    debug_log("starting test repeated_relation_materialization_updates_one_edge_in_place");
+
+    let mut messages = projection_messages();
+    messages.push((
+        "rehydration.graph.relation.materialized".to_string(),
+        serde_json::to_vec(&replayed_relation_payload())
+            .expect("replayed relation payload should serialize"),
+    ));
+
+    let fixture = TestFixture::builder()
+        .with_neo4j()
+        .with_valkey()
+        .with_nats()
+        .with_projection_runtime()
+        .with_grpc_server()
+        .with_seed(ClosureSeed::new(move |ctx| {
+            let client = ctx.nats_client().clone();
+            let messages = messages.clone();
+            Box::pin(async move {
+                publish_messages(&client, &messages).await?;
+                Ok(())
+            })
+        }))
+        .with_readiness_check(ROOT_NODE_ID, FINDING_NODE_ID)
+        .build()
+        .await
+        .expect("fixture should start");
+
+    let context = wait_for_relation_explanation(
+        fixture.query_client(),
+        ROOT_NODE_ID,
+        "the replay confirms the same mitigation without creating a second edge",
+    )
+    .await;
+    let bundle = context.bundle.expect("bundle should exist");
+    let role_bundle = bundle.bundles.first().expect("role bundle should exist");
+    let matching_edges = role_bundle
+        .relationships
+        .iter()
+        .filter(|relationship| {
+            relationship.source_node_id == DECISION_NODE_ID
+                && relationship.target_node_id == FINDING_NODE_ID
+                && relationship.relationship_type == "ADDRESSES"
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(matching_edges.len(), 1);
+    let explanation = matching_edges[0]
+        .explanation
+        .as_ref()
+        .expect("relation explanation should exist");
+    assert_eq!(
+        explanation.rationale,
+        "the replay confirms the same mitigation without creating a second edge"
+    );
+    assert_eq!(explanation.sequence, 4);
+
+    fixture.shutdown().await.expect("fixture should shut down");
+    debug_log("finished test repeated_relation_materialization_updates_one_edge_in_place");
+}
+
 fn projection_messages() -> Vec<(String, Vec<u8>)> {
     vec![
         (
@@ -323,6 +387,16 @@ fn relation_payload() -> Value {
     })
 }
 
+fn replayed_relation_payload() -> Value {
+    let mut payload = relation_payload();
+    payload["event_id"] = json!("evt-relation-replay");
+    payload["occurred_at"] = json!("2026-04-14T19:00:13Z");
+    payload["data"]["explanation"]["rationale"] =
+        json!("the replay confirms the same mitigation without creating a second edge");
+    payload["data"]["explanation"]["sequence"] = json!(4);
+    payload
+}
+
 async fn publish_messages(
     client: &async_nats::Client,
     messages: &[(String, Vec<u8>)],
@@ -386,4 +460,36 @@ async fn wait_for_relation_shape(
     }
 
     panic!("timed out waiting for relation-only spine edge to appear");
+}
+
+async fn wait_for_relation_explanation(
+    mut query_client: kmp_proto::v1beta1::context_query_service_client::ContextQueryServiceClient<
+        Channel,
+    >,
+    root_node_id: &str,
+    rationale: &str,
+) -> kmp_proto::v1beta1::GetContextResponse {
+    for _ in 0..40 {
+        if let Ok(context) = get_context(&mut query_client, root_node_id).await
+            && context.bundle.as_ref().is_some_and(|bundle| {
+                bundle.bundles.first().is_some_and(|role_bundle| {
+                    role_bundle.relationships.iter().any(|relationship| {
+                        relationship.source_node_id == DECISION_NODE_ID
+                            && relationship.target_node_id == FINDING_NODE_ID
+                            && relationship.relationship_type == "ADDRESSES"
+                            && relationship
+                                .explanation
+                                .as_ref()
+                                .is_some_and(|explanation| explanation.rationale == rationale)
+                    })
+                })
+            })
+        {
+            return context;
+        }
+
+        sleep(Duration::from_millis(250)).await;
+    }
+
+    panic!("timed out waiting for replayed relation explanation to appear");
 }
