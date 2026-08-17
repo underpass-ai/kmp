@@ -34,6 +34,17 @@ pub(crate) struct HttpResponse {
     pub(crate) status: u16,
     pub(crate) content_type: &'static str,
     pub(crate) body: Vec<u8>,
+    /// A HEAD answer: the same head a GET would send, with the body withheld.
+    /// The body stays here so `Content-Length` keeps describing what a GET
+    /// would return, which is what makes the two answers agree.
+    pub(crate) omit_body: bool,
+}
+
+impl HttpResponse {
+    pub(crate) fn without_body(mut self) -> Self {
+        self.omit_body = true;
+        self
+    }
 }
 
 impl HttpResponse {
@@ -42,6 +53,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/html; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            omit_body: false,
         }
     }
 
@@ -50,6 +62,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/css; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            omit_body: false,
         }
     }
 
@@ -58,6 +71,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/javascript; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            omit_body: false,
         }
     }
 
@@ -67,6 +81,7 @@ impl HttpResponse {
                 status: 200,
                 content_type: "application/json",
                 body,
+                omit_body: false,
             },
             Err(error) => Self::error(500, &format!("response serialization failed: {error}")),
         }
@@ -78,6 +93,7 @@ impl HttpResponse {
             status,
             content_type: "application/json",
             body: body.to_string().into_bytes(),
+            omit_body: false,
         }
     }
 }
@@ -161,7 +177,9 @@ pub(crate) async fn write_response(
         response.body.len(),
     );
     stream.write_all(head.as_bytes()).await?;
-    stream.write_all(&response.body).await?;
+    if !response.omit_body {
+        stream.write_all(&response.body).await?;
+    }
     stream.flush().await
 }
 

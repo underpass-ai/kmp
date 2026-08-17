@@ -16,6 +16,19 @@ use crate::MemoryViewerServer;
 use crate::http::{HttpRequest, HttpResponse};
 use crate::views;
 
+/// Unwraps a parameter, or returns its refusal from the enclosing handler.
+///
+/// The handlers answer with an `HttpResponse` rather than a `Result`, so `?`
+/// is not available to them.
+macro_rules! param_or_refuse {
+    ($expr:expr) => {
+        match $expr {
+            Ok(value) => value,
+            Err(response) => return response,
+        }
+    };
+}
+
 /// Who the viewer says it is in the kernel's own accounting: every recall it
 /// triggers is attributed and explainable in telemetry.
 const VIEWER_ROLE: &str = "viewer";
@@ -46,9 +59,22 @@ where
     W: ProjectionWriter + Send + Sync,
 {
     pub(crate) async fn route(&self, request: &HttpRequest) -> HttpResponse {
-        if request.method != "GET" {
+        // HEAD is GET without the body (RFC 9110 §9.3.2): a server that
+        // serves GET has to serve it, and a health check or link checker
+        // pointed here reported the viewer as down.
+        let head_only = request.method == "HEAD";
+        if request.method != "GET" && !head_only {
             return HttpResponse::error(405, "the viewer is read-only; only GET is served");
         }
+        let response = self.answer(request).await;
+        if head_only {
+            response.without_body()
+        } else {
+            response
+        }
+    }
+
+    async fn answer(&self, request: &HttpRequest) -> HttpResponse {
         match request.path.as_str() {
             "/" | "/index.html" => HttpResponse::html(INDEX_HTML),
             "/assets/viewer.css" => HttpResponse::css(VIEWER_CSS),
@@ -97,8 +123,8 @@ where
             role: VIEWER_ROLE.to_string(),
             intent: "render the memory graph for a human reader".to_string(),
             dimensions,
-            token_budget: budget_param(request),
-            depth: depth_param(request),
+            token_budget: param_or_refuse!(budget_param(request)),
+            depth: param_or_refuse!(depth_param(request)),
             max_tier,
             max_entries: None,
         };
@@ -186,16 +212,16 @@ where
             cursor,
             dimensions,
             window: TemporalWindow::new(
-                window_param(request, "before"),
-                window_param(request, "after"),
+                param_or_refuse!(window_param(request, "before")),
+                param_or_refuse!(window_param(request, "after")),
             ),
             limit_entries: request
                 .param("limit")
                 .and_then(|value| value.parse::<usize>().ok())
                 .filter(|limit| *limit > 0),
             include: TemporalIncludeOptions::default(),
-            token_budget: budget_param(request),
-            depth: depth_param(request),
+            token_budget: param_or_refuse!(budget_param(request)),
+            depth: param_or_refuse!(depth_param(request)),
             max_tier: None,
         };
         match self.service.temporal(query).await {
@@ -212,7 +238,7 @@ where
             from: from.to_string(),
             to: to.to_string(),
             role: VIEWER_ROLE.to_string(),
-            token_budget: budget_param(request),
+            token_budget: param_or_refuse!(budget_param(request)),
             page: TracePageRequest {
                 entries: request
                     .param("entries")
@@ -229,28 +255,38 @@ where
     }
 }
 
-fn depth_param(request: &HttpRequest) -> u32 {
-    request
-        .param("depth")
-        .and_then(|value| value.parse::<u32>().ok())
-        .unwrap_or(DEFAULT_GRAPH_DEPTH)
-        .clamp(1, MAX_GRAPH_DEPTH)
+/// A number a caller sent, or a refusal naming what was wrong with it.
+///
+/// Absent means "use the default"; present and unparseable means the caller
+/// believes they asked for something. Answering 200 to `depth=abc` as though
+/// it read `depth=2` is the one thing every other refusal in this codebase is
+/// written not to do — `scope` and `dims` next door already say so by name.
+/// Out of range is still clamped: a bound is a policy, not a mistake.
+fn numeric_param<T>(request: &HttpRequest, key: &str, default: T) -> Result<T, HttpResponse>
+where
+    T: std::str::FromStr,
+{
+    match request.param(key) {
+        None => Ok(default),
+        Some(value) => value.parse::<T>().map_err(|_| {
+            HttpResponse::error(
+                400,
+                &format!("parameter `{key}` is not a number: `{value}`"),
+            )
+        }),
+    }
 }
 
-fn budget_param(request: &HttpRequest) -> u32 {
-    request
-        .param("budget")
-        .and_then(|value| value.parse::<u32>().ok())
-        .unwrap_or(DEFAULT_TOKEN_BUDGET)
-        .clamp(256, MAX_TOKEN_BUDGET)
+fn depth_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
+    Ok(numeric_param(request, "depth", DEFAULT_GRAPH_DEPTH)?.clamp(1, MAX_GRAPH_DEPTH))
 }
 
-fn window_param(request: &HttpRequest, key: &str) -> usize {
-    request
-        .param(key)
-        .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(DEFAULT_WINDOW_ENTRIES)
-        .min(MAX_WINDOW_ENTRIES)
+fn budget_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
+    Ok(numeric_param(request, "budget", DEFAULT_TOKEN_BUDGET)?.clamp(256, MAX_TOKEN_BUDGET))
+}
+
+fn window_param(request: &HttpRequest, key: &str) -> Result<usize, HttpResponse> {
+    Ok(numeric_param(request, key, DEFAULT_WINDOW_ENTRIES)?.min(MAX_WINDOW_ENTRIES))
 }
 
 /// `scope=all` widens recall to every about the kernel indexes — the global
