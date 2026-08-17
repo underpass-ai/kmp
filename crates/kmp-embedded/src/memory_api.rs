@@ -57,6 +57,7 @@ impl MemoryRecallApi for EmbeddedKernel {
             token_budget: request.token_budget,
             depth: request.depth,
             max_tier: request.max_tier.map(tier),
+            max_entries: None,
         };
         let result = self.service().ask(query).await.map_err(translate_error)?;
         self.observe_recall_quality("kernel_ask", &result);

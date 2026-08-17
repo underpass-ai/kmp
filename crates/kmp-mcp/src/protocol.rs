@@ -680,8 +680,18 @@ fn budget_schema() -> Value {
 }
 
 pub(crate) fn tool_success_result(structured_content: Value) -> Value {
-    let text = serde_json::to_string_pretty(&structured_content)
-        .expect("fixture JSON should serialize as pretty text");
+    // `structuredContent` is the canonical response. Repeating the entire
+    // pretty-printed JSON in the text block doubled every tool result and was
+    // enough to overflow hosts even after the structured packet was budgeted.
+    let text = structured_content
+        .get("summary")
+        .and_then(Value::as_str)
+        .or_else(|| structured_content.get("answer").and_then(Value::as_str))
+        .map(ToString::to_string)
+        .unwrap_or_else(|| {
+            serde_json::to_string(&structured_content)
+                .expect("fixture JSON should serialize as compact text")
+        });
     json!({
         "content": [
             {

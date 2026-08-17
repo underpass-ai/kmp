@@ -39,25 +39,23 @@ KMP_MCP_BACKEND=embedded kmp-mcp
   `store/kernel.redb` or `store/kernel.sqlite3`, `logs/` (rotating JSON
   logs; stderr also — stdout is JSON-RPC only), `telemetry/quality.redb`
   (bounded fail-open quality journal, ADR-014).
-- **Storage engine** (ADR-018): redb by default — pure Rust, one file, **one
-  process at a time**. A second session on the same data dir fails fast with
-  an explicit error and the tools do not appear in that host's inventory.
-  To share one store between hosts, use the sqlite engine — see below.
+- **Storage engine** (ADR-018): shipped builds create fresh stores on SQLite
+  (WAL), so several agent hosts can share them. Existing redb stores still
+  open unchanged and remain single-process until explicitly migrated.
 
 ### Sharing one memory between two agent hosts
 
-The default engine is single-process: if Claude Code and Codex CLI both open
-the same data directory, whichever started first owns it and the other gets
-no memory. The sqlite engine (WAL mode) lets both work on the same store —
+Fresh stores already use SQLite in the shipped binary. If Claude Code and
+Codex CLI point at the same existing redb directory, whichever started first
+owns it; SQLite (WAL mode) lets both work on the same store —
 readers never block the writer, a second writer waits for the commit lock
 instead of being refused.
 
-It is opt-in, because it brings a C toolchain into the build; the crates.io
-binary and the plugin bundles are built without it. Three steps:
+For an existing redb store the conversion is one command:
 
 ```bash
-# the short way, once you have a binary with the engine:
-cargo install kmp-mcp --features sqlite
+# current crates.io and plugin builds already carry the engine
+cargo install kmp-mcp
 kmp-mcp share-memory           # snapshots, migrates, verifies, installs, keeps the original
 # then restart both hosts
 ```
@@ -75,29 +73,22 @@ deletes: the original is kept beside the new one under a
 The long way, when you want each step in your own hands:
 
 ```bash
-# 1. a binary that carries the engine
-cargo install kmp-mcp --features sqlite
+# 1. the shipped binary carries both engines
+cargo install kmp-mcp
 kmp-mcp --version              # -> kmp-mcp 0.1.x (store formats 1, 2 (sqlite))
 
-# 2a. starting fresh: ask for sqlite when the directory is created
-KMP_MCP_ENGINE=sqlite KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR=~/.local/share/kmp/shared kmp-mcp
+# 2a. starting fresh: SQLite is selected automatically
+KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR=~/.local/share/kmp/shared kmp-mcp
 
 # 2b. already have history: convert it — the source is left untouched
 kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
 
 # 3. point BOTH hosts' KMP_MCP_DATA_DIR at the shared directory
-#    ...and, if they run KMP through the plugin, KMP_MCP_BIN at the binary
-#    from step 1: the bundle ships its own, built without the engine
 ```
 
-`KMP_MCP_BIN` is only needed by the plugin launchers, and only for this. They
-prefer the bundled `bin/kmp-mcp` over anything on `PATH` — a release bundle
-pins the binary that plugin version was tested against — so without it step 1
-is installed and never used, and the shared directory is refused by a binary
-that cannot open it. It selects the executable and nothing else: the backend
-and the data-directory resolution below are unchanged. A marketplace install
-straight from the repository has no `bin/`, so there `PATH` is already used
-and this is unnecessary.
+`KMP_MCP_BIN` remains a development/pinning override for plugin launchers; it
+is no longer part of the SQLite setup because bundled binaries carry both
+engines.
 
 `KMP_MCP_ENGINE` only decides what a **fresh** directory becomes. An
 existing directory always opens with the engine it was created with; asking
@@ -108,9 +99,9 @@ store is on and whether another process has it open.
 
 What it costs, plainly: ~5× slower point reads and ~30 % slower batched
 writes than redb (both far above interactive rates), a slightly larger
-binary, and a C dependency in the build. What it buys: two hosts, one
-memory, and 2.5× smaller stores. A binary without the feature that meets a
-sqlite store refuses it by name and says which feature to enable; a binary
+binary, and a C dependency in shipped builds. What it buys: two hosts, one
+memory, and 2.5× smaller stores. A `--no-default-features` binary that meets
+a SQLite store refuses it by name and says the engine is not compiled; a binary
 older than the layout refuses it as "newer than this binary supports". No
 binary ever opens an empty store beside a real one.
 

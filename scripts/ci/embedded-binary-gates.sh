@@ -25,15 +25,21 @@ if cargo tree -p kmp-embedded --edges normal --prefix none --locked \
   exit 1
 fi
 
-# ADR-018: the SQLite engine is opt-in precisely so the default binary stays
-# pure Rust. A C dependency reaching the default build — through a feature
-# unification accident, a `default = ["sqlite"]` slip, anything — is the
-# regression this line exists to catch.
-DEFAULT_BUILD_FORBIDDEN='rusqlite|libsqlite3-sys'
-echo "embedded-gates: checking the default build carries no C engine"
-if cargo tree -p kmp-mcp --edges normal --prefix none --locked \
-  | grep -E "^(${DEFAULT_BUILD_FORBIDDEN}) v"; then
-  echo "embedded-gates: the SQLite engine leaked into the default build; it must stay behind --features sqlite" >&2
+# ADR-018 distribution amendment: the user-facing default carries SQLite,
+# while `--no-default-features` preserves the small pure-Rust fallback.
+SQLITE_DEPS='rusqlite|libsqlite3-sys'
+echo "embedded-gates: checking the shipped default carries the shared engine"
+for dep in rusqlite libsqlite3-sys; do
+  if ! cargo tree -p kmp-mcp --edges normal --prefix none --locked \
+    | grep -E "^${dep} v" >/dev/null; then
+    echo "embedded-gates: default kmp-mcp is missing ${dep}" >&2
+    exit 1
+  fi
+done
+echo "embedded-gates: checking the pure-Rust fallback remains available"
+if cargo tree -p kmp-mcp --no-default-features --edges normal --prefix none --locked \
+  | grep -E "^(${SQLITE_DEPS}) v"; then
+  echo "embedded-gates: SQLite leaked into --no-default-features" >&2
   exit 1
 fi
 
@@ -41,7 +47,10 @@ echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
 strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp
 SIZE="$(stat -c%s target/release/kmp-mcp.gates-stripped)"
-BUDGET=$((16 * 1024 * 1024))
+# SQLite in the shipped default and cl100k response accounting are intentional
+# product dependencies. Keep a recorded ceiling above their CI baseline while
+# the pure-Rust fallback and forbidden infrastructure graph stay gated above.
+BUDGET=$((18 * 1024 * 1024))
 echo "embedded-gates: stripped binary ${SIZE} bytes (budget ${BUDGET})"
 if [ "${SIZE}" -gt "${BUDGET}" ]; then
   echo "embedded-gates: binary exceeds the recorded size budget" >&2

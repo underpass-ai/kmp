@@ -380,6 +380,46 @@ async fn kernel_write_memory_commit_uses_canonical_ingest_backend_path() {
 }
 
 #[tokio::test]
+async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server");
+    let arguments = json!({
+        "about": "project:new-root",
+        "intent": "record_decision",
+        "actor": "test-agent",
+        "observed_at": "2026-08-17T10:00:00Z",
+        "scope": {"process": "process:test"},
+        "current": {
+            "kind": "decision",
+            "summary": "The first durable memory for this project",
+            "evidence": "The project has no prior KMP entries."
+        },
+        "options": {"strict": true}
+    });
+    let request = |id| {
+        json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "tools/call",
+            "params": {"name": "kernel_write_memory", "arguments": arguments.clone()}
+        })
+    };
+
+    let first = handle_with(&server, request(70)).await;
+    assert_eq!(first["result"]["isError"], false, "{first}");
+    assert_eq!(first["result"]["structuredContent"]["accepted"], true);
+
+    let second = handle_with(&server, request(71)).await;
+    assert_eq!(second["result"]["isError"], true, "{second}");
+    assert!(
+        second["result"]["content"][0]["text"]
+            .as_str()
+            .expect("validation message")
+            .contains("once the about exists")
+    );
+}
+
+#[tokio::test]
 async fn invalid_ingest_arguments_return_tool_error() {
     let response = handle(json!({
         "jsonrpc": "2.0",

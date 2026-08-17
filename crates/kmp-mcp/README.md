@@ -17,7 +17,7 @@ Codex and Claude Code.
 
 | `KMP_MCP_BACKEND` | What it talks to | What it needs |
 |:--|:--|:--|
-| `embedded` | the kernel in this process, over a local redb store | `KMP_MCP_DATA_DIR` (or the default data directory) |
+| `embedded` | the kernel in this process; fresh stores use shareable SQLite, existing redb stores remain compatible | `KMP_MCP_DATA_DIR` (or the default data directory) |
 | `grpc` (default) | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 

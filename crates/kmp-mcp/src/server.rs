@@ -14,7 +14,7 @@ use crate::protocol::{
     initialize_result, jsonrpc_error, jsonrpc_result, tool_error_result, tool_success_result,
     tools_list_result,
 };
-use crate::write::{build_write_plan, write_commit_result, write_dry_run_result};
+use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
 
 pub struct KernelMcpServer {
     backend: Arc<dyn KernelMcpToolBackend>,
@@ -43,7 +43,10 @@ impl KernelMcpServer {
     }
 
     pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
-        Self::embedded_with_engine(data_dir, None)
+        Self::embedded_with_engine(
+            data_dir,
+            kmp_embedded::default_engine_for_data_dir(data_dir),
+        )
     }
 
     pub fn embedded_with_engine(
@@ -81,6 +84,15 @@ impl KernelMcpServer {
         server
     }
 
+    fn with_retrying_embedded_backend(
+        backend: crate::embedded::RetryingEmbeddedKernelMcpBackend,
+    ) -> Self {
+        let engine = backend.declared_engine();
+        let mut server = Self::with_backend(backend);
+        server.embedded_engine = engine;
+        server
+    }
+
     /// The storage engine this server's embedded store is on, if the backend
     /// is embedded.
     pub fn embedded_engine(&self) -> Option<kmp_embedded::StorageEngine> {
@@ -113,15 +125,17 @@ impl KernelMcpServer {
             "embedded" => {
                 let resolved =
                     kmp_embedded::resolve_data_dir_from_env().map_err(|error| error.to_string())?;
-                let engine =
-                    kmp_embedded::resolve_engine_from_env().map_err(|error| error.to_string())?;
+                let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
+                    .map_err(|error| error.to_string())?;
                 tracing::info!(
                     data_dir = %resolved.path().display(),
                     rule = resolved.rule_name(),
                     requested_engine = engine.map(|engine| engine.name()),
                     "embedded backend data dir resolved"
                 );
-                Self::embedded_with_engine(resolved.path(), engine)
+                Ok(Self::with_retrying_embedded_backend(
+                    crate::embedded::RetryingEmbeddedKernelMcpBackend::new(resolved.path(), engine),
+                ))
             }
             other => Err(format!(
                 "unsupported {MCP_BACKEND_ENV} value `{other}`; use `grpc`, `embedded` or `fixture`"
@@ -241,7 +255,22 @@ impl KernelMcpServer {
         arguments: &Value,
         start: Instant,
     ) -> String {
-        let plan = match build_write_plan(arguments) {
+        let allow_unlinked_root = match self.allow_unlinked_strict_root(arguments).await {
+            Ok(allowed) => allowed,
+            Err(message) => {
+                record_tool_error(
+                    self.backend_name(),
+                    self.grpc_tls_mode_name(),
+                    "kernel_write_memory",
+                    arguments,
+                    ToolErrorKind::Backend,
+                    &message,
+                    start.elapsed(),
+                );
+                return jsonrpc_result(id, tool_error_result(&message));
+            }
+        };
+        let plan = match build_write_plan_with_root(arguments, allow_unlinked_root) {
             Ok(plan) => plan,
             Err(message) => {
                 record_tool_error(
@@ -300,6 +329,45 @@ impl KernelMcpServer {
                 );
                 jsonrpc_result(id, tool_error_result(&message))
             }
+        }
+    }
+
+    async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, String> {
+        let Some(object) = arguments.as_object() else {
+            return Ok(false);
+        };
+        let strict = object
+            .get("options")
+            .and_then(Value::as_object)
+            .and_then(|options| options.get("strict"))
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+        let has_links = object
+            .get("connect_to")
+            .and_then(Value::as_array)
+            .is_some_and(|links| !links.is_empty());
+        if !strict || has_links {
+            return Ok(false);
+        }
+        let Some(about) = object
+            .get("about")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|about| !about.is_empty())
+        else {
+            return Ok(false);
+        };
+
+        match self
+            .backend
+            .call_tool("kernel_inspect", &serde_json::json!({"ref": about}))
+            .await
+        {
+            Ok(_) => Ok(false),
+            Err(message) if message.to_ascii_lowercase().contains("not found") => Ok(true),
+            Err(message) => Err(format!(
+                "kernel_write_memory could not verify whether `{about}` is a new about: {message}"
+            )),
         }
     }
 }

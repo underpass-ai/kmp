@@ -130,22 +130,16 @@ question costs almost nothing.
 
 ## Two sessions at once
 
-On the default engine (redb) the store is single-writer (ADR-011): a second
-host session on the same data dir fails fast with an explicit "store is in
-use" error rather than corrupting memory. Close the other session, point the
-second one at a different `KMP_MCP_DATA_DIR`, or — if two hosts sharing one
-memory is your normal day, Claude Code and Codex CLI on the same project —
-move the store to the sqlite engine (ADR-018), which several processes can
-open at once:
+Fresh stores from the shipped MCP binary use SQLite and support several
+hosts. An existing redb store remains single-writer (ADR-011); move that store
+to SQLite (ADR-018) when Claude Code and Codex CLI need the same memory:
 
 ```bash
 kmp-mcp migrate ~/.local/share/kmp/default ~/.local/share/kmp/shared --engine sqlite
 ```
 
-Needs a `kmp-mcp` built with `--features sqlite`, and — if the hosts run KMP
-through the plugin — `KMP_MCP_BIN` naming it, because the bundle ships its own
-binary built without the engine. The full recipe, and what the engine costs,
-is in [mcp-stdio.md](mcp-stdio.md#sharing-one-memory-between-two-agent-hosts).
+Current crates.io and plugin builds already carry SQLite. The full recipe is
+in [mcp-stdio.md](mcp-stdio.md#sharing-one-memory-between-two-agent-hosts).
 
 ## Scripted acceptance demo
 

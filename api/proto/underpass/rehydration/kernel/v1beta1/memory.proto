@@ -444,11 +444,10 @@ message MemoryBudget {
   uint32 tokens = 1;
   MemoryDetailLevel detail = 2;
   uint32 depth = 3;
-  // Cap on the number of entries Wake surfaces in proof.evidence (0 = unbounded,
-  // the default and existing behavior). When set and the about has more entries,
-  // Wake returns the first max_entries (graph-traversal order, closest to the
-  // about) and sets proof.frontier_size to the count withheld, signaling the
-  // client to kernel_near-expand to cover the rest. Only Wake honors this.
+  // Cap on the number of evidence entries Wake or Ask surfaces (0 = unbounded).
+  // Wake applies it in graph-traversal order; Ask applies it after relevance
+  // filtering. Both report withheld sources through proof.missing and
+  // proof.frontier_size so the client can expand deliberately.
   uint32 max_entries = 4;
 }
 

@@ -121,7 +121,8 @@ async fn server_from_env() -> Result<KernelMcpServer, String> {
     }
 
     let resolved = kmp_embedded::resolve_data_dir_from_env().map_err(|e| e.to_string())?;
-    let engine = kmp_embedded::resolve_engine_from_env().map_err(|e| e.to_string())?;
+    let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
+        .map_err(|e| e.to_string())?;
     let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)?;
     spawn_viewer(backend.kernel(), &addr).await?;
     Ok(KernelMcpServer::with_embedded_backend(backend))
@@ -231,6 +232,10 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "migrate" => return run_migrate_command(args).await,
         "share-memory" => return run_share_memory_command(path).await,
         "viewer" => return run_viewer_command(path).await,
+        "--help" | "-h" | "help" => {
+            print_help();
+            return 0;
+        }
         "--version" | "-V" | "version" => {
             // The layouts this build opens, so a user can tell at a glance
             // whether their binary carries the sqlite engine (ADR-018).
@@ -255,7 +260,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
-                 `share-memory [data-dir]` / `viewer [addr]` / `--version`"
+                 `share-memory [data-dir]` / `viewer [addr]` / `--version` / `--help`"
             );
             return 2;
         }
@@ -290,7 +295,14 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         },
     };
     let path = path.as_path();
-    let kernel = match kmp_embedded::EmbeddedKernel::open(resolved.path()) {
+    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
+        Ok(engine) => engine,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");
@@ -359,6 +371,20 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     }
 }
 
+fn print_help() {
+    println!(
+        "kmp-mcp — Kernel Memory Protocol MCP server\n\n\
+Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
+kmp-mcp export [file]           Export the append-only event log\n  \
+kmp-mcp import [file]           Import an event-log bundle\n  \
+kmp-mcp migrate <src> <dst> [--engine redb|sqlite]\n  \
+kmp-mcp share-memory [data-dir] Make an existing redb store shareable\n  \
+kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
+kmp-mcp --version               Print binary and store formats\n  \
+kmp-mcp --help                  Print this help"
+    );
+}
+
 /// `migrate <source-dir> <destination-dir>`: replays the source's history
 /// into a new store this binary can open.
 ///
@@ -387,7 +413,7 @@ async fn run_share_memory_command(explicit_dir: Option<&str>) -> i32 {
     if !StorageEngine::Sqlite.is_compiled() {
         eprintln!(
             "kmp-mcp: this binary was built without the sqlite engine, so it cannot share a \
-             store between hosts.\n  install one with: cargo install kmp-mcp --features sqlite\n               (then re-run this command; nothing has been changed)"
+             store between hosts.\n  install the shipped build with: cargo install kmp-mcp\n               (then re-run this command; nothing has been changed)"
         );
         return 2;
     }
@@ -404,8 +430,8 @@ async fn run_share_memory_command(explicit_dir: Option<&str>) -> i32 {
     };
     if !data_dir.exists() {
         eprintln!(
-            "kmp-mcp: no memory at `{}` yet. Start a session there with \
-             KMP_MCP_ENGINE=sqlite and it is shareable from the first write.",
+            "kmp-mcp: no memory at `{}` yet. Start a current default build there and it is \
+             shareable from the first write (or set KMP_MCP_ENGINE=sqlite explicitly).",
             data_dir.display()
         );
         return 2;
@@ -650,7 +676,14 @@ async fn run_viewer_command(addr: Option<&str>) -> i32 {
             return 2;
         }
     };
-    let kernel = match kmp_embedded::EmbeddedKernel::open(resolved.path()) {
+    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
+        Ok(engine) => engine,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
         Ok(kernel) => kernel,
         Err(error) => {
             eprintln!("kmp-mcp: {error}");

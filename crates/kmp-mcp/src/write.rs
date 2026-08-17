@@ -146,7 +146,20 @@ impl ReadContext {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, String> {
+    build_write_plan_with_root(arguments, false)
+}
+
+/// Builds a write plan, allowing the one relation-free strict write that can
+/// form a new about's root. The server proves `allow_unlinked_root` by
+/// inspecting the about immediately before calling this function; keeping
+/// the storage read outside the pure compiler preserves deterministic dry
+/// runs and focused validation tests.
+pub(crate) fn build_write_plan_with_root(
+    arguments: &Value,
+    allow_unlinked_root: bool,
+) -> Result<KernelWritePlan, String> {
     let arguments = arguments
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
@@ -251,9 +264,9 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Str
     }
 
     let connect_to = optional_array(arguments.get("connect_to"), "connect_to")?;
-    if strict && connect_to.is_empty() {
+    if strict && connect_to.is_empty() && !allow_unlinked_root {
         return Err(
-            "strict kernel_write_memory requires at least one connect_to relation; use an explicit anemic fallback when no richer relation is justified"
+            "strict kernel_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
                 .to_string(),
         );
     }
@@ -1052,7 +1065,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_strict_write_without_any_relation() {
+    fn rejects_strict_write_without_any_relation_after_the_about_exists() {
         let mut request = sample_write_request();
         request
             .as_object_mut()
@@ -1063,7 +1076,26 @@ mod tests {
 
         assert_eq!(
             error,
-            "strict kernel_write_memory requires at least one connect_to relation; use an explicit anemic fallback when no richer relation is justified"
+            "strict kernel_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+        );
+    }
+
+    #[test]
+    fn accepts_the_first_strict_write_as_an_unlinked_about_root() {
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("connect_to");
+
+        let plan = build_write_plan_with_root(&request, true)
+            .expect("a server-proven new about may form its root");
+        assert!(
+            !plan
+                .relations
+                .iter()
+                .any(|relation| relation == "chosen_because"),
+            "the plan succeeds without inventing a link from the root"
         );
     }
 

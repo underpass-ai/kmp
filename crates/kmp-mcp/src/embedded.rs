@@ -1,4 +1,6 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use kmp_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{EmbeddedKernel, EmbeddedMemoryService};
@@ -19,8 +21,9 @@ use crate::grpc::requests::{
 };
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
-    ask_from_response, dry_run_ingest_from_plan, ingest_from_response, inspect_from_response,
-    temporal_from_response, trace_from_response, wake_from_response,
+    ask_from_response, dry_run_ingest_from_plan, enforce_recall_output_budget,
+    ingest_from_response, inspect_from_response, temporal_from_response, trace_from_response,
+    wake_from_response,
 };
 use crate::protocol::tool_success_result;
 
@@ -32,9 +35,87 @@ pub struct EmbeddedKernelMcpBackend {
     data_dir: String,
 }
 
+/// Embedded backend that opens the store on the first memory call and retries
+/// transient redb ownership conflicts on later calls.
+///
+/// MCP discovery (`initialize` and `tools/list`) does not need the database.
+/// Keeping that surface alive means a host does not permanently lose KMP just
+/// because another editor owned a redb store during process startup. Once the
+/// owner exits, the next tool call opens the store and the same MCP process
+/// recovers without a host restart.
+pub struct RetryingEmbeddedKernelMcpBackend {
+    data_dir: PathBuf,
+    engine: Option<kmp_embedded::StorageEngine>,
+    opened: Mutex<Option<Arc<EmbeddedKernelMcpBackend>>>,
+}
+
+impl RetryingEmbeddedKernelMcpBackend {
+    pub fn new(data_dir: &Path, engine: Option<kmp_embedded::StorageEngine>) -> Self {
+        Self {
+            data_dir: data_dir.to_path_buf(),
+            engine,
+            opened: Mutex::new(None),
+        }
+    }
+
+    /// Best engine label available without opening or stamping the store.
+    pub fn declared_engine(&self) -> Option<kmp_embedded::StorageEngine> {
+        let stamp = std::fs::read_to_string(self.data_dir.join("FORMAT_VERSION"))
+            .ok()
+            .and_then(|value| value.trim().parse::<u32>().ok())
+            .and_then(|version| match version {
+                1 => Some(kmp_embedded::StorageEngine::Redb),
+                2 => Some(kmp_embedded::StorageEngine::Sqlite),
+                _ => None,
+            });
+        stamp.or(self.engine)
+    }
+
+    fn opened_backend(&self) -> Result<Arc<EmbeddedKernelMcpBackend>, String> {
+        if let Some(backend) = self
+            .opened
+            .lock()
+            .map_err(|_| "embedded backend state lock is poisoned".to_string())?
+            .as_ref()
+            .cloned()
+        {
+            return Ok(backend);
+        }
+
+        let mut last_error = String::new();
+        for attempt in 0..3 {
+            match EmbeddedKernelMcpBackend::open_with_engine(&self.data_dir, self.engine) {
+                Ok(backend) => {
+                    let backend = Arc::new(backend);
+                    let mut opened = self
+                        .opened
+                        .lock()
+                        .map_err(|_| "embedded backend state lock is poisoned".to_string())?;
+                    let winner = opened.get_or_insert_with(|| Arc::clone(&backend));
+                    return Ok(Arc::clone(winner));
+                }
+                Err(error) => {
+                    let transient_lock = error.contains("Cannot acquire lock");
+                    last_error = error;
+                    if !transient_lock || attempt == 2 {
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(100 * (attempt + 1) as u64));
+                }
+            }
+        }
+        Err(format!(
+            "embedded store is temporarily unavailable; the MCP server is still running and the next tool call will retry: {last_error}"
+        ))
+    }
+}
+
 impl EmbeddedKernelMcpBackend {
     pub fn open(data_dir: &Path) -> Result<Self, String> {
-        Self::open_with_engine(data_dir, None)
+        Self::open_with_engine(
+            data_dir,
+            kmp_embedded::default_engine_for_data_dir(data_dir),
+        )
     }
 
     /// `engine` is what a fresh directory gets; an existing one must agree
@@ -79,6 +160,19 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         let quality_observer = self.kernel.quality_observer();
         Box::pin(async move {
             embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await
+        })
+    }
+}
+
+impl KernelMcpToolBackend for RetryingEmbeddedKernelMcpBackend {
+    fn backend_name(&self) -> &'static str {
+        "embedded"
+    }
+
+    fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
+        Box::pin(async move {
+            let backend = self.opened_backend()?;
+            backend.call_tool(name, arguments).await
         })
     }
 }
@@ -201,8 +295,9 @@ async fn embedded_wake(
         result.bundle.role().as_str(),
         &result.rendered.quality,
     );
-    Ok(tool_success_result(wake_from_response(
-        wake_response_from_result(&intent, max_entries, result),
+    let structured = wake_from_response(wake_response_from_result(&intent, max_entries, result));
+    Ok(tool_success_result(enforce_recall_output_budget(
+        structured, arguments, 1600,
     )))
 }
 
@@ -215,6 +310,7 @@ async fn embedded_ask(
     let query = ask_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
     let policy = query.answer_policy;
+    let max_entries = query.max_entries;
     let about = query.about.clone();
     let result = service
         .ask(query)
@@ -227,8 +323,14 @@ async fn embedded_ask(
         result.bundle.role().as_str(),
         &result.rendered.quality,
     );
-    Ok(tool_success_result(ask_from_response(
-        ask_response_from_result(&question, policy, result),
+    let structured = ask_from_response(ask_response_from_result(
+        &question,
+        policy,
+        max_entries,
+        result,
+    ));
+    Ok(tool_success_result(enforce_recall_output_budget(
+        structured, arguments, 2400,
     )))
 }
 
@@ -324,4 +426,43 @@ async fn embedded_inspect(
     Ok(tool_success_result(inspect_from_response(
         inspect_response_from_result(result),
     )))
+}
+
+#[cfg(test)]
+mod retry_tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn a_redb_startup_lock_does_not_permanently_disable_the_backend() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        let holder = EmbeddedKernel::open_with_engine(
+            data_dir.path(),
+            Some(kmp_embedded::StorageEngine::Redb),
+        )
+        .expect("first redb owner");
+        let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
+        let request = json!({"ref": "missing:test"});
+
+        let locked = backend
+            .call_tool("kernel_inspect", &request)
+            .await
+            .expect_err("the other owner still holds redb");
+        assert!(locked.contains("server is still running"), "{locked}");
+
+        drop(holder);
+        let recovered = backend
+            .call_tool("kernel_inspect", &request)
+            .await
+            .expect_err("the node is absent, but the store now opens");
+        assert!(
+            recovered.to_ascii_lowercase().contains("not found"),
+            "{recovered}"
+        );
+        assert!(
+            !recovered.contains("temporarily unavailable"),
+            "{recovered}"
+        );
+    }
 }

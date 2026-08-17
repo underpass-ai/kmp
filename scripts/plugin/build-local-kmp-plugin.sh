@@ -6,7 +6,7 @@ PLUGIN_DIR="${ROOT_DIR}/plugins/kmp"
 BINARY="${ROOT_DIR}/target/release/kmp-mcp"
 
 cd "${ROOT_DIR}"
-cargo build --release --locked -p kmp-mcp
+cargo build --release --locked -p kmp-mcp --features sqlite
 mkdir -p "${PLUGIN_DIR}/bin"
 if [[ -f "${BINARY}" ]]; then
   cp "${BINARY}" "${PLUGIN_DIR}/bin/kmp-mcp"

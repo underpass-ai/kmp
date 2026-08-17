@@ -131,7 +131,7 @@ fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
     // The banner names the engine (ADR-018): a user reading stderr should
     // know whether this store can be shared with a second host.
     assert!(
-        stderr.contains("embedded backend (kernel in-process, redb engine)"),
+        stderr.contains("embedded backend (kernel in-process, sqlite engine)"),
         "banner must announce embedded mode and the engine: {stderr}"
     );
 
@@ -147,6 +147,14 @@ fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
 #[test]
 fn cli_surface_version_export_import_and_errors() {
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    for flag in ["--help", "-h"] {
+        let help = Command::new(bin).arg(flag).output().expect("help runs");
+        assert!(help.status.success(), "{flag} exits successfully");
+        let stdout = String::from_utf8_lossy(&help.stdout);
+        assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
+        assert!(stdout.contains("share-memory"), "{flag}: {stdout}");
+    }
 
     let version = Command::new(bin)
         .arg("--version")

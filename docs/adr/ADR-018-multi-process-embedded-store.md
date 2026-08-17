@@ -95,19 +95,28 @@ timeline is not ours.
 worst fit for a product with a launch to run: the remaining design is the
 hard part, on a maintainer's roadmap, shipping behind an experimental flag.
 
-**D — Both engines. redb stays the default; SQLite is opt-in.** Chosen.
+**D — Both engines.** Chosen. The original rollout kept SQLite opt-in; the
+distribution amendment below changes the user-facing default.
 
 ## Decision
 
 `kmp-adapter-embedded` grows a storage seam and a second implementation
-behind a `sqlite` cargo feature. redb remains the default engine and the
-default build: pure Rust, one file, static musl and Windows unchanged, no C
-toolchain, no migration, nobody's store touched.
+behind a `sqlite` cargo feature. No existing store is ever reinterpreted or
+converted implicitly.
 
-A user running two agent hosts opts into SQLite and gets a memory both can
-share. The cost lands only on the people who choose it, which is the whole
-argument — A charges everyone for a problem some have, B charges the people
-who have it, and D charges the people who fix it.
+### 2026-08-17 distribution amendment
+
+The installable `kmp-mcp`, release artifacts and plugin bundles ship with the
+SQLite feature and choose SQLite for a fresh data directory. Existing redb
+directories still open from `FORMAT_VERSION` and move only through an
+explicit, verified migration. `--no-default-features` preserves the pure-Rust
+redb build for constrained embedders. This makes the ordinary product path
+support two editor windows without a rebuild or engine environment variables.
+
+The engine remains a per-directory choice recorded in the format stamp. The
+distribution default now optimizes for the ordinary two-host product path;
+embedded consumers that value the smaller pure-Rust build opt out at compile
+time.
 
 The 16 conformance scenarios are engine-agnostic and become the acceptance
 criteria for the second engine, plus a new scenario the suite has never had:
@@ -157,17 +166,16 @@ rewrite.
 
 ## Consequences
 
-- **Positive:** two agent hosts can share one memory, for anyone who opts in.
-- **Positive:** the default build is unchanged — pure Rust, one file, no C
-  toolchain, no migration, static musl and Windows still simple.
+- **Positive:** two agent hosts can share a fresh memory on the shipped path.
+- **Positive:** the pure-Rust redb build remains available explicitly.
 - **Positive:** the seam turns the engine into a decision we can revisit
   cheaply, which is what ADR-009 promised and never had to prove.
 - **Cost:** a storage abstraction that did not exist, and two engines to keep
   green instead of one. The conformance suite already carries most of that
   weight; the new multi-process scenario is what stops the second engine from
   silently regressing.
-- **Cost, on the opt-in path only:** ~5× slower point reads, ~30% slower
-  batched writes, ~+1.4MB binary, a C toolchain. Bought back with 2.5×
+- **Cost, on the shipped path:** ~5× slower point reads, ~30% slower batched
+  writes, ~+1.4MB binary, a C toolchain. Bought back with 2.5×
   smaller stores and 10× faster reopen.
 - **Migration:** moving an existing store between engines replays the
   append-only event log rather than translating pages — it is the source of

@@ -100,9 +100,9 @@ pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
     }
 }
 
-/// Resolves from the process environment and prepares the directory: creates
-/// it and, for project-scoped dirs, drops a self-ignoring `.gitignore` so
-/// local memory never enters version control by accident.
+/// Resolves from the process environment and prepares the directory. Every
+/// data directory gets the same safety skeleton, regardless of whether it was
+/// discovered from a project, supplied explicitly, or created by migration.
 pub fn resolve_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
     let env_override = std::env::var(DATA_DIR_ENV).ok();
     let working_dir = std::env::current_dir().map_err(|error| {
@@ -133,23 +133,40 @@ pub fn resolve_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
 }
 
 fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
-    fs::create_dir_all(resolved.path()).map_err(|error| {
+    ensure_data_dir_skeleton(resolved.path())
+}
+
+/// Creates the non-store part of a KMP data directory.
+///
+/// Fresh startup, `migrate`, and `share-memory` all call this function. The
+/// self-ignore file is deliberately installed even for an explicit path: an
+/// operator can put such a path inside a repository, and the store must not
+/// start appearing in `git status` merely because it arrived through a
+/// migration rather than first startup. Existing files are never replaced.
+pub fn ensure_data_dir_skeleton(path: &Path) -> Result<(), PortError> {
+    fs::create_dir_all(path).map_err(|error| {
         PortError::Unavailable(format!(
             "embedded kernel could not create data dir `{}`: {error}",
-            resolved.path().display()
+            path.display()
         ))
     })?;
-    if let ResolvedDataDir::Project(path) = resolved {
-        let gitignore = path.join(".gitignore");
-        if !gitignore.exists() {
-            fs::write(&gitignore, "*\n").map_err(|error| {
-                PortError::Unavailable(format!(
-                    "embedded kernel could not write `{}`: {error}",
-                    gitignore.display()
-                ))
-            })?;
-        }
+
+    let gitignore = path.join(".gitignore");
+    if !gitignore.exists() {
+        fs::write(&gitignore, "*\n").map_err(|error| {
+            PortError::Unavailable(format!(
+                "embedded kernel could not write `{}`: {error}",
+                gitignore.display()
+            ))
+        })?;
     }
+    let logs = path.join("logs");
+    fs::create_dir_all(&logs).map_err(|error| {
+        PortError::Unavailable(format!(
+            "embedded kernel could not create log dir `{}`: {error}",
+            logs.display()
+        ))
+    })?;
     Ok(())
 }
 
@@ -241,5 +258,27 @@ mod tests {
 
         let gitignore = std::fs::read_to_string(kernel_dir.join(".gitignore")).expect("gitignore");
         assert_eq!(gitignore, "*\n");
+        assert!(kernel_dir.join("logs").is_dir());
+    }
+
+    #[test]
+    fn explicit_and_migrated_dirs_get_the_same_non_destructive_skeleton() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let data_dir = temp.path().join("destination");
+
+        ensure_data_dir_skeleton(&data_dir).expect("prepare explicit destination");
+        assert_eq!(
+            std::fs::read_to_string(data_dir.join(".gitignore")).expect("gitignore"),
+            "*\n"
+        );
+        assert!(data_dir.join("logs").is_dir());
+
+        std::fs::write(data_dir.join(".gitignore"), "keep-me\n").expect("custom ignore");
+        ensure_data_dir_skeleton(&data_dir).expect("prepare again");
+        assert_eq!(
+            std::fs::read_to_string(data_dir.join(".gitignore")).expect("custom gitignore"),
+            "keep-me\n",
+            "the skeleton never overwrites an operator-owned ignore file"
+        );
     }
 }
