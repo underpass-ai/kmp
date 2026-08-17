@@ -287,7 +287,7 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
     );
     assert_eq!(
         sorted_keys(object_keys(&parse_fixture(KMP_WAKE_RESPONSE_FIXTURE))),
-        sorted_strs(&["summary", "wake", "proof", "warnings"])
+        sorted_strs(&["summary", "wake", "proof", "resume_cursor", "warnings"])
     );
     assert_eq!(
         sorted_keys(object_keys(&parse_fixture(KMP_ASK_REQUEST_FIXTURE))),

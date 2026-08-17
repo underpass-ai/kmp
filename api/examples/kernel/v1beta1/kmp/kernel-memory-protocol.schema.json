@@ -1567,6 +1567,7 @@
         "summary",
         "wake",
         "proof",
+        "resume_cursor",
         "warnings"
       ],
       "properties": {
@@ -1641,6 +1642,17 @@
         },
         "warnings": {
           "$ref": "#/$defs/warning_list"
+        },
+        "resume_cursor": {
+          "description": "The newest coordinate this packet covers. Save it and pass it to kernel_forward to receive only what is new. Null when nothing in the packet carries a temporal coordinate.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/temporal_cursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },

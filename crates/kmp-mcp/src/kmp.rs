@@ -76,6 +76,14 @@ pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
             "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
         },
         "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
+        // Where this packet ends, so the next question — "and what changed
+        // since?" — is one call to kernel_forward rather than a rewind whose
+        // only purpose is to recover a timestamp.
+        "resume_cursor": response
+            .resume_cursor
+            .as_ref()
+            .map(temporal_cursor_json)
+            .unwrap_or(Value::Null),
         "warnings": response.warnings
     })
 }
@@ -624,6 +632,14 @@ mod tests {
                 guardrails: Vec::new(),
             }),
             proof: None,
+            resume_cursor: Some(TemporalCursor {
+                r#ref: "decision:latest".to_string(),
+                time: Some(prost_types::Timestamp {
+                    seconds: 1_786_924_800,
+                    nanos: 0,
+                }),
+                sequence: Some(3),
+            }),
             warnings: Vec::new(),
         };
         let _budget = MemoryBudget {
@@ -640,6 +656,10 @@ mod tests {
             value["wake"]["causal_spine"][0]["evidence_ref"],
             "evidence:1"
         );
+        // The bookmark a caller carries to kernel_forward, so catching up is
+        // one more call rather than a rewind that exists to find a timestamp.
+        assert_eq!(value["resume_cursor"]["ref"], "decision:latest");
+        assert_eq!(value["resume_cursor"]["sequence"], 3);
     }
 
     fn relation() -> MemoryRelation {

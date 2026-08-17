@@ -7,8 +7,9 @@ use kmp_application::{
 use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalDirection};
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
-    MemoryEvidence, MemoryRelation, PageInfo, RawMemoryRef, TemporalEntry as ProtoTemporalEntry,
-    TemporalMoveResponse, TemporalState, TraceResponse, WakeClaim, WakePacket, WakeResponse,
+    MemoryEvidence, MemoryRelation, PageInfo, RawMemoryRef, TemporalCursor,
+    TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse, TemporalState, TraceResponse,
+    WakeClaim, WakePacket, WakeResponse,
 };
 
 use super::bundle_views::{
@@ -21,6 +22,46 @@ use super::dimensions::proto_dimension_selection_from_domain;
 use super::scalars::{
     proto_confidence, proto_direction, proto_semantic_class, timestamp_from_sort_or_rfc3339,
 };
+
+/// The newest coordinate a wake packet covers, for the caller to resume from.
+///
+/// Wake already walked the neighbourhood to build the packet, so it holds
+/// this: handing it back turns "where was I, and what changed since" from
+/// three calls into two. Ordering is by time first and sequence second, which
+/// is the same order the store writes in.
+///
+/// `None` when nothing in the packet carries a temporal coordinate — memory
+/// written without one is ordinary, and inventing a cursor for it would hand
+/// the caller a bookmark that points nowhere.
+fn newest_cursor(relationships: &[MemoryRelation]) -> Option<TemporalCursor> {
+    relationships
+        .iter()
+        .filter_map(|relation| {
+            let coordinate = relation.explanation.as_ref()?.coordinate.as_ref()?;
+            // When it happened, else when we saw it, else when we stored it —
+            // the order a reader means by "since when". A coordinate carrying
+            // none of the three cannot anchor a resume.
+            let time = coordinate
+                .occurred_at
+                .or(coordinate.observed_at)
+                .or(coordinate.ingested_at)?;
+            Some((time, coordinate.sequence, relation))
+        })
+        .max_by(
+            |(left_time, left_sequence, _), (right_time, right_sequence, _)| {
+                (left_time.seconds, left_time.nanos, *left_sequence).cmp(&(
+                    right_time.seconds,
+                    right_time.nanos,
+                    *right_sequence,
+                ))
+            },
+        )
+        .map(|(occurred_at, sequence, relation)| TemporalCursor {
+            r#ref: relation.target_ref.clone(),
+            time: Some(occurred_at),
+            sequence,
+        })
+}
 
 pub fn wake_response_from_result(
     intent: &str,
@@ -37,8 +78,10 @@ pub fn wake_response_from_result(
     // sources as proof.missing so proof.frontier_size signals "near-expand to
     // cover the rest". Unset (or not exceeded) -> behavior unchanged.
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
+    let resume_cursor = newest_cursor(&relationships);
 
     WakeResponse {
+        resume_cursor,
         summary,
         wake: Some(WakePacket {
             objective: intent.to_string(),
@@ -639,5 +682,86 @@ mod wake_cap_tests {
         ];
 
         assert_eq!(causal_count(&relations), 3);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::newest_cursor;
+    use kmp_proto::v1beta1::{MemoryRelation, MemoryRelationExplanation, TemporalCoordinate};
+    use prost_types::Timestamp;
+
+    fn relation(
+        target: &str,
+        seconds: i64,
+        sequence: Option<u32>,
+        observed: bool,
+    ) -> MemoryRelation {
+        let time = Some(Timestamp { seconds, nanos: 0 });
+        let coordinate = TemporalCoordinate {
+            dimension: "work".to_string(),
+            scope_id: "scope".to_string(),
+            occurred_at: if observed { None } else { time },
+            observed_at: if observed { time } else { None },
+            sequence,
+            ..Default::default()
+        };
+        MemoryRelation {
+            source_ref: "entry".to_string(),
+            target_ref: target.to_string(),
+            sequence,
+            explanation: Some(MemoryRelationExplanation {
+                coordinate: Some(coordinate),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn the_cursor_is_the_newest_coordinate_the_packet_covers() {
+        let cursor = newest_cursor(&[
+            relation("older", 1_000, Some(1), false),
+            relation("newest", 3_000, Some(2), false),
+            relation("middle", 2_000, Some(9), false),
+        ])
+        .expect("a packet with coordinates has a cursor");
+
+        assert_eq!(cursor.r#ref, "newest");
+        assert_eq!(cursor.time.expect("time").seconds, 3_000);
+        assert_eq!(cursor.sequence, Some(2));
+    }
+
+    #[test]
+    fn sequence_breaks_a_tie_on_time() {
+        let cursor = newest_cursor(&[
+            relation("first", 5_000, Some(1), false),
+            relation("second", 5_000, Some(7), false),
+        ])
+        .expect("a cursor");
+
+        assert_eq!(cursor.r#ref, "second", "the later sequence wins the tie");
+    }
+
+    #[test]
+    fn a_coordinate_without_occurrence_still_anchors_a_resume() {
+        // Relations written with only `observed_at` are ordinary — the real
+        // store is full of them — and used to yield no cursor at all.
+        let cursor = newest_cursor(&[relation("seen", 4_000, None, true)]).expect("a cursor");
+        assert_eq!(cursor.r#ref, "seen");
+        assert_eq!(cursor.time.expect("time").seconds, 4_000);
+    }
+
+    #[test]
+    fn memory_with_no_coordinates_gets_no_cursor() {
+        let bare = MemoryRelation {
+            source_ref: "entry".to_string(),
+            target_ref: "target".to_string(),
+            ..Default::default()
+        };
+        assert!(
+            newest_cursor(&[bare]).is_none(),
+            "a bookmark that points nowhere is worse than none"
+        );
     }
 }
