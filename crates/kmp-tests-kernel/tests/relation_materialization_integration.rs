@@ -86,6 +86,70 @@ async fn relation_materialized_events_extend_a_pir_like_spine_without_rematerial
     );
 }
 
+#[tokio::test]
+async fn relation_materialized_before_both_nodes_converges_after_the_nodes_arrive() {
+    let _guard = container_test_guard().lock().await;
+    debug_log(
+        "starting test relation_materialized_before_both_nodes_converges_after_the_nodes_arrive",
+    );
+
+    let mut messages = projection_messages();
+    let relation = messages
+        .pop()
+        .expect("projection fixture should end with its relation event");
+    messages.insert(0, relation);
+
+    let fixture = TestFixture::builder()
+        .with_neo4j()
+        .with_valkey()
+        .with_nats()
+        .with_projection_runtime()
+        .with_grpc_server()
+        .with_seed(ClosureSeed::new(move |ctx| {
+            let client = ctx.nats_client().clone();
+            let messages = messages.clone();
+            Box::pin(async move {
+                publish_messages(&client, &messages).await?;
+                Ok(())
+            })
+        }))
+        .with_readiness_check(ROOT_NODE_ID, FINDING_NODE_ID)
+        .build()
+        .await
+        .expect("fixture should start");
+
+    let context = wait_for_relation_shape(fixture.query_client(), ROOT_NODE_ID).await;
+    let bundle = context.bundle.expect("bundle should exist");
+    let role_bundle = bundle.bundles.first().expect("role bundle should exist");
+
+    assert_eq!(role_bundle.neighbor_nodes.len(), 2);
+    assert!(role_bundle.neighbor_nodes.iter().all(|node| {
+        node.node_kind != "placeholder"
+            && !node.labels.iter().any(|label| label == "placeholder")
+            && node.properties.get("placeholder").map(String::as_str) != Some("true")
+    }));
+    assert!(role_bundle.neighbor_nodes.iter().any(|node| {
+        node.node_id == FINDING_NODE_ID
+            && node.node_kind == "finding"
+            && node.title == "Cache stampede on invalidation"
+    }));
+    assert!(role_bundle.neighbor_nodes.iter().any(|node| {
+        node.node_id == DECISION_NODE_ID
+            && node.node_kind == "decision"
+            && node.title == "Enable cache jitter"
+    }));
+    assert!(role_bundle.relationships.iter().any(|relationship| {
+        relationship.source_node_id == DECISION_NODE_ID
+            && relationship.target_node_id == FINDING_NODE_ID
+            && relationship.relationship_type == "ADDRESSES"
+    }));
+
+    fixture.shutdown().await.expect("fixture should shut down");
+    debug_log(
+        "finished test relation_materialized_before_both_nodes_converges_after_the_nodes_arrive",
+    );
+}
+
 fn projection_messages() -> Vec<(String, Vec<u8>)> {
     vec![
         (

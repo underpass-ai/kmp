@@ -117,7 +117,7 @@ Coverage state:
 | Test | Status | Purpose | Infra |
 |------|--------|---------|-------|
 | `relation_materialization_integration` | Implemented | Add a relation across waves without re-materializing the source node | Neo4j + Valkey + NATS + gRPC |
-| `relation_materialization_out_of_order_integration` | Planned | Prove convergence when a relation arrives before one or both node events | Neo4j + Valkey + NATS + gRPC |
+| `relation_materialization_out_of_order_integration` | Implemented | Prove convergence when a relation arrives before both node events | Neo4j + Valkey + NATS + gRPC |
 | `pir_sequential_spine_relation_integration` | Planned | Reproduce the full `incident -> finding -> decision -> task -> verification` spine with relation-only waves where needed | Neo4j + Valkey + NATS + gRPC |
 | `relation_materialization_idempotency_integration` | Planned | Prove duplicate relation events do not create duplicate edges | Neo4j + Valkey + NATS + gRPC |
 | `placeholder_filtering_integration` | Planned | Prove convergence placeholders do not leak into default rendered context | Neo4j + Valkey + NATS + gRPC |
