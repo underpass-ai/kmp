@@ -579,6 +579,29 @@ function entryOrderKey(entry) {
   return { sequence, time };
 }
 
+/// Nodes that belong to `id` rather than standing beside it in time.
+///
+/// Structural scaffolding: the dimension an entry sits in, and the evidence
+/// that supports it. Both are reached by an edge whose other end is the
+/// entry, and neither carries a coordinate of its own.
+const ATTACHING_RELATIONS = new Set([
+  "has_dimension",
+  "has_evidence",
+  "contains_entry",
+  "supports",
+  "records",
+]);
+
+function attachedTo(id) {
+  const attached = [];
+  for (const edge of graph.edges) {
+    if (!ATTACHING_RELATIONS.has(edge.rel)) continue;
+    if (edge.source === id) attached.push(edge.target);
+    else if (edge.target === id) attached.push(edge.source);
+  }
+  return attached;
+}
+
 async function startReplay() {
   if (!graph.about) return;
   try {
@@ -610,6 +633,12 @@ async function startReplay() {
     const accumulated = new Set();
     for (const entry of entries) {
       accumulated.add(entry.ref_id);
+      // What hangs off an entry has no time of its own — a dimension is the
+      // scope the entry was written into, and evidence exists at the moment
+      // the entry it supports does. They can never appear in a timeline
+      // query, so a replay that only revealed entries finished with two
+      // thirds of the graph still dark and looked unfinished.
+      for (const attached of attachedTo(entry.ref_id)) accumulated.add(attached);
       playback.revealed.push(new Set(accumulated));
     }
     playback.active = true;
