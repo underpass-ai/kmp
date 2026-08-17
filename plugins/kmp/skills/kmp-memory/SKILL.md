@@ -27,6 +27,19 @@ context you may already have stored. Abouts are stable ids, conventionally
 If `kernel_wake` comes back empty, there is no memory for that about yet.
 That is the signal to start writing one, not to keep guessing.
 
+Wake also hands back `resume_cursor` — the newest coordinate the packet
+covers. Carry it, and the next question ("what changed since I looked?") is
+one call:
+
+```
+kernel_forward { about: "project:kmp", from: <the resume_cursor> }
+```
+
+The kernel does not remember where each reader got to, deliberately: that
+would be state about the reader rather than about the work. The bookmark is
+yours to hold. `resume_cursor` is `null` when nothing in the packet carries a
+temporal coordinate.
+
 ## The ten moves
 
 **Entry**

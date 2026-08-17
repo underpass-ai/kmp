@@ -33,5 +33,10 @@
     "missing": [],
     "confidence": "medium"
   },
+  "resume_cursor": {
+    "ref": "decision:adopt-kmp",
+    "time": "2026-04-12T10:15:00Z",
+    "sequence": 2
+  },
   "warnings": []
 }

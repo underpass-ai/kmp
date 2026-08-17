@@ -681,6 +681,7 @@ impl KernelMemoryService for FakeMemoryService {
                 guardrails: Vec::new(),
             }),
             proof: Some(proof(&request.about, "claim:typed-wake")),
+            resume_cursor: None,
             warnings: Vec::new(),
         }))
     }

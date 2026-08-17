@@ -134,6 +134,12 @@ message WakeResponse {
   WakePacket wake = 2;
   Proof proof = 3;
   repeated string warnings = 4;
+  // The newest coordinate this packet covers, when the memory carries one.
+  // Save it and hand it to Forward next time to receive only what is new:
+  // catching up is the second question anyone asks of a memory, and without
+  // this it took an extra call whose only purpose was to recover a timestamp.
+  // The cursor is the caller's to carry — the kernel does not track readers.
+  optional TemporalCursor resume_cursor = 5;
 }
 
 message WakePacket {
