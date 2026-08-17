@@ -89,6 +89,14 @@ fn namespaced_memory(
 
     let mut known_refs = existing.refs.clone();
     known_refs.extend(existing.dimensions.iter().cloned());
+    // The about's own anchor is always a valid relation target. It is a real
+    // node — the projection materialises it and hangs `records` and
+    // `has_dimension` off it — but it was never in this set, so relating to
+    // it was refused as an unknown ref. That made the first write to a fresh
+    // about impossible: strict demands a relation, every ref inside the
+    // about is being created by this very ingest, and the one thing that
+    // certainly exists could not be named. (#14)
+    known_refs.insert(about.to_string());
     let mut dimension_ids = existing.dimensions.clone();
     let mut dimension_aliases = existing_dimension_aliases(about, existing);
     let mut declared_dimension_kinds = BTreeMap::new();
@@ -572,6 +580,36 @@ mod tests {
             .expect_err("unknown ref should fail");
 
         assert_validation_contains(error, "references unknown refs");
+    }
+
+    /// The first write to a fresh about has nothing of its own to relate to.
+    ///
+    /// Strict `kernel_write_memory` demands a relation, every ref inside the
+    /// about is being created by the very ingest that declares it, and the
+    /// one node that certainly exists — the about's own anchor, which the
+    /// projection materialises and hangs `records` off — was refused as an
+    /// unknown ref. That made seeding a new about impossible through the
+    /// writer the skill presents as the default way to write. (#14)
+    #[test]
+    fn translate_memory_ingest_accepts_a_relation_to_the_abouts_own_anchor() {
+        let mut command = sample_command();
+        command.memory.relations[0].target_ref = command.about.clone();
+
+        let (update, _) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect("an entry may relate to the about it belongs to");
+
+        assert!(
+            update
+                .changes
+                .iter()
+                .any(|change| change.entity_id.ends_with(&command.about)),
+            "the relation to the anchor must survive translation, got {:?}",
+            update
+                .changes
+                .iter()
+                .map(|change| change.entity_id.as_str())
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
