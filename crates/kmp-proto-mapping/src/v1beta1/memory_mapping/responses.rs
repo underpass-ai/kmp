@@ -292,7 +292,8 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
         "después", "mientras", "porque", "si",
     ];
     const GENERIC_QUESTION_PREDICATES: &[&str] = &[
-        "happen", "happened", "occur", "occurred", "ocurrio", "ocurrió", "paso", "pasó",
+        "happen", "happened", "occur", "occurred", "ocurrio", "ocurrió", "paso", "pasó", "prove",
+        "proved", "proves",
     ];
 
     let main_clause = question
@@ -954,6 +955,18 @@ mod wake_cap_tests {
             vec![ev(
                 "The CI workflow concluded and the remote branch remained present.",
             )],
+        );
+
+        assert_eq!(evidence.len(), 1);
+        assert_ne!(confidence, MemoryConfidence::Unknown);
+    }
+
+    #[test]
+    fn strict_focus_does_not_require_the_answer_to_repeat_a_proof_predicate() {
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What proved the MCP ingest path?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![ev("The live smoke accepted MCP ingest over gRPC.")],
         );
 
         assert_eq!(evidence.len(), 1);
