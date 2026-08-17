@@ -10,6 +10,97 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-08-17
+
+Eleven fixes found by driving the product as a user rather than as its
+author: the web viewer, the memory-writing surface, and the two paths an
+operator actually walks — sharing one memory between hosts, and updating.
+
+### Added
+
+- **`kmp-mcp share-memory`** turns the seven manual steps of moving a store to
+  the shared sqlite engine into one command, with the three non-obvious ones
+  handled: the live store is locked by the session asking for the migration,
+  so it snapshots first; both stores must report the same event count and last
+  sequence *before* the swap; and the original is kept as
+  `<dir>-redb-before-share` rather than deleted. Refuses rather than guesses —
+  a binary without the engine, a leftover working directory, a store already
+  shareable, a verification that does not match. (#43)
+
+- **`kernel_wake` returns `resume_cursor`**, the newest coordinate the packet
+  covers. Catching up used to take three calls, the middle one a rewind whose
+  only purpose was to recover a timestamp. The kernel still does not track its
+  readers: the cursor is the caller's to carry. (#25)
+
+- **`proof.superseded`** marks entries that a later one replaced, naming what
+  replaced them and why. Deliberately separate from `conflicts`:
+  `contradicts` says two entries disagree and both may be live, while
+  `supersedes` is a lifecycle — folding them together would make every revert
+  read as an unresolved disagreement. (#28)
+
+- **`kmp-doctor` reports startup history and version drift.** It reads the
+  last five starts from the log, loudly when the most recent failed, and warns
+  when the plugin files and the binary are different versions. (#44, #45)
+
+### Fixed
+
+- **A memory server that died at startup left no trace.** The file log
+  existed; what bypassed it was the startup outcome itself, which went through
+  `eprintln!` and `process::exit` and never through tracing. A failed start
+  left the session with no tools, the host swallowed the reason, and the
+  doctor had nothing to read. Both outcomes are recorded now. (#45)
+
+- **The first write to a fresh about was impossible.** Strict
+  `kernel_write_memory` demands a relation, a relation target must exist, and
+  a fresh about holds nothing — including, it turned out, its own anchor,
+  which the projection materialises but the ingest never counted as a known
+  ref. (#14)
+
+- **The viewer's Timeline landed blank and Replay claimed there was nothing to
+  replay** on memory holding twelve entries. `goto` and `rewind` walk by
+  temporal position, `sequence` is optional at ingest, and memory written
+  without one answers `0/0` — which the viewer's own test corpus never
+  reproduces, because it writes a sequence on every coordinate. (#39)
+
+- **The viewer printed the store's sort key where a date belongs** —
+  `unix:101786903200:000000000` in the timeline's time column — and showed
+  `SNAPSHOT pending` forever, a placeholder the embedded edition never
+  replaces. (#41)
+
+- **The viewer's budget control moved the numbers but never the picture.** It
+  bounds the rendered context, not the graph; at 256 tokens the status bar
+  claimed ×142.9 compression beside a graph showing every node. The control
+  and its figures are named for what they bound. (#40)
+
+- **`depth=abc` answered 200 as though it read the default** while `scope`
+  and `dims` beside it refused by name, and `HEAD` answered 405 though
+  RFC 9110 makes it GET without a body. (#42)
+
+- **A test asserted an exact projection size the readiness probe never waited
+  for**, so it raced: 15 of 17, everything else correct, passing on re-run.
+  It now waits for the query it is about to assert. (#30, partly — the
+  conformance half stays open)
+
+- **The viewer's Replay ended with two thirds of the graph dark.** It walked
+  the timeline, and a timeline holds only entries that carry a coordinate: 24
+  of 68 nodes here. The other 44 are dimensions and evidence, whose time is
+  the entry's — a dimension is the scope an entry was written into, evidence
+  exists at the moment the entry it supports does. A step now reveals the
+  entry and whatever hangs off it. (#57)
+
+### Changed
+
+- **Merging to main no longer re-runs the gates on a tree already proved
+  green.** The rule is "skip when this tree was proved", never "trust the
+  pull request": an out-of-date merge, a conflict resolved in the UI, a direct
+  push, or any doubt at all still runs everything. (#31)
+
+- **Dimension scoping is documented as what it is for**, not only as what it
+  accepts. Abouts are deliberately not joined by relations — an edge would
+  bake the link into the graph and unbound the frontier an about exists to
+  bound — so the join lives with the reader, at read time. That reasoning did
+  not exist on any surface, and its absence cost a wrongly filed issue. (#33)
+
 ## [0.1.5] - 2026-08-17
 
 ### Fixed
@@ -271,7 +362,8 @@ what this version adds is a way to get it.
   the reference examples. A published crate can only ship what lives inside
   it; both copies are diffed against `api/` on every CI run.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.6
 [0.1.5]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.5
 [0.1.4]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.4
 [0.1.3]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.3
