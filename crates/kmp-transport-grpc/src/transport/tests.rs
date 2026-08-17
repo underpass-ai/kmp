@@ -203,6 +203,47 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                     },
                 ],
             })),
+            "question:topical-overlap" => Ok(Some(NodeNeighborhood {
+                root: temporal_projection(
+                    "question:topical-overlap",
+                    "memory_anchor",
+                    "Topical overlap without the requested subject",
+                ),
+                neighbors: vec![
+                    temporal_projection(
+                        "about:question:topical-overlap:dimension:conversation",
+                        "memory_dimension",
+                        "CI completion conversation",
+                    ),
+                    temporal_projection("claim:ci-complete", "claim", "CI completion claim"),
+                    temporal_projection(
+                        "evidence:ci-complete",
+                        "memory_evidence",
+                        "CI completion evidence",
+                    ),
+                ],
+                relations: vec![
+                    temporal_contains_entry(
+                        "about:question:topical-overlap:dimension:conversation",
+                        "claim:ci-complete",
+                        "conversation",
+                        1,
+                        Some(sort_time(125)),
+                        None,
+                        None,
+                    ),
+                    NodeRelationProjection {
+                        source_node_id: "evidence:ci-complete".to_string(),
+                        target_node_id: "claim:ci-complete".to_string(),
+                        relation_type: "supports".to_string(),
+                        explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                            .with_rationale(
+                                "The workflow observation supports only the CI completion claim.",
+                            )
+                            .with_confidence("high"),
+                    },
+                ],
+            })),
             "question:conflict-answer" => Ok(Some(NodeNeighborhood {
                 root: temporal_projection(
                     "question:conflict-answer",
@@ -348,6 +389,7 @@ impl MemoryAboutIndexReader for SeededGraphNeighborhoodReader {
             "node-123".to_string(),
             "graph-only".to_string(),
             "question:evidence-answer".to_string(),
+            "question:topical-overlap".to_string(),
             "question:conflict-answer".to_string(),
         ])
     }
@@ -388,9 +430,9 @@ impl NodeRelationshipReader for SeededGraphNeighborhoodReader {
                         .with_sequence(1),
                 }],
             }),
-            "question:evidence-answer" | "question:conflict-answer" => {
-                Some(NodeRelationships::default())
-            }
+            "question:evidence-answer"
+            | "question:topical-overlap"
+            | "question:conflict-answer" => Some(NodeRelationships::default()),
             "graph-only" => Some(NodeRelationships::default()),
             _ => None,
         })
@@ -472,6 +514,25 @@ impl NodeDetailReader for SeededNodeDetailReader {
                 node_id: "evidence:answer".to_string(),
                 detail: "Explicit memory evidence is the deterministic Ask answer.".to_string(),
                 content_hash: "hash-evidence-answer".to_string(),
+                revision: 1,
+            }),
+            "question:topical-overlap" => Some(NodeDetailProjection {
+                node_id: "question:topical-overlap".to_string(),
+                detail: "Anchor context must not answer the database question.".to_string(),
+                content_hash: "hash-anchor-topical-overlap".to_string(),
+                revision: 1,
+            }),
+            "claim:ci-complete" => Some(NodeDetailProjection {
+                node_id: "claim:ci-complete".to_string(),
+                detail: "Claim detail must not outrank explicit evidence.".to_string(),
+                content_hash: "hash-claim-ci-complete".to_string(),
+                revision: 1,
+            }),
+            "evidence:ci-complete" => Some(NodeDetailProjection {
+                node_id: "evidence:ci-complete".to_string(),
+                detail: "The CI workflow concluded and the remote branch remained present."
+                    .to_string(),
+                content_hash: "hash-evidence-ci-complete".to_string(),
                 revision: 1,
             }),
             "question:conflict-answer" => Some(NodeDetailProjection {
@@ -1295,6 +1356,57 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
     assert_eq!(proof.evidence.len(), 1);
     assert_eq!(proof.evidence[0].supports, vec!["claim:answer".to_string()]);
     assert!(proof.evidence[0].text.contains("deterministic Ask answer"));
+}
+
+#[tokio::test]
+async fn memory_service_ask_strict_policies_require_the_requested_subject() {
+    let service = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader);
+    fn request(answer_policy: i32) -> AskRequest {
+        AskRequest {
+            about: "question:topical-overlap".to_string(),
+            question: "Which database engine was used when the CI workflow concluded and the remote branch remained present?"
+                .to_string(),
+            answer_policy,
+            budget: Some(MemoryBudget {
+                max_entries: 0,
+                tokens: 1024,
+                detail: MemoryDetailLevel::Full as i32,
+                depth: 3,
+            }),
+            dimensions: Some(ProtoDimensionSelection {
+                mode: ProtoDimensionSelectionMode::Only as i32,
+                include: vec!["conversation".to_string()],
+                exclude: Vec::new(),
+                ..Default::default()
+            }),
+        }
+    }
+
+    for policy in [AnswerPolicy::EvidenceOrUnknown, AnswerPolicy::ShowConflicts] {
+        let ask = service
+            .ask(Request::new(request(policy as i32)))
+            .await
+            .expect("strict ask should complete")
+            .into_inner();
+
+        assert_eq!(ask.answer, "UNKNOWN", "strict policy {policy:?}");
+        assert!(ask.because.is_empty(), "strict policy {policy:?}");
+        let proof = ask.proof.expect("strict ask proof should be present");
+        assert_eq!(proof.confidence, MemoryConfidence::Unknown as i32);
+        assert!(!proof.missing.is_empty());
+    }
+
+    let best_effort = service
+        .ask(Request::new(request(AnswerPolicy::BestEffort as i32)))
+        .await
+        .expect("best-effort ask should complete")
+        .into_inner();
+
+    assert_eq!(
+        best_effort.answer,
+        "The CI workflow concluded and the remote branch remained present."
+    );
+    assert_eq!(best_effort.because.len(), 1);
 }
 
 #[tokio::test]
