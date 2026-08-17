@@ -109,7 +109,8 @@ still pending.
 The kernel consumes `graph.relation.materialized` and maps it to a direct
 relation projection without re-materializing the source node. The first
 container test proves a PIR-like cross-wave relation path through the real NATS
-projection runtime, Neo4j, Valkey, and gRPC read path.
+projection runtime, Neo4j, Valkey, and gRPC read path. The required
+`integration-conformance` CI job runs that target on every candidate tree.
 
 Coverage state:
 
