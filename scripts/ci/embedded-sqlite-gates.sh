@@ -108,4 +108,31 @@ for host in a b; do
   fi
 done
 
+# The command that exists so nobody has to do the seven steps by hand. It
+# only earns its place if it verifies, refuses and keeps the original — so
+# the gate drives all three rather than just the happy path.
+echo "sqlite-gates: share-memory migrates, verifies and keeps the original"
+SHARE_DIR="$(mktemp -d)"
+trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${SHARE_DIR}"' EXIT
+# A store on the default engine, created the way any first session creates
+# one. (Not migrated down from the sqlite one: migration runs one way.)
+printf '%s\n' "${LIST}" | env KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR="${SHARE_DIR}/memory" \
+  "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
+grep -q 1 "${SHARE_DIR}/memory/FORMAT_VERSION" \
+  || { echo "sqlite-gates: the fixture store is not on redb" >&2; exit 1; }
+
+RECEIPT="$("${INSTALL_ROOT}/bin/kmp-mcp" share-memory "${SHARE_DIR}/memory")"
+echo "${RECEIPT}" | sed 's/^/    /'
+grep -q 2 "${SHARE_DIR}/memory/FORMAT_VERSION" \
+  || { echo "sqlite-gates: share-memory did not install the sqlite store" >&2; exit 1; }
+echo "${RECEIPT}" | grep -q "verified:" \
+  || { echo "sqlite-gates: share-memory installed without verifying" >&2; exit 1; }
+[ -d "${SHARE_DIR}/memory-redb-before-share" ] \
+  || { echo "sqlite-gates: share-memory did not keep the original" >&2; exit 1; }
+
+# Running it again must be a no-op, not a second migration.
+"${INSTALL_ROOT}/bin/kmp-mcp" share-memory "${SHARE_DIR}/memory" | grep -q "already shareable" \
+  || { echo "sqlite-gates: share-memory is not idempotent" >&2; exit 1; }
+echo "    rerun: already shareable"
+
 echo "sqlite-gates: passed"

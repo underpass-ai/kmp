@@ -56,6 +56,25 @@ It is opt-in, because it brings a C toolchain into the build; the crates.io
 binary and the plugin bundles are built without it. Three steps:
 
 ```bash
+# the short way, once you have a binary with the engine:
+cargo install kmp-mcp --features sqlite
+kmp-mcp share-memory           # snapshots, migrates, verifies, installs, keeps the original
+# then restart both hosts
+```
+
+`share-memory` exists because doing it by hand is seven steps and three of
+them are not obvious: the live store is locked by the session asking for the
+migration, so it has to be snapshotted first; nothing verifies that the
+migrated store still holds every event; and getting the swap order wrong
+leaves you with two live stores or none. It refuses rather than guesses — no
+engine in the binary, a leftover working directory, a store that already
+carries the sqlite engine, a verification that does not match — and it never
+deletes: the original is kept beside the new one under a
+`-redb-before-share` name.
+
+The long way, when you want each step in your own hands:
+
+```bash
 # 1. a binary that carries the engine
 cargo install kmp-mcp --features sqlite
 kmp-mcp --version              # -> kmp-mcp 0.1.x (store formats 1, 2 (sqlite))

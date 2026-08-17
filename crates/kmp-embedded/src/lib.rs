@@ -15,5 +15,7 @@ pub use data_dir::{
 };
 pub use engine::{ENGINE_ENV, parse_engine, resolve_engine_from_env};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
-pub use kmp_adapter_embedded::{SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt};
+pub use kmp_adapter_embedded::{
+    EmbeddedKernelStore, SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt,
+};
 pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};
