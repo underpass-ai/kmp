@@ -97,7 +97,36 @@ the plugin does not cover.
   constraints, outcomes with coordinates and evidence. Never transcripts.
 - One `idempotency_key` per logical write; a conflict on retry means
   "already applied".
+- A decision made in another project is read with
+  `dimensions: {scope: "abouts", abouts: [...]}` — see below.
 ```
+
+## Reading one project's memory from another project's conversation
+
+Abouts are never joined by relations, and that is deliberate: an edge between
+two projects bakes the link into the graph, so anyone traversing one drags the
+other along whether they want it or not, and the frontier an about exists to
+bound stops being bounded.
+
+The join therefore lives with the reader, at read time:
+
+```json
+{
+  "about": "project:made",
+  "question": "Why does the store conversion copy rows instead of replaying the journal?",
+  "dimensions": { "scope": "abouts", "abouts": ["project:made", "project:kmp"] }
+}
+```
+
+One call, both projects, evidence attributed to each. The reasoning recorded
+in `project:kmp` arrives in a conversation about MADE, and neither graph grows
+an edge it did not ask for.
+
+Reach for it whenever a decision made in one project governs work in another —
+a shared contract, an ADR both sides implement, a constraint one repository
+imposes on its sibling. `scope: "all_abouts"` sweeps everything and is a real
+cost on a large store; naming the two or three abouts that bear on the
+question costs almost nothing.
 
 ## Two sessions at once
 
