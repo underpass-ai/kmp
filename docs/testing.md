@@ -120,7 +120,7 @@ Coverage state:
 | `relation_materialization_out_of_order_integration` | Implemented | Prove convergence when a relation arrives before both node events | Neo4j + Valkey + NATS + gRPC |
 | `pir_sequential_spine_relation_integration` | Planned | Reproduce the full `incident -> finding -> decision -> task -> verification` spine with relation-only waves where needed | Neo4j + Valkey + NATS + gRPC |
 | `relation_materialization_idempotency_integration` | Implemented | Prove repeated relation events update one edge instead of creating duplicates | Neo4j + Valkey + NATS + gRPC |
-| `placeholder_filtering_integration` | Planned | Prove convergence placeholders do not leak into default rendered context | Neo4j + Valkey + NATS + gRPC |
+| `placeholder_filtering_integration` | Implemented | Prove convergence placeholders do not leak into default rendered context | Neo4j + Valkey + NATS + gRPC |
 | `graph_relation_roundtrip_smoke` | Planned | Minimal live cluster smoke for one relation-only event | live kernel + live NATS |
 | `pir_sequential_spine_roundtrip_smoke` | Planned | Live PIR-like multi-wave smoke validating the full spine end to end | live kernel + live NATS |
 

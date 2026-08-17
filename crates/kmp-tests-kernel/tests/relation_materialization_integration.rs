@@ -214,6 +214,65 @@ async fn repeated_relation_materialization_updates_one_edge_in_place() {
     debug_log("finished test repeated_relation_materialization_updates_one_edge_in_place");
 }
 
+#[tokio::test]
+async fn unmaterialized_relation_endpoints_do_not_leak_into_default_context() {
+    let _guard = container_test_guard().lock().await;
+    debug_log("starting test unmaterialized_relation_endpoints_do_not_leak_into_default_context");
+
+    let seed_messages = placeholder_filtering_messages();
+
+    let fixture = TestFixture::builder()
+        .with_neo4j()
+        .with_valkey()
+        .with_nats()
+        .with_projection_runtime()
+        .with_grpc_server()
+        .with_seed(ClosureSeed::new(move |ctx| {
+            let client = ctx.nats_client().clone();
+            let messages = seed_messages.clone();
+            Box::pin(async move {
+                publish_messages(&client, &messages).await?;
+                Ok(())
+            })
+        }))
+        .with_readiness_check(ROOT_NODE_ID, DECISION_NODE_ID)
+        .build()
+        .await
+        .expect("fixture should start");
+
+    let context = wait_for_placeholder_filtered_shape(fixture.query_client(), ROOT_NODE_ID).await;
+    let bundle = context.bundle.expect("bundle should exist");
+    let role_bundle = bundle.bundles.first().expect("role bundle should exist");
+
+    assert_eq!(role_bundle.neighbor_nodes.len(), 1);
+    assert_eq!(role_bundle.neighbor_nodes[0].node_id, DECISION_NODE_ID);
+    assert_eq!(role_bundle.neighbor_nodes[0].title, "Enable cache jitter");
+    assert_eq!(role_bundle.relationships.len(), 1);
+    assert!(role_bundle.relationships.iter().all(|relationship| {
+        relationship.source_node_id != FINDING_NODE_ID
+            && relationship.target_node_id != FINDING_NODE_ID
+    }));
+    assert!(role_bundle.relationships.iter().any(|relationship| {
+        relationship.source_node_id == ROOT_NODE_ID
+            && relationship.target_node_id == DECISION_NODE_ID
+            && relationship.relationship_type == "MITIGATED_BY"
+    }));
+
+    let rendered = &context
+        .rendered
+        .as_ref()
+        .expect("rendered context should exist")
+        .content;
+    assert!(!rendered.is_empty());
+    assert!(!rendered.contains(FINDING_NODE_ID));
+    let rendered_lowercase = rendered.to_ascii_lowercase();
+    assert!(!rendered_lowercase.contains("unmaterialized"));
+    assert!(!rendered_lowercase.contains("placeholder"));
+
+    fixture.shutdown().await.expect("fixture should shut down");
+    debug_log("finished test unmaterialized_relation_endpoints_do_not_leak_into_default_context");
+}
+
 fn projection_messages() -> Vec<(String, Vec<u8>)> {
     vec![
         (
@@ -241,6 +300,25 @@ fn projection_messages() -> Vec<(String, Vec<u8>)> {
         (
             "rehydration.graph.relation.materialized".to_string(),
             serde_json::to_vec(&relation_payload()).expect("relation payload should serialize"),
+        ),
+    ]
+}
+
+fn placeholder_filtering_messages() -> Vec<(String, Vec<u8>)> {
+    vec![
+        (
+            "rehydration.graph.node.materialized".to_string(),
+            serde_json::to_vec(&root_node_payload()).expect("root payload should serialize"),
+        ),
+        (
+            "rehydration.graph.node.materialized".to_string(),
+            serde_json::to_vec(&decision_node_payload())
+                .expect("decision payload should serialize"),
+        ),
+        (
+            "rehydration.node.detail.materialized".to_string(),
+            serde_json::to_vec(&decision_detail_payload())
+                .expect("decision detail should serialize"),
         ),
     ]
 }
@@ -492,4 +570,34 @@ async fn wait_for_relation_explanation(
     }
 
     panic!("timed out waiting for replayed relation explanation to appear");
+}
+
+async fn wait_for_placeholder_filtered_shape(
+    mut query_client: kmp_proto::v1beta1::context_query_service_client::ContextQueryServiceClient<
+        Channel,
+    >,
+    root_node_id: &str,
+) -> kmp_proto::v1beta1::GetContextResponse {
+    for _ in 0..40 {
+        if let Ok(context) = get_context(&mut query_client, root_node_id).await
+            && context.bundle.as_ref().is_some_and(|bundle| {
+                bundle.bundles.first().is_some_and(|role_bundle| {
+                    role_bundle.neighbor_nodes.len() == 1
+                        && role_bundle.neighbor_nodes[0].node_id == DECISION_NODE_ID
+                        && role_bundle.relationships.len() == 1
+                        && role_bundle.relationships.iter().any(|relationship| {
+                            relationship.source_node_id == ROOT_NODE_ID
+                                && relationship.target_node_id == DECISION_NODE_ID
+                                && relationship.relationship_type == "MITIGATED_BY"
+                        })
+                })
+            })
+        {
+            return context;
+        }
+
+        sleep(Duration::from_millis(250)).await;
+    }
+
+    panic!("timed out waiting for placeholder-filtered context shape");
 }
