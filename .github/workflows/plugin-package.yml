@@ -16,7 +16,9 @@ on:
       - "scripts/ci/kmp-plugin-install-smoke.sh"
       - "tests/plugin/**"
       - "crates/kmp-mcp/**"
+      - ".github/actions/install-rust/**"
       - ".github/workflows/plugin-package.yml"
+      - "scripts/ci/install-rust-toolchain.sh"
   push:
     branches:
       - main
@@ -52,9 +54,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
-        with:
-          toolchain: 1.97.1
+        uses: ./.github/actions/install-rust
 
       - name: Install protoc (Linux)
         if: runner.os == 'Linux'
