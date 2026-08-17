@@ -6,7 +6,7 @@ use kmp_proto::v1beta1::{
     CommandMetadata, ContextChange, ContextChangeOperation, GetContextRequest,
     GetNodeDetailRequest, UpdateContextRequest,
 };
-use kmp_tests_shared::fixtures::TestFixture;
+use kmp_tests_shared::fixtures::{TestFixture, wait_for_neighbor_count};
 use kmp_tests_shared::ports::ClosureSeed;
 use kmp_tests_shared::seed::kernel_data::DEVELOPER_ROLE;
 use kmp_tests_shared::seed::kernel_e2e_data::{
@@ -85,18 +85,30 @@ async fn kernel_full_journey_covers_projection_query_and_command()
                 .contains(EXPLORER_LEAF_DETAIL)
         );
 
-        let query_context = query_client
-            .get_context(GetContextRequest {
-                root_node_id: ROOT_NODE_ID.to_string(),
-                role: DEVELOPER_ROLE.to_string(),
-                token_budget: 65536,
-                requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
-                depth: 3,
-                max_tier: 0,
-                rehydration_mode: 2,
-            })
-            .await?
-            .into_inner();
+        // The fixture's readiness probe waits for *any* neighbour to appear,
+        // which is the right gate for "the projection is alive" and the wrong
+        // one for "it has caught up". Asserting an exact count straight after
+        // it raced the projection: 15 of 17, everything else correct, and a
+        // re-run with no change passing. Wait for what this test is about to
+        // assert; the assertion itself stays exact.
+        let query_request = GetContextRequest {
+            root_node_id: ROOT_NODE_ID.to_string(),
+            role: DEVELOPER_ROLE.to_string(),
+            token_budget: 65536,
+            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
+            depth: 3,
+            max_tier: 0,
+            rehydration_mode: 2,
+        };
+        wait_for_neighbor_count(
+            fixture.query_client(),
+            query_request.clone(),
+            EXPECTED_NEIGHBOR_COUNT,
+            40,
+        )
+        .await?;
+
+        let query_context = query_client.get_context(query_request).await?.into_inner();
         let query_bundle = query_context.bundle.expect("query bundle should exist");
         assert_eq!(query_bundle.root_node_id, ROOT_NODE_ID);
         assert_eq!(query_bundle.bundles.len(), 1);

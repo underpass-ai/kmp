@@ -120,6 +120,48 @@ impl TestFixture {
 }
 
 /// Polls GetContext until the projection has populated the graph.
+/// Polls a context query until it holds what the caller is about to assert.
+///
+/// The readiness probe run at fixture build time waits for *any* neighbour to
+/// appear, which is the right gate for "the projection is alive" and the wrong
+/// one for "the projection has caught up". A test that then asserts an exact
+/// count is racing the projection: it sees 15 of 17 and fails, and a re-run
+/// with no change passes. The shape of that failure — short by exactly two,
+/// everything else correct — is a read arriving early, not an unhealthy
+/// container.
+///
+/// This turns the race into a bounded wait. A genuine regression still fails,
+/// just at the deadline instead of instantly, and the assertion that follows
+/// stays exact.
+pub async fn wait_for_neighbor_count(
+    mut query_client: ContextQueryServiceClient<Channel>,
+    request: GetContextRequest,
+    expected: usize,
+    attempts: u32,
+) -> Result<(), BoxError> {
+    let mut last_seen = None;
+    for _ in 0..attempts {
+        if let Ok(response) = query_client.get_context(request.clone()).await
+            && let Some(bundle) = response.into_inner().bundle
+            && let Some(role_bundle) = bundle.bundles.first()
+        {
+            let seen = role_bundle.neighbor_nodes.len();
+            if seen >= expected {
+                return Ok(());
+            }
+            last_seen = Some(seen);
+        }
+        sleep(Duration::from_millis(200)).await;
+    }
+    Err(format!(
+        "projection did not converge: expected {expected} neighbours, last saw {}",
+        last_seen
+            .map(|seen| seen.to_string())
+            .unwrap_or_else(|| "no bundle at all".to_string())
+    )
+    .into())
+}
+
 pub(crate) async fn wait_for_context_ready(
     mut query_client: ContextQueryServiceClient<Channel>,
     root_node_id: &str,
