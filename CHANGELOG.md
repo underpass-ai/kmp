@@ -10,6 +10,42 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-08-17
+
+A delivery-hardening patch: Rust setup now survives transient download failures,
+and relation materialization edge cases are enforced through the real
+NATS-to-storage-to-gRPC integration path. Public contracts, store formats and
+runtime behavior are unchanged.
+
+### Added
+
+- **Out-of-order relation delivery has an executable convergence guarantee.**
+  A relation may arrive before either endpoint; when the real nodes arrive,
+  they replace the placeholders without losing the edge or its properties.
+  (#76)
+
+- **Relation replay is proved idempotent and state-preserving.** Replaying the
+  same logical edge updates its rationale and sequence in place instead of
+  duplicating it or silently retaining stale state. (#77)
+
+- **Unmaterialized placeholders cannot leak into recalled context.** Context
+  bundles omit placeholder nodes, their incident edges and their identifiers
+  from rendered output until the endpoint is real. (#78)
+
+### Changed
+
+- **Relation materialization is now part of the mandatory conformance gate.**
+  The container-backed integration workflow executes the baseline plus the
+  out-of-order, replay-idempotency and placeholder-filtering scenarios on every
+  relevant change. (#75)
+
+### Fixed
+
+- **Rust toolchain installation tolerates transient network failures.** CI,
+  packaging, distribution and release workflows share one bounded-retry setup
+  sourced from `rust-toolchain.toml`, including Bash 3.2-safe empty inputs on
+  macOS. This closes the remaining infrastructure cause tracked in #30. (#74)
+
 ## [0.1.8] - 2026-08-17
 
 One focused recall fix: token budgets now reduce detail without erasing the
@@ -427,7 +463,8 @@ what this version adds is a way to get it.
   the reference examples. A published crate can only ship what lives inside
   it; both copies are diffed against `api/` on every CI run.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.9...HEAD
+[0.1.9]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.9
 [0.1.8]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.8
 [0.1.7]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.7
 [0.1.6]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.6
