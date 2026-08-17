@@ -56,6 +56,46 @@ ok "kmp-mcp at $BIN"
 VERSION="$("$BIN" --version 2>/dev/null | head -1)"
 [ -n "$VERSION" ] && info "$VERSION"
 
+# --------------------------------------------------------------- plugin ----
+#
+# The binary and the plugin update through different commands — `cargo
+# install --force` and `/plugin update` — and neither knows about the other.
+# A stale plugin with a fresh binary keeps working by luck: the launcher
+# falls through to PATH when a marketplace install has no bin/, so the engine
+# updates silently while the launcher, this doctor and the skills stay old.
+# Nothing announced that, so this does.
+section "Plugin"
+
+PLUGIN_MANIFEST=""
+for candidate in \
+  "$(dirname "${BASH_SOURCE[0]}")/../.claude-plugin/plugin.json" \
+  "${CLAUDE_PLUGIN_ROOT:-}/.claude-plugin/plugin.json"; do
+  [ -f "$candidate" ] && { PLUGIN_MANIFEST="$candidate"; break; }
+done
+
+if [ -z "$PLUGIN_MANIFEST" ]; then
+  info "not running from an installed plugin — nothing to compare"
+else
+  PLUGIN_VERSION="$(
+    python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' \
+      "$PLUGIN_MANIFEST" 2>/dev/null
+  )"
+  BINARY_VERSION="$(printf '%s' "$VERSION" | sed -E 's/^kmp-mcp ([^ ]+).*/\1/')"
+  if [ -z "$PLUGIN_VERSION" ]; then
+    warn "cannot read the plugin version from $PLUGIN_MANIFEST"
+  elif [ "$PLUGIN_VERSION" = "$BINARY_VERSION" ]; then
+    ok "plugin $PLUGIN_VERSION matches the binary"
+  else
+    warn "plugin files are $PLUGIN_VERSION, binary is $BINARY_VERSION"
+    info "these update separately and neither announces the other:"
+    info "  binary:  cargo install kmp-mcp --force"
+    info "  plugin:  /plugin update kmp@underpass   (then restart the session)"
+    info "a stale plugin still starts, because the launcher falls back to the"
+    info "binary on PATH — so fixes that live in the launcher, this doctor or"
+    info "the skills are the ones you are missing."
+  fi
+fi
+
 # --------------------------------------------------------------- backend ----
 section "Backend"
 
@@ -146,10 +186,28 @@ else
           info "the redb engine is single-writer (ADR-011): a second host"
           info "session on the same data dir gets no tools at all. Close that"
           info "session, point this one at a different KMP_MCP_DATA_DIR, or"
-          info "share the store between hosts by moving it to the sqlite engine:"
-          info "  kmp-mcp migrate $DATA_DIR <new-dir> --engine sqlite"
-          info "(needs a kmp-mcp built with --features sqlite, and KMP_MCP_BIN"
-          info " pointing the plugin at it: the bundled binary has no engine)"
+          info "share the store between hosts by moving it to the sqlite engine."
+          # Say the one thing that is true of *this* machine, rather than a
+          # command that will fail on it. A binary without the engine cannot
+          # run the migration at all, and finding that out afterwards is the
+          # worst moment.
+          if printf '%s' "$VERSION" | grep -q "sqlite"; then
+            info ""
+            info "  kmp-mcp share-memory"
+            info ""
+            info "one command: snapshots the store (yours is locked, so it"
+            info "cannot be migrated in place), migrates, verifies the event"
+            info "log matches, keeps the original under a -redb-before-share"
+            info "name, and installs the result. Restart both hosts after."
+          else
+            info ""
+            info "this binary has no sqlite engine, so it cannot do that yet:"
+            info "  cargo install kmp-mcp --features sqlite"
+            info "  kmp-mcp share-memory"
+            info ""
+            info "through a release-bundle plugin, also point the launcher at"
+            info "the binary you built: KMP_MCP_BIN=\$HOME/.cargo/bin/kmp-mcp"
+          fi
         fi
       else
         ok "store is free — no other process holds it"

@@ -192,6 +192,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     match command {
         "export" | "import" => {}
         "migrate" => return run_migrate_command(args).await,
+        "share-memory" => return run_share_memory_command(path).await,
         "viewer" => return run_viewer_command(path).await,
         "--version" | "-V" | "version" => {
             // The layouts this build opens, so a user can tell at a glance
@@ -217,7 +218,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
-                 `viewer [addr]` / `--version`"
+                 `share-memory [data-dir]` / `viewer [addr]` / `--version`"
             );
             return 2;
         }
@@ -328,6 +329,212 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
 /// when the environment-resolved store is the one that will not open, and
 /// asking an operator to fix that by exporting an environment variable is
 /// how the wrong directory gets migrated over the right one.
+/// `share-memory [data-dir]` — the seven manual steps, as one command.
+///
+/// Two agent hosts sharing one memory needs the sqlite engine (ADR-018), and
+/// getting there by hand meant: notice the binary cannot open a sqlite store,
+/// reinstall with the feature, discover the live store is locked by your own
+/// session so it cannot be migrated in place, snapshot it, migrate the
+/// snapshot, verify nothing was lost, move the original aside, move the new
+/// one in, restart. Seven steps, three of them non-obvious, and the product
+/// suggested none of them.
+///
+/// Nothing is deleted. The original data directory is moved aside under a
+/// dated name and stays exactly as it was, so this is reversible by moving it
+/// back.
+async fn run_share_memory_command(explicit_dir: Option<&str>) -> i32 {
+    use kmp_embedded::{EmbeddedKernel, StorageEngine};
+
+    // A binary without the engine cannot do any of this, and finding that out
+    // after the migration would be the worst possible moment.
+    if !StorageEngine::Sqlite.is_compiled() {
+        eprintln!(
+            "kmp-mcp: this binary was built without the sqlite engine, so it cannot share a \
+             store between hosts.\n  install one with: cargo install kmp-mcp --features sqlite\n               (then re-run this command; nothing has been changed)"
+        );
+        return 2;
+    }
+
+    let data_dir = match explicit_dir {
+        Some(path) => std::path::PathBuf::from(path),
+        None => match kmp_embedded::resolve_data_dir_from_env() {
+            Ok(resolved) => resolved.path().to_path_buf(),
+            Err(error) => {
+                eprintln!("kmp-mcp: cannot resolve which data dir to share: {error}");
+                return 2;
+            }
+        },
+    };
+    if !data_dir.exists() {
+        eprintln!(
+            "kmp-mcp: no memory at `{}` yet. Start a session there with \
+             KMP_MCP_ENGINE=sqlite and it is shareable from the first write.",
+            data_dir.display()
+        );
+        return 2;
+    }
+
+    match kmp_embedded::EmbeddedKernelStore::engine_of(&data_dir) {
+        Ok(StorageEngine::Sqlite) => {
+            println!(
+                "already shareable: `{}` is on the sqlite engine. Point both hosts at it.",
+                data_dir.display()
+            );
+            return 0;
+        }
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!(
+                "kmp-mcp: cannot read the store at `{}`: {error}",
+                data_dir.display()
+            );
+            return 2;
+        }
+    }
+
+    // The live store is very likely held by the session asking for this, and
+    // redb is single-writer — so the migration reads a snapshot, never the
+    // original. Copying files is a read; it does not need the lock.
+    // The working copies live beside the data directory rather than in a
+    // temp dir: same filesystem, so installing the result is a rename within
+    // one volume instead of a copy across two, and a failure leaves the
+    // evidence where the operator will look for it.
+    let work = data_dir.with_file_name(format!(
+        "{}-share-memory-work",
+        data_dir
+            .file_name()
+            .map(|name| name.to_string_lossy().to_string())
+            .unwrap_or_else(|| "kmp".to_string())
+    ));
+    if work.exists() {
+        eprintln!(
+            "kmp-mcp: `{}` is left over from an earlier run; move or remove it first. \
+             Nothing has been changed.",
+            work.display()
+        );
+        return 2;
+    }
+    let snapshot = work.join("snapshot");
+    let shared = work.join("shared");
+    if let Err(error) = copy_tree(&data_dir, &snapshot) {
+        eprintln!(
+            "kmp-mcp: could not snapshot `{}`: {error}",
+            data_dir.display()
+        );
+        return 2;
+    }
+    println!("snapshot taken (the live store was not touched)");
+
+    let receipt =
+        match kmp_embedded::migrate_data_dir_to(&snapshot, &shared, StorageEngine::Sqlite).await {
+            Ok(receipt) => receipt,
+            Err(error) => {
+                eprintln!("kmp-mcp: migration failed, nothing was changed: {error}");
+                return 2;
+            }
+        };
+    println!(
+        "migrated: {} events, {} mutations",
+        receipt.events_migrated, receipt.mutations_applied
+    );
+
+    // Verify before swapping, not after: a migration that reports success and
+    // loses events would otherwise be discovered by a reader, later.
+    match verify_same_log(&snapshot, &shared).await {
+        Ok((events, sequence)) => {
+            println!("verified: {events} events, last sequence {sequence}, on both engines");
+        }
+        Err(error) => {
+            eprintln!(
+                "kmp-mcp: the migrated store does not match the original, so nothing was \
+                 changed: {error}"
+            );
+            return 2;
+        }
+    }
+
+    let kept = data_dir.with_file_name(format!(
+        "{}-redb-before-share",
+        data_dir
+            .file_name()
+            .map(|name| name.to_string_lossy().to_string())
+            .unwrap_or_else(|| "kmp".to_string())
+    ));
+    if kept.exists() {
+        eprintln!(
+            "kmp-mcp: `{}` already exists, so the original cannot be moved aside safely; \
+             nothing was changed",
+            kept.display()
+        );
+        return 2;
+    }
+    if let Err(error) = std::fs::rename(&data_dir, &kept) {
+        eprintln!("kmp-mcp: could not move the original aside: {error}");
+        return 2;
+    }
+    if let Err(error) = copy_tree(&shared, &data_dir) {
+        eprintln!(
+            "kmp-mcp: could not install the shared store; the original is intact at `{}`: {error}",
+            kept.display()
+        );
+        return 2;
+    }
+
+    let _ = std::fs::remove_dir_all(&work);
+    drop(EmbeddedKernel::open(&data_dir));
+    println!(
+        "\n`{}` is now on the sqlite engine and two hosts can share it.\n\
+         the original is kept at `{}` — nothing was deleted\n\
+         restart every agent host so it opens the new store",
+        data_dir.display(),
+        kept.display()
+    );
+    0
+}
+
+/// Copies a data directory, file by file, without following the store's lock.
+fn copy_tree(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        let target = to.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            std::fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
+/// Both stores must hold the same log: same length, same last sequence.
+async fn verify_same_log(
+    original: &std::path::Path,
+    migrated: &std::path::Path,
+) -> Result<(u64, u64), String> {
+    let read = |dir: &std::path::Path| {
+        kmp_embedded::EmbeddedKernelStore::open(dir)
+            .map_err(|error| format!("could not open `{}`: {error}", dir.display()))
+    };
+    let before = read(original)?;
+    let after = read(migrated)?;
+    let before_stats = before
+        .event_log_stats()
+        .await
+        .map_err(|error| format!("could not read the original log: {error}"))?;
+    let after_stats = after
+        .event_log_stats()
+        .await
+        .map_err(|error| format!("could not read the migrated log: {error}"))?;
+    if before_stats != after_stats {
+        return Err(format!(
+            "original holds {} events (last sequence {}), migrated holds {} (last sequence {})",
+            before_stats.0, before_stats.1, after_stats.0, after_stats.1
+        ));
+    }
+    Ok(after_stats)
+}
+
 async fn run_migrate_command(args: &[&str]) -> i32 {
     let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
         eprintln!(
