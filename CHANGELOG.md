@@ -10,6 +10,11 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-08-17
+
+One focused recall fix: token budgets now reduce detail without erasing the
+answer or the proof that supports it.
+
 ### Fixed
 
 - **Budgeted recall preserves its semantic payload.** Oversized `kernel_ask`
@@ -422,7 +427,9 @@ what this version adds is a way to get it.
   the reference examples. A published crate can only ship what lives inside
   it; both copies are diffed against `api/` on every CI run.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.8
+[0.1.7]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.7
 [0.1.6]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.6
 [0.1.5]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.5
 [0.1.4]: https://github.com/underpass-ai/kmp/releases/tag/v0.1.4
