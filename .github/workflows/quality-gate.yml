@@ -17,6 +17,34 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # A merge to main usually lands a tree byte-identical to the pull request
+  # head that was just proved green: same tree, different commit. Compiling
+  # and testing it again proves nothing, and doubles the exposure to the
+  # intermittent container failures in #30 — every false red on a tree that
+  # was green minutes earlier trains the reflex to re-run rather than read.
+  #
+  # The rule is "skip when this tree was already proved", never "trust the
+  # pull request". A merge from an out-of-date branch, a conflict resolved in
+  # the UI and a direct push all produce trees nobody tested, and each still
+  # gets the full gate. So does any doubt at all.
+  tree-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      skip: ${{ steps.proof.outputs.skip }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Was this tree already proved green?
+        id: proof
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/tree-already-proved.sh quality-gate.yml
   # contract: temporarily removed while proto field pruning baseline stabilizes.
   # Restore from git history (commit af4c6a6) once breaking change window closes.
 
@@ -24,6 +52,8 @@ jobs:
   # the crates that have to be publishable. This keeps them one contract.
   # No toolchain, no protoc: it is a diff, and it runs in seconds.
   vendored-contract:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -40,6 +70,8 @@ jobs:
   # dependencies move — a check on a pull request, rather than a discovery
   # halfway through a publish that cannot be rolled back.
   publish-chain:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -57,6 +89,8 @@ jobs:
         run: bash scripts/ci/check-publish-chain.sh
 
   rustfmt:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -75,6 +109,8 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -99,6 +135,8 @@ jobs:
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
   test:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -122,6 +160,8 @@ jobs:
         run: cargo test --workspace --locked
 
   integration-valkey:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -148,6 +188,8 @@ jobs:
         run: bash scripts/ci/integration-valkey.sh
 
   integration-neo4j:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -174,6 +216,8 @@ jobs:
         run: bash scripts/ci/integration-neo4j.sh
 
   embedded-binary-gates:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -197,6 +241,8 @@ jobs:
         run: bash scripts/ci/embedded-binary-gates.sh
 
   embedded-sqlite-gates:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -225,6 +271,8 @@ jobs:
         run: bash scripts/ci/embedded-sqlite-gates.sh
 
   integration-conformance:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -251,6 +299,8 @@ jobs:
         run: bash scripts/ci/integration-conformance.sh
 
   integration-agentic-context:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -277,6 +327,8 @@ jobs:
         run: bash scripts/ci/integration-agentic-context.sh
 
   integration-agentic-event-context:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -303,6 +355,8 @@ jobs:
         run: bash scripts/ci/integration-agentic-event-context.sh
 
   integration-mcp-real-kernel:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -329,6 +383,8 @@ jobs:
         run: bash scripts/ci/integration-mcp-real-kernel.sh
 
   container-image:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -344,6 +400,8 @@ jobs:
         run: bash scripts/ci/container-image.sh
 
   helm-chart:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -359,6 +417,8 @@ jobs:
         run: bash scripts/ci/helm-lint.sh
 
   coverage:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -394,6 +454,7 @@ jobs:
         run: bash scripts/ci/rust-coverage.sh
 
   wait-codeql-checks:
+    needs: tree-proof
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Code scanning default setup does not run its per-language analyses on
@@ -405,6 +466,7 @@ jobs:
     if: >-
       always() && github.event_name == 'pull_request'
       && github.actor != 'dependabot[bot]'
+      && needs.tree-proof.outputs.skip != 'true'
       && !(github.event.pull_request.head.repo.fork || false)
     permissions:
       checks: read
