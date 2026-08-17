@@ -10,6 +10,58 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-08-17
+
+Eight operator-facing fixes from first contact through sustained use: the CLI
+now explains itself, a fresh memory can actually be seeded, a broken session
+is diagnosed as broken, two editor windows work on the shipped default, and
+large or unrelated recalls fail safely instead of misleading the host.
+
+### Added
+
+- **`kmp-mcp --help` and `-h`** print the supported backends, maintenance
+  commands and environment controls instead of being rejected as unknown
+  commands. (#61)
+
+### Changed
+
+- **Fresh default embedded stores use SQLite.** Installable binaries, release
+  artifacts and plugin bundles now carry the multi-process engine, so two
+  editor hosts can share a new memory without rebuilding the product or
+  setting engine variables. Existing redb stores remain redb by their format
+  stamp and are never converted implicitly; `--no-default-features` keeps the
+  pure-Rust fallback. (#64)
+
+- **Compact MCP responses are bounded after final serialization.** Wake and
+  ask apply entry limits, remove duplicate prose and structural evidence, and
+  count the actual cl100k payload before returning it, so a compact packet
+  reaches the model instead of being discarded by the host. (#68)
+
+### Fixed
+
+- **The first strict write may establish an about root.** Once that root
+  exists, later strict writes still require a justified relation to known
+  memory. (#62)
+
+- **`kmp-doctor` no longer calls a tool-less session usable.** A most-recent
+  startup failure or an active redb writer lock is reported as unusable, with
+  the resolved data directory, logs and self-ignore state included. (#63)
+
+- **Every data-directory path installs the same non-destructive skeleton.**
+  Fresh startup, explicit directories, migration and `share-memory` preserve
+  operator-owned files while ensuring logs and a self-ignoring `.gitignore`,
+  so a migrated store does not appear in the enclosing repository. (#65)
+
+- **`kernel_ask` returns `UNKNOWN` for unrelated questions.** Evidence must
+  now clear a relevance floor; weak or partial support is reflected in
+  `missing` and confidence rather than presenting the nearest graph node as
+  an answer. (#66)
+
+- **A transient redb startup lock no longer kills memory for the whole host
+  session.** MCP initialization and tool discovery stay available while the
+  embedded backend retries lazily, then recover when the competing writer
+  releases the store. (#67)
+
 ## [0.1.6] - 2026-08-17
 
 Eleven fixes found by driving the product as a user rather than as its
