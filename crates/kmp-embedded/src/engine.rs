@@ -8,12 +8,14 @@
 //! store that opens as the wrong engine behind a user's back is exactly the
 //! silent divergence that ends in "why can't my second host open it".
 
+use std::path::Path;
+
 use kmp_adapter_embedded::StorageEngine;
 use kmp_domain::PortError;
 
-/// Which engine to create a fresh data directory with: `redb` (default) or
-/// `sqlite`. Ignored for an existing directory only in the sense that it
-/// must agree with it.
+/// Explicit engine override for a fresh data directory. Without it, the
+/// user-facing binary chooses SQLite when compiled and redb otherwise;
+/// existing directories always open from their stamp.
 pub const ENGINE_ENV: &str = "KMP_MCP_ENGINE";
 
 /// Parses an engine name the way the environment variable and the CLI spell
@@ -36,6 +38,34 @@ pub fn resolve_engine_from_env() -> Result<Option<StorageEngine>, PortError> {
         Ok(value) if !value.trim().is_empty() => parse_engine(&value).map(Some),
         _ => Ok(None),
     }
+}
+
+/// Resolves the engine for a particular data directory.
+///
+/// An explicit environment choice is always authoritative. With no choice,
+/// an existing store is opened as stamped; a fresh store prefers SQLite when
+/// this build ships it, otherwise it retains the pure-Rust redb fallback.
+/// This is intentionally data-dir-aware: returning SQLite blindly would make
+/// an upgraded binary refuse every existing redb store.
+pub fn resolve_engine_for_data_dir_from_env(
+    data_dir: &Path,
+) -> Result<Option<StorageEngine>, PortError> {
+    if let Some(engine) = resolve_engine_from_env()? {
+        return Ok(Some(engine));
+    }
+    Ok(default_engine_for_data_dir(data_dir))
+}
+
+/// Implicit engine choice for a data directory when no operator override is
+/// present. Existing stores defer to their stamp; fresh stores prefer the
+/// shareable engine when this build carries it.
+pub fn default_engine_for_data_dir(data_dir: &Path) -> Option<StorageEngine> {
+    if data_dir.join("FORMAT_VERSION").exists() {
+        return None;
+    }
+    StorageEngine::Sqlite
+        .is_compiled()
+        .then_some(StorageEngine::Sqlite)
 }
 
 #[cfg(test)]
@@ -61,5 +91,23 @@ mod tests {
         assert!(message.contains("postgres"), "{message}");
         assert!(message.contains(ENGINE_ENV), "{message}");
         assert!(message.contains("`redb` or `sqlite`"), "{message}");
+    }
+
+    #[test]
+    fn compiled_sqlite_is_only_the_implicit_choice_for_a_fresh_directory() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let fresh = temp.path().join("fresh");
+        let expected = StorageEngine::Sqlite
+            .is_compiled()
+            .then_some(StorageEngine::Sqlite);
+        assert_eq!(default_engine_for_data_dir(&fresh), expected);
+
+        std::fs::create_dir_all(&fresh).expect("data dir");
+        std::fs::write(fresh.join("FORMAT_VERSION"), "1\n").expect("stamp");
+        assert_eq!(
+            default_engine_for_data_dir(&fresh),
+            None,
+            "an existing store must be opened from its stamp"
+        );
     }
 }

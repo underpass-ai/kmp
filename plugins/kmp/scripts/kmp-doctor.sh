@@ -13,6 +13,8 @@ set -uo pipefail
 
 FAILURES=0
 WARNINGS=0
+SESSION_USABLE=1
+SESSION_REASON=""
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   B=$'\033[1m'; R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; D=$'\033[2m'; Z=$'\033[0m'
@@ -151,6 +153,18 @@ else
   info "chosen by: $ORIGIN"
 
   if [ -d "$DATA_DIR" ]; then
+    if [ -f "$DATA_DIR/.gitignore" ] && grep -qxF '*' "$DATA_DIR/.gitignore" 2>/dev/null; then
+      ok "data-dir self-ignore guard is present"
+    else
+      fail "$DATA_DIR/.gitignore is missing the '*' safety guard"
+      info "run a current KMP startup or migration command to restore the skeleton"
+    fi
+    if [ -d "$DATA_DIR/logs" ]; then
+      ok "startup log directory is present"
+    else
+      warn "$DATA_DIR/logs is missing — startup failures cannot be audited here"
+    fi
+
     # FORMAT_VERSION names the layout, which names the engine (ADR-018):
     # 1 is redb, 2 is sqlite. The engine decides whether a second host can
     # share this store, so say which one it is.
@@ -183,6 +197,8 @@ else
           # opening: acquiring the lock to test it would be the very
           # conflict this is meant to report.
           warn "another process holds this store (pid$HOLDER)"
+          SESSION_USABLE=0
+          SESSION_REASON="redb store held by pid$HOLDER"
           info "the redb engine is single-writer (ADR-011): a second host"
           info "session on the same data dir gets no tools at all. Close that"
           info "session, point this one at a different KMP_MCP_DATA_DIR, or"
@@ -202,7 +218,7 @@ else
           else
             info ""
             info "this binary has no sqlite engine, so it cannot do that yet:"
-            info "  cargo install kmp-mcp --features sqlite"
+            info "  cargo install kmp-mcp"
             info "  kmp-mcp share-memory"
             info ""
             info "through a release-bundle plugin, also point the launcher at"
@@ -268,6 +284,8 @@ for verdict, when, detail in starts[-5:]:
       fi
     done
     if printf '%s' "$LAST_STARTS" | tail -1 | grep -q '^FAIL'; then
+      SESSION_USABLE=0
+      SESSION_REASON="last start failed"
       info "the most recent start failed — that is why the tools are missing,"
       info "and the reason above is what the host swallowed."
     fi
@@ -374,6 +392,11 @@ info "the session."
 
 # --------------------------------------------------------------- verdict ----
 printf '\n'
+if [ "$SESSION_USABLE" -eq 0 ]; then
+  printf '%sBinary ok · this session: no tools (%s)%s\n' "$R" "$SESSION_REASON" "$Z"
+  [ "$FAILURES" -gt 0 ] && printf '%d additional check(s) failed, %d warning(s).\n' "$FAILURES" "$WARNINGS"
+  exit 1
+fi
 if [ "$FAILURES" -gt 0 ]; then
   printf '%s%d check(s) failed%s, %d warning(s).\n' "$R" "$FAILURES" "$Z" "$WARNINGS"
   exit 1

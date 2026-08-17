@@ -134,12 +134,13 @@ where
         let query = ask_query_from_proto(request)
             .map_err(|status| map_proto_error("KernelMemoryService.Ask", &start, *status))?;
         let answer_policy = query.answer_policy;
+        let max_entries = query.max_entries;
         log_dimensioned_request("KernelMemoryService.Ask", &query.about, &query.dimensions);
         let result = self.application.ask(query).await.map_err(|error| {
             map_application_error_with_log("KernelMemoryService.Ask", &start, error)
         })?;
         let selected_abouts = selected_abouts_from_bundle(&result.bundle);
-        let response = ask_response_from_result(&question, answer_policy, result);
+        let response = ask_response_from_result(&question, answer_policy, max_entries, result);
         tracing::info!(
             rpc = "KernelMemoryService.Ask",
             selected_abouts = ?selected_abouts,

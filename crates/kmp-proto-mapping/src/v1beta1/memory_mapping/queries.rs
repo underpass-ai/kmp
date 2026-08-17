@@ -47,6 +47,7 @@ pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemory
         },
         depth: if budget.depth == 0 { 2 } else { budget.depth },
         max_tier: max_tier_from_detail(memory_detail_level(budget.detail)?),
+        max_entries: (budget.max_entries != 0).then_some(budget.max_entries as usize),
     })
 }
 

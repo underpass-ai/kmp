@@ -136,9 +136,12 @@ fn cap_wake_evidence(
 pub fn ask_response_from_result(
     question: &str,
     policy: MemoryAnswerPolicy,
+    max_entries: Option<usize>,
     result: GetContextResult,
 ) -> AskResponse {
-    let evidence = answer_evidence_from_bundle(&result.bundle);
+    let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
+    let (relevant_evidence, confidence) = relevant_answer_evidence(question, candidate_evidence);
+    let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     let because = evidence
         .iter()
         .take(5)
@@ -148,11 +151,6 @@ pub fn ask_response_from_result(
             r#ref: item.id.clone(),
         })
         .collect::<Vec<_>>();
-    let confidence = if because.is_empty() {
-        MemoryConfidence::Unknown
-    } else {
-        MemoryConfidence::Medium
-    };
 
     let answer = match policy {
         MemoryAnswerPolicy::EvidenceOrUnknown if because.is_empty() => "UNKNOWN".to_string(),
@@ -165,6 +163,7 @@ pub fn ask_response_from_result(
     } else {
         answer
     };
+    let unknown = because.is_empty();
 
     AskResponse {
         summary: if answer == "UNKNOWN" {
@@ -179,13 +178,112 @@ pub fn ask_response_from_result(
         answer,
         because,
         proof: Some(proof(
-            memory_relations_from_bundle(&result.bundle),
+            if unknown {
+                Vec::new()
+            } else {
+                memory_relations_from_bundle(&result.bundle)
+            },
             evidence,
-            Vec::new(),
+            if unknown {
+                vec![format!("relevant evidence for: {question}")]
+            } else {
+                withheld
+            },
             confidence,
         )),
         warnings: Vec::new(),
     }
+}
+
+/// Applies a deterministic lexical relevance floor before evidence is allowed
+/// to become an answer. Graph proximity says where evidence came from; it does
+/// not say that the evidence answers the user's question.
+fn relevant_answer_evidence(
+    question: &str,
+    evidence: Vec<MemoryEvidence>,
+) -> (Vec<MemoryEvidence>, MemoryConfidence) {
+    let question_terms = informative_terms(question);
+    if question_terms.is_empty() {
+        return if evidence.is_empty() {
+            (Vec::new(), MemoryConfidence::Unknown)
+        } else {
+            (evidence, MemoryConfidence::Low)
+        };
+    }
+
+    let required_matches = if question_terms.len() == 1 { 1 } else { 2 };
+    let mut best_matches = 0usize;
+    let relevant = evidence
+        .into_iter()
+        .filter_map(|item| {
+            let mut searchable = format!("{} {}", item.text, item.source);
+            for (key, value) in &item.metadata {
+                searchable.push(' ');
+                searchable.push_str(key);
+                searchable.push(' ');
+                searchable.push_str(value);
+            }
+            let evidence_terms = informative_terms(&searchable);
+            let matches = question_terms
+                .iter()
+                .filter(|question_term| {
+                    evidence_terms
+                        .iter()
+                        .any(|evidence_term| terms_match(question_term, evidence_term))
+                })
+                .count();
+            if matches < required_matches {
+                None
+            } else {
+                best_matches = best_matches.max(matches);
+                Some(item)
+            }
+        })
+        .collect::<Vec<_>>();
+
+    if relevant.is_empty() {
+        return (Vec::new(), MemoryConfidence::Unknown);
+    }
+    let coverage = best_matches as f64 / question_terms.len() as f64;
+    let confidence = if coverage >= 0.6 {
+        MemoryConfidence::High
+    } else if coverage >= 0.3 {
+        MemoryConfidence::Medium
+    } else {
+        MemoryConfidence::Low
+    };
+    (relevant, confidence)
+}
+
+fn informative_terms(value: &str) -> BTreeSet<String> {
+    const STOP_WORDS: &[&str] = &[
+        "a", "an", "and", "are", "as", "at", "be", "because", "by", "did", "do", "does", "for",
+        "from", "how", "i", "in", "is", "it", "of", "on", "or", "the", "this", "to", "was", "were",
+        "what", "when", "where", "which", "who", "why", "with", "el", "la", "los", "las", "de",
+        "del", "en", "es", "que", "por", "para", "como", "cual", "cuando", "donde",
+    ];
+    value
+        .split(|character: char| !character.is_alphanumeric())
+        .map(str::to_lowercase)
+        .filter(|term| term.len() >= 3 && !STOP_WORDS.contains(&term.as_str()))
+        .collect()
+}
+
+fn terms_match(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+    let common = left
+        .chars()
+        .zip(right.chars())
+        .take_while(|(left, right)| left == right)
+        .count();
+    // Five shared leading characters cover nearby noun/verb forms
+    // (`accepted`/`acceptance`, `migrate`/`migration`). Four are sufficient
+    // only for a short suffix change (`move`/`moved`), keeping
+    // `project`/`projection` from matching on graph boilerplate.
+    let length_difference = left.chars().count().abs_diff(right.chars().count());
+    common >= 5 || (common >= 4 && length_difference <= 2)
 }
 
 fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
@@ -682,6 +780,37 @@ mod wake_cap_tests {
         ];
 
         assert_eq!(causal_count(&relations), 3);
+    }
+
+    #[test]
+    fn unrelated_evidence_cannot_become_an_answer() {
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What is the rollout window for the search migration?",
+            vec![ev("SQLite allows two agent hosts to share one memory")],
+        );
+
+        assert!(evidence.is_empty());
+        assert_eq!(confidence, MemoryConfidence::Unknown);
+    }
+
+    #[test]
+    fn one_shared_topic_word_does_not_prove_the_requested_fact() {
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What is the SQLite rollout window?",
+            vec![ev("SQLite allows two agent hosts to share one memory")],
+        );
+
+        assert!(evidence.is_empty());
+        assert_eq!(confidence, MemoryConfidence::Unknown);
+    }
+
+    #[test]
+    fn confidence_tracks_question_coverage() {
+        let (evidence, confidence) =
+            relevant_answer_evidence("Where did Rachel move?", vec![ev("Rachel moved to Austin")]);
+
+        assert_eq!(evidence.len(), 1);
+        assert_eq!(confidence, MemoryConfidence::High);
     }
 }
 

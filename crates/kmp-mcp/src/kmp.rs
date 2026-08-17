@@ -7,6 +7,9 @@ use kmp_proto::v1beta1::{
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
 
+use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
+use kmp_domain::TokenEstimator;
+
 use crate::ingest::KmpIngestPlan;
 
 pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
@@ -100,6 +103,235 @@ pub(crate) fn ask_from_response(response: AskResponse) -> Value {
         "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
         "warnings": response.warnings
     })
+}
+
+#[derive(Default)]
+struct OutputTruncation {
+    path: usize,
+    evidence: usize,
+    state: usize,
+    reasons: usize,
+    repeated_why: usize,
+}
+
+impl OutputTruncation {
+    fn total(&self) -> usize {
+        self.path + self.evidence + self.state + self.reasons + self.repeated_why
+    }
+}
+
+/// Applies the caller's budget to the JSON that the MCP host actually sees.
+///
+/// The application renderer already budgets its prose, but proof paths and
+/// evidence were appended afterwards and could dwarf it. This final gate uses
+/// the same cl100k estimator over serialized JSON, reports visible omissions,
+/// and makes compact mode structurally compact rather than merely asking the
+/// renderer for a shorter summary.
+pub(crate) fn enforce_recall_output_budget(
+    mut value: Value,
+    arguments: &Value,
+    default_tokens: u32,
+) -> Value {
+    let budget = arguments.get("budget").and_then(Value::as_object);
+    let token_limit = budget
+        .and_then(|budget| budget.get("tokens"))
+        .and_then(Value::as_u64)
+        .and_then(|tokens| u32::try_from(tokens).ok())
+        .filter(|tokens| *tokens > 0)
+        .unwrap_or(default_tokens);
+    let compact = budget
+        .and_then(|budget| budget.get("detail"))
+        .and_then(Value::as_str)
+        == Some("compact");
+    let mut omitted = OutputTruncation::default();
+
+    if let Some(max_entries) = budget
+        .and_then(|budget| budget.get("max_entries"))
+        .and_then(Value::as_u64)
+        .and_then(|entries| usize::try_from(entries).ok())
+        .filter(|entries| *entries > 0)
+    {
+        cap_array(
+            &mut value,
+            &["proof", "evidence"],
+            max_entries,
+            &mut omitted.evidence,
+        );
+        cap_array(&mut value, &["because"], max_entries, &mut omitted.reasons);
+        if omitted.reasons > 0 {
+            rebuild_answer_from_reasons(&mut value);
+        }
+    }
+
+    if compact {
+        if let Some(path) = array_at_mut(&mut value, &["proof", "path"]) {
+            let before = path.len();
+            path.retain(|relation| {
+                relation.get("class").and_then(Value::as_str) != Some("structural")
+            });
+            omitted.path += before - path.len();
+
+            let mut seen_why = std::collections::BTreeSet::new();
+            for relation in path.iter_mut() {
+                let repeated = relation
+                    .get("why")
+                    .and_then(Value::as_str)
+                    .is_some_and(|why| !why.is_empty() && !seen_why.insert(why.to_string()));
+                if repeated && let Some(relation) = relation.as_object_mut() {
+                    relation.remove("why");
+                    omitted.repeated_why += 1;
+                }
+            }
+        }
+        cap_array(&mut value, &["proof", "evidence"], 3, &mut omitted.evidence);
+        cap_array(
+            &mut value,
+            &["wake", "current_state"],
+            3,
+            &mut omitted.state,
+        );
+        cap_array(&mut value, &["wake", "causal_spine"], 4, &mut omitted.state);
+        cap_array(&mut value, &["because"], 3, &mut omitted.reasons);
+        if omitted.reasons > 0 {
+            rebuild_answer_from_reasons(&mut value);
+        }
+    }
+
+    let estimator = Cl100kEstimator::new();
+    while serialized_tokens(&value, &estimator) > token_limit {
+        if pop_array(&mut value, &["proof", "path"], 0) {
+            omitted.path += 1;
+        } else if pop_array(&mut value, &["proof", "evidence"], 0) {
+            omitted.evidence += 1;
+        } else if pop_array(&mut value, &["wake", "causal_spine"], 1)
+            || pop_array(&mut value, &["wake", "current_state"], 1)
+        {
+            omitted.state += 1;
+        } else if pop_array(&mut value, &["because"], 1) {
+            omitted.reasons += 1;
+            rebuild_answer_from_reasons(&mut value);
+        } else {
+            break;
+        }
+    }
+
+    if omitted.total() > 0 {
+        mark_output_truncation(&mut value, token_limit, &omitted);
+    }
+
+    // The marker itself has a cost. Prefer a small, explicit packet over a
+    // silent budget violation when the requested budget cannot hold the
+    // response's fixed schema.
+    if serialized_tokens(&value, &estimator) > token_limit {
+        let summary = value
+            .get("summary")
+            .and_then(Value::as_str)
+            .unwrap_or("KMP recall output truncated to the requested budget");
+        let summary = summary.chars().take(160).collect::<String>();
+        value = json!({
+            "summary": summary,
+            "warnings": ["output truncated to budget.tokens; use kernel_near or kernel_inspect to expand"],
+            "truncation": {
+                "truncated": true,
+                "token_limit": token_limit,
+                "omitted_items": omitted.total()
+            }
+        });
+    }
+    if serialized_tokens(&value, &estimator) > token_limit {
+        value = json!({});
+    }
+    value
+}
+
+fn serialized_tokens(value: &Value, estimator: &dyn TokenEstimator) -> u32 {
+    estimator
+        .estimate_tokens(&serde_json::to_string(value).expect("KMP response JSON should serialize"))
+}
+
+fn array_at_mut<'a>(value: &'a mut Value, path: &[&str]) -> Option<&'a mut Vec<Value>> {
+    let mut current = value;
+    for key in path {
+        current = current.get_mut(*key)?;
+    }
+    current.as_array_mut()
+}
+
+fn cap_array(value: &mut Value, path: &[&str], limit: usize, omitted: &mut usize) {
+    let Some(array) = array_at_mut(value, path) else {
+        return;
+    };
+    if array.len() > limit {
+        *omitted += array.len() - limit;
+        array.truncate(limit);
+    }
+}
+
+fn pop_array(value: &mut Value, path: &[&str], keep: usize) -> bool {
+    let Some(array) = array_at_mut(value, path) else {
+        return false;
+    };
+    if array.len() <= keep {
+        return false;
+    }
+    array.pop();
+    true
+}
+
+fn rebuild_answer_from_reasons(value: &mut Value) {
+    let Some(reasons) = value.get("because").and_then(Value::as_array) else {
+        return;
+    };
+    let texts = reasons
+        .iter()
+        .filter_map(|reason| reason.get("evidence").and_then(Value::as_str))
+        .map(ToString::to_string)
+        .collect::<Vec<_>>();
+    value["answer"] = match texts.as_slice() {
+        [] => Value::Null,
+        [single] => Value::String(single.clone()),
+        many => Value::String(
+            many.iter()
+                .map(|text| format!("- {text}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        ),
+    };
+}
+
+fn mark_output_truncation(value: &mut Value, token_limit: u32, omitted: &OutputTruncation) {
+    value["truncation"] = json!({
+        "truncated": true,
+        "token_limit": token_limit,
+        "omitted": {
+            "proof_path": omitted.path,
+            "proof_evidence": omitted.evidence,
+            "state_or_spine": omitted.state,
+            "answer_reasons": omitted.reasons,
+            "repeated_why": omitted.repeated_why
+        }
+    });
+    if let Some(proof) = value.get_mut("proof").and_then(Value::as_object_mut) {
+        let missing = proof
+            .entry("missing")
+            .or_insert_with(|| json!([]))
+            .as_array_mut();
+        if let Some(missing) = missing
+            && !missing
+                .iter()
+                .any(|item| item == "output truncated to token budget")
+        {
+            missing.push(json!("output truncated to token budget"));
+        }
+        let frontier = proof
+            .get("frontier_size")
+            .and_then(Value::as_u64)
+            .unwrap_or_default();
+        proof.insert(
+            "frontier_size".to_string(),
+            json!(frontier.saturating_add(omitted.total() as u64)),
+        );
+    }
 }
 
 pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
@@ -677,6 +909,89 @@ mod tests {
         // one more call rather than a rewind that exists to find a timestamp.
         assert_eq!(value["resume_cursor"]["ref"], "decision:latest");
         assert_eq!(value["resume_cursor"]["sequence"], 3);
+    }
+
+    #[test]
+    fn compact_output_filters_structure_and_honours_the_serialized_token_limit() {
+        let path = (0..40)
+            .map(|index| {
+                json!({
+                    "from": format!("about:root:{index}"),
+                    "to": format!("entry:{index}"),
+                    "rel": "contains_entry",
+                    "class": "structural",
+                    "why": "Repeated structural boilerplate that must not fill compact output",
+                    "confidence": "high"
+                })
+            })
+            .collect::<Vec<_>>();
+        let evidence = (0..20)
+            .map(|index| {
+                json!({
+                    "id": format!("evidence:{index}"),
+                    "supports": [format!("entry:{index}")],
+                    "text": "Long evidence text repeated to exercise final MCP packet budgeting",
+                    "source": format!("source:{index}")
+                })
+            })
+            .collect::<Vec<_>>();
+        let value = json!({
+            "summary": "Recall summary",
+            "wake": {"current_state": ["state"], "causal_spine": []},
+            "proof": {
+                "path": path,
+                "evidence": evidence,
+                "missing": [],
+                "frontier_size": 0,
+                "confidence": "medium"
+            },
+            "warnings": []
+        });
+        let arguments = json!({"budget": {"tokens": 400, "detail": "compact"}});
+
+        let bounded = enforce_recall_output_budget(value, &arguments, 1600);
+        let estimator = Cl100kEstimator::new();
+        assert!(serialized_tokens(&bounded, &estimator) <= 400);
+        assert!(
+            bounded["proof"]["path"]
+                .as_array()
+                .expect("proof path remains typed")
+                .iter()
+                .all(|relation| relation["class"] != "structural")
+        );
+        assert_eq!(bounded["truncation"]["truncated"], true);
+    }
+
+    #[test]
+    fn max_entries_caps_ask_reasons_as_well_as_proof_evidence() {
+        let reasons = (0..5)
+            .map(|index| json!({"evidence": format!("answer {index}")}))
+            .collect::<Vec<_>>();
+        let evidence = (0..5)
+            .map(|index| json!({"id": format!("evidence:{index}"), "text": "answer"}))
+            .collect::<Vec<_>>();
+        let value = json!({
+            "summary": "answer",
+            "answer": "unbounded",
+            "because": reasons,
+            "proof": {"path": [], "evidence": evidence, "missing": [], "frontier_size": 0},
+            "warnings": []
+        });
+
+        let bounded = enforce_recall_output_budget(
+            value,
+            &json!({"budget": {"tokens": 1000, "max_entries": 2}}),
+            2400,
+        );
+
+        assert_eq!(bounded["because"].as_array().expect("reasons").len(), 2);
+        assert_eq!(
+            bounded["proof"]["evidence"]
+                .as_array()
+                .expect("evidence")
+                .len(),
+            2
+        );
     }
 
     fn relation() -> MemoryRelation {

@@ -34,11 +34,9 @@ trap 'rm -rf "${INSTALL_ROOT}"' EXIT
 cargo install --path crates/kmp-mcp --features sqlite --locked --root "${INSTALL_ROOT}" --quiet
 "${INSTALL_ROOT}/bin/kmp-mcp" --version
 
-# The engine only matters if a host can reach it. A release-bundle install
-# ships bin/kmp-mcp built WITHOUT the engine, and the launcher prefers it over
-# anything on PATH — so an operator who installed the engine could not use it.
-# This reproduces that install: a plugin copy with a bundled binary that has
-# no engine, driven twice at once against one shared store.
+# The engine only matters if a host can reach it. Release and plugin binaries
+# now ship it by default, so the launcher must serve two hosts without a PATH
+# override or a separately rebuilt executable.
 echo "sqlite-gates: two hosts share one store through the plugin launcher"
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}"' EXIT
@@ -47,7 +45,7 @@ BUNDLE="${WORK_DIR}/plugin"
 mkdir -p "${SHARED_DIR}"
 cp -r plugins/kmp "${BUNDLE}"
 mkdir -p "${BUNDLE}/bin"
-cargo build -p kmp-mcp --locked --quiet          # default features: no engine
+cargo build -p kmp-mcp --locked --quiet          # shipped default: sqlite-capable
 cp target/debug/kmp-mcp "${BUNDLE}/bin/kmp-mcp"
 
 LAUNCHER="${BUNDLE}/scripts/run-embedded-mcp.sh"
@@ -85,22 +83,11 @@ start_hosts() {
   wait
 }
 
-# The bundled binary alone: it must refuse the store rather than pretend.
-# If this ever starts working, the override below has stopped being needed
-# and this gate should be rewritten rather than deleted.
+# The bundled binary alone is the product path: both hosts must get tools.
 start_hosts env
-if [[ "$(count_tools "${WORK_DIR}/out-a.json")" -ne 0 ]]; then
-  echo "sqlite-gates: the bundled binary served a sqlite store it cannot open" >&2
-  exit 1
-fi
-echo "  bundled binary alone: refused, as it must"
-
-# And now the binary the operator built, named the only way a launcher
-# accepts one.
-start_hosts env KMP_MCP_BIN="${INSTALL_ROOT}/bin/kmp-mcp"
 for host in a b; do
   tools="$(count_tools "${WORK_DIR}/out-${host}.json")"
-  echo "  host ${host} with KMP_MCP_BIN: ${tools} tools"
+  echo "  bundled host ${host}: ${tools} tools"
   if [[ "${tools}" -lt 10 ]]; then
     echo "sqlite-gates: host ${host} got ${tools} tools, expected the ten moves" >&2
     sed 's/^/    /' "${WORK_DIR}/err-${host}.log" | head -5 >&2
@@ -116,7 +103,8 @@ SHARE_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${SHARE_DIR}"' EXIT
 # A store on the default engine, created the way any first session creates
 # one. (Not migrated down from the sqlite one: migration runs one way.)
-printf '%s\n' "${LIST}" | env KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR="${SHARE_DIR}/memory" \
+printf '%s\n' "${LIST}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=redb \
+  KMP_MCP_DATA_DIR="${SHARE_DIR}/memory" \
   "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
 grep -q 1 "${SHARE_DIR}/memory/FORMAT_VERSION" \
   || { echo "sqlite-gates: the fixture store is not on redb" >&2; exit 1; }

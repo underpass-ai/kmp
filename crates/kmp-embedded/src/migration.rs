@@ -33,6 +33,7 @@ pub async fn migrate_data_dir_to(
     destination_dir: &Path,
     destination_engine: StorageEngine,
 ) -> Result<StoreMigrationReceipt, PortError> {
+    crate::data_dir::ensure_data_dir_skeleton(destination_dir)?;
     let (_store, receipt) = EmbeddedKernelStore::migrate_data_dir_to(
         source_dir,
         destination_dir,
@@ -50,6 +51,7 @@ pub async fn open_or_migrate_data_dir(
     source_dir: &Path,
     destination_dir: &Path,
 ) -> Result<Option<StoreMigrationReceipt>, PortError> {
+    crate::data_dir::ensure_data_dir_skeleton(destination_dir)?;
     let (_store, receipt) = EmbeddedKernelStore::open_or_migrate_data_dir(
         source_dir,
         destination_dir,

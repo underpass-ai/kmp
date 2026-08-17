@@ -3,13 +3,10 @@ set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# An explicit binary wins over both of the choices below. The release bundle
-# is built without the sqlite engine — that is what keeps a default install
-# free of a C toolchain — and it otherwise takes priority over PATH, so
-# without this an operator who ran `cargo install kmp-mcp --features sqlite`
-# could not reach the engine through the plugin at all. It selects the
-# executable and nothing else: the backend below and the kernel's own data
-# directory resolution still apply.
+# An explicit binary wins over both choices below. Release bundles carry the
+# SQLite-capable default; the override remains useful for development builds
+# and pins, and selects only the executable. Backend and data-dir resolution
+# still belong to the kernel.
 BINARY="${KMP_MCP_BIN:-${PLUGIN_ROOT}/bin/kmp-mcp}"
 if [[ -n "${KMP_MCP_BIN:-}" && ! -x "${KMP_MCP_BIN}" ]]; then
   echo "KMP plugin: KMP_MCP_BIN is set to '${KMP_MCP_BIN}', which is not executable." >&2

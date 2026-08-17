@@ -72,7 +72,7 @@ jobs:
 
       - name: Build release binary
         shell: bash
-        run: cargo build --release -p kmp-mcp --locked --target ${{ matrix.target }}
+        run: cargo build --release -p kmp-mcp --locked --features sqlite --target ${{ matrix.target }}
 
       - name: Package and checksum
         shell: bash

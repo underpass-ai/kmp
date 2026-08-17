@@ -158,6 +158,8 @@ pub struct AskMemoryQuery {
     pub token_budget: u32,
     pub depth: u32,
     pub max_tier: Option<ResolutionTier>,
+    /// Cap on answer evidence entries after relevance filtering.
+    pub max_entries: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

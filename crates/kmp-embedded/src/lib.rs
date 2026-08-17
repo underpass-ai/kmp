@@ -10,10 +10,13 @@ mod memory_api;
 mod migration;
 
 pub use data_dir::{
-    DATA_DIR_ENV, PROJECT_BUNDLE_PATH, ResolvedDataDir, project_bundle_path, resolve_data_dir,
-    resolve_data_dir_from_env,
+    DATA_DIR_ENV, PROJECT_BUNDLE_PATH, ResolvedDataDir, ensure_data_dir_skeleton,
+    project_bundle_path, resolve_data_dir, resolve_data_dir_from_env,
 };
-pub use engine::{ENGINE_ENV, parse_engine, resolve_engine_from_env};
+pub use engine::{
+    ENGINE_ENV, default_engine_for_data_dir, parse_engine, resolve_engine_for_data_dir_from_env,
+    resolve_engine_from_env,
+};
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{
     EmbeddedKernelStore, SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt,

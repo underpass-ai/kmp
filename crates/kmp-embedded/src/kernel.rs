@@ -41,7 +41,7 @@ pub struct EmbeddedKernel {
 impl EmbeddedKernel {
     /// Opens the store at `data_dir` (fail-fast per ADR-012) and composes the
     /// kernel. An existing directory opens with the engine it was created
-    /// with; a fresh one gets the default. On the redb engine a second
+    /// with; a fresh one gets the caller's resolved default. On redb a second
     /// session on the same data dir fails here with an explicit single-writer
     /// error (ADR-011; the engine holds the lock); on SQLite it does not.
     pub fn open(data_dir: &Path) -> Result<Self, PortError> {
