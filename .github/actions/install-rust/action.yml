@@ -1,0 +1,23 @@
+name: Install pinned Rust toolchain
+description: Install the repository toolchain with bounded retries for transient network failures
+
+inputs:
+  components:
+    description: Comma- or space-separated rustup components
+    required: false
+    default: ""
+  targets:
+    description: Comma- or space-separated rustup targets
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain with retries
+      shell: bash
+      env:
+        KMP_RUST_COMPONENTS: ${{ inputs.components }}
+        KMP_RUST_TARGETS: ${{ inputs.targets }}
+        RUSTUP_PERMIT_COPY_RENAME: "1"
+      run: bash scripts/ci/install-rust-toolchain.sh
