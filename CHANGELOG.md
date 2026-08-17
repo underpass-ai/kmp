@@ -10,6 +10,14 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Budgeted recall preserves its semantic payload.** Oversized `kernel_ask`
+  responses retain a bounded answer, one cited reason and minimal proof instead
+  of falling back to a misleading summary-only packet; `kernel_wake` likewise
+  retains its wake shape and resume cursor. Truncation summaries and metadata
+  now report omitted items and shortened text explicitly. (#71)
+
 ## [0.1.7] - 2026-08-17
 
 Eight operator-facing fixes from first contact through sustained use: the CLI

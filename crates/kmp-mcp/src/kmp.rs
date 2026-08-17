@@ -105,18 +105,33 @@ pub(crate) fn ask_from_response(response: AskResponse) -> Value {
     })
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct OutputTruncation {
     path: usize,
     evidence: usize,
+    conflicts: usize,
+    superseded: usize,
+    missing: usize,
     state: usize,
     reasons: usize,
     repeated_why: usize,
+    text_chars: usize,
 }
 
 impl OutputTruncation {
-    fn total(&self) -> usize {
-        self.path + self.evidence + self.state + self.reasons + self.repeated_why
+    fn total_items(&self) -> usize {
+        self.path
+            + self.evidence
+            + self.conflicts
+            + self.superseded
+            + self.missing
+            + self.state
+            + self.reasons
+            + self.repeated_why
+    }
+
+    fn any(&self) -> bool {
+        self.total_items() > 0 || self.text_chars > 0
     }
 }
 
@@ -132,6 +147,10 @@ pub(crate) fn enforce_recall_output_budget(
     arguments: &Value,
     default_tokens: u32,
 ) -> Value {
+    let base_frontier = value
+        .pointer("/proof/frontier_size")
+        .and_then(Value::as_u64)
+        .unwrap_or_default();
     let budget = arguments.get("budget").and_then(Value::as_object);
     let token_limit = budget
         .and_then(|budget| budget.get("tokens"))
@@ -186,11 +205,26 @@ pub(crate) fn enforce_recall_output_budget(
         cap_array(&mut value, &["proof", "evidence"], 3, &mut omitted.evidence);
         cap_array(
             &mut value,
+            &["proof", "conflicts"],
+            3,
+            &mut omitted.conflicts,
+        );
+        cap_array(
+            &mut value,
+            &["proof", "superseded"],
+            3,
+            &mut omitted.superseded,
+        );
+        cap_array(
+            &mut value,
             &["wake", "current_state"],
             3,
             &mut omitted.state,
         );
         cap_array(&mut value, &["wake", "causal_spine"], 4, &mut omitted.state);
+        cap_array(&mut value, &["wake", "open_loops"], 3, &mut omitted.state);
+        cap_array(&mut value, &["wake", "next_actions"], 3, &mut omitted.state);
+        cap_array(&mut value, &["wake", "guardrails"], 3, &mut omitted.state);
         cap_array(&mut value, &["because"], 3, &mut omitted.reasons);
         if omitted.reasons > 0 {
             rebuild_answer_from_reasons(&mut value);
@@ -199,47 +233,30 @@ pub(crate) fn enforce_recall_output_budget(
 
     let estimator = Cl100kEstimator::new();
     while serialized_tokens(&value, &estimator) > token_limit {
-        if pop_array(&mut value, &["proof", "path"], 0) {
-            omitted.path += 1;
-        } else if pop_array(&mut value, &["proof", "evidence"], 0) {
-            omitted.evidence += 1;
-        } else if pop_array(&mut value, &["wake", "causal_spine"], 1)
-            || pop_array(&mut value, &["wake", "current_state"], 1)
-        {
-            omitted.state += 1;
-        } else if pop_array(&mut value, &["because"], 1) {
-            omitted.reasons += 1;
-            rebuild_answer_from_reasons(&mut value);
-        } else {
+        if !drop_one_low_priority_item(&mut value, &mut omitted) {
             break;
         }
     }
 
-    if omitted.total() > 0 {
-        mark_output_truncation(&mut value, token_limit, &omitted);
+    if omitted.reasons > 0 {
+        make_ask_summary_truthful(&mut value, &omitted);
     }
 
-    // The marker itself has a cost. Prefer a small, explicit packet over a
-    // silent budget violation when the requested budget cannot hold the
-    // response's fixed schema.
-    if serialized_tokens(&value, &estimator) > token_limit {
-        let summary = value
-            .get("summary")
-            .and_then(Value::as_str)
-            .unwrap_or("KMP recall output truncated to the requested budget");
-        let summary = summary.chars().take(160).collect::<String>();
-        value = json!({
-            "summary": summary,
-            "warnings": ["output truncated to budget.tokens; use kernel_near or kernel_inspect to expand"],
-            "truncation": {
-                "truncated": true,
-                "token_limit": token_limit,
-                "omitted_items": omitted.total()
-            }
-        });
+    if omitted.any() {
+        mark_output_truncation(&mut value, token_limit, &omitted, base_frontier);
     }
+
+    // A single answer reason or wake state may itself exceed the whole
+    // envelope. Build a shape-preserving packet and bound its text instead of
+    // replacing the result with boilerplate that claims an absent answer.
     if serialized_tokens(&value, &estimator) > token_limit {
-        value = json!({});
+        value = if value.get("answer").is_some() {
+            fit_minimal_ask_packet(&value, token_limit, &estimator, base_frontier, &omitted)
+        } else if value.get("wake").is_some() {
+            fit_minimal_wake_packet(&value, token_limit, &estimator, base_frontier, &omitted)
+        } else {
+            Value::Object(Map::new())
+        };
     }
     value
 }
@@ -278,6 +295,298 @@ fn pop_array(value: &mut Value, path: &[&str], keep: usize) -> bool {
     true
 }
 
+fn drop_one_low_priority_item(value: &mut Value, omitted: &mut OutputTruncation) -> bool {
+    if pop_array(value, &["proof", "path"], 0) {
+        omitted.path += 1;
+    } else if pop_array(value, &["proof", "evidence"], 0) {
+        omitted.evidence += 1;
+    } else if pop_array(value, &["proof", "conflicts"], 0) {
+        omitted.conflicts += 1;
+    } else if pop_array(value, &["proof", "superseded"], 0) {
+        omitted.superseded += 1;
+    } else if pop_array(value, &["proof", "missing"], 0) {
+        omitted.missing += 1;
+    } else if pop_array(value, &["wake", "open_loops"], 1)
+        || pop_array(value, &["wake", "next_actions"], 1)
+        || pop_array(value, &["wake", "guardrails"], 1)
+        || pop_array(value, &["wake", "causal_spine"], 1)
+        || pop_array(value, &["wake", "current_state"], 1)
+    {
+        omitted.state += 1;
+    } else if pop_array(value, &["because"], 1) {
+        omitted.reasons += 1;
+        rebuild_answer_from_reasons(value);
+    } else {
+        return false;
+    }
+    true
+}
+
+fn make_ask_summary_truthful(value: &mut Value, omitted: &OutputTruncation) {
+    if value.get("answer").is_none() {
+        return;
+    }
+    let retained = value
+        .get("because")
+        .and_then(Value::as_array)
+        .map(Vec::len)
+        .unwrap_or_default();
+    value["summary"] = json!(format!(
+        "Truncated deterministic memory answer; retained {retained} cited {}; {}.",
+        plural(retained, "reason", "reasons"),
+        omission_summary(omitted)
+    ));
+}
+
+fn fit_minimal_ask_packet(
+    source: &Value,
+    token_limit: u32,
+    estimator: &dyn TokenEstimator,
+    base_frontier: u64,
+    omitted: &OutputTruncation,
+) -> Value {
+    let mut base_omitted = omitted.clone();
+    account_remaining_proof_items(source, &mut base_omitted);
+
+    let reasons = source
+        .get("because")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    base_omitted.reasons += reasons.len().saturating_sub(1);
+    let reason = reasons.first().cloned();
+    let answer = reason
+        .as_ref()
+        .and_then(|reason| reason.get("evidence"))
+        .and_then(Value::as_str)
+        .filter(|answer| !answer.is_empty())
+        .or_else(|| source.get("answer").and_then(Value::as_str))
+        .unwrap_or("UNKNOWN")
+        .to_string();
+    let high = answer
+        .chars()
+        .count()
+        .max(reason.as_ref().map(max_truncatable_text_chars).unwrap_or(0));
+
+    let build = |max_chars: usize| {
+        let mut candidate_omitted = base_omitted.clone();
+        let (bounded_answer, answer_chars) = truncate_text(&answer, max_chars);
+        candidate_omitted.text_chars += answer_chars;
+        let bounded_reasons = reason
+            .as_ref()
+            .map(|reason| {
+                let mut reason = reason.clone();
+                candidate_omitted.text_chars += truncate_json_text(&mut reason, max_chars);
+                reason
+            })
+            .into_iter()
+            .collect::<Vec<_>>();
+        let retained = bounded_reasons.len();
+        let mut candidate = json!({
+            "summary": format!(
+                "Truncated deterministic memory answer; retained {retained} cited {}; {}.",
+                plural(retained, "reason", "reasons"),
+                omission_summary(&candidate_omitted)
+            ),
+            "answer": bounded_answer,
+            "because": bounded_reasons,
+            "proof": minimal_proof_json(source, base_frontier),
+            "warnings": ["output truncated to budget.tokens; retained answer and citation; use kernel_inspect on because refs to expand"]
+        });
+        mark_output_truncation(
+            &mut candidate,
+            token_limit,
+            &candidate_omitted,
+            base_frontier,
+        );
+        candidate
+    };
+
+    largest_fitting_packet(high, token_limit, estimator, build)
+}
+
+fn fit_minimal_wake_packet(
+    source: &Value,
+    token_limit: u32,
+    estimator: &dyn TokenEstimator,
+    base_frontier: u64,
+    omitted: &OutputTruncation,
+) -> Value {
+    let mut base_omitted = omitted.clone();
+    account_remaining_proof_items(source, &mut base_omitted);
+    let mut wake = source.get("wake").cloned().unwrap_or_else(|| json!({}));
+    for key in [
+        "current_state",
+        "causal_spine",
+        "open_loops",
+        "next_actions",
+        "guardrails",
+    ] {
+        cap_array(&mut wake, &[key], 1, &mut base_omitted.state);
+    }
+    let high = max_truncatable_text_chars(&wake);
+
+    let build = |max_chars: usize| {
+        let mut candidate_omitted = base_omitted.clone();
+        let mut bounded_wake = wake.clone();
+        candidate_omitted.text_chars += truncate_json_text(&mut bounded_wake, max_chars);
+        let mut candidate = json!({
+            "summary": format!(
+                "Truncated wake packet; retained a bounded state slice; {}.",
+                omission_summary(&candidate_omitted)
+            ),
+            "wake": bounded_wake,
+            "proof": minimal_proof_json(source, base_frontier),
+            "resume_cursor": source.get("resume_cursor").cloned().unwrap_or(Value::Null),
+            "warnings": ["output truncated to budget.tokens; use kernel_near or kernel_inspect to expand"]
+        });
+        mark_output_truncation(
+            &mut candidate,
+            token_limit,
+            &candidate_omitted,
+            base_frontier,
+        );
+        candidate
+    };
+
+    largest_fitting_packet(high, token_limit, estimator, build)
+}
+
+fn omission_summary(omitted: &OutputTruncation) -> String {
+    let items = omitted.total_items();
+    match (items, omitted.text_chars) {
+        (0, chars) => format!(
+            "shortened {chars} text {}",
+            plural(chars, "character", "characters")
+        ),
+        (items, 0) => format!("omitted {items} {}", plural(items, "item", "items")),
+        (items, chars) => format!(
+            "omitted {items} {} and shortened {chars} text {}",
+            plural(items, "item", "items"),
+            plural(chars, "character", "characters")
+        ),
+    }
+}
+
+fn largest_fitting_packet(
+    high: usize,
+    token_limit: u32,
+    estimator: &dyn TokenEstimator,
+    build: impl Fn(usize) -> Value,
+) -> Value {
+    let mut low = 0usize;
+    let mut high = high;
+    let mut best = None;
+    while low <= high {
+        let midpoint = low + (high - low) / 2;
+        let candidate = build(midpoint);
+        if serialized_tokens(&candidate, estimator) <= token_limit {
+            best = Some(candidate);
+            low = midpoint.saturating_add(1);
+        } else if midpoint == 0 {
+            break;
+        } else {
+            high = midpoint - 1;
+        }
+    }
+    best.unwrap_or_else(|| Value::Object(Map::new()))
+}
+
+fn minimal_proof_json(source: &Value, base_frontier: u64) -> Value {
+    json!({
+        "path": [],
+        "evidence": [],
+        "conflicts": [],
+        "superseded": [],
+        "missing": [],
+        "frontier_size": base_frontier,
+        "confidence": source
+            .pointer("/proof/confidence")
+            .cloned()
+            .unwrap_or_else(|| json!("unknown"))
+    })
+}
+
+fn account_remaining_proof_items(value: &Value, omitted: &mut OutputTruncation) {
+    omitted.path += array_len(value, &["proof", "path"]);
+    omitted.evidence += array_len(value, &["proof", "evidence"]);
+    omitted.conflicts += array_len(value, &["proof", "conflicts"]);
+    omitted.superseded += array_len(value, &["proof", "superseded"]);
+    omitted.missing += value
+        .pointer("/proof/missing")
+        .and_then(Value::as_array)
+        .map(|missing| {
+            missing
+                .iter()
+                .filter(|item| item.as_str() != Some("output truncated to token budget"))
+                .count()
+        })
+        .unwrap_or_default();
+}
+
+fn array_len(value: &Value, path: &[&str]) -> usize {
+    let mut current = value;
+    for key in path {
+        let Some(next) = current.get(*key) else {
+            return 0;
+        };
+        current = next;
+    }
+    current.as_array().map(Vec::len).unwrap_or_default()
+}
+
+fn max_truncatable_text_chars(value: &Value) -> usize {
+    match value {
+        Value::String(text) => text.chars().count(),
+        Value::Array(items) => items
+            .iter()
+            .map(max_truncatable_text_chars)
+            .max()
+            .unwrap_or_default(),
+        Value::Object(object) => object
+            .iter()
+            .filter(|(key, _)| !is_reference_key(key))
+            .map(|(_, value)| max_truncatable_text_chars(value))
+            .max()
+            .unwrap_or_default(),
+        _ => 0,
+    }
+}
+
+fn truncate_json_text(value: &mut Value, max_chars: usize) -> usize {
+    match value {
+        Value::String(text) => {
+            let (bounded, omitted) = truncate_text(text, max_chars);
+            *text = bounded;
+            omitted
+        }
+        Value::Array(items) => items
+            .iter_mut()
+            .map(|item| truncate_json_text(item, max_chars))
+            .sum(),
+        Value::Object(object) => object
+            .iter_mut()
+            .filter(|(key, _)| !is_reference_key(key))
+            .map(|(_, value)| truncate_json_text(value, max_chars))
+            .sum(),
+        _ => 0,
+    }
+}
+
+fn is_reference_key(key: &str) -> bool {
+    key == "ref" || key.ends_with("_ref")
+}
+
+fn truncate_text(value: &str, max_chars: usize) -> (String, usize) {
+    let total = value.chars().count();
+    if total <= max_chars {
+        return (value.to_string(), 0);
+    }
+    let mut bounded = value.chars().take(max_chars).collect::<String>();
+    bounded.push('…');
+    (bounded, total - max_chars)
+}
+
 fn rebuild_answer_from_reasons(value: &mut Value) {
     let Some(reasons) = value.get("because").and_then(Value::as_array) else {
         return;
@@ -299,16 +608,25 @@ fn rebuild_answer_from_reasons(value: &mut Value) {
     };
 }
 
-fn mark_output_truncation(value: &mut Value, token_limit: u32, omitted: &OutputTruncation) {
+fn mark_output_truncation(
+    value: &mut Value,
+    token_limit: u32,
+    omitted: &OutputTruncation,
+    base_frontier: u64,
+) {
     value["truncation"] = json!({
         "truncated": true,
         "token_limit": token_limit,
         "omitted": {
             "proof_path": omitted.path,
             "proof_evidence": omitted.evidence,
+            "proof_conflicts": omitted.conflicts,
+            "proof_superseded": omitted.superseded,
+            "proof_missing": omitted.missing,
             "state_or_spine": omitted.state,
             "answer_reasons": omitted.reasons,
-            "repeated_why": omitted.repeated_why
+            "repeated_why": omitted.repeated_why,
+            "text_chars": omitted.text_chars
         }
     });
     if let Some(proof) = value.get_mut("proof").and_then(Value::as_object_mut) {
@@ -323,13 +641,9 @@ fn mark_output_truncation(value: &mut Value, token_limit: u32, omitted: &OutputT
         {
             missing.push(json!("output truncated to token budget"));
         }
-        let frontier = proof
-            .get("frontier_size")
-            .and_then(Value::as_u64)
-            .unwrap_or_default();
         proof.insert(
             "frontier_size".to_string(),
-            json!(frontier.saturating_add(omitted.total() as u64)),
+            json!(base_frontier.saturating_add(omitted.total_items() as u64)),
         );
     }
 }
@@ -991,6 +1305,139 @@ mod tests {
                 .expect("evidence")
                 .len(),
             2
+        );
+    }
+
+    #[test]
+    fn ask_budget_keeps_a_bounded_answer_and_minimal_proof() {
+        let reasons = (0..5)
+            .map(|index| {
+                json!({
+                    "claim": format!("claim:{index}"),
+                    "evidence": format!("reason {index} {}", "evidence ".repeat(4_000)),
+                    "ref": format!("evidence:{index}")
+                })
+            })
+            .collect::<Vec<_>>();
+        let answer = reasons
+            .iter()
+            .map(|reason| format!("- {}", reason["evidence"].as_str().expect("evidence")))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let value = json!({
+            "summary": "Deterministic memory answer from 5 evidence items for: why?",
+            "answer": answer,
+            "because": reasons,
+            "proof": {
+                "path": [],
+                "evidence": [],
+                "conflicts": [],
+                "superseded": [],
+                "missing": [],
+                "frontier_size": 0,
+                "confidence": "high"
+            },
+            "warnings": []
+        });
+
+        for (arguments, token_limit) in [
+            (json!({}), 2_400),
+            (json!({"budget": {"detail": "compact"}}), 2_400),
+            (json!({"budget": {"tokens": 400}}), 400),
+        ] {
+            let bounded = enforce_recall_output_budget(value.clone(), &arguments, 2_400);
+            let estimator = Cl100kEstimator::new();
+
+            assert!(serialized_tokens(&bounded, &estimator) <= token_limit);
+            assert!(
+                bounded["answer"]
+                    .as_str()
+                    .is_some_and(|answer| !answer.is_empty()),
+                "the payload must survive the budget gate"
+            );
+            assert_eq!(
+                bounded["because"]
+                    .as_array()
+                    .expect("a minimal citation survives")
+                    .len(),
+                1
+            );
+            assert_eq!(bounded["because"][0]["ref"], "evidence:0");
+            assert!(bounded["proof"].is_object());
+            assert_eq!(bounded["proof"]["confidence"], "high");
+            assert!(
+                bounded["summary"]
+                    .as_str()
+                    .expect("summary")
+                    .to_ascii_lowercase()
+                    .contains("truncated")
+            );
+            assert_eq!(bounded["truncation"]["truncated"], true);
+            assert!(bounded["truncation"]["omitted"].is_object());
+            assert!(
+                bounded["truncation"]["omitted"]["text_chars"]
+                    .as_u64()
+                    .is_some_and(|chars| chars > 0)
+            );
+            assert!(bounded["truncation"].get("omitted_items").is_none());
+            assert!(
+                bounded["proof"]["missing"]
+                    .as_array()
+                    .expect("proof omissions")
+                    .iter()
+                    .any(|item| item == "output truncated to token budget")
+            );
+        }
+    }
+
+    #[test]
+    fn wake_budget_keeps_the_wake_shape_when_retained_text_is_too_large() {
+        let value = json!({
+            "summary": "Objective: keep working.",
+            "wake": {
+                "objective": format!("objective {}", "detail ".repeat(4_000)),
+                "current_state": [format!("state {}", "detail ".repeat(4_000))],
+                "causal_spine": [{
+                    "claim": "claim",
+                    "because": format!("because {}", "detail ".repeat(4_000)),
+                    "evidence_ref": "evidence:1"
+                }],
+                "open_loops": [],
+                "next_actions": [],
+                "guardrails": []
+            },
+            "proof": {
+                "path": [],
+                "evidence": [],
+                "conflicts": [],
+                "superseded": [],
+                "missing": [],
+                "frontier_size": 0,
+                "confidence": "medium"
+            },
+            "resume_cursor": {"ref": "decision:latest"},
+            "warnings": []
+        });
+
+        let bounded = enforce_recall_output_budget(value, &json!({}), 1_600);
+        let estimator = Cl100kEstimator::new();
+
+        assert!(serialized_tokens(&bounded, &estimator) <= 1_600);
+        assert!(bounded["wake"].is_object());
+        assert!(bounded["proof"].is_object());
+        assert_eq!(bounded["resume_cursor"]["ref"], "decision:latest");
+        assert_eq!(bounded["truncation"]["truncated"], true);
+        assert!(
+            bounded["truncation"]["omitted"]["text_chars"]
+                .as_u64()
+                .is_some_and(|chars| chars > 0)
+        );
+        assert!(
+            bounded["summary"]
+                .as_str()
+                .expect("summary")
+                .to_ascii_lowercase()
+                .contains("truncated")
         );
     }
 
