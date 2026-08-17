@@ -220,6 +220,60 @@ else
   fi
 fi
 
+# ------------------------------------------------------ startup history ----
+#
+# A server that dies at startup leaves the session with no tools and the
+# host shows nothing but their absence. Everything the binary knew went to
+# stderr, which the host consumes — so this checked a healthy setup while
+# the session it was diagnosing had no memory at all. It reads the record
+# now instead of only testing what happens this second.
+section "Startup history"
+
+if [ -z "${DATA_DIR:-}" ] || [ ! -d "$DATA_DIR/logs" ]; then
+  info "no startup log yet at ${DATA_DIR:-<unresolved>}/logs"
+else
+  LAST_STARTS="$(
+    cat "$DATA_DIR"/logs/kmp-mcp.log* 2>/dev/null | python3 -c '
+import json, sys
+
+starts = []
+for line in sys.stdin:
+    try:
+        entry = json.loads(line)
+    except ValueError:
+        continue
+    fields = entry.get("fields", {})
+    message = fields.get("message", "")
+    if message not in ("startup succeeded", "startup failed"):
+        continue
+    when = entry.get("timestamp", "")[:19].replace("T", " ")
+    if message == "startup failed":
+        starts.append(("FAIL", when, fields.get("reason", "no reason recorded")))
+    else:
+        backend = fields.get("backend", "?")
+        engine = fields.get("engine") or "default"
+        starts.append(("ok", when, backend + " backend, " + engine + " engine"))
+for verdict, when, detail in starts[-5:]:
+    print(verdict + "|" + when + "|" + detail[:88])
+'
+  )"
+  if [ -z "$LAST_STARTS" ]; then
+    info "the log has no startup lines yet — this binary predates them"
+  else
+    printf '%s\n' "$LAST_STARTS" | while IFS='|' read -r verdict when detail; do
+      if [ "$verdict" = "FAIL" ]; then
+        fail "$when  $detail"
+      else
+        ok "$when  $detail"
+      fi
+    done
+    if printf '%s' "$LAST_STARTS" | tail -1 | grep -q '^FAIL'; then
+      info "the most recent start failed — that is why the tools are missing,"
+      info "and the reason above is what the host swallowed."
+    fi
+  fi
+fi
+
 # --------------------------------------------------------- tool surface ----
 section "Tool surface"
 
