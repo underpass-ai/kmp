@@ -216,7 +216,11 @@ fn relevant_answer_evidence(
     let relevant = evidence
         .into_iter()
         .filter_map(|item| {
-            let mut searchable = format!("{} {}", item.text, item.source);
+            let mut searchable = format!("{} {} {}", item.text, item.source, item.id);
+            for supported_ref in &item.supports {
+                searchable.push(' ');
+                searchable.push_str(supported_ref);
+            }
             for (key, value) in &item.metadata {
                 searchable.push(' ');
                 searchable.push_str(key);
@@ -258,14 +262,19 @@ fn relevant_answer_evidence(
 fn informative_terms(value: &str) -> BTreeSet<String> {
     const STOP_WORDS: &[&str] = &[
         "a", "an", "and", "are", "as", "at", "be", "because", "by", "did", "do", "does", "for",
-        "from", "how", "i", "in", "is", "it", "of", "on", "or", "the", "this", "to", "was", "were",
-        "what", "when", "where", "which", "who", "why", "with", "el", "la", "los", "las", "de",
-        "del", "en", "es", "que", "por", "para", "como", "cual", "cuando", "donde",
+        "from", "he", "how", "i", "if", "in", "is", "it", "me", "my", "of", "on", "or", "the",
+        "this", "to", "us", "was", "we", "were", "what", "when", "where", "which", "who", "why",
+        "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo", "no",
+        "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
     ];
     value
         .split(|character: char| !character.is_alphanumeric())
         .map(str::to_lowercase)
-        .filter(|term| term.len() >= 3 && !STOP_WORDS.contains(&term.as_str()))
+        .filter(|term| {
+            !term.is_empty()
+                && !STOP_WORDS.contains(&term.as_str())
+                && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
+        })
         .collect()
 }
 
@@ -808,6 +817,45 @@ mod wake_cap_tests {
     fn confidence_tracks_question_coverage() {
         let (evidence, confidence) =
             relevant_answer_evidence("Where did Rachel move?", vec![ev("Rachel moved to Austin")]);
+
+        assert_eq!(evidence.len(), 1);
+        assert_eq!(confidence, MemoryConfidence::High);
+    }
+
+    #[test]
+    fn short_identifiers_survive_stop_word_filtering() {
+        let terms = informative_terms("PR #83 C1 M1 P0 ID 7 is to un");
+
+        for identifier in ["pr", "83", "c1", "m1", "p0", "id", "7"] {
+            assert!(
+                terms.contains(identifier),
+                "missing identifier {identifier}"
+            );
+        }
+        for stop_word in ["is", "to", "un"] {
+            assert!(!terms.contains(stop_word), "retained stop word {stop_word}");
+        }
+    }
+
+    #[test]
+    fn separated_short_identifier_can_select_exact_evidence() {
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What happened to PR #83?",
+            vec![ev("PR #83 merged after every required check passed")],
+        );
+
+        assert_eq!(evidence.len(), 1);
+        assert_eq!(confidence, MemoryConfidence::High);
+    }
+
+    #[test]
+    fn evidence_identity_and_support_refs_are_searchable() {
+        let mut evidence = ev("The rollout completed successfully");
+        evidence.id = "evidence:change-request:pr83".to_string();
+        evidence.supports = vec!["entry:change-request:pr83".to_string()];
+
+        let (evidence, confidence) =
+            relevant_answer_evidence("What happened to the PR83 rollout?", vec![evidence]);
 
         assert_eq!(evidence.len(), 1);
         assert_eq!(confidence, MemoryConfidence::High);
