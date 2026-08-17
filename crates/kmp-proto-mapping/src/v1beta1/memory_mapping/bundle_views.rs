@@ -6,7 +6,7 @@ use kmp_domain::{
 };
 use kmp_proto::v1beta1::{
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation, Proof,
-    TemporalCoordinate as ProtoTemporalCoordinate,
+    SupersededMemory, TemporalCoordinate as ProtoTemporalCoordinate,
 };
 
 use super::scalars::{proto_confidence, proto_semantic_class, timestamp_from_sort_or_rfc3339};
@@ -198,15 +198,50 @@ pub(super) fn proof(
     confidence: MemoryConfidence,
 ) -> Proof {
     let conflicts = conflicts_from_relations(&path);
+    let superseded = superseded_from_relations(&path);
     let frontier_size = missing.len() as u32;
     Proof {
         path,
         evidence,
         conflicts,
+        superseded,
         missing,
         confidence: confidence as i32,
         frontier_size,
     }
+}
+
+/// Entries this recall reached that a later entry replaced.
+///
+/// A compensating write carries `supersedes`, and the older entry kept coming
+/// back through wake and ask looking exactly like a live one: the supersession
+/// was on the relation, reachable by inspecting or rewinding, and invisible to
+/// a reader who did neither. Acting on a decision that was already replaced is
+/// the one failure an append-only memory should not have.
+///
+/// Deliberately not folded into `conflicts`. `contradicts` says two entries
+/// disagree and both may still be live — the tension is the information.
+/// `supersedes` says one replaced the other: no tension, a lifecycle, and the
+/// older entry is history rather than advice.
+fn superseded_from_relations(path: &[MemoryRelation]) -> Vec<SupersededMemory> {
+    let mut seen = BTreeSet::new();
+    path.iter()
+        .filter(|relation| is_supersession(&relation.rel))
+        .filter(|relation| seen.insert(relation.target_ref.clone()))
+        .map(|relation| SupersededMemory {
+            r#ref: relation.target_ref.clone(),
+            superseded_by: relation.source_ref.clone(),
+            why: if relation.why.trim().is_empty() {
+                relation.evidence.trim().to_string()
+            } else {
+                relation.why.trim().to_string()
+            },
+        })
+        .collect()
+}
+
+fn is_supersession(value: &str) -> bool {
+    MemoryRelationType::new(value).is_ok_and(|relation_type| relation_type.as_str() == "supersedes")
 }
 
 fn conflicts_from_relations(path: &[MemoryRelation]) -> Vec<String> {
@@ -494,5 +529,64 @@ mod tests {
                 .with_rationale("Support relation for scoped temporal evidence.")
                 .with_confidence("medium"),
         )
+    }
+}
+
+#[cfg(test)]
+mod superseded_tests {
+    use super::superseded_from_relations;
+    use kmp_proto::v1beta1::MemoryRelation;
+
+    fn relation(rel: &str, source: &str, target: &str, why: &str) -> MemoryRelation {
+        MemoryRelation {
+            source_ref: source.to_string(),
+            target_ref: target.to_string(),
+            rel: rel.to_string(),
+            why: why.to_string(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_replaced_entry_comes_back_named_with_what_replaced_it() {
+        let superseded = superseded_from_relations(&[relation(
+            "supersedes",
+            "decision:sqlite",
+            "decision:redb",
+            "two hosts need to share the store",
+        )]);
+
+        assert_eq!(superseded.len(), 1);
+        assert_eq!(superseded[0].r#ref, "decision:redb");
+        assert_eq!(superseded[0].superseded_by, "decision:sqlite");
+        assert_eq!(superseded[0].why, "two hosts need to share the store");
+    }
+
+    #[test]
+    fn a_contradiction_is_not_a_supersession() {
+        // They mean different things and a reader has to tell them apart:
+        // `contradicts` says two entries disagree and both may be live;
+        // `supersedes` says one replaced the other. Folding them together
+        // would make every revert read as an unresolved disagreement.
+        assert!(
+            superseded_from_relations(&[relation(
+                "contradicts",
+                "observation:latency",
+                "decision:pool-size",
+                "the premise was wrong",
+            )])
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn the_same_entry_replaced_twice_is_named_once() {
+        let superseded = superseded_from_relations(&[
+            relation("supersedes", "decision:second", "decision:first", "a"),
+            relation("supersedes", "decision:third", "decision:first", "b"),
+        ]);
+
+        assert_eq!(superseded.len(), 1, "one line per replaced entry");
+        assert_eq!(superseded[0].superseded_by, "decision:second");
     }
 }

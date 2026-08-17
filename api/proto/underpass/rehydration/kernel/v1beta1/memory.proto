@@ -404,10 +404,27 @@ message Proof {
   repeated string conflicts = 3;
   repeated string missing = 4;
   MemoryConfidence confidence = 5;
+  // Refs this recall reached that a later entry replaced, and what replaced
+  // them. Kept apart from `conflicts` on purpose: `contradicts` says two
+  // entries disagree and both may still be live, which is the information;
+  // `supersedes` says one replaced the other, so the older is history rather
+  // than advice. Folding them together would make every revert read as an
+  // unresolved disagreement.
+  repeated SupersededMemory superseded = 7;
   // Count of unresolved required-context nodes the proof still depends on
   // (currently the size of `missing`). A non-zero frontier means necessary
   // context has not yet been reached.
   uint32 frontier_size = 6;
+}
+
+// One entry replaced by another, so a reader can tell history from advice.
+message SupersededMemory {
+  // The entry that was replaced.
+  string ref = 1;
+  // The entry that replaced it.
+  string superseded_by = 2;
+  // Why, taken from the relation that carries it.
+  string why = 3;
 }
 
 // Per-response quality/composition summary, promoted from OTel so a client can
