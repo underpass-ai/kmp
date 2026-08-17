@@ -22,6 +22,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let server = match server_from_env().await {
         Ok(server) => server,
         Err(message) => {
+            // On stderr for whoever is watching, and in the log for whoever
+            // is not. A host consumes stderr and shows the user nothing but
+            // an absence of tools, so a start that fails this way used to
+            // leave no trace anywhere — and the one tool built to answer
+            // "why is my memory not working" had nothing to read.
+            tracing::error!(
+                reason = %message,
+                version = env!("CARGO_PKG_VERSION"),
+                "startup failed"
+            );
             eprintln!("kmp-mcp: {message}");
             // Only a backend-selection failure is fixed by choosing a
             // backend. After a store that refused to open — wrong engine,
@@ -60,6 +70,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         eprintln!("kmp-mcp: using explicit fixture backend");
     }
+
+    // A start that worked is worth a line too: without one, a log holding
+    // only failures cannot tell "it has never started" from "it started and
+    // the failure is older than this file".
+    tracing::info!(
+        backend = server.backend_name(),
+        engine = server.embedded_engine().map(|engine| engine.to_string()),
+        version = env!("CARGO_PKG_VERSION"),
+        "startup succeeded"
+    );
 
     for line in stdin.lock().lines() {
         let line = line?;
@@ -175,10 +195,27 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
     if !backend.trim().eq_ignore_ascii_case("embedded") {
         return None;
     }
-    let resolved = kmp_embedded::resolve_data_dir_from_env().ok()?;
-    let log_dir = resolved.path().join("logs");
+    // Beside the memory it serves, when that is knowable. A data dir that
+    // will not resolve is itself a startup failure worth recording, so fall
+    // back to the per-user state home rather than losing the one line that
+    // would explain it.
+    let log_dir = kmp_embedded::resolve_data_dir_from_env()
+        .map(|resolved| resolved.path().join("logs"))
+        .unwrap_or_else(|_| user_state_home().join("kmp").join("logs"));
     std::fs::create_dir_all(&log_dir).ok()?;
     Some(log_dir)
+}
+
+fn user_state_home() -> std::path::PathBuf {
+    std::env::var_os("XDG_STATE_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::env::var_os("HOME")
+                .map(std::path::PathBuf::from)
+                .unwrap_or_else(|| std::path::PathBuf::from("."))
+                .join(".local")
+                .join("state")
+        })
 }
 
 /// Non-MCP maintenance surface (everything is a process — no library):
