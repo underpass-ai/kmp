@@ -50,9 +50,12 @@ cp target/debug/kmp-mcp "${BUNDLE}/bin/kmp-mcp"
 
 LAUNCHER="${BUNDLE}/scripts/run-embedded-mcp.sh"
 LIST='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+PROBE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kernel_wake","arguments":{"about":"project:sqlite-gate"}}}'
 
-# First start creates the directory on the chosen engine.
-printf '%s\n' "${LIST}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=sqlite \
+# A real memory operation creates the store on the chosen engine. `tools/list`
+# deliberately stays available while a locked backend retries, so it no longer
+# proves that storage initialization has happened.
+printf '%s\n' "${PROBE}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=sqlite \
   KMP_MCP_DATA_DIR="${SHARED_DIR}" "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
 grep -q 2 "${SHARED_DIR}/FORMAT_VERSION" \
   || { echo "sqlite-gates: the shared directory is not on the sqlite engine" >&2; exit 1; }
@@ -103,7 +106,7 @@ SHARE_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${SHARE_DIR}"' EXIT
 # A store on the default engine, created the way any first session creates
 # one. (Not migrated down from the sqlite one: migration runs one way.)
-printf '%s\n' "${LIST}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=redb \
+printf '%s\n' "${PROBE}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=redb \
   KMP_MCP_DATA_DIR="${SHARE_DIR}/memory" \
   "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
 grep -q 1 "${SHARE_DIR}/memory/FORMAT_VERSION" \
