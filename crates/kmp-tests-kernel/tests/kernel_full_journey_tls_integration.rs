@@ -8,6 +8,7 @@ use kmp_proto::v1beta1::{
     CommandMetadata, ContextChange, ContextChangeOperation, GetContextRequest,
     GetNodeDetailRequest, UpdateContextRequest,
 };
+use kmp_tests_shared::fixtures::wait_for_neighbor_count;
 use kmp_tests_shared::seed::kernel_data::DEVELOPER_ROLE;
 use kmp_tests_shared::seed::kernel_e2e_data::{
     CHIEF_ENGINEER_TITLE, DECISION_DETAIL, DECISION_ID, EXPECTED_DETAIL_COUNT,
@@ -79,18 +80,24 @@ async fn kernel_full_journey_supports_tls_across_query_and_command_surfaces()
                 .contains(EXPLORER_LEAF_DETAIL)
         );
 
-        let query_context = query_client
-            .get_context(GetContextRequest {
-                root_node_id: ROOT_NODE_ID.to_string(),
-                role: DEVELOPER_ROLE.to_string(),
-                token_budget: 65536,
-                requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
-                depth: 3,
-                max_tier: 0,
-                rehydration_mode: 2,
-            })
-            .await?
-            .into_inner();
+        let query_request = GetContextRequest {
+            root_node_id: ROOT_NODE_ID.to_string(),
+            role: DEVELOPER_ROLE.to_string(),
+            token_budget: 65536,
+            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
+            depth: 3,
+            max_tier: 0,
+            rehydration_mode: 2,
+        };
+        wait_for_neighbor_count(
+            fixture.query_client(),
+            query_request.clone(),
+            EXPECTED_NEIGHBOR_COUNT,
+            40,
+        )
+        .await?;
+
+        let query_context = query_client.get_context(query_request).await?.into_inner();
         let query_bundle = query_context.bundle.expect("query bundle should exist");
         assert_eq!(query_bundle.root_node_id, ROOT_NODE_ID);
         assert_eq!(query_bundle.bundles.len(), 1);
