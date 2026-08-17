@@ -148,12 +148,24 @@ answer leads with the new state, and `kernel_rewind` to before the reversal
 still returns the old decision with the evidence it had. Both are true, at
 different times, and that is the whole point of keeping a log.
 
-**Current limit, worth knowing before you rely on it.** A superseded entry is
-not yet flagged as superseded in `kernel_wake` or `kernel_ask` output. The
-supersession is on the relation — visible through `kernel_inspect` on the
-older entry, and by rewinding — but a reader who does neither can still act on
-a decision that was replaced. Until that changes, say what superseded what
-rather than assuming the next reader will notice.
+A replaced entry comes back **marked**. `kernel_wake` and `kernel_ask` carry
+`proof.superseded`, one line per entry that a later one replaced:
+
+```json
+"superseded": [
+  {
+    "ref": "project:kmp:decision:usar-redb",
+    "superseded_by": "project:kmp:decision:usar-sqlite",
+    "why": "two agent hosts need to share the store"
+  }
+]
+```
+
+It is kept apart from `proof.conflicts` on purpose. `contradicts` says two
+entries disagree and both may still be live — the tension is the information.
+`supersedes` says one replaced the other: no tension, a lifecycle, and the
+older entry is history rather than advice. Read the older one as what was
+true then, not as what to do now.
 
 ## Relations carry the why
 

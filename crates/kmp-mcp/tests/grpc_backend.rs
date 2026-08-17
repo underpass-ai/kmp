@@ -956,6 +956,7 @@ fn proof(source: &str, target: &str) -> Proof {
         path: vec![relation(source, target, "supports")],
         evidence: vec![evidence(source)],
         conflicts: Vec::new(),
+        superseded: Vec::new(),
         missing: Vec::new(),
         frontier_size: 0,
         confidence: MemoryConfidence::High as i32,

@@ -1,8 +1,8 @@
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, DimensionScopeMode, DimensionSelection, DimensionSelectionMode,
     IngestResponse, InspectResponse, MemoryConfidence, MemoryEvidence, MemoryRelation,
-    MemorySemanticClass, RawMemoryRef, TemporalCoordinate, TemporalCursor, TemporalDirection,
-    TemporalEntry, TemporalMoveResponse, TraceResponse, WakeClaim, WakeResponse,
+    MemorySemanticClass, RawMemoryRef, SupersededMemory, TemporalCoordinate, TemporalCursor,
+    TemporalDirection, TemporalEntry, TemporalMoveResponse, TraceResponse, WakeClaim, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
@@ -246,10 +246,25 @@ fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "path": proof.path.iter().map(memory_relation_json).collect::<Vec<_>>(),
         "evidence": proof.evidence.iter().map(memory_evidence_json).collect::<Vec<_>>(),
         "conflicts": proof.conflicts,
+        // Kept apart from conflicts: a supersession is a lifecycle, not a
+        // disagreement, and the older entry is history rather than advice.
+        "superseded": proof
+            .superseded
+            .iter()
+            .map(superseded_json)
+            .collect::<Vec<_>>(),
         "missing": proof.missing,
         "frontier_size": proof.frontier_size,
         "confidence": confidence_label(proof.confidence)
     })
+}
+
+fn superseded_json(entry: &SupersededMemory) -> Value {
+    let mut object = Map::new();
+    object.insert("ref".to_string(), json!(entry.r#ref));
+    object.insert("superseded_by".to_string(), json!(entry.superseded_by));
+    insert_optional_string(&mut object, "why", &entry.why);
+    Value::Object(object)
 }
 
 fn empty_proof_json() -> Value {
@@ -257,6 +272,7 @@ fn empty_proof_json() -> Value {
         "path": [],
         "evidence": [],
         "conflicts": [],
+        "superseded": [],
         "missing": ["proof"],
         "frontier_size": 1,
         "confidence": "unknown"
@@ -517,6 +533,7 @@ mod tests {
                 path: vec![relation()],
                 evidence: vec![evidence()],
                 conflicts: Vec::new(),
+                superseded: Vec::new(),
                 missing: vec!["generative_answer".to_string()],
                 frontier_size: 1,
                 confidence: MemoryConfidence::Medium as i32,

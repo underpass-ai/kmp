@@ -936,6 +936,32 @@
         },
         "confidence": {
           "$ref": "#/$defs/confidence"
+        },
+        "superseded": {
+          "description": "Entries this recall reached that a later entry replaced. Separate from `conflicts`: a supersession is a lifecycle, not a disagreement, so the older entry is history rather than advice.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref",
+              "superseded_by"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string",
+                "description": "The entry that was replaced."
+              },
+              "superseded_by": {
+                "type": "string",
+                "description": "The entry that replaced it."
+              },
+              "why": {
+                "type": "string",
+                "description": "Why, from the relation that carries it."
+              }
+            }
+          }
         }
       }
     },
