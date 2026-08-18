@@ -165,8 +165,15 @@ pub fn ask_response_from_result(
         .iter()
         .take(5)
         .map(|item| AnswerReason {
-            claim: item.source.clone(),
-            evidence: item.text.clone(),
+            claim: item
+                .supports
+                .first()
+                .cloned()
+                .unwrap_or_else(|| item.source.clone()),
+            // The complete body already lives in `proof.evidence`. Keeping it
+            // here made answer packets repeat the same allocation and wire
+            // text; v1beta1 retains the field as an empty compatibility slot.
+            evidence: String::new(),
             r#ref: item.id.clone(),
         })
         .collect::<Vec<_>>();
@@ -715,26 +722,35 @@ fn terms_match(left: &str, right: &str) -> bool {
 
 fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
     let mut seen = BTreeSet::new();
-    let evidence = reasons
+    let citations = reasons
         .iter()
         .filter_map(|reason| {
-            let text = reason.evidence.trim();
-            if text.is_empty() || !seen.insert(text.to_string()) {
+            let evidence_ref = reason.r#ref.trim();
+            if evidence_ref.is_empty() || !seen.insert(evidence_ref.to_string()) {
                 None
             } else {
-                Some(text.to_string())
+                let claim = reason.claim.trim();
+                Some(if claim.is_empty() {
+                    evidence_ref.to_string()
+                } else {
+                    format!("{claim} [{evidence_ref}]")
+                })
             }
         })
         .collect::<Vec<_>>();
 
-    match evidence.as_slice() {
+    match citations.as_slice() {
         [] => String::new(),
-        [single] => single.clone(),
-        many => many
-            .iter()
-            .map(|item| format!("- {item}"))
-            .collect::<Vec<_>>()
-            .join("\n"),
+        [single] => {
+            format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
+        }
+        many => format!(
+            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
+            many.iter()
+                .map(|item| format!("- {item}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
     }
 }
 
@@ -1152,6 +1168,7 @@ fn memory_relation_from_graph_relationship(relationship: &GraphRelationshipView)
         confidence: proto_confidence(explanation.confidence()) as i32,
         sequence: explanation.sequence(),
         explanation: proto_relation_explanation(explanation),
+        evidence_refs: Vec::new(),
     }
 }
 

@@ -411,9 +411,20 @@ fn kmp_reference_fixtures_match_live_grpc_temporal_shape() {
     let first_reason = fixture_array_field(&ask, "because")
         .first()
         .expect("ask fixture should contain evidence reasons");
-    assert_eq!(
-        ask.get("answer").and_then(Value::as_str),
-        first_reason.get("evidence").and_then(Value::as_str)
+    let reason_ref = first_reason
+        .get("ref")
+        .and_then(Value::as_str)
+        .expect("ask reason should cite canonical evidence");
+    assert!(first_reason.get("evidence").is_none());
+    assert!(
+        ask.get("answer")
+            .and_then(Value::as_str)
+            .is_some_and(|answer| answer.contains(reason_ref))
+    );
+    assert!(
+        fixture_array_field(fixture_object_field(&ask, "proof"), "evidence")
+            .iter()
+            .any(|item| item.get("id").and_then(Value::as_str) == Some(reason_ref))
     );
 }
 

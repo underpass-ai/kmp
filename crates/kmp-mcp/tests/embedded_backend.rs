@@ -379,7 +379,16 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         }),
     )
     .await;
-    assert_eq!(ask["because"][0]["evidence"], EXACT_ANSWER, "{ask}");
+    assert!(ask["because"][0].get("evidence").is_none(), "{ask}");
+    let cited_ref = ask["because"][0]["ref"].as_str().expect("evidence ref");
+    assert!(
+        ask["proof"]["evidence"]
+            .as_array()
+            .expect("canonical evidence")
+            .iter()
+            .any(|evidence| evidence["id"] == cited_ref && evidence["text"] == EXACT_ANSWER),
+        "{ask}"
+    );
     assert_eq!(ask["proof"]["confidence"], "high");
     assert_eq!(ask["truncation"]["truncated"], true);
     assert!(
@@ -466,17 +475,37 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
             .await;
 
             assert_ne!(ask["answer"], "UNKNOWN", "{question}: {ask}");
+            let answer_context = ask["proof"]["evidence"]
+                .as_array()
+                .expect("canonical answer evidence")
+                .iter()
+                .filter_map(|evidence| evidence["text"].as_str())
+                .collect::<Vec<_>>()
+                .join("\n");
             assert!(
-                ask["answer"]
-                    .as_str()
-                    .is_some_and(|answer| answer.contains("stale weak-prefix result")),
+                answer_context.contains("stale weak-prefix result"),
                 "{question}: {ask}"
             );
             assert!(
-                !ask["answer"]
-                    .as_str()
-                    .is_some_and(|answer| answer.contains("TLS projection")),
+                !answer_context.contains("TLS projection"),
                 "relation context must not make an unrelated citation eligible: {ask}"
+            );
+            assert!(
+                ask["because"]
+                    .as_array()
+                    .expect("answer citations")
+                    .iter()
+                    .all(|reason| reason["ref"].as_str().is_some_and(|evidence_ref| {
+                        ask["answer"]
+                            .as_str()
+                            .is_some_and(|answer| answer.contains(evidence_ref))
+                            && ask["proof"]["evidence"]
+                                .as_array()
+                                .expect("canonical answer evidence")
+                                .iter()
+                                .any(|evidence| evidence["id"] == evidence_ref)
+                    })),
+                "answer citations must resolve inside the packet: {ask}"
             );
             assert!(
                 ask["proof"]["path"]

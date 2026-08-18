@@ -71,6 +71,10 @@ message MemoryRelation {
   MemoryConfidence confidence = 7;
   optional uint32 sequence = 8;
   MemoryRelationExplanation explanation = 9;
+  // Canonical MemoryEvidence ids that support this hop. When a relation's
+  // textual why/evidence is identical to a Proof.evidence body, the body is
+  // stored only in that registry and this field carries the join.
+  repeated string evidence_refs = 10;
 }
 
 // Typed fields that qualify the relation itself. The top-level `why`,
@@ -175,7 +179,11 @@ message AskResponse {
 
 message AnswerReason {
   string claim = 1;
+  // Deprecated for recall responses. The canonical full body lives once in
+  // Proof.evidence; use `ref` to join it. Kept on the v1beta1 wire so existing
+  // generated clients remain compatible.
   string evidence = 2;
+  // Canonical Proof.evidence.id.
   string ref = 3;
 }
 

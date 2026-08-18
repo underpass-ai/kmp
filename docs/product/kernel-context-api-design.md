@@ -605,12 +605,11 @@ MCP response:
 ```json
 {
   "summary": "Deterministic memory answer from 1 evidence item for: Where did Rachel move after her recent relocation?",
-  "answer": "Later she corrected it: the move is to Austin.",
+  "answer": "Memory answer supported by claim:rachel-austin [evidence:rachel-turn-2]; canonical text is in proof.evidence.",
   "because": [
     {
-      "claim": "Rachel later corrected the destination to Austin.",
-      "evidence": "Later she corrected it: the move is to Austin.",
-      "ref": "claim:rachel-austin"
+      "claim": "claim:rachel-austin",
+      "ref": "evidence:rachel-turn-2"
     }
   ],
   "proof": {
@@ -621,7 +620,7 @@ MCP response:
         "rel": "supersedes",
         "class": "evidential",
         "why": "The later statement corrects the earlier destination.",
-        "evidence": "Later she corrected it: the move is to Austin.",
+        "evidence_refs": ["evidence:rachel-turn-2"],
         "confidence": "high"
       }
     ],

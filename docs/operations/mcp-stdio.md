@@ -184,8 +184,10 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
 
 ## Tool semantics (identical in both modes)
 
-- `kernel_ask` returns a deterministic evidence-derived answer or `UNKNOWN`;
-  it never generates an LLM answer. For a retained answer,
+- `kernel_ask` returns a deterministic citation-oriented answer or `UNKNOWN`;
+  it never generates an LLM answer. Complete bodies occur once in
+  `proof.evidence`, joined from `because[].ref` and
+  `proof.path[].evidence_refs`. For a retained answer,
   `proof.matched_terms` lists the informative query terms covered by the
   selected evidence and its directly supporting semantic context, while
   `proof.matched_relations` lists the contributing relation types. These are

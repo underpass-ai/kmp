@@ -345,6 +345,15 @@
         "evidence": {
           "$ref": "#/$defs/non_empty_string"
         },
+        "evidence_refs": {
+          "description": "Canonical proof.evidence ids that support this relation. Replaces repeated relation text when that body already exists in the evidence registry.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          }
+        },
         "confidence": {
           "$ref": "#/$defs/confidence"
         },
@@ -1748,7 +1757,6 @@
             "additionalProperties": false,
             "required": [
               "claim",
-              "evidence",
               "ref"
             ],
             "properties": {
@@ -1756,6 +1764,7 @@
                 "$ref": "#/$defs/non_empty_string"
               },
               "evidence": {
+                "description": "Deprecated compatibility field. New recall responses omit it and join ref to proof.evidence.id.",
                 "$ref": "#/$defs/non_empty_string"
               },
               "ref": {

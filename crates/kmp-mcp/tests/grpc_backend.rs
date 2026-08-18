@@ -976,6 +976,7 @@ fn relation(source_ref: &str, target_ref: &str, rel: &str) -> MemoryRelation {
         confidence: MemoryConfidence::High as i32,
         sequence: Some(1),
         explanation: None,
+        evidence_refs: Vec::new(),
     }
 }
 
