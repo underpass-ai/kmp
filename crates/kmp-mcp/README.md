@@ -41,6 +41,10 @@ Current status:
   `proof.path[].evidence_refs`; successful asks expose retained recall terms
   and contributing semantic relation types in `proof` without exposing scoring
   internals;
+- `kernel_ask` and `kernel_wake` preserve a stable core and fill a deterministic
+  semantic prefix under `budget.max_bytes` (10,000 by default); expandable
+  proof returns `projection.page.next_cursor`, while `budget.tokens` remains an
+  advisory cl100k planning hint rather than a cross-model hard ceiling;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index;
 - `kernel_inspect` supports typed detail/link lookup and typed raw audit refs
@@ -98,8 +102,14 @@ KMP_MCP_BACKEND=fixture KMP_MCP_BIN=kmp-mcp \
 Tool call example:
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kernel_ask","arguments":{"about":"question:830ce83f","question":"Where did Rachel move after her recent relocation?","answer_policy":"evidence_or_unknown"}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kernel_ask","arguments":{"about":"question:830ce83f","question":"Where did Rachel move after her recent relocation?","answer_policy":"evidence_or_unknown","budget":{"detail":"balanced","max_bytes":10000}}}}
 ```
+
+When `projection.page.has_more` is true, repeat the same tool and bound
+arguments with `page.cursor` set to `projection.page.next_cursor`. Only
+`page.entries`, `budget.tokens`, and `budget.max_bytes` may change. The cursor
+is opaque and remains valid while the selected response snapshot is
+byte-identical; changed query/scope/detail or changed memory is rejected.
 
 Live backend mapping:
 

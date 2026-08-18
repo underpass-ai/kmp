@@ -192,6 +192,24 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
   selected evidence and its directly supporting semantic context, while
   `proof.matched_relations` lists the contributing relation types. These are
   eligibility explanations, not scores or internal thresholds.
+- Recall output is a deterministic contract projection. Tier 0 is the answer
+  or wake core plus every canonical evidence body needed to trust its refs.
+  Expandable items use one total order independent of budget: semantic proof,
+  additional evidence, support bookkeeping, then structural/raw detail.
+  `compact ⊆ balanced ⊆ full`; richer detail adds eligible sections and never
+  displaces the core.
+- `budget.max_bytes` is the normative ceiling over compact serialized
+  `structuredContent` and defaults to 10,000 bytes. `budget.tokens` is an
+  advisory cl100k planning hint only: it can bound how much expansion KMP tries
+  to include, but it cannot prove a hard ceiling for Claude or other
+  tokenizers. Tool metadata advertises `_meta["anthropic/maxResultSizeChars"] =
+  10000`.
+- If detail remains, `projection.page` reports `returned`, `total`, `has_more`,
+  and an opaque `next_cursor`, plus truthful per-section counts. Repeat the
+  same recall with `page.cursor`; only page size and byte/token budgets may
+  vary. The cursor binds the query, scope, detail, selected core, and response
+  snapshot, so changed arguments or changed memory fail as an invalid cursor
+  instead of silently recomputing a different answer.
 - Temporal tools return deterministic kernel-owned traversal slices with a
   `page` object, so bounded partial reads are visible to operators and
   clients. `kernel_goto` defaults to at most 50 entries when no explicit

@@ -3,6 +3,7 @@ use serde_json::Value;
 use crate::args::validate_required_arguments;
 use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::ingest::build_ingest_plan;
+use crate::kmp::try_enforce_recall_output_budget;
 use crate::protocol::tool_success_result;
 
 // The fixture backend answers with the reference examples from the contract.
@@ -47,10 +48,15 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             build_ingest_plan(arguments)?;
             read_fixture_tool_result(arguments, &[], INGEST_RESPONSE_FIXTURE)
         }
-        "kernel_wake" => read_fixture_tool_result(arguments, &["about"], WAKE_RESPONSE_FIXTURE),
-        "kernel_ask" => {
-            read_fixture_tool_result(arguments, &["about", "question"], ASK_RESPONSE_FIXTURE)
+        "kernel_wake" => {
+            read_recall_fixture_tool_result(arguments, &["about"], WAKE_RESPONSE_FIXTURE, 1600)
         }
+        "kernel_ask" => read_recall_fixture_tool_result(
+            arguments,
+            &["about", "question"],
+            ASK_RESPONSE_FIXTURE,
+            2400,
+        ),
         "kernel_goto" => read_fixture_tool_result(arguments, &["about"], GOTO_RESPONSE_FIXTURE),
         "kernel_near" => read_fixture_tool_result(arguments, &["about"], NEAR_RESPONSE_FIXTURE),
         "kernel_rewind" => read_fixture_tool_result(arguments, &["about"], REWIND_RESPONSE_FIXTURE),
@@ -63,6 +69,22 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         "kernel_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
         other => Err(format!("unknown KMP tool `{other}`")),
     }
+}
+
+fn read_recall_fixture_tool_result(
+    arguments: &Value,
+    required_arguments: &[&str],
+    fixture: &str,
+    default_tokens: u32,
+) -> Result<Value, String> {
+    validate_required_arguments(arguments, required_arguments)?;
+    let structured_content = serde_json::from_str::<Value>(fixture)
+        .map_err(|error| format!("fixture response is invalid JSON: {error}"))?;
+    Ok(tool_success_result(try_enforce_recall_output_budget(
+        structured_content,
+        arguments,
+        default_tokens,
+    )?))
 }
 
 fn read_fixture_tool_result(
