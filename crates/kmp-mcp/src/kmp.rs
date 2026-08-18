@@ -641,10 +641,7 @@ fn mark_output_truncation(
         {
             missing.push(json!("output truncated to token budget"));
         }
-        proof.insert(
-            "frontier_size".to_string(),
-            json!(base_frontier.saturating_add(omitted.total_items() as u64)),
-        );
+        proof.insert("frontier_size".to_string(), json!(base_frontier));
     }
 }
 
@@ -1274,6 +1271,46 @@ mod tests {
                 .all(|relation| relation["class"] != "structural")
         );
         assert_eq!(bounded["truncation"]["truncated"], true);
+    }
+
+    #[test]
+    fn transport_omissions_do_not_change_the_graph_frontier() {
+        let proof = json!({
+            "proof": {
+                "path": [],
+                "evidence": [],
+                "conflicts": [],
+                "superseded": [],
+                "missing": ["unexplored:one", "unexplored:two"],
+                "frontier_size": 2,
+                "confidence": "high"
+            }
+        });
+        let mut low_budget = proof.clone();
+        let mut high_budget = proof;
+        let low_budget_omissions = OutputTruncation {
+            path: 30,
+            evidence: 4,
+            ..Default::default()
+        };
+        let high_budget_omissions = OutputTruncation {
+            path: 10,
+            evidence: 1,
+            ..Default::default()
+        };
+
+        mark_output_truncation(&mut low_budget, 500, &low_budget_omissions, 2);
+        mark_output_truncation(&mut high_budget, 1_200, &high_budget_omissions, 2);
+
+        for result in [&low_budget, &high_budget] {
+            assert_eq!(result["proof"]["frontier_size"], 2);
+            assert_eq!(result["truncation"]["truncated"], true);
+        }
+        assert_ne!(
+            low_budget["truncation"]["omitted"]["proof_path"],
+            high_budget["truncation"]["omitted"]["proof_path"],
+            "the regression must exercise different transport omission counts"
+        );
     }
 
     #[test]

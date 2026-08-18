@@ -13,10 +13,11 @@ use kmp_proto::v1beta1::{
 };
 
 use super::bundle_views::{
-    answer_evidence_from_bundle, bundle_memory_metadata, memory_evidence_from_bundle,
-    memory_relations_from_bundle, persisted_memory_metadata, persisted_memory_source, proof,
-    proto_coordinate_from_domain, proto_relation_explanation, rendered_current_state,
-    rendered_summary, temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    answer_evidence_from_bundle, answer_relations_from_bundle, bundle_memory_metadata,
+    memory_evidence_from_bundle, memory_relations_from_bundle, persisted_memory_metadata,
+    persisted_memory_source, proof, proto_coordinate_from_domain, proto_relation_explanation,
+    rendered_current_state, rendered_summary, temporal_evidence_from_bundle,
+    temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::scalars::{
@@ -181,7 +182,7 @@ pub fn ask_response_from_result(
             if unknown {
                 Vec::new()
             } else {
-                memory_relations_from_bundle(&result.bundle)
+                answer_relations_from_bundle(&result.bundle, &evidence)
             },
             evidence,
             if unknown {

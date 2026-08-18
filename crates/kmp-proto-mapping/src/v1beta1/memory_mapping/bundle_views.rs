@@ -62,6 +62,36 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
         .collect()
 }
 
+/// Keeps only graph edges that can audit the selected answer evidence.
+///
+/// An answer is proved by its evidence node, the claims it supports, and the
+/// relations incident to either. The latter deliberately retains conflict and
+/// supersession edges for selected claims without leaking unrelated bundle
+/// history into `proof.path`.
+pub(super) fn answer_relations_from_bundle(
+    bundle: &KmpBundle,
+    evidence: &[MemoryEvidence],
+) -> Vec<MemoryRelation> {
+    let selected_refs = evidence
+        .iter()
+        .flat_map(|item| {
+            item.id
+                .strip_prefix("detail:")
+                .map(str::to_string)
+                .into_iter()
+                .chain(item.supports.iter().cloned())
+        })
+        .collect::<BTreeSet<_>>();
+
+    memory_relations_from_bundle(bundle)
+        .into_iter()
+        .filter(|relationship| {
+            selected_refs.contains(&relationship.source_ref)
+                || selected_refs.contains(&relationship.target_ref)
+        })
+        .collect()
+}
+
 pub(super) fn temporal_relations_from_bundle(
     bundle: &KmpBundle,
     selected_refs: &BTreeSet<String>,
@@ -456,6 +486,75 @@ mod tests {
     }
 
     #[test]
+    fn answer_relations_exclude_unrelated_edges_and_keep_selected_claim_lifecycle() {
+        let bundle = KmpBundle::new(
+            CaseId::new("question:a").expect("case id should be valid"),
+            Role::new("answerer").expect("role is valid"),
+            node("question:a", "memory_anchor"),
+            vec![
+                node("claim:selected", "claim"),
+                node("claim:conflicting", "claim"),
+                node("claim:old", "claim"),
+                node("claim:unrelated", "claim"),
+                node("evidence:selected", "memory_evidence"),
+                node("evidence:unrelated", "memory_evidence"),
+            ],
+            vec![
+                supports("evidence:selected", "claim:selected"),
+                relation("claim:selected", "claim:conflicting", "contradicts"),
+                relation("claim:selected", "claim:old", "supersedes"),
+                supports("evidence:unrelated", "claim:unrelated"),
+            ],
+            vec![
+                BundleNodeDetail::new(
+                    "evidence:selected",
+                    "Selected answer evidence",
+                    "hash-selected",
+                    1,
+                ),
+                BundleNodeDetail::new(
+                    "evidence:unrelated",
+                    "Unrelated evidence",
+                    "hash-unrelated",
+                    1,
+                ),
+            ],
+            BundleMetadata::initial("test"),
+        )
+        .expect("test bundle should be valid");
+        let selected_evidence = answer_evidence_from_bundle(&bundle)
+            .into_iter()
+            .filter(|evidence| evidence.id == "detail:evidence:selected")
+            .collect::<Vec<_>>();
+
+        let relations = answer_relations_from_bundle(&bundle, &selected_evidence)
+            .into_iter()
+            .map(|relation| (relation.source_ref, relation.target_ref, relation.rel))
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            relations,
+            vec![
+                (
+                    "evidence:selected".to_string(),
+                    "claim:selected".to_string(),
+                    "supports".to_string(),
+                ),
+                (
+                    "claim:selected".to_string(),
+                    "claim:conflicting".to_string(),
+                    "contradicts".to_string(),
+                ),
+                (
+                    "claim:selected".to_string(),
+                    "claim:old".to_string(),
+                    "supersedes".to_string(),
+                ),
+            ]
+        );
+    }
+
+    #[test]
     fn proof_surfaces_explicit_conflict_relations() {
         let conflicts = proof(
             vec![
@@ -528,6 +627,21 @@ mod tests {
             RelationExplanation::new(RelationSemanticClass::Evidential)
                 .with_rationale("Support relation for scoped temporal evidence.")
                 .with_confidence("medium"),
+        )
+    }
+
+    fn relation(
+        source_node_id: &str,
+        target_node_id: &str,
+        relationship_type: &str,
+    ) -> BundleRelationship {
+        BundleRelationship::new(
+            source_node_id,
+            target_node_id,
+            relationship_type,
+            RelationExplanation::new(RelationSemanticClass::Evidential)
+                .with_rationale("Selected claim lifecycle relation.")
+                .with_confidence("high"),
         )
     }
 }
