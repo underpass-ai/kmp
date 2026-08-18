@@ -140,13 +140,20 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                 "intent": "read back the memory written through MCP",
                 "depth": 2,
                 "budget": {
-                    "tokens": 2048
+                    "tokens": 30000,
+                    "max_bytes": 100000,
+                    "detail": "full"
                 }
             }),
         )
         .await;
         assert_tool_success(&ingested_wake);
         let ingested_wake_content = structured_content(&ingested_wake);
+        assert_eq!(
+            ingested_wake_content.pointer("/projection/page/has_more"),
+            Some(&Value::Bool(false)),
+            "the explicit full integration budget should materialize the complete proof"
+        );
         assert_array_contains_relation(
             ingested_wake_content,
             "/proof/path",
