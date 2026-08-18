@@ -959,6 +959,8 @@ fn proof(source: &str, target: &str) -> Proof {
         superseded: Vec::new(),
         missing: Vec::new(),
         frontier_size: 0,
+        matched_terms: Vec::new(),
+        matched_relations: Vec::new(),
         confidence: MemoryConfidence::High as i32,
     }
 }

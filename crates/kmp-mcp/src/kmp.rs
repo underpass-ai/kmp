@@ -500,6 +500,14 @@ fn minimal_proof_json(source: &Value, base_frontier: u64) -> Value {
         "superseded": [],
         "missing": [],
         "frontier_size": base_frontier,
+        "matched_terms": source
+            .pointer("/proof/matched_terms")
+            .cloned()
+            .unwrap_or_else(|| json!([])),
+        "matched_relations": source
+            .pointer("/proof/matched_relations")
+            .cloned()
+            .unwrap_or_else(|| json!([])),
         "confidence": source
             .pointer("/proof/confidence")
             .cloned()
@@ -798,6 +806,8 @@ fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
             .collect::<Vec<_>>(),
         "missing": proof.missing,
         "frontier_size": proof.frontier_size,
+        "matched_terms": proof.matched_terms,
+        "matched_relations": proof.matched_relations,
         "confidence": confidence_label(proof.confidence)
     })
 }
@@ -818,6 +828,8 @@ fn empty_proof_json() -> Value {
         "superseded": [],
         "missing": ["proof"],
         "frontier_size": 1,
+        "matched_terms": [],
+        "matched_relations": [],
         "confidence": "unknown"
     })
 }
@@ -1079,6 +1091,8 @@ mod tests {
                 superseded: Vec::new(),
                 missing: vec!["generative_answer".to_string()],
                 frontier_size: 1,
+                matched_terms: vec!["deterministic".to_string()],
+                matched_relations: vec!["supports".to_string()],
                 confidence: MemoryConfidence::Medium as i32,
             }),
             warnings: Vec::new(),

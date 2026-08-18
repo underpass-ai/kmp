@@ -145,6 +145,111 @@ fn large_recall_ingest_arguments() -> Value {
     })
 }
 
+fn paraphrase_recall_ingest_arguments() -> Value {
+    json!({
+        "about": "project:live-validation",
+        "idempotency_key": "ingest:paraphrase-recall-regression",
+        "memory": {
+            "dimensions": [{"id": "work:live-validation", "kind": "work"}],
+            "entries": [
+                {
+                    "id": "success:ranking-correction-merged",
+                    "kind": "success_path",
+                    "text": "The relevance-ranking correction passed its regression test and was merged.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:live-validation",
+                        "occurred_at": "2026-08-17T23:55:00Z",
+                        "sequence": 1
+                    }]
+                },
+                {
+                    "id": "constraint:restart-live-service",
+                    "kind": "constraint",
+                    "text": "The connected live service must be rebuilt or reinstalled from the corrected release and restarted before it can validate the relevance-ranking change.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:live-validation",
+                        "occurred_at": "2026-08-18T00:00:00Z",
+                        "sequence": 2
+                    }]
+                },
+                {
+                    "id": "success:corrected-service-installed",
+                    "kind": "success_path",
+                    "text": "The corrected service release is now installed for future launches.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:live-validation",
+                        "occurred_at": "2026-08-18T00:05:00Z",
+                        "sequence": 3
+                    }]
+                },
+                {
+                    "id": "error:tls-projection-race",
+                    "kind": "error_path",
+                    "text": "A TLS projection test observed a partial graph.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:live-validation",
+                        "occurred_at": "2026-08-18T00:10:00Z",
+                        "sequence": 4
+                    }]
+                }
+            ],
+            "relations": [
+                {
+                    "from": "constraint:restart-live-service",
+                    "to": "success:ranking-correction-merged",
+                    "rel": "depends_on",
+                    "class": "causal",
+                    "why": "Live validation depends on rebuilding and restarting the service because the running executable predates the corrected relevance-ranking implementation.",
+                    "evidence": "The old service reproduced the stale weak-prefix retrieval result after the corrected build passed its regression test.",
+                    "confidence": "high"
+                },
+                {
+                    "from": "success:corrected-service-installed",
+                    "to": "constraint:restart-live-service",
+                    "rel": "updates_state",
+                    "class": "causal",
+                    "why": "Installing the corrected release removes the stale executable for future launches, while an already-running process still requires restart.",
+                    "evidence": "The installer replaced the old release with the corrected build; the live process was not restarted.",
+                    "confidence": "high"
+                },
+                {
+                    "from": "error:tls-projection-race",
+                    "to": "constraint:restart-live-service",
+                    "rel": "checked_against",
+                    "class": "evidential",
+                    "why": "The projection race was compared with the live service restart constraint while triaging issue 80.",
+                    "evidence": "The comparison mentioned the retrieval regression, required rebuild and restart, and later validation against the live service.",
+                    "confidence": "high"
+                }
+            ],
+            "evidence": [
+                {
+                    "id": "evidence:old-live-service",
+                    "supports": ["constraint:restart-live-service"],
+                    "text": "The running service used an older executable while the corrected repository build was newer. Its live query reproduced the stale weak-prefix result, so the corrected implementation had not yet been validated in that process.",
+                    "source": "live validation probe"
+                },
+                {
+                    "id": "evidence:corrected-install",
+                    "supports": ["success:corrected-service-installed"],
+                    "text": "The installer replaced the previous release with the corrected build for subsequent service launches.",
+                    "source": "installation verification"
+                },
+                {
+                    "id": "evidence:tls-projection-race",
+                    "supports": ["error:tls-projection-race"],
+                    "text": "The TLS projection test returned seven of seventeen nodes because its wait was missing.",
+                    "source": "unrelated projection investigation"
+                }
+            ]
+        }
+    })
+}
+
 #[tokio::test]
 async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
@@ -320,6 +425,105 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
             "structured response exceeded the hard token ceiling: {response}"
         );
     }
+}
+
+#[tokio::test]
+async fn ask_recalls_supported_constraint_across_morphology_and_clause_reordering() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(
+        &server,
+        1,
+        "kernel_ingest",
+        paraphrase_recall_ingest_arguments(),
+    )
+    .await;
+
+    let questions = [
+        "What retrieval failure did the old service reproduce, and why must it be rebuilt and restarted before validating the correction?",
+        "Why is a reinstall plus process restart required before the fixed relevance ranking can be checked against the live service, and which stale result came from the prior executable?",
+    ];
+
+    for (question_index, question) in questions.into_iter().enumerate() {
+        let mut first = None;
+        for repeat in 0..3 {
+            let ask = call(
+                &server,
+                2 + (question_index * 3 + repeat) as u64,
+                "kernel_ask",
+                json!({
+                    "about": "project:live-validation",
+                    "question": question,
+                    "answer_policy": "evidence_or_unknown",
+                    "depth": 3,
+                    "budget": {
+                        "tokens": 2_048,
+                        "detail": "balanced",
+                        "max_entries": 10
+                    }
+                }),
+            )
+            .await;
+
+            assert_ne!(ask["answer"], "UNKNOWN", "{question}: {ask}");
+            assert!(
+                ask["answer"]
+                    .as_str()
+                    .is_some_and(|answer| answer.contains("stale weak-prefix result")),
+                "{question}: {ask}"
+            );
+            assert!(
+                !ask["answer"]
+                    .as_str()
+                    .is_some_and(|answer| answer.contains("TLS projection")),
+                "relation context must not make an unrelated citation eligible: {ask}"
+            );
+            assert!(
+                ask["proof"]["path"]
+                    .as_array()
+                    .is_some_and(|path| path.iter().any(|relation| {
+                        relation["rel"] == "depends_on" || relation["rel"] == "updates_state"
+                    })),
+                "the proof must retain the semantic relation that makes the paraphrase auditable: {ask}"
+            );
+            assert!(
+                ask["proof"]["matched_terms"]
+                    .as_array()
+                    .is_some_and(|terms| terms.len() >= 4),
+                "proof must explain eligibility with retained query terms: {ask}"
+            );
+            assert!(
+                ask["proof"]["matched_relations"]
+                    .as_array()
+                    .is_some_and(|relations| relations.iter().any(|relation| {
+                        relation == "depends_on" || relation == "updates_state"
+                    })),
+                "proof must identify the semantic relation used for recall: {ask}"
+            );
+
+            if let Some(first) = &first {
+                assert_eq!(ask, *first, "identical asks must be deterministic");
+            } else {
+                first = Some(ask);
+            }
+        }
+    }
+
+    let unrelated = call(
+        &server,
+        10,
+        "kernel_ask",
+        json!({
+            "about": "project:live-validation",
+            "question": "Which catering vendor supplies the launch dinner?",
+            "answer_policy": "evidence_or_unknown",
+            "depth": 3
+        }),
+    )
+    .await;
+    assert_eq!(unrelated["answer"], "UNKNOWN", "{unrelated}");
+    assert_eq!(unrelated["proof"]["matched_terms"], json!([]));
+    assert_eq!(unrelated["proof"]["matched_relations"], json!([]));
 }
 
 #[tokio::test]

@@ -185,7 +185,11 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
 ## Tool semantics (identical in both modes)
 
 - `kernel_ask` returns a deterministic evidence-derived answer or `UNKNOWN`;
-  it never generates an LLM answer.
+  it never generates an LLM answer. For a retained answer,
+  `proof.matched_terms` lists the informative query terms covered by the
+  selected evidence and its directly supporting semantic context, while
+  `proof.matched_relations` lists the contributing relation types. These are
+  eligibility explanations, not scores or internal thresholds.
 - Temporal tools return deterministic kernel-owned traversal slices with a
   `page` object, so bounded partial reads are visible to operators and
   clients. `kernel_goto` defaults to at most 50 entries when no explicit

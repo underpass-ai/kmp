@@ -415,6 +415,13 @@ message Proof {
   // (currently the size of `missing`). A non-zero frontier means necessary
   // context has not yet been reached.
   uint32 frontier_size = 6;
+  // Informative query terms retained by the selected answer evidence and its
+  // directly supporting semantic graph context. These explain eligibility;
+  // scoring thresholds and internal weights remain implementation details.
+  repeated string matched_terms = 8;
+  // Non-structural relation types whose rationale, evidence or endpoints
+  // contributed retained query terms to the selected answer.
+  repeated string matched_relations = 9;
 }
 
 // One entry replaced by another, so a reader can tell history from advice.

@@ -5,7 +5,9 @@ use kmp_application::{
     GetContextPathResult, GetContextResult, GraphRelationshipView, InspectMemoryResult,
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
 };
-use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalDirection};
+use kmp_domain::{
+    BundleNodeDetail, BundleRelationship, KmpBundle, RelationSemanticClass, TemporalDirection,
+};
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
     MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef, TemporalCursor,
@@ -142,13 +144,23 @@ pub fn ask_response_from_result(
     max_entries: Option<usize>,
     result: GetContextResult,
 ) -> AskResponse {
+    let recall_context = AnswerRecallContext::from_bundle(&result.bundle);
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
-    let (relevant_evidence, _) = relevant_answer_evidence(question, policy, candidate_evidence);
+    let (relevant_evidence, _) = relevant_answer_evidence_with_context(
+        question,
+        policy,
+        candidate_evidence,
+        Some(&recall_context),
+    );
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     // `because` and the deterministic answer retain at most five citations.
     // Confidence must describe those surviving citations, not a stronger item
     // that `max_entries` or a later transport budget omitted.
-    let confidence = retained_answer_confidence(question, &evidence[..evidence.len().min(5)]);
+    let retained_evidence = &evidence[..evidence.len().min(5)];
+    let confidence =
+        retained_answer_confidence_with_context(question, retained_evidence, Some(&recall_context));
+    let matched_terms = matched_query_terms(question, retained_evidence, &recall_context);
+    let matched_relations = matched_recall_relations(question, retained_evidence, &recall_context);
     let because = evidence
         .iter()
         .take(5)
@@ -171,6 +183,22 @@ pub fn ask_response_from_result(
         answer
     };
     let unknown = because.is_empty();
+    let mut answer_proof = proof(
+        if unknown {
+            Vec::new()
+        } else {
+            answer_relations_from_bundle(&result.bundle, &evidence)
+        },
+        evidence,
+        if unknown {
+            vec![format!("relevant evidence for: {question}")]
+        } else {
+            withheld
+        },
+        confidence,
+    );
+    answer_proof.matched_terms = matched_terms;
+    answer_proof.matched_relations = matched_relations;
 
     AskResponse {
         summary: if answer == "UNKNOWN" {
@@ -184,20 +212,7 @@ pub fn ask_response_from_result(
         },
         answer,
         because,
-        proof: Some(proof(
-            if unknown {
-                Vec::new()
-            } else {
-                answer_relations_from_bundle(&result.bundle, &evidence)
-            },
-            evidence,
-            if unknown {
-                vec![format!("relevant evidence for: {question}")]
-            } else {
-                withheld
-            },
-            confidence,
-        )),
+        proof: Some(answer_proof),
         warnings: Vec::new(),
     }
 }
@@ -205,10 +220,101 @@ pub fn ask_response_from_result(
 /// Applies a deterministic lexical relevance floor before evidence is allowed
 /// to become an answer. Graph proximity says where evidence came from; it does
 /// not say that the evidence answers the user's question.
+#[derive(Clone)]
+struct RecallRelationshipContext {
+    rel: String,
+    terms: BTreeSet<String>,
+}
+
+#[derive(Default)]
+struct AnswerRecallContext {
+    details_by_ref: BTreeMap<String, BTreeSet<String>>,
+    relationships_by_ref: BTreeMap<String, Vec<RecallRelationshipContext>>,
+}
+
+impl AnswerRecallContext {
+    fn from_bundle(bundle: &KmpBundle) -> Self {
+        let details_by_ref = bundle
+            .node_details()
+            .iter()
+            .map(|detail| {
+                (
+                    detail.node_id().to_string(),
+                    informative_terms(detail.detail()),
+                )
+            })
+            .collect();
+        let mut relationships_by_ref = BTreeMap::<String, Vec<_>>::new();
+        for relationship in bundle.relationships().iter().filter(|relationship| {
+            matches!(
+                relationship.explanation().semantic_class(),
+                RelationSemanticClass::Causal
+                    | RelationSemanticClass::Motivational
+                    | RelationSemanticClass::Constraint
+            )
+        }) {
+            let context = RecallRelationshipContext {
+                rel: relationship.relationship_type().to_string(),
+                terms: recall_relationship_terms(relationship),
+            };
+            relationships_by_ref
+                .entry(relationship.source_node_id().to_string())
+                .or_default()
+                .push(context.clone());
+            if relationship.target_node_id() != relationship.source_node_id() {
+                relationships_by_ref
+                    .entry(relationship.target_node_id().to_string())
+                    .or_default()
+                    .push(context);
+            }
+        }
+        Self {
+            details_by_ref,
+            relationships_by_ref,
+        }
+    }
+
+    fn relationships_for<'a>(
+        &'a self,
+        item: &MemoryEvidence,
+    ) -> Vec<&'a RecallRelationshipContext> {
+        let mut relationships = Vec::new();
+        if let Some(evidence_ref) = item.id.strip_prefix("detail:")
+            && let Some(direct) = self.relationships_by_ref.get(evidence_ref)
+        {
+            relationships.extend(direct);
+        }
+        for supported_ref in &item.supports {
+            if let Some(semantic) = self.relationships_by_ref.get(supported_ref) {
+                // A popular claim can have hundreds of evidence nodes. The
+                // current evidence's own `supports` edge is already included
+                // above; walking its siblings here would make recall O(n²)
+                // and let unrelated citations leak into the match context.
+                relationships.extend(
+                    semantic
+                        .iter()
+                        .filter(|relationship| relationship.rel != "supports"),
+                );
+            }
+        }
+        relationships
+    }
+}
+
+#[cfg(test)]
 fn relevant_answer_evidence(
     question: &str,
     policy: MemoryAnswerPolicy,
     evidence: Vec<MemoryEvidence>,
+) -> (Vec<MemoryEvidence>, MemoryConfidence) {
+    relevant_answer_evidence_with_context(question, policy, evidence, None)
+}
+
+fn relevant_answer_evidence_with_context(
+    question: &str,
+    policy: MemoryAnswerPolicy,
+    evidence: Vec<MemoryEvidence>,
+    context: Option<&AnswerRecallContext>,
 ) -> (Vec<MemoryEvidence>, MemoryConfidence) {
     let question_terms = informative_terms(question);
     if question_terms.is_empty() {
@@ -228,10 +334,30 @@ fn relevant_answer_evidence(
         }
         MemoryAnswerPolicy::BestEffort => None,
     };
+    let diversity_focus_terms = strict_focus
+        .as_ref()
+        .map(|(terms, _)| terms.clone())
+        .unwrap_or_default();
     let mut relevant = evidence
         .into_iter()
         .filter_map(|item| {
-            let evidence_terms = searchable_evidence_terms(&item);
+            // Graph context may complete a paraphrase, but it cannot make an
+            // otherwise unrelated citation eligible. Requiring the existing
+            // lexical floor on the evidence itself prevents a high-degree
+            // supported node from lending all of its neighboring vocabulary
+            // to a weak answer.
+            let direct_terms = searchable_evidence_terms_with_context(&item, None);
+            let direct_matches = matching_term_count(&question_terms, &direct_terms);
+            if direct_matches < required_matches {
+                return None;
+            }
+            let text_terms = informative_terms(&item.text);
+            let content_matches = matching_term_count(&question_terms, &text_terms);
+            let content_focus_matches = strict_focus
+                .as_ref()
+                .map(|(focus_terms, _)| matching_term_count(focus_terms, &text_terms))
+                .unwrap_or_default();
+            let evidence_terms = searchable_evidence_terms_with_context(&item, context);
             let matches = matching_term_count(&question_terms, &evidence_terms);
             let answers_requested_focus =
                 strict_focus
@@ -247,10 +373,22 @@ fn relevant_answer_evidence(
                             .count()
                             >= *required_focus_matches
                     });
-            if matches < required_matches || !answers_requested_focus {
+            if !answers_requested_focus {
                 None
             } else {
-                Some((matches, item))
+                // Answer text is derived from the retained evidence text, so
+                // subject-bearing content wins before ids, refs or graph
+                // context. Identifiers remain eligible, but cannot outrank a
+                // citation that actually states the requested fact.
+                Some((
+                    (
+                        content_focus_matches,
+                        content_matches,
+                        direct_matches,
+                        matches,
+                    ),
+                    item,
+                ))
             }
         })
         .collect::<Vec<_>>();
@@ -267,11 +405,83 @@ fn relevant_answer_evidence(
         .into_iter()
         .map(|(_, item)| item)
         .collect::<Vec<_>>();
-    let confidence = retained_answer_confidence(question, &relevant[..relevant.len().min(5)]);
+    let relevant = diversify_answer_evidence(&question_terms, &diversity_focus_terms, relevant);
+    let confidence = retained_answer_confidence_with_context(
+        question,
+        &relevant[..relevant.len().min(5)],
+        context,
+    );
     (relevant, confidence)
 }
 
-fn searchable_evidence_terms(item: &MemoryEvidence) -> BTreeSet<String> {
+fn diversify_answer_evidence(
+    question_terms: &BTreeSet<String>,
+    focus_terms: &BTreeSet<String>,
+    mut evidence: Vec<MemoryEvidence>,
+) -> Vec<MemoryEvidence> {
+    if evidence.len() < 2 {
+        return evidence;
+    }
+
+    // Keep the strongest citation first, then prefer citations that add
+    // uncovered parts of a compound question. Without this pass, five nearly
+    // identical issue-summary citations can displace the operational
+    // constraint that answers the second clause.
+    let first = evidence.remove(0);
+    let first_terms = informative_terms(&first.text);
+    let mut covered = matching_terms(question_terms, &first_terms);
+    let mut covered_focus = matching_terms(focus_terms, &first_terms);
+    let mut ranked = vec![first];
+
+    while !evidence.is_empty() {
+        let mut best_index = 0;
+        let mut best_gain = (0, 0);
+        for (index, item) in evidence.iter().enumerate() {
+            let item_terms = informative_terms(&item.text);
+            let focus_gain = matching_terms(focus_terms, &item_terms)
+                .difference(&covered_focus)
+                .count();
+            let total_gain = matching_terms(question_terms, &item_terms)
+                .difference(&covered)
+                .count();
+            if (focus_gain, total_gain) > best_gain {
+                best_index = index;
+                best_gain = (focus_gain, total_gain);
+            }
+        }
+        if best_gain == (0, 0) {
+            ranked.extend(evidence);
+            break;
+        }
+
+        let selected = evidence.remove(best_index);
+        let selected_terms = informative_terms(&selected.text);
+        covered.extend(matching_terms(question_terms, &selected_terms));
+        covered_focus.extend(matching_terms(focus_terms, &selected_terms));
+        ranked.push(selected);
+    }
+    ranked
+}
+
+fn matching_terms(
+    question_terms: &BTreeSet<String>,
+    evidence_terms: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    question_terms
+        .iter()
+        .filter(|question_term| {
+            evidence_terms
+                .iter()
+                .any(|evidence_term| terms_match(question_term, evidence_term))
+        })
+        .cloned()
+        .collect()
+}
+
+fn searchable_evidence_terms_with_context(
+    item: &MemoryEvidence,
+    context: Option<&AnswerRecallContext>,
+) -> BTreeSet<String> {
     let mut searchable = format!("{} {} {}", item.text, item.source, item.id);
     for supported_ref in &item.supports {
         searchable.push(' ');
@@ -283,7 +493,83 @@ fn searchable_evidence_terms(item: &MemoryEvidence) -> BTreeSet<String> {
         searchable.push(' ');
         searchable.push_str(value);
     }
-    informative_terms(&searchable)
+    let mut terms = informative_terms(&searchable);
+    let Some(context) = context else {
+        return terms;
+    };
+
+    for selected_ref in answer_context_refs(item) {
+        if let Some(detail_terms) = context.details_by_ref.get(&selected_ref) {
+            terms.extend(detail_terms.iter().cloned());
+        }
+    }
+    for relationship in context.relationships_for(item) {
+        terms.extend(relationship.terms.iter().cloned());
+    }
+    terms
+}
+
+fn answer_context_refs(item: &MemoryEvidence) -> BTreeSet<String> {
+    item.id
+        .strip_prefix("detail:")
+        .map(str::to_string)
+        .into_iter()
+        .chain(item.supports.iter().cloned())
+        .collect()
+}
+
+fn recall_relationship_terms(relationship: &BundleRelationship) -> BTreeSet<String> {
+    let explanation = relationship.explanation();
+    informative_terms(&format!(
+        "{} {} {} {} {}",
+        relationship.source_node_id(),
+        relationship.target_node_id(),
+        relationship.relationship_type(),
+        explanation.rationale().unwrap_or_default(),
+        explanation.evidence().unwrap_or_default(),
+    ))
+}
+
+fn matched_query_terms(
+    question: &str,
+    evidence: &[MemoryEvidence],
+    context: &AnswerRecallContext,
+) -> Vec<String> {
+    let evidence_terms = evidence
+        .iter()
+        .flat_map(|item| searchable_evidence_terms_with_context(item, Some(context)))
+        .collect::<BTreeSet<_>>();
+    informative_terms(question)
+        .into_iter()
+        .filter(|question_term| {
+            evidence_terms
+                .iter()
+                .any(|evidence_term| terms_match(question_term, evidence_term))
+        })
+        .collect()
+}
+
+fn matched_recall_relations(
+    question: &str,
+    evidence: &[MemoryEvidence],
+    context: &AnswerRecallContext,
+) -> Vec<String> {
+    let question_terms = informative_terms(question);
+    evidence
+        .iter()
+        .flat_map(|item| context.relationships_for(item))
+        .filter(|relationship| {
+            question_terms.iter().any(|question_term| {
+                relationship
+                    .terms
+                    .iter()
+                    .any(|relation_term| terms_match(question_term, relation_term))
+            })
+        })
+        .map(|relationship| relationship.rel.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
 }
 
 fn matching_term_count(
@@ -300,7 +586,16 @@ fn matching_term_count(
         .count()
 }
 
+#[cfg(test)]
 fn retained_answer_confidence(question: &str, evidence: &[MemoryEvidence]) -> MemoryConfidence {
+    retained_answer_confidence_with_context(question, evidence, None)
+}
+
+fn retained_answer_confidence_with_context(
+    question: &str,
+    evidence: &[MemoryEvidence],
+    context: Option<&AnswerRecallContext>,
+) -> MemoryConfidence {
     if evidence.is_empty() {
         return MemoryConfidence::Unknown;
     }
@@ -310,7 +605,12 @@ fn retained_answer_confidence(question: &str, evidence: &[MemoryEvidence]) -> Me
     }
     let best_matches = evidence
         .iter()
-        .map(|item| matching_term_count(&question_terms, &searchable_evidence_terms(item)))
+        .map(|item| {
+            matching_term_count(
+                &question_terms,
+                &searchable_evidence_terms_with_context(item, context),
+            )
+        })
         .max()
         .unwrap_or_default();
     let coverage = best_matches as f64 / question_terms.len() as f64;
@@ -389,6 +689,15 @@ fn informative_terms(value: &str) -> BTreeSet<String> {
 
 fn terms_match(left: &str, right: &str) -> bool {
     if left == right {
+        return true;
+    }
+    const RECALL_CONCEPTS: &[&str] = &["query", "recall", "retrieval", "retrieve"];
+    const CORRECTION_CONCEPTS: &[&str] = &["correct", "corrected", "correction", "fix", "fixed"];
+    const CURRENTNESS_CONCEPTS: &[&str] = &["remain", "remains", "remaining", "still"];
+    if [RECALL_CONCEPTS, CORRECTION_CONCEPTS, CURRENTNESS_CONCEPTS]
+        .iter()
+        .any(|concepts| concepts.contains(&left) && concepts.contains(&right))
+    {
         return true;
     }
     let common = left
@@ -1017,6 +1326,18 @@ mod wake_cap_tests {
         for stop_word in ["is", "to", "un"] {
             assert!(!terms.contains(stop_word), "retained stop word {stop_word}");
         }
+    }
+
+    #[test]
+    fn recall_concepts_match_common_paraphrases_without_general_fuzziness() {
+        for (left, right) in [
+            ("retrieval", "query"),
+            ("fixed", "correction"),
+            ("remains", "still"),
+        ] {
+            assert!(terms_match(left, right), "{left} should match {right}");
+        }
+        assert!(!terms_match("database", "branch"));
     }
 
     #[test]

@@ -962,6 +962,20 @@
               }
             }
           }
+        },
+        "matched_terms": {
+          "description": "Informative query terms retained by the selected answer evidence and its directly supporting semantic graph context. This explains eligibility without exposing scores or thresholds.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          }
+        },
+        "matched_relations": {
+          "description": "Non-structural relation types whose rationale, evidence or endpoints contributed retained query terms to the selected answer.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          }
         }
       }
     },
