@@ -93,8 +93,8 @@ pub(crate) fn tools_list_result() -> Value {
                                                 )
                                             },
                                             "class": semantic_class_schema(),
-                                            "why": string_schema("Optional relation rationale; required for non-structural relations unless evidence is set."),
-                                            "evidence": string_schema("Optional relation evidence; required for non-structural relations unless why is set."),
+                                            "why": string_schema("Optional rationale explaining why this specific semantic connection holds and what a later reader should understand when traversing it."),
+                                            "evidence": string_schema("Optional concrete observation or source that supports the relation rationale."),
                                             "confidence": {
                                                 "type": "string",
                                                 "enum": ["high", "medium", "low", "unknown"]
@@ -352,8 +352,8 @@ fn write_memory_schema() -> Value {
                             )
                         },
                         "class": semantic_class_schema(),
-                        "why": string_schema("Why this relation exists. Required for non-structural relations."),
-                        "evidence": string_schema("Evidence for this relation. Required for non-structural relations."),
+                        "why": string_schema("Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations."),
+                        "evidence": string_schema("The concrete observation or source that supports the relation rationale. Required for non-structural relations."),
                         "confidence": {
                             "type": "string",
                             "enum": ["high", "medium", "low", "unknown"]
@@ -828,6 +828,19 @@ mod tests {
                 .get("read_context")
                 .is_some()
         );
+        let why_description = tools[1]["inputSchema"]["properties"]["connect_to"]["items"]
+            ["properties"]["why"]["description"]
+            .as_str()
+            .expect("writer why carries operational guidance");
+        let evidence_description =
+            tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["evidence"]
+                ["description"]
+                .as_str()
+                .expect("writer evidence carries operational guidance");
+        assert!(why_description.contains("specific semantic connection"));
+        assert!(why_description.contains("later reader"));
+        assert!(evidence_description.contains("concrete observation or source"));
+        assert!(evidence_description.contains("relation rationale"));
         assert_eq!(tools[2]["name"], "kernel_wake");
         assert_eq!(tools[2]["inputSchema"]["required"][0], "about");
         assert_eq!(tools[2]["_meta"]["anthropic/maxResultSizeChars"], 10_000);

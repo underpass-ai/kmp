@@ -13,9 +13,19 @@ fn kernel_write_memory_prompt_fixture_is_schema_constrained() {
     assert!(PROMPT.contains("kernel_write_memory"));
     assert!(PROMPT.contains("read_context"));
     assert!(PROMPT.contains("Do not use vague relations"));
+    assert!(PROMPT.contains("`why` explains why the specific semantic"));
+    assert!(PROMPT.contains("`evidence` names the concrete observation or source"));
+    assert!(PROMPT.contains("does not generate"));
+    assert!(PROMPT.contains("a missing rationale or proof"));
 
     let request: Value = serde_json::from_str(REQUEST)
         .expect("kernel write memory request fixture should be valid JSON");
+    let request_prompt = request["messages"][1]["content"]
+        .as_str()
+        .expect("request fixture should carry the writer prompt");
+    assert!(request_prompt.contains("why explains why the specific semantic connection holds"));
+    assert!(request_prompt.contains("evidence names the concrete observation or source"));
+    assert!(request_prompt.contains("does not generate a missing rationale or proof"));
     assert_eq!(
         request["response_format"]["json_schema"]["name"],
         "kernel_write_memory_arguments"

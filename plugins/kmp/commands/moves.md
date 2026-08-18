@@ -35,9 +35,12 @@ server is not reachable, and say that you are doing so.
   exact graph yourself.
 
 Close with the one rule that decides whether this memory is worth anything
-later: **write decisions, constraints and outcomes — never transcripts** —
-and the one the kernel enforces: **rich relations carry both `why` and
-`evidence`**, so a vague `related_to` is a bug, not a shortcut.
+later: **write decisions, constraints and outcomes — never transcripts**.
+For rich relations, explain that `why` is the meaning of this specific link
+and `evidence` is the concrete observation or source that proves the
+rationale. KMP uses both in recall and audit but does not generate either.
+Point writers to “Why the `why` matters” in the `kmp-memory` skill; a vague
+`related_to` is a bug, not a shortcut.
 
 If the user asked about writing, point them at `options.dry_run=true` as the
 safe way to see what a write would commit before committing it.

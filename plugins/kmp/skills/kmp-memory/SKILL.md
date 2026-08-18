@@ -167,23 +167,108 @@ entries disagree and both may still be live — the tension is the information.
 older entry is history rather than advice. Read the older one as what was
 true then, not as what to do now.
 
-## Relations carry the why
+## Why the `why` matters
 
-This is the part most writers get wrong, and the kernel enforces it.
+An entry records **what is true**. A relation records **how two entries are
+connected**. Its `why` records **why that specific connection holds and what
+a later reader should understand by traversing it**. Its `evidence` records
+**the concrete observation or source that supports that explanation**.
+`confidence` says how certain the writer is; it is not a relevance score.
+
+Those fields are deliberately separate:
+
+| Field | Durable meaning | Good test |
+| --- | --- | --- |
+| entry | What is true | Can it stand alone a year later? |
+| `rel` + `class` | How the endpoints connect | Is this the most specific supported relation? |
+| `why` | Why this connection holds | Does it explain both endpoints, not merely repeat one? |
+| `evidence` | What proves that rationale | Is it an observed fact or named source rather than an interpretation? |
+| `confidence` | Certainty in the relation | Does it reflect the strength of the proof? |
+
+KMP preserves and uses this context; it does not invent it. During recall,
+direct evidence determines whether a candidate is eligible. A typed,
+evidence-backed relation and its `why` can then improve the ordering and
+explain the match, but relation prose cannot promote unrelated evidence into
+an answer. The selected relation types are exposed in
+`proof.matched_relations`, and the original rationale remains auditable in
+`proof.path`, `kernel_trace`, and `kernel_inspect`.
+
+That gives the agent a complete read path:
+
+1. `kernel_wake` recovers the durable state and its causal or motivational
+   spine.
+2. `kernel_ask` answers a paraphrased question from direct evidence and uses
+   the graph context to keep the right citation in the core.
+3. `kernel_trace` proves the path between two refs; `kernel_inspect` shows the
+   stored object, links, and evidence verbatim.
+
+### Write the rationale and its proof as a pair
+
+For a decision selected from an observation:
+
+```json
+{
+  "ref": "incident:login:observation:refresh-race",
+  "rel": "chosen_because",
+  "class": "motivational",
+  "why": "Retry was chosen because it addresses the refresh race without weakening the timeout policy.",
+  "evidence": "Auth logs show refresh success followed by a 401 on the next request.",
+  "confidence": "high"
+}
+```
+
+For an outcome governed by a constraint:
+
+```json
+{
+  "ref": "project:kmp:constraint:shared-store",
+  "rel": "satisfies_constraint",
+  "class": "constraint",
+  "why": "SQLite WAL satisfies the requirement that independent agent processes share one embedded store.",
+  "evidence": "The two-process integration test completed concurrent reads and writes without a single-writer lock failure.",
+  "confidence": "high"
+}
+```
+
+For a lifecycle change:
+
+```json
+{
+  "ref": "project:kmp:decision:redb",
+  "rel": "supersedes",
+  "class": "evidential",
+  "why": "SQLite WAL replaces redb because the architecture now requires multi-process access to one store.",
+  "evidence": "The shared-store test failed at redb's process lock and passed under SQLite WAL.",
+  "confidence": "high"
+}
+```
+
+In all three, swapping `why` and `evidence` would lose information. The
+rationale interprets the edge; the evidence anchors that interpretation in
+something observed.
+
+Before committing a rich relation:
+
+- inspect or traverse every existing target and name it in `read_context`;
+- choose the most specific relation supported by what you read;
+- make `why` mention the actual relationship between the two endpoints;
+- make `evidence` concrete and independent enough to audit;
+- preview with `options.dry_run=true`, inspect the compiled relation, then
+  commit the same logical write with a stable `idempotency_key`.
 
 A relation is **rich** or **anemic**. Rich relations — causal, motivational,
-evidential, constraint — require both `why` and `evidence`. They are what
-makes memory explanatory instead of merely connected.
+evidential, constraint — require both `why` and `evidence`. If the context
+does not justify one, use a narrow fallback and say only what is known:
 
-- Never use a vague relation like `related_to` when a real one applies.
-- Never invent a causal or motivational link the evidence does not support.
-- When a rich relation points at an existing external ref, include that ref
-  in `read_context` — claim the connection only after reading what you are
-  connecting to.
-- If you cannot justify a rich relation after reading context, fall back
-  explicitly and honestly: `follows`/procedural, `answers`/evidential, or
-  `uses_background`/evidential. Do not dress an anemic fallback in causal
-  language.
+| What the evidence supports | Honest fallback |
+| --- | --- |
+| Only temporal sequence | `follows` / procedural |
+| A response to a prior turn | `answers` / evidential |
+| Background was consulted | `uses_background` / evidential |
+
+Never use a vague relation like `related_to`, invent a causal link, or dress
+one of these fallbacks in motivational or constraint language. A weak honest
+edge is safer than a rich false one.
 
 **The vocabulary is self-documenting.** `tools/list` carries a catalog
 generated from the kernel's own writer spec on `connect_to.rel` and the

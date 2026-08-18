@@ -19,14 +19,14 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   `kernel_write_memory`, which validates intent and relation quality before
   compiling to canonical ingest; use `options.dry_run=true` to see what a
   write would commit.
-- **Relations carry the why.** Rich relations (causal, motivational,
-  evidential, constraint) require both `why` and `evidence`. Never use a
-  vague `related_to` when a real relation applies, and never invent a causal
-  link the evidence does not support. If you cannot justify a rich relation
-  after reading context, fall back explicitly — `follows`/procedural,
-  `answers`/evidential, `uses_background`/evidential — without dressing it in
-  causal language. The authoritative vocabulary is in `tools/list` itself,
-  on `connect_to.rel`.
+- **Relations carry the why.** `why` explains why the specific semantic link
+  holds; `evidence` is the concrete observation or source that proves that
+  rationale. KMP preserves and uses this context in wake, recall and audit,
+  but never generates it. Rich relations require both fields. If context
+  cannot justify one, use the honest fallback `follows`/procedural,
+  `answers`/evidential or `uses_background`/evidential. The full guide is in
+  the `kmp-memory` skill, section “Why the `why` matters”; `tools/list` is the
+  authority for the current relation vocabulary.
 - **One `idempotency_key` per logical write.** A conflict on retry means the
   write was already applied. That is success.
 - **Scope is explicit.** Omitted means `current_about`; `abouts` needs a

@@ -386,6 +386,34 @@ fn graph_reranker_ingest_arguments() -> Value {
     })
 }
 
+fn relation_why_seed_arguments() -> Value {
+    json!({
+        "about": "project:relation-why-conformance",
+        "idempotency_key": "ingest:relation-why-constraint",
+        "memory": {
+            "dimensions": [{"id": "work:relation-why", "kind": "work"}],
+            "entries": [{
+                "id": "constraint:share-embedded-store",
+                "kind": "constraint",
+                "text": "Independent KMP agent processes must safely share one embedded store.",
+                "coordinates": [{
+                    "dimension": "work",
+                    "scope_id": "work:relation-why",
+                    "occurred_at": "2026-08-18T09:00:00Z",
+                    "sequence": 1
+                }]
+            }],
+            "relations": [],
+            "evidence": [{
+                "id": "evidence:shared-store-requirement",
+                "supports": ["constraint:share-embedded-store"],
+                "text": "The host architecture starts independent KMP processes against the same project store.",
+                "source": "host architecture fixture"
+            }]
+        }
+    })
+}
+
 #[tokio::test]
 async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
@@ -752,6 +780,136 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
             first = Some(ask);
         }
     }
+}
+
+#[tokio::test]
+async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
+    const WHY: &str = "SQLite WAL was chosen because independent KMP agents must concurrently share one embedded store.";
+    const RELATION_EVIDENCE: &str = "The two-process integration test passed concurrent reads and writes under SQLite WAL and failed at redb's single-writer process lock.";
+
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kernel_ingest", relation_why_seed_arguments()).await;
+
+    let inspected = call(
+        &server,
+        2,
+        "kernel_inspect",
+        json!({"ref": "constraint:share-embedded-store"}),
+    )
+    .await;
+    assert_eq!(
+        inspected["object"]["text"],
+        "Independent KMP agent processes must safely share one embedded store."
+    );
+
+    let write_arguments = |dry_run| {
+        json!({
+            "about": "project:relation-why-conformance",
+            "intent": "record_decision",
+            "actor": "agent:relation-why-conformance",
+            "observed_at": "2026-08-18T09:05:00Z",
+            "scope": {"process": "work:relation-why"},
+            "current": {
+                "ref": "decision:sqlite-wal-shared-store",
+                "kind": "decision",
+                "summary": "Use SQLite WAL instead of redb for shared embedded storage.",
+                "evidence": "The architecture comparison selected SQLite WAL over redb after exercising two independent processes."
+            },
+            "connect_to": [{
+                "ref": "constraint:share-embedded-store",
+                "rel": "chosen_because",
+                "class": "motivational",
+                "why": WHY,
+                "evidence": RELATION_EVIDENCE,
+                "confidence": "high"
+            }],
+            "read_context": {
+                "inspected_refs": ["constraint:share-embedded-store"]
+            },
+            "idempotency_key": "write:relation-why-sqlite-decision",
+            "options": {"dry_run": dry_run, "strict": true, "sequence": 2}
+        })
+    };
+
+    let preview = call(&server, 3, "kernel_write_memory", write_arguments(true)).await;
+    assert_eq!(preview["accepted"], false);
+    assert_eq!(preview["dry_run"], true);
+    assert_eq!(
+        preview["ingest_preview"]["memory"]["relations"][0]["why"],
+        WHY
+    );
+    assert_eq!(
+        preview["ingest_preview"]["memory"]["relations"][0]["evidence"],
+        RELATION_EVIDENCE
+    );
+
+    let committed = call(&server, 4, "kernel_write_memory", write_arguments(false)).await;
+    assert_eq!(committed["accepted"], true, "{committed}");
+
+    let wake = call(
+        &server,
+        5,
+        "kernel_wake",
+        json!({"about": "project:relation-why-conformance"}),
+    )
+    .await;
+    assert!(
+        wake.to_string().contains(WHY),
+        "wake must recover the supplied rationale: {wake}"
+    );
+
+    let ask = call(
+        &server,
+        6,
+        "kernel_ask",
+        json!({
+            "about": "project:relation-why-conformance",
+            "question": "Which embedded storage engine should independent KMP processes sharing one store use, and why was redb replaced?",
+            "answer_policy": "evidence_or_unknown",
+            "depth": 3,
+            "budget": {"detail": "full", "max_bytes": 10_000}
+        }),
+    )
+    .await;
+    assert_ne!(ask["answer"], "UNKNOWN", "{ask}");
+    assert!(
+        ask["because"].as_array().is_some_and(|reasons| reasons
+            .iter()
+            .any(|reason| { reason["claim"] == "decision:sqlite-wal-shared-store" })),
+        "paraphrased recall must retain the decision citation: {ask}"
+    );
+    assert!(
+        ask["proof"]["matched_relations"]
+            .as_array()
+            .is_some_and(|relations| relations.iter().any(|rel| rel == "chosen_because")),
+        "recall must disclose that relation context contributed: {ask}"
+    );
+
+    let trace = call(
+        &server,
+        7,
+        "kernel_trace",
+        json!({
+            "from": "decision:sqlite-wal-shared-store",
+            "to": "constraint:share-embedded-store"
+        }),
+    )
+    .await;
+    assert!(trace.to_string().contains(WHY), "{trace}");
+    assert!(trace.to_string().contains(RELATION_EVIDENCE), "{trace}");
+
+    let relation_proof = call(
+        &server,
+        8,
+        "kernel_inspect",
+        json!({"ref": "evidence:decision:sqlite-wal-shared-store:relation:1"}),
+    )
+    .await;
+    assert!(
+        relation_proof.to_string().contains(RELATION_EVIDENCE),
+        "{relation_proof}"
+    );
 }
 
 #[tokio::test]

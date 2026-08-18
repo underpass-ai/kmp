@@ -77,14 +77,22 @@ remembering is reached. It carries the operating doctrine:
 - **recover before re-deriving** — `kernel_wake {about}` before reading files
   to reconstruct context that may already be stored;
 - **write decisions, constraints and outcomes — never transcripts**;
-- **rich relations carry both `why` and `evidence`**, so a vague `related_to`
-  is a bug rather than a shortcut;
+- **rich relations carry both `why` and `evidence`**: the first explains the
+  semantic connection and the second proves that rationale;
 - `UNKNOWN` from `kernel_ask` is a correct answer, not a failure to route
   around.
 
 The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
 with the kernel. The skill teaches the shape; the schema carries the truth.
+
+The payoff appears on the read path: `kernel_wake` reconstructs the causal
+spine, `kernel_ask` can keep the right citation when the question is
+paraphrased, and `kernel_trace` / `kernel_inspect` expose the original
+rationale and proof verbatim. KMP uses what the writer supplied; it never
+generates a missing `why`. See
+[Why the `why` matters](skills/kmp-memory/SKILL.md#why-the-why-matters) for the
+field-by-field model, safe fallbacks and worked examples.
 
 ### For you — three commands
 
