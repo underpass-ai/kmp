@@ -91,8 +91,9 @@ api/examples/inference-prompts/kernel-write-memory.request.json
 
 ## Tips
 
-- **Quote rationale**: instruct the LLM to cite `rationale` fields from
-  relationships, not just node titles. This is the kernel's main value.
+- **Keep rationale and proof distinct**: `why` explains the specific semantic
+  connection; `evidence` names the concrete observation or source that
+  supports it. KMP preserves and uses both, but generates neither.
 - **Use tiers under budget pressure**: L0+L1 gives the causal spine in
   ~600 tokens. Feed only those tiers when the full context is too large.
 - **Structured JSON output**: ask for JSON responses when you need to

@@ -28,5 +28,8 @@ so.
 - `kernel_ingest` — canonical low-level form.
 
 Close with the two rules that matter: **write decisions, constraints and
-outcomes — never transcripts**, and **rich relations carry both `why` and
-`evidence`**, so a vague `related_to` is a bug rather than a shortcut.
+outcomes — never transcripts**, and for a rich relation **`why` explains the
+specific semantic link while `evidence` is the concrete observation or source
+that proves the rationale**. KMP uses both in recall and audit but generates
+neither. Point writers to “Why the `why` matters” in the `kmp-memory` skill;
+a vague `related_to` is a bug rather than a shortcut.

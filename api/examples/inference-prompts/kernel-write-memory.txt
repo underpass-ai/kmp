@@ -64,6 +64,12 @@ Hard rules:
 - Emit a single memory event, not a batch.
 - Always include `about`, `intent`, `actor`, `observed_at`, `scope.process`, `current.kind`, `current.summary`, `current.evidence`, and at least one `connect_to` relation.
 - Every non-structural relation must include both `why` and `evidence`.
+- Write them as distinct facts: `why` explains why the specific semantic
+  connection holds; `evidence` names the concrete observation or source that
+  supports that rationale.
+- Make `why` interpret both endpoints. Do not merely repeat an entry summary.
+- KMP preserves and uses this context in recall and audit; it does not generate
+  a missing rationale or proof.
 - Do not use vague relations such as `related_to`.
 - Do not invent causal, motivational, evidential, or constraint links.
 - Do not point a relation from a ref to itself.
