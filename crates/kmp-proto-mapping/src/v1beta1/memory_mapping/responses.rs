@@ -140,7 +140,8 @@ pub fn ask_response_from_result(
     result: GetContextResult,
 ) -> AskResponse {
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
-    let (relevant_evidence, confidence) = relevant_answer_evidence(question, candidate_evidence);
+    let (relevant_evidence, confidence) =
+        relevant_answer_evidence(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     let because = evidence
         .iter()
@@ -200,6 +201,7 @@ pub fn ask_response_from_result(
 /// not say that the evidence answers the user's question.
 fn relevant_answer_evidence(
     question: &str,
+    policy: MemoryAnswerPolicy,
     evidence: Vec<MemoryEvidence>,
 ) -> (Vec<MemoryEvidence>, MemoryConfidence) {
     let question_terms = informative_terms(question);
@@ -212,6 +214,14 @@ fn relevant_answer_evidence(
     }
 
     let required_matches = if question_terms.len() == 1 { 1 } else { 2 };
+    let strict_focus = match policy {
+        MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
+            let terms = strict_answer_focus_terms(question);
+            let required_matches = (terms.len() * 2).div_ceil(3);
+            Some((terms, required_matches))
+        }
+        MemoryAnswerPolicy::BestEffort => None,
+    };
     let mut best_matches = 0usize;
     let relevant = evidence
         .into_iter()
@@ -236,7 +246,21 @@ fn relevant_answer_evidence(
                         .any(|evidence_term| terms_match(question_term, evidence_term))
                 })
                 .count();
-            if matches < required_matches {
+            let answers_requested_focus =
+                strict_focus
+                    .as_ref()
+                    .is_none_or(|(focus_terms, required_focus_matches)| {
+                        focus_terms
+                            .iter()
+                            .filter(|focus_term| {
+                                evidence_terms
+                                    .iter()
+                                    .any(|evidence_term| terms_match(focus_term, evidence_term))
+                            })
+                            .count()
+                            >= *required_focus_matches
+                    });
+            if matches < required_matches || !answers_requested_focus {
                 None
             } else {
                 best_matches = best_matches.max(matches);
@@ -257,6 +281,36 @@ fn relevant_answer_evidence(
         MemoryConfidence::Low
     };
     (relevant, confidence)
+}
+
+/// Extracts the subject-bearing clause used by strict answer policies.
+/// Context clauses such as "when CI finished" help retrieve nearby memory,
+/// but they cannot substitute for the fact requested before the boundary.
+fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
+    const CONTEXT_BOUNDARIES: &[&str] = &[
+        "after", "before", "because", "if", "once", "when", "while", "antes", "cuando", "despues",
+        "después", "mientras", "porque", "si",
+    ];
+    const GENERIC_QUESTION_PREDICATES: &[&str] = &[
+        "happen", "happened", "occur", "occurred", "ocurrio", "ocurrió", "paso", "pasó", "prove",
+        "proved", "proves",
+    ];
+
+    let main_clause = question
+        .split(|character: char| !character.is_alphanumeric())
+        .map(str::to_lowercase)
+        .take_while(|token| !CONTEXT_BOUNDARIES.contains(&token.as_str()))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut terms = informative_terms(&main_clause);
+    for predicate in GENERIC_QUESTION_PREDICATES {
+        terms.remove(*predicate);
+    }
+    if terms.is_empty() {
+        informative_terms(question)
+    } else {
+        terms
+    }
 }
 
 fn informative_terms(value: &str) -> BTreeSet<String> {
@@ -795,6 +849,7 @@ mod wake_cap_tests {
     fn unrelated_evidence_cannot_become_an_answer() {
         let (evidence, confidence) = relevant_answer_evidence(
             "What is the rollout window for the search migration?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![ev("SQLite allows two agent hosts to share one memory")],
         );
 
@@ -806,6 +861,7 @@ mod wake_cap_tests {
     fn one_shared_topic_word_does_not_prove_the_requested_fact() {
         let (evidence, confidence) = relevant_answer_evidence(
             "What is the SQLite rollout window?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![ev("SQLite allows two agent hosts to share one memory")],
         );
 
@@ -815,8 +871,11 @@ mod wake_cap_tests {
 
     #[test]
     fn confidence_tracks_question_coverage() {
-        let (evidence, confidence) =
-            relevant_answer_evidence("Where did Rachel move?", vec![ev("Rachel moved to Austin")]);
+        let (evidence, confidence) = relevant_answer_evidence(
+            "Where did Rachel move?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![ev("Rachel moved to Austin")],
+        );
 
         assert_eq!(evidence.len(), 1);
         assert_eq!(confidence, MemoryConfidence::High);
@@ -841,6 +900,7 @@ mod wake_cap_tests {
     fn separated_short_identifier_can_select_exact_evidence() {
         let (evidence, confidence) = relevant_answer_evidence(
             "What happened to PR #83?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![ev("PR #83 merged after every required check passed")],
         );
 
@@ -854,11 +914,63 @@ mod wake_cap_tests {
         evidence.id = "evidence:change-request:pr83".to_string();
         evidence.supports = vec!["entry:change-request:pr83".to_string()];
 
-        let (evidence, confidence) =
-            relevant_answer_evidence("What happened to the PR83 rollout?", vec![evidence]);
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What happened to the PR83 rollout?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![evidence],
+        );
 
         assert_eq!(evidence.len(), 1);
         assert_eq!(confidence, MemoryConfidence::High);
+    }
+
+    #[test]
+    fn strict_policies_reject_context_that_omits_the_requested_subject() {
+        let question = "Which database engine was used when the CI workflow concluded and the remote branch remained present?";
+        let contextual_evidence =
+            "The CI workflow concluded and the remote branch remained present.";
+
+        for policy in [
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            MemoryAnswerPolicy::ShowConflicts,
+        ] {
+            let (evidence, confidence) =
+                relevant_answer_evidence(question, policy, vec![ev(contextual_evidence)]);
+
+            assert!(
+                evidence.is_empty(),
+                "strict policy {policy:?} answered from context alone"
+            );
+            assert_eq!(confidence, MemoryConfidence::Unknown);
+        }
+    }
+
+    #[test]
+    fn best_effort_retains_topical_context_without_the_requested_subject() {
+        let question = "Which database engine was used when the CI workflow concluded and the remote branch remained present?";
+
+        let (evidence, confidence) = relevant_answer_evidence(
+            question,
+            MemoryAnswerPolicy::BestEffort,
+            vec![ev(
+                "The CI workflow concluded and the remote branch remained present.",
+            )],
+        );
+
+        assert_eq!(evidence.len(), 1);
+        assert_ne!(confidence, MemoryConfidence::Unknown);
+    }
+
+    #[test]
+    fn strict_focus_does_not_require_the_answer_to_repeat_a_proof_predicate() {
+        let (evidence, confidence) = relevant_answer_evidence(
+            "What proved the MCP ingest path?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![ev("The live smoke accepted MCP ingest over gRPC.")],
+        );
+
+        assert_eq!(evidence.len(), 1);
+        assert_ne!(confidence, MemoryConfidence::Unknown);
     }
 }
 
