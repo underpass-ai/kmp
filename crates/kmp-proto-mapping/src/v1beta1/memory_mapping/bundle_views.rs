@@ -238,6 +238,8 @@ pub(super) fn proof(
         missing,
         confidence: confidence as i32,
         frontier_size,
+        matched_terms: Vec::new(),
+        matched_relations: Vec::new(),
     }
 }
 
