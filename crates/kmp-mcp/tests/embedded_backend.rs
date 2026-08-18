@@ -250,6 +250,142 @@ fn paraphrase_recall_ingest_arguments() -> Value {
     })
 }
 
+fn graph_reranker_ingest_arguments() -> Value {
+    json!({
+        "about": "decision:sqlite-wal",
+        "idempotency_key": "ingest:graph-reranker-regression",
+        "memory": {
+            "dimensions": [{"id": "work:graph-reranker", "kind": "work"}],
+            "entries": [
+                {
+                    "id": "decision:sqlite-wal",
+                    "kind": "decision",
+                    "text": "SQLite WAL is the embedded engine for concurrent KMP processes sharing one store.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:00Z",
+                        "sequence": 1
+                    }]
+                },
+                {
+                    "id": "constraint:shared-process-store",
+                    "kind": "constraint",
+                    "text": "Two KMP processes must safely share the same embedded store.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:01Z",
+                        "sequence": 2
+                    }]
+                },
+                {
+                    "id": "outcome:migration-replay",
+                    "kind": "outcome",
+                    "text": "Migration replay preserves existing redb stores while fresh stores use SQLite.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:02Z",
+                        "sequence": 3
+                    }]
+                },
+                {
+                    "id": "note:earlier-features",
+                    "kind": "note",
+                    "text": "KMP shipped more features earlier than one planning note expected.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:03Z",
+                        "sequence": 4
+                    }]
+                },
+                {
+                    "id": "note:format-layout",
+                    "kind": "note",
+                    "text": "KMP format version names use the same directory layout.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:04Z",
+                        "sequence": 5
+                    }]
+                },
+                {
+                    "id": "note:release-verification",
+                    "kind": "note",
+                    "text": "One local KMP release was verified after installation.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:graph-reranker",
+                        "occurred_at": "2026-08-18T08:00:05Z",
+                        "sequence": 6
+                    }]
+                }
+            ],
+            "relations": [
+                {
+                    "from": "decision:sqlite-wal",
+                    "to": "constraint:shared-process-store",
+                    "rel": "chosen_because",
+                    "class": "motivational",
+                    "why": "SQLite WAL replaced redb because concurrent processes need one shareable embedded store.",
+                    "evidence": "The multi-process architecture decision records the engine comparison and concurrency requirement.",
+                    "confidence": "high"
+                },
+                {
+                    "from": "outcome:migration-replay",
+                    "to": "decision:sqlite-wal",
+                    "rel": "depends_on",
+                    "class": "causal",
+                    "why": "Replay preserves legacy redb data while the SQLite decision governs fresh shared stores.",
+                    "evidence": "Migration compatibility and the current engine decision were verified together.",
+                    "confidence": "high"
+                }
+            ],
+            "evidence": [
+                {
+                    "id": "evidence:sqlite-wal-decision",
+                    "supports": ["decision:sqlite-wal"],
+                    "text": "SQLite WAL is the embedded storage engine selected for concurrent KMP processes sharing one store.",
+                    "source": "ADR fixture"
+                },
+                {
+                    "id": "evidence:shared-process-constraint",
+                    "supports": ["constraint:shared-process-store"],
+                    "text": "Two KMP processes require a shareable embedded store.",
+                    "source": "concurrency fixture"
+                },
+                {
+                    "id": "evidence:migration-replay",
+                    "supports": ["outcome:migration-replay"],
+                    "text": "Existing redb stores remain readable during migration; new stores select SQLite.",
+                    "source": "migration fixture"
+                },
+                {
+                    "id": "evidence:earlier-features",
+                    "supports": ["note:earlier-features"],
+                    "text": "KMP added more features earlier than one roadmap expected.",
+                    "source": "weak lexical distractor"
+                },
+                {
+                    "id": "evidence:format-layout",
+                    "supports": ["note:format-layout"],
+                    "text": "KMP version names use the same format layout.",
+                    "source": "weak lexical distractor"
+                },
+                {
+                    "id": "evidence:release-verification",
+                    "supports": ["note:release-verification"],
+                    "text": "One KMP release was verified after installation.",
+                    "source": "weak lexical distractor"
+                }
+            ]
+        }
+    })
+}
+
 #[tokio::test]
 async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
@@ -553,6 +689,69 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
     assert_eq!(unrelated["answer"], "UNKNOWN", "{unrelated}");
     assert_eq!(unrelated["proof"]["matched_terms"], json!([]));
     assert_eq!(unrelated["proof"]["matched_relations"], json!([]));
+}
+
+#[tokio::test]
+async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let ingest = call(
+        &server,
+        1,
+        "kernel_ingest",
+        graph_reranker_ingest_arguments(),
+    )
+    .await;
+    assert_eq!(
+        ingest["memory"]["about"], "decision:sqlite-wal",
+        "fixture ingest failed: {ingest}"
+    );
+    let arguments = json!({
+        "about": "decision:sqlite-wal",
+        "question": "Which embedded storage engine should two KMP processes sharing one store use, and which engine did it replace?",
+        "answer_policy": "evidence_or_unknown",
+        "depth": 3,
+        "budget": {
+            "detail": "balanced",
+            "max_entries": 12,
+            "max_bytes": 10_000
+        }
+    });
+
+    let mut first = None;
+    for repeat in 0..3 {
+        let ask = call(&server, 2 + repeat, "kernel_ask", arguments.clone()).await;
+        assert_ne!(ask["answer"], "UNKNOWN", "{ask}");
+        let evidence_ids = ask["proof"]["evidence"]
+            .as_array()
+            .unwrap_or_else(|| panic!("canonical answer evidence: {ask}"))
+            .iter()
+            .filter_map(|evidence| evidence["id"].as_str())
+            .collect::<Vec<_>>();
+        assert!(
+            evidence_ids.contains(&"detail:evidence:sqlite-wal-decision"),
+            "the answer-bearing architecture decision must survive reranking: {ask}"
+        );
+        assert!(
+            ask["because"]
+                .as_array()
+                .expect("answer citations")
+                .iter()
+                .any(|reason| reason["claim"] == "decision:sqlite-wal"),
+            "the scarce answer core must cite the architecture decision: {ask}"
+        );
+        assert!(
+            ask["proof"]["matched_relations"]
+                .as_array()
+                .is_some_and(|relations| relations.iter().any(|rel| rel == "chosen_because")),
+            "the relation why contribution must remain auditable: {ask}"
+        );
+        if let Some(first) = &first {
+            assert_eq!(ask, *first, "fresh calls must be byte-stable in structure");
+        } else {
+            first = Some(ask);
+        }
+    }
 }
 
 #[tokio::test]
