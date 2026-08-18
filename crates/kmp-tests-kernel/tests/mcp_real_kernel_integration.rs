@@ -222,7 +222,14 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_eq!(
             ingested_ask_content.pointer("/answer"),
             Some(&Value::String(
-                "The live smoke accepted kernel_ingest over gRPC.".to_string()
+                "Memory answer supported by claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]; canonical text is in proof.evidence."
+                    .to_string()
+            ))
+        );
+        assert_eq!(
+            ingested_ask_content.pointer("/because/0/ref"),
+            Some(&Value::String(
+                "detail:evidence:mcp-ingest-smoke".to_string()
             ))
         );
         assert_array_contains_evidence(

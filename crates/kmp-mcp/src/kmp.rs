@@ -92,17 +92,80 @@ pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
 }
 
 pub(crate) fn ask_from_response(response: AskResponse) -> Value {
+    let evidence = response
+        .proof
+        .as_ref()
+        .map(|proof| proof.evidence.as_slice())
+        .unwrap_or_default();
+    let answer = normalized_ask_answer(&response.answer, &response.because, evidence);
     json!({
         "summary": response.summary,
-        "answer": if response.answer.trim().is_empty() {
+        "answer": if answer.trim().is_empty() {
             Value::Null
         } else {
-            Value::String(response.answer)
+            Value::String(answer)
         },
-        "because": response.because.iter().map(answer_reason_json).collect::<Vec<_>>(),
+        "because": response
+            .because
+            .iter()
+            .map(|reason| answer_reason_json(reason, evidence))
+            .collect::<Vec<_>>(),
         "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
         "warnings": response.warnings
     })
+}
+
+fn normalized_ask_answer(
+    answer: &str,
+    reasons: &[AnswerReason],
+    evidence: &[MemoryEvidence],
+) -> String {
+    let repeats_canonical_body = evidence.iter().any(|item| {
+        let body = item.text.trim();
+        !body.is_empty() && answer.contains(body)
+    });
+    if !repeats_canonical_body {
+        return answer.to_string();
+    }
+
+    citation_answer(
+        reasons
+            .iter()
+            .map(|reason| (reason.claim.as_str(), reason.r#ref.as_str())),
+    )
+}
+
+fn citation_answer<'a>(citations: impl IntoIterator<Item = (&'a str, &'a str)>) -> String {
+    let mut seen = std::collections::BTreeSet::new();
+    let citations = citations
+        .into_iter()
+        .filter_map(|(claim, evidence_ref)| {
+            let evidence_ref = evidence_ref.trim();
+            if evidence_ref.is_empty() || !seen.insert(evidence_ref.to_string()) {
+                return None;
+            }
+            let claim = claim.trim();
+            Some(if claim.is_empty() {
+                evidence_ref.to_string()
+            } else {
+                format!("{claim} [{evidence_ref}]")
+            })
+        })
+        .collect::<Vec<_>>();
+
+    match citations.as_slice() {
+        [] => String::new(),
+        [single] => {
+            format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
+        }
+        many => format!(
+            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
+            many.iter()
+                .map(|citation| format!("- {citation}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
+    }
 }
 
 #[derive(Clone, Default)]
@@ -642,20 +705,37 @@ fn rebuild_answer_from_reasons(value: &mut Value) {
     let Some(reasons) = value.get("because").and_then(Value::as_array) else {
         return;
     };
-    let texts = reasons
+    let citations = reasons
         .iter()
-        .filter_map(|reason| reason.get("evidence").and_then(Value::as_str))
-        .map(ToString::to_string)
+        .filter_map(|reason| {
+            let evidence_ref = reason.get("ref").and_then(Value::as_str)?.trim();
+            if evidence_ref.is_empty() {
+                return None;
+            }
+            let claim = reason
+                .get("claim")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .trim();
+            Some(if claim.is_empty() {
+                evidence_ref.to_string()
+            } else {
+                format!("{claim} [{evidence_ref}]")
+            })
+        })
         .collect::<Vec<_>>();
-    value["answer"] = match texts.as_slice() {
+    value["answer"] = match citations.as_slice() {
         [] => Value::Null,
-        [single] => Value::String(single.clone()),
-        many => Value::String(
+        [single] => Value::String(format!(
+            "Memory answer supported by {single}; canonical text is in proof.evidence."
+        )),
+        many => Value::String(format!(
+            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
             many.iter()
-                .map(|text| format!("- {text}"))
+                .map(|citation| format!("- {citation}"))
                 .collect::<Vec<_>>()
-                .join("\n"),
-        ),
+                .join("\n")
+        )),
     };
 }
 
@@ -804,12 +884,19 @@ fn wake_claim_json(claim: &WakeClaim) -> Value {
     })
 }
 
-fn answer_reason_json(reason: &AnswerReason) -> Value {
-    json!({
-        "claim": reason.claim,
-        "evidence": reason.evidence,
-        "ref": reason.r#ref
-    })
+fn answer_reason_json(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> Value {
+    let mut object = Map::new();
+    object.insert("claim".to_string(), json!(reason.claim));
+    // v1beta1 keeps the protobuf field for wire compatibility. New recall
+    // responses leave it empty and join through `ref` to proof.evidence.
+    let repeats_canonical_body = evidence.iter().any(|item| {
+        item.id == reason.r#ref && !item.text.is_empty() && item.text == reason.evidence
+    });
+    if !repeats_canonical_body {
+        insert_optional_string(&mut object, "evidence", &reason.evidence);
+    }
+    object.insert("ref".to_string(), json!(reason.r#ref));
+    Value::Object(object)
 }
 
 fn dimension_coverage_json(dimension: &kmp_proto::v1beta1::DimensionCoverage) -> Value {
@@ -837,7 +924,11 @@ fn optional_quality_json(quality: Option<&kmp_proto::v1beta1::ResponseQuality>) 
 
 fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
     json!({
-        "path": proof.path.iter().map(memory_relation_json).collect::<Vec<_>>(),
+        "path": proof
+            .path
+            .iter()
+            .map(|relation| proof_relation_json(relation, &proof.evidence))
+            .collect::<Vec<_>>(),
         "evidence": proof.evidence.iter().map(memory_evidence_json).collect::<Vec<_>>(),
         "conflicts": proof.conflicts,
         // Kept apart from conflicts: a supersession is a lifecycle, not a
@@ -853,6 +944,49 @@ fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "matched_relations": proof.matched_relations,
         "confidence": confidence_label(proof.confidence)
     })
+}
+
+fn proof_relation_json(relation: &MemoryRelation, evidence: &[MemoryEvidence]) -> Value {
+    let mut relation = relation.clone();
+    let mut refs = relation
+        .evidence_refs
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut repeated_why = false;
+    let mut repeated_evidence = false;
+
+    for item in evidence {
+        let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
+        let incident = relation.source_ref == evidence_node_ref
+            || relation.target_ref == evidence_node_ref
+            || item.supports.iter().any(|supported_ref| {
+                relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
+            });
+        let why_matches = !relation.why.is_empty() && relation.why == item.text;
+        let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
+        if incident || why_matches || evidence_matches {
+            refs.insert(item.id.clone());
+        }
+        repeated_why |= why_matches;
+        repeated_evidence |= evidence_matches;
+    }
+
+    if repeated_why {
+        relation.why.clear();
+    }
+    if repeated_evidence {
+        relation.evidence.clear();
+    }
+    relation.evidence_refs = refs.into_iter().collect();
+    if relation.semantic_class != MemorySemanticClass::Structural as i32
+        && relation.why.is_empty()
+        && relation.evidence.is_empty()
+        && !relation.evidence_refs.is_empty()
+    {
+        relation.why = "Supported by canonical evidence refs.".to_string();
+    }
+    memory_relation_json(&relation)
 }
 
 fn superseded_json(entry: &SupersededMemory) -> Value {
@@ -1017,6 +1151,9 @@ fn memory_relation_json(relation: &MemoryRelation) -> Value {
             );
         }
     }
+    if !relation.evidence_refs.is_empty() {
+        object.insert("evidence_refs".to_string(), json!(relation.evidence_refs));
+    }
     Value::Object(object)
 }
 
@@ -1148,6 +1285,192 @@ mod tests {
         assert_eq!(value["proof"]["path"][0]["from"], "claim:source");
         assert_eq!(value["proof"]["confidence"], "medium");
         assert_eq!(value["proof"]["frontier_size"], 1);
+    }
+
+    #[test]
+    fn three_reason_packet_serializes_each_evidence_body_once() {
+        let bodies = (0..3)
+            .map(|index| {
+                format!(
+                    "Evidence body {index} establishes the selected claim with exact temporal and provenance detail. {}",
+                    "grounded context remains canonical here. ".repeat(24)
+                )
+            })
+            .collect::<Vec<_>>();
+        let reasons = bodies
+            .iter()
+            .enumerate()
+            .map(|(index, body)| AnswerReason {
+                claim: format!("claim:{index}"),
+                evidence: body.clone(),
+                r#ref: format!("detail:evidence:{index}"),
+            })
+            .collect::<Vec<_>>();
+        let evidence = bodies
+            .iter()
+            .enumerate()
+            .map(|(index, body)| MemoryEvidence {
+                id: format!("detail:evidence:{index}"),
+                supports: vec![format!("claim:{index}")],
+                text: body.clone(),
+                source: format!("source:{index}"),
+                time: None,
+                metadata: Default::default(),
+            })
+            .collect::<Vec<_>>();
+        let path = (0..12)
+            .map(|index| {
+                let evidence_index = index % 3;
+                MemoryRelation {
+                    source_ref: format!("evidence:{evidence_index}"),
+                    target_ref: format!("claim:{evidence_index}"),
+                    rel: "supports".to_string(),
+                    semantic_class: MemorySemanticClass::Evidential as i32,
+                    why: "Evidence supports the selected memory claim.".to_string(),
+                    evidence: bodies[evidence_index].clone(),
+                    confidence: MemoryConfidence::High as i32,
+                    sequence: Some(index as u32 + 1),
+                    explanation: None,
+                    evidence_refs: Vec::new(),
+                }
+            })
+            .collect::<Vec<_>>();
+        let legacy_answer = bodies
+            .iter()
+            .map(|body| format!("- {body}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let response = AskResponse {
+            summary: "Deterministic memory answer from 3 evidence items.".to_string(),
+            answer: legacy_answer.clone(),
+            because: reasons.clone(),
+            proof: Some(Proof {
+                path: path.clone(),
+                evidence: evidence.clone(),
+                conflicts: Vec::new(),
+                superseded: Vec::new(),
+                missing: Vec::new(),
+                frontier_size: 0,
+                matched_terms: vec!["canonical".to_string()],
+                matched_relations: vec!["supports".to_string()],
+                confidence: MemoryConfidence::High as i32,
+            }),
+            warnings: Vec::new(),
+        };
+        let legacy = json!({
+            "summary": response.summary,
+            "answer": legacy_answer,
+            "because": reasons.iter().map(|reason| json!({
+                "claim": reason.claim,
+                "evidence": reason.evidence,
+                "ref": reason.r#ref
+            })).collect::<Vec<_>>(),
+            "proof": {
+                "path": path.iter().map(memory_relation_json).collect::<Vec<_>>(),
+                "evidence": evidence.iter().map(memory_evidence_json).collect::<Vec<_>>(),
+                "conflicts": [],
+                "superseded": [],
+                "missing": [],
+                "frontier_size": 0,
+                "matched_terms": ["canonical"],
+                "matched_relations": ["supports"],
+                "confidence": "high"
+            },
+            "warnings": []
+        });
+
+        let outputs = (0..3)
+            .map(|_| {
+                serde_json::to_string(&ask_from_response(response.clone()))
+                    .expect("normalized ask should serialize")
+            })
+            .collect::<Vec<_>>();
+        let normalized = &outputs[0];
+        let legacy = serde_json::to_string(&legacy).expect("legacy ask should serialize");
+        let estimator = Cl100kEstimator::new();
+        let normalized_tokens = estimator.estimate_tokens(normalized);
+        let legacy_tokens = estimator.estimate_tokens(&legacy);
+        let normalized_value: Value =
+            serde_json::from_str(normalized).expect("normalized ask should parse");
+        let legacy_value: Value = serde_json::from_str(&legacy).expect("legacy ask should parse");
+        let canonical_body_bytes = bodies.iter().map(String::len).sum::<usize>();
+        // Legacy owns every body in answer, because, proof.evidence, and four
+        // supporting path hops. The normalized packet owns the registry copy.
+        let legacy_owned_body_bytes = canonical_body_bytes * 7;
+        let normalized_owned_body_bytes = canonical_body_bytes;
+        let samples = 250;
+        let legacy_started = std::time::Instant::now();
+        for _ in 0..samples {
+            std::hint::black_box(
+                serde_json::to_vec(std::hint::black_box(&legacy_value))
+                    .expect("legacy ask should serialize repeatedly"),
+            );
+        }
+        let legacy_serialization = legacy_started.elapsed();
+        let normalized_started = std::time::Instant::now();
+        for _ in 0..samples {
+            std::hint::black_box(
+                serde_json::to_vec(std::hint::black_box(&normalized_value))
+                    .expect("normalized ask should serialize repeatedly"),
+            );
+        }
+        let normalized_serialization = normalized_started.elapsed();
+
+        println!(
+            "three-reason normalization: {} -> {} bytes; {} -> {} advisory cl100k tokens; owned evidence-body bytes {} -> {}; {samples} serializations {:?} -> {:?}",
+            legacy.len(),
+            normalized.len(),
+            legacy_tokens,
+            normalized_tokens,
+            legacy_owned_body_bytes,
+            normalized_owned_body_bytes,
+            legacy_serialization,
+            normalized_serialization
+        );
+
+        assert!(outputs.windows(2).all(|pair| pair[0] == pair[1]));
+        for body in &bodies {
+            assert_eq!(normalized.matches(body).count(), 1, "{body}");
+        }
+        assert!(
+            normalized.len() * 100 <= legacy.len() * 40,
+            "normalized={} legacy={}",
+            normalized.len(),
+            legacy.len()
+        );
+        assert!(normalized.len() < 10_000, "{} bytes", normalized.len());
+
+        let canonical_ids = normalized_value["proof"]["evidence"]
+            .as_array()
+            .expect("canonical evidence registry")
+            .iter()
+            .filter_map(|item| item["id"].as_str())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert!(
+            normalized_value["because"]
+                .as_array()
+                .expect("reasons")
+                .iter()
+                .all(|reason| reason.get("evidence").is_none()
+                    && reason["ref"]
+                        .as_str()
+                        .is_some_and(|evidence_ref| canonical_ids.contains(evidence_ref)))
+        );
+        assert!(
+            normalized_value["proof"]["path"]
+                .as_array()
+                .expect("proof path")
+                .iter()
+                .all(|relation| relation.get("evidence").is_none()
+                    && relation["evidence_refs"]
+                        .as_array()
+                        .is_some_and(|refs| !refs.is_empty()
+                            && refs.iter().all(|evidence_ref| {
+                                evidence_ref.as_str().is_some_and(|evidence_ref| {
+                                    canonical_ids.contains(evidence_ref)
+                                })
+                            })))
+        );
     }
 
     #[test]
@@ -1781,6 +2104,7 @@ mod tests {
             confidence: MemoryConfidence::High as i32,
             sequence: Some(1),
             explanation: None,
+            evidence_refs: Vec::new(),
         }
     }
 

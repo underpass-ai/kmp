@@ -1377,11 +1377,12 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
 
     assert_eq!(
         ask.answer,
-        "Explicit memory evidence is the deterministic Ask answer."
+        "Memory answer supported by claim:answer [detail:evidence:answer]; canonical text is in proof.evidence."
     );
     assert_eq!(ask.because.len(), 1);
     assert_eq!(ask.because[0].r#ref, "detail:evidence:answer");
-    assert_eq!(ask.because[0].claim, "evidence:answer");
+    assert_eq!(ask.because[0].claim, "claim:answer");
+    assert!(ask.because[0].evidence.is_empty());
     let proof = ask.proof.expect("ask proof should be present");
     assert_eq!(proof.evidence.len(), 1);
     assert_eq!(proof.evidence[0].supports, vec!["claim:answer".to_string()]);
@@ -1439,9 +1440,18 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
 
     assert_eq!(
         best_effort.answer,
-        "The CI workflow concluded and the remote branch remained present."
+        "Memory answer supported by claim:ci-complete [detail:evidence:ci-complete]; canonical text is in proof.evidence."
     );
     assert_eq!(best_effort.because.len(), 1);
+    assert!(best_effort.because[0].evidence.is_empty());
+    assert!(
+        best_effort
+            .proof
+            .expect("best-effort proof")
+            .evidence
+            .iter()
+            .any(|evidence| evidence.text.contains("remote branch remained present"))
+    );
 }
 
 #[tokio::test]
@@ -1471,9 +1481,24 @@ async fn memory_service_ask_show_conflicts_surfaces_explicit_conflict_relations(
         .into_inner();
 
     assert_eq!(ask.because.len(), 2);
-    assert!(ask.answer.contains("cache=true"));
-    assert!(ask.answer.contains("cache=false"));
+    assert!(
+        ask.because
+            .iter()
+            .all(|reason| ask.answer.contains(&reason.r#ref) && reason.evidence.is_empty())
+    );
     let proof = ask.proof.expect("ask proof should be present");
+    assert!(
+        proof
+            .evidence
+            .iter()
+            .any(|evidence| evidence.text.contains("cache=true"))
+    );
+    assert!(
+        proof
+            .evidence
+            .iter()
+            .any(|evidence| evidence.text.contains("cache=false"))
+    );
     assert_eq!(
         proof.conflicts,
         vec![

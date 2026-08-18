@@ -249,6 +249,10 @@ async fn kernel_ask_returns_fixture_backed_structured_content() {
     assert_eq!(response["result"]["isError"], false);
     assert_eq!(
         response["result"]["structuredContent"]["answer"],
+        "Memory answer supported by claim:rachel-austin [evidence:rachel-turn-2]; canonical text is in proof.evidence."
+    );
+    assert_eq!(
+        response["result"]["structuredContent"]["proof"]["evidence"][0]["text"],
         "Later she corrected it: the move is to Austin."
     );
     assert_eq!(

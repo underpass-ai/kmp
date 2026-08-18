@@ -5,8 +5,8 @@ use kmp_domain::{
     BundleNodeDetail, KmpBundle, MemoryRelationType, RelationExplanation, TemporalCoordinate,
 };
 use kmp_proto::v1beta1::{
-    MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation, Proof,
-    SupersededMemory, TemporalCoordinate as ProtoTemporalCoordinate,
+    MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation,
+    MemorySemanticClass, Proof, SupersededMemory, TemporalCoordinate as ProtoTemporalCoordinate,
 };
 
 use super::scalars::{proto_confidence, proto_semantic_class, timestamp_from_sort_or_rfc3339};
@@ -27,6 +27,7 @@ pub(super) fn memory_relations_from_bundle(bundle: &KmpBundle) -> Vec<MemoryRela
                 confidence: proto_confidence(explanation.confidence()) as i32,
                 sequence: explanation.sequence(),
                 explanation: proto_relation_explanation(explanation),
+                evidence_refs: Vec::new(),
             }
         })
         .collect()
@@ -227,6 +228,7 @@ pub(super) fn proof(
     missing: Vec<String>,
     confidence: MemoryConfidence,
 ) -> Proof {
+    let path = normalize_proof_path(path, &evidence);
     let conflicts = conflicts_from_relations(&path);
     let superseded = superseded_from_relations(&path);
     let frontier_size = missing.len() as u32;
@@ -241,6 +243,60 @@ pub(super) fn proof(
         matched_terms: Vec::new(),
         matched_relations: Vec::new(),
     }
+}
+
+/// Normalizes proof hops around the canonical evidence registry.
+///
+/// Relation-specific explanations remain inline. A `why` or `evidence` body
+/// that exactly repeats `Proof.evidence[].text` becomes a stable ref instead,
+/// and every hop incident to a selected evidence/claim carries the refs that
+/// make the join explicit.
+fn normalize_proof_path(
+    mut path: Vec<MemoryRelation>,
+    evidence: &[MemoryEvidence],
+) -> Vec<MemoryRelation> {
+    for relation in &mut path {
+        let mut refs = relation
+            .evidence_refs
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let mut repeated_why = false;
+        let mut repeated_evidence = false;
+
+        for item in evidence {
+            let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
+            let incident = relation.source_ref == evidence_node_ref
+                || relation.target_ref == evidence_node_ref
+                || item.supports.iter().any(|supported_ref| {
+                    relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
+                });
+            let why_matches = !relation.why.is_empty() && relation.why == item.text;
+            let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
+
+            if incident || why_matches || evidence_matches {
+                refs.insert(item.id.clone());
+            }
+            repeated_why |= why_matches;
+            repeated_evidence |= evidence_matches;
+        }
+
+        if repeated_why {
+            relation.why.clear();
+        }
+        if repeated_evidence {
+            relation.evidence.clear();
+        }
+        relation.evidence_refs = refs.into_iter().collect();
+        if relation.semantic_class != MemorySemanticClass::Structural as i32
+            && relation.why.is_empty()
+            && relation.evidence.is_empty()
+            && !relation.evidence_refs.is_empty()
+        {
+            relation.why = "Supported by canonical evidence refs.".to_string();
+        }
+    }
+    path
 }
 
 /// Entries this recall reached that a later entry replaced.
@@ -444,6 +500,46 @@ mod tests {
     use kmp_proto::v1beta1::MemorySemanticClass;
 
     use super::*;
+
+    #[test]
+    fn proof_replaces_repeated_evidence_bodies_with_canonical_refs() {
+        let body = "The canonical evidence body belongs in the registry once.";
+        let normalized = proof(
+            vec![MemoryRelation {
+                source_ref: "evidence:selected".to_string(),
+                target_ref: "claim:selected".to_string(),
+                rel: "supports".to_string(),
+                semantic_class: MemorySemanticClass::Evidential as i32,
+                why: body.to_string(),
+                evidence: body.to_string(),
+                confidence: MemoryConfidence::High as i32,
+                sequence: Some(1),
+                explanation: None,
+                evidence_refs: Vec::new(),
+            }],
+            vec![MemoryEvidence {
+                id: "detail:evidence:selected".to_string(),
+                supports: vec!["claim:selected".to_string()],
+                text: body.to_string(),
+                source: "source:selected".to_string(),
+                time: None,
+                metadata: Default::default(),
+            }],
+            Vec::new(),
+            MemoryConfidence::High,
+        );
+
+        assert_eq!(normalized.evidence[0].text, body);
+        assert_eq!(
+            normalized.path[0].evidence_refs,
+            vec!["detail:evidence:selected".to_string()]
+        );
+        assert_eq!(
+            normalized.path[0].why,
+            "Supported by canonical evidence refs."
+        );
+        assert!(normalized.path[0].evidence.is_empty());
+    }
 
     #[test]
     fn temporal_evidence_only_expands_memory_evidence_support_sources() {
@@ -658,6 +754,7 @@ mod tests {
                     confidence: MemoryConfidence::Medium as i32,
                     sequence: None,
                     explanation: None,
+                    evidence_refs: Vec::new(),
                 },
                 MemoryRelation {
                     source_ref: "claim:a".to_string(),
@@ -669,6 +766,7 @@ mod tests {
                     confidence: MemoryConfidence::High as i32,
                     sequence: None,
                     explanation: None,
+                    evidence_refs: Vec::new(),
                 },
                 MemoryRelation {
                     source_ref: "claim:a".to_string(),
@@ -680,6 +778,7 @@ mod tests {
                     confidence: MemoryConfidence::High as i32,
                     sequence: None,
                     explanation: None,
+                    evidence_refs: Vec::new(),
                 },
             ],
             Vec::new(),

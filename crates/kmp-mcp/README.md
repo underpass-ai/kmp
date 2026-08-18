@@ -35,10 +35,12 @@ Current status:
   contract's reference examples;
 - can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;
 - live mode calls the typed `KernelMemoryService` gRPC API directly;
-- live `kernel_ask` returns a deterministic evidence-derived answer or
-  `UNKNOWN`, not a generated answer; successful asks expose retained recall
-  terms and contributing semantic relation types in `proof` without exposing
-  scoring internals;
+- live `kernel_ask` returns a deterministic citation-oriented answer or
+  `UNKNOWN`, not a generated answer; complete bodies are canonical in
+  `proof.evidence`, joined from `because[].ref` and
+  `proof.path[].evidence_refs`; successful asks expose retained recall terms
+  and contributing semantic relation types in `proof` without exposing scoring
+  internals;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index;
 - `kernel_inspect` supports typed detail/link lookup and typed raw audit refs

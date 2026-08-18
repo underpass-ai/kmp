@@ -167,6 +167,7 @@ fn relation_from_value(value: &Value) -> Result<MemoryRelation, String> {
         evidence,
         confidence,
         sequence: optional_positive_u32_field(value, "sequence", "memory.relations[].sequence")?,
+        evidence_refs: Vec::new(),
         explanation: Some(MemoryRelationExplanation {
             motivation: optional_string_field(
                 value,
