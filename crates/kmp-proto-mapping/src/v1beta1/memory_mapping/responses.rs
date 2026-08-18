@@ -1,4 +1,3 @@
-use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::{
@@ -233,6 +232,15 @@ struct RecallRelationshipContext {
     terms: BTreeSet<String>,
 }
 
+type AnswerRelevance = (usize, usize, usize, usize);
+
+#[derive(Clone)]
+struct RankedAnswerEvidence {
+    relevance: AnswerRelevance,
+    searchable_terms: BTreeSet<String>,
+    item: MemoryEvidence,
+}
+
 #[derive(Default)]
 struct AnswerRecallContext {
     details_by_ref: BTreeMap<String, BTreeSet<String>>,
@@ -387,15 +395,16 @@ fn relevant_answer_evidence_with_context(
                 // subject-bearing content wins before ids, refs or graph
                 // context. Identifiers remain eligible, but cannot outrank a
                 // citation that actually states the requested fact.
-                Some((
-                    (
+                Some(RankedAnswerEvidence {
+                    relevance: (
                         content_focus_matches,
                         content_matches,
                         direct_matches,
                         matches,
                     ),
+                    searchable_terms: evidence_terms,
                     item,
-                ))
+                })
             }
         })
         .collect::<Vec<_>>();
@@ -404,15 +413,17 @@ fn relevant_answer_evidence_with_context(
         return (Vec::new(), MemoryConfidence::Unknown);
     }
 
-    // Stable sorting keeps graph traversal order only as a tie-breaker. The
-    // strongest query match must be first because every downstream budget
-    // gate preserves the prefix (including the minimal one-reason packet).
-    relevant.sort_by_key(|(matches, _)| Reverse(*matches));
-    let relevant = relevant
-        .into_iter()
-        .map(|(_, item)| item)
-        .collect::<Vec<_>>();
+    // The strongest query match must be first because every downstream budget
+    // gate preserves the prefix. Refs provide a stable final tie-breaker so
+    // bundle traversal order cannot change the cited answer.
+    relevant.sort_by(|left, right| {
+        right
+            .relevance
+            .cmp(&left.relevance)
+            .then_with(|| left.item.id.cmp(&right.item.id))
+    });
     let relevant = diversify_answer_evidence(&question_terms, &diversity_focus_terms, relevant);
+    let relevant = prioritize_distinct_answer_claims(relevant);
     let confidence = retained_answer_confidence_with_context(
         question,
         &relevant[..relevant.len().min(5)],
@@ -424,50 +435,68 @@ fn relevant_answer_evidence_with_context(
 fn diversify_answer_evidence(
     question_terms: &BTreeSet<String>,
     focus_terms: &BTreeSet<String>,
-    mut evidence: Vec<MemoryEvidence>,
+    mut evidence: Vec<RankedAnswerEvidence>,
 ) -> Vec<MemoryEvidence> {
     if evidence.len() < 2 {
-        return evidence;
+        return evidence
+            .into_iter()
+            .map(|candidate| candidate.item)
+            .collect();
     }
 
-    // Keep the strongest citation first, then prefer citations that add
-    // uncovered parts of a compound question. Without this pass, five nearly
-    // identical issue-summary citations can displace the operational
-    // constraint that answers the second clause.
+    // Keep primary relevance ahead of novelty, then prefer candidates that add
+    // uncovered parts of a compound question. Coverage comes from the same
+    // bounded evidence + claim + relation context used by initial ranking;
+    // falling back to `item.text` here used to erase relation `why` matches.
     let first = evidence.remove(0);
-    let first_terms = informative_terms(&first.text);
-    let mut covered = matching_terms(question_terms, &first_terms);
-    let mut covered_focus = matching_terms(focus_terms, &first_terms);
-    let mut ranked = vec![first];
+    let mut covered = matching_terms(question_terms, &first.searchable_terms);
+    let mut covered_focus = matching_terms(focus_terms, &first.searchable_terms);
+    let mut ranked = vec![first.item];
 
     while !evidence.is_empty() {
         let mut best_index = 0;
-        let mut best_gain = (0, 0);
-        for (index, item) in evidence.iter().enumerate() {
-            let item_terms = informative_terms(&item.text);
-            let focus_gain = matching_terms(focus_terms, &item_terms)
+        let mut best_key = None;
+        for (index, candidate) in evidence.iter().enumerate() {
+            let focus_gain = matching_terms(focus_terms, &candidate.searchable_terms)
                 .difference(&covered_focus)
                 .count();
-            let total_gain = matching_terms(question_terms, &item_terms)
+            let total_gain = matching_terms(question_terms, &candidate.searchable_terms)
                 .difference(&covered)
                 .count();
-            if (focus_gain, total_gain) > best_gain {
+            let key = (candidate.relevance, focus_gain, total_gain);
+            if best_key.is_none_or(|current| key > current) {
                 best_index = index;
-                best_gain = (focus_gain, total_gain);
+                best_key = Some(key);
             }
-        }
-        if best_gain == (0, 0) {
-            ranked.extend(evidence);
-            break;
         }
 
         let selected = evidence.remove(best_index);
-        let selected_terms = informative_terms(&selected.text);
-        covered.extend(matching_terms(question_terms, &selected_terms));
-        covered_focus.extend(matching_terms(focus_terms, &selected_terms));
-        ranked.push(selected);
+        covered.extend(matching_terms(question_terms, &selected.searchable_terms));
+        covered_focus.extend(matching_terms(focus_terms, &selected.searchable_terms));
+        ranked.push(selected.item);
     }
     ranked
+}
+
+fn prioritize_distinct_answer_claims(evidence: Vec<MemoryEvidence>) -> Vec<MemoryEvidence> {
+    let mut seen_claims = BTreeSet::new();
+    let mut distinct = Vec::with_capacity(evidence.len());
+    let mut repeated = Vec::new();
+
+    for item in evidence {
+        let claim = item
+            .supports
+            .first()
+            .map(String::as_str)
+            .unwrap_or(item.source.as_str());
+        if seen_claims.insert(claim.to_string()) {
+            distinct.push(item);
+        } else {
+            repeated.push(item);
+        }
+    }
+    distinct.extend(repeated);
+    distinct
 }
 
 fn matching_terms(
@@ -1187,6 +1216,24 @@ mod wake_cap_tests {
         }
     }
 
+    fn claim_ev(id: &str, claim: &str, text: &str) -> MemoryEvidence {
+        MemoryEvidence {
+            id: format!("detail:{id}"),
+            supports: vec![claim.to_string()],
+            text: text.to_string(),
+            source: "fixture".to_string(),
+            time: None,
+            metadata: Default::default(),
+        }
+    }
+
+    fn relation_context(terms: &str) -> Vec<RecallRelationshipContext> {
+        vec![RecallRelationshipContext {
+            rel: "chosen_because".to_string(),
+            terms: informative_terms(terms),
+        }]
+    }
+
     #[test]
     fn unbounded_when_max_entries_is_none() {
         let (kept, withheld) = cap_wake_evidence(vec![ev("a"), ev("b")], None);
@@ -1251,6 +1298,101 @@ mod wake_cap_tests {
         assert_eq!(
             retained_answer_confidence(question, &[exact]),
             MemoryConfidence::High
+        );
+    }
+
+    #[test]
+    fn graph_context_relevance_survives_answer_diversification() {
+        let question =
+            "What sqlite storage engine replaced redb for shared concurrent processes migration?";
+        let candidates = vec![
+            claim_ev(
+                "first",
+                "claim:first",
+                "sqlite storage engine shared migration",
+            ),
+            claim_ev(
+                "graph-answer",
+                "claim:graph-answer",
+                "sqlite storage engine shared",
+            ),
+            claim_ev(
+                "weak-replaced",
+                "claim:weak-replaced",
+                "sqlite storage engine replaced",
+            ),
+            claim_ev("weak-redb", "claim:weak-redb", "sqlite storage engine redb"),
+            claim_ev(
+                "weak-concurrent",
+                "claim:weak-concurrent",
+                "sqlite storage engine concurrent",
+            ),
+            claim_ev(
+                "weak-processes",
+                "claim:weak-processes",
+                "sqlite storage engine processes",
+            ),
+        ];
+        let all_terms = "sqlite storage engine replaced redb shared concurrent processes migration";
+        let context = AnswerRecallContext {
+            details_by_ref: BTreeMap::new(),
+            relationships_by_ref: BTreeMap::from([
+                ("claim:first".to_string(), relation_context(all_terms)),
+                (
+                    "claim:graph-answer".to_string(),
+                    relation_context(all_terms),
+                ),
+                (
+                    "claim:weak-replaced".to_string(),
+                    relation_context("shared migration"),
+                ),
+                (
+                    "claim:weak-redb".to_string(),
+                    relation_context("shared migration"),
+                ),
+                (
+                    "claim:weak-concurrent".to_string(),
+                    relation_context("shared migration"),
+                ),
+                (
+                    "claim:weak-processes".to_string(),
+                    relation_context("shared migration"),
+                ),
+            ]),
+        };
+
+        let (ranked, confidence) = relevant_answer_evidence_with_context(
+            question,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            candidates,
+            Some(&context),
+        );
+
+        assert_eq!(ranked[0].id, "detail:first");
+        assert_eq!(ranked[1].id, "detail:graph-answer");
+        assert!(
+            ranked[..5]
+                .iter()
+                .any(|item| item.id == "detail:graph-answer")
+        );
+        assert_eq!(confidence, MemoryConfidence::High);
+    }
+
+    #[test]
+    fn distinct_supported_claims_precede_repeated_citations() {
+        let ranked = prioritize_distinct_answer_claims(vec![
+            claim_ev("a-primary", "claim:a", "primary evidence"),
+            claim_ev("a-secondary", "claim:a", "secondary evidence"),
+            claim_ev("b", "claim:b", "different claim"),
+            claim_ev("c", "claim:c", "another claim"),
+        ]);
+
+        assert_eq!(
+            ranked
+                .iter()
+                .map(|item| item.supports[0].as_str())
+                .collect::<Vec<_>>(),
+            vec!["claim:a", "claim:b", "claim:c", "claim:a"]
         );
     }
 
