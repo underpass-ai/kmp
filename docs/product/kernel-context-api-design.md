@@ -1185,6 +1185,11 @@ MCP must not duplicate kernel logic. The current stdio adapter is a thin live
 client of the typed `KernelMemoryService`; it does not call
 `ContextQueryService` or `ContextCommandService` directly for KMP moves.
 
+`kernel_ask` and `kernel_wake` apply the MCP recall projection gateway after
+the typed service response. Its stable core, deterministic expansion order,
+byte ceiling, detail fieldsets, and stateless cursor contract are specified in
+[`recall-projection-contract.md`](./recall-projection-contract.md).
+
 ## Binding: gRPC
 
 gRPC carries the same protocol for typed clients.

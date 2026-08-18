@@ -172,7 +172,8 @@ pub(crate) fn tools_list_result() -> Value {
                         "intent": string_schema("Optional continuation intent."),
                         "dimensions": dimensions_schema(),
                         "depth": integer_schema("Optional graph traversal depth for live gRPC mode."),
-                        "budget": budget_schema()
+                        "budget": budget_schema(),
+                        "page": recall_page_schema()
                     }
                 })
             ),
@@ -193,7 +194,8 @@ pub(crate) fn tools_list_result() -> Value {
                         },
                         "dimensions": dimensions_schema(),
                         "depth": integer_schema("Optional graph traversal depth for live gRPC mode."),
-                        "budget": budget_schema()
+                        "budget": budget_schema(),
+                        "page": recall_page_schema()
                     }
                 })
             ),
@@ -581,7 +583,10 @@ fn tool_definition(name: &str, description: &str, input_schema: Value) -> Value 
     json!({
         "name": name,
         "description": description,
-        "inputSchema": input_schema
+        "inputSchema": input_schema,
+        "_meta": {
+            "anthropic/maxResultSizeChars": 10_000
+        }
     })
 }
 
@@ -661,7 +666,13 @@ fn budget_schema() -> Value {
         "properties": {
             "tokens": {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1,
+                "description": "Advisory cl100k planning ceiling retained for compatibility; max_bytes is the normative host-safe ceiling."
+            },
+            "max_bytes": {
+                "type": "integer",
+                "minimum": 512,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile."
             },
             "detail": {
                 "type": "string",
@@ -674,6 +685,25 @@ fn budget_schema() -> Value {
             "max_entries": {
                 "type": "integer",
                 "minimum": 1
+            }
+        }
+    })
+}
+
+fn recall_page_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "entries": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Optional maximum expansion items on this page; byte and advisory-token ceilings still apply."
+            },
+            "cursor": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
             }
         }
     })
@@ -800,8 +830,16 @@ mod tests {
         );
         assert_eq!(tools[2]["name"], "kernel_wake");
         assert_eq!(tools[2]["inputSchema"]["required"][0], "about");
+        assert_eq!(tools[2]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
+        assert_eq!(
+            tools[2]["inputSchema"]["properties"]["budget"]["properties"]["max_bytes"]["minimum"],
+            512
+        );
+        assert!(tools[2]["inputSchema"]["properties"].get("page").is_some());
         assert_eq!(tools[3]["name"], "kernel_ask");
         assert_eq!(tools[3]["inputSchema"]["required"][1], "question");
+        assert_eq!(tools[3]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
+        assert!(tools[3]["inputSchema"]["properties"].get("page").is_some());
         assert!(
             tools[3]["inputSchema"]["properties"]
                 .get("prefer")

@@ -37,7 +37,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "intent": "continue the live incident",
             "depth": 3,
             "budget": {
-                "tokens": 321,
+                "tokens": 1600,
                 "detail": "full"
             },
             "dimensions": {
@@ -63,7 +63,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     assert_eq!(wake_requests[0].role, "implementer");
     assert_eq!(
         wake_requests[0].budget.as_ref().expect("budget").tokens,
-        321
+        1600
     );
     assert_eq!(
         wake_requests[0]

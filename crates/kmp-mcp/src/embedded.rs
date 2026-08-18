@@ -21,8 +21,8 @@ use crate::grpc::requests::{
 };
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
-    ask_from_response, dry_run_ingest_from_plan, enforce_recall_output_budget,
-    ingest_from_response, inspect_from_response, temporal_from_response, trace_from_response,
+    ask_from_response, dry_run_ingest_from_plan, ingest_from_response, inspect_from_response,
+    temporal_from_response, trace_from_response, try_enforce_recall_output_budget,
     wake_from_response,
 };
 use crate::protocol::tool_success_result;
@@ -296,9 +296,9 @@ async fn embedded_wake(
         &result.rendered.quality,
     );
     let structured = wake_from_response(wake_response_from_result(&intent, max_entries, result));
-    Ok(tool_success_result(enforce_recall_output_budget(
+    Ok(tool_success_result(try_enforce_recall_output_budget(
         structured, arguments, 1600,
-    )))
+    )?))
 }
 
 async fn embedded_ask(
@@ -329,9 +329,9 @@ async fn embedded_ask(
         max_entries,
         result,
     ));
-    Ok(tool_success_result(enforce_recall_output_budget(
+    Ok(tool_success_result(try_enforce_recall_output_budget(
         structured, arguments, 2400,
-    )))
+    )?))
 }
 
 async fn embedded_temporal(

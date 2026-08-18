@@ -262,6 +262,34 @@ async fn kernel_ask_returns_fixture_backed_structured_content() {
 }
 
 #[tokio::test]
+async fn kernel_ask_rejects_a_cursor_from_another_projection() {
+    let response = handle(json!({
+        "jsonrpc": "2.0",
+        "id": 30,
+        "method": "tools/call",
+        "params": {
+            "name": "kernel_ask",
+            "arguments": {
+                "about": "question:830ce83f",
+                "question": "Where did Rachel move after her recent relocation?",
+                "answer_policy": "evidence_or_unknown",
+                "page": {
+                    "cursor": "kmp1:1:not-a-cursor-for-this-selection"
+                }
+            }
+        }
+    }))
+    .await;
+
+    assert_eq!(response["result"]["isError"], true);
+    assert!(
+        response["result"]["content"][0]["text"]
+            .as_str()
+            .is_some_and(|message| message.contains("invalid page.cursor"))
+    );
+}
+
+#[tokio::test]
 async fn ingest_aliases_return_fixture_backed_structured_content() {
     for name in ["kernel_remember", "kernel_ingest_context"] {
         let response = handle(json!({
