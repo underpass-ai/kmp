@@ -324,13 +324,63 @@ pub(super) fn rendered_summary(rendered: &RenderedContext) -> String {
         .unwrap_or_else(|| rendered.content.clone())
 }
 
-pub(super) fn rendered_current_state(rendered: &RenderedContext) -> Vec<String> {
-    let sections = rendered
+pub(super) fn rendered_current_state(
+    rendered: &RenderedContext,
+    bundle: &KmpBundle,
+) -> Vec<String> {
+    let semantic_relationships = bundle
+        .relationships()
+        .iter()
+        .filter(|relationship| {
+            relationship.explanation().semantic_class()
+                != &kmp_domain::RelationSemanticClass::Structural
+        })
+        .map(|relationship| {
+            format!(
+                "rel:{}→{}",
+                relationship.source_node_id(),
+                relationship.target_node_id()
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    let structural_relationships = bundle
+        .relationships()
+        .iter()
+        .filter(|relationship| {
+            relationship.explanation().semantic_class()
+                == &kmp_domain::RelationSemanticClass::Structural
+        })
+        .map(|relationship| {
+            format!(
+                "rel:{}→{}",
+                relationship.source_node_id(),
+                relationship.target_node_id()
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    let mut sections = rendered
         .sections
         .iter()
+        .filter(|section| !section.content.trim().is_empty())
+        .collect::<Vec<_>>();
+    // Minimal wake packets keep the first state item. Prefer the semantic
+    // reason the graph changed, then concrete detail, then node anchors;
+    // containment bookkeeping remains available but cannot displace state.
+    sections.sort_by_key(|section| {
+        if semantic_relationships.contains(&section.source_id) {
+            0
+        } else if section.source_id.starts_with("detail:") {
+            1
+        } else if structural_relationships.contains(&section.source_id) {
+            3
+        } else {
+            2
+        }
+    });
+    let sections = sections
+        .into_iter()
         .take(5)
         .map(|section| section.content.clone())
-        .filter(|value| !value.trim().is_empty())
         .collect::<Vec<_>>();
     if sections.is_empty() && !rendered.content.trim().is_empty() {
         vec![rendered.content.clone()]
@@ -384,6 +434,7 @@ pub(super) fn proto_relation_explanation(
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
+    use kmp_application::queries::render_graph_bundle;
     use kmp_domain::{
         BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId,
         RelationExplanation, RelationSemanticClass, Role,
@@ -552,6 +603,43 @@ mod tests {
                 ),
             ]
         );
+    }
+
+    #[test]
+    fn wake_state_places_semantic_context_before_anchor_and_containment() {
+        let bundle = KmpBundle::new(
+            CaseId::new("question:a").expect("case id should be valid"),
+            Role::new("developer").expect("role is valid"),
+            node("question:a", "memory_anchor"),
+            vec![
+                node("claim:selected", "claim"),
+                node("evidence:selected", "memory_evidence"),
+            ],
+            vec![
+                BundleRelationship::new(
+                    "question:a",
+                    "claim:selected",
+                    "contains_entry",
+                    RelationExplanation::new(RelationSemanticClass::Structural)
+                        .with_rationale("The anchor contains the recalled claim."),
+                ),
+                supports("evidence:selected", "claim:selected"),
+            ],
+            vec![BundleNodeDetail::new(
+                "evidence:selected",
+                "The selected evidence explains the current state.",
+                "hash-selected",
+                1,
+            )],
+            BundleMetadata::initial("test"),
+        )
+        .expect("test bundle should be valid");
+        let rendered = render_graph_bundle(&bundle);
+
+        let state = rendered_current_state(&rendered, &bundle);
+
+        assert!(state[0].contains("--supports-->"), "{state:?}");
+        assert!(!state[0].contains("contains_entry"), "{state:?}");
     }
 
     #[test]

@@ -2,6 +2,8 @@
 //! memory survives across sessions (fresh-machine criterion analog).
 
 use kmp_adapter_embedded::RedbQualityTelemetryReader;
+use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
+use kmp_domain::TokenEstimator;
 use kmp_mcp::KernelMcpServer;
 use serde_json::{Value, json};
 
@@ -76,6 +78,69 @@ fn ingest_arguments() -> Value {
                 "source": "embedded backend test",
                 "metadata": {"requested_by": "choreographer"}
             }]
+        }
+    })
+}
+
+fn large_recall_ingest_arguments() -> Value {
+    let mut evidence = (0..301)
+        .map(|index| {
+            json!({
+                "id": format!("evidence:weak:{index:03}"),
+                "supports": ["claim:large-recall"],
+                "text": format!(
+                    "Gate deficiencies caused rejection; authority remains withheld for unrelated rollout {index}."
+                ),
+                "source": format!("historical gate note {index:03}")
+            })
+        })
+        .collect::<Vec<_>>();
+    evidence.push(json!({
+        "id": "evidence:exact:gate-rejection",
+        "supports": ["claim:large-recall"],
+        "text": "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.",
+        "source": "current gate review"
+    }));
+
+    json!({
+        "about": "project:large-recall",
+        "idempotency_key": "ingest:large-recall-ranking",
+        "memory": {
+            "dimensions": [{"id": "work:large-recall", "kind": "work"}],
+            "entries": [
+                {
+                    "id": "claim:large-recall",
+                    "kind": "claim",
+                    "text": "Large recall gate result.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:large-recall",
+                        "occurred_at": "2026-08-18T00:00:00Z",
+                        "sequence": 1
+                    }]
+                },
+                {
+                    "id": "claim:gate-action",
+                    "kind": "claim",
+                    "text": "Gate remediation must happen before authority is released.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:large-recall",
+                        "occurred_at": "2026-08-18T00:00:01Z",
+                        "sequence": 2
+                    }]
+                }
+            ],
+            "relations": [{
+                "from": "claim:large-recall",
+                "to": "claim:gate-action",
+                "rel": "triggers",
+                "class": "causal",
+                "why": "The rejected gate caused remediation to become the next required action.",
+                "evidence": "The gate review withheld authority until its deficiencies are corrected.",
+                "confidence": "high"
+            }],
+            "evidence": evidence
         }
     })
 }
@@ -181,6 +246,80 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         inspected_evidence["object"]["metadata"]["requested_by"],
         "choreographer"
     );
+}
+
+#[tokio::test]
+async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
+    const TOKEN_LIMIT: u32 = 3_000;
+    const EXACT_ANSWER: &str = "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.";
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kernel_ingest", large_recall_ingest_arguments()).await;
+    let budget = json!({
+        "tokens": TOKEN_LIMIT,
+        "detail": "balanced",
+        "max_entries": 12
+    });
+
+    let ask = call(
+        &server,
+        2,
+        "kernel_ask",
+        json!({
+            "about": "project:large-recall",
+            "question": "What exact deficiencies caused rejection and what authority remains withheld?",
+            "answer_policy": "evidence_or_unknown",
+            "depth": 3,
+            "budget": budget
+        }),
+    )
+    .await;
+    assert_eq!(ask["because"][0]["evidence"], EXACT_ANSWER, "{ask}");
+    assert_eq!(ask["proof"]["confidence"], "high");
+    assert_eq!(ask["truncation"]["truncated"], true);
+    assert!(
+        ask["truncation"]["omitted"]
+            .as_object()
+            .is_some_and(|omitted| omitted
+                .values()
+                .any(|count| count.as_u64().unwrap_or(0) > 0)),
+        "{ask}"
+    );
+
+    let wake = call(
+        &server,
+        3,
+        "kernel_wake",
+        json!({
+            "about": "project:large-recall",
+            "intent": "continue gate remediation",
+            "depth": 3,
+            "budget": {
+                "tokens": TOKEN_LIMIT,
+                "detail": "balanced",
+                "max_entries": 12
+            }
+        }),
+    )
+    .await;
+    assert!(
+        wake["wake"]["current_state"][0]
+            .as_str()
+            .is_some_and(|state| state.contains("--triggers-->")),
+        "{wake}"
+    );
+    assert_eq!(
+        wake["wake"]["causal_spine"][0]["because"],
+        "The rejected gate caused remediation to become the next required action."
+    );
+
+    let estimator = Cl100kEstimator::new();
+    for response in [&ask, &wake] {
+        assert!(
+            estimator.estimate_tokens(&response.to_string()) <= TOKEN_LIMIT,
+            "structured response exceeded the hard token ceiling: {response}"
+        );
+    }
 }
 
 #[tokio::test]
