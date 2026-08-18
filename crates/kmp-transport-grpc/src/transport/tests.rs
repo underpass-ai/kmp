@@ -182,6 +182,8 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                     ),
                     temporal_projection("claim:answer", "claim", "Answer claim"),
                     temporal_projection("evidence:answer", "memory_evidence", "Answer evidence"),
+                    temporal_projection("claim:unrelated-a", "claim", "Unrelated claim A"),
+                    temporal_projection("claim:unrelated-b", "claim", "Unrelated claim B"),
                 ],
                 relations: vec![
                     temporal_contains_entry(
@@ -193,12 +195,40 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
                         None,
                         None,
                     ),
+                    temporal_contains_entry(
+                        "about:question:evidence-answer:dimension:conversation",
+                        "claim:unrelated-a",
+                        "conversation",
+                        2,
+                        Some(sort_time(121)),
+                        None,
+                        None,
+                    ),
+                    temporal_contains_entry(
+                        "about:question:evidence-answer:dimension:conversation",
+                        "claim:unrelated-b",
+                        "conversation",
+                        3,
+                        Some(sort_time(122)),
+                        None,
+                        None,
+                    ),
                     NodeRelationProjection {
                         source_node_id: "evidence:answer".to_string(),
                         target_node_id: "claim:answer".to_string(),
                         relation_type: "supports".to_string(),
                         explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
                             .with_rationale("Explicit evidence supports the answer claim.")
+                            .with_confidence("high"),
+                    },
+                    NodeRelationProjection {
+                        source_node_id: "claim:unrelated-a".to_string(),
+                        target_node_id: "claim:unrelated-b".to_string(),
+                        relation_type: "contradicts".to_string(),
+                        explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                            .with_rationale(
+                                "An unrelated conflict must not enter the selected answer proof.",
+                            )
                             .with_confidence("high"),
                     },
                 ],
@@ -1356,6 +1386,11 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
     assert_eq!(proof.evidence.len(), 1);
     assert_eq!(proof.evidence[0].supports, vec!["claim:answer".to_string()]);
     assert!(proof.evidence[0].text.contains("deterministic Ask answer"));
+    assert!(proof.conflicts.is_empty());
+    assert!(proof.path.iter().all(|relation| {
+        !relation.source_ref.starts_with("claim:unrelated")
+            && !relation.target_ref.starts_with("claim:unrelated")
+    }));
 }
 
 #[tokio::test]
