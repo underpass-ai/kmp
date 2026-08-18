@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::{
@@ -7,7 +8,7 @@ use kmp_application::{
 use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalDirection};
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
-    MemoryEvidence, MemoryRelation, PageInfo, RawMemoryRef, TemporalCursor,
+    MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef, TemporalCursor,
     TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse, TemporalState, TraceResponse,
     WakeClaim, WakePacket, WakeResponse,
 };
@@ -70,8 +71,9 @@ pub fn wake_response_from_result(
     result: GetContextResult,
 ) -> WakeResponse {
     let relationships = memory_relations_from_bundle(&result.bundle);
+    let causal_spine = prioritize_wake_relationships(relationships.clone());
     let full_evidence = memory_evidence_from_bundle(&result.bundle);
-    let current_state = rendered_current_state(&result.rendered);
+    let current_state = rendered_current_state(&result.rendered, &result.bundle);
     let summary = rendered_summary(&result.rendered);
 
     // Opt-in entry cap: surface the first `max_entries` evidence entries
@@ -87,7 +89,7 @@ pub fn wake_response_from_result(
         wake: Some(WakePacket {
             objective: intent.to_string(),
             current_state,
-            causal_spine: relationships
+            causal_spine: causal_spine
                 .iter()
                 .take(8)
                 .map(|relationship| WakeClaim {
@@ -141,9 +143,12 @@ pub fn ask_response_from_result(
     result: GetContextResult,
 ) -> AskResponse {
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
-    let (relevant_evidence, confidence) =
-        relevant_answer_evidence(question, policy, candidate_evidence);
+    let (relevant_evidence, _) = relevant_answer_evidence(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
+    // `because` and the deterministic answer retain at most five citations.
+    // Confidence must describe those surviving citations, not a stronger item
+    // that `max_entries` or a later transport budget omitted.
+    let confidence = retained_answer_confidence(question, &evidence[..evidence.len().min(5)]);
     let because = evidence
         .iter()
         .take(5)
@@ -223,30 +228,11 @@ fn relevant_answer_evidence(
         }
         MemoryAnswerPolicy::BestEffort => None,
     };
-    let mut best_matches = 0usize;
-    let relevant = evidence
+    let mut relevant = evidence
         .into_iter()
         .filter_map(|item| {
-            let mut searchable = format!("{} {} {}", item.text, item.source, item.id);
-            for supported_ref in &item.supports {
-                searchable.push(' ');
-                searchable.push_str(supported_ref);
-            }
-            for (key, value) in &item.metadata {
-                searchable.push(' ');
-                searchable.push_str(key);
-                searchable.push(' ');
-                searchable.push_str(value);
-            }
-            let evidence_terms = informative_terms(&searchable);
-            let matches = question_terms
-                .iter()
-                .filter(|question_term| {
-                    evidence_terms
-                        .iter()
-                        .any(|evidence_term| terms_match(question_term, evidence_term))
-                })
-                .count();
+            let evidence_terms = searchable_evidence_terms(&item);
+            let matches = matching_term_count(&question_terms, &evidence_terms);
             let answers_requested_focus =
                 strict_focus
                     .as_ref()
@@ -264,8 +250,7 @@ fn relevant_answer_evidence(
             if matches < required_matches || !answers_requested_focus {
                 None
             } else {
-                best_matches = best_matches.max(matches);
-                Some(item)
+                Some((matches, item))
             }
         })
         .collect::<Vec<_>>();
@@ -273,15 +258,84 @@ fn relevant_answer_evidence(
     if relevant.is_empty() {
         return (Vec::new(), MemoryConfidence::Unknown);
     }
+
+    // Stable sorting keeps graph traversal order only as a tie-breaker. The
+    // strongest query match must be first because every downstream budget
+    // gate preserves the prefix (including the minimal one-reason packet).
+    relevant.sort_by_key(|(matches, _)| Reverse(*matches));
+    let relevant = relevant
+        .into_iter()
+        .map(|(_, item)| item)
+        .collect::<Vec<_>>();
+    let confidence = retained_answer_confidence(question, &relevant[..relevant.len().min(5)]);
+    (relevant, confidence)
+}
+
+fn searchable_evidence_terms(item: &MemoryEvidence) -> BTreeSet<String> {
+    let mut searchable = format!("{} {} {}", item.text, item.source, item.id);
+    for supported_ref in &item.supports {
+        searchable.push(' ');
+        searchable.push_str(supported_ref);
+    }
+    for (key, value) in &item.metadata {
+        searchable.push(' ');
+        searchable.push_str(key);
+        searchable.push(' ');
+        searchable.push_str(value);
+    }
+    informative_terms(&searchable)
+}
+
+fn matching_term_count(
+    question_terms: &BTreeSet<String>,
+    evidence_terms: &BTreeSet<String>,
+) -> usize {
+    question_terms
+        .iter()
+        .filter(|question_term| {
+            evidence_terms
+                .iter()
+                .any(|evidence_term| terms_match(question_term, evidence_term))
+        })
+        .count()
+}
+
+fn retained_answer_confidence(question: &str, evidence: &[MemoryEvidence]) -> MemoryConfidence {
+    if evidence.is_empty() {
+        return MemoryConfidence::Unknown;
+    }
+    let question_terms = informative_terms(question);
+    if question_terms.is_empty() {
+        return MemoryConfidence::Low;
+    }
+    let best_matches = evidence
+        .iter()
+        .map(|item| matching_term_count(&question_terms, &searchable_evidence_terms(item)))
+        .max()
+        .unwrap_or_default();
     let coverage = best_matches as f64 / question_terms.len() as f64;
-    let confidence = if coverage >= 0.6 {
+    if coverage >= 0.6 {
         MemoryConfidence::High
     } else if coverage >= 0.3 {
         MemoryConfidence::Medium
     } else {
         MemoryConfidence::Low
-    };
-    (relevant, confidence)
+    }
+}
+
+fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<MemoryRelation> {
+    relationships.sort_by_key(|relationship| {
+        match MemorySemanticClass::try_from(relationship.semantic_class) {
+            Ok(MemorySemanticClass::Causal) => 0,
+            Ok(MemorySemanticClass::Motivational) => 1,
+            Ok(MemorySemanticClass::Evidential) => 2,
+            Ok(MemorySemanticClass::Constraint) => 3,
+            Ok(MemorySemanticClass::Procedural) => 4,
+            Ok(MemorySemanticClass::Structural) => 5,
+            _ => 6,
+        }
+    });
+    relationships
 }
 
 /// Extracts the subject-bearing clause used by strict answer policies.
@@ -827,6 +881,74 @@ mod wake_cap_tests {
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0].source, "a");
         assert_eq!(withheld, vec!["b".to_string(), "c".to_string()]);
+    }
+
+    #[test]
+    fn exact_late_match_leads_more_than_three_hundred_eligible_items() {
+        let question =
+            "What exact deficiencies caused rejection and what authority remains withheld?";
+        let mut candidates = (0..301)
+            .map(|index| {
+                ev(&format!(
+                    "Gate deficiencies caused rejection; authority remains withheld for unrelated rollout {index}."
+                ))
+            })
+            .collect::<Vec<_>>();
+        let exact = "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.";
+        candidates.push(ev(exact));
+
+        let (ranked, _) =
+            relevant_answer_evidence(question, MemoryAnswerPolicy::EvidenceOrUnknown, candidates);
+        let (retained, withheld) = cap_wake_evidence(ranked, Some(12));
+
+        assert_eq!(retained[0].text, exact);
+        assert_eq!(retained.len(), 12);
+        assert_eq!(withheld.len(), 290);
+        assert_eq!(
+            retained_answer_confidence(question, &retained[..5]),
+            MemoryConfidence::High
+        );
+    }
+
+    #[test]
+    fn confidence_only_describes_the_evidence_retained_for_the_answer() {
+        let question = "Which exact deficiencies caused rejection and authority withheld?";
+        let weak = ev("The rejection affected authority in an unrelated rollout.");
+        let exact = ev(
+            "The exact deficiencies caused rejection, so authority remained withheld until tests passed.",
+        );
+
+        assert_eq!(
+            retained_answer_confidence(question, &[weak]),
+            MemoryConfidence::Medium
+        );
+        assert_eq!(
+            retained_answer_confidence(question, &[exact]),
+            MemoryConfidence::High
+        );
+    }
+
+    #[test]
+    fn wake_prioritizes_semantic_relations_before_structural_bookkeeping() {
+        let relation = |semantic_class, rel: &str| MemoryRelation {
+            rel: rel.to_string(),
+            semantic_class: semantic_class as i32,
+            ..Default::default()
+        };
+        let prioritized = prioritize_wake_relationships(vec![
+            relation(MemorySemanticClass::Structural, "contains_entry"),
+            relation(MemorySemanticClass::Procedural, "follows"),
+            relation(MemorySemanticClass::Evidential, "supports"),
+            relation(MemorySemanticClass::Causal, "triggers"),
+        ]);
+
+        assert_eq!(
+            prioritized
+                .iter()
+                .map(|relationship| relationship.rel.as_str())
+                .collect::<Vec<_>>(),
+            vec!["triggers", "supports", "follows", "contains_entry"]
+        );
     }
 
     #[test]
