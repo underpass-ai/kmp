@@ -249,7 +249,8 @@ bash scripts/ci/quality-gate.sh      # format + clippy + contract + tests
 
 Full guides: [usage](./docs/usage-guide.md) | [testing](./docs/testing.md) |
 [container image](./docs/operations/container-image.md) |
-[Helm deploy](./docs/operations/kubernetes-deploy.md)
+[Helm deploy](./docs/operations/kubernetes-deploy.md) |
+[PR evolution history](./docs/project-history/README.md)
 
 ### Verify a deployment
 
