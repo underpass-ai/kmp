@@ -39,17 +39,22 @@ both Underpass plugins, so the same source also offers `made@underpass`:
 
 A marketplace install brings the skill, the commands and the launcher, but not
 the binary — `bin/kmp-mcp` is gitignored, so it exists only in a release
-package. The launcher handles that: it prefers `bin/kmp-mcp` when a release
-bundle provides it, and otherwise falls back to `kmp-mcp` on `PATH`. So either
-of these works:
+package. That is what `/kmp:setup` is for: it downloads the engine matching
+this plugin's version, from the release that published it, verified against
+the checksum published beside it, and no Rust toolchain is involved.
 
-```bash
-cargo install kmp-mcp        # then install the plugin from the marketplace
+```text
+/kmp:setup
 ```
 
-or install the plugin from a release package, which carries a pinned binary and
-needs nothing else. If neither is present the launcher fails with an explicit
-message naming both places it looked; `/kmp:setup` fixes it.
+The launcher looks for `bin/kmp-mcp` first, so a release bundle keeps its
+pinned binary, and otherwise falls back to `kmp-mcp` on `PATH` — which is
+where `/kmp:setup` puts it. If neither exists the launcher fails with an
+explicit message naming both places it looked.
+
+`cargo install kmp-mcp` remains the fallback for a platform with no published
+asset, and a release package remains the way to install a pinned pair with no
+download step at all.
 
 **Codex CLI** — no plugin system, so a script does the wiring:
 
