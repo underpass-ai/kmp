@@ -481,7 +481,13 @@ if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
   fi
 fi
 
-[ "$FOUND_HOST" -eq 0 ] && info "no Claude Code or Codex CLI found on this machine"
+# With no host on the machine there is no check to pass, and an area whose
+# only lines are info has no headline — it printed as a tick with nothing
+# beside it. Say what was found instead of showing a blank verdict.
+if [ "$FOUND_HOST" -eq 0 ]; then
+  brief "no Claude Code or Codex CLI found on this machine"
+  info "nothing is wired here yet; install one of them and re-run this doctor"
+fi
 
 info ""
 info "A host session started before a registration change keeps the old MCP"
