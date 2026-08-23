@@ -30,7 +30,7 @@ resolver = "3"
 [workspace.package]
 edition = "2024"
 rust-version = "1.97"
-version = "0.1.12"
+version = "0.1.13"
 license = "Apache-2.0"
 description = "KMP by Underpass — node-centric context rehydration engine for agentic systems"
 repository = "https://github.com/underpass-ai/kmp"
@@ -43,27 +43,27 @@ neo4rs = "0.8.0"
 # registry. The rest stay path-only on purpose: a dev-dependency without a
 # version is dropped from the published manifest, which is what keeps
 # `kmp-application` publishable while it still tests against `kmp-testkit`.
-kmp-adapter-embedded = { path = "crates/kmp-adapter-embedded", version = "0.1.12" }
+kmp-adapter-embedded = { path = "crates/kmp-adapter-embedded", version = "0.1.13" }
 kmp-adapter-nats = { path = "crates/kmp-adapter-nats" }
 kmp-adapter-neo4j = { path = "crates/kmp-adapter-neo4j" }
 kmp-adapter-valkey = { path = "crates/kmp-adapter-valkey" }
-kmp-application = { path = "crates/kmp-application", version = "0.1.12" }
+kmp-application = { path = "crates/kmp-application", version = "0.1.13" }
 kmp-config = { path = "crates/kmp-config" }
 kmp-conformance = { path = "crates/kmp-conformance" }
-kmp-domain = { path = "crates/kmp-domain", version = "0.1.12" }
-kmp-embedded = { path = "crates/kmp-embedded", version = "0.1.12" }
-kmp-memory-api = { path = "crates/kmp-memory-api", version = "0.1.12" }
+kmp-domain = { path = "crates/kmp-domain", version = "0.1.13" }
+kmp-embedded = { path = "crates/kmp-embedded", version = "0.1.13" }
+kmp-memory-api = { path = "crates/kmp-memory-api", version = "0.1.13" }
 kmp-interpretation = { path = "crates/kmp-interpretation" }
-kmp-mcp = { path = "crates/kmp-mcp", version = "0.1.12" }
-kmp-observability = { path = "crates/kmp-observability", version = "0.1.12", default-features = false }
-kmp-plugin-api = { path = "crates/kmp-plugin-api", version = "0.1.12" }
-kmp-ports = { path = "crates/kmp-ports", version = "0.1.12" }
-kmp-proto = { path = "crates/kmp-proto", version = "0.1.12" }
-kmp-proto-mapping = { path = "crates/kmp-proto-mapping", version = "0.1.12" }
+kmp-mcp = { path = "crates/kmp-mcp", version = "0.1.13" }
+kmp-observability = { path = "crates/kmp-observability", version = "0.1.13", default-features = false }
+kmp-plugin-api = { path = "crates/kmp-plugin-api", version = "0.1.13" }
+kmp-ports = { path = "crates/kmp-ports", version = "0.1.13" }
+kmp-proto = { path = "crates/kmp-proto", version = "0.1.13" }
+kmp-proto-mapping = { path = "crates/kmp-proto-mapping", version = "0.1.13" }
 kmp-testkit = { path = "crates/kmp-testkit" }
 kmp-tests-shared = { path = "crates/kmp-tests-shared" }
 kmp-transport-grpc = { path = "crates/kmp-transport-grpc" }
-kmp-viewer = { path = "crates/kmp-viewer", version = "0.1.12" }
+kmp-viewer = { path = "crates/kmp-viewer", version = "0.1.13" }
 prost = "0.13.5"
 prost-types = "0.13.5"
 sha2 = "0.10"
