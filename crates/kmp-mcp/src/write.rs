@@ -311,13 +311,18 @@ pub(crate) fn build_write_plan_with_root(
         ));
         relation_names.push(rel.to_string());
         relation_quality.push(quality);
-        evidence.push(json!({
-            "id": format!("evidence:{}:relation:{}", current_ref, index + 1),
-            "supports": [current_ref.clone(), target_ref],
-            "text": relation_evidence,
-            "source": format!("kernel_write_memory:{actor}:relation:{rel}"),
-            "time": observed_at
-        }));
+        // A structural link is exempt from evidence, and an evidence item with
+        // no text is not evidence: the canonical ingest mapper requires
+        // `memory.evidence[].text`, and rightly refuses an empty one.
+        if !relation_evidence.trim().is_empty() {
+            evidence.push(json!({
+                "id": format!("evidence:{}:relation:{}", current_ref, index + 1),
+                "supports": [current_ref.clone(), target_ref],
+                "text": relation_evidence,
+                "source": format!("kernel_write_memory:{actor}:relation:{rel}"),
+                "time": observed_at
+            }));
+        }
     }
 
     if let Some(delta) = arguments.get("semantic_delta").and_then(Value::as_object) {
@@ -534,16 +539,29 @@ fn relation(
     evidence: &str,
     sequence: u32,
 ) -> Value {
-    json!({
+    // A structural link carries no rationale, and that is the writer's own
+    // rule: `why` and `evidence` are required for every other class. The
+    // canonical ingest mapper reads a *present but empty* string as a
+    // malformed argument rather than an absent one, so emitting `""` here
+    // rejected exactly the writes the rule allows. Omit the keys instead.
+    let mut relation = json!({
         "from": from,
         "to": to,
         "rel": rel,
         "class": semantic_class,
         "confidence": confidence,
-        "why": why,
-        "evidence": evidence,
         "sequence": sequence
-    })
+    });
+    let fields = relation
+        .as_object_mut()
+        .expect("relation literal is a JSON object");
+    if !why.trim().is_empty() {
+        fields.insert("why".to_string(), json!(why));
+    }
+    if !evidence.trim().is_empty() {
+        fields.insert("evidence".to_string(), json!(evidence));
+    }
+    relation
 }
 
 fn suggested_reads(current_ref: &str, connect_to: &[Value]) -> Vec<Value> {
@@ -1017,6 +1035,52 @@ mod tests {
         assert_eq!(
             plan.ingest_arguments["provenance"]["source_agent"],
             "agent:backend"
+        );
+    }
+
+    #[test]
+    fn structural_links_compile_without_an_empty_rationale() {
+        // The first memory in a store is often a plain `scoped_to` into its
+        // own about, with no rationale to give — structural links are exempt
+        // from why and evidence by this tool's own contract. Compiling that
+        // exemption to `"why": ""` made the canonical ingest mapper reject the
+        // write as a malformed argument, so the exemption existed on paper
+        // only.
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("semantic_delta");
+        request["connect_to"] = json!([{
+            "ref": "incident:mobile-login",
+            "rel": "scoped_to",
+            "class": "structural"
+        }]);
+
+        let plan = build_write_plan(&request).expect("a structural link needs no rationale");
+
+        let relation = &plan.ingest_arguments["memory"]["relations"][0];
+        assert_eq!(relation["rel"], "scoped_to");
+        assert!(
+            relation.get("why").is_none(),
+            "an absent why must stay absent, not become an empty string: {relation}"
+        );
+        assert!(
+            relation.get("evidence").is_none(),
+            "an absent evidence must stay absent, not become an empty string: {relation}"
+        );
+
+        let evidence = plan.ingest_arguments["memory"]["evidence"]
+            .as_array()
+            .expect("evidence should be an array");
+        assert_eq!(
+            evidence.len(),
+            1,
+            "only the entry's own evidence survives; a structural link contributes none: {evidence:?}"
+        );
+        assert_eq!(
+            evidence[0]["text"],
+            "Logs show 401 immediately after token refresh."
         );
     }
 
