@@ -14,16 +14,33 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-doctor.sh"
 
 Then act on what it reported.
 
-**Binary missing** — install it, and prefer the repository helper when the
-user is inside a checkout, because it pins refs:
+**Binary missing, or older than these plugin files** — install the engine this
+plugin version expects. The installer downloads the release binary for this
+platform and verifies it against the checksum published beside it, so no Rust
+toolchain is needed:
 
 ```bash
-cargo install kmp-mcp
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-install-binary.sh"
+```
+
+It installs into `~/.local/bin` by default; pass `--dir` for somewhere else.
+If the platform has no published binary it falls back to `cargo install`.
+Tell the user if `~/.local/bin` is not on their `PATH` — the installer says so,
+and a binary the launcher cannot find is the same as no binary.
+
+Other ways, when the user asks for them:
+
+```bash
+cargo install kmp-mcp --force
 # inside a checkout, to pin refs:
 bash scripts/mcp/install-kmp-mcp.sh
 # for the unreleased tip:
 cargo install --git https://github.com/underpass-ai/kmp kmp-mcp --locked
 ```
+
+A version mismatch is worth fixing even when memory answers: the launcher
+falls through to whatever `kmp-mcp` is on `PATH`, so a stale half keeps
+working while the fixes that live in the other half are silently missing.
 
 **Claude Code not wired** — if this plugin is installed, the `kernel-memory`
 server ships with it and no separate registration is needed; a stale session

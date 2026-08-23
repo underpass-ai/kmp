@@ -10,6 +10,33 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/kmp-install-binary.sh` in the plugin: installs the engine whose
+  version matches the plugin's own, from the release that published it,
+  verified against the checksum published beside it. No Rust toolchain needed.
+  A marketplace install brings text and cannot bring a compiled binary, so the
+  engine arrived separately and the two drifted; `/kmp:setup` now closes that.
+- A session-start hook that says, once, when the engine and the plugin
+  disagree, and names `/kmp:setup`. It offers and never installs: a hook that
+  changes a machine while someone opens a terminal is a surprise. It stays
+  silent when the versions agree, because a hook that speaks every session is
+  one people turn off.
+
+### Changed
+
+- `kmp-doctor` reports the way `flutter doctor`, `brew doctor` and
+  `gh auth status` do: one line per area, detail only where something is
+  wrong, the fix attached to the problem, and a verdict in plain words with a
+  single next command. Everything it used to print is still there under
+  `--verbose`.
+
+### Fixed
+
+- The doctor's startup-history loop ran in a subshell, so a recorded startup
+  failure was counted and then thrown away with the subshell. It reads the
+  same lines through a here-string now, and a failed start reaches the verdict.
+
 ## [0.1.12] - 2026-08-23
 
 The binary can now introduce itself. `info` says what it is and which memory it
