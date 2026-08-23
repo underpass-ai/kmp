@@ -10,6 +10,13 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-08-23
+
+The binary can now introduce itself. `info` says what it is and which memory it
+would open here; `doctor` judges the same facts and ends in a verdict, moving a
+diagnosis that lived in the plugin's shell script into the tool it diagnoses.
+Store formats and public contracts are unchanged.
+
 ### Added
 
 - `kmp-mcp info` — what this binary is and which memory it would open here:
