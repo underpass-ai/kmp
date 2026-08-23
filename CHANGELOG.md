@@ -10,6 +10,28 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Added
+
+- `kmp-mcp info` — what this binary is and which memory it would open here:
+  the backend in effect, the data directory with the rule that chose it, the
+  format and engine on disk, the committed bundle when the store is
+  project-scoped, the tool surface, and the last startups.
+- `kmp-mcp doctor` — the same facts, judged, ending in a verdict. It reads the
+  layout from the filesystem and never opens the store, so a diagnostic cannot
+  create a memory as a side effect nor take the single-writer lock out from
+  under a live session (ADR-011).
+- A mark KMP shows when it announces itself: on `help`, atop `info` and
+  `doctor`, and on startup. The startup mark goes to stderr, because stdout
+  carries the protocol.
+
+### Changed
+
+- `kmp-adapter-embedded` exposes `read_stamped_version` and
+  `store_file_path_for`, so a diagnostic can read the layout without
+  reimplementing where the store lives.
+- `--version` output is deliberately unchanged: it is parsed by the plugin's
+  doctor, and a mark on it would break the tooling that reads it.
+
 ## [0.1.9] - 2026-08-17
 
 A delivery-hardening patch: Rust setup now survives transient download failures,

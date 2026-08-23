@@ -1,3 +1,6 @@
+pub mod banner;
+pub mod diagnostics;
+
 mod args;
 mod backend;
 mod embedded;
@@ -16,6 +19,22 @@ pub use backend::{
     GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpBackend, KernelMcpGrpcTlsConfig,
     KernelMcpGrpcTlsMode, KernelMcpToolBackend, KernelMcpToolFuture, MCP_BACKEND_ENV,
 };
+/// The tools this build advertises, in the order `tools/list` returns them.
+///
+/// Exposed so a diagnostic can answer "is the surface there" from inside the
+/// process, instead of spawning the binary to ask it.
+pub fn tool_names() -> Vec<String> {
+    protocol::tools_list_result()["tools"]
+        .as_array()
+        .map(|tools| {
+            tools
+                .iter()
+                .filter_map(|tool| tool["name"].as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 pub use embedded::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
 pub use fixture::FixtureKernelMcpBackend;
 pub use grpc::GrpcKernelMcpBackend;

@@ -50,6 +50,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
+    // The mark goes to stderr: stdout is the protocol, and a banner on it
+    // would be the first thing a host fails to parse.
+    eprintln!("{}\n", kmp_mcp::banner::LARGE);
     if server.backend_name() == "grpc" {
         eprintln!(
             "kmp-mcp: using live gRPC backend from {GRPC_ENDPOINT_ENV} with {GRPC_TLS_MODE_ENV}={}",
@@ -236,6 +239,15 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             print_help();
             return 0;
         }
+        "info" => {
+            print!("{}", kmp_mcp::diagnostics::info());
+            return 0;
+        }
+        "doctor" => {
+            let (report, code) = kmp_mcp::diagnostics::doctor();
+            print!("{report}");
+            return code;
+        }
         "--version" | "-V" | "version" => {
             // The layouts this build opens, so a user can tell at a glance
             // whether their binary carries the sqlite engine (ADR-018).
@@ -373,15 +385,18 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
 
 fn print_help() {
     println!(
-        "kmp-mcp — Kernel Memory Protocol MCP server\n\n\
+        "{}\n\n\
 Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
+kmp-mcp info                    What this binary is and which memory it opens\n  \
+kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
 kmp-mcp export [file]           Export the append-only event log\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
 kmp-mcp migrate <src> <dst> [--engine redb|sqlite]\n  \
 kmp-mcp share-memory [data-dir] Make an existing redb store shareable\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
-kmp-mcp --help                  Print this help"
+kmp-mcp --help                  Print this help",
+        kmp_mcp::banner::LARGE
     );
 }
 
