@@ -11,10 +11,21 @@
 
 set -uo pipefail
 
+VERBOSE=0
+for argument in "$@"; do
+  case "$argument" in
+    -v|--verbose) VERBOSE=1 ;;
+    -h|--help) sed -n '2,11p' "$0"; exit 0 ;;
+    *) printf 'kmp-doctor: unknown argument %s\n' "$argument" >&2; exit 2 ;;
+  esac
+done
+
 FAILURES=0
 WARNINGS=0
 SESSION_USABLE=1
 SESSION_REASON=""
+NEXT_COMMAND=""
+NEXT_REASON=""
 
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   B=$'\033[1m'; R=$'\033[31m'; G=$'\033[32m'; Y=$'\033[33m'; D=$'\033[2m'; Z=$'\033[0m'
@@ -22,13 +33,76 @@ else
   B=''; R=''; G=''; Y=''; D=''; Z=''
 fi
 
-section() { printf '\n%s%s%s\n' "$B" "$1" "$Z"; }
-ok()      { printf '  %sok%s    %s\n' "$G" "$Z" "$1"; }
-warn()    { printf '  %swarn%s  %s\n' "$Y" "$Z" "$1"; WARNINGS=$((WARNINGS + 1)); }
-fail()    { printf '  %sFAIL%s  %s\n' "$R" "$Z" "$1"; FAILURES=$((FAILURES + 1)); }
-info()    { printf '        %s%s%s\n' "$D" "$1" "$Z"; }
+# One line per area, detail only where something is wrong — the shape
+# `flutter doctor`, `brew doctor` and `gh auth status` share. The full record
+# is still there under --verbose; what changes is which of it you have to read
+# to learn whether your memory works.
+AREA=""
+AREA_STATUS="ok"
+AREA_HEADLINE=""
+AREA_HEADLINE_INDEX=-1
+AREA_LINES=()
 
-printf '%sKMP doctor%s  %sagent memory, end to end%s\n' "$B" "$Z" "$D" "$Z"
+render_area() {
+  [ -z "$AREA" ] && return 0
+  local glyph colour
+  case "$AREA_STATUS" in
+    ok)   glyph="✓"; colour="$G" ;;
+    warn) glyph="!"; colour="$Y" ;;
+    *)    glyph="✗"; colour="$R" ;;
+  esac
+  printf '%s[%s]%s %s%-10s%s %s\n' "$colour" "$glyph" "$Z" "$B" "$AREA" "$Z" "$AREA_HEADLINE"
+  if [ "$AREA_STATUS" != "ok" ] || [ "$VERBOSE" -eq 1 ]; then
+    local index=0
+    local line
+    for line in "${AREA_LINES[@]:-}"; do
+      # The line that became the headline is already on screen.
+      if [ "$index" -ne "$AREA_HEADLINE_INDEX" ] || [ "$VERBOSE" -eq 1 ]; then
+        [ -n "$line" ] && printf '%s\n' "$line"
+      fi
+      index=$((index + 1))
+    done
+  fi
+}
+
+section() {
+  render_area
+  AREA="$1"
+  AREA_STATUS="ok"
+  AREA_HEADLINE=""
+  AREA_HEADLINE_INDEX=-1
+  AREA_LINES=()
+}
+
+# The compact headline for an area. Without it the first check speaks for the
+# area, which is right when the first check is the point and wrong when it is
+# a preamble.
+brief()   { AREA_HEADLINE="$1"; AREA_HEADLINE_INDEX=-1; }
+
+# The command to put in front of the reader at the end. The first problem to
+# name one wins: a doctor that lists five fixes has not diagnosed anything.
+offer()   { [ -z "$NEXT_COMMAND" ] && { NEXT_COMMAND="$1"; NEXT_REASON="${2:-}"; }; return 0; }
+
+ok()      { AREA_LINES+=("  ${G}ok${Z}    $1")
+            if [ -z "$AREA_HEADLINE" ]; then
+              AREA_HEADLINE="$1"; AREA_HEADLINE_INDEX=$((${#AREA_LINES[@]} - 1))
+            fi
+            return 0; }
+warn()    { AREA_LINES+=("  ${Y}warn${Z}  $1")
+            if [ "$AREA_STATUS" = "ok" ]; then
+              AREA_STATUS="warn"; AREA_HEADLINE="$1"
+              AREA_HEADLINE_INDEX=$((${#AREA_LINES[@]} - 1))
+            fi
+            WARNINGS=$((WARNINGS + 1)); return 0; }
+fail()    { AREA_LINES+=("  ${R}FAIL${Z}  $1")
+            if [ "$AREA_STATUS" != "fail" ]; then
+              AREA_STATUS="fail"; AREA_HEADLINE="$1"
+              AREA_HEADLINE_INDEX=$((${#AREA_LINES[@]} - 1))
+            fi
+            FAILURES=$((FAILURES + 1)); return 0; }
+info()    { AREA_LINES+=("        ${D}$1${Z}"); return 0; }
+
+printf '%sKMP doctor%s\n\n' "$B" "$Z"
 
 # ---------------------------------------------------------------- binary ----
 section "Binary"
@@ -47,6 +121,7 @@ fi
 
 if [ -z "$BIN" ] || [ ! -x "$BIN" ]; then
   fail "kmp-mcp not found"
+  offer "/kmp:setup" "there is no engine on this machine yet"
   info "install it with:"
   info "  cargo install kmp-mcp"
   info "or, in a checkout:  bash scripts/mcp/install-kmp-mcp.sh"
@@ -56,6 +131,7 @@ fi
 
 ok "kmp-mcp at $BIN"
 VERSION="$("$BIN" --version 2>/dev/null | head -1)"
+[ -n "$VERSION" ] && brief "$VERSION"
 [ -n "$VERSION" ] && info "$VERSION"
 
 # --------------------------------------------------------------- plugin ----
@@ -95,6 +171,9 @@ else
     info "a stale plugin still starts, because the launcher falls back to the"
     info "binary on PATH — so fixes that live in the launcher, this doctor or"
     info "the skills are the ones you are missing."
+    if [ "$PLUGIN_VERSION" != "$BINARY_VERSION" ]; then
+      offer "/kmp:setup" "your engine is $BINARY_VERSION and the plugin is $PLUGIN_VERSION"
+    fi
   fi
 fi
 
@@ -124,7 +203,7 @@ else
 fi
 
 # -------------------------------------------------------------- data dir ----
-section "Data directory"
+section "Memory"
 
 if [ "${BACKEND:-embedded}" = "grpc" ] || { [ -z "$BACKEND" ] && [ -n "$ENDPOINT" ]; }; then
   info "not applicable in grpc mode — storage lives behind the server"
@@ -228,8 +307,14 @@ else
       else
         ok "store is free — no other process holds it"
       fi
+      STORE_SIZE="$(du -h "$STORE_FILE" 2>/dev/null | cut -f1)"
+      STORE_WHEN="$(date -r "$STORE_FILE" '+%Y-%m-%d %H:%M' 2>/dev/null)"
+      if [ "$AREA_STATUS" = "ok" ]; then
+        brief "${STORE_SIZE:-?} · ${ENGINE} · last written ${STORE_WHEN:-unknown}"
+      fi
     else
       info "no store yet — it is created on first write"
+      [ "$AREA_STATUS" = "ok" ] && brief "$DATA_DIR — empty, created on first write"
     fi
   else
     info "does not exist yet — it is created on first write"
@@ -243,9 +328,10 @@ fi
 # stderr, which the host consumes — so this checked a healthy setup while
 # the session it was diagnosing had no memory at all. It reads the record
 # now instead of only testing what happens this second.
-section "Startup history"
+section "History"
 
 if [ -z "${DATA_DIR:-}" ] || [ ! -d "$DATA_DIR/logs" ]; then
+  brief "no startup recorded here yet"
   info "no startup log yet at ${DATA_DIR:-<unresolved>}/logs"
 else
   LAST_STARTS="$(
@@ -276,13 +362,23 @@ for verdict, when, detail in starts[-5:]:
   if [ -z "$LAST_STARTS" ]; then
     info "the log has no startup lines yet — this binary predates them"
   else
-    printf '%s\n' "$LAST_STARTS" | while IFS='|' read -r verdict when detail; do
+    # A here-string, not a pipe: a piped loop runs in a subshell, so every
+    # startup failure it read would be counted and then thrown away with it.
+    while IFS='|' read -r verdict when detail; do
+      [ -z "$verdict" ] && continue
       if [ "$verdict" = "FAIL" ]; then
         fail "$when  $detail"
       else
         ok "$when  $detail"
       fi
-    done
+    done <<< "$LAST_STARTS"
+    LAST_LINE="$(printf '%s\n' "$LAST_STARTS" | tail -1)"
+    LAST_WHEN="$(printf '%s' "$LAST_LINE" | cut -d'|' -f2)"
+    if printf '%s' "$LAST_LINE" | grep -q '^FAIL'; then
+      brief "the last start failed, at $LAST_WHEN"
+    else
+      brief "last started $LAST_WHEN, without failing"
+    fi
     if printf '%s' "$LAST_STARTS" | tail -1 | grep -q '^FAIL'; then
       SESSION_USABLE=0
       SESSION_REASON="last start failed"
@@ -293,7 +389,7 @@ for verdict, when, detail in starts[-5:]:
 fi
 
 # --------------------------------------------------------- tool surface ----
-section "Tool surface"
+section "Tools"
 
 REQUEST='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ERR_LOG="$(mktemp)"
@@ -339,8 +435,8 @@ fi
 COUNT="$(printf '%s' "$TOOLS" | wc -w | tr -d ' ')"
 
 if [ "$COUNT" -gt 0 ]; then
-  ok "$COUNT tools answered tools/list"
-  printf '        %s%s%s\n' "$D" "$TOOLS" "$Z"
+  ok "$COUNT tools answered"
+  info "$TOOLS"
   [ "$COUNT" -lt 10 ] && warn "expected 10 moves; this build exposes $COUNT"
 else
   fail "the binary did not return a usable tool list"
@@ -353,7 +449,7 @@ else
 fi
 
 # ----------------------------------------------------------- host wiring ----
-section "Host registration"
+section "Hosts"
 
 FOUND_HOST=0
 
@@ -363,6 +459,7 @@ if command -v claude >/dev/null 2>&1; then
     ok "Claude Code — kernel-memory registered"
   else
     warn "Claude Code — kernel-memory not in 'claude mcp list'"
+    offer "/kmp:setup" "Claude Code has no kernel-memory server registered"
     info "installing the kmp plugin wires it automatically:"
     info "  /plugin marketplace add underpass-ai/plugins"
     info "  /plugin install kmp@underpass"
@@ -379,6 +476,7 @@ if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
     ok "Codex CLI — kernel-memory registered"
   else
     warn "Codex CLI — kernel-memory not in $CODEX_CONFIG"
+    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI is not wired"
     info "wire it with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
   fi
 fi
@@ -391,19 +489,34 @@ info "inventory. If the wiring looks right but the tools are missing, restart"
 info "the session."
 
 # --------------------------------------------------------------- verdict ----
+render_area
+AREA=""
+
 printf '\n'
 if [ "$SESSION_USABLE" -eq 0 ]; then
-  printf '%sBinary ok · this session: no tools (%s)%s\n' "$R" "$SESSION_REASON" "$Z"
-  [ "$FAILURES" -gt 0 ] && printf '%d additional check(s) failed, %d warning(s).\n' "$FAILURES" "$WARNINGS"
+  printf '%sYour memory is not answering in this session.%s %s\n' "$R" "$Z" "$SESSION_REASON"
+  [ -n "$NEXT_COMMAND" ] && printf 'Run: %s%s%s\n' "$B" "$NEXT_COMMAND" "$Z"
   exit 1
 fi
+
+ISSUES=$((FAILURES + WARNINGS))
 if [ "$FAILURES" -gt 0 ]; then
-  printf '%s%d check(s) failed%s, %d warning(s).\n' "$R" "$FAILURES" "$Z" "$WARNINGS"
-  exit 1
+  printf '%sDoctor found %d issue(s).%s Your memory will not work until they are fixed.\n' \
+    "$R" "$ISSUES" "$Z"
+elif [ "$WARNINGS" -gt 0 ]; then
+  printf '%sDoctor found %d issue(s).%s Your memory works; none of them stop it today.\n' \
+    "$Y" "$ISSUES" "$Z"
+else
+  printf '%sNo issues found. Your memory is wired and answering.%s\n' "$G" "$Z"
 fi
-if [ "$WARNINGS" -gt 0 ]; then
-  printf '%sUsable%s, with %d warning(s) above.\n' "$Y" "$Z" "$WARNINGS"
-  exit 0
+
+if [ -n "$NEXT_COMMAND" ]; then
+  printf '\nNext: %s%s%s' "$B" "$NEXT_COMMAND" "$Z"
+  [ -n "$NEXT_REASON" ] && printf '   %s(%s)%s' "$D" "$NEXT_REASON" "$Z"
+  printf '\n'
 fi
-printf '%sKMP memory is wired and answering.%s\n' "$G" "$Z"
+[ "$VERBOSE" -eq 0 ] && [ "$ISSUES" -gt 0 ] \
+  && printf '%sRun with --verbose to see every check.%s\n' "$D" "$Z"
+
+[ "$FAILURES" -gt 0 ] && exit 1
 exit 0

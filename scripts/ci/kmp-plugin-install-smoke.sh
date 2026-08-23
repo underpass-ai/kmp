@@ -195,4 +195,33 @@ PYCHECK
 
 printf '%s\n' "${RESPONSES}" | python3 "${CHECKER}" "${WORKSPACE_VERSION}"
 
+# The offer has to survive the marketplace shape too: a plugin that ships the
+# notice but not the installer would tell a user to run a command that is not
+# there. Both are tracked files, so both must land in the copy a host gets.
+for required in scripts/kmp-install-binary.sh scripts/kmp-version-notice.sh hooks/hooks.json; do
+  [ -f "${INSTALLED}/$required" ] \
+    || fail "$required is missing from the marketplace copy"
+done
+
+# With no engine on the machine, the notice says so and names the one command
+# that fixes it. This is the state a marketplace install leaves behind.
+if ! KMP_MCP_BIN="${WORK_DIR}/no-such-kmp-mcp" CLAUDE_PLUGIN_ROOT="${INSTALLED}" \
+     bash "${INSTALLED}/scripts/kmp-version-notice.sh" > "${WORK_DIR}/notice.txt" 2>&1; then
+  fail "the version notice exited non-zero; a session-start hook must never break a session"
+fi
+grep -q "kmp:setup" "${WORK_DIR}/notice.txt" \
+  || { cat "${WORK_DIR}/notice.txt" >&2; fail "the notice does not offer /kmp:setup"; }
+
+# And when the engine matches, it says nothing at all. A hook that speaks every
+# session is a hook people turn off, and then it is not there on the day it
+# would have mattered.
+if ! CLAUDE_PLUGIN_ROOT="${INSTALLED}" \
+     bash "${INSTALLED}/scripts/kmp-version-notice.sh" > "${WORK_DIR}/quiet.txt" 2>&1; then
+  fail "the version notice exited non-zero with a matching engine"
+fi
+if [ -s "${WORK_DIR}/quiet.txt" ]; then
+  cat "${WORK_DIR}/quiet.txt" >&2
+  fail "the notice spoke while the engine and the plugin agree"
+fi
+
 echo "KMP plugin install smoke passed"
