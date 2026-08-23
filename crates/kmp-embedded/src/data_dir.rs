@@ -104,6 +104,18 @@ pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
 /// data directory gets the same safety skeleton, regardless of whether it was
 /// discovered from a project, supplied explicitly, or created by migration.
 pub fn resolve_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
+    let resolved = locate_data_dir_from_env()?;
+    prepare_data_dir(&resolved)?;
+    Ok(resolved)
+}
+
+/// Resolves from the process environment and touches nothing.
+///
+/// Reporting where memory *would* live must not bring it into being:
+/// `kmp-mcp info` and `kmp-mcp doctor` run wherever a user happens to be
+/// standing, and a diagnostic that leaves a `.kernel/` behind in an unrelated
+/// repository has answered a question by changing the answer.
+pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
     let env_override = std::env::var(DATA_DIR_ENV).ok();
     let working_dir = std::env::current_dir().map_err(|error| {
         PortError::Unavailable(format!(
@@ -127,9 +139,11 @@ pub fn resolve_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
             )
         })?;
 
-    let resolved = resolve_data_dir(env_override.as_deref(), &working_dir, &user_data_home);
-    prepare_data_dir(&resolved)?;
-    Ok(resolved)
+    Ok(resolve_data_dir(
+        env_override.as_deref(),
+        &working_dir,
+        &user_data_home,
+    ))
 }
 
 fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {

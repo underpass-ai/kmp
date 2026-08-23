@@ -455,7 +455,13 @@ FOUND_HOST=0
 
 if command -v claude >/dev/null 2>&1; then
   FOUND_HOST=1
-  if claude mcp list 2>/dev/null | grep -qi 'kernel-memory'; then
+  # `claude mcp list` proves a registration by starting the server, and a
+  # server that starts prepares its data dir — so asking Claude Code whether
+  # KMP is wired used to leave a `.kernel/` behind in whatever project the
+  # user happened to be standing in. Point that start at the throwaway dir
+  # the tool probe already uses: the answer is the same, the footprint is
+  # none.
+  if env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null | grep -qi 'kernel-memory'; then
     ok "Claude Code — kernel-memory registered"
   else
     warn "Claude Code — kernel-memory not in 'claude mcp list'"
