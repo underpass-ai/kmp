@@ -5,40 +5,72 @@
 Kernel Memory Protocol for navigable, temporal, multidimensional AI agent
 memory.
 
-## Start here — pick an edition
+## Your first memory, in two minutes
 
-KMP ships as **two editions of one protocol**. They expose the identical tool
-surface with identical JSON, so memory written through one is navigable through
-the other. Full comparison: **[docs/editions.md](./docs/editions.md)**.
+One path, in Claude Code. No database, no API key, no Rust toolchain.
 
-### Embedded edition — inside your coding agent
-
-The kernel runs in-process inside the MCP stdio binary. No database, no
-service, no API key. Memory lands in a per-project `.kernel/` store. Verified
-live in **Claude Code** and **Codex CLI**.
-
-```bash
-cargo install kmp-mcp
-```
-
-**Claude Code** — install the [plugin](./plugins/kmp/README.md). It registers
-the MCP server, installs the `kmp-memory` skill that teaches the agent *when*
-to reach for memory, and adds `/kmp:doctor`, `/kmp:moves` and `/kmp:setup`:
+**1. Install the plugin, and the engine it expects**
 
 ```text
 /plugin marketplace add underpass-ai/plugins
 /plugin install kmp@underpass
+/kmp:setup
 ```
 
-The plugin launcher runs `bin/kmp-mcp` from a release package when there is
-one, and otherwise falls back to the `kmp-mcp` you just installed on `PATH`.
-Run `/kmp:doctor` if anything looks wrong — it diagnoses the setup end to end
-and names the one thing to fix.
+The MCP server ships inside the plugin, so there is nothing to register.
+`/kmp:setup` brings the part a marketplace cannot: it downloads the `kmp-mcp`
+binary matching this plugin's version, from the release that published it, and
+verifies it against the checksum published beside it. Restart the session
+afterwards so the tools load.
+
+**2. Write something worth remembering**
+
+In a project directory, say it in plain words:
+
+> Remember that we picked redb over sqlite for the embedded store: one writer
+> matched one agent per project, and sqlite stayed opt-in for the case of two
+> hosts sharing a store.
+
+The agent stores it with `kernel_write_memory`, under an *about* — a stable id
+for what the memory is about, conventionally `project:<name>`. The decision
+lands with its reason attached, as a typed relation, not as a loose note.
+
+**3. Recover it in a new session**
+
+Open a new session in the same directory and ask:
+
+> What do we know about this project?
+
+The agent calls `kernel_wake { about: "project:<name>" }` and gets back where
+the work stood, your decision among it, with the why still attached. The
+second session did not re-derive it and did not read the first one's
+transcript. That is the whole claim, and you just watched it happen.
+
+**When something looks wrong** — `/kmp:doctor` checks the setup end to end and
+names the one thing to fix. **To see memory before writing any** — `/kmp:demo`
+loads a real incident, wrong turn included, and walks the moves against it.
+**To learn the surface** — `/kmp:moves`, ten moves and when to reach for each.
+
+**Then read** the [Usage Guide](./docs/usage-guide.md) — 3 steps to give your
+agent graph-aware context, with sequence diagrams and examples.
 
 <details>
-<summary>Register the MCP server by hand, without the plugin</summary>
+<summary><b>Another host, or no plugin at all</b></summary>
+
+**Codex CLI** — no plugin system, so a script does the whole wiring (binary,
+`~/.codex/config.toml`, prompts, and the memory doctrine in `~/.codex/AGENTS.md`
+behind replace-in-place markers). Re-running is safe; `--dry-run` shows the
+changes first:
 
 ```bash
+bash scripts/mcp/install-kmp-plugin.sh --codex
+```
+
+**Claude Code without the plugin** — install the binary and register the server
+by hand:
+
+```bash
+cargo install kmp-mcp
 claude mcp add kernel-memory --scope user \
   --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
 ```
@@ -46,39 +78,51 @@ claude mcp add kernel-memory --scope user \
 `--scope user` registers it for every project; each project still keeps its own
 `.kernel/` store. Verify with `claude mcp list`.
 
+**Every other host**: [embedded-hosts.md](./docs/operations/embedded-hosts.md).
+Prebuilt binaries and the one-command installer:
+[embedded-release.md](./docs/operations/embedded-release.md). What the plugin
+itself contains: [plugins/kmp/README.md](./plugins/kmp/README.md).
+
 </details>
 
-**Codex CLI** — no plugin system, so a script does the whole wiring (binary,
-`~/.codex/config.toml`, prompts, and the memory doctrine in
-`~/.codex/AGENTS.md` behind replace-in-place markers). Re-running is safe;
-`--dry-run` shows the changes first:
+<details>
+<summary><b>A team sharing one memory — the cluster edition</b></summary>
 
-```bash
-bash scripts/mcp/install-kmp-plugin.sh --codex
-```
+KMP ships as **two editions of one protocol**. Everything above is the
+embedded one. The cluster edition is the typed `KernelMemoryService` over gRPC,
+with graph, key-value and event persistence behind ports: Helm chart, TLS/mTLS
+on the boundaries, OpenTelemetry and Loki.
 
-Every other host: [embedded-hosts.md](./docs/operations/embedded-hosts.md).
-Prebuilt binaries and the one-command installer:
-[embedded-release.md](./docs/operations/embedded-release.md).
+| | Embedded edition | Cluster edition |
+|:--|:--|:--|
+| Who it is for | one developer, one project | a team sharing and auditing memory |
+| Kernel runs | in-process, inside `kmp-mcp` | remote `KernelMemoryService` over gRPC |
+| Storage | one local data dir (`.kernel/`; redb, or sqlite opt-in) | Neo4j · Valkey · NATS JetStream |
+| Requires | nothing | a deployed kernel plus TLS configuration |
+| Concurrency | one host per data dir on redb; two hosts share one store on sqlite | server-side |
+| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
 
-### Cluster edition — shared memory for a team
-
-The typed `KernelMemoryService` over gRPC, with graph, key-value and event
-persistence behind ports. Helm chart, TLS/mTLS on the boundaries, OpenTelemetry
-and Loki.
+Both expose the identical KMP surface with identical JSON by construction — the
+embedded backend reuses the live JSON path through shared proto mapping, and a
+conformance suite pins storage semantics across backends in CI. Switching is an
+environment change, not a code change.
 
 ```bash
 docker pull ghcr.io/underpass-ai/kmp:latest   # trial only; pin a digest or v* tag in production
 ```
 
 Deploy guide: [kubernetes-deploy.md](./docs/operations/kubernetes-deploy.md).
+Which edition to run, what each guarantees, and how to move between them:
+[docs/editions.md](./docs/editions.md).
 
-### Building the kernel itself
+</details>
+
+<details>
+<summary><b>Building the kernel itself</b></summary>
 
 Contributor loop, not a user path — see [Developing this repo](#developing-this-repo).
 
-**Then read** the [Usage Guide](./docs/usage-guide.md) — 3 steps to give your
-agent graph-aware context, with sequence diagrams and examples.
+</details>
 
 ## What This Repo Is
 
@@ -217,29 +261,10 @@ What is out of scope:
 - Product-side integration adapters, shadow mode, or rollout logic
 - Authorization backend (scope validation is set-comparison only)
 
-## Editions
-
-| | Embedded edition | Cluster edition |
-|:--|:--|:--|
-| Who it is for | one developer, one project | a team sharing and auditing memory |
-| Kernel runs | in-process, inside `kmp-mcp` | remote `KernelMemoryService` over gRPC |
-| Storage | one local data dir (`.kernel/`; redb, or sqlite opt-in) | Neo4j · Valkey · NATS JetStream |
-| Requires | nothing | a deployed kernel plus TLS configuration |
-| Concurrency | one host per data dir on redb; two hosts share one store on sqlite | server-side |
-| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
-
-Both expose the identical KMP surface with identical JSON by construction — the
-embedded backend reuses the live JSON path through shared proto mapping, and a
-conformance suite pins storage semantics across backends in CI. Switching is an
-environment change, not a code change.
-
-Which one to run, what each guarantees, and how to move between them:
-**[docs/editions.md](./docs/editions.md)**.
-
 ## Developing this repo
 
 The commands below build and verify the kernel itself. To *use* KMP, see
-[Start here](#start-here--pick-an-edition) instead.
+[Your first memory, in two minutes](#your-first-memory-in-two-minutes) instead.
 
 ```bash
 # Toolchain: Rust 1.97.1 (pinned in rust-toolchain.toml)
