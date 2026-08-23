@@ -1,7 +1,7 @@
 {
   "name": "kmp",
   "displayName": "KMP by Underpass",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Discover and operate KMP agent memory: wires the kernel-memory MCP server, teaches the ten moves, and diagnoses a broken setup.",
   "author": {
     "name": "Underpass AI",
