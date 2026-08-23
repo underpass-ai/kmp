@@ -92,7 +92,7 @@ pub fn format_version_path(data_dir: &Path) -> PathBuf {
 ///
 /// The migration needs to know what it is looking at precisely when
 /// [`check_or_stamp`] would refuse to open it.
-pub(crate) fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
+pub fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
     let version_path = format_version_path(data_dir);
     let raw = fs::read_to_string(&version_path).map_err(|error| {
         PortError::Unavailable(format!(
@@ -110,7 +110,7 @@ pub(crate) fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
 }
 
 /// Where `engine` keeps its store inside `data_dir`.
-pub(crate) fn store_file_path_for(data_dir: &Path, engine: StorageEngine) -> PathBuf {
+pub fn store_file_path_for(data_dir: &Path, engine: StorageEngine) -> PathBuf {
     data_dir.join("store").join(engine.store_file_name())
 }
 
