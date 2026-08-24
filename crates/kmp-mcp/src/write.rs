@@ -168,6 +168,7 @@ pub(crate) fn build_write_plan_with_root(
     validate_intent(&intent)?;
     let actor = required_string(arguments, "actor")?;
     let observed_at = required_string(arguments, "observed_at")?;
+    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
     let scope = required_object(arguments, "scope")?;
     let read_context = ReadContext::from_arguments(arguments)?;
     let process_scope = required_map_string(scope, "process", "scope.process")?;
@@ -817,6 +818,47 @@ fn required_object<'a>(
         .ok_or_else(|| format!("missing required object argument `{key}`"))
 }
 
+/// Refuses a stamp the kernel's own clock says has not happened yet.
+///
+/// The read path is ordered by `observed_at`, so an entry above the present
+/// is one `kernel_forward` from a correct "now" will never return: the delta
+/// comes back empty and looks exactly like a quiet week. The log has no
+/// delete, so this has to be caught before the write and not explained
+/// afterwards.
+///
+/// A shape the clock cannot read is left alone. Format is the ingest layer's
+/// contract, and refusing here for a second reason would move that argument
+/// into the wrong place.
+fn reject_a_time_that_has_not_happened(observed_at: &str, now: i64) -> Result<(), String> {
+    let Some(stamped) = crate::clock::rfc3339_to_seconds(observed_at) else {
+        return Ok(());
+    };
+    let ahead = stamped - now;
+    if ahead <= crate::clock::FUTURE_TOLERANCE_SECONDS {
+        return Ok(());
+    }
+    Err(format!(
+        "`observed_at` is {} ahead of this kernel's clock, so it has not happened yet. \
+         RFC3339 permits an offset and `{observed_at}` claims UTC: local wall-clock time \
+         written with a `Z` is the usual cause. Stamp the real UTC time — memory is ordered \
+         by this field, and an entry above the present is one that reading forward from now \
+         never finds.",
+        humanise(ahead)
+    ))
+}
+
+/// A duration a person can judge at a glance. "12240 seconds" is a number to
+/// do arithmetic on; "3h 24m" is recognisably a timezone.
+fn humanise(seconds: i64) -> String {
+    let (hours, minutes) = (seconds / 3_600, (seconds % 3_600) / 60);
+    match (hours, minutes) {
+        (0, 0) => format!("{seconds}s"),
+        (0, minutes) => format!("{minutes}m"),
+        (hours, 0) => format!("{hours}h"),
+        (hours, minutes) => format!("{hours}h {minutes}m"),
+    }
+}
+
 fn required_string(object: &Map<String, Value>, key: &str) -> Result<String, String> {
     object
         .get(key)
@@ -974,6 +1016,57 @@ fn plural<'a>(count: usize, singular: &'a str, plural: &'a str) -> &'a str {
 
 #[cfg(test)]
 mod tests {
+    use super::{humanise, reject_a_time_that_has_not_happened};
+
+    /// 2026-08-24T20:44:21Z — the wall clock in the log line that exposed the
+    /// skew, used as "now" so these do not drift with the calendar.
+    const NOW: i64 = 1787604261;
+
+    #[test]
+    fn a_stamp_from_the_past_is_a_backfill_and_is_allowed() {
+        // Recording something that happened earlier is legitimate and common:
+        // an incident written up the next morning is still true.
+        assert!(reject_a_time_that_has_not_happened("2026-08-18T05:57:01.068Z", NOW).is_ok());
+    }
+
+    #[test]
+    fn a_stamp_inside_the_tolerance_survives_a_skewed_clock() {
+        assert!(reject_a_time_that_has_not_happened("2026-08-24T20:46:00Z", NOW).is_ok());
+    }
+
+    #[test]
+    fn local_wall_clock_written_as_utc_is_refused_and_told_why() {
+        // The exact failure: CEST written with a `Z`, three hours and twenty
+        // minutes into the future, accepted in silence.
+        let error = reject_a_time_that_has_not_happened("2026-08-25T00:05:00Z", NOW)
+            .expect_err("a time that has not happened");
+        assert!(error.contains("3h 20m"), "say how far out it is: {error}");
+        assert!(
+            error.contains("local wall-clock"),
+            "and name the cause, because it is always the same one: {error}"
+        );
+    }
+
+    #[test]
+    fn a_correct_offset_is_read_as_the_time_it_actually_is() {
+        // 22:44+02:00 is 20:44Z — the same instant, not two hours ahead. A
+        // check that refused this would punish the writers doing it right.
+        assert!(reject_a_time_that_has_not_happened("2026-08-24T22:44:21+02:00", NOW).is_ok());
+    }
+
+    #[test]
+    fn a_shape_the_clock_cannot_read_is_left_to_the_ingest_layer() {
+        assert!(reject_a_time_that_has_not_happened("yesterday", NOW).is_ok());
+    }
+
+    #[test]
+    fn a_duration_reads_as_a_timezone_rather_than_a_number_of_seconds() {
+        assert_eq!(humanise(12_000), "3h 20m");
+        assert_eq!(humanise(7_200), "2h");
+        assert_eq!(humanise(600), "10m");
+        assert_eq!(humanise(42), "42s");
+    }
+
     use serde_json::json;
 
     use super::*;

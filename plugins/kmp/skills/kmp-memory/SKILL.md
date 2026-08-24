@@ -150,6 +150,18 @@ durable shape of the work. A transcript makes later traversal worthless.
 Use one `idempotency_key` per logical write. If a retry conflicts, the write
 was already applied — that is success, not an error to retry around.
 
+## `observed_at` is the real clock, in UTC
+
+Every write carries `observed_at`, and the whole read path is ordered by it.
+**Read the clock; do not compose a timestamp.** Local wall-clock time with a
+`Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
+above the present — where `kernel_forward` from a correct "now" never finds
+it, and the delta comes back empty looking exactly like a quiet week.
+
+A stamp more than five minutes ahead of the kernel's clock is refused at
+write time. Earlier is fine: writing up yesterday's incident this morning is a
+backfill, and stamping when it happened is the point.
+
 ## Undoing is a write, not a delete
 
 There is no delete, on purpose: a memory that can be quietly edited is a
