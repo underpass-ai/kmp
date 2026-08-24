@@ -229,7 +229,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_eq!(
             ingested_ask_content.pointer("/answer"),
             Some(&Value::String(
-                "Memory answer supported by claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]; canonical text is in proof.evidence."
+                "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]"
                     .to_string()
             ))
         );

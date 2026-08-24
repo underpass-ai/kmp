@@ -769,6 +769,28 @@ pub(crate) fn enforce_temporal_output_budget(
     Ok(value)
 }
 
+/// Inspect has no canonical pagination contract yet, but it still crosses the
+/// same bounded host interface as every other read. Refuse an oversized hub
+/// node instead of returning a packet beyond the caller's declared ceiling;
+/// the include flags let the caller request incoming, outgoing, details, or
+/// raw data separately without inventing a transport-only continuation.
+pub(crate) fn enforce_inspect_output_budget(
+    value: Value,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let limit = crate::recall_projection::requested_byte_limit(arguments)
+        .map_err(ToolError::invalid_argument)?;
+    let used = serialized_len(&value);
+    if used <= limit {
+        return Ok(value);
+    }
+
+    Err(ToolError::invalid_argument(format!(
+        "this inspect response is {used} bytes and does not fit budget.max_bytes={limit}; narrow \
+         include.incoming/include.outgoing/include.details/include.raw, or raise budget.max_bytes"
+    )))
+}
+
 fn truncate_entries(value: &mut Value, entries: &[Value], keep: usize, total: usize) {
     let keep = keep.min(total);
     value["entries"] = Value::Array(entries[..keep].to_vec());
@@ -788,7 +810,7 @@ fn serialized_len(value: &Value) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::enforce_temporal_output_budget;
+    use super::{enforce_inspect_output_budget, enforce_temporal_output_budget};
 
     fn temporal_value(entries: usize, text_len: usize) -> serde_json::Value {
         serde_json::json!({
@@ -814,6 +836,31 @@ mod tests {
         let arguments = serde_json::json!({"budget": {"max_bytes": 9000}});
         let bounded = enforce_temporal_output_budget(value.clone(), &arguments).expect("fits");
         assert_eq!(bounded, value);
+    }
+
+    #[test]
+    fn inspect_refuses_a_hub_that_cannot_fit_the_declared_ceiling() {
+        let value = serde_json::json!({
+            "summary": "one hub",
+            "object": {"ref": "hub"},
+            "links": {"incoming": [], "outgoing": []},
+            "evidence": [{"text": "x".repeat(2_000)}],
+            "raw": [],
+            "quality": null,
+            "warnings": []
+        });
+        let error = enforce_inspect_output_budget(
+            value,
+            &serde_json::json!({"budget": {"max_bytes": 512}}),
+        )
+        .expect_err("the response is larger than the host-safe request");
+
+        assert_eq!(
+            error.code,
+            crate::tool_error::ToolErrorCode::InvalidArgument
+        );
+        assert!(error.message.contains("include.incoming"));
+        assert!(error.message.contains("raise budget.max_bytes"));
     }
 
     #[test]

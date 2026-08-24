@@ -67,8 +67,10 @@ colleague who imported a bundle.
 
 The frontier first: `kernel_rewind` from now with `limit: { entries: 1 }` and
 `budget: { detail: "full" }` returns the newest entry with its
-`coordinates[].observed_at`, and `page.total` for how much the memory holds.
-That timestamp is the bookmark.
+`coordinates[].observed_at`. In this temporal response, `page.total` counts
+temporal entries in the selected move; it is not the same unit as recall
+`projection.page.total`, which counts eligible expansion items. That timestamp
+is the bookmark.
 
 Then the delta: `kernel_forward` from that timestamp — or from a plain
 "since Friday" the user gives you — returns exactly what came after, in order.
@@ -84,8 +86,8 @@ work.
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_trace` | Prove a connection: the path between two refs. |
-| `kernel_inspect` | Examine one ref: stored object, links, evidence. `include.raw=true` for audit refs. |
+| `kernel_trace` | Prove a connection between two refs in the same memory graph. Abouts are never joined, so cross-about refs have no path. |
+| `kernel_inspect` | Examine one ref: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
 
 **Write**
 
@@ -94,9 +96,12 @@ work.
 | `kernel_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then compiles to canonical ingest. Supports `options.dry_run` to check before committing. |
 | `kernel_ingest` | Canonical low-level form. Use when you are producing the exact graph yourself. |
 
-Temporal reads return a `page` object. A bounded partial read is visible, not
-silent — if `page` says the slice was truncated, say so rather than treating
-it as the whole history.
+Temporal reads return a `page` object whose total is temporal entries and whose
+continuation is a memory-ref cursor. Wake and Ask return `projection.page`,
+whose total is eligible expansion items and whose cursor is an opaque,
+selection-bound token. A bounded partial read is visible, not silent — if
+either page says the slice was cut, say so rather than treating it as the whole
+history.
 
 ## Memory can live in the repository
 
