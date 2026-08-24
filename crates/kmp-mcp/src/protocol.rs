@@ -763,15 +763,33 @@ pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<
     let Some(schema) = tool_input_schema(tool) else {
         return Ok(());
     };
-    check_against_schema(&schema, arguments, tool)
+    check_against_schema(schema, arguments, tool)
 }
 
-fn tool_input_schema(tool: &str) -> Option<Value> {
-    tools_list_result()["tools"]
-        .as_array()?
-        .iter()
-        .find(|definition| definition["name"].as_str() == Some(tool))
-        .map(|definition| definition["inputSchema"].clone())
+/// The schemas, built once.
+///
+/// This runs on every tool call, and `tools_list_result()` builds the whole
+/// ten-tool document — relation vocabulary included — from scratch each time.
+/// Rebuilding a document that cannot change, per call, to read one field of
+/// it, is a cost with nothing on the other side of it.
+fn tool_input_schema(tool: &str) -> Option<&'static Value> {
+    static SCHEMAS: std::sync::OnceLock<std::collections::BTreeMap<String, Value>> =
+        std::sync::OnceLock::new();
+    SCHEMAS
+        .get_or_init(|| {
+            tools_list_result()["tools"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|definition| {
+                    Some((
+                        definition["name"].as_str()?.to_string(),
+                        definition["inputSchema"].clone(),
+                    ))
+                })
+                .collect()
+        })
+        .get(tool)
 }
 
 fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(), ToolError> {

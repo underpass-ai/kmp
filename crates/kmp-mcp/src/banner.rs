@@ -11,8 +11,12 @@
 //! is absent in use — so it went, and the doc now describes what exists.
 
 /// The full mark, with what KMP is and what it does not need.
-pub const LARGE: &str = "\
- ██╗  ██╗███╗   ███╗██████╗
+///
+/// Written without a `\` line continuation on purpose: that escape eats the
+/// newline *and* the leading whitespace of the next line, so the top row of
+/// the mark lost its column and the logo shipped one character out of true —
+/// on the two surfaces a user actually meets it.
+pub const LARGE: &str = " ██╗  ██╗███╗   ███╗██████╗
  ██║ ██╔╝████╗ ████║██╔══██╗   Kernel Memory Protocol
  █████╔╝ ██╔████╔██║██████╔╝   temporal · multidimensional · auditable
  ██╔═██╗ ██║╚██╔╝██║██╔═══╝
@@ -44,6 +48,23 @@ mod tests {
         assert!(LARGE.contains("Kernel Memory Protocol"));
         assert!(LARGE.contains("embedded database + event store"));
         assert!(LARGE.contains("no external services"));
+    }
+
+    /// The mark is the product's face on the only two surfaces a user
+    /// reaches. A row one column out of true is the kind of thing nobody
+    /// reports and everybody sees.
+    #[test]
+    fn every_row_of_the_mark_starts_in_the_same_column() {
+        let indents = LARGE
+            .lines()
+            .map(|line| line.len() - line.trim_start().len())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(
+            indents.len(),
+            1,
+            "rows start at different columns: {indents:?}"
+        );
+        assert_eq!(LARGE.lines().count(), 6);
     }
 
     #[test]
