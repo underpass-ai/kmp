@@ -518,11 +518,38 @@ if command -v claude >/dev/null 2>&1; then
   fi
 fi
 
+# What a complete Codex install looks like. This list is the same one
+# install-kmp-plugin.sh copies, and scripts/ci/kmp-plugin-voice.sh fails the
+# build if the two ever drift from the prompts the plugin actually ships —
+# the drift that left a Codex user with three of eight.
+CODEX_PROMPT_NAMES="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert"
+CODEX_EXPECTED_PROMPTS=9
+
 CODEX_CONFIG="$HOME/.codex/config.toml"
 if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
   FOUND_HOST=1
   if [ -f "$CODEX_CONFIG" ] && grep -q 'mcp_servers.kernel-memory' "$CODEX_CONFIG"; then
-    ok "Codex CLI — kernel-memory registered"
+    # Registration is not the whole install. Four prompts shipped in every
+    # release and landed nowhere, because the installer copied a hardcoded
+    # three — and this line said `ok` the whole time, which is how it stayed
+    # hidden for as long as it did. Count what is actually there.
+    CODEX_PROMPT_DIR="$HOME/.codex/prompts"
+    CODEX_HAVE="$(ls "$CODEX_PROMPT_DIR"/kmp-*.md 2>/dev/null | wc -l | tr -d ' ')"
+    if [ "$CODEX_HAVE" -ge "$CODEX_EXPECTED_PROMPTS" ]; then
+      ok "Codex CLI — registered, $CODEX_HAVE commands"
+    elif [ "$CODEX_HAVE" -eq 0 ]; then
+      warn "Codex CLI — registered, but no /kmp- commands installed"
+      info "memory answers; the commands that drive it are missing"
+      info "install them with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+    else
+      warn "Codex CLI — registered, $CODEX_HAVE of $CODEX_EXPECTED_PROMPTS commands"
+      CODEX_MISSING=""
+      for name in $CODEX_PROMPT_NAMES; do
+        [ -f "$CODEX_PROMPT_DIR/$name.md" ] || CODEX_MISSING="$CODEX_MISSING /$name"
+      done
+      info "missing:$CODEX_MISSING"
+      info "re-run:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+    fi
   else
     warn "Codex CLI — kernel-memory not in $CODEX_CONFIG"
     offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI is not wired"
