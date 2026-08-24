@@ -45,6 +45,19 @@ implemented, with deprecated fields removed in `v1`.
   time, saying how far out it is and naming the cause. Earlier times are
   untouched: a backfill is legitimate. Nothing already written is edited — the
   record says what it said.
+- **The temporal verbs apply the budget they advertise.** `kernel_goto`,
+  `kernel_near`, `kernel_rewind` and `kernel_forward` declared the full
+  `budget` object — `max_bytes` among it, described as normative — and
+  enforced none of it: a `max_bytes: 9000` request came back at 17.3 KB, past
+  the caller's ceiling and past the tool's own published
+  `anthropic/maxResultSizeChars` of 10,000. Two limits, both advertised,
+  neither applied. Every one of these verbs exists to be called by a model
+  with a finite context, and an oversized result does not degrade a turn, it
+  ends it — so declaring a limit and not keeping it is worse than declaring
+  none, because the agent plans around the number and takes no precautions of
+  its own. Entries are now dropped from the far end until the response fits,
+  and `page.returned`, `page.total` and `page.has_more` say so. Both the
+  embedded and the gRPC paths, which had the same gap.
 
 - **`kernel_ask` stops claiming support it has not established.** The `answer`
   field opened "Memory answer supported by cited evidence" — a claim the
