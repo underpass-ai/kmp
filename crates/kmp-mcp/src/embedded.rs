@@ -21,9 +21,10 @@ use crate::grpc::requests::{
 };
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
-    ask_from_response, dry_run_ingest_from_plan, enforce_temporal_output_budget,
-    ingest_from_response, inspect_from_response, temporal_from_response, trace_from_response,
-    try_enforce_recall_output_budget, wake_from_response,
+    ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
+    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
+    temporal_from_response, trace_from_response, try_enforce_recall_output_budget,
+    wake_from_response,
 };
 use crate::protocol::tool_success_result;
 use crate::tool_error::{ToolError, ToolErrorCode};
@@ -466,9 +467,10 @@ async fn embedded_inspect(
         .inspect(query)
         .await
         .map_err(kernel_error("inspect", &ref_id))?;
-    Ok(tool_success_result(inspect_from_response(
-        inspect_response_from_result(result),
-    )))
+    Ok(tool_success_result(enforce_inspect_output_budget(
+        inspect_from_response(inspect_response_from_result(result)),
+        arguments,
+    )?))
 }
 
 #[cfg(test)]

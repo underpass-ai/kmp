@@ -51,6 +51,24 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **The ten tools now describe what they return.** Every `tools/list` entry
+  carries an `outputSchema` for its structured response, including proof
+  semantics, the different units and cursor kinds behind `page.total`, recall
+  projection/truncation accounting, coverage, quality, and writer results. A
+  contract test fails if a response mapper grows a top-level field without
+  describing it. Per-verb token and depth defaults are published from the same
+  surface the caller reads; the writer says which values are caller assertions
+  and which are kernel observations; and `kernel_trace` says plainly that
+  abouts are not joined.
+- Retrieval no longer becomes a support claim on the gRPC mapping path when
+  exactly one citation survives. MCP and gRPC now both say the item was
+  retrieved by term overlap and require the caller to judge the canonical
+  evidence.
+- `kernel_inspect` accepts a normative `budget.max_bytes` and refuses an
+  oversized hub with concrete include flags to narrow, rather than overflowing
+  a bounded host. Wake's structured blocker, next-action, and guardrail lists
+  now agree with the L0 summary instead of remaining empty beside asserted
+  `Blocker:` and `Next:` lines.
 - The mark lines up. Its top row lost a column to a `\` line continuation,
   which in Rust eats the newline *and* the leading whitespace of the next
   line — so the logo shipped one character out of true on the two surfaces a

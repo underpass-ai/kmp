@@ -37,9 +37,9 @@ pub(crate) fn tools_list_result() -> Value {
                 .collect::<Vec<_>>()
         },
         "tools": [
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_ingest",
-                "Submit memory with dimensions, entries, relations, evidence, and provenance for later traversal.",
+                "Low-level batch writer for callers producing the exact graph themselves. Prefer kernel_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -164,14 +164,16 @@ pub(crate) fn tools_list_result() -> Value {
                             "type": "boolean"
                         }
                     }
-                })
+                }),
+                ingest_output_schema(),
             ),
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_write_memory",
                 "Write to memory. This is the writer to use: it validates intent and relation quality, then compiles to canonical kernel_ingest, and `options.dry_run` shows what a write would commit before committing it. Reach for kernel_ingest only when producing the exact graph yourself.",
-                write_memory_schema()
+                write_memory_schema(),
+                write_memory_output_schema(),
             ),
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_wake",
                 "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
                 json!({
@@ -183,13 +185,14 @@ pub(crate) fn tools_list_result() -> Value {
                         "role": string_schema("Optional caller role."),
                         "intent": string_schema("Optional continuation intent."),
                         "dimensions": dimensions_schema(),
-                        "depth": integer_schema("Optional graph traversal depth for live gRPC mode."),
-                        "budget": budget_schema(),
+                        "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
+                        "budget": budget_schema(1_600, 2),
                         "page": recall_page_schema()
                     }
-                })
+                }),
+                wake_output_schema(),
             ),
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_ask",
                 "Retrieve stored evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — read it, and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching evidence item; it is not a judgement that the evidence answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
                 json!({
@@ -205,11 +208,12 @@ pub(crate) fn tools_list_result() -> Value {
                             "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"]
                         },
                         "dimensions": dimensions_schema(),
-                        "depth": integer_schema("Optional graph traversal depth for live gRPC mode."),
-                        "budget": budget_schema(),
+                        "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
+                        "budget": budget_schema(2_400, 2),
                         "page": recall_page_schema()
                     }
-                })
+                }),
+                ask_output_schema(),
             ),
             temporal_tool_definition(
                 "kernel_goto",
@@ -231,9 +235,9 @@ pub(crate) fn tools_list_result() -> Value {
                 "Move forward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
                 "from",
             ),
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_trace",
-                "Trace the proof path between two memory refs.",
+                "Trace the proof path between two memory refs in the same connected memory graph. Trace has no implicit cross-about scope: abouts are never joined, so refs from different abouts cannot produce a path.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -244,11 +248,12 @@ pub(crate) fn tools_list_result() -> Value {
                         "role": string_schema("Optional caller role."),
                         "goal": string_schema("Optional trace goal."),
                         "page": page_schema(),
-                        "budget": budget_schema()
+                        "budget": budget_schema(1_600, 1)
                     }
-                })
+                }),
+                trace_output_schema(),
             ),
-            tool_definition(
+            tool_definition_with_output(
                 "kernel_inspect",
                 "Inspect the typed stored memory object, direct links, and evidence for one ref.",
                 json!({
@@ -269,9 +274,11 @@ pub(crate) fn tools_list_result() -> Value {
                                     "description": "Return typed raw audit refs for the inspected object."
                                 }
                             }
-                        }
+                        },
+                        "budget": inspect_budget_schema()
                     }
-                })
+                }),
+                inspect_output_schema(),
             )
         ]
     })
@@ -286,6 +293,7 @@ fn write_memory_schema() -> Value {
             "about": string_schema("Memory anchor or root ref this semantic memory event should attach to."),
             "intent": {
                 "type": "string",
+                "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact.",
                 "enum": [
                     "record_turn",
                     "record_observation",
@@ -306,7 +314,7 @@ fn write_memory_schema() -> Value {
                 "required": ["process"],
                 "properties": {
                     "task": string_schema("Optional task dimension scope id."),
-                    "process": string_schema("Required agentic process dimension scope id."),
+                    "process": string_schema("Caller-defined stable id for the agentic process this memory belongs to. Unknown values intentionally create or attach that process dimension; this is an identifier, not an enum."),
                     "episode": string_schema("Optional agentic episode dimension scope id.")
                 }
             },
@@ -318,6 +326,7 @@ fn write_memory_schema() -> Value {
                     "ref": string_schema("Optional stable memory entry ref. Omit to let the writer planner generate one deterministically."),
                     "kind": {
                         "type": "string",
+                        "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
                         "enum": [
                             "turn",
                             "observation",
@@ -332,7 +341,7 @@ fn write_memory_schema() -> Value {
                         ]
                     },
                     "summary": string_schema("Concise semantic memory text to store."),
-                    "evidence": string_schema("Direct evidence for the new memory entry. Required in strict mode.")
+                    "evidence": string_schema("Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.")
                 }
             },
             "semantic_delta": {
@@ -393,7 +402,25 @@ fn write_memory_schema() -> Value {
                     }
                 }
             }
-        }
+        },
+        "allOf": [{
+            "if": {
+                "not": {
+                    "required": ["options"],
+                    "properties": {
+                        "options": {
+                            "required": ["strict"],
+                            "properties": {"strict": {"const": false}}
+                        }
+                    }
+                }
+            },
+            "then": {
+                "properties": {
+                    "current": {"required": ["kind", "summary", "evidence"]}
+                }
+            }
+        }]
     })
 }
 
@@ -401,6 +428,7 @@ fn read_context_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
+        "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
         "properties": {
             "inspected_refs": {
                 "type": "array",
@@ -446,7 +474,8 @@ fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> 
             "time": string_schema("ISO-8601 temporal cursor."),
             "sequence": {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1,
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number."
             },
             "ref": string_schema("Memory ref cursor.")
         }
@@ -498,12 +527,17 @@ fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> 
                     }
                 }
             },
-            "depth": integer_schema("Optional graph traversal depth for live gRPC mode."),
-            "budget": budget_schema()
+            "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
+            "budget": budget_schema(2_400, 3)
         }
     });
     input_schema["properties"][cursor_key] = cursor_schema;
-    tool_definition(name, description, input_schema)
+    tool_definition_with_output(
+        name,
+        description,
+        input_schema,
+        temporal_output_schema(cursor_key),
+    )
 }
 
 fn page_schema() -> Value {
@@ -591,10 +625,6 @@ fn string_map_schema() -> Value {
     })
 }
 
-fn tool_definition(name: &str, description: &str, input_schema: Value) -> Value {
-    tool_definition_with_output(name, description, input_schema, Value::Null)
-}
-
 /// A tool, with the shape of what it answers.
 ///
 /// Inputs were described field by field and the response — the half the agent
@@ -626,13 +656,14 @@ fn tool_definition_with_output(
     definition
 }
 
-/// An object schema whose properties are described and whose extra fields are
-/// tolerated: the response may grow, and a client that refuses a new field is
-/// worse off than one that ignores it.
+/// An object schema whose public fields are complete. A response mapper that
+/// grows without this schema growing with it is a protocol drift, not a
+/// compatible extension: the whole point of `outputSchema` is that a caller
+/// no longer has to guess what an unexplained field means.
 fn output_object(properties: Value) -> Value {
     json!({
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "properties": properties
     })
 }
@@ -641,13 +672,174 @@ fn described(kind: &str, description: &str) -> Value {
     json!({"type": kind, "description": description})
 }
 
+fn nullable_described(kind: &str, description: &str) -> Value {
+    json!({"type": [kind, "null"], "description": description})
+}
+
+fn nullable_output_schema(mut schema: Value, description: &str) -> Value {
+    schema["type"] = json!(["object", "null"]);
+    schema["description"] = json!(description);
+    schema
+}
+
+fn string_array(description: &str) -> Value {
+    json!({
+        "type": "array",
+        "description": description,
+        "items": {"type": "string"}
+    })
+}
+
+fn warnings_output_schema() -> Value {
+    string_array(
+        "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+    )
+}
+
+fn ingest_output_schema() -> Value {
+    output_object(json!({
+        "summary": described("string", "Concise statement of what the kernel accepted."),
+        "memory": output_object(json!({
+            "about": described("string", "Memory anchor the write attached to."),
+            "memory_id": described("string", "Stable id of the accepted memory event."),
+            "accepted": output_object(json!({
+                "entries": described("integer", "Number of entries accepted."),
+                "relations": described("integer", "Number of relations accepted."),
+                "evidence": described("integer", "Number of evidence items accepted.")
+            })),
+            "read_after_write_ready": described("boolean", "Whether a read issued now is guaranteed to observe this write.")
+        })),
+        "warnings": warnings_output_schema()
+    }))
+}
+
+fn write_memory_output_schema() -> Value {
+    output_object(json!({
+        "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
+        "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
+        "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
+        "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted."),
+        "relations": string_array("Typed relation names compiled into the canonical ingest."),
+        "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
+        "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),
+        "ingest_preview": described("object", "Canonical kernel_ingest arguments. Present only on dry-run."),
+        "ingest_result": described("object", "Canonical kernel_ingest result. Present only after a committed write."),
+        "diagnostics": described("array", "Planner diagnostics that qualify the write."),
+        "next_suggested_reads": string_array("Concrete refs worth reading next to verify or continue the write."),
+        "viewer": output_object(json!({
+            "url": described("string", "Loopback, read-only viewer URL for this memory."),
+            "tell_the_user": described("string", "One-time handoff text for the human; it is not another kernel instruction.")
+        }))
+    }))
+}
+
+fn recall_envelope_properties() -> Value {
+    json!({
+        "projection": projection_output_schema(),
+        "truncation": truncation_output_schema(),
+        "warnings": warnings_output_schema()
+    })
+}
+
+fn wake_output_schema() -> Value {
+    let mut properties = json!({
+        "summary": described("string", "Four-line L0 resume summary: objective, status, blocker, and next action."),
+        "wake": output_object(json!({
+            "objective": described("string", "The continuation intent supplied by the caller."),
+            "current_state": string_array("Current semantic state selected from the rendered memory."),
+            "causal_spine": described("array", "Highest-salience explanatory relations, each with claim, because, and evidence_ref."),
+            "open_loops": string_array("Live blocker statements reflected by the L0 summary; empty means no blocker was identified."),
+            "next_actions": string_array("Next-action statements reflected by the L0 summary; empty means no concrete next action was identified."),
+            "guardrails": string_array("Stored constraints the continuation should preserve.")
+        })),
+        "proof": proof_output_schema("Wake uses medium for a non-empty deterministic retrieval packet; this is not relation-writer certainty."),
+        "resume_cursor": nullable_described("object", "Newest temporal coordinate covered by this packet; null when the packet carries no temporal anchor.")
+    });
+    properties
+        .as_object_mut()
+        .expect("output properties")
+        .extend(
+            recall_envelope_properties()
+                .as_object()
+                .expect("envelope properties")
+                .clone(),
+        );
+    output_object(properties)
+}
+
+fn ask_output_schema() -> Value {
+    let mut properties = json!({
+        "summary": described("string", "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained."),
+        "answer": nullable_described("string", "UNKNOWN when the selected policy found no answerable evidence; otherwise names the retrieved citations without claiming they prove the answer."),
+        "because": described("array", "At most five retained citation refs. Empty beside UNKNOWN; canonical text lives in proof.evidence."),
+        "proof": proof_output_schema("Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty.")
+    });
+    properties
+        .as_object_mut()
+        .expect("output properties")
+        .extend(
+            recall_envelope_properties()
+                .as_object()
+                .expect("envelope properties")
+                .clone(),
+        );
+    output_object(properties)
+}
+
+fn temporal_output_schema(cursor_key: &str) -> Value {
+    output_object(json!({
+        "summary": described("string", "Concise description of the temporal selection."),
+        "temporal": nullable_described("object", "Resolved direction, requested cursor, and resolved coordinate."),
+        "coverage": output_object(json!({
+            "requested": nullable_described("object", "Dimension selection requested by the caller."),
+            "included": string_array("Dimension scope ids included in the result."),
+            "missing": string_array("Requested dimension scope ids not present in the result."),
+            "dimensions": described("array", "Per-dimension returned counts and presence flags.")
+        })),
+        "entries": described("array", "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata."),
+        "page": page_output_schema(
+            "temporal entries",
+            &format!("Memory-ref cursor for the next temporal slice; place it in `{cursor_key}.ref` while keeping the other arguments unchanged."),
+        ),
+        "raw_refs": described("array", "Typed raw audit refs for selected entries when include.raw_refs=true."),
+        "proof": proof_output_schema("Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty."),
+        "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
+        "warnings": warnings_output_schema()
+    }))
+}
+
+fn trace_output_schema() -> Value {
+    output_object(json!({
+        "summary": described("string", "Concise statement of the path selection."),
+        "trace": described("array", "Ordered typed relations connecting from to to; empty means no path in the same memory graph."),
+        "page": page_output_schema("trace relations", "Opaque trace cursor; repeat it as page.cursor with every other argument unchanged."),
+        "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
+        "warnings": warnings_output_schema()
+    }))
+}
+
+fn inspect_output_schema() -> Value {
+    output_object(json!({
+        "summary": described("string", "Concise statement of which typed object was inspected."),
+        "object": described("object", "Stored object with ref, kind, canonical text, metadata, and optional source."),
+        "links": output_object(json!({
+            "incoming": described("array", "Direct typed relations whose target is the inspected ref."),
+            "outgoing": described("array", "Direct typed relations whose source is the inspected ref.")
+        })),
+        "evidence": described("array", "Direct stored evidence for the object; text is canonical and supports names the refs it anchors."),
+        "raw": described("array", "Typed raw audit records returned only when include.raw=true."),
+        "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
+        "warnings": warnings_output_schema()
+    }))
+}
+
 /// `page`, with what `total` counts said out loud.
 ///
 /// It counts different things in different verbs — expansion items in a
 /// recall, temporal entries in a move — and nothing in the surface said the
 /// unit changed. A number whose meaning the receiver has to guess is worse
 /// than no number, because it will be acted on.
-fn page_output_schema(unit: &str) -> Value {
+fn page_output_schema(unit: &str, cursor_description: &str) -> Value {
     output_object(json!({
         "returned": described("integer", "How many items this response carries."),
         "total": described("integer", &format!("How many {unit} the selection holds in total.")),
@@ -656,23 +848,14 @@ fn page_output_schema(unit: &str) -> Value {
             "Whether the slice was cut. A partial answer reported as a whole one is the failure \
              this field exists to prevent."
         ),
-        "next_cursor": described(
-            "string",
-            "Opaque cursor for the next page, or null. Repeat every other argument unchanged."
-        )
+        "next_cursor": nullable_described("string", cursor_description)
     }))
 }
 
 /// `proof`, which is where a caller decides whether to believe the answer.
-fn proof_output_schema() -> Value {
+fn proof_output_schema(confidence_description: &str) -> Value {
     output_object(json!({
-        "confidence": described(
-            "string",
-            "high | medium | low | unknown. Derived from lexical term overlap between the \
-             question and the best-matching evidence item. It is not a judgement that the \
-             evidence answers the question, and it is not the `confidence` on a relation, which \
-             is writer certainty."
-        ),
+        "confidence": described("string", confidence_description),
         "evidence": described(
             "array",
             "The stored evidence, verbatim. `text` is the canonical body — this is where the \
@@ -709,6 +892,14 @@ fn proof_output_schema() -> Value {
 
 /// `projection`, the budget envelope on a recall.
 fn projection_output_schema() -> Value {
+    let mut page = page_output_schema(
+        "eligible expansion items",
+        "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+    );
+    page["properties"]["offset"] = described(
+        "integer",
+        "Number of eligible expansion items reconstructed by earlier pages.",
+    );
     output_object(json!({
         "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
         "budget": described("object", "The ceilings that applied, and the bytes actually used."),
@@ -718,16 +909,31 @@ fn projection_output_schema() -> Value {
             "Items a richer `budget.detail` would have included. Not a truncation: they were \
              never eligible at this tier."
         ),
-        "next_action": described(
+        "next_action": nullable_described(
             "string",
             "The exact call that continues this page, or null when there is nothing after it."
         ),
-        "page": page_output_schema("expansion items")
+        "page": page,
+        "sections": described("object", "Per-section core, returned, eligible, and total counts for reconstructing the full proof."),
+        "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
+        "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes.")
+    }))
+}
+
+fn truncation_output_schema() -> Value {
+    output_object(json!({
+        "truncated": described("boolean", "Always true when this optional object is present."),
+        "token_limit": described("integer", "Advisory token ceiling applied."),
+        "byte_limit": described("integer", "Normative serialized-byte ceiling applied."),
+        "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
     }))
 }
 
 fn quality_output_schema() -> Value {
     output_object(json!({
+        "nodes": described("integer", "Returned node count."),
+        "relationships": described("integer", "Returned relation count."),
+        "details": described("integer", "Returned node-detail count."),
         "causal_density": described(
             "number",
             "Share of returned relations that explain rather than merely connect. Low means the \
@@ -807,7 +1013,7 @@ fn semantic_class_schema() -> Value {
     })
 }
 
-fn budget_schema() -> Value {
+fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
@@ -815,24 +1021,45 @@ fn budget_schema() -> Value {
             "tokens": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Advisory cl100k planning ceiling retained for compatibility; max_bytes is the normative host-safe ceiling."
+                "default": default_tokens,
+                "description": format!("Advisory cl100k planning ceiling retained for compatibility; defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
             },
             "max_bytes": {
                 "type": "integer",
                 "minimum": 512,
+                "default": 10_000,
                 "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile."
             },
             "detail": {
                 "type": "string",
-                "enum": ["compact", "balanced", "full"]
+                "enum": ["compact", "balanced", "full"],
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied."
             },
             "depth": {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1,
+                "default": default_depth,
+                "description": format!("Graph traversal depth; defaults to {default_depth} for this verb in both embedded and live gRPC modes.")
             },
             "max_entries": {
                 "type": "integer",
                 "minimum": 1
+            }
+        }
+    })
+}
+
+fn inspect_budget_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "max_bytes": {
+                "type": "integer",
+                "minimum": 512,
+                "default": 10_000,
+                "description": "Normative maximum bytes for structuredContent. Inspect refuses an oversized result instead of overflowing the host; narrow include flags or raise this ceiling explicitly."
             }
         }
     })
@@ -1069,6 +1296,160 @@ mod tests {
         );
         assert_eq!(tools[4]["name"], "kernel_goto");
         assert_eq!(tools[4]["inputSchema"]["required"][1], "at");
+    }
+
+    #[test]
+    fn every_tool_describes_the_response_it_returns() {
+        let tools = tools_list_result();
+        let tools = tools["tools"].as_array().expect("tools");
+
+        for tool in tools {
+            let name = tool["name"].as_str().expect("tool name");
+            let schema = &tool["outputSchema"];
+            assert_eq!(schema["type"], "object", "{name} output is an object");
+            assert_eq!(
+                schema["additionalProperties"], false,
+                "{name} must not grow an unexplained response field"
+            );
+            let properties = schema["properties"]
+                .as_object()
+                .unwrap_or_else(|| panic!("{name} output properties"));
+            assert!(!properties.is_empty(), "{name} describes its response");
+            for (field, field_schema) in properties {
+                let explained = field_schema
+                    .get("description")
+                    .and_then(Value::as_str)
+                    .is_some_and(|description| !description.trim().is_empty())
+                    || field_schema
+                        .get("properties")
+                        .and_then(Value::as_object)
+                        .is_some_and(|nested| !nested.is_empty());
+                assert!(explained, "{name}.outputSchema.{field} has a meaning");
+            }
+        }
+    }
+
+    #[test]
+    fn output_schemas_cover_the_mapper_top_level_fields() {
+        use kmp_proto::v1beta1::{
+            AskResponse, IngestResponse, InspectResponse, TemporalMoveResponse, TraceResponse,
+            WakeResponse,
+        };
+
+        let tools = tools_list_result();
+        let schemas = tools["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .map(|tool| (tool["name"].as_str().expect("name"), &tool["outputSchema"]))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let recall_arguments = json!({});
+        let samples = [
+            (
+                "kernel_ingest",
+                crate::kmp::ingest_from_response(IngestResponse::default()),
+            ),
+            (
+                "kernel_wake",
+                crate::kmp::enforce_recall_output_budget(
+                    crate::kmp::wake_from_response(WakeResponse::default()),
+                    &recall_arguments,
+                    1_600,
+                ),
+            ),
+            (
+                "kernel_ask",
+                crate::kmp::enforce_recall_output_budget(
+                    crate::kmp::ask_from_response(AskResponse::default()),
+                    &recall_arguments,
+                    2_400,
+                ),
+            ),
+            (
+                "kernel_goto",
+                crate::kmp::temporal_from_response(TemporalMoveResponse::default()),
+            ),
+            (
+                "kernel_trace",
+                crate::kmp::trace_from_response(TraceResponse::default()),
+            ),
+            (
+                "kernel_inspect",
+                crate::kmp::inspect_from_response(InspectResponse::default()),
+            ),
+        ];
+
+        for (name, sample) in samples {
+            let described = schemas[name]["properties"]
+                .as_object()
+                .expect("schema properties");
+            for field in sample.as_object().expect("mapped response").keys() {
+                assert!(
+                    described.contains_key(field),
+                    "{name} returns `{field}` but its outputSchema does not describe it"
+                );
+            }
+        }
+
+        for name in ["kernel_near", "kernel_rewind", "kernel_forward"] {
+            assert_eq!(
+                schemas[name]["properties"]
+                    .as_object()
+                    .expect("temporal properties")
+                    .keys()
+                    .collect::<Vec<_>>(),
+                schemas["kernel_goto"]["properties"]
+                    .as_object()
+                    .expect("temporal properties")
+                    .keys()
+                    .collect::<Vec<_>>()
+            );
+        }
+        for field in [
+            "accepted",
+            "dry_run",
+            "summary",
+            "generated_refs",
+            "relations",
+            "relation_quality",
+            "relation_quality_metrics",
+            "diagnostics",
+            "next_suggested_reads",
+        ] {
+            assert!(
+                schemas["kernel_write_memory"]["properties"]
+                    .get(field)
+                    .is_some(),
+                "writer output describes `{field}`"
+            );
+        }
+    }
+
+    #[test]
+    fn each_verb_publishes_the_defaults_its_backend_uses() {
+        let tools = tools_list_result();
+        let tools = tools["tools"].as_array().expect("tools");
+        let defaults = [
+            ("kernel_wake", 1_600, 2),
+            ("kernel_ask", 2_400, 2),
+            ("kernel_goto", 2_400, 3),
+            ("kernel_near", 2_400, 3),
+            ("kernel_rewind", 2_400, 3),
+            ("kernel_forward", 2_400, 3),
+            ("kernel_trace", 1_600, 1),
+        ];
+
+        for (name, tokens, depth) in defaults {
+            let tool = tools
+                .iter()
+                .find(|tool| tool["name"] == name)
+                .unwrap_or_else(|| panic!("{name}"));
+            let budget = &tool["inputSchema"]["properties"]["budget"]["properties"];
+            assert_eq!(budget["tokens"]["default"], tokens, "{name} tokens");
+            assert_eq!(budget["depth"]["default"], depth, "{name} depth");
+            assert_eq!(budget["max_bytes"]["default"], 10_000);
+            assert_eq!(budget["detail"]["default"], "balanced");
+        }
     }
 
     /// The tool documentation is generated from the writer spec; this pins

@@ -1383,7 +1383,7 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
 
     assert_eq!(
         ask.answer,
-        "Memory answer supported by claim:answer [detail:evidence:answer]; canonical text is in proof.evidence."
+        "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:answer [detail:evidence:answer]"
     );
     assert_eq!(ask.because.len(), 1);
     assert_eq!(ask.because[0].r#ref, "detail:evidence:answer");
@@ -1446,7 +1446,7 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
 
     assert_eq!(
         best_effort.answer,
-        "Memory answer supported by claim:ci-complete [detail:evidence:ci-complete]; canonical text is in proof.evidence."
+        "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:ci-complete [detail:evidence:ci-complete]"
     );
     assert_eq!(best_effort.because.len(), 1);
     assert!(best_effort.because[0].evidence.is_empty());

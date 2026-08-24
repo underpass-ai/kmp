@@ -82,6 +82,30 @@ pub fn wake_response_from_result(
     let full_evidence = memory_evidence_from_bundle(&result.bundle);
     let current_state = rendered_current_state(&result.rendered, &result.bundle);
     let summary = rendered_summary(&result.rendered);
+    // The L0 summary already selects one blocker and one next action. Leaving
+    // the typed lists empty made the same packet assert `Blocker:` / `Next:`
+    // in prose and deny them in structure. Project those exact selections so
+    // an agent does not have to choose which half of the response to trust.
+    let open_loops = l0_summary_value(&summary, "Blocker:", &["none identified"]);
+    let next_actions = l0_summary_value(&summary, "Next:", &["continue"]);
+    let guardrails = relationships
+        .iter()
+        .filter(|relationship| {
+            relationship.semantic_class == MemorySemanticClass::Constraint as i32
+        })
+        .filter_map(|relationship| {
+            let guardrail = if !relationship.why.trim().is_empty() {
+                relationship.why.trim()
+            } else if !relationship.evidence.trim().is_empty() {
+                relationship.evidence.trim()
+            } else {
+                return None;
+            };
+            Some(guardrail.to_string())
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
 
     // Opt-in entry cap: surface the first `max_entries` evidence entries
     // (graph-traversal order, closest to the about) and report the withheld
@@ -109,9 +133,9 @@ pub fn wake_response_from_result(
                     evidence_ref: relationship.evidence.clone(),
                 })
                 .collect(),
-            open_loops: Vec::new(),
-            next_actions: Vec::new(),
-            guardrails: Vec::new(),
+            open_loops,
+            next_actions,
+            guardrails,
         }),
         proof: Some(proof(
             relationships,
@@ -121,6 +145,15 @@ pub fn wake_response_from_result(
         )),
         warnings: Vec::new(),
     }
+}
+
+fn l0_summary_value(summary: &str, label: &str, empty_values: &[&str]) -> Vec<String> {
+    summary
+        .lines()
+        .find_map(|line| line.trim().strip_prefix(label).map(str::trim))
+        .filter(|value| !value.is_empty() && !empty_values.contains(value))
+        .map(|value| vec![value.to_string()])
+        .unwrap_or_default()
 }
 
 /// Opt-in entry cap for Wake: keep the first `max_entries` evidence items and
@@ -309,9 +342,10 @@ fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
 
     match citations.as_slice() {
         [] => String::new(),
-        [single] => {
-            format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
-        }
+        [single] => format!(
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether \
+             it answers: {single}"
+        ),
         many => format!(
             "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
             many.iter()
@@ -815,6 +849,47 @@ mod wake_cap_tests {
         ];
 
         assert_eq!(causal_count(&relations), 3);
+    }
+
+    #[test]
+    fn wake_structured_lists_agree_with_the_l0_summary() {
+        assert_eq!(
+            l0_summary_value(
+                "Objective: ship\nStatus: active\nBlocker: waiting for CI\nNext: merge → main",
+                "Blocker:",
+                &["none identified"],
+            ),
+            vec!["waiting for CI"]
+        );
+        assert_eq!(
+            l0_summary_value(
+                "Objective: ship\nStatus: active\nBlocker: waiting for CI\nNext: merge → main",
+                "Next:",
+                &["continue"],
+            ),
+            vec!["merge → main"]
+        );
+        assert!(
+            l0_summary_value(
+                "Objective: ship\nStatus: active\nBlocker: none identified\nNext: continue",
+                "Blocker:",
+                &["none identified"],
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn one_citation_never_turns_retrieval_into_a_support_claim() {
+        let answer = deterministic_answer_from_reasons(&[AnswerReason {
+            claim: "claim:one".to_string(),
+            evidence: String::new(),
+            r#ref: "detail:evidence:one".to_string(),
+        }]);
+
+        assert!(answer.starts_with("Retrieved for this question by term overlap"));
+        assert!(answer.contains("judge whether it answers"));
+        assert!(!answer.contains("supported by"));
     }
 }
 
