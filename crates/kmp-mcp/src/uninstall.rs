@@ -421,6 +421,11 @@ fn directory_size(path: &Path) -> u64 {
     if metadata.is_file() {
         return metadata.len();
     }
+    // A symlink is not walked into. Its target may be anywhere, including an
+    // ancestor of this walk, and a size that recurses forever is not a size.
+    if metadata.is_symlink() {
+        return 0;
+    }
     std::fs::read_dir(path)
         .into_iter()
         .flatten()
