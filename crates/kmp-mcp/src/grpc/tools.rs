@@ -19,13 +19,33 @@ use crate::kmp::{
     wake_from_response,
 };
 use crate::protocol::tool_success_result;
+use crate::tool_error::{ToolError, ToolErrorCode};
+
+/// gRPC already carries a status code, so this boundary reads that instead of
+/// the sentence it produced. The server said what kind of failure it was; the
+/// only way to lose that was to throw it away and guess later.
+fn grpc_error(operation: &str, subject: &str) -> impl FnOnce(tonic::Status) -> ToolError {
+    let context = format!("KernelMemoryService.{operation} failed for `{subject}`");
+    move |status| {
+        let code = match status.code() {
+            tonic::Code::NotFound => ToolErrorCode::NotFound,
+            tonic::Code::InvalidArgument | tonic::Code::OutOfRange => {
+                ToolErrorCode::InvalidArgument
+            }
+            tonic::Code::AlreadyExists | tonic::Code::Aborted => ToolErrorCode::Conflict,
+            tonic::Code::Unavailable | tonic::Code::DeadlineExceeded => ToolErrorCode::Unavailable,
+            _ => ToolErrorCode::BackendError,
+        };
+        ToolError::new(code, format!("{context}: {status}"))
+    }
+}
 
 pub(super) async fn grpc_tool_result(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     name: &str,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     match name {
         "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             grpc_ingest(endpoint, tls, arguments).await
@@ -38,7 +58,9 @@ pub(super) async fn grpc_tool_result(
         "kernel_forward" => grpc_temporal_move(endpoint, tls, "forward", arguments).await,
         "kernel_trace" => grpc_trace(endpoint, tls, arguments).await,
         "kernel_inspect" => grpc_inspect(endpoint, tls, arguments).await,
-        other => Err(format!("unknown KMP tool `{other}`")),
+        other => Err(ToolError::unknown_tool(format!(
+            "unknown KMP tool `{other}`"
+        ))),
     }
 }
 
@@ -46,7 +68,7 @@ async fn grpc_ingest(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = ingest_request_from_arguments(arguments)?;
     if request.dry_run {
         let plan = build_ingest_plan(arguments)?;
@@ -54,11 +76,13 @@ async fn grpc_ingest(
     }
 
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .ingest(request)
         .await
-        .map_err(|status| format!("KernelMemoryService.Ingest failed for `{about}`: {status}"))?
+        .map_err(grpc_error("Ingest", &about))?
         .into_inner();
 
     Ok(tool_success_result(ingest_from_response(response)))
@@ -68,14 +92,16 @@ async fn grpc_wake(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = wake_request_from_arguments(arguments)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .wake(request)
         .await
-        .map_err(|status| format!("KernelMemoryService.Wake failed for `{about}`: {status}"))?
+        .map_err(grpc_error("Wake", &about))?
         .into_inner();
 
     Ok(tool_success_result(try_enforce_recall_output_budget(
@@ -89,14 +115,16 @@ async fn grpc_ask(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = ask_request_from_arguments(arguments)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .ask(request)
         .await
-        .map_err(|status| format!("KernelMemoryService.Ask failed for `{about}`: {status}"))?
+        .map_err(grpc_error("Ask", &about))?
         .into_inner();
 
     Ok(tool_success_result(try_enforce_recall_output_budget(
@@ -111,10 +139,12 @@ async fn grpc_temporal_move(
     tls: &KernelMcpGrpcTlsConfig,
     direction: &str,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = temporal_move_request_from_arguments(arguments, direction)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = match direction {
         "goto" => client
             .goto(goto_request_from_temporal(request))
@@ -128,14 +158,13 @@ async fn grpc_temporal_move(
             .forward(forward_request_from_temporal(request))
             .await
             .map(|response| temporal_response_from_forward(response.into_inner())),
-        _ => return Err(format!("unknown temporal direction `{direction}`")),
+        _ => {
+            return Err(ToolError::invalid_argument(format!(
+                "unknown temporal direction `{direction}`"
+            )));
+        }
     }
-    .map_err(|status| {
-        format!(
-            "KernelMemoryService.{} failed for `{about}`: {status}",
-            method_name(direction)
-        )
-    })?;
+    .map_err(grpc_error(method_name(direction), &about))?;
 
     Ok(tool_success_result(temporal_from_response(response)))
 }
@@ -144,14 +173,16 @@ async fn grpc_temporal_near(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = temporal_near_request_from_arguments(arguments)?;
     let about = request.about.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .near(near_request_from_temporal(request))
         .await
-        .map_err(|status| format!("KernelMemoryService.Near failed for `{about}`: {status}"))?
+        .map_err(grpc_error("Near", &about))?
         .into_inner();
 
     Ok(tool_success_result(temporal_from_response(
@@ -163,17 +194,17 @@ async fn grpc_trace(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = trace_request_from_arguments(arguments)?;
     let from = request.from.clone();
     let to = request.to.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .trace(request)
         .await
-        .map_err(|status| {
-            format!("KernelMemoryService.Trace failed for `{from}` -> `{to}`: {status}")
-        })?
+        .map_err(grpc_error("Trace", &format!("{from}` -> `{to}")))?
         .into_inner();
 
     Ok(tool_success_result(trace_from_response(response)))
@@ -183,14 +214,16 @@ async fn grpc_inspect(
     endpoint: &str,
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = inspect_request_from_arguments(arguments)?;
     let ref_id = request.r#ref.clone();
-    let mut client = connect_memory_client(endpoint, tls).await?;
+    let mut client = connect_memory_client(endpoint, tls)
+        .await
+        .map_err(ToolError::unavailable)?;
     let response = client
         .inspect(request)
         .await
-        .map_err(|status| format!("KernelMemoryService.Inspect failed for `{ref_id}`: {status}"))?
+        .map_err(grpc_error("Inspect", &ref_id))?
         .into_inner();
 
     Ok(tool_success_result(inspect_from_response(response)))

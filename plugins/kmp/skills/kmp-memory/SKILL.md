@@ -362,5 +362,19 @@ and fixable, and `/kmp:doctor` distinguishes them:
 ## Errors
 
 Tool failures set `isError=true` and carry
-`structuredContent.error.{code,message}`. Read the code; it is specific.
-Report what it says rather than retrying blindly.
+`structuredContent.error.{code,message}`. Read the code; it is produced where
+the failure happened, never inferred from the words, and `tools/list` carries
+the closed set under `_meta."kmp/errorCodes"` with what each one means.
+
+| code | what to do |
+| --- | --- |
+| `invalid_argument` | fix the arguments — retrying unchanged cannot work |
+| `not_found` | the memory is not in this store |
+| `conflict` | the write already landed under this idempotency key. **That is success**, not something to retry around |
+| `unavailable` | the kernel was unreachable; the same call may work later |
+| `unknown_tool` | no such tool here |
+| `backend_error` | the kernel failed for a reason no argument can fix |
+
+An unknown argument is refused rather than dropped: every tool declares
+`additionalProperties: false` and the boundary enforces it, so a misspelling
+comes back naming the key instead of being answered from defaults.

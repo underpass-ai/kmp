@@ -26,6 +26,7 @@ use crate::kmp::{
     wake_from_response,
 };
 use crate::protocol::tool_success_result;
+use crate::tool_error::{ToolError, ToolErrorCode};
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -181,11 +182,41 @@ fn mapping_error(status: &tonic::Status) -> String {
     status.message().to_string()
 }
 
+/// Carries the kernel's own classification out to the caller.
+///
+/// The kernel already knows what went wrong — `ApplicationError` and
+/// `PortError` are typed — and that knowledge used to be thrown away at this
+/// boundary and reconstructed by matching English words further downstream.
+/// Nothing here reads the message.
 fn kernel_error<'a>(
     operation: &'a str,
     about: &'a str,
-) -> impl FnOnce(kmp_application::ApplicationError) -> String + 'a {
-    move |error| format!("embedded kernel {operation} failed for `{about}`: {error}")
+) -> impl FnOnce(kmp_application::ApplicationError) -> ToolError + 'a {
+    use kmp_application::ApplicationError;
+    use kmp_domain::{DomainError, PortError};
+
+    move |error| {
+        let code = match &error {
+            ApplicationError::NotFound(_) => ToolErrorCode::NotFound,
+            ApplicationError::Validation(_) => ToolErrorCode::InvalidArgument,
+            // A domain error is an invariant the payload broke, so the caller
+            // can fix it. `EmptyValue` naming a field is the clearest case.
+            ApplicationError::Domain(DomainError::EmptyValue(_)) => ToolErrorCode::InvalidArgument,
+            // `InvalidState` is the ambiguous one: it covers both a payload
+            // the model rejects and a store that cannot serve the request.
+            // It stays a backend error, because telling an agent to fix its
+            // arguments when nothing about them is wrong is the failure this
+            // whole change exists to remove.
+            ApplicationError::Domain(DomainError::InvalidState(_)) => ToolErrorCode::BackendError,
+            ApplicationError::Ports(PortError::Conflict(_)) => ToolErrorCode::Conflict,
+            ApplicationError::Ports(PortError::Unavailable(_)) => ToolErrorCode::Unavailable,
+            ApplicationError::Ports(PortError::InvalidState(_)) => ToolErrorCode::BackendError,
+        };
+        ToolError::new(
+            code,
+            format!("embedded kernel {operation} failed for `{about}`: {error}"),
+        )
+    }
 }
 
 fn observe_quality(
@@ -210,7 +241,7 @@ async fn embedded_tool_result(
     observer: &dyn QualityMetricsObserver,
     name: &str,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     match name {
         "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             embedded_ingest(service, arguments).await
@@ -250,14 +281,16 @@ async fn embedded_tool_result(
         }
         "kernel_trace" => embedded_trace(service, observer, arguments).await,
         "kernel_inspect" => embedded_inspect(service, arguments).await,
-        other => Err(format!("unknown KMP tool `{other}`")),
+        other => Err(ToolError::unknown_tool(format!(
+            "unknown KMP tool `{other}`"
+        ))),
     }
 }
 
 async fn embedded_ingest(
     service: &EmbeddedMemoryService,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = ingest_request_from_arguments(arguments)?;
     if request.dry_run {
         let plan = build_ingest_plan(arguments)?;
@@ -278,7 +311,7 @@ async fn embedded_wake(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = wake_request_from_arguments(arguments)?;
     let query = wake_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let intent = query.intent.clone();
@@ -305,7 +338,7 @@ async fn embedded_ask(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = ask_request_from_arguments(arguments)?;
     let query = ask_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
@@ -340,7 +373,7 @@ async fn embedded_temporal(
     direction: TemporalDirection,
     direction_name: &str,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = temporal_move_request_from_arguments(arguments, direction_name)?;
     let requested_cursor = request.cursor.clone().unwrap_or_default();
     let query = temporal_query_from_move_proto(request, direction)
@@ -366,7 +399,7 @@ async fn embedded_near(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = temporal_near_request_from_arguments(arguments)?;
     let requested_cursor = request.around.clone().unwrap_or_default();
     let query = temporal_query_from_near_proto(request).map_err(|status| mapping_error(&status))?;
@@ -391,7 +424,7 @@ async fn embedded_trace(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = trace_request_from_arguments(arguments)?;
     let query = trace_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let page = query.page.clone();
@@ -415,7 +448,7 @@ async fn embedded_trace(
 async fn embedded_inspect(
     service: &EmbeddedMemoryService,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let request = inspect_request_from_arguments(arguments)?;
     let query = inspect_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let ref_id = query.ref_id.clone();
@@ -449,7 +482,10 @@ mod retry_tests {
             .call_tool("kernel_inspect", &request)
             .await
             .expect_err("the other owner still holds redb");
-        assert!(locked.contains("server is still running"), "{locked}");
+        assert!(
+            locked.message.contains("server is still running"),
+            "{locked}"
+        );
 
         drop(holder);
         let recovered = backend
@@ -457,11 +493,11 @@ mod retry_tests {
             .await
             .expect_err("the node is absent, but the store now opens");
         assert!(
-            recovered.to_ascii_lowercase().contains("not found"),
+            recovered.message.to_ascii_lowercase().contains("not found"),
             "{recovered}"
         );
         assert!(
-            !recovered.contains("temporarily unavailable"),
+            !recovered.message.contains("temporarily unavailable"),
             "{recovered}"
         );
     }

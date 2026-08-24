@@ -5,6 +5,7 @@ use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::ingest::build_ingest_plan;
 use crate::kmp::try_enforce_recall_output_budget;
 use crate::protocol::tool_success_result;
+use crate::tool_error::ToolError;
 
 // The fixture backend answers with the reference examples from the contract.
 // They are embedded from `fixtures/`, a vendored copy of
@@ -42,7 +43,7 @@ impl KernelMcpToolBackend for FixtureKernelMcpBackend {
     }
 }
 
-pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value, String> {
+pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value, ToolError> {
     match name {
         "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             build_ingest_plan(arguments)?;
@@ -67,7 +68,9 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
             read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE)
         }
         "kernel_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
-        other => Err(format!("unknown KMP tool `{other}`")),
+        other => Err(ToolError::unknown_tool(format!(
+            "unknown KMP tool `{other}`"
+        ))),
     }
 }
 
@@ -76,7 +79,7 @@ fn read_recall_fixture_tool_result(
     required_arguments: &[&str],
     fixture: &str,
     default_tokens: u32,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     validate_required_arguments(arguments, required_arguments)?;
     let structured_content = serde_json::from_str::<Value>(fixture)
         .map_err(|error| format!("fixture response is invalid JSON: {error}"))?;
@@ -91,7 +94,7 @@ fn read_fixture_tool_result(
     arguments: &Value,
     required_arguments: &[&str],
     fixture: &str,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     validate_required_arguments(arguments, required_arguments)?;
     let structured_content = serde_json::from_str::<Value>(fixture)
         .map_err(|error| format!("fixture response is invalid JSON: {error}"))?;

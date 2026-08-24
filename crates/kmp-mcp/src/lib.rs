@@ -2,6 +2,7 @@ pub mod banner;
 pub mod clock;
 pub mod diagnostics;
 pub mod document;
+pub mod tool_error;
 pub mod viewer;
 
 mod args;
@@ -42,6 +43,7 @@ pub use embedded::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
 pub use fixture::FixtureKernelMcpBackend;
 pub use grpc::GrpcKernelMcpBackend;
 pub use server::KernelMcpServer;
+pub use tool_error::{ToolError, ToolErrorCode};
 
 pub fn kernel_mcp_tools_list_result() -> serde_json::Value {
     protocol::tools_list_result()
