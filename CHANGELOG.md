@@ -34,6 +34,34 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **The error `code` is produced where the failure happens.** It used to be
+  reconstructed by substring-matching the English message, so anything
+  containing `must` or `invalid` became `invalid_argument` — *"the store must
+  be migrated before it can be opened"* arrived as the agent's fault, and the
+  agent did what the skill told it not to: retried with different arguments
+  against something no argument can fix. Rewording a message could silently
+  change its code, and a message in another language degraded to
+  `backend_error`. The kernel's own typed errors now travel out: the embedded
+  path maps `ApplicationError` and `PortError`, the gRPC path maps the status
+  code the server already sent. Nothing reads the message.
+- **`conflict` exists.** The documentation tells agents that a conflicting
+  retry means the write already landed and is success — and no code could say
+  so, because a conflict arrived as `backend_error`, the same word as a
+  corrupt store. The advice could not be followed.
+- The six codes are enumerated in `tools/list` under `_meta."kmp/errorCodes"`,
+  each with what to do about it. They existed only in the source, while the
+  skill told agents to read them — advice with nothing behind it in any host
+  that does not ship the skill.
+- **`additionalProperties: false` is enforced.** All ten tools declared it and
+  nothing applied it, which made the surface a silent-failure generator: a
+  misspelled `dimensions`, a `budget` key one level too deep, a `from` sent to
+  `kernel_goto` where the cursor is `at` — each accepted, dropped, and
+  answered with a well-formed success built from defaults, so the agent read
+  the result as proof its arguments were understood. Unknown keys are now
+  refused, named, and given their path. The hand-written `kernel_ask.prefer`
+  rejection is gone with it: that branch was only reachable because the
+  declared strictness was not applied.
+
 - **A memory cannot be written from the future.** `observed_at` was supplied by
   the writer and checked against nothing, and on this project's own store the
   frontier ended up three hours and twenty minutes ahead of the wall clock:

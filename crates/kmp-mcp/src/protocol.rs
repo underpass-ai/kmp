@@ -1,6 +1,8 @@
 use kmp_domain::KnownMemoryRelationType;
 use serde_json::{Value, json};
 
+use crate::tool_error::{ToolError, ToolErrorCode};
+
 const PROTOCOL_VERSION: &str = "2024-11-05";
 const SERVER_NAME: &str = "underpass-kmp-mcp";
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -24,6 +26,16 @@ pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
 
 pub(crate) fn tools_list_result() -> Value {
     json!({
+        // The codes an agent may branch on, with what to do about each. They
+        // were enumerated only in the source, while the skill told agents to
+        // read the code — advice with nothing behind it in any host that does
+        // not ship the skill.
+        "_meta": {
+            "kmp/errorCodes": ToolErrorCode::ALL
+                .iter()
+                .map(|code| json!({"code": code.as_str(), "means": code.guidance()}))
+                .collect::<Vec<_>>()
+        },
         "tools": [
             tool_definition(
                 "kernel_ingest",
@@ -734,41 +746,84 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
     })
 }
 
-pub(crate) fn tool_error_result(message: &str) -> Value {
+/// Applies the strictness the schemas already declare.
+///
+/// Every one of the ten tools says `"additionalProperties": false` and nothing
+/// enforced it, which made the surface a silent-failure generator: a
+/// misspelled `dimensions`, a `budget` nested one level too deep, a `from`
+/// sent to `kernel_goto` where the cursor is `at` — each accepted, dropped,
+/// and answered with a well-formed success built from defaults. The agent has
+/// no way to tell a request that was honoured from one that was discarded, so
+/// it reads the result as proof its arguments were understood and makes the
+/// same call again.
+///
+/// The check reads the published schema rather than a second list, so it
+/// cannot drift from what `tools/list` promises.
+pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
+    let Some(schema) = tool_input_schema(tool) else {
+        return Ok(());
+    };
+    check_against_schema(&schema, arguments, tool)
+}
+
+fn tool_input_schema(tool: &str) -> Option<Value> {
+    tools_list_result()["tools"]
+        .as_array()?
+        .iter()
+        .find(|definition| definition["name"].as_str() == Some(tool))
+        .map(|definition| definition["inputSchema"].clone())
+}
+
+fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(), ToolError> {
+    let (Some(properties), Some(object)) = (schema["properties"].as_object(), value.as_object())
+    else {
+        return Ok(());
+    };
+
+    if schema["additionalProperties"] == Value::Bool(false) {
+        for key in object.keys() {
+            if properties.contains_key(key) {
+                continue;
+            }
+            let known = properties.keys().cloned().collect::<Vec<_>>().join(", ");
+            return Err(ToolError::invalid_argument(format!(
+                "`{path}` has no argument `{key}`. This call would otherwise have been answered \
+                 with that argument silently dropped. Accepted here: {known}."
+            )));
+        }
+    }
+
+    for (key, nested) in object {
+        let Some(nested_schema) = properties.get(key) else {
+            continue;
+        };
+        let nested_path = format!("{path}.{key}");
+        check_against_schema(nested_schema, nested, &nested_path)?;
+        if let (Some(items), Some(array)) = (nested_schema.get("items"), nested.as_array()) {
+            for entry in array {
+                check_against_schema(items, entry, &nested_path)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn tool_error_result(error: &ToolError) -> Value {
     json!({
         "content": [
             {
                 "type": "text",
-                "text": message
+                "text": error.message
             }
         ],
         "structuredContent": {
             "error": {
-                "code": tool_error_code(message),
-                "message": message
+                "code": error.code.as_str(),
+                "message": error.message
             }
         },
         "isError": true
     })
-}
-
-fn tool_error_code(message: &str) -> &'static str {
-    let normalized = message.to_ascii_lowercase();
-    if normalized.contains("not found") {
-        "not_found"
-    } else if normalized.contains("unknown kmp tool") {
-        "unknown_tool"
-    } else if normalized.contains("failed to connect") || normalized.contains("unavailable") {
-        "unavailable"
-    } else if normalized.contains("missing")
-        || normalized.contains("required")
-        || normalized.contains("invalid")
-        || normalized.contains("must")
-    {
-        "invalid_argument"
-    } else {
-        "backend_error"
-    }
 }
 
 pub(crate) fn jsonrpc_result(id: Value, result: Value) -> String {
@@ -914,13 +969,49 @@ mod tests {
                 .contains("Austin")
         );
 
-        let error = tool_error_result("no evidence");
+        let error = tool_error_result(&ToolError::backend("no evidence"));
         assert_eq!(error["isError"], true);
         assert_eq!(error["content"][0]["text"], "no evidence");
         assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
 
-        let missing = tool_error_result("node `question:missing` not found");
+        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
         assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
+    }
+
+    /// The property the substring matcher could not have. Same words, two
+    /// codes, because the producer chose and the words were never consulted.
+    #[test]
+    fn the_code_comes_from_the_producer_and_not_from_the_message() {
+        let phrased_like_a_bad_argument =
+            "the store must be migrated before it can be opened; this is invalid";
+        assert_eq!(
+            tool_error_result(&ToolError::backend(phrased_like_a_bad_argument))["structuredContent"]
+                ["error"]["code"],
+            "backend_error"
+        );
+        assert_eq!(
+            tool_error_result(&ToolError::invalid_argument(phrased_like_a_bad_argument))["structuredContent"]
+                ["error"]["code"],
+            "invalid_argument"
+        );
+    }
+
+    #[test]
+    fn the_surface_enumerates_every_error_code_it_can_return() {
+        let listed = tools_list_result()["_meta"]["kmp/errorCodes"]
+            .as_array()
+            .expect("the codes an agent may branch on are part of the surface")
+            .iter()
+            .map(|entry| entry["code"].as_str().expect("a code").to_string())
+            .collect::<Vec<_>>();
+
+        for code in ToolErrorCode::ALL {
+            assert!(
+                listed.contains(&code.as_str().to_string()),
+                "`{code}` can be returned and is not in tools/list"
+            );
+        }
+        assert_eq!(listed.len(), ToolErrorCode::ALL.len());
     }
 
     #[test]

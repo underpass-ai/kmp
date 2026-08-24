@@ -497,6 +497,114 @@ fn stub_ingest_response() -> Value {
     })
 }
 
+/// Every tool declares `additionalProperties: false`. Until it was enforced,
+/// a misspelled or misplaced argument was accepted, dropped, and answered with
+/// a well-formed success built from defaults — so the agent read the result as
+/// proof its arguments were understood and made the same call again.
+#[tokio::test]
+async fn an_argument_a_tool_does_not_have_is_refused_on_every_tool() {
+    for name in kmp_mcp::kernel_mcp_tool_names() {
+        let server = KernelMcpServer::fixture();
+        let response = handle_with(
+            &server,
+            json!({
+                "jsonrpc": "2.0",
+                "id": 90,
+                "method": "tools/call",
+                "params": {
+                    "name": name,
+                    // Only the bogus key: the boundary runs before any
+                    // required-argument check, so an unknown key is refused
+                    // whether or not the rest of the call was well formed.
+                    "arguments": {"definitely_not_an_argument": true}
+                }
+            }),
+        )
+        .await;
+
+        let structured = &response["result"]["structuredContent"];
+        assert_eq!(
+            response["result"]["isError"], true,
+            "`{name}` accepted an argument it does not have"
+        );
+        assert_eq!(
+            structured["error"]["code"], "invalid_argument",
+            "on `{name}`"
+        );
+        assert!(
+            structured["error"]["message"]
+                .as_str()
+                .expect("a message")
+                .contains("definitely_not_an_argument"),
+            "the error has to name the key, on `{name}`: {structured}"
+        );
+    }
+}
+
+/// The nested schemas declare it too, and a `budget` key one level too deep is
+/// the shape that looks most like it worked.
+#[tokio::test]
+async fn an_unknown_key_inside_budget_is_refused_with_its_path() {
+    let server = KernelMcpServer::fixture();
+    let response = handle_with(
+        &server,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 91,
+            "method": "tools/call",
+            "params": {
+                "name": "kernel_wake",
+                "arguments": {"about": "question:x", "budget": {"max_bytes": 4000, "tokns": 900}}
+            }
+        }),
+    )
+    .await;
+
+    let message = response["result"]["structuredContent"]["error"]["message"]
+        .as_str()
+        .expect("a message")
+        .to_string();
+    assert_eq!(response["result"]["isError"], true);
+    assert!(message.contains("tokns"), "{message}");
+    assert!(
+        message.contains("kernel_wake.budget"),
+        "say where it was, not just what it was: {message}"
+    );
+}
+
+/// `prefer` was rejected by name in the Ask request builder — a branch only
+/// reachable because the declared strictness was not applied. The boundary now
+/// refuses it as one unknown key among all of them.
+#[tokio::test]
+async fn prefer_is_refused_by_the_schema_rather_than_by_a_special_case() {
+    let server = KernelMcpServer::fixture();
+    let response = handle_with(
+        &server,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 92,
+            "method": "tools/call",
+            "params": {
+                "name": "kernel_ask",
+                "arguments": {"about": "question:x", "question": "why?", "prefer": {"time": "latest"}}
+            }
+        }),
+    )
+    .await;
+
+    assert_eq!(response["result"]["isError"], true);
+    assert_eq!(
+        response["result"]["structuredContent"]["error"]["code"],
+        "invalid_argument"
+    );
+    assert!(
+        response["result"]["structuredContent"]["error"]["message"]
+            .as_str()
+            .expect("a message")
+            .contains("prefer")
+    );
+}
+
 #[tokio::test]
 async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
@@ -770,7 +878,7 @@ async fn server_wraps_injected_backend_errors_as_mcp_tool_errors() {
         calls: Arc::new(Mutex::new(Vec::new())),
         backend_name: "stub",
         grpc_tls_mode_name: "mutual",
-        response: Err("stub failure".to_string()),
+        response: Err(kmp_mcp::ToolError::backend("stub failure")),
     });
 
     assert_eq!(server.backend_name(), "stub");
@@ -880,7 +988,7 @@ struct StubBackend {
     calls: Arc<Mutex<Vec<(String, Value)>>>,
     backend_name: &'static str,
     grpc_tls_mode_name: &'static str,
-    response: Result<Value, String>,
+    response: Result<Value, kmp_mcp::ToolError>,
 }
 
 impl KernelMcpToolBackend for StubBackend {

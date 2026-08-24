@@ -12,6 +12,7 @@ use kmp_domain::TokenEstimator;
 
 use crate::ingest::KmpIngestPlan;
 use crate::recall_projection::{ProjectionOutcome, project_recall_output};
+use crate::tool_error::ToolError;
 
 pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     let memory = response.memory.as_ref();
@@ -199,7 +200,7 @@ pub(crate) fn try_enforce_recall_output_budget(
     value: Value,
     arguments: &Value,
     default_tokens: u32,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let estimator = Cl100kEstimator::new();
     try_enforce_recall_output_budget_with_estimator(value, arguments, default_tokens, &estimator)
 }
@@ -209,13 +210,13 @@ fn try_enforce_recall_output_budget_with_estimator(
     arguments: &Value,
     default_tokens: u32,
     estimator: &dyn TokenEstimator,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     match project_recall_output(value, arguments, default_tokens, estimator)? {
         ProjectionOutcome::Projected(value) => Ok(value),
-        ProjectionOutcome::CoreTooLarge => Err(
-            "recall projection byte budget is smaller than the stable citation core; increase budget.max_bytes"
-                .to_string(),
-        ),
+        ProjectionOutcome::CoreTooLarge => Err(ToolError::invalid_argument(
+            "recall projection byte budget is smaller than the stable citation core; increase \
+             budget.max_bytes",
+        )),
     }
 }
 

@@ -4,6 +4,8 @@ use std::pin::Pin;
 
 use serde_json::Value;
 
+use crate::tool_error::ToolError;
+
 pub const GRPC_ENDPOINT_ENV: &str = "KMP_KERNEL_GRPC_ENDPOINT";
 pub const MCP_BACKEND_ENV: &str = "KMP_MCP_BACKEND";
 pub const GRPC_TLS_MODE_ENV: &str = "KMP_KERNEL_GRPC_TLS_MODE";
@@ -21,7 +23,8 @@ pub enum KernelMcpBackend {
     },
 }
 
-pub type KernelMcpToolFuture<'a> = Pin<Box<dyn Future<Output = Result<Value, String>> + Send + 'a>>;
+pub type KernelMcpToolFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<Value, ToolError>> + Send + 'a>>;
 
 pub trait KernelMcpToolBackend: Send + Sync {
     fn backend_name(&self) -> &'static str;

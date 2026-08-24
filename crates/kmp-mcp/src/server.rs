@@ -12,9 +12,10 @@ use crate::fixture::FixtureKernelMcpBackend;
 use crate::grpc::GrpcKernelMcpBackend;
 use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::protocol::{
-    initialize_result, jsonrpc_error, jsonrpc_result, tool_error_result, tool_success_result,
-    tools_list_result,
+    initialize_result, jsonrpc_error, jsonrpc_result, reject_unknown_arguments, tool_error_result,
+    tool_success_result, tools_list_result,
 };
+use crate::tool_error::ToolError;
 use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
 
 pub struct KernelMcpServer {
@@ -261,6 +262,22 @@ impl KernelMcpServer {
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
 
+        // Before anything reads them: the schemas declare
+        // `additionalProperties: false`, so an argument the tool does not have
+        // is refused here rather than dropped and answered anyway.
+        if let Err(error) = reject_unknown_arguments(name, arguments) {
+            record_tool_error(
+                self.backend_name(),
+                self.grpc_tls_mode_name(),
+                name,
+                arguments,
+                ToolErrorKind::Validation,
+                &error.message,
+                start.elapsed(),
+            );
+            return jsonrpc_result(id, tool_error_result(&error));
+        }
+
         if name == "kernel_write_memory" {
             return self.handle_kernel_write_memory(id, arguments, start).await;
         }
@@ -277,17 +294,17 @@ impl KernelMcpServer {
                 );
                 jsonrpc_result(id, result)
             }
-            Err(message) => {
+            Err(error) => {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     name,
                     arguments,
                     ToolErrorKind::Backend,
-                    &message,
+                    &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&message))
+                jsonrpc_result(id, tool_error_result(&error))
             }
         }
     }
@@ -300,32 +317,37 @@ impl KernelMcpServer {
     ) -> String {
         let allow_unlinked_root = match self.allow_unlinked_strict_root(arguments).await {
             Ok(allowed) => allowed,
-            Err(message) => {
+            Err(error) => {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kernel_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
-                    &message,
+                    &error.message,
                     start.elapsed(),
                 );
-                return jsonrpc_result(id, tool_error_result(&message));
+                return jsonrpc_result(id, tool_error_result(&error));
             }
         };
         let plan = match build_write_plan_with_root(arguments, allow_unlinked_root) {
             Ok(plan) => plan,
             Err(message) => {
+                // Everything the write planner refuses is about the
+                // arguments: a missing field, an unsupported relation, a rich
+                // link with no evidence. The caller can fix all of it, and
+                // only the caller can.
+                let error = ToolError::invalid_argument(message);
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kernel_write_memory",
                     arguments,
                     ToolErrorKind::Validation,
-                    &message,
+                    &error.message,
                     start.elapsed(),
                 );
-                return jsonrpc_result(id, tool_error_result(&message));
+                return jsonrpc_result(id, tool_error_result(&error));
             }
         };
 
@@ -364,22 +386,22 @@ impl KernelMcpServer {
                 );
                 jsonrpc_result(id, result)
             }
-            Err(message) => {
+            Err(error) => {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kernel_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
-                    &message,
+                    &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&message))
+                jsonrpc_result(id, tool_error_result(&error))
             }
         }
     }
 
-    async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, String> {
+    async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, ToolError> {
         let Some(object) = arguments.as_object() else {
             return Ok(false);
         };
@@ -411,9 +433,17 @@ impl KernelMcpServer {
             .await
         {
             Ok(_) => Ok(false),
-            Err(message) if message.to_ascii_lowercase().contains("not found") => Ok(true),
-            Err(message) => Err(format!(
-                "kernel_write_memory could not verify whether `{about}` is a new about: {message}"
+            // The kernel says which failure this was, so this no longer has
+            // to guess from the words — and "not found" here is the whole
+            // point: an about nobody has written yet is allowed one unlinked
+            // root entry.
+            Err(error) if error.code == crate::tool_error::ToolErrorCode::NotFound => Ok(true),
+            Err(error) => Err(ToolError::new(
+                error.code,
+                format!(
+                    "kernel_write_memory could not verify whether `{about}` is a new about: {}",
+                    error.message
+                ),
             )),
         }
     }
