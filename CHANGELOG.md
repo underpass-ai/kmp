@@ -34,6 +34,15 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- The mark lines up. Its top row lost a column to a `\` line continuation,
+  which in Rust eats the newline *and* the leading whitespace of the next
+  line — so the logo shipped one character out of true on the two surfaces a
+  user actually meets it. A test now fails if any row starts in a different
+  column.
+- The tool schemas are built once instead of on every call. The strictness
+  check rebuilt the whole ten-tool document — relation vocabulary included —
+  to read one field of it, per call.
+
 - **The mark reaches a user.** `/kmp:info` and `/kmp:doctor` now show the first
   block of the output verbatim before saying anything in their own words. That
   is the only place a KMP user meets the product's own face: the startup banner
