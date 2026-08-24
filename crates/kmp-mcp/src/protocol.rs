@@ -142,7 +142,7 @@ pub(crate) fn tools_list_result() -> Value {
                                     "enum": ["human", "agent", "projection", "derived"]
                                 },
                                 "source_agent": string_schema("Agent or component that observed the memory."),
-                                "observed_at": string_schema("RFC3339 observation timestamp."),
+                                "observed_at": string_schema("RFC3339 observation timestamp, in UTC."),
                                 "correlation_id": string_schema("Optional correlation id."),
                                 "causation_id": string_schema("Optional causation id.")
                             }
@@ -156,7 +156,7 @@ pub(crate) fn tools_list_result() -> Value {
             ),
             tool_definition(
                 "kernel_write_memory",
-                "Plan or commit a writer-friendly semantic memory event. The tool validates writer intent, relation quality, and compiles to canonical kernel_ingest.",
+                "Write to memory. This is the writer to use: it validates intent and relation quality, then compiles to canonical kernel_ingest, and `options.dry_run` shows what a write would commit before committing it. Reach for kernel_ingest only when producing the exact graph yourself.",
                 write_memory_schema()
             ),
             tool_definition(
@@ -179,7 +179,7 @@ pub(crate) fn tools_list_result() -> Value {
             ),
             tool_definition(
                 "kernel_ask",
-                "Return a deterministic evidence answer from kernel memory, or UNKNOWN.",
+                "Retrieve stored evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — read it, and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching evidence item; it is not a judgement that the evidence answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -201,22 +201,22 @@ pub(crate) fn tools_list_result() -> Value {
             ),
             temporal_tool_definition(
                 "kernel_goto",
-                "Jump to memory state at a timestamp, sequence, or ref over selected dimensions.",
+                "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`.",
                 "at",
             ),
             temporal_tool_definition(
                 "kernel_near",
-                "Return the temporal neighborhood around a timestamp, sequence, or ref.",
+                "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`.",
                 "around",
             ),
             temporal_tool_definition(
                 "kernel_rewind",
-                "Move backward through memory from a timestamp, sequence, or ref.",
+                "Move backward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
                 "from",
             ),
             temporal_tool_definition(
                 "kernel_forward",
-                "Move forward through memory from a timestamp, sequence, or ref.",
+                "Move forward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
                 "from",
             ),
             tool_definition(
@@ -283,7 +283,7 @@ fn write_memory_schema() -> Value {
                 ]
             },
             "actor": string_schema("Human, agent, or component producing the write."),
-            "observed_at": string_schema("RFC3339 timestamp for provenance and default coordinates."),
+            "observed_at": string_schema("RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future."),
             "source_kind": {
                 "type": "string",
                 "enum": ["human", "agent", "projection", "derived"]
@@ -553,7 +553,7 @@ fn temporal_coordinate_schema() -> Value {
             "dimension": string_schema("Dimension kind for this coordinate."),
             "scope_id": string_schema("Dimension scope id."),
             "occurred_at": string_schema("Optional RFC3339 occurrence timestamp."),
-            "observed_at": string_schema("Optional RFC3339 observation timestamp."),
+            "observed_at": string_schema("Optional RFC3339 observation timestamp, in UTC."),
             "ingested_at": string_schema("Optional RFC3339 ingest timestamp."),
             "valid_from": string_schema("Optional RFC3339 validity start."),
             "valid_until": string_schema("Optional RFC3339 validity end."),

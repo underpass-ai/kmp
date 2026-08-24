@@ -53,7 +53,7 @@ temporal coordinate.
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_goto` | Jump to the state at a point in time. Defaults to 50 entries. |
+| `kernel_goto` | Jump to the state at a point in time. Set `limit.entries` — there is no default. |
 | `kernel_near` | See the neighborhood around a point — what surrounded it. |
 | `kernel_rewind` | Walk backward: how did we get here. |
 | `kernel_forward` | Walk forward: what happened after this. |
