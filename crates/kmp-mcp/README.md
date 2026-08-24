@@ -83,9 +83,10 @@ KMP_KERNEL_GRPC_ENDPOINT=https://kmp.underpassai.com cargo run -p kmp-mcp --lock
 
 The server reads newline-delimited JSON-RPC requests from stdin and writes
 newline-delimited JSON-RPC responses to stdout.
-The executable is fail-fast by default: set `KMP_KERNEL_GRPC_ENDPOINT`
-for live gRPC mode, or set `KMP_MCP_BACKEND=fixture` explicitly for
-fixture mode.
+Run it with nothing set and it serves the embedded kernel. An endpoint in
+the environment chooses gRPC; `KMP_MCP_BACKEND=fixture` chooses the canned
+responses, and has to be asked for by name so that memory which is not real
+is never a default.
 
 Minimal smoke request:
 

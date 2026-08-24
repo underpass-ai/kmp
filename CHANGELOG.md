@@ -10,6 +10,21 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Changed
+
+- **The default is the embedded kernel.** `kmp-mcp` with nothing set serves
+  memory in-process; no variable, no endpoint, no flag. It used to default to
+  gRPC and then exit 2 asking for an endpoint, blaming a variable the user
+  never set and offering gRPC or fixture — never `embedded`, the mode the
+  product actually is. Every host worked only because the plugin launcher
+  pasted `KMP_MCP_BACKEND=embedded` over the default before exec.
+  An endpoint already in the environment still chooses gRPC, which is how the
+  cluster edition has always been selected, and `KMP_MCP_BACKEND` still
+  settles it outright.
+- `kmp-mcp info` no longer warns "no backend selected in this shell". With a
+  default there is nothing unselected — it was a fossil of the
+  Kubernetes-first days, and it was the second thing a stranger read.
+
 ### Added
 
 - **The viewer comes up on its own.** Every embedded session serves it at

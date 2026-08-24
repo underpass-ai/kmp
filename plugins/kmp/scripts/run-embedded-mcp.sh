@@ -35,6 +35,10 @@ if [[ ! -x "${BINARY}" ]]; then
   exit 127
 fi
 
+# Belt and braces since 0.1.14, not a requirement: an unconfigured kmp-mcp
+# now serves the embedded kernel on its own. It stays because this launcher
+# ships with the plugin and can meet an older binary, which would otherwise
+# default to gRPC and exit asking for an endpoint nobody set.
 export KMP_MCP_BACKEND=embedded
 
 # The data directory is deliberately NOT set here: the embedded kernel

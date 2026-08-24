@@ -13,15 +13,18 @@ switches modes by changing environment variables only:
 
 | | **Embedded** (primary) | **Live** (infrastructure gRPC) | Fixture (test-only) |
 | --- | --- | --- | --- |
-| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` (backend defaults to `grpc`) | `KMP_MCP_BACKEND=fixture` |
+| Select with | nothing — it is the default | `KMP_KERNEL_GRPC_ENDPOINT=…` | `KMP_MCP_BACKEND=fixture` |
 | Kernel runs | in-process, inside this binary | remote `KernelMemoryService` gRPC | none (canned responses) |
 | Storage | one local data dir (`.kernel/`, redb) | Neo4j / Valkey / NATS behind the server | none |
 | `read_after_write_ready` | always `true` (synchronous projection) | `true` on live ingest | `false` |
 | Requires | nothing | deployed kernel + TLS config | nothing |
 | Concurrency | single writer per data dir (ADR-011) | server-side | n/a |
 
-The binary is fail-fast: with no configuration it exits with guidance
-instead of guessing a mode.
+With no configuration the binary runs the embedded kernel — the mode the
+product is. An endpoint in the environment chooses gRPC instead, which is how
+the cluster edition has always been selected; `KMP_MCP_BACKEND` settles it
+explicitly when both are present. Asking for `grpc` by name with no endpoint
+is the one configuration that still refuses to start, and it says so.
 
 ## Embedded mode (primary)
 
@@ -29,7 +32,7 @@ The kernel runs inside the binary: zero infrastructure, per-project memory,
 fsync-durable commits.
 
 ```bash
-KMP_MCP_BACKEND=embedded kmp-mcp
+kmp-mcp
 ```
 
 - **Data directory resolution** (ADR-012, winning rule logged at startup):

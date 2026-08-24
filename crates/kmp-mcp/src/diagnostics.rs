@@ -112,19 +112,40 @@ fn data_dir_finding() -> (Finding, Option<ResolvedDataDir>) {
 }
 
 fn backend_finding() -> Finding {
-    match std::env::var(crate::MCP_BACKEND_ENV) {
-        Ok(value) if value.trim().eq_ignore_ascii_case("embedded") => {
-            Finding::new(Level::Ok, "embedded — the kernel runs in this process")
-        }
-        Ok(value) if value.trim().eq_ignore_ascii_case("fixture") => {
+    let configured = std::env::var(crate::MCP_BACKEND_ENV)
+        .ok()
+        .map(|value| value.trim().to_ascii_lowercase())
+        .filter(|value| !value.is_empty());
+    let endpoint = std::env::var(crate::GRPC_ENDPOINT_ENV)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty());
+
+    match configured.as_deref() {
+        Some("embedded") => Finding::new(Level::Ok, "embedded — the kernel is right here"),
+        Some("fixture" | "fixtures") => {
             Finding::new(Level::Warn, "fixture — canned answers that look real")
-                .with("nothing you write is stored; unset the variable to use the real kernel")
+                .with("nothing you write is stored; unset the variable for the real kernel")
         }
-        Ok(value) => Finding::new(Level::Ok, format!("{value} — configured by the host")),
-        Err(_) => Finding::new(Level::Warn, "no backend selected in this shell").with(
-            "the binary is fail-fast: with no configuration it exits with guidance rather \
-             than guessing. Hosts set it in their MCP registration, so this is usually fine.",
-        ),
+        Some("grpc" | "live") => match endpoint {
+            Some(endpoint) => Finding::new(Level::Ok, format!("grpc — talking to {endpoint}")),
+            None => Finding::new(Level::Fail, "grpc, with no kernel to talk to").with(format!(
+                "set {} , or unset {} and the kernel runs right here",
+                crate::GRPC_ENDPOINT_ENV,
+                crate::MCP_BACKEND_ENV
+            )),
+        },
+        Some(other) => Finding::new(Level::Fail, format!("`{other}` is not a backend"))
+            .with("use `embedded` (the default), `grpc` or `fixture`"),
+        // Nothing set is not a gap to warn about any more: it is the product.
+        // The old text called this "no backend selected" and warned about it,
+        // which was a fossil of the Kubernetes-first days — and the second
+        // thing a stranger read.
+        None => match endpoint {
+            Some(endpoint) => Finding::new(Level::Ok, format!("grpc — talking to {endpoint}"))
+                .with("an endpoint in the environment is how the cluster edition is chosen"),
+            None => Finding::new(Level::Ok, "embedded — the default, nothing to configure"),
+        },
     }
 }
 

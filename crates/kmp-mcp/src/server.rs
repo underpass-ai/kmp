@@ -129,20 +129,36 @@ impl KernelMcpServer {
         Self::try_from_env().expect("valid MCP backend configuration")
     }
 
+    /// What to run when nobody said. The product is the embedded kernel — one
+    /// binary, no service, no database, no key — so that is what an
+    /// unconfigured binary serves. The one exception is an endpoint already
+    /// sitting in the environment: naming a kernel to talk to *is* asking for
+    /// gRPC, and it is how the cluster edition has always been selected.
+    fn default_backend(endpoint: Option<&str>) -> &'static str {
+        match endpoint {
+            Some(endpoint) if !endpoint.trim().is_empty() => "grpc",
+            _ => "embedded",
+        }
+    }
+
     pub fn try_from_env() -> Result<Self, String> {
+        let endpoint = std::env::var(GRPC_ENDPOINT_ENV).ok();
         let backend = std::env::var(MCP_BACKEND_ENV)
             .ok()
             .map(|value| value.trim().to_ascii_lowercase())
             .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| "grpc".to_string());
-        let endpoint = std::env::var(GRPC_ENDPOINT_ENV).ok();
+            .unwrap_or_else(|| Self::default_backend(endpoint.as_deref()).to_string());
         let tls = KernelMcpGrpcTlsConfig::from_env_for_endpoint(endpoint.as_deref());
 
         match backend.as_str() {
             "grpc" | "live" => {
                 let Some(endpoint) = endpoint.filter(|endpoint| !endpoint.trim().is_empty()) else {
+                    // Only reachable when someone asked for gRPC by name: with
+                    // no endpoint and no variable the default is embedded.
                     return Err(format!(
-                        "{GRPC_ENDPOINT_ENV} is required when {MCP_BACKEND_ENV}=grpc"
+                        "{MCP_BACKEND_ENV}=grpc needs {GRPC_ENDPOINT_ENV} — a kernel to talk to. \
+                         Unset {MCP_BACKEND_ENV} to run the embedded kernel instead, which needs \
+                         nothing."
                     ));
                 };
                 Ok(Self::grpc_with_tls(endpoint, tls))
@@ -164,7 +180,8 @@ impl KernelMcpServer {
                 ))
             }
             other => Err(format!(
-                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `grpc`, `embedded` or `fixture`"
+                "unsupported {MCP_BACKEND_ENV} value `{other}`; use `embedded` (the default), \
+                 `grpc` or `fixture`"
             )),
         }
     }
