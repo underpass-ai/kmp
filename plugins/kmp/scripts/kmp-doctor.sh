@@ -522,8 +522,8 @@ fi
 # install-kmp-plugin.sh copies, and scripts/ci/kmp-plugin-voice.sh fails the
 # build if the two ever drift from the prompts the plugin actually ships —
 # the drift that left a Codex user with three of eight.
-CODEX_PROMPT_NAMES="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert"
-CODEX_EXPECTED_PROMPTS=9
+CODEX_PROMPT_NAMES="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
+CODEX_EXPECTED_PROMPTS=10
 
 CODEX_CONFIG="$HOME/.codex/config.toml"
 if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then

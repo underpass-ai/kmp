@@ -300,6 +300,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     match command {
         "export" | "import" => {}
         "document" => return run_document_command(args).await,
+        "uninstall" => return run_uninstall_command(args).await,
         "migrate" => return run_migrate_command(args).await,
         "share-memory" => return run_share_memory_command(path).await,
         "viewer" => return run_viewer_command(path).await,
@@ -339,6 +340,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             eprintln!(
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
+                 `uninstall [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
                  `share-memory [data-dir]` / `viewer [addr]` / `--version` / `--help`"
@@ -459,6 +461,7 @@ Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
 kmp-mcp info                    What this binary is and which memory it opens\n  \
 kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
+kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\n  \
 kmp-mcp export [file]           Export the append-only event log\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
 kmp-mcp migrate <src> <dst> [--engine redb|sqlite]\n  \
@@ -490,6 +493,131 @@ kmp-mcp --help                  Print this help",
 /// Nothing is deleted. The original data directory is moved aside under a
 /// dated name and stays exactly as it was, so this is reversible by moving it
 /// back.
+/// `uninstall` — what `/kmp:setup` never had an inverse for.
+///
+/// The dry run is the default and `--apply` is how someone says to go ahead:
+/// a destructive command whose first run destroys is one people learn to fear
+/// and then avoid. Exit 1 when anything was kept, so "uninstalled" is a
+/// checkable claim rather than a hope.
+async fn run_uninstall_command(args: &[&str]) -> i32 {
+    let mut applying = false;
+    let mut purge = false;
+    let mut keep_memory = false;
+    for argument in args {
+        match *argument {
+            "--apply" | "--yes" => applying = true,
+            "--purge" => purge = true,
+            "--keep-memory" => keep_memory = true,
+            other => {
+                eprintln!(
+                    "kmp-mcp: uninstall has no option `{other}`; it takes --apply, --purge and \
+                     --keep-memory"
+                );
+                return 2;
+            }
+        }
+    }
+
+    let roots = kmp_mcp::uninstall::Roots {
+        home: std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(".")),
+        data_home: std::env::var_os("XDG_DATA_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| {
+                std::env::var_os("HOME")
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| PathBuf::from("."))
+                    .join(".local/share")
+            }),
+        working_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+        path_entries: std::env::var_os("PATH")
+            .map(|value| std::env::split_paths(&value).collect())
+            .unwrap_or_default(),
+    };
+
+    let workspace = roots.working_dir.clone();
+    let pieces: Vec<_> = kmp_mcp::uninstall::survey(&roots)
+        .into_iter()
+        .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::uninstall::PieceKind::Store))
+        .collect();
+    print!(
+        "{}",
+        kmp_mcp::uninstall::report(&pieces, &workspace, purge, applying)
+    );
+
+    if pieces.is_empty() {
+        return 0;
+    }
+    if !applying {
+        println!("Run the same command with --apply to remove what is listed.");
+        return 0;
+    }
+
+    let mut kept = 0;
+    for piece in &pieces {
+        // Memory is handed back before it is taken. A failed save keeps the
+        // store: the copy is the point, and removing memory whose rescue did
+        // not happen is the one mistake this verb must not make.
+        if !purge && let Some(destination) = kmp_mcp::uninstall::rescue_path(piece, &workspace) {
+            match save_store(&piece.path, &destination).await {
+                Ok(events) => println!(
+                    "saved    {} — {events} {}",
+                    destination.display(),
+                    if events == 1 { "event" } else { "events" }
+                ),
+                Err(reason) => {
+                    kept += 1;
+                    println!(
+                        "kept     {}\n         could not save it first: {reason}",
+                        piece.path.display()
+                    );
+                    continue;
+                }
+            }
+        }
+        match kmp_mcp::uninstall::remove(piece) {
+            Ok(()) => println!("removed  {}", piece.path.display()),
+            Err(reason) => {
+                kept += 1;
+                println!("kept     {}\n         {reason}", piece.path.display());
+            }
+        }
+    }
+    if kept > 0 {
+        println!("\n{kept} left in place. KMP is not fully removed.");
+        return 1;
+    }
+    println!("\nEverything listed is gone.");
+    0
+}
+
+/// Writes a store's whole event log to `destination`, and answers with how
+/// many events it holds — a number is what makes the file believable.
+async fn save_store(store: &std::path::Path, destination: &std::path::Path) -> Result<u64, String> {
+    let engine = kmp_embedded::default_engine_for_data_dir(store);
+    let kernel = kmp_embedded::EmbeddedKernel::open_with_engine(store, engine)
+        .map_err(|error| error.to_string())?;
+    let bundle = kernel
+        .store()
+        .export_bundle()
+        .await
+        .map_err(|error| error.to_string())?;
+    let events = bundle
+        .lines()
+        .next()
+        .and_then(|header| serde_json::from_str::<serde_json::Value>(header).ok())
+        .and_then(|header| {
+            header
+                .get("event_count")
+                .and_then(serde_json::Value::as_u64)
+        })
+        .unwrap_or_default();
+    std::fs::write(destination, bundle)
+        .map_err(|error| format!("could not write `{}`: {error}", destination.display()))?;
+    Ok(events)
+}
+
 /// `document <about> [--out FILE]` — one about, as Markdown.
 ///
 /// Reads the same export the bundle uses, because that is the only source
