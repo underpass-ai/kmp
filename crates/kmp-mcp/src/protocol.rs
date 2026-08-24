@@ -592,14 +592,150 @@ fn string_map_schema() -> Value {
 }
 
 fn tool_definition(name: &str, description: &str, input_schema: Value) -> Value {
-    json!({
+    tool_definition_with_output(name, description, input_schema, Value::Null)
+}
+
+/// A tool, with the shape of what it answers.
+///
+/// Inputs were described field by field and the response — the half the agent
+/// actually reasons over — was described nowhere. `proof.confidence`,
+/// `proof.superseded` against `proof.conflicts`, `page.total`,
+/// `projection.next_action`, `resume_cursor`: every one of them arrived
+/// unexplained, and what did explain them was `SKILL.md`, a Claude Code plugin
+/// file that an agent in any other host never sees.
+///
+/// A memory kernel whose contract is only legible inside one vendor's plugin
+/// is not a protocol.
+fn tool_definition_with_output(
+    name: &str,
+    description: &str,
+    input_schema: Value,
+    output_schema: Value,
+) -> Value {
+    let mut definition = json!({
         "name": name,
         "description": description,
         "inputSchema": input_schema,
         "_meta": {
             "anthropic/maxResultSizeChars": 10_000
         }
+    });
+    if !output_schema.is_null() {
+        definition["outputSchema"] = output_schema;
+    }
+    definition
+}
+
+/// An object schema whose properties are described and whose extra fields are
+/// tolerated: the response may grow, and a client that refuses a new field is
+/// worse off than one that ignores it.
+fn output_object(properties: Value) -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": true,
+        "properties": properties
     })
+}
+
+fn described(kind: &str, description: &str) -> Value {
+    json!({"type": kind, "description": description})
+}
+
+/// `page`, with what `total` counts said out loud.
+///
+/// It counts different things in different verbs — expansion items in a
+/// recall, temporal entries in a move — and nothing in the surface said the
+/// unit changed. A number whose meaning the receiver has to guess is worse
+/// than no number, because it will be acted on.
+fn page_output_schema(unit: &str) -> Value {
+    output_object(json!({
+        "returned": described("integer", "How many items this response carries."),
+        "total": described("integer", &format!("How many {unit} the selection holds in total.")),
+        "has_more": described(
+            "boolean",
+            "Whether the slice was cut. A partial answer reported as a whole one is the failure \
+             this field exists to prevent."
+        ),
+        "next_cursor": described(
+            "string",
+            "Opaque cursor for the next page, or null. Repeat every other argument unchanged."
+        )
+    }))
+}
+
+/// `proof`, which is where a caller decides whether to believe the answer.
+fn proof_output_schema() -> Value {
+    output_object(json!({
+        "confidence": described(
+            "string",
+            "high | medium | low | unknown. Derived from lexical term overlap between the \
+             question and the best-matching evidence item. It is not a judgement that the \
+             evidence answers the question, and it is not the `confidence` on a relation, which \
+             is writer certainty."
+        ),
+        "evidence": described(
+            "array",
+            "The stored evidence, verbatim. `text` is the canonical body — this is where the \
+             answer actually is."
+        ),
+        "missing": described(
+            "array",
+            "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which \
+             kind: nothing retrieved at all, or nothing that bears on the question."
+        ),
+        "superseded": described(
+            "array",
+            "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, \
+             not a disagreement: read the older entry as what was true then, not as advice."
+        ),
+        "conflicts": described(
+            "array",
+            "Entries that explicitly contradict each other and are both still live. The tension \
+             is the information — this is deliberately not the same field as `superseded`."
+        ),
+        "matched_relations": described(
+            "array",
+            "Which typed relations contributed to the ordering. Relation prose can improve a \
+             match and can never promote unrelated evidence into an answer."
+        ),
+        "matched_terms": described("array", "Question terms that matched retrieved evidence."),
+        "path": described("array", "The traversal that connects the cited evidence."),
+        "frontier_size": described(
+            "integer",
+            "How much was reachable and not returned, which is the signal to expand."
+        )
+    }))
+}
+
+/// `projection`, the budget envelope on a recall.
+fn projection_output_schema() -> Value {
+    output_object(json!({
+        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
+        "budget": described("object", "The ceilings that applied, and the bytes actually used."),
+        "detail": described("string", "compact | balanced | full — the detail tier that was served."),
+        "excluded_by_detail": described(
+            "integer",
+            "Items a richer `budget.detail` would have included. Not a truncation: they were \
+             never eligible at this tier."
+        ),
+        "next_action": described(
+            "string",
+            "The exact call that continues this page, or null when there is nothing after it."
+        ),
+        "page": page_output_schema("expansion items")
+    }))
+}
+
+fn quality_output_schema() -> Value {
+    output_object(json!({
+        "causal_density": described(
+            "number",
+            "Share of returned relations that explain rather than merely connect. Low means the \
+             memory is a list; it is a property of what was written, not of this call."
+        ),
+        "detail_coverage": described("number", "Share of returned nodes that carry stored detail."),
+        "truncated": described("boolean", "Whether the rendering dropped anything.")
+    }))
 }
 
 fn string_schema(description: &str) -> Value {
