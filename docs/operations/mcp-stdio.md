@@ -120,7 +120,28 @@ kmp-mcp export memory.jsonl      # ...or an explicit path
 kmp-mcp import                   # .kmp/memory.jsonl -> EMPTY store (fail-fast)
 kmp-mcp import memory.jsonl      # ...or an explicit path
 kmp-mcp migrate <old> <new> [--engine redb|sqlite]   # replay history into a fresh store
+kmp-mcp document project:kmp     # one about -> Markdown on stdout
+kmp-mcp document project:kmp --out HOW-THIS-WAS-BUILT.md
 ```
+
+### One about, as a document
+
+`document` renders everything stored under one about as Markdown: entries in
+temporal order grouped by kind, each with its own evidence beside it and its
+ref kept visible so a reader can take it back to `kernel_inspect`; relations
+as prose lines carrying their `why`; and two closing sections for what was
+superseded and what still contradicts, because one is history and the other
+is a live disagreement.
+
+It renders from the event log, which is the only source that carries every
+entry, every `why` and every piece of evidence as written. **Nothing in it is
+generated** — ordering and grouping are rendering decisions, wording is not.
+The other two exits are a recall projection, which is budgeted in bytes for an
+agent's context window, and the raw bundle, which buries entry text inside a
+`payload_json` string.
+
+Bundle hygiene applies unchanged: whatever is in the payloads lands in the
+document, secrets included.
 
 ### Memory in the repository
 

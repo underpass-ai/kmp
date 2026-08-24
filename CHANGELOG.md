@@ -10,6 +10,22 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Added
+
+- **`kmp-mcp document <about> [--out FILE]`** — one about, as a Markdown
+  document. The kernel already held everything such a page needs and there was
+  no way to get it out: a recall projection is budgeted in bytes for an
+  agent's context window, and the bundle buries entry text in a `payload_json`
+  string inside `changes[]`, so anyone who wanted a document wrote a throwaway
+  script to pull the entries out — and wrote it again next time.
+  Entries in temporal order grouped by kind, each with its own evidence beside
+  it and its ref kept visible for `kernel_inspect`; relations rendered as
+  prose carrying the `why`, which is the connective tissue a bare node list
+  loses; supersession and contradiction in separate closing sections, because
+  one is history and the other is a live disagreement.
+  **Nothing in it is generated.** Ordering and grouping are rendering
+  decisions; wording is not.
+
 ### Changed
 
 - **The default is the embedded kernel.** `kmp-mcp` with nothing set serves

@@ -219,7 +219,7 @@ impl CoordinateView {
 /// timeline's time column, where `unix:101786903200:000000000` sat exactly
 /// where a date belongs. Anything that is not that form is passed through
 /// untouched: times ingested as RFC3339 are already readable.
-fn readable_time(value: impl AsRef<str>) -> String {
+pub fn readable_time(value: impl AsRef<str>) -> String {
     let value = value.as_ref();
     match parse_sortable_seconds(value) {
         Some(seconds) => rfc3339_utc(seconds),
