@@ -17,8 +17,11 @@ Nothing is removed unless I pass `--apply`. Then tell me, in a few lines:
   host's config, a binary outside my home — each with the command I run myself.
 
 After `--apply`, tell me how many events were saved and into which file, by
-name. If a store was kept because its export failed, say so plainly: none of
-that memory was removed.
+name. If a store was kept because its export failed, say so plainly — none of
+that memory was removed — and name the cause: nearly always this session is
+holding it, because the embedded store is single-writer and the session
+running the command is the writer. Tell me to close it and run
+`kmp-mcp uninstall --apply` from a plain shell.
 
 Never add `--apply` or `--purge` on your own initiative. `--purge` skips the
 export, which is the one way this command loses memory for good.
