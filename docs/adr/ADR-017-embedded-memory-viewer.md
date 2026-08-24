@@ -1,6 +1,13 @@
 # ADR-017 — In-process web viewer over the embedded kernel
 
-Date: 2026-08-06. Status: accepted.
+Date: 2026-08-06. Status: accepted, amended 2026-08-24.
+
+> **Amendment, 2026-08-24.** One bullet below no longer describes the binary:
+> the viewer is **on by default**, not off. The env gate stayed, but its
+> absence now means the documented address rather than silence — nothing set
+> `KMP_VIEWER_ADDR`, so the viewer shipped inside every binary and was
+> reachable by nobody. `off`, `none` or an empty value declines it. The rest
+> of this record stands as written.
 
 ## Context
 
@@ -34,7 +41,8 @@ Two constraints shape where such a viewer can live:
   admits. A `viewer [addr]` subcommand covers the offline case (no agent
   session holding the store), resolving the data dir exactly as
   `export`/`import` do.
-- **Off by default, env-gated, not feature-gated.** ADR-013 describes a cargo
+- **Off by default, env-gated, not feature-gated.** *(Superseded by the
+  amendment above: on by default, still env-gated.)* ADR-013 describes a cargo
   feature discipline, but the current tree ships `kmp-mcp` with a
   single dependency set and no CI dependency budget; a `viewer` feature would
   add build-matrix cost without an enforcement mechanism. The env var is the

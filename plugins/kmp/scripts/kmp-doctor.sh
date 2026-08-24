@@ -102,6 +102,18 @@ fail()    { AREA_LINES+=("  ${R}FAIL${Z}  $1")
             FAILURES=$((FAILURES + 1)); return 0; }
 info()    { AREA_LINES+=("        ${D}$1${Z}"); return 0; }
 
+# Asks a loopback port whether anything is behind it. Configuration says what
+# was intended; only the port says what is true. Loopback answers or refuses
+# at once, so there is nothing to time out.
+port_answers() {
+  local hostport="$1" host port
+  port="${hostport##*:}"
+  host="${hostport%:*}"
+  host="${host#[}"; host="${host%]}"
+  [ -n "$host" ] && [ -n "$port" ] || return 1
+  ( exec 3<>"/dev/tcp/$host/$port" ) >/dev/null 2>&1
+}
+
 printf '%sKMP doctor%s\n\n' "$B" "$Z"
 
 # ---------------------------------------------------------------- binary ----
@@ -362,11 +374,26 @@ for verdict, when, detail in starts[-5:]:
   if [ -z "$LAST_STARTS" ]; then
     info "the log has no startup lines yet — this binary predates them"
   else
+    # Only the newest start is a verdict; the ones before it are history.
+    # A failure that a later start already recovered from is not something to
+    # fix, and counting it said "your memory will not work" over a memory that
+    # was working — in the same block whose own headline said it had started
+    # without failing.
+    #
     # A here-string, not a pipe: a piped loop runs in a subshell, so every
     # startup failure it read would be counted and then thrown away with it.
+    TOTAL_STARTS="$(printf '%s\n' "$LAST_STARTS" | grep -c '^')"
+    SEEN_STARTS=0
     while IFS='|' read -r verdict when detail; do
       [ -z "$verdict" ] && continue
-      if [ "$verdict" = "FAIL" ]; then
+      SEEN_STARTS=$((SEEN_STARTS + 1))
+      if [ "$SEEN_STARTS" -lt "$TOTAL_STARTS" ]; then
+        if [ "$verdict" = "FAIL" ]; then
+          info "$when  failed, and recovered since: $detail"
+        else
+          info "$when  $detail"
+        fi
+      elif [ "$verdict" = "FAIL" ]; then
         fail "$when  $detail"
       else
         ok "$when  $detail"
@@ -403,8 +430,17 @@ command -v timeout >/dev/null 2>&1 && RUNNER="timeout 30"
 # create a store as a side effect, and must not take the single-writer lock
 # out from under a live session. Whether the real store is free is answered
 # above, by looking rather than by opening.
+#
+# The viewer is off for the same reason: the probe would otherwise bind the
+# viewer's port, and on the ordinary happy path — a live session already
+# serving there — it would collide with the very session it is diagnosing.
+#
+# Empty rather than `off`: this script ships with the plugin and can meet an
+# older binary that has no word for declining, but every version has always
+# read an empty value as no viewer.
 RESPONSE="$(printf '%s\n' "$REQUEST" \
   | env KMP_MCP_BACKEND="${BACKEND:-embedded}" KMP_MCP_DATA_DIR="$PROBE_DIR" \
+    KMP_VIEWER_ADDR= \
     $RUNNER "$BIN" 2>"$ERR_LOG")"
 
 TOOLS=""
@@ -493,6 +529,31 @@ info ""
 info "A host session started before a registration change keeps the old MCP"
 info "inventory. If the wiring looks right but the tools are missing, restart"
 info "the session."
+
+# ---------------------------------------------------------------- viewer ----
+section "Viewer"
+
+# The viewer is compiled into every kmp-mcp and mounts over a live embedded
+# session, so there is nothing to install. Resolve the address exactly as the
+# binary does — unset means the default, an empty value means declined — then
+# ask the port instead of trusting the configuration.
+VIEWER_ADDR="${KMP_VIEWER_ADDR-127.0.0.1:7317}"
+case "$(printf '%s' "$VIEWER_ADDR" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
+  ''|off|none)
+    brief "declined with KMP_VIEWER_ADDR"
+    info "unset that variable and restart the session to see your memory again"
+    ;;
+  *)
+    if port_answers "$VIEWER_ADDR"; then
+      ok "your memory, as a graph: http://$VIEWER_ADDR/"
+    else
+      brief "serves at http://$VIEWER_ADDR/ once a session is running"
+      info "nothing is listening there yet. A session on the embedded backend"
+      info "mounts it at startup; one already running from an older version"
+      info "needs restarting before it does."
+    fi
+    ;;
+esac
 
 # --------------------------------------------------------------- verdict ----
 render_area

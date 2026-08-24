@@ -1,5 +1,6 @@
 pub mod banner;
 pub mod diagnostics;
+pub mod viewer;
 
 mod args;
 mod backend;

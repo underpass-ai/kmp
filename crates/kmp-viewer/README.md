@@ -18,9 +18,9 @@ bind — generic over the same stores as the application service, so the
 embedded edition mounts it over redb today and another edition can mount it
 over its own composition unchanged.
 
-The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): set
-`KMP_VIEWER_ADDR` (default `127.0.0.1:7317`) on an embedded MCP session and
-the viewer comes up over that session's own kernel.
+The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
+embedded MCP session brings the viewer up over its own kernel at
+`127.0.0.1:7317`, unasked. `KMP_VIEWER_ADDR` moves it; `off` declines it.
 
 ## A deliberately small surface
 

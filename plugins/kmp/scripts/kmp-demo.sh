@@ -52,6 +52,13 @@ if [ ! -f "$BUNDLE" ]; then
   exit 1
 fi
 
+# --------------------------------------------------------- viewer port ----
+#
+# The live session already serves the project's own memory on the default
+# port. The demo is a second store, so it needs a second port: colliding with
+# the session that is running the demo would be a strange first impression.
+DEMO_VIEWER_PORT=7318
+
 # ------------------------------------------------------------ data dir ----
 #
 # A separate directory, always. The import refuses a non-empty store anyway,
@@ -96,11 +103,12 @@ info "  kernel_wake    about: incident:checkout-latency"
 info "  kernel_ask     \"why did the rollback not fix the latency\""
 info "  kernel_trace   from the first symptom to the constraint that closed it"
 say ""
-info "Or look at it directly, no agent involved:"
+info "Or just look at it. No agent, no query language:"
 say ""
-say "    KMP_MCP_DATA_DIR=${DEMO_DIR} kmp-mcp viewer 127.0.0.1:7317"
+say "    KMP_MCP_DATA_DIR=${DEMO_DIR} kmp-mcp viewer 127.0.0.1:${DEMO_VIEWER_PORT}"
 say ""
-info "Loopback only, read-only, no auth."
+info "Loopback only, read-only, no auth. Port ${DEMO_VIEWER_PORT} and not 7317,"
+info "because 7317 is where your own memory is already showing."
 
 say ""
 say "${B}When you are done${Z}"

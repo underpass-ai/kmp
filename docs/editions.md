@@ -94,12 +94,19 @@ Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`, `logs/`
 
 ### Watching a live session
 
-Adding `KMP_VIEWER_ADDR=127.0.0.1:7317` to the MCP server environment makes the
-session serve a local read-only viewer over its own memory: the graph with typed
-relations, the note behind each node, a "known at" timeline cursor, traces
-highlighted on the graph, and the exact rendered context a model would receive
-with the hash covering it. Loopback only, non-local `Host` headers refused, no
-authentication — see [operations/viewer.md](operations/viewer.md).
+Every embedded session serves a local read-only viewer over its own memory at
+`http://127.0.0.1:7317/`, with nothing to install and nothing to configure: the
+graph with typed relations, the note behind each node, a "known at" timeline
+cursor, traces highlighted on the graph, and the exact rendered context a model
+would receive with the hash covering it. Loopback only, non-local `Host`
+headers refused, no authentication — see
+[operations/viewer.md](operations/viewer.md).
+
+`KMP_VIEWER_ADDR` moves it to another address, and `off` declines it. If the
+port is already taken — usually by another project's session — the one that
+was offered the default steps aside and says so; a port is not worth a
+session. An address you named yourself is a different matter, and a session
+that cannot bind it fails rather than serving nothing quietly.
 
 ## Cluster edition
 
