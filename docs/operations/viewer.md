@@ -12,26 +12,48 @@ it beyond the machine you trust with the store itself.
 
 The embedded store is single-writer
 ([ADR-011](../adr/ADR-011-embedded-concurrency-model.md)), so a live session
-can only be observed from inside that session's process. Add one variable to
-the MCP server config:
+can only be observed from inside that session's process. That mount is
+automatic: **every embedded session serves the viewer at `127.0.0.1:7317`**
+without being asked. There is nothing to add to the MCP config.
 
 ```json
 {
   "mcpServers": {
     "kernel-memory": {
       "command": "kmp-mcp",
-      "env": {
-        "KMP_MCP_BACKEND": "embedded",
-        "KMP_VIEWER_ADDR": "127.0.0.1:7317"
-      }
+      "env": { "KMP_MCP_BACKEND": "embedded" }
     }
   }
 }
 ```
 
 The session logs `memory viewer at http://127.0.0.1:7317/` to stderr on
-startup. Every write the agent makes projects synchronously, so a reload of
-the viewer sees it immediately.
+startup, and hands the same link back on the first memory it writes — the
+first moment there is anything to look at. `kmp-mcp info`, `kmp-mcp doctor`
+and `/kmp:doctor` all print the address, the last of them by asking the port
+rather than trusting the configuration. Every write the agent makes projects
+synchronously, so a reload of the viewer sees it immediately.
+
+### Choosing another address, or none
+
+| `KMP_VIEWER_ADDR` | What happens |
+|:--|:--|
+| unset | the viewer serves at `127.0.0.1:7317` |
+| `127.0.0.1:9000` | it serves there instead, and the session **fails** if it cannot bind |
+| `off`, `none`, empty | no viewer this session |
+
+The asymmetry is deliberate. An address you named must be honoured or refused
+out loud, because a typo that silently serves nothing wastes an afternoon. An
+address the binary offered on your behalf must never cost you your memory: if
+another project's session already holds the port, this one warns on stderr and
+carries on without a viewer. That session's viewer still works — open it.
+
+Two projects open at once, each wanting its own viewer, is the case for naming
+the second one:
+
+```json
+"env": { "KMP_MCP_BACKEND": "embedded", "KMP_VIEWER_ADDR": "127.0.0.1:7318" }
+```
 
 ## Standalone (no session running)
 

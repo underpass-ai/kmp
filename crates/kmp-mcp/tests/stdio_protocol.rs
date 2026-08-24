@@ -411,6 +411,92 @@ async fn kernel_write_memory_commit_uses_canonical_ingest_backend_path() {
     );
 }
 
+/// A viewer nobody is told about is a viewer nobody opens — the whole reason
+/// phase 04 exists. The link rides on the write because that is the first
+/// moment there is anything to look at, and it rides once because a link
+/// repeated on every write is a link nobody reads.
+#[tokio::test]
+async fn the_first_write_of_a_session_hands_over_the_viewer_link_and_the_second_does_not() {
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let server = KernelMcpServer::with_backend(StubBackend {
+        calls: Arc::clone(&calls),
+        backend_name: "stub",
+        grpc_tls_mode_name: "disabled",
+        response: Ok(stub_ingest_response()),
+    })
+    .serving_viewer_at("http://127.0.0.1:7317/");
+
+    let first = handle_with(&server, write_request(51)).await;
+    let viewer = &first["result"]["structuredContent"]["viewer"];
+    assert_eq!(viewer["url"], "http://127.0.0.1:7317/");
+    assert!(
+        viewer["tell_the_user"]
+            .as_str()
+            .expect("the invitation is written for a human")
+            .contains("http://127.0.0.1:7317/"),
+        "the sentence must carry the link, not just the sibling field"
+    );
+
+    let second = handle_with(&server, write_request(52)).await;
+    assert_eq!(second["result"]["structuredContent"]["accepted"], true);
+    assert!(
+        second["result"]["structuredContent"]
+            .get("viewer")
+            .is_none(),
+        "the invitation is said once a session"
+    );
+}
+
+/// Every other backend reaches a kernel this process does not host, so there
+/// is no local viewer to point at and no link to invent.
+#[tokio::test]
+async fn a_session_without_a_viewer_never_mentions_one() {
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let server = KernelMcpServer::with_backend(StubBackend {
+        calls: Arc::clone(&calls),
+        backend_name: "stub",
+        grpc_tls_mode_name: "disabled",
+        response: Ok(stub_ingest_response()),
+    });
+
+    let response = handle_with(&server, write_request(53)).await;
+    assert_eq!(response["result"]["structuredContent"]["accepted"], true);
+    assert!(
+        response["result"]["structuredContent"]
+            .get("viewer")
+            .is_none()
+    );
+}
+
+fn write_request(id: u64) -> Value {
+    json!({
+        "jsonrpc": "2.0",
+        "id": id,
+        "method": "tools/call",
+        "params": {
+            "name": "kernel_write_memory",
+            "arguments": sample_write_arguments(false)
+        }
+    })
+}
+
+fn stub_ingest_response() -> Value {
+    json!({
+        "content": [],
+        "structuredContent": {
+            "summary": "Ingested via stub",
+            "memory": {
+                "about": "incident:mobile-login",
+                "memory_id": "memory:incident:mobile-login:1",
+                "accepted": {"entries": 2, "relations": 3, "evidence": 3},
+                "read_after_write_ready": true
+            },
+            "warnings": []
+        },
+        "isError": false
+    })
+}
+
 #[tokio::test]
 async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link() {
     let data_dir = tempfile::tempdir().expect("temp data dir");

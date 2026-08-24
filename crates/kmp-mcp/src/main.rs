@@ -21,7 +21,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let server = match server_from_env().await {
         Ok(server) => server,
-        Err(message) => {
+        Err(StartupFailure {
+            message,
+            backend_selection,
+        }) => {
             // On stderr for whoever is watching, and in the log for whoever
             // is not. A host consumes stderr and shows the user nothing but
             // an absence of tools, so a start that fails this way used to
@@ -33,13 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "startup failed"
             );
             eprintln!("kmp-mcp: {message}");
-            // Only a backend-selection failure is fixed by choosing a
-            // backend. After a store that refused to open — wrong engine,
-            // locked, too new — this line sent people to look exactly where
-            // the problem was not.
-            if !message.starts_with("embedded store")
-                && !message.starts_with("unknown storage engine")
-            {
+            if backend_selection {
                 eprintln!(
                     "kmp-mcp: set {GRPC_ENDPOINT_ENV} for live gRPC, or set {MCP_BACKEND_ENV}=fixture explicitly for fixture mode"
                 );
@@ -99,41 +96,105 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Why a start failed, and whether choosing a backend would fix it.
+///
+/// This used to be decided by matching the front of the message, which is a
+/// guess about wording rather than about what happened: every new failure
+/// defaulted to "choose a backend" and sent people to look exactly where the
+/// problem was not. A store that refused to open and a viewer port already
+/// taken are both correctly configured sessions.
+struct StartupFailure {
+    message: String,
+    backend_selection: bool,
+}
+
+impl StartupFailure {
+    /// The backend could not be chosen from the environment. Saying which
+    /// variables settle it is genuinely the next step.
+    fn selecting_a_backend(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            backend_selection: true,
+        }
+    }
+
+    /// The backend was clear; something after it went wrong.
+    fn after_the_backend_was_chosen(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            backend_selection: false,
+        }
+    }
+}
+
 /// Builds the MCP server, mounting the local web viewer over the embedded
-/// backend when `KMP_VIEWER_ADDR` asks for it. The viewer must share
-/// this process's kernel: the embedded store is single-writer (ADR-011), so
-/// an in-process mount is the only way to watch a live session.
-async fn server_from_env() -> Result<KernelMcpServer, String> {
-    let viewer_addr = std::env::var(kmp_viewer::VIEWER_ADDR_ENV)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty());
+/// backend. The viewer must share this process's kernel: the embedded store
+/// is single-writer (ADR-011), so an in-process mount is the only way to
+/// watch a live session.
+async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
+    let viewer = kmp_mcp::viewer::viewer_addr_from_env();
     let backend_is_embedded = std::env::var(MCP_BACKEND_ENV)
         .map(|value| value.trim().eq_ignore_ascii_case("embedded"))
         .unwrap_or(false);
 
-    let Some(addr) = viewer_addr else {
-        return KernelMcpServer::try_from_env();
+    let Some(addr) = viewer.addr() else {
+        return KernelMcpServer::try_from_env().map_err(StartupFailure::selecting_a_backend);
     };
     if !backend_is_embedded {
-        return Err(format!(
-            "{} is set but {MCP_BACKEND_ENV} is not `embedded`; the viewer mounts over the \
-             in-process kernel only",
-            kmp_viewer::VIEWER_ADDR_ENV
-        ));
+        // Only a request that was actually made can be refused. A default
+        // that met a gRPC session is not a misconfiguration to report.
+        return if viewer.was_asked_for() {
+            Err(StartupFailure::after_the_backend_was_chosen(format!(
+                "{} is set but {MCP_BACKEND_ENV} is not `embedded`; the viewer mounts over the \
+                 in-process kernel only",
+                kmp_viewer::VIEWER_ADDR_ENV
+            )))
+        } else {
+            KernelMcpServer::try_from_env().map_err(StartupFailure::selecting_a_backend)
+        };
     }
 
-    let resolved = kmp_embedded::resolve_data_dir_from_env().map_err(|e| e.to_string())?;
+    let resolved = kmp_embedded::resolve_data_dir_from_env()
+        .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
-        .map_err(|e| e.to_string())?;
-    let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)?;
-    spawn_viewer(backend.kernel(), &addr).await?;
-    Ok(KernelMcpServer::with_embedded_backend(backend))
+        .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
+    let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)
+        .map_err(StartupFailure::after_the_backend_was_chosen)?;
+    let url = match spawn_viewer(backend.kernel(), addr).await {
+        Ok(url) => Some(url),
+        // The commonest cause is another project's session already holding
+        // the port. That session's viewer still works; this one goes without
+        // rather than taking the memory down with it.
+        Err(message) if viewer.was_asked_for() => {
+            // You asked for this address, so you get told why it did not
+            // happen and what to type next — not a shrug.
+            return Err(StartupFailure::after_the_backend_was_chosen(format!(
+                "{message}\nkmp-mcp: usually another project's session already has it. Name a \
+                 free port with {}=127.0.0.1:7318, or {}=off to go without.",
+                kmp_viewer::VIEWER_ADDR_ENV,
+                kmp_viewer::VIEWER_ADDR_ENV
+            )));
+        }
+        Err(message) => {
+            eprintln!(
+                "kmp-mcp: {message}; continuing without it. Set {}=off to stop offering it.",
+                kmp_viewer::VIEWER_ADDR_ENV
+            );
+            None
+        }
+    };
+    let server = KernelMcpServer::with_embedded_backend(backend);
+    Ok(match url {
+        Some(url) => server.serving_viewer_at(url),
+        None => server,
+    })
 }
 
 /// Binds the viewer on `addr` (loopback only) and serves it in the
-/// background for the life of this process.
-async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Result<(), String> {
+/// background for the life of this process. Returns the URL it ended up on,
+/// which is the bound address rather than the requested one: `:0` and an
+/// unspecified host both resolve here, and the caller hands this to a human.
+async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Result<String, String> {
     let viewer = std::sync::Arc::new(kmp_viewer::MemoryViewerServer::new(
         kernel.service(),
         Some(kernel.data_dir().display().to_string()),
@@ -144,13 +205,14 @@ async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Resu
     let local_addr = listener
         .local_addr()
         .map_err(|error| format!("viewer listener has no local address: {error}"))?;
-    eprintln!("kmp-mcp: memory viewer at http://{local_addr}/");
+    let url = format!("http://{local_addr}/");
+    eprintln!("kmp-mcp: memory viewer at {url}");
     tokio::spawn(async move {
         if let Err(error) = viewer.serve(listener).await {
             tracing::error!(%error, "memory viewer stopped");
         }
     });
-    Ok(())
+    Ok(url)
 }
 
 /// Logs go to stderr always (stdout belongs to MCP JSON-RPC). In embedded

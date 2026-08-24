@@ -12,6 +12,19 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **The viewer comes up on its own.** Every embedded session serves it at
+  `http://127.0.0.1:7317/` with nothing set, nothing installed and no flag.
+  It had shipped inside every binary since 0.1.9, gated behind a variable that
+  nothing set — not the plugin launcher, not the host recipes — so the best
+  thing KMP has to show was reachable by nobody.
+- The first memory a session writes hands back the link to it, once. That is
+  the first moment there is anything to look at, and a link repeated on every
+  write is a link nobody reads.
+- `kmp-mcp info`, `kmp-mcp doctor` and `/kmp:doctor` all say where the viewer
+  is. The plugin doctor asks the port rather than trusting the configuration,
+  because configuration says what was intended and only the port says what is
+  true.
+
 - `scripts/kmp-install-binary.sh` in the plugin: installs the engine whose
   version matches the plugin's own, from the release that published it,
   verified against the checksum published beside it. No Rust toolchain needed.
@@ -25,6 +38,26 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- `KMP_VIEWER_ADDR` unset now means the documented default instead of silence.
+  `off`, `none` or an empty value declines the viewer. An address you name is
+  honoured or the session fails — a typo that quietly serves nothing costs an
+  afternoon — while an address the binary offered steps aside with a warning
+  if the port is busy, because a port is not worth a session. Amends
+  [ADR-017](docs/adr/ADR-017-embedded-memory-viewer.md), which had it off by
+  default.
+- `/kmp:demo` points its viewer at port 7318, since 7317 is already serving
+  the memory of the project running the demo.
+
+### Fixed
+
+- A start that failed for any reason other than backend selection used to end
+  with "set `KMP_KERNEL_GRPC_ENDPOINT`…", because the follow-up advice was
+  chosen by matching the front of the error message and everything unmatched
+  fell through to it. A correctly configured session whose viewer port was
+  taken was told to go and configure a backend. The failure now carries
+  whether choosing a backend would fix it, and a viewer that cannot bind an
+  address you named says what usually holds the port and which variable frees
+  it.
 - `kmp-doctor` reports the way `flutter doctor`, `brew doctor` and
   `gh auth status` do: one line per area, detail only where something is
   wrong, the fix attached to the problem, and a verdict in plain words with a

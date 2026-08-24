@@ -35,7 +35,8 @@ Then tell the user, in a few lines:
 - the thing worth noticing — the rollback at 15:05 looked right with the
   evidence available at 15:05, and the memory can still show you that state;
 - how to look at the graph themselves:
-  `KMP_MCP_DATA_DIR=<dir> kmp-mcp viewer 127.0.0.1:7317`;
+  `KMP_MCP_DATA_DIR=<dir> kmp-mcp viewer 127.0.0.1:7318` — port 7318 and not
+  7317, because 7317 is already serving their own memory;
 - that removing it is deleting one directory.
 
 Do not paraphrase the whole incident. Let the moves do the talking.

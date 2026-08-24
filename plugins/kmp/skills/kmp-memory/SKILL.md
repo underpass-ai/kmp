@@ -119,6 +119,26 @@ the kernel could pick. And **a bundle carries the payloads as written** — a
 secret in memory is a secret in the committed file, so the hygiene of the
 bundle is the hygiene of the store.
 
+## The viewer, when it offers itself
+
+`kernel_write_memory` sometimes comes back with a `viewer` block:
+
+```json
+"viewer": {
+  "url": "http://127.0.0.1:7317/",
+  "tell_the_user": "Their memory is now a graph they can open: …"
+}
+```
+
+That is the session saying it is already serving this store as a graph — the
+same abouts, the same typed relations, the same evidence, in a window instead
+of in JSON. It appears on the **first memory a session writes**, because that
+is the first moment there is anything to look at, and it does not appear
+again.
+
+Pass the link on when it appears. It is the one thing a human can look at
+without learning any of this, and most people never find out it exists.
+
 ## What to write, and what never to write
 
 Write when something is **decided, constrained, or concluded**. Decisions,

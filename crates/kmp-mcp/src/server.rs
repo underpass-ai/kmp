@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use serde_json::Value;
@@ -21,6 +22,13 @@ pub struct KernelMcpServer {
     /// The storage engine under an embedded backend, for the startup line
     /// and the doctor. `None` for the other backends.
     embedded_engine: Option<kmp_embedded::StorageEngine>,
+    /// Where this process's viewer is serving, when it mounted one.
+    viewer_url: Option<String>,
+    /// Whether the viewer has already been offered on this session. The
+    /// invitation is worth saying once and is noise said twice, and the
+    /// moment worth saying it at is the first memory the session writes:
+    /// before that there is nothing to look at.
+    viewer_offered: AtomicBool,
 }
 
 impl Default for KernelMcpServer {
@@ -62,16 +70,15 @@ impl KernelMcpServer {
     }
 
     pub fn with_backend(backend: impl KernelMcpToolBackend + 'static) -> Self {
-        Self {
-            backend: Arc::new(backend),
-            embedded_engine: None,
-        }
+        Self::with_shared_backend(Arc::new(backend))
     }
 
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
         Self {
             backend,
             embedded_engine: None,
+            viewer_url: None,
+            viewer_offered: AtomicBool::new(false),
         }
     }
 
@@ -97,6 +104,25 @@ impl KernelMcpServer {
     /// is embedded.
     pub fn embedded_engine(&self) -> Option<kmp_embedded::StorageEngine> {
         self.embedded_engine
+    }
+
+    /// Records that a viewer is serving this process's store at `url`, so a
+    /// write can hand a human the link to their own graph. Without this the
+    /// viewer is reachable and unmentioned, which is how it went unnoticed.
+    pub fn serving_viewer_at(mut self, url: impl Into<String>) -> Self {
+        self.viewer_url = Some(url.into());
+        self
+    }
+
+    /// The viewer link, returned once per session and never again. Takes the
+    /// flag before returning it, so two concurrent writes cannot both claim
+    /// to be the first.
+    fn viewer_invitation(&self) -> Option<&str> {
+        let url = self.viewer_url.as_deref()?;
+        self.viewer_offered
+            .swap(true, Ordering::SeqCst)
+            .eq(&false)
+            .then_some(url)
     }
 
     pub fn from_env() -> Self {
@@ -306,7 +332,11 @@ impl KernelMcpServer {
         {
             Ok(result) => {
                 let ingest_result = result.get("structuredContent").cloned().unwrap_or(result);
-                let result = tool_success_result(write_commit_result(&plan, ingest_result));
+                let result = tool_success_result(write_commit_result(
+                    &plan,
+                    ingest_result,
+                    self.viewer_invitation(),
+                ));
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),

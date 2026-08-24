@@ -206,6 +206,23 @@ fn section(out: &mut String, title: &str, findings: &[Finding]) {
     out.push('\n');
 }
 
+/// Where a human can watch this memory. The viewer ships inside the binary
+/// and mounts itself on an embedded session, so the only thing worth saying
+/// is the address — and, when someone turned it off, how to get it back.
+fn viewer_finding() -> Finding {
+    match crate::viewer::viewer_addr_from_env().addr() {
+        Some(addr) => Finding::new(
+            Level::Ok,
+            format!("your memory, as a graph: http://{addr}/"),
+        )
+        .with("an embedded session mounts it at startup; this command starts nothing"),
+        None => Finding::new(Level::Warn, "declined — no viewer this session").with(format!(
+            "unset {} and restart the session to see your memory again",
+            kmp_viewer::VIEWER_ADDR_ENV
+        )),
+    }
+}
+
 /// `info` — the facts, with no verdict: what this binary is and what memory it
 /// would open here.
 pub fn info() -> String {
@@ -232,6 +249,7 @@ pub fn info() -> String {
     )
     .with(names.join(" "));
     section(&mut out, "Tools", &[surface]);
+    section(&mut out, "Viewer", &[viewer_finding()]);
 
     if let Some(resolved) = resolved {
         let history = startup_history(resolved.path(), 3);
@@ -282,6 +300,7 @@ pub fn doctor() -> (String, i32) {
     };
     let surface_level = surface.level;
     section(&mut out, "Tools", &[surface]);
+    section(&mut out, "Viewer", &[viewer_finding()]);
 
     let mut history_level = Level::Ok;
     if let Some(resolved) = resolved.as_ref() {

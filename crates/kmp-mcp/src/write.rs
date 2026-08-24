@@ -461,8 +461,12 @@ pub(crate) fn write_dry_run_result(plan: &KernelWritePlan) -> Value {
     })
 }
 
-pub(crate) fn write_commit_result(plan: &KernelWritePlan, ingest_result: Value) -> Value {
-    json!({
+pub(crate) fn write_commit_result(
+    plan: &KernelWritePlan,
+    ingest_result: Value,
+    viewer_url: Option<&str>,
+) -> Value {
+    let mut result = json!({
         "accepted": true,
         "dry_run": false,
         "summary": write_summary(plan),
@@ -473,6 +477,23 @@ pub(crate) fn write_commit_result(plan: &KernelWritePlan, ingest_result: Value) 
         "ingest_result": ingest_result,
         "diagnostics": plan.diagnostics,
         "next_suggested_reads": plan.next_suggested_reads
+    });
+    if let Some(url) = viewer_url {
+        result["viewer"] = viewer_invitation(url);
+    }
+    result
+}
+
+/// The one moment a link to the viewer is worth spending a line on: memory
+/// that did not exist a second ago now does, and there is somewhere to see
+/// it. Phrased for the human, because the agent is only carrying it.
+fn viewer_invitation(url: &str) -> Value {
+    json!({
+        "url": url,
+        "tell_the_user": format!(
+            "Their memory is now a graph they can open: {url} — already running, \
+             loopback only, read-only. Say it once; it is the same link all session."
+        )
     })
 }
 

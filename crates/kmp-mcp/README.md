@@ -22,9 +22,10 @@ Codex and Claude Code.
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 
 `embedded` is the one to start with: no server, no cluster, memory that
-survives the session on your own disk. Set `KMP_VIEWER_ADDR` on an embedded
-session and the [viewer](https://crates.io/crates/kmp-viewer) comes up over
-that same kernel.
+survives the session on your own disk. It also brings its own
+[viewer](https://crates.io/crates/kmp-viewer) up at `http://127.0.0.1:7317/`
+over that same kernel — your memory as a graph, read-only, loopback only, no
+flag required. `KMP_VIEWER_ADDR` moves it; `off` declines it.
 
 Current status:
 
