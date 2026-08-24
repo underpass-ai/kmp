@@ -386,6 +386,94 @@ fn graph_reranker_ingest_arguments() -> Value {
     })
 }
 
+fn partial_default_update_ingest_arguments() -> Value {
+    json!({
+        "about": "decision:fresh-store-default",
+        "idempotency_key": "ingest:partial-default-update-eval",
+        "memory": {
+            "dimensions": [{"id": "work:fresh-store-default", "kind": "work"}],
+            "entries": [
+                {
+                    "id": "decision:two-engine-architecture",
+                    "kind": "decision",
+                    "text": "KMP keeps redb compatibility and SQLite as two embedded storage engines.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:fresh-store-default",
+                        "occurred_at": "2026-08-17T11:37:00Z",
+                        "sequence": 1
+                    }]
+                },
+                {
+                    "id": "decision:historical-fresh-store-default",
+                    "kind": "decision",
+                    "text": "Redb was the distribution default for a fresh KMP data directory.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:fresh-store-default",
+                        "occurred_at": "2026-08-17T11:38:00Z",
+                        "sequence": 2
+                    }]
+                },
+                {
+                    "id": "decision:current-fresh-store-default",
+                    "kind": "decision",
+                    "text": "Shipped KMP builds create fresh SQLite stores while preserving existing redb stores.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:fresh-store-default",
+                        "occurred_at": "2026-08-17T11:39:00Z",
+                        "sequence": 3
+                    }]
+                }
+            ],
+            "relations": [
+                {
+                    "from": "decision:current-fresh-store-default",
+                    "to": "decision:historical-fresh-store-default",
+                    "rel": "updates_state",
+                    "class": "causal",
+                    "why": "The shipped fresh-store policy changes only the distribution default, not the two-engine architecture.",
+                    "evidence": "A fresh data directory now selects SQLite while existing redb stores remain readable.",
+                    "confidence": "high"
+                },
+                {
+                    "from": "decision:current-fresh-store-default",
+                    "to": "decision:two-engine-architecture",
+                    "rel": "uses_background",
+                    "class": "evidential",
+                    "why": "The new default operates inside the existing two-engine compatibility architecture.",
+                    "evidence": "Existing redb stores remain readable while fresh stores select SQLite.",
+                    "confidence": "high"
+                }
+            ],
+            "evidence": [
+                {
+                    "id": "evidence:historical-fresh-store-default",
+                    "supports": ["decision:historical-fresh-store-default"],
+                    "text": "Before the distribution change, fresh KMP data directories defaulted to redb.",
+                    "source": "historical release fixture",
+                    "time": "2026-08-17T11:38:00Z"
+                },
+                {
+                    "id": "evidence:current-fresh-store-default",
+                    "supports": ["decision:current-fresh-store-default"],
+                    "text": "Existing redb stores remain readable; a new KMP installation creates a fresh SQLite store by default.",
+                    "source": "current release fixture",
+                    "time": "2026-08-17T11:39:00Z"
+                },
+                {
+                    "id": "evidence:two-engine-architecture",
+                    "supports": ["decision:two-engine-architecture"],
+                    "text": "The architecture retains both the redb compatibility path and the SQLite engine.",
+                    "source": "architecture fixture",
+                    "time": "2026-08-17T11:37:00Z"
+                }
+            ]
+        }
+    })
+}
+
 fn relation_why_seed_arguments() -> Value {
     json!({
         "about": "project:relation-why-conformance",
@@ -780,6 +868,139 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
             first = Some(ask);
         }
     }
+}
+
+#[tokio::test]
+async fn current_default_recall_survives_a_partial_decision_update() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(
+        &server,
+        1,
+        "kernel_ingest",
+        partial_default_update_ingest_arguments(),
+    )
+    .await;
+
+    let questions = [
+        "What is the current default storage engine for a fresh KMP data directory?",
+        "Which backend will a new installation select when no existing store is present?",
+    ];
+    for (question_index, question) in questions.into_iter().enumerate() {
+        let mut first = None;
+        for repeat in 0..3 {
+            let ask = call(
+                &server,
+                2 + (question_index * 3 + repeat) as u64,
+                "kernel_ask",
+                json!({
+                    "about": "decision:fresh-store-default",
+                    "question": question,
+                    "answer_policy": "evidence_or_unknown",
+                    "depth": 3,
+                    "budget": {"detail": "balanced", "max_bytes": 10_000}
+                }),
+            )
+            .await;
+
+            assert_ne!(ask["answer"], "UNKNOWN", "{question}: {ask}");
+            assert_eq!(
+                ask["proof"]["evidence"][0]["supports"][0], "decision:current-fresh-store-default",
+                "the current policy must rank first: {ask}"
+            );
+            assert!(
+                ask["proof"]["evidence"][0]["text"]
+                    .as_str()
+                    .is_some_and(|text| text.contains("SQLite")),
+                "the current answer evidence must name SQLite: {ask}"
+            );
+            assert!(
+                ask["proof"]["matched_relations"]
+                    .as_array()
+                    .is_some_and(|relations| relations.iter().any(|rel| rel == "updates_state")),
+                "the partial update must remain visible in proof: {ask}"
+            );
+            assert!(ask["truncation"]["truncated"].is_boolean(), "{ask}");
+            assert!(
+                ask["projection"]["budget"]["used_bytes"]
+                    .as_u64()
+                    .is_some_and(|used| used <= 10_000),
+                "the recorded projection must stay inside its byte budget: {ask}"
+            );
+
+            if let Some(first) = &first {
+                assert_eq!(ask, *first, "identical asks must be deterministic");
+            } else {
+                first = Some(ask);
+            }
+        }
+    }
+
+    let before = call(
+        &server,
+        8,
+        "kernel_goto",
+        json!({
+            "about": "decision:fresh-store-default",
+            "at": {"sequence": 2},
+            "include": {"evidence": true, "relations": true}
+        }),
+    )
+    .await;
+    let before_refs = before["entries"]
+        .as_array()
+        .expect("goto entries")
+        .iter()
+        .filter_map(|entry| entry["ref"].as_str())
+        .collect::<Vec<_>>();
+    assert!(before_refs.contains(&"decision:historical-fresh-store-default"));
+    assert!(!before_refs.contains(&"decision:current-fresh-store-default"));
+
+    let after = call(
+        &server,
+        9,
+        "kernel_goto",
+        json!({
+            "about": "decision:fresh-store-default",
+            "at": {"sequence": 3},
+            "include": {"evidence": true, "relations": true}
+        }),
+    )
+    .await;
+    assert!(
+        after["entries"]
+            .as_array()
+            .expect("goto entries")
+            .iter()
+            .any(|entry| entry["ref"] == "decision:current-fresh-store-default"),
+        "{after}"
+    );
+
+    let architecture = call(
+        &server,
+        10,
+        "kernel_inspect",
+        json!({
+            "ref": "decision:two-engine-architecture",
+            "include": {"incoming": true, "outgoing": true}
+        }),
+    )
+    .await;
+    assert!(architecture.to_string().contains("uses_background"));
+    assert!(!architecture.to_string().contains("supersedes"));
+
+    let unrelated = call(
+        &server,
+        11,
+        "kernel_ask",
+        json!({
+            "about": "decision:fresh-store-default",
+            "question": "Which catering vendor supplies the launch dinner?",
+            "answer_policy": "evidence_or_unknown"
+        }),
+    )
+    .await;
+    assert_eq!(unrelated["answer"], "UNKNOWN", "{unrelated}");
 }
 
 #[tokio::test]
