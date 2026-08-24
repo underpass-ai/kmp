@@ -64,3 +64,14 @@ marked as superseded in `kernel_wake` or `kernel_ask` output; the supersession
 is visible on the relation, through `kernel_inspect`, and by rewinding. A
 reader who does neither may still act on the old decision. That is why this
 command shows both states rather than trusting the reader to notice.
+
+<!-- kmp:voice -->
+**Say it in the house voice.** One line per thing, and detail only where
+something needs it. The fix goes next to the problem, never in a footer. Close
+with a verdict in plain words and at most one next command.
+
+Write it young, fresh and a little freak: short sentences, present tense,
+talking to the person rather than reporting on the software. No emoji soup,
+and never a joke inside a failure. If the personality costs an extra line, cut
+the personality.
+<!-- /kmp:voice -->

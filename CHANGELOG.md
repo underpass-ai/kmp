@@ -27,6 +27,21 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **`/kmp:info`** — what this install is and which memory this project opens.
+  The binary has had `kmp-mcp info` since it had a CLI and no command mirrored
+  it, so finding out which store you were on meant running a diagnostic. The
+  `chosen by:` line is what it leads with: the store resolves from the working
+  directory, so the same command run elsewhere opens another memory.
+- **[`plugins/kmp/VOICE.md`](plugins/kmp/VOICE.md)** — the shape and the
+  register KMP speaks in, in one place, with worked examples. Every command
+  carries its block verbatim and `scripts/ci/kmp-plugin-voice.sh` fails the
+  build when one drifts. A standard nobody enforces lasts until the next
+  command is written in a hurry.
+- Codex reaches parity. `kmp-setup` and `kmp-info` were missing, and the
+  installer only ever copied three of the nine prompts, so `/kmp-save` and
+  `/kmp-catchup` existed for Claude Code users and silently did not for Codex
+  ones. Both hosts now offer the same nine, and the check fails if they
+  diverge again.
 - **The viewer comes up on its own.** Every embedded session serves it at
   `http://127.0.0.1:7317/` with nothing set, nothing installed and no flag.
   It had shipped inside every binary since 0.1.9, gated behind a variable that

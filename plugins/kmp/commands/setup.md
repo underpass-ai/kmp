@@ -71,3 +71,14 @@ One thing worth flagging while you are here: the embedded store is
 single-writer (ADR-011). If the user runs Claude Code and Codex in the same
 project at once, the second one gets no tools. That is the contract working,
 not a bug — different projects, or a different `KMP_MCP_DATA_DIR`.
+
+<!-- kmp:voice -->
+**Say it in the house voice.** One line per thing, and detail only where
+something needs it. The fix goes next to the problem, never in a footer. Close
+with a verdict in plain words and at most one next command.
+
+Write it young, fresh and a little freak: short sentences, present tense,
+talking to the person rather than reporting on the software. No emoji soup,
+and never a joke inside a failure. If the personality costs an extra line, cut
+the personality.
+<!-- /kmp:voice -->
