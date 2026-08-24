@@ -157,9 +157,10 @@ fn citation_answer<'a>(citations: impl IntoIterator<Item = (&'a str, &'a str)>) 
 
     match citations.as_slice() {
         [] => String::new(),
-        [single] => {
-            format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
-        }
+        [single] => format!(
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether \
+             it answers: {single}"
+        ),
         many => format!(
             "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
             many.iter()
@@ -710,8 +711,159 @@ fn plural<'a>(count: usize, singular: &'a str, plural: &'a str) -> &'a str {
     if count == 1 { singular } else { plural }
 }
 
+/// Keeps a temporal response inside the byte ceiling the caller named.
+///
+/// The four temporal verbs declared the full `budget` object — `max_bytes`
+/// included, described as normative — and applied none of it. A `max_bytes:
+/// 9000` request came back at 17.3 KB, past the caller's ceiling and past the
+/// tool's own published `anthropic/maxResultSizeChars` of 10,000. Two limits,
+/// both advertised, neither enforced.
+///
+/// Declaring a limit and not enforcing it is worse than declaring none: every
+/// one of these verbs exists to be called by a model with a finite context,
+/// so the agent plans around the published number and takes no precautions of
+/// its own. An oversized result does not degrade a turn, it ends it.
+///
+/// Entries are dropped from the end — the far side of the move, the least
+/// recent thing the caller asked to walk toward — and `page` says so, which is
+/// the same channel a naturally-partial temporal read already uses.
+pub(crate) fn enforce_temporal_output_budget(
+    mut value: Value,
+    arguments: &Value,
+) -> Result<Value, String> {
+    let limit = crate::recall_projection::requested_byte_limit(arguments)?;
+    if serialized_len(&value) <= limit {
+        return Ok(value);
+    }
+
+    let entries = value["entries"].as_array().cloned().unwrap_or_default();
+    let total = entries.len();
+
+    // Largest prefix that fits. Probing on a copy, because truncating the
+    // response in place makes every probe narrower than the last and walks
+    // the search down to nothing.
+    let (mut low, mut high) = (0usize, total);
+    while low < high {
+        let middle = low + (high - low).div_ceil(2);
+        let mut probe = value.clone();
+        truncate_entries(&mut probe, &entries, middle, total);
+        if serialized_len(&probe) <= limit {
+            low = middle;
+        } else {
+            high = middle - 1;
+        }
+    }
+    truncate_entries(&mut value, &entries, low, total);
+
+    if low == 0 && serialized_len(&value) > limit {
+        // The envelope alone is over. Say which number to raise rather than
+        // returning something the caller cannot use.
+        return Err(format!(
+            "this temporal response does not fit budget.max_bytes={limit} even with no entries; \
+             raise budget.max_bytes"
+        ));
+    }
+    Ok(value)
+}
+
+fn truncate_entries(value: &mut Value, entries: &[Value], keep: usize, total: usize) {
+    let keep = keep.min(total);
+    value["entries"] = Value::Array(entries[..keep].to_vec());
+    value["page"]["returned"] = json!(keep);
+    value["page"]["total"] =
+        json!(total.max(value["page"]["total"].as_u64().unwrap_or_default() as usize));
+    if keep < total {
+        value["page"]["has_more"] = json!(true);
+    }
+}
+
+fn serialized_len(value: &Value) -> usize {
+    serde_json::to_string(value)
+        .map(|text| text.len())
+        .unwrap_or(usize::MAX)
+}
+
 #[cfg(test)]
 mod tests {
+    use super::enforce_temporal_output_budget;
+
+    fn temporal_value(entries: usize, text_len: usize) -> serde_json::Value {
+        serde_json::json!({
+            "summary": "walked backward",
+            "entries": (0..entries)
+                .map(|index| serde_json::json!({
+                    "ref": format!("project:t:entry:{index}"),
+                    "text": "x".repeat(text_len)
+                }))
+                .collect::<Vec<_>>(),
+            "page": {"returned": entries, "total": entries, "has_more": false, "next_cursor": null},
+            "warnings": []
+        })
+    }
+
+    fn byte_len(value: &serde_json::Value) -> usize {
+        serde_json::to_string(value).expect("serializes").len()
+    }
+
+    #[test]
+    fn a_response_inside_the_ceiling_is_returned_untouched() {
+        let value = temporal_value(3, 20);
+        let arguments = serde_json::json!({"budget": {"max_bytes": 9000}});
+        let bounded = enforce_temporal_output_budget(value.clone(), &arguments).expect("fits");
+        assert_eq!(bounded, value);
+    }
+
+    #[test]
+    fn an_oversized_response_is_cut_to_the_ceiling_the_caller_named() {
+        // The reported shape: max_bytes 9000, a response at roughly twice it.
+        let value = temporal_value(8, 2_000);
+        assert!(byte_len(&value) > 9_000, "the fixture has to be over");
+        let arguments = serde_json::json!({"budget": {"max_bytes": 9000}});
+
+        let bounded = enforce_temporal_output_budget(value, &arguments).expect("fits after");
+        assert!(
+            byte_len(&bounded) <= 9_000,
+            "returned {} bytes against a 9000 ceiling",
+            byte_len(&bounded)
+        );
+    }
+
+    #[test]
+    fn a_cut_response_says_it_was_cut() {
+        let value = temporal_value(8, 2_000);
+        let arguments = serde_json::json!({"budget": {"max_bytes": 9000}});
+        let bounded = enforce_temporal_output_budget(value, &arguments).expect("fits after");
+
+        let returned = bounded["entries"].as_array().expect("entries").len();
+        assert!(returned < 8, "something had to go");
+        // Silence here is the failure this exists to prevent: a partial walk
+        // that reads as a complete one.
+        assert_eq!(bounded["page"]["returned"], returned);
+        assert_eq!(bounded["page"]["total"], 8);
+        assert_eq!(bounded["page"]["has_more"], true);
+    }
+
+    #[test]
+    fn the_default_ceiling_applies_when_the_caller_names_none() {
+        // The tool publishes anthropic/maxResultSizeChars 10_000 and callers
+        // plan around it, so an unasked response must respect it too.
+        let value = temporal_value(40, 1_000);
+        let bounded =
+            enforce_temporal_output_budget(value, &serde_json::json!({})).expect("fits after");
+        assert!(byte_len(&bounded) <= 10_000);
+    }
+
+    #[test]
+    fn an_envelope_that_cannot_fit_says_which_number_to_raise() {
+        let mut value = temporal_value(0, 0);
+        value["summary"] = serde_json::json!("x".repeat(2_000));
+        let arguments = serde_json::json!({"budget": {"max_bytes": 512}});
+
+        let error = enforce_temporal_output_budget(value, &arguments)
+            .expect_err("nothing can be dropped to make this fit");
+        assert!(error.contains("budget.max_bytes"), "{error}");
+    }
+
     use kmp_proto::v1beta1::{MemoryBudget, MemoryDetailLevel, Proof, TemporalState, WakePacket};
 
     use super::*;

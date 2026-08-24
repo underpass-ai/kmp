@@ -4,7 +4,20 @@ use kmp_domain::TokenEstimator;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-const DEFAULT_MAX_BYTES: usize = 10_000;
+pub(crate) const DEFAULT_MAX_BYTES: usize = 10_000;
+
+/// Reads `budget.max_bytes` the way the recall projection does, so the
+/// temporal verbs cannot mean something different by the same argument.
+pub(crate) fn requested_byte_limit(arguments: &Value) -> Result<usize, String> {
+    match arguments.pointer("/budget/max_bytes") {
+        None | Some(Value::Null) => Ok(DEFAULT_MAX_BYTES),
+        Some(value) => value
+            .as_u64()
+            .and_then(|bytes| usize::try_from(bytes).ok())
+            .filter(|bytes| *bytes >= 512)
+            .ok_or_else(|| "budget.max_bytes must be an integer of at least 512".to_string()),
+    }
+}
 const CURSOR_VERSION: &str = "kmp1";
 const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v1";
 
