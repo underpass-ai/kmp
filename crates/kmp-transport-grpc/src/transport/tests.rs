@@ -1344,7 +1344,13 @@ async fn memory_service_wake_and_ask_read_live_context() {
         .into_inner();
 
     assert_eq!(ask.answer, "UNKNOWN");
-    assert!(ask.summary.contains("No deterministic memory answer"));
+    // The summary says which kind of UNKNOWN this is: nothing retrieved at
+    // all, rather than things retrieved that do not bear on the question.
+    assert!(
+        ask.summary.contains("Nothing in this memory was retrieved"),
+        "unexpected summary: {}",
+        ask.summary
+    );
     assert!(ask.because.is_empty());
     assert!(ask.warnings.is_empty());
 }

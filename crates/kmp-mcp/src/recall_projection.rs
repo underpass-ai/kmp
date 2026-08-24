@@ -697,7 +697,7 @@ fn rebuild_answer(value: &mut Value) {
             "Memory answer supported by {single}; canonical text is in proof.evidence."
         )),
         many => json!(format!(
-            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
             many.iter()
                 .map(|citation| format!("- {citation}"))
                 .collect::<Vec<_>>()
@@ -1200,7 +1200,7 @@ mod tests {
             .collect::<Vec<_>>();
         json!({
             "summary": "Deterministic memory answer from 3 evidence items.",
-            "answer": "Memory answer supported by cited evidence (canonical text in proof.evidence):\n- claim:0 [evidence:0]\n- claim:1 [evidence:1]\n- claim:2 [evidence:2]",
+            "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- claim:0 [evidence:0]\n- claim:1 [evidence:1]\n- claim:2 [evidence:2]",
             "because": reasons,
             "proof": {
                 "path": path,

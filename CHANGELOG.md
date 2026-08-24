@@ -12,6 +12,32 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **`kernel_ask` stops claiming support it has not established.** The `answer`
+  field opened "Memory answer supported by cited evidence" — a claim the
+  kernel cannot make: it retrieves by term overlap, and whether those items
+  answer the question is a judgement it does not perform. It now says what it
+  did and points at `proof.evidence[].text`, where the reading belongs to the
+  caller. For a kernel whose whole claim is that it does not generate,
+  asserting unestablished support is the one thing it must never do.
+- `UNKNOWN` now says which kind it is. `summary` distinguishes *nothing was
+  retrieved* from *things were retrieved and none of them bear on this*, and
+  `proof.missing` follows — two situations that lead to different next moves,
+  and only one of them means the memory has not been written yet. An UNKNOWN
+  answer no longer ships five citations beside it.
+- **The tool surface explains itself.** `kernel_ask` says what
+  `proof.confidence` measures (lexical term overlap with the best-matching
+  evidence item — not a judgement that the evidence answers, and not the
+  `confidence` on a relation, which is writer certainty). `kernel_write_memory`
+  says it is the writer to reach for and `kernel_ingest` the low-level form.
+  The four temporal verbs each name their own cursor parameter, since they are
+  taught as one family and three of the four differ. `kernel_goto` stops
+  advertising `dimensions` as if the other three lacked it.
+- `observed_at` says **UTC**. RFC3339 alone permits an offset, so writers
+  sending local wall-clock time with a `Z` were not out of spec — and put the
+  memory's frontier hours into the future.
+- The agent skill stops teaching a `kernel_goto` default of 50 entries. There
+  is no default; the only `50` was in a unit test.
+
 - **The default is the embedded kernel.** `kmp-mcp` with nothing set serves
   memory in-process; no variable, no endpoint, no flag. It used to default to
   gRPC and then exit 2 asking for an endpoint, blaming a variable the user

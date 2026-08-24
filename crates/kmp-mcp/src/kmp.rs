@@ -160,7 +160,7 @@ fn citation_answer<'a>(citations: impl IntoIterator<Item = (&'a str, &'a str)>) 
             format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
         }
         many => format!(
-            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
             many.iter()
                 .map(|citation| format!("- {citation}"))
                 .collect::<Vec<_>>()

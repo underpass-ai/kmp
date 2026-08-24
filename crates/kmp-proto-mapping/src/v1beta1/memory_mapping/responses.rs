@@ -13,6 +13,13 @@ use kmp_proto::v1beta1::{
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
+
+/// What the `answer` field carries when memory does not answer the question.
+///
+/// One token, so a caller can test for it without parsing prose, and the same
+/// token whether nothing was retrieved or nothing retrieved bore on the
+/// question — `summary` and `proof.missing` say which.
+pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
     answer_evidence_from_bundle, answer_relations_from_bundle, bundle_memory_metadata,
     memory_evidence_from_bundle, memory_relations_from_bundle, persisted_memory_metadata,
@@ -170,18 +177,43 @@ pub fn ask_response_from_result(
         })
         .collect::<Vec<_>>();
 
-    let answer = match policy {
-        MemoryAnswerPolicy::EvidenceOrUnknown if because.is_empty() => "UNKNOWN".to_string(),
-        MemoryAnswerPolicy::EvidenceOrUnknown
-        | MemoryAnswerPolicy::ShowConflicts
-        | MemoryAnswerPolicy::BestEffort => deterministic_answer_from_reasons(&because),
+    // Retrieval succeeding is not the same event as the question being
+    // answered, and only one of those is what the caller asked about.
+    //
+    // UNKNOWN used to fire on `because.is_empty()` — the selector finding
+    // nothing at all. It could not fire when the selector found evidence with
+    // no bearing on the question, which is the commoner case and the one that
+    // matters: a question dense in words this store happens to contain came
+    // back with five citations, `confidence: high`, and `missing: []`, about
+    // something else entirely. That is a generated-looking answer from a
+    // kernel whose whole claim is that it does not generate.
+    //
+    // `Low` confidence is the kernel saying the best thing it found barely
+    // shares a term with the question. Under a policy that promises evidence
+    // or UNKNOWN, that is UNKNOWN. `best_effort` exists for callers who want
+    // the neighbourhood anyway, and keeps what it always returned.
+    let bears_on_the_question = !because.is_empty()
+        && !(matches!(
+            policy,
+            MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
+        ) && confidence == MemoryConfidence::Low);
+
+    let answer = if bears_on_the_question {
+        deterministic_answer_from_reasons(&because)
+    } else {
+        UNANSWERED.to_string()
     };
     let answer = if answer.trim().is_empty() {
-        "UNKNOWN".to_string()
+        UNANSWERED.to_string()
     } else {
         answer
     };
-    let unknown = because.is_empty();
+    let unknown = !bears_on_the_question;
+    let retrieved = because.len();
+    // Citations belong to an answer. Returning five of them beside UNKNOWN is
+    // how an unsupported answer looked supported in the first place; what was
+    // retrieved is still visible in `proof.evidence`.
+    let because = if unknown { Vec::new() } else { because };
     let mut answer_proof = proof(
         if unknown {
             Vec::new()
@@ -190,7 +222,11 @@ pub fn ask_response_from_result(
         },
         evidence,
         if unknown {
-            vec![format!("relevant evidence for: {question}")]
+            vec![if retrieved == 0 {
+                format!("any evidence for: {question}")
+            } else {
+                format!("evidence that bears on: {question}")
+            }]
         } else {
             withheld
         },
@@ -200,11 +236,22 @@ pub fn ask_response_from_result(
     answer_proof.matched_relations = matched_relations;
 
     AskResponse {
-        summary: if answer == "UNKNOWN" {
-            format!("No deterministic memory answer found for: {question}")
+        summary: if answer == UNANSWERED {
+            // Say which of the two happened. "Found nothing" and "found
+            // things that do not answer this" lead to different next moves:
+            // one is a memory that has not been written yet, the other is a
+            // question this memory cannot settle.
+            if retrieved == 0 {
+                format!("Nothing in this memory was retrieved for: {question}")
+            } else {
+                format!(
+                    "Retrieved {retrieved} evidence {}, none of which bears on: {question}",
+                    if retrieved == 1 { "item" } else { "items" }
+                )
+            }
         } else {
             format!(
-                "Deterministic memory answer from {} evidence {} for: {question}",
+                "Retrieved {} evidence {} for: {question}",
                 because.len(),
                 if because.len() == 1 { "item" } else { "items" }
             )
@@ -231,6 +278,16 @@ fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<
     relationships
 }
 
+/// What the kernel actually did, said in the `answer` field.
+///
+/// This used to open "Memory answer supported by cited evidence". The kernel
+/// cannot know that: it retrieved by term overlap, and whether those items
+/// answer the question is a judgement it does not make. Asserting support it
+/// has not established is the one thing a kernel-not-a-model must never do,
+/// and it is what made an unsupported answer read as a supported one.
+///
+/// So it says what it has: these items were retrieved for this question, the
+/// text is in `proof.evidence`, and the reading is the caller's.
 fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
     let mut seen = BTreeSet::new();
     let citations = reasons
@@ -256,7 +313,7 @@ fn deterministic_answer_from_reasons(reasons: &[AnswerReason]) -> String {
             format!("Memory answer supported by {single}; canonical text is in proof.evidence.")
         }
         many => format!(
-            "Memory answer supported by cited evidence (canonical text in proof.evidence):\n{}",
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
             many.iter()
                 .map(|item| format!("- {item}"))
                 .collect::<Vec<_>>()
