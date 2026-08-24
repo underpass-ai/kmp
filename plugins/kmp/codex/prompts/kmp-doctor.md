@@ -4,6 +4,12 @@ Diagnose the KMP agent-memory setup by running:
 bash "@@DOCTOR@@"
 ```
 
+Show me the **first block of the output verbatim** — the mark and the line
+under it — before anything you say in your own words. It is the only place a
+KMP user ever meets the product's own face: the startup banner goes to stderr
+and the host swallows it, and nobody runs `--help` on a server a plugin
+launched. Paraphrase the rest; never paraphrase that.
+
 Then tell me, in a few lines:
 
 - whether KMP memory is usable right now — plainly, yes or no;

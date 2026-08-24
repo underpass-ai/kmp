@@ -1,9 +1,14 @@
 //! What KMP shows when it announces itself.
 //!
-//! Two marks, because they answer different questions. The large one says what
-//! this binary is to someone meeting it — it heads `help` and a startup. The
-//! compact one only has to say *which* tool is talking, so it heads a section
-//! inside `info` and `doctor` without pushing the answer off the screen.
+//! One mark and one lockup. The mark says what this binary is to someone
+//! meeting it, and heads `help`, `info`, `doctor` and a startup. The lockup —
+//! `▌KMP▐ Backend ────` — says which tool is talking at the head of a section,
+//! in one line, so the brand never pushes the answer off the screen.
+//!
+//! There used to be a third: a four-line compact logo this doc described as
+//! heading those sections. Nothing outside this file ever called it. Branded
+//! code that never renders is worse than none — it reads as done in review and
+//! is absent in use — so it went, and the doc now describes what exists.
 
 /// The full mark, with what KMP is and what it does not need.
 pub const LARGE: &str = "\
@@ -14,30 +19,9 @@ pub const LARGE: &str = "\
  ██║  ██╗██║ ╚═╝ ██║██║        embedded database + event store
  ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝        no external services";
 
-/// The compact mark, for the head of a section.
-pub const SMALL: &str = "\
-▗▖ ▗▖▗▖  ▗▖▗▄▄▖
-▐▌▗▞▘▐▛▚▞▜▌▐▌ ▐▌
-▐▛▚▖ ▐▌  ▐▌▐▛▀▘
-▐▌ ▐▌▐▌  ▐▌▐▌";
-
 /// The large mark with a subtitle under it.
 pub fn large_with(subtitle: &str) -> String {
     format!("{LARGE}\n\n{subtitle}")
-}
-
-/// The compact mark beside a title, for a section head.
-pub fn small_with(title: &str) -> String {
-    let mut out = String::new();
-    for (index, line) in SMALL.lines().enumerate() {
-        if index == 1 {
-            out.push_str(&format!("{line}   {title}\n"));
-        } else {
-            out.push_str(line);
-            out.push('\n');
-        }
-    }
-    out
 }
 
 /// A section head: one line, so the mark never pushes the answer off screen.
@@ -63,14 +47,6 @@ mod tests {
     }
 
     #[test]
-    fn the_compact_mark_fits_a_section_head() {
-        // Four lines is the budget: a section head must not push the answer
-        // it introduces off a small terminal.
-        assert_eq!(SMALL.lines().count(), 4);
-        assert!(SMALL.lines().all(|line| line.chars().count() <= 20));
-    }
-
-    #[test]
     fn a_section_head_is_one_line_and_names_its_section() {
         let head = head("Backend");
         assert_eq!(head.lines().count(), 1);
@@ -83,13 +59,5 @@ mod tests {
     fn a_long_title_does_not_wrap_the_head() {
         let head = head("A section with a very long name that eats the whole rule");
         assert_eq!(head.lines().count(), 1);
-    }
-
-    #[test]
-    fn a_section_head_carries_its_title_on_the_reading_line() {
-        let head = small_with("Store");
-        let titled: Vec<&str> = head.lines().filter(|line| line.contains("Store")).collect();
-        assert_eq!(titled.len(), 1, "exactly one line carries the title");
-        assert!(head.lines().count() == 4);
     }
 }

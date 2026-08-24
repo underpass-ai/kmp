@@ -470,6 +470,27 @@ mod tests {
         assert!(startup_history(dir.path(), 5).is_empty());
     }
 
+    /// The mark reaches a user through `/kmp:info` and `/kmp:doctor` and
+    /// nowhere else — the startup banner goes to stderr and the host eats it,
+    /// and nobody runs `--help` on a server a plugin launches. So a branded
+    /// surface that quietly stops being branded should fail here rather than
+    /// be noticed by nobody, which is what happened to the mark that was
+    /// written, tested and never rendered.
+    #[test]
+    fn the_two_surfaces_a_user_actually_reaches_carry_the_mark() {
+        let (doctor_report, _) = doctor();
+        for (surface, report) in [("info", info()), ("doctor", doctor_report)] {
+            assert!(
+                report.starts_with(banner::LARGE),
+                "`{surface}` must open with the mark"
+            );
+            assert!(
+                report.contains("Kernel Memory Protocol"),
+                "`{surface}` must say what KMP is"
+            );
+        }
+    }
+
     #[test]
     fn info_reports_the_surface_without_judging_it() {
         let report = info();

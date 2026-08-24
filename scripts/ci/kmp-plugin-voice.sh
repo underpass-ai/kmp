@@ -104,6 +104,20 @@ else
   ok "the doctor knows what a complete Codex install looks like"
 fi
 
+# The mark reaches a KMP user through these two commands and nowhere else: the
+# startup banner goes to stderr and the host swallows it, and nobody runs
+# --help on a server a plugin launched. A command that shells out to a branded
+# surface and then describes the result in prose loses the block entirely.
+for branded in commands/info commands/doctor codex/prompts/kmp-info codex/prompts/kmp-doctor; do
+  file="$PLUGIN/$branded.md"
+  if grep -qi 'verbatim' "$file"; then
+    ok "${branded}.md relays the mark instead of describing it"
+  else
+    fail "${branded}.md no longer tells the agent to show the mark verbatim"
+    printf '      this is the only surface where a KMP user meets the mark\n' >&2
+  fi
+done
+
 printf '\n'
 if [ "$FAILURES" -gt 0 ]; then
   printf 'One voice, %d exception(s). Fix the FAIL lines above.\n' "$FAILURES" >&2

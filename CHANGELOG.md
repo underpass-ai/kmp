@@ -34,6 +34,20 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **The mark reaches a user.** `/kmp:info` and `/kmp:doctor` now show the first
+  block of the output verbatim before saying anything in their own words. That
+  is the only place a KMP user meets the product's own face: the startup banner
+  goes to stderr where the host swallows it, and nobody runs `--help` on a
+  server a plugin launched. A test fails if either surface stops opening with
+  the mark, and the plugin check fails if a command stops relaying it.
+- The compact four-line mark is gone. It was written, documented as heading the
+  sections of `info` and `doctor`, covered by its own unit test — and never
+  called from anywhere outside its own file. The one-line `▌KMP▐ Backend ────`
+  lockup is what actually heads those sections. Branded code that never renders
+  is worse than none: it reads as done in review and is absent in use.
+- A temporal `budget.max_bytes` that cannot be honoured now comes back as
+  `invalid_argument` rather than `backend_error`. It is the caller's number.
+
 - **The error `code` is produced where the failure happens.** It used to be
   reconstructed by substring-matching the English message, so anything
   containing `must` or `invalid` became `invalid_argument` — *"the store must
