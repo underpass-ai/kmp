@@ -69,6 +69,18 @@ implemented, with deprecated fields removed in `v1`.
   a bounded host. Wake's structured blocker, next-action, and guardrail lists
   now agree with the L0 summary instead of remaining empty beside asserted
   `Blocker:` and `Next:` lines.
+- **Shared spelling is no longer evidence of shared meaning.** The answer
+  ranker treated any five-character prefix — or four characters with a small
+  length difference — as a semantic match, so `prefix` matched `prefer` and
+  `deliberate` matched `delivered`. Those manufactured matches could turn
+  common KMP vocabulary into a confident answer to an unrelated question.
+  Matching is now exact or belongs to a small, explicit concept set, and
+  synonyms in one question count once rather than inflating coverage. The
+  repository store returns `UNKNOWN` for the reproduced false answer, both
+  current fresh-store paraphrases recover the later SQLite policy without
+  superseding the broader two-engine architecture, and the minimal
+  LongMemEval movement/destination case remains retrievable.
+
 - The mark lines up. Its top row lost a column to a `\` line continuation,
   which in Rust eats the newline *and* the leading whitespace of the next
   line — so the logo shipped one character out of true on the two surfaces a

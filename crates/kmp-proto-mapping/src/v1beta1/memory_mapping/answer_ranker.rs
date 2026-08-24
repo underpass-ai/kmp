@@ -40,11 +40,15 @@ impl AnswerEvidenceRanker {
             return evidence;
         }
 
-        let required_matches = if question_terms.len() == 1 { 1 } else { 2 };
+        let required_matches = if concept_count(&question_terms) <= 2 {
+            1
+        } else {
+            2
+        };
         let strict_focus = match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
                 let terms = strict_answer_focus_terms(question);
-                let required_matches = (terms.len() * 2).div_ceil(3);
+                let required_matches = (concept_count(&terms) * 2).div_ceil(3);
                 Some((terms, required_matches))
             }
             MemoryAnswerPolicy::BestEffort => None,
@@ -102,7 +106,7 @@ impl AnswerEvidenceRanker {
             })
             .max()
             .unwrap_or_default();
-        let coverage = best_matches as f64 / question_terms.len() as f64;
+        let coverage = best_matches as f64 / concept_count(&question_terms) as f64;
         if coverage >= 0.6 {
             MemoryConfidence::High
         } else if coverage >= 0.3 {
@@ -597,7 +601,19 @@ fn matching_term_count(
     question_terms: &BTreeSet<String>,
     evidence_terms: &BTreeSet<String>,
 ) -> usize {
-    matching_terms(question_terms, evidence_terms).len()
+    matching_terms(question_terms, evidence_terms)
+        .iter()
+        .map(|term| concept_key(term))
+        .collect::<BTreeSet<_>>()
+        .len()
+}
+
+fn concept_count(terms: &BTreeSet<String>) -> usize {
+    terms
+        .iter()
+        .map(|term| concept_key(term))
+        .collect::<BTreeSet<_>>()
+        .len()
 }
 
 /// Extracts the subject-bearing clause used by strict answer policies.
@@ -630,12 +646,12 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
 
 fn informative_terms(value: &str) -> BTreeSet<String> {
     const STOP_WORDS: &[&str] = &[
-        "a", "an", "and", "are", "as", "at", "be", "because", "by", "did", "do", "does", "earlier",
-        "for", "from", "he", "how", "i", "if", "in", "is", "it", "me", "more", "my", "of", "on",
-        "one", "or", "same", "should", "than", "the", "this", "to", "us", "use", "used", "uses",
-        "was", "we", "were", "what", "when", "where", "which", "who", "why", "with", "el", "la",
-        "los", "las", "de", "al", "del", "donde", "en", "es", "lo", "no", "por", "para", "que",
-        "se", "su", "un", "ya", "como", "cual", "cuando",
+        "a", "against", "an", "and", "are", "as", "at", "be", "because", "by", "came", "did", "do",
+        "does", "earlier", "for", "from", "he", "how", "i", "if", "in", "is", "it", "me", "more",
+        "my", "of", "on", "one", "or", "plus", "same", "should", "than", "the", "this", "to", "us",
+        "use", "used", "uses", "was", "we", "were", "what", "when", "where", "which", "who", "why",
+        "will", "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo",
+        "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
     ];
     value
         .split(|character: char| !character.is_alphanumeric())
@@ -649,39 +665,38 @@ fn informative_terms(value: &str) -> BTreeSet<String> {
 }
 
 fn terms_match(left: &str, right: &str) -> bool {
-    if left == right {
-        return true;
+    concept_key(left) == concept_key(right)
+}
+
+/// Stable semantic buckets for the small set of paraphrases the deterministic
+/// ranker intentionally understands. Counting buckets rather than raw words
+/// prevents a question containing two synonyms from earning two matches from
+/// one evidence term.
+fn concept_key(term: &str) -> &str {
+    match term {
+        "query" | "recall" | "retrieval" | "retrieve" => "concept:recall",
+        "accept" | "accepted" | "acceptance" => "concept:acceptance",
+        "correct" | "corrected" | "correction" | "fix" | "fixed" => "concept:correction",
+        "remain" | "remains" | "remaining" | "still" => "concept:currentness",
+        "destination" | "move" | "moved" | "moves" | "moving" | "relocate" | "relocated"
+        | "relocates" | "relocating" => "concept:movement",
+        "replace" | "replaced" | "replaces" | "replacing" | "supersede" | "superseded"
+        | "supersedes" => "concept:lifecycle",
+        "backend" | "engine" | "redb" | "sqlite" => "concept:storage-engine",
+        "data" | "directory" | "store" | "stores" | "storage" => "concept:store",
+        "build" | "builds" | "built" | "create" | "created" | "fresh" | "install"
+        | "installation" | "installed" | "new" | "reinstall" | "reinstalled" => {
+            "concept:installation"
+        }
+        "restart" | "restarted" | "restarting" => "concept:restart",
+        "require" | "required" | "requires" => "concept:requirement",
+        "check" | "checked" | "validate" | "validated" | "validation" => "concept:validation",
+        "rank" | "ranked" | "ranking" | "relevance" => "concept:ranking",
+        "old" | "older" | "previous" | "prior" | "stale" => "concept:historical",
+        "default" | "select" | "selected" | "selection" => "concept:selection",
+        "existing" | "present" | "preserve" | "preserved" | "preserving" => "concept:presence",
+        _ => term,
     }
-    const RECALL_CONCEPTS: &[&str] = &["query", "recall", "retrieval", "retrieve"];
-    const CORRECTION_CONCEPTS: &[&str] = &["correct", "corrected", "correction", "fix", "fixed"];
-    const CURRENTNESS_CONCEPTS: &[&str] = &["remain", "remains", "remaining", "still"];
-    const LIFECYCLE_CONCEPTS: &[&str] = &[
-        "replace",
-        "replaced",
-        "replaces",
-        "replacing",
-        "supersede",
-        "superseded",
-        "supersedes",
-    ];
-    if [
-        RECALL_CONCEPTS,
-        CORRECTION_CONCEPTS,
-        CURRENTNESS_CONCEPTS,
-        LIFECYCLE_CONCEPTS,
-    ]
-    .iter()
-    .any(|concepts| concepts.contains(&left) && concepts.contains(&right))
-    {
-        return true;
-    }
-    let common = left
-        .chars()
-        .zip(right.chars())
-        .take_while(|(left, right)| left == right)
-        .count();
-    let length_difference = left.chars().count().abs_diff(right.chars().count());
-    common >= 5 || (common >= 4 && length_difference <= 2)
 }
 
 fn query_requests_lifecycle(question_terms: &BTreeSet<String>) -> bool {
@@ -1212,6 +1227,63 @@ mod tests {
         }
         assert!(terms_match("replaced", "supersedes"));
         assert!(terms_match("retrieval", "query"));
+        assert!(terms_match("move", "destination"));
         assert!(!terms_match("database", "branch"));
+    }
+
+    #[test]
+    fn shared_prefixes_do_not_create_semantic_matches() {
+        assert!(!terms_match("prefix", "prefer"));
+        assert!(!terms_match("deliberate", "delivered"));
+    }
+
+    #[test]
+    fn shared_prefixes_cannot_turn_unrelated_evidence_into_an_answer() {
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Was the kernel prefix a deliberate decision?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![ev(
+                "The kernel prefer mode delivered a decision from another workflow.",
+            )],
+        );
+
+        assert!(ranked.is_empty());
+    }
+
+    #[test]
+    fn synonyms_form_one_scoring_concept() {
+        let question_terms = informative_terms("new installation");
+        let evidence_terms = informative_terms("fresh build");
+
+        assert_eq!(concept_count(&question_terms), 1);
+        assert_eq!(matching_term_count(&question_terms, &evidence_terms), 1);
+    }
+
+    #[test]
+    fn partial_default_update_answers_both_current_state_paraphrases() {
+        let current = claim_ev(
+            "current-default",
+            "decision:fresh-store-default",
+            "Shipped KMP builds create fresh SQLite stores while preserving existing redb stores.",
+        );
+        let historical = claim_ev(
+            "historical-default",
+            "decision:historical-default",
+            "Redb was the distribution default for a KMP data directory.",
+        );
+        let ranker = AnswerEvidenceRanker::default();
+
+        for question in [
+            "What is the current default storage engine for a fresh KMP data directory?",
+            "Which backend will a new installation select when no existing store is present?",
+        ] {
+            let ranked = ranker.rank(
+                question,
+                MemoryAnswerPolicy::EvidenceOrUnknown,
+                vec![historical.clone(), current.clone()],
+            );
+
+            assert_eq!(ranked[0].id, "detail:current-default", "{question}");
+        }
     }
 }
