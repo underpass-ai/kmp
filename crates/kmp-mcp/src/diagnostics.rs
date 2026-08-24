@@ -229,6 +229,83 @@ fn section(out: &mut String, title: &str, findings: &[Finding]) {
     out.push('\n');
 }
 
+/// Where all the memory on this machine is, not only the one this shell would
+/// open. Two of five stores on a real machine were reachable by no rule at
+/// all, and nothing that shipped would ever have mentioned them.
+fn memories_finding() -> Vec<Finding> {
+    let Some(data_home) = kmp_embedded::user_data_home() else {
+        return vec![
+            Finding::new(Level::Warn, "cannot tell what memory is here")
+                .with("neither XDG_DATA_HOME nor HOME is set, so there is nowhere to look"),
+        ];
+    };
+    let index = data_home.join("kmp").join(crate::memories::INDEX_FILE);
+    let memories = crate::memories::list(&data_home, &crate::memories::read_index(&index));
+    if memories.is_empty() {
+        return vec![
+            Finding::new(Level::Ok, "no memory on this machine yet")
+                .with("the first write creates one; where depends on where you are standing"),
+        ];
+    }
+
+    let opening = kmp_embedded::locate_data_dir_from_env()
+        .ok()
+        .map(|resolved| resolved.path().to_path_buf());
+    let unreachable = memories
+        .iter()
+        .filter(|memory| memory.reach == crate::memories::Reach::Unreachable)
+        .count();
+
+    let mut finding = Finding::new(
+        if unreachable > 0 {
+            Level::Warn
+        } else {
+            Level::Ok
+        },
+        format!(
+            "{} {} on this machine{}",
+            memories.len(),
+            if memories.len() == 1 {
+                "memory"
+            } else {
+                "memories"
+            },
+            if unreachable > 0 {
+                format!(", {unreachable} that no rule reaches")
+            } else {
+                String::new()
+            }
+        ),
+    );
+    for memory in &memories {
+        let here = opening.as_deref() == Some(memory.path.as_path());
+        finding = finding.with(format!(
+            "{} {} · {} · {}{}{}",
+            if here { "→" } else { " " },
+            memory.path.display(),
+            crate::memories::human_size(memory.bytes),
+            memory.reach.as_str(),
+            memory
+                .engine
+                .as_deref()
+                .map(|engine| format!(" · {engine}"))
+                .unwrap_or_default(),
+            memory
+                .last_opened
+                .as_deref()
+                .map(|when| format!(" · last opened {when}"))
+                .unwrap_or_default()
+        ));
+    }
+    if unreachable > 0 {
+        finding = finding.with(
+            "`unreachable` means no rule resolves to it: open it with KMP_MCP_DATA_DIR, or \
+             remove it with `kmp-mcp uninstall`, which saves the memory first",
+        );
+    }
+    vec![finding]
+}
+
 /// Where a human can watch this memory. The viewer ships inside the binary
 /// and mounts itself on an embedded session, so the only thing worth saying
 /// is the address — and, when someone turned it off, how to get it back.
@@ -273,6 +350,7 @@ pub fn info() -> String {
     .with(names.join(" "));
     section(&mut out, "Tools", &[surface]);
     section(&mut out, "Viewer", &[viewer_finding()]);
+    section(&mut out, "Memories", &memories_finding());
 
     if let Some(resolved) = resolved {
         let history = startup_history(resolved.path(), 3);

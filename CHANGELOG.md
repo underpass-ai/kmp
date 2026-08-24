@@ -12,6 +12,23 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **`kmp-mcp info` lists every memory on this machine**, not only the one this
+  shell would open. On a real machine that was one of five, and two of the five
+  were reachable by no rule at all — a pre-migration redb backup and whatever
+  `share-memory` left behind — so nothing that shipped would ever have
+  mentioned them again. Each row carries the rule that reaches it (`user`,
+  `project`, or `unreachable`), engine, store format, size and when it was last
+  opened, with an arrow on the one this directory resolves to.
+  User-scope stores come from one `readdir`. Project stores are remembered: a
+  `.kernel` can be anywhere on disk, so each time the binary resolves a data
+  directory it records the path in `~/.local/share/kmp/known-stores.jsonl`.
+  That index is machine state about someone's filesystem — local only, never
+  inside a store and so never inside a bundle, and pruned on both read and
+  write, because an index that only grows becomes a log of everywhere memory
+  has ever been.
+  `uninstall` enumerates the same set, so its dry run can no longer promise to
+  remove a list the operator was never shown.
+
 - **`kmp-mcp uninstall` and `/kmp:uninstall`** — the inverse `/kmp:setup` never
   had. There was no supported way to remove an installation, or one store
   inside it, and the last instruction left to a user was `rm -rf` against paths

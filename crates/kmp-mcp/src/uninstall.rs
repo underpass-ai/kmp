@@ -142,6 +142,25 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
         }
     }
 
+    // KMP's own note of where memory has been. Small, and leaving it behind
+    // means a fresh install starts with a list of stores that are gone.
+    let index = roots
+        .data_home
+        .join("kmp")
+        .join(crate::memories::INDEX_FILE);
+    if index.is_file() {
+        pieces.push(Piece {
+            kind: PieceKind::HostFiles,
+            detail: format!(
+                "{} — the note of which memories exist here",
+                describe_size(&index)
+            ),
+            path: index,
+            bundled_events: None,
+            ours_to_remove: true,
+        });
+    }
+
     let claude_plugin = roots.home.join(".claude/plugins/cache/underpass/kmp");
     if claude_plugin.is_dir() {
         pieces.push(Piece {
@@ -321,15 +340,21 @@ fn engine_directories(roots: &Roots) -> Vec<PathBuf> {
 /// The per-user default and the project store are both easy to forget, and
 /// forgetting one is how an uninstall leaves memory behind.
 fn stores(roots: &Roots) -> Vec<PathBuf> {
-    let mut found = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(roots.data_home.join("kmp")) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.join("FORMAT_VERSION").is_file() {
-                found.push(path);
-            }
-        }
-    }
+    // The same enumeration `info` shows, so the dry run cannot promise to
+    // remove a set the operator was never shown — including the stores no
+    // resolution rule reaches, which are the strongest candidates for removal
+    // and the ones nothing would otherwise mention.
+    let index = roots
+        .data_home
+        .join("kmp")
+        .join(crate::memories::INDEX_FILE);
+    let mut found: Vec<PathBuf> =
+        crate::memories::list(&roots.data_home, &crate::memories::read_index(&index))
+            .into_iter()
+            .map(|memory| memory.path)
+            .collect();
+
+    // Plus the one under this directory, which may never have been opened.
     let project = roots.working_dir.join(".kernel");
     if project.join("FORMAT_VERSION").is_file() {
         found.push(project);
