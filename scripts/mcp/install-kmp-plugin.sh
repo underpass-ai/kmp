@@ -167,7 +167,7 @@ EOF
   # Every prompt the plugin ships, not a hand-picked three. The repository
   # carried nine and installed three, so /kmp-save and /kmp-catchup existed
   # for Claude Code users and silently did not for Codex ones.
-  CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert"
+  CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
   if [ "$DRY_RUN" -eq 1 ]; then
     act "install $(printf '/%s ' $CODEX_PROMPTS)into $CODEX_HOME/prompts"
   else

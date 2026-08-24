@@ -12,6 +12,23 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **`kmp-mcp uninstall` and `/kmp:uninstall`** — the inverse `/kmp:setup` never
+  had. There was no supported way to remove an installation, or one store
+  inside it, and the last instruction left to a user was `rm -rf` against paths
+  they had to work out themselves: two engine copies, two stores on two
+  formats, a committed bundle, a plugin cache and a prompt directory.
+  It **saves the memory before it takes it** — every store is exported into the
+  working directory, the file is named out loud with its event count, and the
+  report says how to bring it back (`kmp-mcp import`, into an empty store,
+  because import restores rather than merges). A save that fails keeps the
+  store; `--purge` is how someone says they want it gone without a copy.
+  The dry run is the default, `--apply` is how you say go, and a non-zero exit
+  means something was left behind — so "uninstalled" is checkable rather than
+  hoped for. It removes only what it printed: a binary outside your home may be
+  a package manager's, a committed bundle belongs to the repository, and a host
+  registration lives inside a file that is not ours. Those are named with the
+  command that removes them, and left alone.
+
 - `/kmp:doctor` counts the Codex commands instead of stopping at the
   registration. Four prompts shipped in every release and landed nowhere,
   because the installer copied a hardcoded three — and the doctor said `ok`

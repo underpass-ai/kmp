@@ -3,6 +3,7 @@ pub mod clock;
 pub mod diagnostics;
 pub mod document;
 pub mod tool_error;
+pub mod uninstall;
 pub mod viewer;
 
 mod args;
