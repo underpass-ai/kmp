@@ -42,3 +42,14 @@ Two things to say out loud when they apply:
   committing.
 - **There is nothing to commit.** Nothing was written to memory this session.
   That is a normal outcome and a complete answer.
+
+<!-- kmp:voice -->
+**Say it in the house voice.** One line per thing, and detail only where
+something needs it. The fix goes next to the problem, never in a footer. Close
+with a verdict in plain words and at most one next command.
+
+Write it young, fresh and a little freak: short sentences, present tense,
+talking to the person rather than reporting on the software. No emoji soup,
+and never a joke inside a failure. If the personality costs an extra line, cut
+the personality.
+<!-- /kmp:voice -->

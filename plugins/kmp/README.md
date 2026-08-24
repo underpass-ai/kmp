@@ -99,15 +99,24 @@ generates a missing `why`. See
 [Why the `why` matters](skills/kmp-memory/SKILL.md#why-the-why-matters) for the
 field-by-field model, safe fallbacks and worked examples.
 
-### For you — three commands
+### For you — nine commands
 
 | Command | What it does |
 | --- | --- |
-| `/kmp:doctor` | Diagnoses the setup end to end and tells you the one thing to fix |
-| `/kmp:moves` | The ten moves and when to use each, read from the live surface when reachable |
 | `/kmp:setup` | Installs and wires whatever is missing, then re-checks |
+| `/kmp:doctor` | Diagnoses the setup end to end and names the one thing to fix |
+| `/kmp:info` | What this install is and which memory this project opens — and why that one |
+| `/kmp:moves` | The ten moves and when to use each, read from the live surface when reachable |
+| `/kmp:demo` | Loads an example memory — a real incident with a wrong turn in it |
+| `/kmp:catchup` | What changed since you last looked, from the event log |
+| `/kmp:save` | Commits this project's memory to the repository, and shows the diff |
+| `/kmp:restore` | Loads the memory committed in the repository back into the store |
+| `/kmp:revert` | Reverts a decision without deleting it, so both states survive |
 
-In Codex: `/kmp-doctor` and `/kmp-moves`.
+Codex gets all nine as `/kmp-setup`, `/kmp-doctor` and so on. They read the
+same because they are held to the same standard: [VOICE.md](VOICE.md) is the
+source of truth for how KMP talks, and `scripts/ci/kmp-plugin-voice.sh` fails
+the build when a command drifts out of it.
 
 ## The doctor
 

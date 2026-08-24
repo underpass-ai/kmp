@@ -114,6 +114,17 @@ else
   say "   doctor installed at $DOCTOR"
 fi
 
+# The engine installer, so /kmp-setup can offer it the same way Claude Code's
+# /kmp:setup does. Codex has no plugin-root variable to reach it by.
+SETUP="$DOCTOR_DIR/kmp-install-binary.sh"
+if [ "$DRY_RUN" -eq 1 ]; then
+  act "install the engine installer at $SETUP"
+else
+  fetch_asset "scripts/kmp-install-binary.sh" "$SETUP"
+  chmod +x "$SETUP"
+  say "   engine installer at $SETUP"
+fi
+
 # Shared demo. The script resolves its own plugin root from its location, so
 # installing it beside the doctor with the bundle one directory over is all it
 # needs — no plugin-root variable, which Codex does not have.
@@ -153,18 +164,23 @@ EOF
     [ -f "$CODEX_CONFIG.kmp-backup" ] && say "   previous config saved as $CODEX_CONFIG.kmp-backup"
   fi
 
+  # Every prompt the plugin ships, not a hand-picked three. The repository
+  # carried nine and installed three, so /kmp-save and /kmp-catchup existed
+  # for Claude Code users and silently did not for Codex ones.
+  CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert"
   if [ "$DRY_RUN" -eq 1 ]; then
-    act "install /kmp-doctor, /kmp-moves and /kmp-demo into $CODEX_HOME/prompts"
+    act "install $(printf '/%s ' $CODEX_PROMPTS)into $CODEX_HOME/prompts"
   else
     mkdir -p "$CODEX_HOME/prompts"
-    for p in kmp-doctor kmp-moves kmp-demo; do
+    for p in $CODEX_PROMPTS; do
       fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
       # The Codex prompts have no plugin-root variable to lean on.
       sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
+        -e "s#@@SETUP@@#$SETUP#g" \
         "$CODEX_HOME/prompts/$p.md"
       rm -f "$CODEX_HOME/prompts/$p.md.bak"
     done
-    say "   prompts — /kmp-doctor, /kmp-moves and /kmp-demo installed"
+    say "   prompts — $(printf '/%s ' $CODEX_PROMPTS)installed"
   fi
 
   # The memory doctrine. Codex has no skills, so it lives in AGENTS.md,
