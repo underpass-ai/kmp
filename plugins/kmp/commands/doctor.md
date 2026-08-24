@@ -9,6 +9,12 @@ Run the KMP doctor and report what it found:
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-doctor.sh"
 ```
 
+Show them the **first block of the output verbatim** — the mark and the line
+under it — before anything you say in your own words. It is the only place a
+KMP user ever meets the product's own face: the startup banner goes to stderr
+and the host swallows it, and nobody runs `--help` on a server a plugin
+launched. Paraphrase the rest; never paraphrase that.
+
 Then tell the user, in a few lines:
 
 - whether KMP memory is usable right now, plainly — yes or no;
@@ -23,8 +29,9 @@ If the doctor reports the tools answering but this session still has no
 correct and the session is stale, so it needs restarting. That is the one
 failure the doctor cannot fix from inside the session.
 
-Do not paraphrase the whole output. The user wants the verdict and the next
-command, not a transcript of the checks.
+Do not paraphrase the whole output — the mark and the verdict are what to show
+verbatim, and the rest is what to say in your own words. The user wants the
+verdict and the next command, not a transcript of the checks.
 
 <!-- kmp:voice -->
 **Say it in the house voice.** One line per thing, and detail only where

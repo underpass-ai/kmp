@@ -730,8 +730,11 @@ fn plural<'a>(count: usize, singular: &'a str, plural: &'a str) -> &'a str {
 pub(crate) fn enforce_temporal_output_budget(
     mut value: Value,
     arguments: &Value,
-) -> Result<Value, String> {
-    let limit = crate::recall_projection::requested_byte_limit(arguments)?;
+) -> Result<Value, ToolError> {
+    // A `max_bytes` the caller cannot have meant is the caller's to fix, and
+    // arrives here as untyped text from the shared parser.
+    let limit = crate::recall_projection::requested_byte_limit(arguments)
+        .map_err(ToolError::invalid_argument)?;
     if serialized_len(&value) <= limit {
         return Ok(value);
     }
@@ -758,10 +761,10 @@ pub(crate) fn enforce_temporal_output_budget(
     if low == 0 && serialized_len(&value) > limit {
         // The envelope alone is over. Say which number to raise rather than
         // returning something the caller cannot use.
-        return Err(format!(
+        return Err(ToolError::invalid_argument(format!(
             "this temporal response does not fit budget.max_bytes={limit} even with no entries; \
              raise budget.max_bytes"
-        ));
+        )));
     }
     Ok(value)
 }
@@ -854,6 +857,22 @@ mod tests {
     }
 
     #[test]
+    fn a_budget_a_caller_cannot_have_meant_is_the_callers_to_fix() {
+        for arguments in [
+            serde_json::json!({"budget": {"max_bytes": 12}}),
+            serde_json::json!({"budget": {"max_bytes": "lots"}}),
+        ] {
+            let error = enforce_temporal_output_budget(temporal_value(1, 10), &arguments)
+                .expect_err("a budget below the floor is not a budget");
+            assert_eq!(
+                error.code,
+                crate::tool_error::ToolErrorCode::InvalidArgument,
+                "a bad max_bytes is the caller's, not the kernel's"
+            );
+        }
+    }
+
+    #[test]
     fn an_envelope_that_cannot_fit_says_which_number_to_raise() {
         let mut value = temporal_value(0, 0);
         value["summary"] = serde_json::json!("x".repeat(2_000));
@@ -861,7 +880,11 @@ mod tests {
 
         let error = enforce_temporal_output_budget(value, &arguments)
             .expect_err("nothing can be dropped to make this fit");
-        assert!(error.contains("budget.max_bytes"), "{error}");
+        assert!(error.message.contains("budget.max_bytes"), "{error}");
+        assert_eq!(
+            error.code,
+            crate::tool_error::ToolErrorCode::InvalidArgument
+        );
     }
 
     use kmp_proto::v1beta1::{MemoryBudget, MemoryDetailLevel, Proof, TemporalState, WakePacket};
