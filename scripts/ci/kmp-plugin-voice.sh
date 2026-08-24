@@ -76,6 +76,34 @@ else
   ok "both hosts offer the same commands: $claude_names"
 fi
 
+# Two places name the Codex prompts by hand — the installer, which cannot glob
+# a remote directory, and the doctor, which decides whether an install is
+# complete. Both drifting from what ships is exactly how four prompts rode in
+# every release and landed nowhere while the doctor said `ok`.
+shipped="$(find "$PLUGIN/codex/prompts" -name 'kmp-*.md' -exec basename {} .md \; | sort | tr '\n' ' ')"
+
+installer_list="$(
+  sed -n 's/^ *CODEX_PROMPTS="\(.*\)"$/\1/p' "$ROOT/scripts/mcp/install-kmp-plugin.sh" \
+    | tr ' ' '\n' | sort | tr '\n' ' '
+)"
+if [ "$installer_list" != "$shipped" ]; then
+  fail "install-kmp-plugin.sh installs a different set than the plugin ships"
+  printf '      ships:     %s\n      installs:  %s\n' "$shipped" "$installer_list" >&2
+else
+  ok "the installer installs every prompt that ships"
+fi
+
+doctor_list="$(
+  sed -n 's/^ *CODEX_PROMPT_NAMES="\(.*\)"$/\1/p' "$PLUGIN/scripts/kmp-doctor.sh" \
+    | tr ' ' '\n' | sort | tr '\n' ' '
+)"
+if [ "$doctor_list" != "$shipped" ]; then
+  fail "kmp-doctor.sh expects a different set than the plugin ships"
+  printf '      ships:    %s\n      expects:  %s\n' "$shipped" "$doctor_list" >&2
+else
+  ok "the doctor knows what a complete Codex install looks like"
+fi
+
 printf '\n'
 if [ "$FAILURES" -gt 0 ]; then
   printf 'One voice, %d exception(s). Fix the FAIL lines above.\n' "$FAILURES" >&2

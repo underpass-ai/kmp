@@ -12,6 +12,12 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- `/kmp:doctor` counts the Codex commands instead of stopping at the
+  registration. Four prompts shipped in every release and landed nowhere,
+  because the installer copied a hardcoded three — and the doctor said `ok`
+  the whole time, which is how it stayed hidden. It now names what is missing
+  and the command that installs it.
+
 - **`kmp-mcp document <about> [--out FILE]`** — one about, as a Markdown
   document. The kernel already held everything such a page needs and there was
   no way to get it out: a recall projection is budgeted in bytes for an
