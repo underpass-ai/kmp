@@ -100,7 +100,9 @@ fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
 }
 
 fn data_dir_finding() -> (Finding, Option<ResolvedDataDir>) {
-    match kmp_embedded::resolve_data_dir_from_env() {
+    // Locate, never prepare: a report on where memory lives must not create
+    // it. `info` and `doctor` are run from wherever the user is standing.
+    match kmp_embedded::locate_data_dir_from_env() {
         Ok(resolved) => (describe_data_dir(&resolved), Some(resolved)),
         Err(error) => (
             Finding::new(Level::Fail, "the data directory does not resolve")

@@ -208,6 +208,37 @@ fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
 }
 
 #[test]
+fn info_and_doctor_report_the_data_dir_without_creating_it() {
+    // A report on where memory lives must not bring it into being. `info` and
+    // `doctor` are run from wherever the user happens to be standing, and one
+    // that left a `.kernel/` behind in an unrelated repository would be
+    // answering the question by changing the answer.
+    let project = tempfile::tempdir().expect("project dir");
+    std::fs::create_dir_all(project.path().join(".git")).expect(".git marker");
+    let kernel = project.path().join(".kernel");
+
+    for verb in ["info", "doctor"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+            .arg(verb)
+            .current_dir(project.path())
+            .env_remove("KMP_MCP_DATA_DIR")
+            .env_remove("KMP_MCP_BACKEND")
+            .output()
+            .expect("command runs");
+
+        assert!(
+            String::from_utf8_lossy(&output.stdout).contains(".kernel"),
+            "`{verb}` should still name the project store it would use"
+        );
+        assert!(
+            !kernel.exists(),
+            "`{verb}` created {} just by reporting on it",
+            kernel.display()
+        );
+    }
+}
+
+#[test]
 fn cli_surface_version_export_import_and_errors() {
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
 
