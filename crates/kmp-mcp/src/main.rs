@@ -165,6 +165,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)
         .map_err(StartupFailure::after_the_backend_was_chosen)?;
+    remember_this_memory(resolved.path());
     let url = match spawn_viewer(backend.kernel(), addr).await {
         Ok(url) => Some(url),
         // The commonest cause is another project's session already holding
@@ -590,6 +591,18 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     }
     println!("\nEverything listed is gone.");
     0
+}
+
+/// Records that this data directory exists, so `info` can list it from any
+/// other directory later. A project `.kernel` can be anywhere on disk, and
+/// nothing that ships could find one you were not standing next to.
+///
+/// Machine state about this user's filesystem: local only, never in a bundle,
+/// and pruned on read when the path is gone.
+fn remember_this_memory(path: &std::path::Path) {
+    if let Some(data_home) = kmp_embedded::user_data_home() {
+        kmp_mcp::memories::remember(&data_home, path);
+    }
 }
 
 /// Writes a store's whole event log to `destination`, and answers with how

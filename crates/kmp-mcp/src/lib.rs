@@ -2,6 +2,7 @@ pub mod banner;
 pub mod clock;
 pub mod diagnostics;
 pub mod document;
+pub mod memories;
 pub mod tool_error;
 pub mod uninstall;
 pub mod viewer;

@@ -86,6 +86,23 @@ fn resolve_with_project_marker(
     ResolvedDataDir::UserDefault(user_data_home.join("kmp").join("default"))
 }
 
+/// Where user-scope memory lives: `$XDG_DATA_HOME`, or `~/.local/share`.
+///
+/// Exposed because it is also where anything that wants to enumerate the
+/// machine's memories has to look, and a second copy of this rule would be a
+/// second answer to the same question.
+pub fn user_data_home() -> Option<PathBuf> {
+    std::env::var("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .ok()
+        .filter(|path| !path.as_os_str().is_empty())
+        .or_else(|| {
+            std::env::var("HOME")
+                .ok()
+                .map(|home| PathBuf::from(home).join(".local").join("share"))
+        })
+}
+
 /// The conventional bundle path for the project `data_dir` belongs to.
 ///
 /// Only a project-scoped store has one: an explicit `KMP_MCP_DATA_DIR` or the
@@ -122,22 +139,13 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
             "embedded kernel could not resolve the working directory: {error}"
         ))
     })?;
-    let user_data_home = std::env::var("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .ok()
-        .filter(|path| !path.as_os_str().is_empty())
-        .or_else(|| {
-            std::env::var("HOME")
-                .ok()
-                .map(|home| PathBuf::from(home).join(".local").join("share"))
-        })
-        .ok_or_else(|| {
-            PortError::Unavailable(
-                "embedded kernel could not resolve a user data directory \
-                 (neither XDG_DATA_HOME nor HOME is set)"
-                    .to_string(),
-            )
-        })?;
+    let user_data_home = user_data_home().ok_or_else(|| {
+        PortError::Unavailable(
+            "embedded kernel could not resolve a user data directory \
+             (neither XDG_DATA_HOME nor HOME is set)"
+                .to_string(),
+        )
+    })?;
 
     Ok(resolve_data_dir(
         env_override.as_deref(),

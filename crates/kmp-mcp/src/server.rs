@@ -176,6 +176,13 @@ impl KernelMcpServer {
                     requested_engine = engine.map(|engine| engine.name()),
                     "embedded backend data dir resolved"
                 );
+                // Remembered so `info` can list it from any other directory
+                // later: a project `.kernel` can be anywhere on disk, and
+                // nothing that shipped could find one you were not standing
+                // next to.
+                if let Some(data_home) = kmp_embedded::user_data_home() {
+                    crate::memories::remember(&data_home, resolved.path());
+                }
                 Ok(Self::with_retrying_embedded_backend(
                     crate::embedded::RetryingEmbeddedKernelMcpBackend::new(resolved.path(), engine),
                 ))
