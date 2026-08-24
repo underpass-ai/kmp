@@ -1,4 +1,5 @@
 pub mod banner;
+pub mod clock;
 pub mod diagnostics;
 pub mod document;
 pub mod viewer;

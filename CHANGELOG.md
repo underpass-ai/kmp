@@ -28,6 +28,18 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **A memory cannot be written from the future.** `observed_at` was supplied by
+  the writer and checked against nothing, and on this project's own store the
+  frontier ended up three hours and twenty minutes ahead of the wall clock:
+  agents wrote local time with a `Z`, which RFC3339 permits, so nothing was out
+  of spec and nothing complained. The read path is ordered by that field, so
+  `kernel_forward` from a correct present returned nothing while unread entries
+  sat above it — an empty delta that looks exactly like a quiet week. A stamp
+  more than five minutes ahead of the kernel's clock is now refused at write
+  time, saying how far out it is and naming the cause. Earlier times are
+  untouched: a backfill is legitimate. Nothing already written is edited — the
+  record says what it said.
+
 - **`kernel_ask` stops claiming support it has not established.** The `answer`
   field opened "Memory answer supported by cited evidence" — a claim the
   kernel cannot make: it retrieves by term overlap, and whether those items

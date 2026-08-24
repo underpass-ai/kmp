@@ -283,7 +283,7 @@ fn write_memory_schema() -> Value {
                 ]
             },
             "actor": string_schema("Human, agent, or component producing the write."),
-            "observed_at": string_schema("RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future."),
+            "observed_at": string_schema("RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused \u{2014} read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error."),
             "source_kind": {
                 "type": "string",
                 "enum": ["human", "agent", "projection", "derived"]
