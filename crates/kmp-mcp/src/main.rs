@@ -37,8 +37,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             eprintln!("kmp-mcp: {message}");
             if backend_selection {
+                // The default is the embedded kernel, so a backend failure is
+                // always something that was asked for by name. Pointing at
+                // gRPC and fixture, and never at embedded, sent people away
+                // from the mode the product is.
                 eprintln!(
-                    "kmp-mcp: set {GRPC_ENDPOINT_ENV} for live gRPC, or set {MCP_BACKEND_ENV}=fixture explicitly for fixture mode"
+                    "kmp-mcp: unset {MCP_BACKEND_ENV} to run the embedded kernel — no service, \
+                     no endpoint, nothing to configure"
                 );
             }
             std::process::exit(2);

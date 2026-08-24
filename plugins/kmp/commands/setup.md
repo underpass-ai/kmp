@@ -49,7 +49,7 @@ the server without the plugin:
 
 ```bash
 claude mcp add kernel-memory --scope user \
-  --env KMP_MCP_BACKEND=embedded -- "$(command -v kmp-mcp)"
+  -- "$(command -v kmp-mcp)"
 ```
 
 **Codex CLI not wired** — the installer is idempotent and safe to re-run:

@@ -25,7 +25,6 @@ pin a fixed store.
 
 ```bash
 claude mcp add kernel-memory --scope user \
-  --env KMP_MCP_BACKEND=embedded \
   -- ~/.cargo/bin/kmp-mcp
 ```
 
@@ -46,7 +45,7 @@ project with a free store, or close the other session):
 ```toml
 [mcp_servers.kernel-memory]
 command = "/home/YOU/.cargo/bin/kmp-mcp"
-env = { KMP_MCP_BACKEND = "embedded" }
+# no env: the embedded kernel is the default
 ```
 
 ## OpenCode — recipe (out of initial product scope)
@@ -59,7 +58,7 @@ Project or global config (`opencode.json`):
     "kernel-memory": {
       "type": "local",
       "command": ["/home/YOU/.cargo/bin/kmp-mcp"],
-      "environment": { "KMP_MCP_BACKEND": "embedded" }
+      "environment": {}
     }
   }
 }
@@ -74,7 +73,7 @@ Project or global config (`opencode.json`):
   "servers": {
     "kernel-memory": {
       "command": "/home/YOU/.cargo/bin/kmp-mcp",
-      "env": { "KMP_MCP_BACKEND": "embedded" }
+      "env": {}
     }
   }
 }

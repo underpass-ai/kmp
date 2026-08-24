@@ -197,21 +197,28 @@ ENDPOINT="${KMP_KERNEL_GRPC_ENDPOINT:-}"
 
 if [ -n "$BACKEND" ]; then
   case "$BACKEND" in
-    embedded) ok "embedded — kernel runs in-process, storage is local" ;;
-    grpc)     ok "grpc — talks to a deployed kernel"
-              [ -z "$ENDPOINT" ] && fail "KMP_MCP_BACKEND=grpc but KMP_KERNEL_GRPC_ENDPOINT is unset" ;;
-    fixture)  warn "fixture — canned responses, test-only. Memory is not real."
-              info "unset KMP_MCP_BACKEND or set it to embedded for real memory" ;;
-    *)        fail "unknown KMP_MCP_BACKEND=$BACKEND (expected embedded, grpc or fixture)" ;;
+    embedded) ok "embedded — the kernel is right here" ;;
+    grpc)     if [ -n "$ENDPOINT" ]; then
+                ok "grpc — talking to $ENDPOINT"
+              else
+                fail "grpc, with no kernel to talk to"
+                info "set KMP_KERNEL_GRPC_ENDPOINT, or unset KMP_MCP_BACKEND and"
+                info "the kernel runs right here"
+              fi ;;
+    fixture)  warn "fixture — canned answers that look real"
+              info "nothing you write is stored; unset KMP_MCP_BACKEND for the real kernel" ;;
+    *)        fail "\`$BACKEND\` is not a backend"
+              info "use embedded (the default), grpc or fixture" ;;
   esac
 elif [ -n "$ENDPOINT" ]; then
-  ok "grpc (implied by KMP_KERNEL_GRPC_ENDPOINT=$ENDPOINT)"
+  ok "grpc — talking to $ENDPOINT"
+  info "an endpoint in the environment is how the cluster edition is chosen"
 else
-  warn "no backend selected in this shell"
-  info "the binary is fail-fast: with no configuration it exits with guidance"
-  info "rather than guessing. Hosts usually set KMP_MCP_BACKEND=embedded in"
-  info "their MCP registration, so this can be fine — the tool surface check"
-  info "below runs with embedded to prove the binary works."
+  # Nothing set stopped being a gap when embedded became the default. The
+  # old warning cancelled itself in its own text — "this can be fine" — and a
+  # warning that does that teaches people to skip the block where a real
+  # backend problem would one day appear.
+  ok "embedded — the default, nothing to configure"
 fi
 
 # -------------------------------------------------------------- data dir ----

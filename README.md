@@ -71,9 +71,11 @@ by hand:
 
 ```bash
 cargo install kmp-mcp
-claude mcp add kernel-memory --scope user \
-  --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
+claude mcp add kernel-memory --scope user -- ~/.cargo/bin/kmp-mcp
 ```
+
+No `--env` and no endpoint: with nothing configured `kmp-mcp` runs the
+embedded kernel.
 
 `--scope user` registers it for every project; each project still keeps its own
 `.kernel/` store. Verify with `claude mcp list`.
@@ -100,7 +102,7 @@ on the boundaries, OpenTelemetry and Loki.
 | Storage | one local data dir (`.kernel/`; redb, or sqlite opt-in) | Neo4j · Valkey · NATS JetStream |
 | Requires | nothing | a deployed kernel plus TLS configuration |
 | Concurrency | one host per data dir on redb; two hosts share one store on sqlite | server-side |
-| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
+| Select with | nothing — it is the default | `KMP_KERNEL_GRPC_ENDPOINT=…` |
 
 Both expose the identical KMP surface with identical JSON by construction — the
 embedded backend reuses the live JSON path through shared proto mapping, and a

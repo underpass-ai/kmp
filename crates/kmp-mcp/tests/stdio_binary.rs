@@ -13,14 +13,77 @@ const TLS_ENV_VARS: &[&str] = &[
     "KMP_KERNEL_GRPC_TLS_DOMAIN_NAME",
 ];
 
+/// The product is the embedded kernel, so an unconfigured binary serves it.
+/// This used to exit 2 asking for a gRPC endpoint nobody had mentioned — the
+/// single-binary promise demanding a cluster.
+///
+/// A data directory is still named here, because a test that writes to
+/// whatever store this machine resolves would be writing in someone's real
+/// memory. Naming where to keep a store is not choosing a backend.
 #[test]
-fn stdio_binary_fails_fast_without_backend_configuration() {
-    let output = run_binary(&[], "");
+fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let output = run_binary(
+        &[
+            ("KMP_MCP_DATA_DIR", &data_dir.path().display().to_string()),
+            ("KMP_VIEWER_ADDR", "off"),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}\n",
+    );
+
+    assert!(
+        output.status.success(),
+        "an unconfigured binary must serve, not refuse: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be UTF-8");
+    let response: Value = serde_json::from_str(stdout.lines().next().expect("one response"))
+        .expect("stdout line should be JSON");
+    assert_eq!(
+        response["result"]["tools"]
+            .as_array()
+            .expect("a tool list")
+            .len(),
+        10
+    );
+}
+
+/// gRPC by name and nothing to talk to is the one backend failure left, and
+/// the way out it offers must be the mode the product actually is.
+#[test]
+fn asking_for_grpc_without_an_endpoint_points_at_embedded() {
+    let output = run_binary(&[("KMP_MCP_BACKEND", "grpc")], "");
 
     assert!(!output.status.success());
     assert_eq!(output.status.code(), Some(2));
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
-    assert!(stderr.contains("KMP_KERNEL_GRPC_ENDPOINT is required"));
+    assert!(
+        stderr.contains("KMP_KERNEL_GRPC_ENDPOINT"),
+        "it must name what is missing: {stderr}"
+    );
+    assert!(
+        stderr.contains("embedded"),
+        "and the way out, which is the mode this product is: {stderr}"
+    );
+}
+
+/// An endpoint sitting in the environment is how the cluster edition has
+/// always been chosen, and flipping the default must not have taken that
+/// away: the binary must not quietly open a local store instead of talking to
+/// the kernel it was pointed at.
+#[test]
+fn an_endpoint_alone_still_chooses_grpc() {
+    let output = run_binary(
+        &[("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:50051")],
+        "",
+    );
+
+    assert!(output.status.success());
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
+    assert!(
+        stderr.contains("grpc"),
+        "the startup line should name the backend it chose: {stderr}"
+    );
 }
 
 #[test]

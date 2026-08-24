@@ -20,7 +20,7 @@ and so is the tool surface. Nothing in the protocol is edition-specific.
 | Transport security | no network surface | TLS / mTLS on gRPC, Valkey, NATS, OTLP |
 | Observability | bounded local quality journal | OpenTelemetry + Loki |
 | Deployment | `cargo install kmp-mcp` | Helm chart, container image |
-| Select with | `KMP_MCP_BACKEND=embedded` | `KMP_KERNEL_GRPC_ENDPOINT=…` |
+| Select with | nothing — it is the default | `KMP_KERNEL_GRPC_ENDPOINT=…` |
 
 `kmp-mcp` calls the cluster-edition path *live mode* in its own configuration
 docs — same thing, seen from the adapter rather than from the deployment.
