@@ -114,6 +114,16 @@ port_answers() {
   ( exec 3<>"/dev/tcp/$host/$port" ) >/dev/null 2>&1
 }
 
+# Claude Code prefixes plugin-provided servers as `plugin:<plugin>:<server>`.
+# Treat both whitespace and that colon namespace separator as identifier
+# boundaries; matching only a bare `kmp` made a healthy native plugin look
+# unregistered.
+host_list_has_server() {
+  local listing="$1" server_id="$2"
+  printf '%s\n' "$listing" \
+    | grep -Eqi "(^|[[:space:]:])${server_id}([[:space:]:])"
+}
+
 printf '%sKMP doctor%s\n\n' "$B" "$Z"
 
 # ---------------------------------------------------------------- binary ----
@@ -496,7 +506,7 @@ section "Hosts"
 
 FOUND_HOST=0
 
-if command -v claude >/dev/null 2>&1; then
+if command -v claude >/dev/null 2>&1 || [ "${KMP_DOCTOR_CLAUDE_MCP_LIST+x}" = x ]; then
   FOUND_HOST=1
   # `claude mcp list` proves a registration by starting the server, and a
   # server that starts prepares its data dir — so asking Claude Code whether
@@ -504,10 +514,16 @@ if command -v claude >/dev/null 2>&1; then
   # user happened to be standing in. Point that start at the throwaway dir
   # the tool probe already uses: the answer is the same, the footprint is
   # none.
-  CLAUDE_MCP_LIST="$(env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null)"
-  if printf '%s\n' "$CLAUDE_MCP_LIST" | grep -Eqi '(^|[[:space:]])kmp([[:space:]]|:)'; then
+  if [ "${KMP_DOCTOR_CLAUDE_MCP_LIST+x}" = x ]; then
+    # Deterministic seam for the plugin smoke: no host config or process is
+    # needed to prove every supported registration shape.
+    CLAUDE_MCP_LIST="$KMP_DOCTOR_CLAUDE_MCP_LIST"
+  else
+    CLAUDE_MCP_LIST="$(env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null)"
+  fi
+  if host_list_has_server "$CLAUDE_MCP_LIST" kmp; then
     ok "Claude Code — kmp registered"
-  elif printf '%s\n' "$CLAUDE_MCP_LIST" | grep -Eqi '(^|[[:space:]])kernel-memory([[:space:]]|:)'; then
+  elif host_list_has_server "$CLAUDE_MCP_LIST" kernel-memory; then
     warn "Claude Code — registered under the former kernel-memory id"
     offer "/kmp:setup" "Claude Code still uses the former server id"
     info "replace it with:"

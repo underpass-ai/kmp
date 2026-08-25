@@ -85,4 +85,25 @@ for tool in kmp_wake kmp_ask kmp_write_memory kmp_trace; do
   fi
 done
 
+# Claude Code names a plugin MCP server `plugin:<plugin>:<server>`. Doctor
+# must accept that native registration, not prescribe a redundant direct MCP
+# entry after setup has already succeeded.
+DOCTOR_BIN="${PLUGIN_DIR}/bin/kmp-mcp"
+if [[ ! -x "${DOCTOR_BIN}" ]]; then
+  DOCTOR_BIN="${PLUGIN_DIR}/bin/kmp-mcp.exe"
+fi
+doctor_output="$(
+  NO_COLOR=1 \
+  KMP_MCP_BIN="${DOCTOR_BIN}" \
+  KMP_MCP_BACKEND=embedded \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
+)"
+if ! grep -Fq '[✓] Hosts      Claude Code — kmp registered' <<<"${doctor_output}"; then
+  echo "KMP plugin smoke: doctor rejected Claude Code's native plugin registration" >&2
+  printf '%s\n' "${doctor_output}" >&2
+  exit 1
+fi
+
 echo "KMP plugin smoke passed"
