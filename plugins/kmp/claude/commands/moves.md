@@ -29,7 +29,9 @@ server is not reachable, and say that you are doing so.
 Temporal intent has precedence over Ask. For yesterday/today, since, before,
 after, during, dates or release windows, resolve the user's timezone to an
 explicit half-open UTC interval `[start, end)`, navigate time first, and follow
-every continuation cursor until the interval is complete.
+every continuation cursor until the interval is complete. Since `kmp_forward`
+is strictly after its cursor, capture the inclusive start with `kmp_goto`, then
+move forward from start, merge/deduplicate refs and exclude the end.
 
 **Audit**
 - `kmp_trace` — the proof path between two refs

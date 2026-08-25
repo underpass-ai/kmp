@@ -53,12 +53,17 @@ Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
 to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
 `kmp_near`, `kmp_rewind` or `kmp_forward`, keep only entries whose effective
-time is inside the interval, and continue while `page.has_more`. Put the
-returned `page.next_cursor` in the next move's cursor field — for example
+time is inside the interval, and continue while `page.has_more`.
+
+The start is inclusive but `kmp_forward` is strictly after its cursor. First
+call `kmp_goto` at `start` and retain entries whose effective time equals
+`start`; discard older state. Then call `kmp_forward` from the same `start` for
+the strictly later entries. Merge and deduplicate refs from both reads. Put
+each returned `page.next_cursor` in the next move's cursor field — for example
 `from.ref` for `kmp_forward` — while keeping the other arguments unchanged.
-Stop after reaching the end bound. If a budget or selection cap prevents a
-complete interval, report the exact continuation action; never call a partial
-page the whole period.
+Exclude entries at or after `end`. If a budget or selection cap prevents a
+complete boundary probe or interval, report the exact continuation action;
+never call a partial page the whole period.
 
 ## Cross-language fallback is only for semantic Ask
 

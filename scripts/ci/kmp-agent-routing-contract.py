@@ -37,12 +37,19 @@ if actual_interval != FIXTURE["expected_utc_interval"]:
 start = dt.datetime.fromisoformat(actual_interval["start"].replace("Z", "+00:00"))
 end = dt.datetime.fromisoformat(actual_interval["end"].replace("Z", "+00:00"))
 material_refs: list[str] = []
-expected_trace: list[str] = []
+excluded_refs = set(FIXTURE["excluded_refs"])
+for entry in FIXTURE["temporal_boundary"]["entries"]:
+    when = dt.datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
+    if when == start:
+        material_refs.append(entry["ref"])
+expected_trace: list[str] = [f"kmp_goto:{actual_interval['start']}"]
 cursor = actual_interval["start"]
 for page in FIXTURE["temporal_pages"]:
     expected_trace.append(f"kmp_forward:{cursor}")
     for entry in page["entries"]:
         when = dt.datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
+        if when == start:
+            fail("strictly-after forward fixture incorrectly returned the start boundary")
         if start <= when < end:
             material_refs.append(entry["ref"])
     cursor = page["next_cursor"]
@@ -51,8 +58,11 @@ for page in FIXTURE["temporal_pages"]:
 
 if cursor is not None:
     fail(f"fixture stopped with an unconsumed continuation cursor: {cursor}")
-if len(expected_trace) != len(FIXTURE["temporal_pages"]):
-    fail("not every temporal page was consumed")
+if len(expected_trace) != len(FIXTURE["temporal_pages"]) + 1:
+    fail("not every temporal page was consumed after the boundary probe")
+material_refs = list(dict.fromkeys(material_refs))
+if excluded_refs.intersection(material_refs):
+    fail("an out-of-window boundary ref entered the material result")
 
 case_refs = []
 for case in FIXTURE["temporal_cases"]:
@@ -104,6 +114,8 @@ required = (
     "half-open UTC interval",
     "translate only the query",
     "user's language",
+    "kmp_goto",
+    "deduplicate",
     "UNKNOWN",
 )
 for asset in instruction_assets:
