@@ -78,6 +78,94 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
         ]
     );
     assert_eq!(
+        message_field_names(memory_file, "MemoryBudget"),
+        vec!["tokens", "detail", "depth", "max_entries", "max_bytes"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "WakeRequest"),
+        vec!["about", "role", "intent", "budget", "dimensions", "page"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "WakeResponse"),
+        vec![
+            "summary",
+            "wake",
+            "proof",
+            "warnings",
+            "resume_cursor",
+            "projection",
+            "truncation",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "AskRequest"),
+        vec![
+            "about",
+            "question",
+            "answer_policy",
+            "budget",
+            "dimensions",
+            "page",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "AskResponse"),
+        vec![
+            "summary",
+            "answer",
+            "because",
+            "proof",
+            "warnings",
+            "projection",
+            "truncation",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallProjection"),
+        vec![
+            "contract",
+            "detail",
+            "budget",
+            "page",
+            "sections",
+            "excluded_by_detail",
+            "selection_omitted",
+            "core_text_shortened",
+            "next_action",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallProjectionBudget"),
+        vec!["max_bytes", "used_bytes", "tokens_advisory"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallProjectionPage"),
+        vec!["offset", "returned", "total", "has_more", "next_cursor"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallProjectionSection"),
+        vec!["name", "core", "returned_on_page", "eligible", "total"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallTruncation"),
+        vec!["truncated", "token_limit", "byte_limit", "omitted"]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallOmitted"),
+        vec![
+            "page_items",
+            "prior_page_items",
+            "remaining_page_items",
+            "excluded_by_detail",
+            "selection_items",
+            "core_text_shortened",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "RecallCursorError"),
+        vec!["reason", "cursor", "message"]
+    );
+    assert_eq!(
         message_field_names(memory_file, "TemporalCoordinate"),
         vec![
             "dimension",

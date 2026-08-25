@@ -1,10 +1,13 @@
 # Recall projection contract
 
-`kmp_ask` and `kmp_wake` expose a deterministic core-plus-prefix
-projection at the MCP host boundary. The kernel remains responsible for
-retrieval, temporal currentness, confidence, and ranking. The projection
-gateway is responsible for preserving that selected core under a host-safe
-serialized response budget and for making omitted proof recoverable.
+`Ask`/`Wake` and `kmp_ask`/`kmp_wake` expose one deterministic
+core-plus-prefix projection. The canonical implementation lives in
+`kmp-proto-mapping`: the typed `KernelMemoryService` applies it before a gRPC
+response leaves the service, embedded MCP invokes the same mapper locally,
+and MCP-over-gRPC only maps the already-projected typed response. Retrieval,
+temporal currentness, confidence, ranking, budgeting, and continuation are
+therefore transport-neutral semantics rather than an MCP post-processing
+step.
 
 This is a contract algorithm: the budget is known before the structured packet
 is filled. It does not call an LLM and does not summarize evidence
@@ -89,12 +92,18 @@ When expandable items remain, the response contains:
 }
 ```
 
-Repeat the same tool with `page.cursor` set to `next_cursor`. The caller may
-change only `page.entries`, `budget.tokens`, or `budget.max_bytes`. The cursor
+Repeat the same tool or RPC with `page.cursor` set to `next_cursor`. The caller
+may change only `page.entries`, `budget.tokens`, or `budget.max_bytes`. The cursor
 binds a SHA-256 digest of the bound arguments and the complete normalized
 selection; a changed query, scope, detail, answer policy, selected core, or
 memory snapshot returns invalid cursor. Cursor lifetime is therefore the
 lifetime of that byte-identical selection, with no hidden server session.
+
+Direct gRPC returns `INVALID_ARGUMENT` for an unusable continuation and carries
+a serialized `RecallCursorError` in `grpc-status-details-bin`. Its typed reason
+distinguishes a malformed cursor, a changed selection, and an out-of-range
+offset; MCP preserves the same error class and diagnostic in its tool-error
+envelope.
 
 Combining each section's core once with `returned_on_page` items from every
 page reconstructs the complete eligible proof without gaps or duplicates. Use
@@ -111,7 +120,7 @@ returned on earlier pages from items still available after the current page;
 the final continuation page tells the caller to combine pages rather than
 pointing at a null cursor.
 
-The gateway bounds oversized core prose with a logarithmic search, then
+The canonical projector bounds oversized core prose with a logarithmic search, then
 estimates each candidate item independently and serializes the final packet
 once. It does not tokenize the complete shrinking packet once per omitted
 item. Property regressions cover the 1,400 compact versus 1,800 balanced case,

@@ -1,8 +1,8 @@
 use kmp_proto::v1beta1::{
-    AnswerReason, AskResponse, DimensionScopeMode, DimensionSelection, DimensionSelectionMode,
-    IngestResponse, InspectResponse, MemoryConfidence, MemoryEvidence, MemoryRelation,
-    MemorySemanticClass, RawMemoryRef, SupersededMemory, TemporalCoordinate, TemporalCursor,
-    TemporalDirection, TemporalEntry, TemporalMoveResponse, TraceResponse, WakeClaim, WakeResponse,
+    AskResponse, DimensionScopeMode, DimensionSelection, DimensionSelectionMode, IngestResponse,
+    InspectResponse, MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass,
+    RawMemoryRef, SupersededMemory, TemporalCoordinate, TemporalCursor, TemporalDirection,
+    TemporalEntry, TemporalMoveResponse, TraceResponse, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
@@ -11,8 +11,10 @@ use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
 
 use crate::ingest::KmpIngestPlan;
-use crate::recall_projection::{ProjectionOutcome, project_recall_output};
 use crate::tool_error::ToolError;
+use kmp_proto_mapping::v1beta1::recall_projection::{
+    ProjectionOutcome, project_recall_output, requested_byte_limit,
+};
 
 pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     let memory = response.memory.as_ref();
@@ -65,110 +67,11 @@ pub(crate) fn dry_run_ingest_from_plan(plan: &KmpIngestPlan) -> Value {
 }
 
 pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
-    let wake = response.wake.as_ref();
-    json!({
-        "summary": response.summary,
-        "wake": {
-            "objective": wake.map(|wake| wake.objective.as_str()).unwrap_or(""),
-            "current_state": wake
-                .map(|wake| wake.current_state.clone())
-                .unwrap_or_default(),
-            "causal_spine": wake
-                .map(|wake| wake.causal_spine.iter().map(wake_claim_json).collect::<Vec<_>>())
-                .unwrap_or_default(),
-            "open_loops": wake.map(|wake| wake.open_loops.clone()).unwrap_or_default(),
-            "next_actions": wake.map(|wake| wake.next_actions.clone()).unwrap_or_default(),
-            "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
-        },
-        "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
-        // Where this packet ends, so the next question — "and what changed
-        // since?" — is one call to kmp_forward rather than a rewind whose
-        // only purpose is to recover a timestamp.
-        "resume_cursor": response
-            .resume_cursor
-            .as_ref()
-            .map(temporal_cursor_json)
-            .unwrap_or(Value::Null),
-        "warnings": response.warnings
-    })
+    kmp_proto_mapping::v1beta1::recall_projection::wake_value(&response)
 }
 
 pub(crate) fn ask_from_response(response: AskResponse) -> Value {
-    let evidence = response
-        .proof
-        .as_ref()
-        .map(|proof| proof.evidence.as_slice())
-        .unwrap_or_default();
-    let answer = normalized_ask_answer(&response.answer, &response.because, evidence);
-    json!({
-        "summary": response.summary,
-        "answer": if answer.trim().is_empty() {
-            Value::Null
-        } else {
-            Value::String(answer)
-        },
-        "because": response
-            .because
-            .iter()
-            .map(|reason| answer_reason_json(reason, evidence))
-            .collect::<Vec<_>>(),
-        "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
-        "warnings": response.warnings
-    })
-}
-
-fn normalized_ask_answer(
-    answer: &str,
-    reasons: &[AnswerReason],
-    evidence: &[MemoryEvidence],
-) -> String {
-    let repeats_canonical_body = evidence.iter().any(|item| {
-        let body = item.text.trim();
-        !body.is_empty() && answer.contains(body)
-    });
-    if !repeats_canonical_body {
-        return answer.to_string();
-    }
-
-    citation_answer(
-        reasons
-            .iter()
-            .map(|reason| (reason.claim.as_str(), reason.r#ref.as_str())),
-    )
-}
-
-fn citation_answer<'a>(citations: impl IntoIterator<Item = (&'a str, &'a str)>) -> String {
-    let mut seen = std::collections::BTreeSet::new();
-    let citations = citations
-        .into_iter()
-        .filter_map(|(claim, evidence_ref)| {
-            let evidence_ref = evidence_ref.trim();
-            if evidence_ref.is_empty() || !seen.insert(evidence_ref.to_string()) {
-                return None;
-            }
-            let claim = claim.trim();
-            Some(if claim.is_empty() {
-                evidence_ref.to_string()
-            } else {
-                format!("{claim} [{evidence_ref}]")
-            })
-        })
-        .collect::<Vec<_>>();
-
-    match citations.as_slice() {
-        [] => String::new(),
-        [single] => format!(
-            "Retrieved for this question by term overlap; read proof.evidence and judge whether \
-             it answers: {single}"
-        ),
-        many => format!(
-            "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
-            many.iter()
-                .map(|citation| format!("- {citation}"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        ),
-    }
+    kmp_proto_mapping::v1beta1::recall_projection::ask_value(&response)
 }
 
 /// Applies the caller's budget to the JSON that the MCP host actually sees.
@@ -337,29 +240,6 @@ pub(crate) fn inspect_from_response(response: InspectResponse) -> Value {
         "quality": optional_quality_json(response.quality.as_ref()),
         "warnings": response.warnings
     })
-}
-
-fn wake_claim_json(claim: &WakeClaim) -> Value {
-    json!({
-        "claim": claim.claim,
-        "because": claim.because,
-        "evidence_ref": claim.evidence_ref
-    })
-}
-
-fn answer_reason_json(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> Value {
-    let mut object = Map::new();
-    object.insert("claim".to_string(), json!(reason.claim));
-    // v1beta1 keeps the protobuf field for wire compatibility. New recall
-    // responses leave it empty and join through `ref` to proof.evidence.
-    let repeats_canonical_body = evidence.iter().any(|item| {
-        item.id == reason.r#ref && !item.text.is_empty() && item.text == reason.evidence
-    });
-    if !repeats_canonical_body {
-        insert_optional_string(&mut object, "evidence", &reason.evidence);
-    }
-    object.insert("ref".to_string(), json!(reason.r#ref));
-    Value::Object(object)
 }
 
 fn dimension_coverage_json(dimension: &kmp_proto::v1beta1::DimensionCoverage) -> Value {
@@ -733,8 +613,7 @@ pub(crate) fn enforce_temporal_output_budget(
 ) -> Result<Value, ToolError> {
     // A `max_bytes` the caller cannot have meant is the caller's to fix, and
     // arrives here as untyped text from the shared parser.
-    let limit = crate::recall_projection::requested_byte_limit(arguments)
-        .map_err(ToolError::invalid_argument)?;
+    let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
     if serialized_len(&value) <= limit {
         return Ok(value);
     }
@@ -778,8 +657,7 @@ pub(crate) fn enforce_inspect_output_budget(
     value: Value,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let limit = crate::recall_projection::requested_byte_limit(arguments)
-        .map_err(ToolError::invalid_argument)?;
+    let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
     let used = serialized_len(&value);
     if used <= limit {
         return Ok(value);
@@ -934,7 +812,9 @@ mod tests {
         );
     }
 
-    use kmp_proto::v1beta1::{MemoryBudget, MemoryDetailLevel, Proof, TemporalState, WakePacket};
+    use kmp_proto::v1beta1::{
+        AnswerReason, MemoryBudget, MemoryDetailLevel, Proof, TemporalState, WakeClaim, WakePacket,
+    };
 
     use super::*;
 
@@ -960,6 +840,8 @@ mod tests {
                 confidence: MemoryConfidence::Medium as i32,
             }),
             warnings: Vec::new(),
+            projection: None,
+            truncation: None,
         };
 
         let value = ask_from_response(response);
@@ -1040,6 +922,8 @@ mod tests {
                 confidence: MemoryConfidence::High as i32,
             }),
             warnings: Vec::new(),
+            projection: None,
+            truncation: None,
         };
         let legacy = json!({
             "summary": response.summary,
@@ -1265,12 +1149,15 @@ mod tests {
                 sequence: Some(3),
             }),
             warnings: Vec::new(),
+            projection: None,
+            truncation: None,
         };
         let _budget = MemoryBudget {
             tokens: 1,
             detail: MemoryDetailLevel::Full as i32,
             depth: 1,
             max_entries: 0,
+            max_bytes: 0,
         };
 
         let value = wake_from_response(response);

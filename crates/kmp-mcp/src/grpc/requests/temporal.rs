@@ -95,7 +95,7 @@ pub(super) fn temporal_include_from_arguments(
     }))
 }
 
-pub(super) fn trace_page_from_arguments(arguments: &Value) -> Result<Option<PageRequest>, String> {
+pub(super) fn page_from_arguments(arguments: &Value) -> Result<Option<PageRequest>, String> {
     let Some(page) = optional_object_field(object(arguments, "tool arguments")?, "page", "page")?
     else {
         return Ok(None);

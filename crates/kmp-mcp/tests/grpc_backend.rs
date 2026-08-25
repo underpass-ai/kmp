@@ -13,6 +13,7 @@ use kmp_proto::v1beta1::{
     WakeRequest, WakeResponse,
     kernel_memory_service_server::{KernelMemoryService, KernelMemoryServiceServer},
 };
+use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use prost_types::Timestamp;
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
@@ -38,8 +39,10 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "depth": 3,
             "budget": {
                 "tokens": 1600,
-                "detail": "full"
+                "detail": "full",
+                "max_bytes": 4000
             },
+            "page": {"entries": 1},
             "dimensions": {
                 "mode": "only",
                 "include": ["conversation"]
@@ -56,6 +59,13 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         wake["result"]["structuredContent"]["proof"]["path"][0]["class"],
         "evidential"
     );
+    let wake_structured = &wake["result"]["structuredContent"];
+    assert_eq!(
+        wake_structured["projection"]["budget"]["used_bytes"],
+        serde_json::to_vec(wake_structured)
+            .expect("serialized wake")
+            .len()
+    );
 
     let wake_requests = recorded.wakes().await;
     assert_eq!(wake_requests.len(), 1);
@@ -65,6 +75,11 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         wake_requests[0].budget.as_ref().expect("budget").tokens,
         1600
     );
+    assert_eq!(
+        wake_requests[0].budget.as_ref().expect("budget").max_bytes,
+        4000
+    );
+    assert_eq!(wake_requests[0].page.as_ref().expect("page").entries, 1);
     assert_eq!(
         wake_requests[0]
             .dimensions
@@ -83,7 +98,9 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
             "question": "What should the next agent trust?",
             "answer_policy": "evidence_or_unknown",
             "budget": {
-                "tokens": 654
+                "tokens": 654,
+                "detail": "full",
+                "max_bytes": 4000
             }
         }),
     )
@@ -96,6 +113,13 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     assert_eq!(
         ask["result"]["structuredContent"]["because"][0]["ref"],
         "claim:typed-answer"
+    );
+    let ask_structured = &ask["result"]["structuredContent"];
+    assert_eq!(
+        ask_structured["projection"]["budget"]["used_bytes"],
+        serde_json::to_vec(ask_structured)
+            .expect("serialized ask")
+            .len()
     );
 
     let trace = call_tool(
@@ -662,7 +686,7 @@ impl KernelMemoryService for FakeMemoryService {
         let request = request.into_inner();
         self.recorded.wakes.lock().await.push(request.clone());
 
-        Ok(Response::new(WakeResponse {
+        let response = WakeResponse {
             summary: format!("Wake summary for {}.", request.about),
             wake: Some(WakePacket {
                 objective: if request.intent.trim().is_empty() {
@@ -683,14 +707,20 @@ impl KernelMemoryService for FakeMemoryService {
             proof: Some(proof(&request.about, "claim:typed-wake")),
             resume_cursor: None,
             warnings: Vec::new(),
-        }))
+            projection: None,
+            truncation: None,
+        };
+        Ok(Response::new(
+            project_wake_response(response, &request)
+                .map_err(|error| Status::invalid_argument(error.to_string()))?,
+        ))
     }
 
     async fn ask(&self, request: Request<AskRequest>) -> Result<Response<AskResponse>, Status> {
         let request = request.into_inner();
         self.recorded.asks.lock().await.push(request.clone());
 
-        Ok(Response::new(AskResponse {
+        let response = AskResponse {
             summary: "Typed deterministic answer.".to_string(),
             answer: "Trust the typed KernelMemoryService response.".to_string(),
             because: vec![AnswerReason {
@@ -700,7 +730,13 @@ impl KernelMemoryService for FakeMemoryService {
             }],
             proof: Some(proof(&request.about, "claim:typed-answer")),
             warnings: Vec::new(),
-        }))
+            projection: None,
+            truncation: None,
+        };
+        Ok(Response::new(
+            project_ask_response(response, &request)
+                .map_err(|error| Status::invalid_argument(error.to_string()))?,
+        ))
     }
 
     async fn goto(&self, request: Request<GotoRequest>) -> Result<Response<GotoResponse>, Status> {

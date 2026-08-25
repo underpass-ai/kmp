@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use kmp_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
+use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
@@ -23,8 +24,7 @@ use crate::ingest::build_ingest_plan;
 use crate::kmp::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
-    temporal_from_response, trace_from_response, try_enforce_recall_output_budget,
-    wake_from_response,
+    temporal_from_response, trace_from_response, wake_from_response,
 };
 use crate::protocol::tool_success_result;
 use crate::tool_error::{ToolError, ToolErrorCode};
@@ -398,7 +398,7 @@ async fn embedded_wake(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = wake_request_from_arguments(arguments)?;
-    let query = wake_query_from_proto(request).map_err(|status| mapping_error(&status))?;
+    let query = wake_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let intent = query.intent.clone();
     let max_entries = query.max_entries;
     let about = query.about.clone();
@@ -413,10 +413,12 @@ async fn embedded_wake(
         result.bundle.role().as_str(),
         &result.rendered.quality,
     );
-    let structured = wake_from_response(wake_response_from_result(&intent, max_entries, result));
-    Ok(tool_success_result(try_enforce_recall_output_budget(
-        structured, arguments, 1600,
-    )?))
+    let response = project_wake_response(
+        wake_response_from_result(&intent, max_entries, result),
+        &request,
+    )
+    .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
+    Ok(tool_success_result(wake_from_response(response)))
 }
 
 async fn embedded_ask(
@@ -425,7 +427,7 @@ async fn embedded_ask(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = ask_request_from_arguments(arguments)?;
-    let query = ask_query_from_proto(request).map_err(|status| mapping_error(&status))?;
+    let query = ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
     let policy = query.answer_policy;
     let max_entries = query.max_entries;
@@ -441,15 +443,12 @@ async fn embedded_ask(
         result.bundle.role().as_str(),
         &result.rendered.quality,
     );
-    let structured = ask_from_response(ask_response_from_result(
-        &question,
-        policy,
-        max_entries,
-        result,
-    ));
-    Ok(tool_success_result(try_enforce_recall_output_budget(
-        structured, arguments, 2400,
-    )?))
+    let response = project_ask_response(
+        ask_response_from_result(&question, policy, max_entries, result),
+        &request,
+    )
+    .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
+    Ok(tool_success_result(ask_from_response(response)))
 }
 
 async fn embedded_temporal(

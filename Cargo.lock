@@ -1680,6 +1680,7 @@ dependencies = [
  "kmp-proto",
  "prost-types 0.13.5",
  "serde_json",
+ "sha2",
  "tonic 0.12.3",
 ]
 
@@ -1804,6 +1805,7 @@ dependencies = [
  "kmp-proto-mapping",
  "kmp-testkit",
  "opentelemetry",
+ "prost 0.13.5",
  "prost-types 0.13.5",
  "reqwest 0.12.28",
  "serde",

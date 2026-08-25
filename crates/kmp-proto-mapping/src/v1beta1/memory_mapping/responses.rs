@@ -115,6 +115,8 @@ pub fn wake_response_from_result(
     let resume_cursor = newest_cursor(&relationships);
 
     WakeResponse {
+        projection: None,
+        truncation: None,
         resume_cursor,
         summary,
         wake: Some(WakePacket {
@@ -269,6 +271,8 @@ pub fn ask_response_from_result(
     answer_proof.matched_relations = matched_relations;
 
     AskResponse {
+        projection: None,
+        truncation: None,
         summary: if answer == UNANSWERED {
             // Say which of the two happened. "Found nothing" and "found
             // things that do not answer this" lead to different next moves:
