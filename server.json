@@ -3,7 +3,7 @@
   "name": "io.github.underpass-ai/kmp",
   "title": "KMP",
   "description": "Durable, temporal and auditable memory for AI agents in one local MCP binary",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "websiteUrl": "https://github.com/underpass-ai/kmp",
   "repository": {
     "url": "https://github.com/underpass-ai/kmp",
@@ -12,8 +12,8 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.1.17/kmp-mcp-v0.1.17.mcpb",
-      "fileSha256": "d4ad632905488d9091692c569f9b96637a6a52ec74a7f565269368428dc191e0",
+      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.1.18/kmp-mcp-v0.1.18.mcpb",
+      "fileSha256": "472416d935fec431d9e102531e7db773695cfe57b05e5acb1f621bc1cc32c3f9",
       "environmentVariables": [
         {
           "name": "KMP_MCP_DATA_DIR",
@@ -41,7 +41,7 @@
     {
       "registryType": "cargo",
       "identifier": "kmp-mcp",
-      "version": "0.1.17",
+      "version": "0.1.18",
       "environmentVariables": [
         {
           "name": "KMP_MCP_DATA_DIR",
