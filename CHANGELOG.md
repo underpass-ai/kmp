@@ -334,6 +334,9 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Fixed
 
+- `kmp-doctor` recognizes Claude Code's native `plugin:kmp:kmp` MCP id as the
+  healthy registration created by the plugin, instead of prescribing a second
+  direct server entry after setup already succeeded.
 - Release MCPBs now keep the Registry hash stable between a version-branch
   build and its tag build. MSVC's default linker timestamp was the only byte
   that changed; Windows release binaries now use reproducible linking, and the
