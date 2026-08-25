@@ -13,7 +13,7 @@ myself.
 
 After a successful import, tell me the event count and then `kmp_wake` on
 the about it restored so I see the memory rather than a number. If this
-session has no `kernel_*` tools, say the import worked and that they appear
+session has no `kmp_*` tools, say the import worked and that they appear
 after a restart — do not simulate the wake.
 
 <!-- kmp:voice -->

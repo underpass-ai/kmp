@@ -550,43 +550,107 @@ CODEX_PROMPT_NAMES="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup
 CODEX_EXPECTED_PROMPTS=10
 
 CODEX_CONFIG="$HOME/.codex/config.toml"
-if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
+if command -v codex >/dev/null 2>&1 \
+    || [ -f "$CODEX_CONFIG" ] \
+    || [ "${KMP_DOCTOR_CODEX_PLUGIN_LIST+x}" = x ]; then
   FOUND_HOST=1
-  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG"; then
-    warn "Codex CLI — config still contains former kernel-memory tables"
-    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex cannot safely load a partial server-id migration"
-    if grep -q '^\[mcp_servers\.kernel-memory\]$' "$CODEX_CONFIG"; then
-      info "the former registration and any child tool policies must move together"
+
+  if [ "${KMP_DOCTOR_CODEX_PLUGIN_LIST+x}" = x ]; then
+    CODEX_PLUGIN_LIST="$KMP_DOCTOR_CODEX_PLUGIN_LIST"
+  elif command -v codex >/dev/null 2>&1; then
+    CODEX_PLUGIN_LIST="$(codex plugin list 2>/dev/null || true)"
+  else
+    CODEX_PLUGIN_LIST=""
+  fi
+  if printf '%s\n' "$CODEX_PLUGIN_LIST" \
+      | grep -Eq '^kmp@[^[:space:]]+[[:space:]]+installed, enabled([[:space:]]|$)'; then
+    CODEX_PLUGIN_ENABLED=1
+  else
+    CODEX_PLUGIN_ENABLED=0
+  fi
+
+  CODEX_GLOBAL_CURRENT=0
+  CODEX_GLOBAL_FORMER=0
+  CODEX_STALE_TOOL_POLICIES=0
+  if [ -f "$CODEX_CONFIG" ]; then
+    grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG" && CODEX_GLOBAL_CURRENT=1
+    grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG" && CODEX_GLOBAL_FORMER=1
+    grep -Eq '^\[mcp_servers\.(kmp|kernel-memory)\.tools\.kernel_(ingest|write_memory|wake|ask|goto|near|rewind|forward|trace|inspect)\]$' \
+      "$CODEX_CONFIG" && CODEX_STALE_TOOL_POLICIES=1
+  fi
+
+  if [ "$CODEX_STALE_TOOL_POLICIES" -eq 1 ]; then
+    warn "Codex CLI — approval policy still names retired kernel_* tools"
+    if [ "$CODEX_PLUGIN_ENABLED" -eq 1 ]; then
+      offer "codex mcp remove kmp" "the plugin owns MCP, so stale global tool policies belong to the duplicate owner"
+      info "remove the global owner; the enabled plugin keeps the live kmp_* tools"
     else
-      info "stale child tool-policy tables create a server with no transport"
-      info "Codex reports: invalid transport in mcp_servers.kernel-memory"
+      offer "bash scripts/mcp/install-kmp-plugin.sh --codex --standalone" "standalone tool policies need the atomic kmp_* migration"
+      info "the installer migrates all ten policy table names and preserves their values"
     fi
-  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
-    # Registration is not the whole install. Four prompts shipped in every
-    # release and landed nowhere, because the installer copied a hardcoded
-    # three — and this line said `ok` the whole time, which is how it stayed
-    # hidden for as long as it did. Count what is actually there.
+  elif [ "$CODEX_GLOBAL_FORMER" -eq 1 ]; then
+    warn "Codex CLI — config still contains former kernel-memory tables"
+    if [ "$CODEX_PLUGIN_ENABLED" -eq 1 ]; then
+      offer "codex mcp remove kernel-memory" "the native plugin already owns the KMP server"
+    else
+      offer "bash scripts/mcp/install-kmp-plugin.sh --codex --standalone" "Codex cannot safely load a partial server-id migration"
+    fi
+    info "the former registration and every child tool policy must move together"
+  fi
+
+  if [ "$CODEX_PLUGIN_ENABLED" -eq 1 ] && { [ "$CODEX_GLOBAL_CURRENT" -eq 1 ] || [ "$CODEX_GLOBAL_FORMER" -eq 1 ]; }; then
+    warn "Codex CLI — both plugin and global config claim the KMP MCP server"
+    offer "codex mcp remove kmp" "one server must have exactly one owner"
+    info "plugin owner: kmp@underpass -> kmp-mcp"
+    if [ -f "$CODEX_CONFIG" ]; then
+      while IFS= read -r owner_line; do
+        [ -n "$owner_line" ] && info "$owner_line"
+      done < <(python3 - "$CODEX_CONFIG" <<'PY'
+import pathlib
+import sys
+import tomllib
+
+try:
+    body = tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(0)
+servers = body.get("mcp_servers", {})
+entry = servers.get("kmp") or servers.get("kernel-memory") or {}
+print(f"global owner: {entry.get('command', '<no command>')}")
+env = entry.get("env", {})
+for name in ("KMP_MCP_BACKEND", "KMP_MCP_DATA_DIR", "KMP_MCP_ENGINE"):
+    if name in env:
+        print(f"global {name}={env[name]}")
+PY
+)
+    fi
+    info "compare the global environment above with the Data directory selected from this working directory"
+  elif [ "$CODEX_PLUGIN_ENABLED" -eq 1 ]; then
+    ok "Codex CLI — plugin-managed, one MCP owner"
+  elif [ "$CODEX_GLOBAL_CURRENT" -eq 1 ]; then
+    # Standalone installs deliberately keep prompts and doctrine outside a
+    # plugin. Count them only in this mode; native Codex skills are checked by
+    # the capability contract and the installed-plugin smoke.
     CODEX_PROMPT_DIR="$HOME/.codex/prompts"
     CODEX_HAVE="$(ls "$CODEX_PROMPT_DIR"/kmp-*.md 2>/dev/null | wc -l | tr -d ' ')"
     if [ "$CODEX_HAVE" -ge "$CODEX_EXPECTED_PROMPTS" ]; then
-      ok "Codex CLI — registered, $CODEX_HAVE commands"
+      ok "Codex CLI — standalone, $CODEX_HAVE commands"
     elif [ "$CODEX_HAVE" -eq 0 ]; then
-      warn "Codex CLI — registered, but no /kmp- commands installed"
-      info "memory answers; the commands that drive it are missing"
-      info "install them with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+      warn "Codex CLI — standalone MCP, but no /kmp- commands installed"
+      info "complete it with:  bash scripts/mcp/install-kmp-plugin.sh --codex --standalone"
     else
-      warn "Codex CLI — registered, $CODEX_HAVE of $CODEX_EXPECTED_PROMPTS commands"
+      warn "Codex CLI — standalone, $CODEX_HAVE of $CODEX_EXPECTED_PROMPTS commands"
       CODEX_MISSING=""
       for name in $CODEX_PROMPT_NAMES; do
         [ -f "$CODEX_PROMPT_DIR/$name.md" ] || CODEX_MISSING="$CODEX_MISSING /$name"
       done
       info "missing:$CODEX_MISSING"
-      info "re-run:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+      info "re-run:  bash scripts/mcp/install-kmp-plugin.sh --codex --standalone"
     fi
-  else
-    warn "Codex CLI — kmp not in $CODEX_CONFIG"
-    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI is not wired"
-    info "wire it with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+  elif [ "$CODEX_GLOBAL_FORMER" -eq 0 ]; then
+    warn "Codex CLI — neither an enabled KMP plugin nor standalone wiring was found"
+    offer "codex plugin add kmp@underpass" "Codex CLI is not wired"
+    info "advanced alternative: bash scripts/mcp/install-kmp-plugin.sh --codex --standalone"
   fi
 
   # config.toml is only one input. Enabled Codex plugins can contribute MCP
@@ -599,8 +663,8 @@ if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
   fi
   if host_list_has_server "$CODEX_MCP_LIST" kernel-memory; then
     warn "Codex CLI — effective MCP list still contains kernel-memory"
-    offer "codex plugin remove kmp@underpass" "an enabled pre-rename plugin is still injecting the former server"
-    info "remove or reinstall the stale KMP plugin; the [mcp_servers.kmp] registration remains in place"
+    offer "codex plugin add kmp@underpass" "an enabled pre-rename plugin is still injecting the former server"
+    info "reinstall the KMP plugin, then restart Codex"
   fi
 fi
 

@@ -107,11 +107,13 @@ if [[ ! -x "${DOCTOR_BIN}" ]]; then
   DOCTOR_BIN="${PLUGIN_DIR}/bin/kmp-mcp.exe"
 fi
 doctor_output="$(
+  HOME="${SMOKE_DATA_DIR}/doctor-home" \
   NO_COLOR=1 \
   KMP_MCP_BIN="${DOCTOR_BIN}" \
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
   KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
 )"
@@ -140,6 +142,7 @@ stale_codex_output="$(
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
   KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='' \
   KMP_DOCTOR_CODEX_MCP_LIST='kernel-memory  ${CLAUDE_PLUGIN_ROOT}/scripts/run-embedded-mcp.sh  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
 )"
@@ -165,13 +168,43 @@ legacy_table_output="$(
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
   KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
 )"
-if ! grep -Fq 'Codex CLI — config still contains former kernel-memory tables' <<<"${legacy_table_output}"; then
-  echo "KMP plugin smoke: doctor missed a legacy Codex child table" >&2
+if ! grep -Fq 'Codex CLI — approval policy still names retired kernel_* tools' <<<"${legacy_table_output}"; then
+  echo "KMP plugin smoke: doctor missed a legacy Codex tool policy" >&2
   printf '%s\n' "${legacy_table_output}" >&2
   exit 1
 fi
+
+# An enabled native plugin plus a global registration is two owners, even
+# when both currently start. Doctor must name the collision and the global
+# environment that can redirect the store.
+printf '%s\n' \
+  '[mcp_servers.kmp]' \
+  'command = "/global/kmp-mcp"' \
+  'env = { KMP_MCP_BACKEND = "embedded", KMP_MCP_DATA_DIR = "/global/store", KMP_MCP_ENGINE = "sqlite" }' \
+  > "${CODEX_DOCTOR_HOME}/.codex/config.toml"
+collision_output="$(
+  HOME="${CODEX_DOCTOR_HOME}" \
+  NO_COLOR=1 \
+  KMP_MCP_BIN="${DOCTOR_BIN}" \
+  KMP_MCP_BACKEND=embedded \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  KMP_DOCTOR_CODEX_MCP_LIST='kmp  /global/kmp-mcp  enabled' \
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
+)"
+for expected in \
+  'both plugin and global config claim the KMP MCP server' \
+  'plugin owner: kmp@underpass -> kmp-mcp' \
+  'global owner: /global/kmp-mcp' \
+  'global KMP_MCP_DATA_DIR=/global/store' \
+  'codex mcp remove kmp'; do
+  grep -Fq "$expected" <<<"${collision_output}" \
+    || { printf '%s\n' "${collision_output}" >&2; echo "KMP plugin smoke: collision output omitted $expected" >&2; exit 1; }
+done
 
 echo "KMP plugin smoke passed"

@@ -1,5 +1,6 @@
 ---
 description: Checkpoint this project's maintained memory bundle and show what changed
+argument-hint: "[no arguments]"
 allowed-tools: Bash(kmp-mcp:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*)
 ---
 

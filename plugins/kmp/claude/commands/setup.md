@@ -63,14 +63,21 @@ claude mcp add kmp --scope user \
   -- "$(command -v kmp-mcp)"
 ```
 
-**Codex CLI not wired** — the installer is idempotent and safe to re-run:
+**Codex CLI not wired** — install the native plugin. It owns the MCP server and
+native skills; setup must not also write a global registration:
 
 ```bash
-bash scripts/mcp/install-kmp-plugin.sh --codex
+codex plugin add kmp@underpass
 ```
 
-It writes `[mcp_servers.kmp]` into `~/.codex/config.toml` and drops
-the `/kmp-doctor` and `/kmp-moves` prompts into `~/.codex/prompts/`.
+Only when the user explicitly requests a plugin-free advanced installation:
+
+```bash
+bash scripts/mcp/install-kmp-plugin.sh --codex --standalone
+```
+
+Refuse standalone setup while the KMP plugin is enabled. If both owners
+already exist, name the collision before changing configuration.
 
 If `$ARGUMENTS` names a host, restrict the work to that host.
 

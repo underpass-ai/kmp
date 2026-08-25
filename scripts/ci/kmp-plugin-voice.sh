@@ -28,7 +28,7 @@ CANON="$(awk -v o="$OPEN" -v c="$CLOSE" '
 
 # Both hosts, every command. A file that opts out is drift with extra steps.
 mapfile -t COMMANDS < <(
-  find "$PLUGIN/commands" "$PLUGIN/codex/prompts" -name '*.md' -type f | sort
+  find "$PLUGIN/claude/commands" "$PLUGIN/codex/prompts" -name '*.md' -type f | sort
 )
 [ "${#COMMANDS[@]}" -gt 0 ] || { fail "no commands found to check"; exit 1; }
 
@@ -67,7 +67,7 @@ for file in "${COMMANDS[@]}"; do
 done
 
 # The two hosts offer the same commands or one of them is quietly poorer.
-claude_names="$(find "$PLUGIN/commands" -name '*.md' -exec basename {} .md \; | sort | tr '\n' ' ')"
+claude_names="$(find "$PLUGIN/claude/commands" -name '*.md' -exec basename {} .md \; | sort | tr '\n' ' ')"
 codex_names="$(find "$PLUGIN/codex/prompts" -name 'kmp-*.md' -exec basename {} .md \; | sed 's/^kmp-//' | sort | tr '\n' ' ')"
 if [ "$claude_names" != "$codex_names" ]; then
   fail "the hosts do not offer the same commands"
@@ -108,7 +108,7 @@ fi
 # startup banner goes to stderr and the host swallows it, and nobody runs
 # --help on a server a plugin launched. A command that shells out to a branded
 # surface and then describes the result in prose loses the block entirely.
-for branded in commands/info commands/doctor codex/prompts/kmp-info codex/prompts/kmp-doctor; do
+for branded in claude/commands/info claude/commands/doctor codex/prompts/kmp-info codex/prompts/kmp-doctor; do
   file="$PLUGIN/$branded.md"
   if grep -qi 'verbatim' "$file"; then
     ok "${branded}.md relays the mark instead of describing it"

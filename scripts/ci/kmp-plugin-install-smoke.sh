@@ -305,6 +305,14 @@ grep -q 'claude plugin update' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the plugin"; }
 grep -q 'kmp-install-binary.sh' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the engine"; }
+CLAUDE_PLUGIN_ROOT="$INSTALLED" \
+  bash "$INSTALLED/scripts/kmp-update.sh" --codex --dry-run \
+    --version "$WORKSPACE_VERSION" > "$WORK_DIR/codex-plugin-update-dry-run.txt"
+grep -q 'codex plugin add kmp@underpass' "$WORK_DIR/codex-plugin-update-dry-run.txt" \
+  || { cat "$WORK_DIR/codex-plugin-update-dry-run.txt" >&2; fail "Codex plugin update lost plugin ownership"; }
+if grep -q 'standalone Codex prompts' "$WORK_DIR/codex-plugin-update-dry-run.txt"; then
+  fail "Codex plugin update attempted to refresh standalone assets"
+fi
 if [ -s "${WORK_DIR}/quiet.txt" ]; then
   cat "${WORK_DIR}/quiet.txt" >&2
   fail "the notice spoke while the engine and the plugin agree"
@@ -320,19 +328,33 @@ printf '%s\n' \
   'command = "/previous/kmp-mcp"' \
   'env = { KMP_MCP_BACKEND = "embedded" }' \
   '' \
-  '[mcp_servers.kernel-memory.tools.kernel_wake]' \
-  'approval_mode = "approve"' \
   > "${MIGRATION_HOME}/.codex/config.toml"
+for tool in ingest write_memory wake ask goto near rewind forward trace inspect; do
+  printf '[mcp_servers.kernel-memory.tools.kernel_%s]\napproval_mode = "approve"\nnote = "kept-%s"\n\n' \
+    "$tool" "$tool" >> "${MIGRATION_HOME}/.codex/config.toml"
+done
 HOME="${MIGRATION_HOME}" \
 XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
 KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
-  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+KMP_CODEX_PLUGIN_LIST='' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex --standalone \
   > "${WORK_DIR}/migration.txt"
 grep -q '^\[mcp_servers\.kmp\]$' "${MIGRATION_HOME}/.codex/config.toml" \
   || fail "the installer did not migrate the Codex server id to kmp"
-grep -q '^\[mcp_servers\.kmp\.tools\.kernel_wake\]$' \
+grep -q '^\[mcp_servers\.kmp\.tools\.kmp_wake\]$' \
   "${MIGRATION_HOME}/.codex/config.toml" \
   || fail "the installer did not migrate the Codex tool policy table"
+for tool in ingest write_memory wake ask goto near rewind forward trace inspect; do
+  grep -q "^\[mcp_servers\.kmp\.tools\.kmp_${tool}\]$" \
+    "${MIGRATION_HOME}/.codex/config.toml" \
+    || fail "the installer did not migrate the ${tool} policy"
+  grep -q "^note = \"kept-${tool}\"$" "${MIGRATION_HOME}/.codex/config.toml" \
+    || fail "the installer rewrote fields in the ${tool} policy"
+done
+if grep -Eq '^\[mcp_servers\.(kmp|kernel-memory)\.tools\.kernel_' \
+    "${MIGRATION_HOME}/.codex/config.toml"; then
+  fail "the installer left a former Codex tool-policy name behind"
+fi
 if grep -q '^\[mcp_servers\.kernel-memory' "${MIGRATION_HOME}/.codex/config.toml"; then
   fail "the installer left a former Codex server table behind"
 fi
@@ -347,9 +369,68 @@ python3 -c 'import pathlib,sys,tomllib;tomllib.loads(pathlib.Path(sys.argv[1]).r
 # plugin root. Its one-command path must resolve that installed layout too.
 HOME="${MIGRATION_HOME}" XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
   bash "${MIGRATION_HOME}/.local/share/kmp/bin/kmp-update.sh" \
-    --codex --dry-run --version "$WORKSPACE_VERSION" \
+    --codex --standalone --dry-run --version "$WORKSPACE_VERSION" \
     > "${WORK_DIR}/codex-update-dry-run.txt"
-grep -q 'refresh the Codex prompts' "${WORK_DIR}/codex-update-dry-run.txt" \
-  || { cat "${WORK_DIR}/codex-update-dry-run.txt" >&2; fail "Codex updater did not resolve its installed layout"; }
+grep -q 'refresh the standalone Codex prompts' "${WORK_DIR}/codex-update-dry-run.txt" \
+  || { cat "${WORK_DIR}/codex-update-dry-run.txt" >&2; fail "standalone Codex updater changed ownership mode"; }
+
+# Plugin-managed setup owns no global server, prompts, or AGENTS doctrine.
+PLUGIN_HOME="${WORK_DIR}/plugin-home"
+mkdir -p "$PLUGIN_HOME"
+HOME="$PLUGIN_HOME" XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+  > "${WORK_DIR}/plugin-mode.txt"
+grep -q 'mode — plugin-managed' "${WORK_DIR}/plugin-mode.txt" \
+  || fail "setup did not select plugin-managed mode"
+if [ -f "$PLUGIN_HOME/.codex/config.toml" ] \
+    || [ -d "$PLUGIN_HOME/.codex/prompts" ] \
+    || [ -f "$PLUGIN_HOME/.codex/AGENTS.md" ]; then
+  fail "plugin-managed setup created standalone Codex wiring"
+fi
+
+# A collision is diagnosed before config mutation. The plugin remains the
+# intended owner and setup names the exact command that removes the duplicate.
+COLLISION_HOME="${WORK_DIR}/collision-home"
+mkdir -p "$COLLISION_HOME/.codex"
+printf '%s\n' '[mcp_servers.kmp]' 'command = "/global/kmp-mcp"' \
+  'env = { KMP_MCP_DATA_DIR = "/wrong/store" }' \
+  > "$COLLISION_HOME/.codex/config.toml"
+cp "$COLLISION_HOME/.codex/config.toml" "$WORK_DIR/collision-before.toml"
+if HOME="$COLLISION_HOME" XDG_DATA_HOME="$COLLISION_HOME/.local/share" \
+   KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+   KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+     bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+     > "$WORK_DIR/collision.txt" 2>&1; then
+  fail "plugin/global collision setup unexpectedly succeeded"
+fi
+cmp "$WORK_DIR/collision-before.toml" "$COLLISION_HOME/.codex/config.toml" \
+  || fail "collision setup changed config before ownership was resolved"
+grep -q 'codex mcp remove kmp' "$WORK_DIR/collision.txt" \
+  || fail "collision setup did not name the owner repair"
+
+# An old/new policy conflict fails atomically and preserves the source file.
+CONFLICT_HOME="${WORK_DIR}/conflict-home"
+mkdir -p "$CONFLICT_HOME/.codex"
+printf '%s\n' \
+  '[mcp_servers.kernel-memory]' \
+  'command = "/old/kmp-mcp"' \
+  '[mcp_servers.kernel-memory.tools.kernel_wake]' \
+  'approval_mode = "approve"' \
+  '[mcp_servers.kmp.tools.kmp_wake]' \
+  'approval_mode = "deny"' \
+  > "$CONFLICT_HOME/.codex/config.toml"
+cp "$CONFLICT_HOME/.codex/config.toml" "$WORK_DIR/conflict-before.toml"
+if HOME="$CONFLICT_HOME" XDG_DATA_HOME="$CONFLICT_HOME/.local/share" \
+   KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" KMP_CODEX_PLUGIN_LIST='' \
+     bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex --standalone \
+     > "$WORK_DIR/conflict.txt" 2>&1; then
+  fail "conflicting old/new policy migration unexpectedly succeeded"
+fi
+cmp "$WORK_DIR/conflict-before.toml" "$CONFLICT_HOME/.codex/config.toml" \
+  || fail "conflicting migration replaced the original config"
+grep -q 'old and new KMP tables conflict' "$WORK_DIR/conflict.txt" \
+  || fail "conflicting migration did not explain the collision"
 
 echo "KMP plugin install smoke passed"

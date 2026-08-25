@@ -1,5 +1,6 @@
 ---
 description: Diagnose the KMP agent-memory setup — binary, backend, data directory, tool surface and host wiring
+argument-hint: "[no arguments]"
 allowed-tools: Bash(bash:*), Bash(claude mcp list:*), Bash(kmp-mcp:*)
 ---
 
@@ -25,7 +26,7 @@ Then tell the user, in a few lines:
   that exists but has not been picked up because the session predates it.
 
 If the doctor reports the tools answering but this session still has no
-`kernel_*` tools in its inventory, say so directly: the registration is
+`kmp_*` tools in its inventory, say so directly: the registration is
 correct and the session is stale, so it needs restarting. That is the one
 failure the doctor cannot fix from inside the session.
 

@@ -12,7 +12,7 @@ If the session-start notice says a newer release exists, catch up the Codex
 prompts, memory doctrine and engine together:
 
 ```bash
-bash "@@UPDATE@@" --codex
+bash "@@UPDATE@@" --codex --standalone
 ```
 
 That is the one update command. Re-run the doctor afterwards and ask for one
@@ -24,8 +24,12 @@ If the engine is missing or older than the plugin, install the matching one:
 bash "@@SETUP@@"
 ```
 
-If Codex is not wired, register the server. The binary needs no configuration
-— an unconfigured `kmp-mcp` runs the embedded kernel:
+This prompt belongs to a standalone Codex install. If a native `kmp` plugin is
+enabled, do not register another server: the plugin already owns MCP and its
+skills. Diagnose a plugin/global collision before changing configuration.
+
+For an explicitly standalone install, register the server. The binary needs
+no configuration — an unconfigured `kmp-mcp` runs the embedded kernel:
 
 ```toml
 # ~/.codex/config.toml
@@ -38,7 +42,7 @@ was already fine, one for what you changed, and the next command if anything
 is still missing.
 
 **Codex keeps the MCP inventory it started with.** If the wiring is right and
-the `kernel_*` tools are still absent, the session is stale — say so plainly.
+the `kmp_*` tools are still absent, the session is stale — say so plainly.
 Restarting is the fix, and it cannot happen from in here.
 
 <!-- kmp:voice -->

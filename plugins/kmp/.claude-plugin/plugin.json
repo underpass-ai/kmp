@@ -17,5 +17,6 @@
     "graph",
     "temporal",
     "context-recovery"
-  ]
+  ],
+  "commands": "./claude/commands/"
 }

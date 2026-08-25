@@ -15,6 +15,8 @@ on:
       - "scripts/ci/kmp-plugin-smoke.sh"
       - "scripts/ci/kmp-plugin-install-smoke.sh"
       - "scripts/ci/kmp-plugin-voice.sh"
+      - "scripts/ci/kmp-capability-contract.py"
+      - "scripts/ci/kmp-codex-installed-smoke.sh"
       - "tests/plugin/**"
       - "crates/kmp-mcp/**"
       - ".github/actions/install-rust/**"
@@ -91,6 +93,10 @@ jobs:
         shell: bash
         run: bash scripts/ci/kmp-plugin-voice.sh
 
+      - name: Check the plugin capability contract
+        if: runner.os == 'Linux'
+        run: python3 scripts/ci/kmp-capability-contract.py
+
       - name: Smoke-test the plugin bundle
         shell: bash
         run: bash scripts/ci/kmp-plugin-smoke.sh
@@ -103,6 +109,11 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: bash scripts/ci/kmp-plugin-install-smoke.sh
+
+      - name: Smoke-test the effective Codex install
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash scripts/ci/kmp-codex-installed-smoke.sh
 
       - name: Package the plugin bundle
         shell: bash

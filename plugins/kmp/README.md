@@ -75,22 +75,27 @@ refreshes its prompts and doctrine from the versioned release as well. Both
 paths finish with one restart because a running host keeps the MCP inventory
 it started with.
 
-**Codex CLI** — the plugin provides the skill and a PATH-based MCP
-declaration. The setup script also supports standalone and older installs:
+**Codex CLI** — install the native plugin. It owns both the skills and the
+PATH-based MCP declaration, so it does not need a second registration in
+`~/.codex/config.toml`:
 
 ```bash
-bash scripts/mcp/install-kmp-plugin.sh --codex
+codex plugin add kmp@underpass
 ```
 
-It installs the binary if missing, registers `[mcp_servers.kmp]` in
-`~/.codex/config.toml`, drops `/kmp-doctor` and `/kmp-moves` into
-`~/.codex/prompts/`, and adds the memory doctrine to `~/.codex/AGENTS.md`.
-Re-running is safe: it reports what is already wired instead of duplicating
-it, and the `AGENTS.md` section is fenced by markers so it is replaced rather
-than stacked. Pass `--dry-run` to see the changes before making them.
+Run the native `kmp-setup` skill to install the matching engine and diagnose
+the result. Re-running it preserves the plugin as the single MCP owner.
+
+Standalone Codex wiring remains available as an explicit advanced path. It
+owns a global MCP table, copied prompts and a fenced AGENTS section, and must
+not be combined with an enabled KMP plugin:
+
+```bash
+bash scripts/mcp/install-kmp-plugin.sh --codex --standalone
+```
 
 The script works outside a checkout too, fetching what it needs from the
-repository.
+repository. Pass `--dry-run` to preview its changes.
 
 ## What you get
 
@@ -119,7 +124,7 @@ generates a missing `why`. See
 [Why the `why` matters](skills/kmp-memory/SKILL.md#why-the-why-matters) for the
 field-by-field model, safe fallbacks and worked examples.
 
-### For you — nine commands
+### For you — ten commands
 
 | Command | What it does |
 | --- | --- |
@@ -132,16 +137,19 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:save` | Commits this project's memory to the repository, and shows the diff |
 | `/kmp:restore` | Loads the memory committed in the repository back into the store |
 | `/kmp:revert` | Reverts a decision without deleting it, so both states survive |
+| `/kmp:uninstall` | Previews removal, protects memory first, and only applies when explicitly asked |
 
-Codex gets all nine as `/kmp-setup`, `/kmp-doctor` and so on. They read the
-same because they are held to the same standard: [VOICE.md](VOICE.md) is the
-source of truth for how KMP talks, and `scripts/ci/kmp-plugin-voice.sh` fails
-the build when a command drifts out of it.
+Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
+Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
+commands. [`capabilities.json`](capabilities.json) is the machine-checked
+inventory that maps each workflow to its owner and exposure; MCP tools remain
+a separate ten-verb contract. [VOICE.md](VOICE.md) remains the source of truth
+for how the host workflows talk.
 
 ## The doctor
 
 `/kmp:doctor` exists because the failure modes are specific, and they all
-look identical from inside a session — the `kernel_*` tools are simply not
+look identical from inside a session — the `kmp_*` tools are simply not
 there. It separates them:
 
 - **binary** — installed, on `PATH`, and its version;
@@ -151,6 +159,11 @@ there. It separates them:
   (`KMP_MCP_DATA_DIR` → project `.kernel/` → XDG fallback), and why;
 - **tool surface** — a real `tools/list` over stdio, counting what answers;
 - **host registration** — whether Claude Code and Codex actually have it.
+
+For Codex it also distinguishes plugin-managed from standalone wiring. If an
+enabled plugin and a global `mcp_servers.kmp` table both claim the server, the
+doctor names both owners and the global store-affecting environment instead of
+declaring the setup healthy.
 
 Two failures it names rather than leaving you to guess: another session
 holding a redb store, which is the single-writer contract (ADR-011) doing its
