@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+set -eu
+
+server_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+system=$(uname -s)
+machine=$(uname -m)
+
+case "${system}:${machine}" in
+  Linux:x86_64|Linux:amd64)
+    binary="kmp-mcp-x86_64-unknown-linux-gnu"
+    ;;
+  Linux:aarch64|Linux:arm64)
+    binary="kmp-mcp-aarch64-unknown-linux-gnu"
+    ;;
+  Darwin:x86_64|Darwin:amd64)
+    binary="kmp-mcp-x86_64-apple-darwin"
+    ;;
+  Darwin:arm64|Darwin:aarch64)
+    binary="kmp-mcp-aarch64-apple-darwin"
+    ;;
+  *)
+    echo "kmp-mcp: this MCPB does not contain a binary for ${system} ${machine}" >&2
+    exit 1
+    ;;
+esac
+
+exec "${server_dir}/bin/${binary}" "$@"

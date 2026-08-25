@@ -1,0 +1,113 @@
+name: mcp-registry
+
+# Validation is safe on every change. Publishing is a separate, one-shot
+# action: only a version tag, only after Cargo and MCPB are publicly reachable,
+# only with GitHub OIDC, and only while the repository owner has explicitly
+# armed MCP_REGISTRY_PUBLISH. Pull requests never receive publish authority.
+
+on:
+  pull_request:
+    paths:
+      - "server.json"
+      - "distribution/mcpb/**"
+      - "crates/kmp-mcp/README.md"
+      - "crates/kmp-mcp/src/protocol.rs"
+      - "scripts/ci/mcp-registry.sh"
+      - "scripts/ci/install-mcp-publisher.sh"
+      - "scripts/release/**"
+      - "scripts/release.sh"
+      - ".github/workflows/mcp-registry.yml"
+      - ".github/workflows/release.yml"
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+env:
+  MCP_REGISTRY: https://registry.modelcontextprotocol.io
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Check repository-owned Registry contracts
+        run: bash scripts/ci/mcp-registry.sh
+
+      - name: Install the checksummed official publisher
+        run: bash scripts/ci/install-mcp-publisher.sh "${RUNNER_TEMP}/mcp-publisher"
+
+      - name: Dry-run against the staging Registry
+        run: PATH="${RUNNER_TEMP}/mcp-publisher:${PATH}" bash scripts/ci/mcp-registry.sh
+
+      - name: Validate the MCPB manifest
+        run: npx --yes @anthropic-ai/mcpb@2.1.2 validate distribution/mcpb/manifest.json
+
+  publish:
+    needs: validate
+    if: startsWith(github.ref, 'refs/tags/v') && vars.MCP_REGISTRY_PUBLISH == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    environment: mcp-registry-production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Wait for the immutable Cargo and MCPB packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          for attempt in $(seq 1 360); do
+            cargo_ready=0
+            mcpb_ready=0
+            curl --proto '=https' --tlsv1.2 -fsSL \
+              "https://crates.io/api/v1/crates/kmp-mcp/${VERSION}" >/dev/null \
+              && cargo_ready=1 || true
+            gh release view "${GITHUB_REF_NAME}" --json assets \
+              --jq ".assets[].name" 2>/dev/null \
+              | grep -qx "kmp-mcp-${GITHUB_REF_NAME}.mcpb" \
+              && mcpb_ready=1 || true
+            if [[ "${cargo_ready}" == 1 && "${mcpb_ready}" == 1 ]]; then
+              exit 0
+            fi
+            echo "waiting for packages (attempt ${attempt}: cargo=${cargo_ready}, mcpb=${mcpb_ready})"
+            sleep 30
+          done
+          echo "Cargo or MCPB package did not become available before timeout" >&2
+          exit 1
+
+      - name: Verify the released MCPB matches server.json
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/mcpb"
+          gh release download "${GITHUB_REF_NAME}" \
+            --pattern "kmp-mcp-${GITHUB_REF_NAME}.mcpb" \
+            --dir "${RUNNER_TEMP}/mcpb"
+          expected="$(python3 -c 'import json; print(next(p["fileSha256"] for p in json.load(open("server.json"))["packages"] if p["registryType"] == "mcpb"))')"
+          actual="$(sha256sum "${RUNNER_TEMP}/mcpb/kmp-mcp-${GITHUB_REF_NAME}.mcpb" | awk '{print $1}')"
+          [[ "${actual}" == "${expected}" ]] || {
+            echo "released MCPB ${actual} does not match server.json ${expected}" >&2
+            exit 1
+          }
+
+      - name: Install the checksummed official publisher
+        run: bash scripts/ci/install-mcp-publisher.sh "${RUNNER_TEMP}/mcp-publisher"
+
+      - name: Authenticate and publish with GitHub OIDC
+        run: |
+          publisher="${RUNNER_TEMP}/mcp-publisher/mcp-publisher"
+          "${publisher}" login github-oidc --registry="${MCP_REGISTRY}"
+          "${publisher}" publish server.json

@@ -1,0 +1,91 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/mcpb/main/schemas/mcpb-manifest-v0.3.schema.json",
+  "manifest_version": "0.3",
+  "name": "kmp",
+  "display_name": "KMP",
+  "version": "0.1.14",
+  "description": "Durable, temporal and auditable memory for AI agents",
+  "long_description": "KMP gives an agent one local binary for durable memory, temporal navigation and auditable proof. The embedded kernel needs no service, database or API key.",
+  "author": {
+    "name": "Underpass AI",
+    "url": "https://github.com/underpass-ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/underpass-ai/kmp.git"
+  },
+  "homepage": "https://github.com/underpass-ai/kmp",
+  "documentation": "https://github.com/underpass-ai/kmp/blob/main/docs/index.md",
+  "support": "https://github.com/underpass-ai/kmp/issues",
+  "server": {
+    "type": "binary",
+    "entry_point": "server/kmp-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/server/kmp-mcp",
+      "args": [],
+      "env": {},
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/kmp-mcp.exe"
+        }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "kmp_ingest",
+      "description": "Ingest canonical KMP events"
+    },
+    {
+      "name": "kmp_write_memory",
+      "description": "Write validated memory and relations"
+    },
+    {
+      "name": "kmp_wake",
+      "description": "Recover the working context for an about"
+    },
+    {
+      "name": "kmp_ask",
+      "description": "Answer a question from stored evidence"
+    },
+    {
+      "name": "kmp_goto",
+      "description": "Open memory at a time or sequence"
+    },
+    {
+      "name": "kmp_near",
+      "description": "Navigate near a memory reference"
+    },
+    {
+      "name": "kmp_rewind",
+      "description": "Move backward through memory history"
+    },
+    {
+      "name": "kmp_forward",
+      "description": "Move forward through memory history"
+    },
+    {
+      "name": "kmp_trace",
+      "description": "Trace the proof path between references"
+    },
+    {
+      "name": "kmp_inspect",
+      "description": "Inspect one reference and its evidence"
+    }
+  ],
+  "keywords": [
+    "agents",
+    "memory",
+    "mcp",
+    "temporal",
+    "audit"
+  ],
+  "license": "Apache-2.0",
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ]
+  }
+}

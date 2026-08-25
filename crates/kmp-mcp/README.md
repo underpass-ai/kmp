@@ -4,6 +4,8 @@ The stdio MCP adapter for
 [KMP by Underpass](https://github.com/underpass-ai/kmp), the Kernel Memory
 Protocol — navigable, temporal, multidimensional memory for AI agents.
 
+- MCP Registry name: `mcp-name: io.github.underpass-ai/kmp`
+
 ```bash
 cargo install kmp-mcp
 ```

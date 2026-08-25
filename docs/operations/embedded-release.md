@@ -4,7 +4,10 @@
 
 Push a tag `vX.Y.Z` → the `release` workflow builds, strips and checksums
 `kmp-mcp` for linux x86_64/aarch64, macOS arm64/x86_64 and Windows
-x86_64, and attaches every artifact (+ `.sha256`) to the GitHub release.
+x86_64, and attaches every artifact (+ `.sha256`) to the GitHub release. It
+also packs the five binaries into one deterministic MCPB: a shell launcher
+selects architecture on Linux/macOS and the Windows override selects the
+`.exe`, so the no-toolchain Registry path is one integrity-pinned package.
 `workflow_dispatch` runs the same matrix without publishing (pipeline
 verification). The embedded edition releases from the same tags as the
 kernel — one version for the whole product.
