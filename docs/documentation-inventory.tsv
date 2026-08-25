@@ -8,7 +8,7 @@ current	docs/operations/embedded/README.md	Current local embedded operations.
 current	docs/operations/deployment/README.md	Current Docker and Kubernetes operations.
 current	docs/research/README.md	Current summary of completed research and the active memory-analysis direction.
 research	docs/research/operator.md	Separate benchmark-only Operator research.
-research	docs/paper/*.md	Publication packages that may lag implementation.
-research	docs/paper/acl/*.md	ACL package source notes.
+research	docs/research/paper/*.md	Paused publication package retained for later recovery.
+research	docs/research/paper/acl/*.md	ACL package source notes retained for later recovery.
 research	docs/development/graph-aware-answer-reranker.md	Experimental reranker design.
 current	docs/development/running-e2e.md	Current contributor procedure.

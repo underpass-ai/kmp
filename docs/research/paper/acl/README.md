@@ -1,7 +1,11 @@
 # ACL Submission Package
 
 This directory contains an ACL-style LaTeX package derived from
-[`archive/docs/research/PAPER_SUBMISSION_DRAFT.md`](../../../archive/docs/research/PAPER_SUBMISSION_DRAFT.md).
+[`archive/docs/research/PAPER_SUBMISSION_DRAFT.md`](../../../../archive/docs/research/PAPER_SUBMISSION_DRAFT.md).
+
+The package is retained for the future recovery of the paper. It is not an
+active submission and must be revalidated against the implementation and new
+research results before publication work resumes.
 
 The current manuscript covers four use cases:
 

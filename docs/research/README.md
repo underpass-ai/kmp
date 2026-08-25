@@ -63,11 +63,14 @@ Evaluation will therefore measure false positives, missed evidence, temporal
 leakage, prioritization quality, and whether a reviewer can audit the result.
 
 The existing MemoryArena, MemoryAgentBench, and LongMemEval adapters remain
-useful regression and evaluation infrastructure for this work. External
-comparisons, human studies, or a revived paper are possible later, but are not
-release promises. Release commitments remain in the current code, tests,
-release process and [documentation catalog](../documentation-catalog.md), not
-in research notes.
+useful regression and evaluation infrastructure for this work. The paper is
+paused, not abandoned: its sources remain under
+[`docs/research/paper/`](paper/README.md), and we intend to recover the
+publication effort when the new roadmap and research evidence justify a
+maintained paper. External comparisons, human studies, and that future paper
+are not release promises. Release commitments remain in the current code,
+tests, release process and
+[documentation catalog](../documentation-catalog.md), not in research notes.
 
 ## Archive map
 
@@ -77,5 +80,5 @@ in research notes.
 - [Current testing and quality gates](../testing.md)
 - [Operator model research](operator.md)
 - [Experimental graph-aware reranker](../development/graph-aware-answer-reranker.md)
-- [Paper package](../paper/README.md)
-- [ACL paper package](../paper/acl/README.md)
+- [Paused paper package, retained for later recovery](paper/README.md)
+- [ACL paper sources](paper/acl/README.md)

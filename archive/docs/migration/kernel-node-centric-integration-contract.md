@@ -1,6 +1,6 @@
 # Kernel Node-Centric Integration Contract
 
-Status: v1beta1 (see [beta-status.md](../../../docs/beta-status.md) for maturity and path to v1)
+Status: v1beta1 (see [archived beta-status.md](../beta-status.md) for the maturity assessment recorded at the time)
 
 ## Purpose
 
@@ -73,8 +73,8 @@ Important:
 
 See:
 
-- [`graph-batch-quickstart.md`](../../../docs/graph-batch-quickstart.md)
-- [`graph-batch-ingestion-api.md`](../../../docs/graph-batch-ingestion-api.md)
+- [`graph-batch-quickstart.md`](../graph-batch-quickstart.md)
+- [`graph-batch-ingestion-api.md`](../graph-batch-ingestion-api.md)
 
 ## What Consumers May Rely On
 

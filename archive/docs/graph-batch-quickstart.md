@@ -1,5 +1,8 @@
 # GraphBatch Quickstart
 
+> Archived: this is retained as historical integration guidance and is not a
+> current KMP entry point.
+
 The fastest way to feed new graph context into the kernel.
 
 ## Who this is for
@@ -65,13 +68,13 @@ let messages = graph_batch_to_projection_events(&batch, "rehydration", "incident
 Use these files as the source of truth:
 
 - Batch example:
-  [`api/examples/kernel/v1beta1/async/vllm-graph-batch.json`](../api/examples/kernel/v1beta1/async/vllm-graph-batch.json)
+  [`api/examples/kernel/v1beta1/async/vllm-graph-batch.json`](../../api/examples/kernel/v1beta1/async/vllm-graph-batch.json)
 - Batch schema:
-  [`api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json`](../api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json)
+  [`api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json`](../../api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json)
 - `vLLM` request example:
-  [`api/examples/inference-prompts/vllm-graph-materialization.request.json`](../api/examples/inference-prompts/vllm-graph-materialization.request.json)
+  [`api/examples/inference-prompts/vllm-graph-materialization.request.json`](../../api/examples/inference-prompts/vllm-graph-materialization.request.json)
 - Prompt:
-  [`api/examples/inference-prompts/graph-materialization.txt`](../api/examples/inference-prompts/graph-materialization.txt)
+  [`api/examples/inference-prompts/graph-materialization.txt`](../../api/examples/inference-prompts/graph-materialization.txt)
 
 ## What makes a good GraphBatch
 
@@ -115,15 +118,15 @@ There is also an experimental live repair path:
 
 See:
 
-- [`docs/testing.md`](testing.md)
-- [`docs/graph-batch-ingestion-api.md`](graph-batch-ingestion-api.md)
-- [archived GraphBatch decision record](../archive/docs/adr/ADR-008-graph-batch-ingestion-boundary.md)
+- [`docs/testing.md`](../../docs/testing.md)
+- [archived GraphBatch ingestion API](graph-batch-ingestion-api.md)
+- [archived GraphBatch decision record](adr/ADR-008-graph-batch-ingestion-boundary.md)
 
 ## Next documents
 
 - If you want the broad product view:
-  [`usage-guide.md`](usage-guide.md)
+  [archived usage guide](usage-guide.md)
 - If you want the proposed ingress API:
   [`graph-batch-ingestion-api.md`](graph-batch-ingestion-api.md)
 - If you want the current typed KMP boundary:
-  [`api/proto/README.md`](../api/proto/README.md)
+  [`api/proto/README.md`](../../api/proto/README.md)

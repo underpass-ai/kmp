@@ -24,6 +24,9 @@ Archived sections:
 
 Earlier standalone documents:
 
+- [Former usage guide](usage-guide.md)
+- [GraphBatch quickstart](graph-batch-quickstart.md)
+- [Experimental GraphBatch ingestion API](graph-batch-ingestion-api.md)
 - [Context Service Rust migration plan](CONTEXT_SERVICE_RUST_MIGRATION_PLAN.md)
 - [Incident-resolution product use case](PRODUCT_USECASE_INCIDENT_RESOLUTION.md)
 - [Context Service compatibility matrix](context-service-compatibility-matrix.md)

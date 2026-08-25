@@ -22,9 +22,6 @@ The operations router is [`operations/README.md`](operations/README.md).
 
 | Need | Current document |
 |:--|:--|
-| Use the typed APIs and model-producer path | [Usage guide](usage-guide.md) |
-| Start with GraphBatch | [GraphBatch quickstart](graph-batch-quickstart.md) |
-| Inspect the experimental GraphBatch boundary | [GraphBatch ingestion API](graph-batch-ingestion-api.md) |
 | Run tests and quality gates | [Testing](testing.md) |
 | Run the live E2E preflight | [Running E2E](development/running-e2e.md) |
 | Inspect telemetry | [Observability](observability.md) |

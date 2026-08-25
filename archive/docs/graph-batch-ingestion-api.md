@@ -1,5 +1,8 @@
 # GraphBatch Ingestion API
 
+> Archived: this proposal is retained for research and traceability. It is not
+> a current KMP API commitment.
+
 Status: Experimental
 Scope: proposed ingress API for graph materialization before stable contract freeze
 
@@ -47,11 +50,11 @@ It follows the same bounded rules already enforced by the testkit translator:
 
 Canonical JSON fixture:
 
-- [`api/examples/kernel/v1beta1/async/vllm-graph-batch.json`](../api/examples/kernel/v1beta1/async/vllm-graph-batch.json)
+- [`api/examples/kernel/v1beta1/async/vllm-graph-batch.json`](../../api/examples/kernel/v1beta1/async/vllm-graph-batch.json)
 
 Canonical JSON schema:
 
-- [`api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json`](../api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json)
+- [`api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json`](../../api/examples/kernel/v1beta1/async/vllm-graph-batch.schema.json)
 
 ### CommandMetadata
 
@@ -64,7 +67,7 @@ Command metadata should travel next to the batch, not inside its domain body:
 - `requested_at`
 
 This reuses the existing metadata concept already present in
-[`command.proto`](../api/proto/underpass/rehydration/kernel/v1beta1/command.proto).
+[`command.proto`](../../api/proto/underpass/rehydration/kernel/v1beta1/command.proto).
 
 ## Proposed API Shape
 

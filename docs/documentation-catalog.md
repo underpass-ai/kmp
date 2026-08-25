@@ -29,8 +29,10 @@ current class against the live KMP vocabulary and keeps it reachable from
 
 The [research summary](research/README.md) owns the active investigation into
 temporal and multidimensional memory analysis, decision outcomes, recurring
-conversation patterns and state-of-the-art agentic context. Research may guide
-future work, but it is not a release promise.
+conversation patterns and state-of-the-art agentic context. The
+[paper package](research/paper/README.md) is paused there with an explicit
+intention to recover it when new results justify publication. Research may
+guide future work, but it is not a release promise.
 
 ## Archive
 
@@ -47,6 +49,7 @@ spine:
 | [Integrations](../archive/docs/integrations/made-kmp.md) | Former product-specific guidance. |
 | [Research archive](../archive/docs/research/README.md) | Benchmarks, papers, demos, incidents and completed notebooks. |
 | [Showcase](../archive/docs/showcase/README.md) | Former public-pitch recordings and sources. |
+| [Legacy graph integration](../archive/docs/usage-guide.md) | Former usage guide, GraphBatch quickstart and experimental direct-ingestion proposal. |
 
 Archived paths may still appear inside fixtures or recorded evidence because
 those strings describe what existed when the evidence was produced. New code

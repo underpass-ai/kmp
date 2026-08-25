@@ -1,8 +1,11 @@
 # Usage Guide
 
+> Archived: this guide describes a former graph-materialization integration
+> path. It is retained for traceability and is not a current KMP entry point.
+
 How to give your AI agent graph-aware context in 3 steps.
 
-Most users integrating a model such as `vLLM` should start with
+The historical model-driven path begins with the archived
 [`graph-batch-quickstart.md`](graph-batch-quickstart.md).
 
 Mental model:
@@ -30,7 +33,7 @@ If you only remember one integration pattern from this page, use:
 
 Publish projection events to NATS. Each event materializes a node or detail
 in the kernel's graph store. Events follow the
-[AsyncAPI contract](../api/asyncapi/context-projection.v1beta1.yaml).
+[AsyncAPI contract](../../api/asyncapi/context-projection.v1beta1.yaml).
 
 ### Recommended for model producers: GraphBatch
 
@@ -105,7 +108,7 @@ Operational rule for model extraction:
 - keep the model-generation timeout policy separate from any future `GraphBatch` ingress timeout
 - if you use a `repair-judge`, give it its own timeout budget rather than sharing the primary model budget
 
-For the shortest end-to-end explanation of this write path, see
+For the shortest end-to-end explanation of this historical write path, see
 [`graph-batch-quickstart.md`](graph-batch-quickstart.md).
 
 ### If you already own the transport: raw projection events
@@ -528,16 +531,16 @@ relation spec, so it cannot drift):
   relation's own temporal coordinate.
 
 The current writer doctrine and worked examples live in the
-[`kmp-memory` skill](../plugins/kmp/skills/kmp-memory/SKILL.md#why-the-why-matters).
+[`kmp-memory` skill](../../plugins/kmp/skills/kmp-memory/SKILL.md#why-the-why-matters).
 
 ## Further Reading
 
-- [GraphBatch Quickstart](graph-batch-quickstart.md) — fastest model-driven path
-- [GraphBatch ingestion API](graph-batch-ingestion-api.md) — experimental ingress proposal
-- [Proto contracts](../api/proto/underpass/rehydration/kernel/v1beta1/) — gRPC API definition
-- [Embedded operations](operations/embedded/README.md) — run the KMP tools locally over MCP stdio
-- [AsyncAPI contract](../api/asyncapi/context-projection.v1beta1.yaml) — event schema
-- [Reference fixtures](../api/examples/kernel/v1beta1/grpc/) — example request/response JSON
-- [Runtime guarantees](runtime-guarantees.md) and [security model](security-model.md)
-- [Observability](observability.md) — quality metrics, OTel, Loki, Grafana
-- [Testing](testing.md) — how to run the test suite
+- [Archived GraphBatch quickstart](graph-batch-quickstart.md) — former model-driven path
+- [Archived GraphBatch ingestion API](graph-batch-ingestion-api.md) — experimental ingress proposal
+- [Proto contracts](../../api/proto/underpass/rehydration/kernel/v1beta1/) — gRPC API definition
+- [Current embedded operations](../../docs/operations/embedded/README.md) — run the KMP tools locally over MCP stdio
+- [AsyncAPI contract](../../api/asyncapi/context-projection.v1beta1.yaml) — event schema
+- [Reference fixtures](../../api/examples/kernel/v1beta1/grpc/) — example request/response JSON
+- [Runtime guarantees](../../docs/runtime-guarantees.md) and [security model](../../docs/security-model.md)
+- [Observability](../../docs/observability.md) — quality metrics, OTel, Loki, Grafana
+- [Testing](../../docs/testing.md) — how to run the test suite
