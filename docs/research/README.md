@@ -19,6 +19,7 @@ rehydration kernel research track.
 - [small-open-models-semantic-class-agent-2026.md](small-open-models-semantic-class-agent-2026.md) — Small open-model shortlist for the semantic-class agent (curated April 10, 2026)
 - [vllm-graph-extraction-strategy.md](vllm-graph-extraction-strategy.md) — Research note on schema-constrained graph extraction with vLLM
 - [benchmark-paper-use-cases.md](benchmark-paper-use-cases.md) — E2E evaluation matrix
+- [benchmark-methodology-v1.md](benchmark-methodology-v1.md) — benchmark scoring and evidence contract
 - [agentic-memory-benchmark-strategy-2026-05-06.md](agentic-memory-benchmark-strategy-2026-05-06.md) — Benchmark positioning: LongMemEval as secondary conversational-memory regression, MemoryArena/MemoryAgentBench as primary agentic-memory candidates
 - [memoryarena-benchmark.md](memoryarena-benchmark.md) — MemoryArena-to-KMP feasibility adapter and artifact contract
 - [memoryarena-paper-aligned-evaluator.md](memoryarena-paper-aligned-evaluator.md) — MemoryArena paper-aligned local evaluator contract and public extraction plan
@@ -32,4 +33,9 @@ rehydration kernel research track.
 - [mobile-login-resolution-replay-demo-2026-05-05.md](mobile-login-resolution-replay-demo-2026-05-05.md) — Live MCP resolution replay demo for a multi-agent mobile login incident
 - [demos/mobile-login-resolution-replay/](demos/mobile-login-resolution-replay/) — Static interactive incident replay for the mobile login demo
 - [incidents/](incidents/) — Benchmark post-mortems (2026-03-26)
+- [benchmark technical review](incidents/benchmark-2026-03-26-technical-review.md)
+- [A/B thinking wasted-run incident](incidents/incident-ab-thinking-wasted-run-2026-03-29.md)
+- [benchmark incident report](incidents/incident-report-benchmark-2026-03-26.md)
+- [E2E ground-truth incident report](incidents/incident-report-e2e-ground-truth-2026-03-26.md)
+- [vLLM thinking-configuration incident](incidents/incident-vllm-thinking-config-2026-03-29.md)
 - [paper/](../paper/) — LaTeX submission package

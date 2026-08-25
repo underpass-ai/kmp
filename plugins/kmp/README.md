@@ -56,6 +56,23 @@ explicit message naming both places it looked.
 asset, and a release package remains the way to install a pinned pair with no
 download step at all.
 
+### Catching up
+
+The session-start hook checks GitHub Releases at most once per day. It is
+silent when the plugin and engine are current, and fail-open when offline. If
+both halves are two releases behind together, it still notices — equality is
+not mistaken for freshness — and offers one command:
+
+```text
+/kmp:setup
+```
+
+Setup runs `scripts/kmp-update.sh`: Claude's native plugin update plus the
+checksummed engine from the same release. Codex uses `/kmp-setup`, which
+refreshes its prompts and doctrine from the versioned release as well. Both
+paths finish with one restart because a running host keeps the MCP inventory
+it started with.
+
 **Codex CLI** — no plugin system, so a script does the wiring:
 
 ```bash

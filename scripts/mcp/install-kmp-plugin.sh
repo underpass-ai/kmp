@@ -7,6 +7,7 @@
 #   bash scripts/mcp/install-kmp-plugin.sh --codex    # Codex CLI only
 #   bash scripts/mcp/install-kmp-plugin.sh --claude   # Claude Code only
 #   bash scripts/mcp/install-kmp-plugin.sh --dry-run  # show, change nothing
+#   bash scripts/mcp/install-kmp-plugin.sh --version 0.1.14 --codex
 #
 # Idempotent: re-running it is safe and reports "already wired" rather than
 # duplicating configuration. Works from a checkout or standalone, in which
@@ -22,12 +23,14 @@ REPO_RAW="${KMP_PLUGIN_RAW_BASE:-https://raw.githubusercontent.com/underpass-ai/
 DO_CODEX=0
 DO_CLAUDE=0
 DRY_RUN=0
+TARGET_VERSION=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --codex)   DO_CODEX=1 ;;
     --claude)  DO_CLAUDE=1 ;;
     --dry-run) DRY_RUN=1 ;;
+    --version) TARGET_VERSION="${2:?--version needs X.Y.Z}"; shift ;;
     -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -84,8 +87,34 @@ if [ -z "$BIN" ]; then
   fi
 fi
 
+if [ -n "$TARGET_VERSION" ]; then
+  TARGET_VERSION="${TARGET_VERSION#v}"
+  [[ "$TARGET_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]] || {
+    echo "   invalid target version: $TARGET_VERSION" >&2
+    exit 1
+  }
+fi
+
+INSTALLED_VERSION=""
 if [ -n "$BIN" ]; then
-  say "   already installed: $BIN"
+  INSTALLED_VERSION="$("$BIN" --version 2>/dev/null | head -1 | sed -E 's/^kmp-mcp ([^ ]+).*/\1/' || true)"
+fi
+
+if [ -n "$BIN" ] && { [ -z "$TARGET_VERSION" ] || [ "$INSTALLED_VERSION" = "$TARGET_VERSION" ]; }; then
+  say "   already installed: $BIN${INSTALLED_VERSION:+ ($INSTALLED_VERSION)}"
+elif [ -n "$TARGET_VERSION" ]; then
+  INSTALL_DIR="${KMP_INSTALL_DIR:-$HOME/.local/bin}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    act "install checksummed kmp-mcp ${TARGET_VERSION} into ${INSTALL_DIR}"
+    BIN="${INSTALL_DIR}/kmp-mcp"
+  else
+    ENGINE_INSTALLER="$(mktemp)"
+    fetch_asset "scripts/kmp-install-binary.sh" "$ENGINE_INSTALLER"
+    chmod +x "$ENGINE_INSTALLER"
+    bash "$ENGINE_INSTALLER" --version "$TARGET_VERSION" --dir "$INSTALL_DIR"
+    rm -f "$ENGINE_INSTALLER"
+    BIN="${INSTALL_DIR}/kmp-mcp"
+  fi
 else
   if [ "$DRY_RUN" -eq 1 ]; then
     act "cargo install --git https://github.com/underpass-ai/kmp kmp-mcp --locked"
@@ -123,6 +152,17 @@ else
   fetch_asset "scripts/kmp-install-binary.sh" "$SETUP"
   chmod +x "$SETUP"
   say "   engine installer at $SETUP"
+fi
+
+# One-command update path used by /kmp-setup. It refreshes Codex's copied
+# assets from a versioned release and installs the matching checksummed engine.
+UPDATE="$DOCTOR_DIR/kmp-update.sh"
+if [ "$DRY_RUN" -eq 1 ]; then
+  act "install the updater at $UPDATE"
+else
+  fetch_asset "scripts/kmp-update.sh" "$UPDATE"
+  chmod +x "$UPDATE"
+  say "   updater at $UPDATE"
 fi
 
 # Shared demo. The script resolves its own plugin root from its location, so
@@ -186,7 +226,7 @@ EOF
       fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
       # The Codex prompts have no plugin-root variable to lean on.
       sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
-        -e "s#@@SETUP@@#$SETUP#g" \
+        -e "s#@@SETUP@@#$SETUP#g" -e "s#@@UPDATE@@#$UPDATE#g" \
         "$CODEX_HOME/prompts/$p.md"
       rm -f "$CODEX_HOME/prompts/$p.md.bak"
     done

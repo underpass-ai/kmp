@@ -153,6 +153,14 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --locked
 
+      - name: Build the binary used by the public recordings
+        run: cargo build -p kmp-mcp --locked
+
+      - name: Documentation spine and pitch evidence
+        run: |
+          bash scripts/ci/documentation-spine.sh
+          bash scripts/ci/pitch-material.sh
+
   integration-valkey:
     needs: tree-proof
     if: needs.tree-proof.outputs.skip != 'true'

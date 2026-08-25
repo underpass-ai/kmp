@@ -8,6 +8,16 @@ bash "@@DOCTOR@@"
 Read the doctor before changing anything. If it says the memory is usable,
 say so and stop — there is nothing to install.
 
+If the session-start notice says a newer release exists, catch up the Codex
+prompts, memory doctrine and engine together:
+
+```bash
+bash "@@UPDATE@@" --codex
+```
+
+That is the one update command. Re-run the doctor afterwards and ask for one
+restart so Codex loads the refreshed MCP inventory.
+
 If the engine is missing or older than the plugin, install the matching one:
 
 ```bash

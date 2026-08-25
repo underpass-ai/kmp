@@ -204,7 +204,7 @@ printf '%s\n' "${RESPONSES}" | python3 "${CHECKER}" "${WORKSPACE_VERSION}"
 # The offer has to survive the marketplace shape too: a plugin that ships the
 # notice but not the installer would tell a user to run a command that is not
 # there. Both are tracked files, so both must land in the copy a host gets.
-for required in scripts/kmp-install-binary.sh scripts/kmp-version-notice.sh hooks/hooks.json; do
+for required in scripts/kmp-install-binary.sh scripts/kmp-update.sh scripts/kmp-version-notice.sh hooks/hooks.json; do
   [ -f "${INSTALLED}/$required" ] \
     || fail "$required is missing from the marketplace copy"
 done
@@ -221,10 +221,61 @@ grep -q "kmp:setup" "${WORK_DIR}/notice.txt" \
 # And when the engine matches, it says nothing at all. A hook that speaks every
 # session is a hook people turn off, and then it is not there on the day it
 # would have mattered.
-if ! CLAUDE_PLUGIN_ROOT="${INSTALLED}" \
+if ! KMP_LATEST_VERSION="${WORKSPACE_VERSION}" CLAUDE_PLUGIN_ROOT="${INSTALLED}" \
      bash "${INSTALLED}/scripts/kmp-version-notice.sh" > "${WORK_DIR}/quiet.txt" 2>&1; then
   fail "the version notice exited non-zero with a matching engine"
 fi
+
+# Equality between the plugin and engine is not freshness. Reproduce someone
+# exactly two patch releases behind and prove the in-product hook names both
+# versions and the single command that catches up both halves.
+STALE_VERSION="$(python3 - "$WORKSPACE_VERSION" <<'PY'
+import sys
+
+major, minor, patch = map(int, sys.argv[1].split(".")[:3])
+if patch < 2:
+    raise SystemExit("plugin install smoke needs a patch version >= 2")
+print(f"{major}.{minor}.{patch - 2}")
+PY
+)"
+STALE_PLUGIN="${WORK_DIR}/stale-plugin"
+cp -R "${INSTALLED}" "$STALE_PLUGIN"
+python3 - "$STALE_PLUGIN" "$STALE_VERSION" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+version = sys.argv[2]
+for relative in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
+    path = root / relative
+    body = json.loads(path.read_text())
+    body["version"] = version
+    path.write_text(json.dumps(body, indent=2) + "\n")
+PY
+STALE_BIN="${WORK_DIR}/stale-kmp-mcp"
+printf '#!/usr/bin/env bash\nprintf "kmp-mcp %s (store format 1)\\n"\n' \
+  "$STALE_VERSION" > "$STALE_BIN"
+chmod +x "$STALE_BIN"
+
+KMP_MCP_BIN="$STALE_BIN" KMP_LATEST_VERSION="$WORKSPACE_VERSION" \
+CLAUDE_PLUGIN_ROOT="$STALE_PLUGIN" \
+  bash "$STALE_PLUGIN/scripts/kmp-version-notice.sh" > "$WORK_DIR/stale-notice.txt"
+grep -q "${STALE_VERSION} is installed; ${WORKSPACE_VERSION} is out" \
+  "$WORK_DIR/stale-notice.txt" \
+  || { cat "$WORK_DIR/stale-notice.txt" >&2; fail "two-releases-behind notice lost the version delta"; }
+grep -q 'kmp:setup' "$WORK_DIR/stale-notice.txt" \
+  || fail "two-releases-behind notice does not offer the single catch-up command"
+
+# The catch-up script is safe to preview and contains both operations: native
+# plugin update and the matching checksummed engine install.
+CLAUDE_PLUGIN_ROOT="$INSTALLED" \
+  bash "$INSTALLED/scripts/kmp-update.sh" --claude --dry-run \
+    --version "$WORKSPACE_VERSION" > "$WORK_DIR/update-dry-run.txt"
+grep -q 'claude plugin update' "$WORK_DIR/update-dry-run.txt" \
+  || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the plugin"; }
+grep -q 'kmp-install-binary.sh' "$WORK_DIR/update-dry-run.txt" \
+  || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the engine"; }
 if [ -s "${WORK_DIR}/quiet.txt" ]; then
   cat "${WORK_DIR}/quiet.txt" >&2
   fail "the notice spoke while the engine and the plugin agree"
@@ -253,5 +304,14 @@ fi
 grep -q '^\[mcp_servers\.kernel-memory\]$' \
   "${MIGRATION_HOME}/.codex/config.toml.kmp-backup" \
   || fail "the installer did not preserve the pre-migration Codex config"
+
+# Codex copies the updater beside the binary installer rather than inside a
+# plugin root. Its one-command path must resolve that installed layout too.
+HOME="${MIGRATION_HOME}" XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
+  bash "${MIGRATION_HOME}/.local/share/kmp/bin/kmp-update.sh" \
+    --codex --dry-run --version "$WORKSPACE_VERSION" \
+    > "${WORK_DIR}/codex-update-dry-run.txt"
+grep -q 'refresh the Codex prompts' "${WORK_DIR}/codex-update-dry-run.txt" \
+  || { cat "${WORK_DIR}/codex-update-dry-run.txt" >&2; fail "Codex updater did not resolve its installed layout"; }
 
 echo "KMP plugin install smoke passed"

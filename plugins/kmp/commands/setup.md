@@ -14,6 +14,17 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-doctor.sh"
 
 Then act on what it reported.
 
+**A newer KMP release is available** — update the plugin and engine together.
+This is the one-command catch-up path offered by the session-start notice:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-update.sh"
+```
+
+It asks the native Claude plugin manager for the latest marketplace package,
+installs the engine from that same release with its published checksum, and
+then asks for one restart. Do not update only one half.
+
 **Binary missing, or older than these plugin files** — install the engine this
 plugin version expects. The installer downloads the release binary for this
 platform and verifies it against the checksum published beside it, so no Rust
