@@ -98,6 +98,26 @@ bash scripts/mcp/install-kmp-plugin.sh --codex --standalone
 The script works outside a checkout too, fetching what it needs from the
 repository. Pass `--dry-run` to preview its changes.
 
+### Agent routing policy
+
+`kmp-mcp config` shows the policy agents receive at MCP initialization and the
+file that owns it. With no file, genuinely semantic `kmp_ask` calls get one
+bounded English retry after the user's-language question returns `UNKNOWN`.
+Configure a different ordered list during setup with:
+
+```bash
+kmp-mcp config ask-fallback-languages en,fr
+# or disable retries
+kmp-mcp config ask-fallback-languages none
+```
+
+The fallback translates only the query. The answer follows the user's
+language; evidence text, refs, relation `why`, and source metadata remain
+byte-for-byte as stored. Temporal requests such as “yesterday” or a release
+window bypass semantic Ask: the agent resolves the user's timezone, navigates
+the half-open UTC interval and consumes every page. Setup and upgrades preserve
+the configured list.
+
 ## What you get
 
 ### For the agent — the `kmp-memory` skill

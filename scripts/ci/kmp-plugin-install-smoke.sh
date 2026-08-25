@@ -167,7 +167,7 @@ RESPONSES="$(
   cd "${WORK_DIR}" && printf '%s\n' \
     '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"install-smoke","version":"1"}}}' \
     '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-    | "${SERVER_COMMAND}" 2>/dev/null
+    | env XDG_CONFIG_HOME="${WORK_DIR}/config" "${SERVER_COMMAND}" 2>/dev/null
 )" || fail "the declared command failed to start"
 
 # --- 5. the surface the user came for -----------------------------------
@@ -224,6 +224,18 @@ if server_version != expected_version:
         f"note: the started binary reports {server_version}, workspace is "
         f"{expected_version} (PATH fallback resolved an older install)"
     )
+
+instructions = initialize["result"].get("instructions", "")
+for clause in (
+    "Temporal intent has precedence",
+    "half-open UTC interval [start, end)",
+    "Active Ask fallback languages: en",
+    "translate only the query",
+    "Answer in the user's language",
+    "Preserve evidence text, refs, relation why, and source metadata byte-for-byte",
+):
+    if clause not in instructions:
+        sys.exit(f"initialize agent policy omitted: {clause}")
 
 print(f"started {len(advertised)} tools from a marketplace-shaped install")
 PYCHECK
@@ -384,11 +396,37 @@ KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   > "${WORK_DIR}/plugin-mode.txt"
 grep -q 'mode — plugin-managed' "${WORK_DIR}/plugin-mode.txt" \
   || fail "setup did not select plugin-managed mode"
+grep -q 'ask fallback languages: en (default)' "${WORK_DIR}/plugin-mode.txt" \
+  || fail "setup did not report the default semantic Ask fallback"
 if [ -f "$PLUGIN_HOME/.codex/config.toml" ] \
     || [ -d "$PLUGIN_HOME/.codex/prompts" ] \
     || [ -f "$PLUGIN_HOME/.codex/AGENTS.md" ]; then
   fail "plugin-managed setup created standalone Codex wiring"
 fi
+if [ -f "$PLUGIN_HOME/.config/kmp/config.toml" ]; then
+  fail "reading the default agent policy created a user config"
+fi
+
+# Setup persists an explicitly selected fallback list, and a later upgrade
+# without that flag leaves the user-owned policy byte-for-byte unchanged.
+HOME="$PLUGIN_HOME" XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+    --ask-fallback-languages en,fr > "${WORK_DIR}/plugin-policy.txt"
+grep -q 'ask fallback languages: en, fr (configured)' "${WORK_DIR}/plugin-policy.txt" \
+  || fail "setup did not report the configured semantic Ask fallback"
+grep -qx 'ask_fallback_languages = \["en", "fr"\]' \
+  "$PLUGIN_HOME/.config/kmp/config.toml" \
+  || fail "setup did not persist the configured semantic Ask fallback"
+cp "$PLUGIN_HOME/.config/kmp/config.toml" "$WORK_DIR/policy-before.toml"
+HOME="$PLUGIN_HOME" XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+    > "${WORK_DIR}/plugin-policy-upgrade.txt"
+cmp "$WORK_DIR/policy-before.toml" "$PLUGIN_HOME/.config/kmp/config.toml" \
+  || fail "setup without a policy flag changed the configured fallback list"
 
 # A collision is diagnosed before config mutation. The plugin remains the
 # intended owner and setup names the exact command that removes the duplicate.

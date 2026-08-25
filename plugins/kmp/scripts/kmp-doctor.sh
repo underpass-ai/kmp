@@ -501,6 +501,38 @@ else
   fi
 fi
 
+# --------------------------------------------------------- agent policy ----
+section "Agent"
+
+# This is orchestration policy, not retrieval behavior inside the kernel.
+# Reading it must never create the config: an absent file means the bounded
+# English fallback default is active.
+if POLICY_OUTPUT="$("$BIN" config 2>&1)"; then
+  POLICY_LANGUAGES="$(
+    printf '%s\n' "$POLICY_OUTPUT" \
+      | sed -n 's/^ask fallback languages: //p' \
+      | head -1
+  )"
+  POLICY_PATH="$(
+    printf '%s\n' "$POLICY_OUTPUT" \
+      | sed -n 's/^config: //p' \
+      | head -1
+  )"
+  if [ -n "$POLICY_LANGUAGES" ]; then
+    ok "semantic Ask fallback: $POLICY_LANGUAGES"
+  else
+    warn "the binary returned an unreadable agent policy"
+    info "$POLICY_OUTPUT"
+  fi
+  [ -n "$POLICY_PATH" ] && info "config: $POLICY_PATH"
+  info "temporal intent bypasses Ask and navigates time first"
+  info "only the query may be translated; stored evidence stays byte-for-byte"
+else
+  warn "this binary predates configurable agent routing"
+  info "$POLICY_OUTPUT"
+  info "update the engine and plugin together; no language fallback is assumed"
+fi
+
 # ----------------------------------------------------------- host wiring ----
 section "Hosts"
 

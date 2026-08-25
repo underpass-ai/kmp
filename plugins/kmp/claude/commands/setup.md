@@ -1,6 +1,6 @@
 ---
 description: Install and wire KMP agent memory for this machine (binary, Claude Code, Codex CLI)
-argument-hint: "[--codex] [--claude]"
+argument-hint: "[--codex] [--claude] [--ask-fallback-languages en,fr|none]"
 ---
 
 Get KMP memory working on this machine. Diagnose first, then fix only what is
@@ -80,6 +80,25 @@ Refuse standalone setup while the KMP plugin is enabled. If both owners
 already exist, name the collision before changing configuration.
 
 If `$ARGUMENTS` names a host, restrict the work to that host.
+
+**Agent language policy** — show it during setup:
+
+```bash
+kmp-mcp config
+```
+
+With no user config, semantic `kmp_ask` retries are bounded to English after
+the question in the user's language returns `UNKNOWN`; temporal requests do
+not use this fallback. If `$ARGUMENTS` supplies `--ask-fallback-languages`,
+persist its comma-separated value (or `none`) with:
+
+```bash
+kmp-mcp config ask-fallback-languages <tags|none>
+```
+
+Answer in the user's language, but translate only the retry query. Never
+translate or rewrite stored evidence, refs, relation `why`, or source metadata.
+An upgrade must preserve the existing policy.
 
 Finish by re-running the doctor and telling the user whether memory is now
 answering. If the only thing left is a stale session, say that plainly — it

@@ -1,0 +1,85 @@
+{
+  "timezone": "Europe/Madrid",
+  "local_interval": {
+    "start": "2026-08-24T00:00:00",
+    "end": "2026-08-25T00:00:00"
+  },
+  "expected_utc_interval": {
+    "start": "2026-08-23T22:00:00Z",
+    "end": "2026-08-24T22:00:00Z"
+  },
+  "temporal_pages": [
+    {
+      "entries": [
+        {
+          "ref": "project:kmp:outcome:day-start",
+          "timestamp": "2026-08-23T22:00:00Z"
+        },
+        {
+          "ref": "project:kmp:decision:language-routing",
+          "timestamp": "2026-08-24T10:15:00Z"
+        }
+      ],
+      "next_cursor": "project:kmp:decision:language-routing"
+    },
+    {
+      "entries": [
+        {
+          "ref": "project:kmp:outcome:release-ready",
+          "timestamp": "2026-08-24T21:59:59Z"
+        },
+        {
+          "ref": "project:kmp:outcome:next-day",
+          "timestamp": "2026-08-24T22:00:00Z"
+        }
+      ],
+      "next_cursor": null
+    }
+  ],
+  "temporal_cases": [
+    {
+      "language": "en",
+      "prompt": "What happened yesterday, 24 August, in KMP?",
+      "tool_trace": [
+        "kmp_forward:2026-08-23T22:00:00Z",
+        "kmp_forward:project:kmp:decision:language-routing"
+      ],
+      "material_refs": [
+        "project:kmp:outcome:day-start",
+        "project:kmp:decision:language-routing",
+        "project:kmp:outcome:release-ready"
+      ]
+    },
+    {
+      "language": "es",
+      "prompt": "¿Qué se hizo ayer, 24 de agosto, en KMP?",
+      "tool_trace": [
+        "kmp_forward:2026-08-23T22:00:00Z",
+        "kmp_forward:project:kmp:decision:language-routing"
+      ],
+      "material_refs": [
+        "project:kmp:outcome:day-start",
+        "project:kmp:decision:language-routing",
+        "project:kmp:outcome:release-ready"
+      ]
+    }
+  ],
+  "semantic_case": {
+    "user_language": "es",
+    "question": "¿Por qué se eligió redb para el almacén embebido?",
+    "primary_result": "UNKNOWN",
+    "fallback_languages": [
+      "en"
+    ],
+    "translated_queries": [
+      "Why was redb chosen for the embedded store?"
+    ],
+    "answer_language": "es",
+    "stored_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"docs/adr/ADR-011.md\",\"line\":42}}",
+    "fallback_returned_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"docs/adr/ADR-011.md\",\"line\":42}}",
+    "tool_trace": [
+      "kmp_ask:es",
+      "kmp_ask:en"
+    ]
+  }
+}

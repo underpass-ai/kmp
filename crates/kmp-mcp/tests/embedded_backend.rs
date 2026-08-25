@@ -581,6 +581,109 @@ fn relation_why_seed_arguments() -> Value {
     })
 }
 
+fn language_fallback_seed_arguments() -> Value {
+    json!({
+        "about": "project:language-fallback",
+        "idempotency_key": "ingest:language-fallback-evidence",
+        "memory": {
+            "dimensions": [{"id": "work:language-fallback", "kind": "work"}],
+            "entries": [
+                {
+                    "id": "decision:embedded-redb",
+                    "kind": "decision",
+                    "text": "The embedded store uses redb.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:language-fallback",
+                        "occurred_at": "2026-08-24T10:15:00Z",
+                        "sequence": 1
+                    }]
+                },
+                {
+                    "id": "constraint:single-writer-ownership",
+                    "kind": "constraint",
+                    "text": "One writer matches one agent per project.",
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:language-fallback",
+                        "occurred_at": "2026-08-24T10:16:00Z",
+                        "sequence": 2
+                    }]
+                }
+            ],
+            "relations": [{
+                "from": "decision:embedded-redb",
+                "to": "constraint:single-writer-ownership",
+                "rel": "uses_background",
+                "class": "evidential",
+                "why": "The single-writer model matches the product's per-project agent ownership.",
+                "evidence": "ADR-011 records one writer per redb store.",
+                "confidence": "high"
+            }],
+            "evidence": [{
+                "id": "evidence:embedded-redb-choice",
+                "supports": ["decision:embedded-redb"],
+                "text": "We chose redb because one writer matched one agent per project.",
+                "source": "docs/adr/ADR-011.md:42",
+                "metadata": {"language": "en", "digest": "sha256:language-fixture"}
+            }]
+        }
+    })
+}
+
+#[tokio::test]
+async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it() {
+    const TEXT: &str = "We chose redb because one writer matched one agent per project.";
+    const WHY: &str = "The single-writer model matches the product's per-project agent ownership.";
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", language_fallback_seed_arguments()).await;
+
+    let spanish = call(
+        &server,
+        2,
+        "kmp_ask",
+        json!({
+            "about": "project:language-fallback",
+            "question": "¿Qué motivó escoger el almacén local y con qué modelo de propiedad encaja?",
+            "answer_policy": "evidence_or_unknown"
+        }),
+    )
+    .await;
+    assert_eq!(spanish["answer"], "UNKNOWN", "{spanish}");
+
+    let english = call(
+        &server,
+        3,
+        "kmp_ask",
+        json!({
+            "about": "project:language-fallback",
+            "question": "Why does the embedded store use redb and which ownership model does it match?",
+            "answer_policy": "evidence_or_unknown"
+        }),
+    )
+    .await;
+    assert_ne!(english["answer"], "UNKNOWN", "{english}");
+    let evidence = english["proof"]["evidence"]
+        .as_array()
+        .expect("English retry carries evidence")
+        .iter()
+        .find(|evidence| evidence["id"] == "detail:evidence:embedded-redb-choice")
+        .expect("English retry cites the stored evidence");
+    assert_eq!(evidence["text"], TEXT);
+    assert_eq!(evidence["source"], "docs/adr/ADR-011.md:42");
+    assert_eq!(evidence["metadata"]["language"], "en");
+    assert_eq!(evidence["metadata"]["digest"], "sha256:language-fixture");
+    assert!(
+        english["proof"]["path"]
+            .as_array()
+            .expect("English retry carries relation context")
+            .iter()
+            .any(|relation| relation["why"] == WHY),
+        "{english}"
+    );
+}
+
 #[tokio::test]
 async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let data_dir = tempfile::tempdir().expect("temp data dir");

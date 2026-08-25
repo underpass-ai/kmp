@@ -20,7 +20,11 @@ plugin is enabled.
 
 Show the active semantic-Ask fallback policy with `kmp-mcp config`. Change it
 with `kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
-user requests a different list. Upgrades must leave this user policy intact.
+user requests a different list; `none` disables retries. With no config, one
+English retry is active by default. Explain that only a semantic query may be
+translated: answer in the user's language and preserve stored evidence, refs,
+relation `why`, and source metadata byte-for-byte. Temporal requests navigate
+time and never enter this fallback. Upgrades must leave this policy intact.
 
 Finish by rerunning the doctor. A running Codex session needs one restart to
 load changed skills or MCP wiring.
