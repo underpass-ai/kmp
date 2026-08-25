@@ -165,9 +165,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let ingest_started = Instant::now();
         let ingest_response =
-            call_mcp_tool(&server, request_id, "kernel_ingest", &ingest.arguments).await?;
+            call_mcp_tool(&server, request_id, "kmp_ingest", &ingest.arguments).await?;
         request_id = request_id.checked_add(1).ok_or("request id overflow")?;
-        assert_tool_success(&ingest_response, "kernel_ingest", &ingest.question_id)?;
+        assert_tool_success(&ingest_response, "kmp_ingest", &ingest.question_id)?;
         let ingest_elapsed_ms = ingest_started.elapsed().as_millis();
 
         if let Some(writer) = smart_writer.as_ref() {
@@ -189,9 +189,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
 
         let ask_started = Instant::now();
-        let ask_response = call_mcp_tool(&server, request_id, "kernel_ask", &ask.arguments).await?;
+        let ask_response = call_mcp_tool(&server, request_id, "kmp_ask", &ask.arguments).await?;
         request_id = request_id.checked_add(1).ok_or("request id overflow")?;
-        let ask_content = assert_tool_success(&ask_response, "kernel_ask", &ask.question_id)?;
+        let ask_content = assert_tool_success(&ask_response, "kmp_ask", &ask.question_id)?;
         let ask_elapsed_ms = ask_started.elapsed().as_millis();
 
         let observed_refs = collect_observed_evidence_refs(ask_content);

@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 use serde_json::Value;
 
-use kmp_mcp::kernel_mcp_tool_names;
+use kmp_mcp::kmp_mcp_tool_names;
 use kmp_testkit::{
     kernel_operator_allowed_full_tools, kernel_operator_allowed_read_tools,
     kernel_operator_is_bounded_tool_call,
@@ -114,7 +114,7 @@ fn build_report(
     args: &Args,
     trajectories: Option<&[Value]>,
 ) -> Result<CoverageReport, Box<dyn Error + Send + Sync>> {
-    let mcp_tools = kernel_mcp_tool_names().into_iter().collect::<BTreeSet<_>>();
+    let mcp_tools = kmp_mcp_tool_names().into_iter().collect::<BTreeSet<_>>();
     let operator_tools = match args.profile {
         Profile::Read => kernel_operator_allowed_read_tools(),
         Profile::Full => kernel_operator_allowed_full_tools(),
@@ -209,15 +209,15 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
                 group: "mode",
             },
             Capability {
-                id: "tool:kernel_near",
+                id: "tool:kmp_near",
                 group: "tool",
             },
             Capability {
-                id: "tool:kernel_inspect",
+                id: "tool:kmp_inspect",
                 group: "tool",
             },
             Capability {
-                id: "tool:kernel_trace",
+                id: "tool:kmp_trace",
                 group: "tool",
             },
             Capability {
@@ -265,15 +265,15 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
                 group: "writer_state",
             },
             Capability {
-                id: "writer.last_tool:kernel_near",
+                id: "writer.last_tool:kmp_near",
                 group: "writer_state",
             },
             Capability {
-                id: "writer.last_tool:kernel_inspect",
+                id: "writer.last_tool:kmp_inspect",
                 group: "writer_state",
             },
             Capability {
-                id: "writer.last_tool:kernel_trace",
+                id: "writer.last_tool:kmp_trace",
                 group: "writer_state",
             },
             Capability {
@@ -292,35 +292,35 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
     }
     let mut capabilities = vec![
         Capability {
-            id: "tool:kernel_wake",
+            id: "tool:kmp_wake",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_ask",
+            id: "tool:kmp_ask",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_near",
+            id: "tool:kmp_near",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_goto",
+            id: "tool:kmp_goto",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_rewind",
+            id: "tool:kmp_rewind",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_forward",
+            id: "tool:kmp_forward",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_trace",
+            id: "tool:kmp_trace",
             group: "tool",
         },
         Capability {
-            id: "tool:kernel_inspect",
+            id: "tool:kmp_inspect",
             group: "tool",
         },
         Capability {
@@ -391,11 +391,11 @@ fn required_capability_ids(profile: Profile) -> Vec<Capability> {
     if profile == Profile::Full {
         capabilities.extend([
             Capability {
-                id: "tool:kernel_ingest",
+                id: "tool:kmp_ingest",
                 group: "tool",
             },
             Capability {
-                id: "tool:kernel_write_memory",
+                id: "tool:kmp_write_memory",
                 group: "tool",
             },
             Capability {
@@ -432,15 +432,14 @@ fn contract_supports(
         "inspect.raw:false" => bounded_inspect_raw_false(),
         "mode:write_context_read"
         | "writer.last_tool:none"
-        | "writer.last_tool:kernel_near"
-        | "writer.last_tool:kernel_inspect"
-        | "writer.last_tool:kernel_trace"
+        | "writer.last_tool:kmp_near"
+        | "writer.last_tool:kmp_inspect"
+        | "writer.last_tool:kmp_trace"
         | "writer.candidate_role:previous_subtask_answer"
         | "writer.candidate_role:same_subtask_question"
         | "writer.candidate_pool:ambiguous" => true,
         "write:relation_quality" | "write:read_context_proof" => {
-            mcp_tools.contains("kernel_write_memory")
-                && operator_tools.contains("kernel_write_memory")
+            mcp_tools.contains("kmp_write_memory") && operator_tools.contains("kmp_write_memory")
         }
         _ => false,
     }
@@ -462,7 +461,7 @@ fn bounded_temporal_cursor(id: &str) -> bool {
         "budget": { "depth": 3, "tokens": 2400 },
         "window": { "before_entries": 6, "after_entries": 0 }
     });
-    kernel_operator_is_bounded_tool_call("kernel_near", &arguments)
+    kernel_operator_is_bounded_tool_call("kmp_near", &arguments)
 }
 
 fn validated_dimension_mode(id: &str) -> bool {
@@ -498,7 +497,7 @@ fn validated_dimension_scope(id: &str) -> bool {
 fn action_contract_accepts_dimensions(dimensions: Value) -> bool {
     let action = serde_json::json!({
         "type": "tool_call",
-        "tool": "kernel_ask",
+        "tool": "kmp_ask",
         "arguments": {
             "about": "about:1",
             "answer_policy": "evidence_or_unknown",
@@ -522,12 +521,12 @@ fn bounded_trace_page(id: &str) -> bool {
         "budget": { "depth": 2, "tokens": 2400 },
         "page": page
     });
-    kernel_operator_is_bounded_tool_call("kernel_trace", &arguments)
+    kernel_operator_is_bounded_tool_call("kmp_trace", &arguments)
 }
 
 fn bounded_inspect_raw_false() -> bool {
     kernel_operator_is_bounded_tool_call(
-        "kernel_inspect",
+        "kmp_inspect",
         &serde_json::json!({
             "ref": "node:1",
             "include": { "details": true, "incoming": true, "outgoing": true, "raw": false }
@@ -569,18 +568,14 @@ fn observe_writer_pre_read_state(row: &Value, observed: &mut ObservedCoverage) {
         return;
     };
     match state.get("last_tool").and_then(Value::as_str) {
-        Some("kernel_near") => {
-            observed.capabilities.insert("writer.last_tool:kernel_near");
+        Some("kmp_near") => {
+            observed.capabilities.insert("writer.last_tool:kmp_near");
         }
-        Some("kernel_inspect") => {
-            observed
-                .capabilities
-                .insert("writer.last_tool:kernel_inspect");
+        Some("kmp_inspect") => {
+            observed.capabilities.insert("writer.last_tool:kmp_inspect");
         }
-        Some("kernel_trace") => {
-            observed
-                .capabilities
-                .insert("writer.last_tool:kernel_trace");
+        Some("kmp_trace") => {
+            observed.capabilities.insert("writer.last_tool:kmp_trace");
         }
         None if state.get("last_tool").is_some_and(Value::is_null) => {
             observed.capabilities.insert("writer.last_tool:none");
@@ -635,16 +630,16 @@ fn observe_action(action: &Value, observed: &mut ObservedCoverage) {
     };
     observe_dimensions(arguments, observed);
     match tool {
-        "kernel_near" => observe_cursor(arguments.get("around"), observed),
-        "kernel_goto" => observe_cursor(arguments.get("at"), observed),
-        "kernel_rewind" | "kernel_forward" => observe_cursor(arguments.get("from"), observed),
-        "kernel_trace" => observe_trace_page(arguments, observed),
-        "kernel_inspect"
+        "kmp_near" => observe_cursor(arguments.get("around"), observed),
+        "kmp_goto" => observe_cursor(arguments.get("at"), observed),
+        "kmp_rewind" | "kmp_forward" => observe_cursor(arguments.get("from"), observed),
+        "kmp_trace" => observe_trace_page(arguments, observed),
+        "kmp_inspect"
             if arguments.pointer("/include/raw").and_then(Value::as_bool) == Some(false) =>
         {
             observed.capabilities.insert("inspect.raw:false");
         }
-        "kernel_write_memory" => observe_write_memory(arguments, observed),
+        "kmp_write_memory" => observe_write_memory(arguments, observed),
         _ => {}
     }
     observe_window(arguments, observed);
@@ -652,16 +647,16 @@ fn observe_action(action: &Value, observed: &mut ObservedCoverage) {
 
 fn match_tool_capability(tool: &str) -> Option<&'static str> {
     match tool {
-        "kernel_wake" => Some("tool:kernel_wake"),
-        "kernel_ask" => Some("tool:kernel_ask"),
-        "kernel_near" => Some("tool:kernel_near"),
-        "kernel_goto" => Some("tool:kernel_goto"),
-        "kernel_rewind" => Some("tool:kernel_rewind"),
-        "kernel_forward" => Some("tool:kernel_forward"),
-        "kernel_trace" => Some("tool:kernel_trace"),
-        "kernel_inspect" => Some("tool:kernel_inspect"),
-        "kernel_ingest" => Some("tool:kernel_ingest"),
-        "kernel_write_memory" => Some("tool:kernel_write_memory"),
+        "kmp_wake" => Some("tool:kmp_wake"),
+        "kmp_ask" => Some("tool:kmp_ask"),
+        "kmp_near" => Some("tool:kmp_near"),
+        "kmp_goto" => Some("tool:kmp_goto"),
+        "kmp_rewind" => Some("tool:kmp_rewind"),
+        "kmp_forward" => Some("tool:kmp_forward"),
+        "kmp_trace" => Some("tool:kmp_trace"),
+        "kmp_inspect" => Some("tool:kmp_inspect"),
+        "kmp_ingest" => Some("tool:kmp_ingest"),
+        "kmp_write_memory" => Some("tool:kmp_write_memory"),
         _ => None,
     }
 }

@@ -19,11 +19,11 @@ none of it.
 
 | Move | What it finds here |
 | --- | --- |
-| `kernel_wake` | the incident's state, its decisions and what closed it |
-| `kernel_ask` | "why did the rollback not fix the latency" — answered from evidence |
-| `kernel_trace` | six-hop path from the first symptom to the constraint that ended it |
-| `kernel_rewind` / `kernel_goto` | the store at 15:05, when the rollback still looked right |
-| `kernel_inspect` | any node with its links and the evidence behind them |
+| `kmp_wake` | the incident's state, its decisions and what closed it |
+| `kmp_ask` | "why did the rollback not fix the latency" — answered from evidence |
+| `kmp_trace` | six-hop path from the first symptom to the constraint that ended it |
+| `kmp_rewind` / `kmp_goto` | the store at 15:05, when the rollback still looked right |
+| `kmp_inspect` | any node with its links and the evidence behind them |
 
 The graph carries every rich relation class: `supports` (evidential),
 `chosen_because` (causal), `contradicts` (evidential — the rollback being

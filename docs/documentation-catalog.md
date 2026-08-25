@@ -48,9 +48,9 @@ The current roadmap is:
 1. Keep KMP as the API-first memory protocol: ingest, wake, ask, temporal
    moves, trace, and inspect.
 2. Keep MCP as an adapter over KMP, not the owner of memory behavior.
-3. Keep `kernel_ingest` / `KernelMemoryService.Ingest` as the canonical
+3. Keep `kmp_ingest` / `KernelMemoryService.Ingest` as the canonical
    low-level write path.
-4. Use `kernel_write_memory` as the writer-friendly MCP helper above canonical
+4. Use `kmp_write_memory` as the writer-friendly MCP helper above canonical
    ingest, with strict relation quality and read-context proof.
 5. Treat MemoryArena and MemoryAgentBench as primary agentic-memory benchmarks.
 6. Keep LongMemEval as a secondary conversational-memory regression and reader
@@ -113,14 +113,14 @@ Fixed or clarified:
   now documented as NATS projection consumer processing time, not full
   publish-to-queryable latency.
 - Plugin docs now state explicitly that interpretation plugins are not
-  automatically run by `kernel_ask`; readers/adapters must compose them.
-- Writer protocol docs now reflect the implemented `kernel_write_memory` helper
+  automatically run by `kmp_ask`; readers/adapters must compose them.
+- Writer protocol docs now reflect the implemented `kmp_write_memory` helper
   and leave the remaining P1 work visible.
 
 Open documentation gaps:
 
 - Add a short KMP "happy path" guide showing a human and an LLM using
-  `kernel_write_memory`, `near`, `trace`, and `inspect` together.
+  `kmp_write_memory`, `near`, `trace`, and `inspect` together.
 - Add a conformance-oriented API page that says which behavior is protocol
   semantics and which behavior is adapter/backend-specific.
 - Keep benchmark docs marked as "official", "local scorecard", "reader check",

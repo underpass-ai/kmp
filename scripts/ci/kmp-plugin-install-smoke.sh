@@ -127,6 +127,8 @@ print(name, command)
 PY
 )"
 
+[[ "${SERVER_NAME}" == "kmp" ]] \
+  || fail "the marketplace server id is ${SERVER_NAME}; expected kmp"
 [[ -x "${SERVER_COMMAND}" ]] || fail "declared command is not executable: ${SERVER_COMMAND}"
 
 export KMP_MCP_BACKEND=embedded
@@ -148,16 +150,16 @@ import sys
 
 expected_version = sys.argv[1]
 expected_tools = {
-    "kernel_ingest",
-    "kernel_write_memory",
-    "kernel_wake",
-    "kernel_ask",
-    "kernel_goto",
-    "kernel_near",
-    "kernel_rewind",
-    "kernel_forward",
-    "kernel_trace",
-    "kernel_inspect",
+    "kmp_ingest",
+    "kmp_write_memory",
+    "kmp_wake",
+    "kmp_ask",
+    "kmp_goto",
+    "kmp_near",
+    "kmp_rewind",
+    "kmp_forward",
+    "kmp_trace",
+    "kmp_inspect",
 }
 
 responses = {}
@@ -178,8 +180,12 @@ if listing is None or "result" not in listing:
 
 advertised = {tool["name"] for tool in listing["result"]["tools"]}
 missing = expected_tools - advertised
-if missing:
-    sys.exit(f"the started server does not advertise {sorted(missing)}")
+unexpected = advertised - expected_tools
+if missing or unexpected:
+    sys.exit(
+        "the started server surface differs: "
+        f"missing={sorted(missing)}, unexpected={sorted(unexpected)}"
+    )
 
 server_version = initialize["result"]["serverInfo"]["version"]
 if server_version != expected_version:
@@ -223,5 +229,29 @@ if [ -s "${WORK_DIR}/quiet.txt" ]; then
   cat "${WORK_DIR}/quiet.txt" >&2
   fail "the notice spoke while the engine and the plugin agree"
 fi
+
+# A previous Codex install used the `kernel-memory` registration id. Re-running
+# setup must migrate that exact block in place, keeping a recoverable copy and
+# never leaving two servers pointing at the same store.
+MIGRATION_HOME="${WORK_DIR}/migration-home"
+mkdir -p "${MIGRATION_HOME}/.codex"
+printf '%s\n' \
+  '[mcp_servers.kernel-memory]' \
+  'command = "/previous/kmp-mcp"' \
+  'env = { KMP_MCP_BACKEND = "embedded" }' \
+  > "${MIGRATION_HOME}/.codex/config.toml"
+HOME="${MIGRATION_HOME}" \
+XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+  > "${WORK_DIR}/migration.txt"
+grep -q '^\[mcp_servers\.kmp\]$' "${MIGRATION_HOME}/.codex/config.toml" \
+  || fail "the installer did not migrate the Codex server id to kmp"
+if grep -q '^\[mcp_servers\.kernel-memory\]$' "${MIGRATION_HOME}/.codex/config.toml"; then
+  fail "the installer left the former Codex server id behind"
+fi
+grep -q '^\[mcp_servers\.kernel-memory\]$' \
+  "${MIGRATION_HOME}/.codex/config.toml.kmp-backup" \
+  || fail "the installer did not preserve the pre-migration Codex config"
 
 echo "KMP plugin install smoke passed"

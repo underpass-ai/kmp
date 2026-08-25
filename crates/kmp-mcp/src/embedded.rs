@@ -244,12 +244,12 @@ async fn embedded_tool_result(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     match name {
-        "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
+        "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             embedded_ingest(service, arguments).await
         }
-        "kernel_wake" => embedded_wake(service, observer, arguments).await,
-        "kernel_ask" => embedded_ask(service, observer, arguments).await,
-        "kernel_goto" => {
+        "kmp_wake" => embedded_wake(service, observer, arguments).await,
+        "kmp_ask" => embedded_ask(service, observer, arguments).await,
+        "kmp_goto" => {
             embedded_temporal(
                 service,
                 observer,
@@ -259,8 +259,8 @@ async fn embedded_tool_result(
             )
             .await
         }
-        "kernel_near" => embedded_near(service, observer, arguments).await,
-        "kernel_rewind" => {
+        "kmp_near" => embedded_near(service, observer, arguments).await,
+        "kmp_rewind" => {
             embedded_temporal(
                 service,
                 observer,
@@ -270,7 +270,7 @@ async fn embedded_tool_result(
             )
             .await
         }
-        "kernel_forward" => {
+        "kmp_forward" => {
             embedded_temporal(
                 service,
                 observer,
@@ -280,8 +280,8 @@ async fn embedded_tool_result(
             )
             .await
         }
-        "kernel_trace" => embedded_trace(service, observer, arguments).await,
-        "kernel_inspect" => embedded_inspect(service, arguments).await,
+        "kmp_trace" => embedded_trace(service, observer, arguments).await,
+        "kmp_inspect" => embedded_inspect(service, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),
@@ -324,7 +324,7 @@ async fn embedded_wake(
         .map_err(kernel_error("wake", &about))?;
     observe_quality(
         observer,
-        "kernel_wake",
+        "kmp_wake",
         result.bundle.root_node_id().as_str(),
         result.bundle.role().as_str(),
         &result.rendered.quality,
@@ -352,7 +352,7 @@ async fn embedded_ask(
         .map_err(kernel_error("ask", &about))?;
     observe_quality(
         observer,
-        "kernel_ask",
+        "kmp_ask",
         result.bundle.root_node_id().as_str(),
         result.bundle.role().as_str(),
         &result.rendered.quality,
@@ -386,7 +386,7 @@ async fn embedded_temporal(
         .map_err(kernel_error(direction_name, &about))?;
     observe_quality(
         observer,
-        &format!("kernel_{direction_name}"),
+        &format!("kmp_{direction_name}"),
         result.source_bundle.root_node_id().as_str(),
         result.source_bundle.role().as_str(),
         &result.quality,
@@ -416,7 +416,7 @@ async fn embedded_near(
         .map_err(kernel_error("near", &about))?;
     observe_quality(
         observer,
-        "kernel_near",
+        "kmp_near",
         result.source_bundle.root_node_id().as_str(),
         result.source_bundle.role().as_str(),
         &result.quality,
@@ -446,7 +446,7 @@ async fn embedded_trace(
         .map_err(kernel_error("trace", &from))?;
     observe_quality(
         observer,
-        "kernel_trace",
+        "kmp_trace",
         result.path_bundle.root_node_id().as_str(),
         result.path_bundle.role().as_str(),
         &result.rendered.quality,
@@ -491,7 +491,7 @@ mod retry_tests {
         let request = json!({"ref": "missing:test"});
 
         let locked = backend
-            .call_tool("kernel_inspect", &request)
+            .call_tool("kmp_inspect", &request)
             .await
             .expect_err("the other owner still holds redb");
         assert!(
@@ -501,7 +501,7 @@ mod retry_tests {
 
         drop(holder);
         let recovered = backend
-            .call_tool("kernel_inspect", &request)
+            .call_tool("kmp_inspect", &request)
             .await
             .expect_err("the node is absent, but the store now opens");
         assert!(

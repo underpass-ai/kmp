@@ -15,7 +15,7 @@ Current integration status, 2026-05-09:
 - `kmp-plugin-api` and `kmp-interpretation` are implemented.
 - `ComposedEvidenceReader` is implemented for in-process readers and benchmark
   adapters.
-- KMP/gRPC/MCP `kernel_ask` does not automatically run interpretation plugins.
+- KMP/gRPC/MCP `kmp_ask` does not automatically run interpretation plugins.
   It remains deterministic evidence retrieval. A reader, agent, benchmark
   harness, SDK, or future helper must explicitly compose plugins over returned
   evidence.

@@ -31,7 +31,7 @@ In a project directory, say it in plain words:
 > matched one agent per project, and sqlite stayed opt-in for the case of two
 > hosts sharing a store.
 
-The agent stores it with `kernel_write_memory`, under an *about* — a stable id
+The agent stores it with `kmp_write_memory`, under an *about* — a stable id
 for what the memory is about, conventionally `project:<name>`. The decision
 lands with its reason attached, as a typed relation, not as a loose note.
 
@@ -41,7 +41,7 @@ Open a new session in the same directory and ask:
 
 > What do we know about this project?
 
-The agent calls `kernel_wake { about: "project:<name>" }` and gets back where
+The agent calls `kmp_wake { about: "project:<name>" }` and gets back where
 the work stood, your decision among it, with the why still attached. The
 second session did not re-derive it and did not read the first one's
 transcript. That is the whole claim, and you just watched it happen.
@@ -71,7 +71,7 @@ by hand:
 
 ```bash
 cargo install kmp-mcp
-claude mcp add kernel-memory --scope user -- ~/.cargo/bin/kmp-mcp
+claude mcp add kmp --scope user -- ~/.cargo/bin/kmp-mcp
 ```
 
 No `--env` and no endpoint: with nothing configured `kmp-mcp` runs the
@@ -206,8 +206,8 @@ The Hugging Face publication gate and draft model/dataset cards are tracked in
 
 ### KMP is operated directly through MCP
 
-KMP is exposed through MCP as the **same tool surface an agent uses** (`kernel_wake`,
-`kernel_ask`, `kernel_near`, `kernel_trace`, `kernel_inspect`, `kernel_write_memory`).
+KMP is exposed through MCP as the **same tool surface an agent uses** (`kmp_wake`,
+`kmp_ask`, `kmp_near`, `kmp_trace`, `kmp_inspect`, `kmp_write_memory`).
 **Any capable frontier model — Claude Opus, GPT-5.x, etc. — operates KMP directly. There is
 no required intermediary, and a frontier model would not route through a smaller one.**
 
@@ -216,7 +216,7 @@ graph LR
     A["Frontier model / agent<br/>(Codex, Claude Code, Opus, GPT-5.x)<br/>understands the message · reasons"]
     MCP["MCP — KMP tool surface"]
     K["KMP / KMP<br/>memory · traversal · proof · validation"]
-    A -->|"kernel_wake / ask / near / trace / inspect / write_memory"| MCP
+    A -->|"kmp_wake / ask / near / trace / inspect / write_memory"| MCP
     MCP --> K
     K -->|"evidence · refs · proof · or fail-fast"| A
 ```

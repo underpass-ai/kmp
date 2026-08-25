@@ -37,7 +37,7 @@ Current integration stance:
 | [queryable-agentic-memory-layer.md](product/queryable-agentic-memory-layer.md) | Product direction for temporal, multidimensional memory as a queryable persistence layer for humans and LLMs |
 | [kernel-memory-service-grpc-plan.md](product/kernel-memory-service-grpc-plan.md) | API-first plan for the typed `KernelMemoryService` gRPC boundary and MCP live-mode migration |
 | [kernel-plugin-architecture.md](product/kernel-plugin-architecture.md) | Exportable plugin API architecture and implementation guide for external plugin crates |
-| [kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md) | Writer-first plan for LLM/human memory ingestion above canonical `kernel_ingest` |
+| [kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md) | Writer-first plan for LLM/human memory ingestion above canonical `kmp_ingest` |
 | [kernel-tool-operator-model-plan.md](product/kernel-tool-operator-model-plan.md) | P1 plan for a small sidecar model that learns bounded KMP/MCP tool operation from audited trajectories |
 | [operator-training-experiment-process.md](product/operator-training-experiment-process.md) | Process for versioned Operator training attempts, dataset provenance, stop gates, and required evidence |
 | [operator-training-runs/](product/operator-training-runs/README.md) | Per-attempt Operator training records |

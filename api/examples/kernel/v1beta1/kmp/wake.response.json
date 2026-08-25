@@ -19,7 +19,7 @@
     ],
     "next_actions": [
       "Add JSON schemas and fixtures for the five memory moves.",
-      "Implement kernel_wake, kernel_ask, kernel_trace, and kernel_inspect before write-side ingestion."
+      "Implement kmp_wake, kmp_ask, kmp_trace, and kmp_inspect before write-side ingestion."
     ],
     "guardrails": [
       "Do not claim benchmark success before implementation and measurement.",

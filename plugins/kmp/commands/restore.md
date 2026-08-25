@@ -24,7 +24,7 @@ command work — offer the choices instead:
   themselves, deliberately.
 
 After a successful import, report what arrived: the event count from the
-command's output, and then `kernel_wake` on the about it restored, so the user
+command's output, and then `kmp_wake` on the about it restored, so the user
 sees the memory rather than a number. If this session has no `kernel_*` tools,
 say the import succeeded and that the tools appear after a restart — do not
 simulate the wake.

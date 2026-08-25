@@ -58,7 +58,7 @@ mod tests {
 
     fn sample_context() -> QualityObservationContext {
         QualityObservationContext {
-            rpc: "kernel_wake".to_string(),
+            rpc: "kmp_wake".to_string(),
             root_node_id: "question:t".to_string(),
             role: "resumer".to_string(),
         }
@@ -71,7 +71,7 @@ mod tests {
         observer.observe(&sample_metrics(), &sample_context());
 
         let observation = receiver.try_recv().expect("observation buffered");
-        assert_eq!(observation.rpc(), "kernel_wake");
+        assert_eq!(observation.rpc(), "kmp_wake");
         assert_eq!(observation.root_node_id(), "question:t");
         assert_eq!(observation.raw_equivalent_tokens(), 120);
         assert!(observation.observed_at_millis() > 0);

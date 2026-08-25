@@ -42,13 +42,13 @@ A version mismatch is worth fixing even when memory answers: the launcher
 falls through to whatever `kmp-mcp` is on `PATH`, so a stale half keeps
 working while the fixes that live in the other half are silently missing.
 
-**Claude Code not wired** — if this plugin is installed, the `kernel-memory`
+**Claude Code not wired** — if this plugin is installed, the `kmp`
 server ships with it and no separate registration is needed; a stale session
 is the likely cause, so restart it. Register manually only if the user wants
 the server without the plugin:
 
 ```bash
-claude mcp add kernel-memory --scope user \
+claude mcp add kmp --scope user \
   -- "$(command -v kmp-mcp)"
 ```
 
@@ -58,7 +58,7 @@ claude mcp add kernel-memory --scope user \
 bash scripts/mcp/install-kmp-plugin.sh --codex
 ```
 
-It writes `[mcp_servers.kernel-memory]` into `~/.codex/config.toml` and drops
+It writes `[mcp_servers.kmp]` into `~/.codex/config.toml` and drops
 the `/kmp-doctor` and `/kmp-moves` prompts into `~/.codex/prompts/`.
 
 If `$ARGUMENTS` names a host, restrict the work to that host.

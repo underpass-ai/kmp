@@ -189,24 +189,29 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
     // configuration on their behalf, because a botched edit there costs more
     // than the uninstall saves.
     let claude_config = roots.home.join(".claude.json");
-    if file_mentions(&claude_config, "kernel-memory") {
-        pieces.push(Piece {
-            kind: PieceKind::HostWiring,
-            detail: "remove with:  claude mcp remove kernel-memory".to_string(),
-            path: claude_config,
-            bundled_events: None,
-            ours_to_remove: false,
-        });
+    for (needle, server_id) in [("\"kmp\"", "kmp"), ("\"kernel-memory\"", "kernel-memory")] {
+        if file_mentions(&claude_config, needle) {
+            pieces.push(Piece {
+                kind: PieceKind::HostWiring,
+                detail: format!("remove with:  claude mcp remove {server_id}"),
+                path: claude_config.clone(),
+                bundled_events: None,
+                ours_to_remove: false,
+            });
+        }
     }
     let codex_config = roots.home.join(".codex/config.toml");
-    if file_mentions(&codex_config, "mcp_servers.kernel-memory") {
-        pieces.push(Piece {
-            kind: PieceKind::HostWiring,
-            detail: "delete the [mcp_servers.kernel-memory] block".to_string(),
-            path: codex_config,
-            bundled_events: None,
-            ours_to_remove: false,
-        });
+    for server_id in ["kmp", "kernel-memory"] {
+        let header = format!("[mcp_servers.{server_id}]");
+        if file_mentions(&codex_config, &header) {
+            pieces.push(Piece {
+                kind: PieceKind::HostWiring,
+                detail: format!("delete the {header} block"),
+                path: codex_config.clone(),
+                bundled_events: None,
+                ours_to_remove: false,
+            });
+        }
     }
 
     pieces
@@ -603,12 +608,12 @@ mod tests {
         std::fs::create_dir_all(base.join("home/.codex")).expect("codex dir");
         std::fs::write(
             base.join("home/.claude.json"),
-            "{\"mcpServers\":{\"kernel-memory\":{}}}",
+            "{\"mcpServers\":{\"kmp\":{}}}",
         )
         .expect("claude config");
         std::fs::write(
             base.join("home/.codex/config.toml"),
-            "[mcp_servers.kernel-memory]\ncommand = \"kmp-mcp\"\n",
+            "[mcp_servers.kmp]\ncommand = \"kmp-mcp\"\n",
         )
         .expect("codex config");
 
@@ -628,6 +633,34 @@ mod tests {
             assert!(remove(piece).is_err());
             assert!(piece.path.exists());
         }
+    }
+
+    #[test]
+    fn former_host_registration_is_still_found_for_the_migration_release() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        std::fs::create_dir_all(base.join("home/.codex")).expect("codex dir");
+        std::fs::write(
+            base.join("home/.claude.json"),
+            "{\"mcpServers\":{\"kernel-memory\":{}}}",
+        )
+        .expect("claude config");
+        std::fs::write(
+            base.join("home/.codex/config.toml"),
+            "[mcp_servers.kernel-memory]\ncommand = \"kmp-mcp\"\n",
+        )
+        .expect("codex config");
+
+        let wiring: Vec<_> = survey(&roots(base))
+            .into_iter()
+            .filter(|piece| piece.kind == PieceKind::HostWiring)
+            .collect();
+        assert_eq!(wiring.len(), 2, "{wiring:?}");
+        assert!(
+            wiring
+                .iter()
+                .all(|piece| piece.detail.contains("kernel-memory"))
+        );
     }
 
     #[test]

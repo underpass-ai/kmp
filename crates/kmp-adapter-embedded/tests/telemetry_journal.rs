@@ -48,8 +48,8 @@ fn observations_persist_survive_reopen_and_respect_retention() {
     )
     .expect("worker starts");
 
-    observe_n(&observer, "kernel_wake", 12);
-    observe_n(&observer, "kernel_ask", 3);
+    observe_n(&observer, "kmp_wake", 12);
+    observe_n(&observer, "kmp_ask", 3);
     drop(observer);
     guard.close();
     assert_eq!(writer.write_failures(), 0);
@@ -61,10 +61,10 @@ fn observations_persist_survive_reopen_and_respect_retention() {
     );
     let reader = RedbQualityTelemetryReader::open(data_dir.path()).expect("reader opens");
     let wakes = reader
-        .query_since(0, Some("kernel_wake"), 100)
+        .query_since(0, Some("kmp_wake"), 100)
         .expect("query wakes");
     let asks = reader
-        .query_since(0, Some("kernel_ask"), 100)
+        .query_since(0, Some("kmp_ask"), 100)
         .expect("query asks");
     let all = reader.latest(100).expect("query latest");
     assert_eq!(reader.count().expect("count"), 10);

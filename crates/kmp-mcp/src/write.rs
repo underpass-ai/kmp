@@ -60,10 +60,10 @@ impl ReadContext {
             .as_object()
             .ok_or_else(|| "argument `read_context` must be an object".to_string())?;
         let mut context = Self::default();
-        context.collect_ref_array(read_context, "inspected_refs", "kernel_inspect")?;
-        context.collect_ref_array(read_context, "temporal_refs", "kernel_temporal")?;
-        context.collect_ref_array(read_context, "wake_refs", "kernel_wake")?;
-        context.collect_ref_array(read_context, "ask_refs", "kernel_ask")?;
+        context.collect_ref_array(read_context, "inspected_refs", "kmp_inspect")?;
+        context.collect_ref_array(read_context, "temporal_refs", "kmp_temporal")?;
+        context.collect_ref_array(read_context, "wake_refs", "kmp_wake")?;
+        context.collect_ref_array(read_context, "ask_refs", "kmp_ask")?;
         context.collect_trace_paths(read_context)?;
         Ok(context)
     }
@@ -122,8 +122,8 @@ impl ReadContext {
                 "to",
                 &format!("read_context.trace_paths[{index}].to"),
             )?;
-            self.add_ref(from, "kernel_trace");
-            self.add_ref(to, "kernel_trace");
+            self.add_ref(from, "kmp_trace");
+            self.add_ref(to, "kmp_trace");
             for (ref_index, ref_value) in optional_array(
                 trace.get("refs"),
                 &format!("read_context.trace_paths[{index}].refs"),
@@ -139,7 +139,7 @@ impl ReadContext {
                             "read_context.trace_paths[{index}].refs[{ref_index}] must be a non-empty string"
                         )
                     })?;
-                self.add_ref(ref_id, "kernel_trace");
+                self.add_ref(ref_id, "kmp_trace");
             }
         }
         Ok(())
@@ -201,7 +201,7 @@ pub(crate) fn build_write_plan_with_root(
     let current_summary = required_map_string(current, "summary", "current.summary")?;
     let current_evidence = optional_map_string(current, "evidence");
     if strict && current_evidence.is_none() {
-        return Err("strict kernel_write_memory requires current.evidence".to_string());
+        return Err("strict kmp_write_memory requires current.evidence".to_string());
     }
 
     let current_ref = optional_map_string(current, "ref")
@@ -259,7 +259,7 @@ pub(crate) fn build_write_plan_with_root(
             "id": format!("evidence:{}:current", current_ref),
             "supports": [current_ref.clone()],
             "text": current_evidence,
-            "source": format!("kernel_write_memory:{actor}"),
+            "source": format!("kmp_write_memory:{actor}"),
             "time": observed_at
         }));
     }
@@ -267,7 +267,7 @@ pub(crate) fn build_write_plan_with_root(
     let connect_to = optional_array(arguments.get("connect_to"), "connect_to")?;
     if strict && connect_to.is_empty() && !allow_unlinked_root {
         return Err(
-            "strict kernel_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+            "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
                 .to_string(),
         );
     }
@@ -320,7 +320,7 @@ pub(crate) fn build_write_plan_with_root(
                 "id": format!("evidence:{}:relation:{}", current_ref, index + 1),
                 "supports": [current_ref.clone(), target_ref],
                 "text": relation_evidence,
-                "source": format!("kernel_write_memory:{actor}:relation:{rel}"),
+                "source": format!("kmp_write_memory:{actor}:relation:{rel}"),
                 "time": observed_at
             }));
         }
@@ -403,7 +403,7 @@ pub(crate) fn build_write_plan_with_root(
             "id": format!("evidence:{}:semantic_delta", delta_ref),
             "supports": [delta_ref.clone(), current_ref.clone()],
             "text": delta_evidence,
-            "source": format!("kernel_write_memory:{actor}:semantic_delta"),
+            "source": format!("kmp_write_memory:{actor}:semantic_delta"),
             "time": observed_at
         }));
     }
@@ -428,7 +428,7 @@ pub(crate) fn build_write_plan_with_root(
                 .unwrap_or(DEFAULT_SOURCE_KIND),
             "source_agent": actor,
             "observed_at": observed_at,
-            "correlation_id": format!("kernel_write:{about}"),
+            "correlation_id": format!("kmp_write:{about}"),
             "causation_id": idempotency_key
         }
     });
@@ -594,7 +594,7 @@ fn suggested_reads(current_ref: &str, connect_to: &[Value]) -> Vec<Value> {
         .and_then(Value::as_str)
         .map(|target_ref| {
             vec![json!({
-                "tool": "kernel_trace",
+                "tool": "kmp_trace",
                 "from": current_ref,
                 "to": target_ref
             })]
@@ -619,10 +619,10 @@ struct RelationQualityInput<'a> {
 fn relation_quality_diagnostic(input: RelationQualityInput<'_>) -> Result<Value, String> {
     let spec = relation_spec(input.rel, input.strict)?;
     let semantic_class = RelationSemanticClass::parse(input.semantic_class)
-        .map_err(|error| format!("kernel_write_memory relation class is invalid: {error}"))?;
+        .map_err(|error| format!("kmp_write_memory relation class is invalid: {error}"))?;
     if !spec.classes.contains(&semantic_class) {
         return Err(format!(
-            "kernel_write_memory relation `{}` cannot use class `{}`; expected one of {}",
+            "kmp_write_memory relation `{}` cannot use class `{}`; expected one of {}",
             input.rel,
             input.semantic_class,
             class_names(spec.classes).join(", ")
@@ -634,19 +634,19 @@ fn relation_quality_diagnostic(input: RelationQualityInput<'_>) -> Result<Value,
         || (!input.why.trim().is_empty() && !input.evidence.trim().is_empty());
     if !target_present {
         return Err(format!(
-            "kernel_write_memory relation `{}` requires a target ref",
+            "kmp_write_memory relation `{}` requires a target ref",
             input.rel
         ));
     }
     if input.from == input.to {
         return Err(format!(
-            "kernel_write_memory relation `{}` cannot point from and to the same ref `{}`",
+            "kmp_write_memory relation `{}` cannot point from and to the same ref `{}`",
             input.rel, input.from
         ));
     }
     if input.strict && input.semantic_class != "structural" && !proof_complete {
         return Err(format!(
-            "kernel_write_memory relation `{}` requires both why and evidence in strict mode",
+            "kmp_write_memory relation `{}` requires both why and evidence in strict mode",
             input.rel
         ));
     }
@@ -664,7 +664,7 @@ fn relation_quality_diagnostic(input: RelationQualityInput<'_>) -> Result<Value,
         && !prior_context_observed
     {
         return Err(format!(
-            "strict kernel_write_memory rich relation `{}` to `{}` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback",
+            "strict kmp_write_memory rich relation `{}` to `{}` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback",
             input.rel, input.to
         ));
     }
@@ -698,7 +698,7 @@ fn relation_quality_diagnostic(input: RelationQualityInput<'_>) -> Result<Value,
 
 fn relation_spec(rel: &str, strict: bool) -> Result<ResolvedRelationSpec, String> {
     let relation_type = MemoryRelationType::new(rel)
-        .map_err(|error| format!("kernel_write_memory relation type is invalid: {error}"))?;
+        .map_err(|error| format!("kmp_write_memory relation type is invalid: {error}"))?;
     if let Some(spec) = relation_type.writer_spec() {
         return Ok(spec.into());
     }
@@ -710,7 +710,7 @@ fn relation_spec(rel: &str, strict: bool) -> Result<ResolvedRelationSpec, String
         });
     }
     Err(format!(
-        "unsupported or vague kernel_write_memory relation `{rel}`"
+        "unsupported or vague kmp_write_memory relation `{rel}`"
     ))
 }
 
@@ -821,7 +821,7 @@ fn required_object<'a>(
 /// Refuses a stamp the kernel's own clock says has not happened yet.
 ///
 /// The read path is ordered by `observed_at`, so an entry above the present
-/// is one `kernel_forward` from a correct "now" will never return: the delta
+/// is one `kmp_forward` from a correct "now" will never return: the delta
 /// comes back empty and looks exactly like a quiet week. The log has no
 /// delete, so this has to be caught before the write and not explained
 /// afterwards.
@@ -927,7 +927,7 @@ fn validate_intent(value: &str) -> Result<(), String> {
     match value {
         "record_turn" | "record_observation" | "record_decision" | "record_feedback"
         | "record_delta" => Ok(()),
-        other => Err(format!("invalid kernel_write_memory intent `{other}`")),
+        other => Err(format!("invalid kmp_write_memory intent `{other}`")),
     }
 }
 
@@ -935,9 +935,7 @@ fn validate_node_kind(value: &str) -> Result<(), String> {
     match value {
         "turn" | "observation" | "decision" | "feedback" | "semantic_delta" | "constraint"
         | "preference" | "derived_value" | "error_path" | "success_path" => Ok(()),
-        other => Err(format!(
-            "invalid kernel_write_memory current.kind `{other}`"
-        )),
+        other => Err(format!("invalid kmp_write_memory current.kind `{other}`")),
     }
 }
 
@@ -946,9 +944,7 @@ fn validate_semantic_class(value: &str) -> Result<(), String> {
         "structural" | "causal" | "motivational" | "procedural" | "evidential" | "constraint" => {
             Ok(())
         }
-        other => Err(format!(
-            "invalid kernel_write_memory relation class `{other}`"
-        )),
+        other => Err(format!("invalid kmp_write_memory relation class `{other}`")),
     }
 }
 
@@ -956,7 +952,7 @@ fn validate_confidence(value: &str) -> Result<(), String> {
     match value {
         "high" | "medium" | "low" | "unknown" => Ok(()),
         other => Err(format!(
-            "invalid kernel_write_memory relation confidence `{other}`"
+            "invalid kmp_write_memory relation confidence `{other}`"
         )),
     }
 }
@@ -1123,7 +1119,7 @@ mod tests {
         assert_eq!(plan.relation_quality[0]["quality"], json!("rich"));
         assert_eq!(
             plan.relation_quality[0]["prior_context_sources"],
-            json!(["kernel_inspect"])
+            json!(["kmp_inspect"])
         );
         assert_eq!(plan.ingest_arguments["about"], "incident:mobile-login");
         assert_eq!(
@@ -1254,7 +1250,7 @@ mod tests {
 
         assert_eq!(
             error,
-            "strict kernel_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+            "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
         );
     }
 
@@ -1289,7 +1285,7 @@ mod tests {
 
         assert_eq!(
             error,
-            "strict kernel_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
+            "strict kmp_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
         );
     }
 
@@ -1304,7 +1300,7 @@ mod tests {
 
         assert_eq!(
             error,
-            "kernel_write_memory relation `chosen_because` cannot point from and to the same ref `incident:mobile-login:entry:decision:self`"
+            "kmp_write_memory relation `chosen_because` cannot point from and to the same ref `incident:mobile-login:entry:decision:self`"
         );
     }
 
@@ -1365,7 +1361,7 @@ mod tests {
 
         assert_eq!(
             error,
-            "unsupported or vague kernel_write_memory relation `related_to`"
+            "unsupported or vague kmp_write_memory relation `related_to`"
         );
     }
 

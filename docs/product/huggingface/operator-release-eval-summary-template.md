@@ -80,13 +80,13 @@ fresh run.
 
 | Action | Count | Avg ms | Max ms |
 | --- | ---: | ---: | ---: |
-| `kernel_near` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_inspect` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_trace` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_goto` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_rewind` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_forward` | `<fill>` | `<fill>` | `<fill>` |
-| `kernel_ask` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_near` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_inspect` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_trace` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_goto` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_rewind` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_forward` | `<fill>` | `<fill>` | `<fill>` |
+| `kmp_ask` | `<fill>` | `<fill>` | `<fill>` |
 | `stop` | `<fill>` | `<fill>` | `<fill>` |
 
 ## Release Decision

@@ -360,23 +360,23 @@ Do not explain. Do not include markdown. Do not invent refs, scopes, or hidden m
 
 Allowed action shapes:
 
-{{"action":{{"type":"tool_call","tool":"kernel_near","arguments":{{"about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_near","arguments":{{"about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kernel_inspect","arguments":{{"ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kernel_trace","arguments":{{"from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1,"tokens":1600}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1,"tokens":1600}}}}}}}}
 
 {{"action":{{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}}}
 
 Policy:
-- If there is no `last_tool`, call `kernel_near` around `current_ref`.
-- If the last tool was `kernel_near`, call `kernel_inspect` on `current_ref`.
-- If the last tool was `kernel_inspect` and `trace_target_ref` is present, call `kernel_trace` from `current_ref` to `trace_target_ref`.
+- If there is no `last_tool`, call `kmp_near` around `current_ref`.
+- If the last tool was `kmp_near`, call `kmp_inspect` on `current_ref`.
+- If the last tool was `kmp_inspect` and `trace_target_ref` is present, call `kmp_trace` from `current_ref` to `trace_target_ref`.
 - Otherwise stop.
 - Every tool call must be bounded.
-- For `kernel_near`, `arguments.about` must equal the top-level `about` value exactly.
+- For `kmp_near`, `arguments.about` must equal the top-level `about` value exactly.
 - Do not use `current_ref` as `arguments.about`.
-- `kernel_inspect.include.raw` must be false.
+- `kmp_inspect.include.raw` must be false.
 - Use only tools present in `allowed_tools`.
 - Use only refs visible in `current_ref`, `trace_target_ref`, `known_refs`, or `last_observed_refs`.
 
@@ -442,7 +442,7 @@ fn validate_action_shape(action: &Value) -> Result<(), Box<dyn Error + Send + Sy
             if !kernel_operator_is_bounded_tool_call(tool, arguments) {
                 return Err(format!("unbounded or invalid tool call for `{tool}`").into());
             }
-            if kernel_operator_primary_refs(action).is_empty() && tool != "kernel_ask" {
+            if kernel_operator_primary_refs(action).is_empty() && tool != "kmp_ask" {
                 return Err(format!("tool call `{tool}` has no primary refs").into());
             }
             Ok(())
@@ -661,21 +661,21 @@ mod tests {
                 "last_tool": null,
                 "known_refs": [],
             }),
-            allowed_tools: vec!["kernel_near".to_string()],
+            allowed_tools: vec!["kmp_near".to_string()],
         };
         let prompt = build_prompt(&trajectory, 32);
         assert!(!prompt.contains("target_action"));
-        assert!(prompt.contains("kernel_near"));
+        assert!(prompt.contains("kmp_near"));
     }
 
     #[test]
     fn parse_action_accepts_wrapped_tool_call() -> Result<(), Box<dyn Error + Send + Sync>> {
         let action = parse_action(
-            r#"{"action":{"type":"tool_call","tool":"kernel_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}"#,
+            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}"#,
         )?;
         assert_eq!(
             action.get("tool").and_then(Value::as_str),
-            Some("kernel_inspect")
+            Some("kmp_inspect")
         );
         Ok(())
     }
@@ -683,7 +683,7 @@ mod tests {
     #[test]
     fn parse_action_rejects_raw_inspect() {
         let error = parse_action(
-            r#"{"action":{"type":"tool_call","tool":"kernel_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":true}}}}"#,
+            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":true}}}}"#,
         )
         .err()
         .map(|error| error.to_string())
@@ -702,7 +702,7 @@ mod tests {
         let error = validate_action_for_trajectory(
             json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
@@ -730,7 +730,7 @@ mod tests {
         let error = validate_action_for_trajectory(
             json!({
                 "type": "tool_call",
-                "tool": "kernel_inspect",
+                "tool": "kmp_inspect",
                 "arguments": {
                     "ref": "node:2",
                     "include": {
@@ -781,7 +781,7 @@ mod tests {
             task_family: "memoryarena.progressive_search".to_string(),
             mode: "read".to_string(),
             visible_state,
-            allowed_tools: vec!["kernel_near".to_string(), "kernel_inspect".to_string()],
+            allowed_tools: vec!["kmp_near".to_string(), "kmp_inspect".to_string()],
         }
     }
 }

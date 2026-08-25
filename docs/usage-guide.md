@@ -520,7 +520,7 @@ relation spec, so it cannot drift):
   semantic dependency. They are never a default, and never to be upgraded
   into causal or motivational language without proof.
 - **Read before you link.** A rich relation to existing memory declares the
-  refs it inspected (`read_context.inspected_refs`); `kernel_write_memory`
+  refs it inspected (`read_context.inspected_refs`); `kmp_write_memory`
   reports per-relation quality (`rich`/`anemic`/`suspect`, `proof_complete`)
   so the writer — human or model — is accountable for every link.
 - Richer explanation fields are available where the semantics earn them:

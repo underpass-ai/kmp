@@ -146,7 +146,7 @@ Current proof:
 - a real official MemoryAgentBench `Conflict_Resolution` /
   `factconsolidation_mh_6k` smoke reached 4/4 successful KMP events, 3/3
   known-at-clean asks, 0 unexpected refs, and 0 missing refs with a 64-fact /
-  3-query bounded slice. It also exposed that current `kernel_ask` is a generic
+  3-query bounded slice. It also exposed that current `kmp_ask` is a generic
   deterministic evidence summary, not a MemoryAgentBench-grade question reader.
 - a real public-TLS MemoryArena `progressive_search` 100-task smart-writer run
   reached 2259/2259 successful KMP events, 753/753 known-at-clean asks,
@@ -209,7 +209,7 @@ Goal:
 Train or fine-tune a small specialist model that knows how to operate the
 kernel MCP/API, not a generalist model that owns memory reasoning. The model is
 a tool operator for `ask`, `near`, `trace`, `inspect`, `goto`, `rewind`,
-`forward`, and `kernel_write_memory`.
+`forward`, and `kmp_write_memory`.
 
 Why this is plausible:
 

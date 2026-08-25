@@ -349,7 +349,7 @@ pub fn prepare_memoryagentbench_item(
 
     let ingest = build_ingest(&ingest_context, &context_entries.entries);
     let ingest_events = vec![MemoryAgentBenchIngestArtifact {
-        tool: "kernel_ingest",
+        tool: "kmp_ingest",
         item_id: item_id.clone(),
         split: split.clone(),
         source: source.clone(),
@@ -396,7 +396,7 @@ pub fn prepare_memoryagentbench_item(
             optional_metadata_value(&item.metadata.question_dates, query_index_zero);
 
         ask_events.push(MemoryAgentBenchAskArtifact {
-            tool: "kernel_ask",
+            tool: "kmp_ask",
             item_id: item_id.clone(),
             split: split.clone(),
             source: source.clone(),

@@ -16,8 +16,8 @@ endpoint.
 Target use case: **context recovery plugin for coding agents** — Claude Code,
 Codex CLI, OpenCode, and GitHub Copilot. The host launches the binary, the
 agent operates the same KMP tool surface it would use against the
-infrastructure kernel (`kernel_wake`, `kernel_ask`, `kernel_near`,
-`kernel_trace`, `kernel_inspect`, `kernel_write_memory`, temporal moves), and
+infrastructure kernel (`kmp_wake`, `kmp_ask`, `kmp_near`,
+`kmp_trace`, `kmp_inspect`, `kmp_write_memory`, temporal moves), and
 memory persists locally per project or per user.
 
 The embedded edition is **the same product, not a fork**:
@@ -37,7 +37,7 @@ edition (these are the product, not optional features):
 - temporal movement (`goto`, `near`, `rewind`, `forward`) with known-at-time
   semantics;
 - typed relations with rationale, evidence, and provenance;
-- inspectable proof (`kernel_inspect`, trace, relation evidence) without raw
+- inspectable proof (`kmp_inspect`, trace, relation evidence) without raw
   transcripts;
 - replay-safe, deduplicated, auditable writes;
 - the same MCP tool schemas, so a client config can switch editions by
@@ -284,7 +284,7 @@ Deliverables:
 - local observability: structured log file in the data dir (rotation, no
   stdout pollution — stdout belongs to MCP JSON-RPC), optional OTLP export
   reusing `kmp-observability`;
-- `kernel_ingest`/`kernel_write_memory` responses report
+- `kmp_ingest`/`kmp_write_memory` responses report
   `read_after_write_ready=true` in embedded mode.
 
 Exit criteria:
@@ -299,7 +299,7 @@ Exit criteria:
 Priority: P0 (Claude Code, Codex), P1 (OpenCode, Copilot)
 Status: **accepted (2026-07-23)** — initial product scope is Claude Code +
 Codex + Copilot (owner decision; OpenCode parked). Claude Code TESTED live
-(native `kernel_wake` in a real session recovered prior-session memory with
+(native `kmp_wake` in a real session recovered prior-session memory with
 proof); Codex TESTED live (session recovered the incident-resolution
 checkpoint); Copilot recipe documented, verification parked. Two-session
 demo `scripts/demo/embedded_two_sessions.sh` green; recipes + playbook in
@@ -317,14 +317,14 @@ Deliverables:
 - per-host registration recipes, tested against real host versions and kept
   in `docs/operations/embedded-hosts.md`:
   - Claude Code: `claude mcp add` config + optionally a plugin (skill +
-    SessionStart hook that nudges `kernel_wake` on session open);
+    SessionStart hook that nudges `kmp_wake` on session open);
   - Codex CLI: `~/.codex/config.toml` MCP server entry;
   - OpenCode: MCP server entry in its config;
   - Copilot: MCP registration for VS Code / Copilot agent mode;
 - **context-recovery playbook** shipped as host-facing instructions (skill /
-  AGENTS.md snippet / rules file per host): when to `kernel_wake` (session
-  start on a known about), when to `kernel_ask` vs `kernel_near`, when to
-  `kernel_write_memory` (decisions, constraints, outcomes — not transcripts);
+  AGENTS.md snippet / rules file per host): when to `kmp_wake` (session
+  start on a known about), when to `kmp_ask` vs `kmp_near`, when to
+  `kmp_write_memory` (decisions, constraints, outcomes — not transcripts);
 - concurrency behavior under two simultaneous host sessions on one store,
   matching the E0 concurrency ADR (documented, tested, explicit error UX for
   the locked case);
@@ -403,7 +403,7 @@ under the reframe**, not pending: with the infrastructure edition retired as
 a deployment target there is no cluster to promote into. The remaining two
 are met: round-trip parity is proven by
 `export_import_preserves_wake_temporal_and_proof` (wake node ids, known-at-time
-`kernel_goto`, and the `supports` relation with its evidence rationale all
+`kmp_goto`, and the `supports` relation with its evidence rationale all
 survive the bundle), and benchmark parity rests on the recorded LongMemEval
 run.
 Depends on: E2, E3

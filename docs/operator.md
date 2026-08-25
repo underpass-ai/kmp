@@ -74,7 +74,7 @@ graph LR
     A["Frontier model / agent<br/>(Codex, Claude Code, Opus, GPT-5.x)<br/>understands the task · reasons"]
     MCP["MCP — KMP tool surface"]
     K["KMP / KMP<br/>memory · multidimensional traversal · proof · validation"]
-    A -->|"kernel_wake / ask / near / trace / inspect / write_memory"| MCP
+    A -->|"kmp_wake / ask / near / trace / inspect / write_memory"| MCP
     MCP --> K
     K -->|"evidence · refs · proof · or fail-fast"| A
 ```
@@ -115,13 +115,13 @@ graph LR
     MCP["MCP"]
     K["KMP / KMP"]
     LLM -->|"relation intent (why / evidence)"| OP
-    OP -->|"schema-valid kernel_write_memory<br/>(or stop / escalate)"| MCP
+    OP -->|"schema-valid kmp_write_memory<br/>(or stop / escalate)"| MCP
     MCP --> K
 ```
 
 - The **LLM** observes the conversation context and authors the relation's *meaning* (the
   `why`/evidence). When there is no evidence, the relation falls back to **anemic**.
-- **Operator** takes that intent and **emits a schema-valid `kernel_write_memory` / `kernel_ingest`**
+- **Operator** takes that intent and **emits a schema-valid `kmp_write_memory` / `kmp_ingest`**
   — correct coordinates, valid relation type/class, read-before-write, anemic fallback. **It does
   not infer relations and it does not know the message** — it only knows how to use KMP perfectly.
   When a decision needs real reasoning, it **escalates** instead of faking it.

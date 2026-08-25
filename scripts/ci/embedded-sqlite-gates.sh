@@ -50,7 +50,7 @@ cp target/debug/kmp-mcp "${BUNDLE}/bin/kmp-mcp"
 
 LAUNCHER="${BUNDLE}/scripts/run-embedded-mcp.sh"
 LIST='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-PROBE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kernel_wake","arguments":{"about":"project:sqlite-gate"}}}'
+PROBE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_wake","arguments":{"about":"project:sqlite-gate"}}}'
 
 # A real memory operation creates the store on the chosen engine. `tools/list`
 # deliberately stays available while a locked backend retries, so it no longer

@@ -226,7 +226,7 @@ Important boundaries:
 
 - the prompt does not include gold answers;
 - expected answers are loaded only to compute the reader summary;
-- the original deterministic kernel answer is preserved as `kernel_ask_answer`;
+- the original deterministic kernel answer is preserved as `kmp_ask_answer`;
 - reader metadata is written under `memoryarena_reader`;
 - this is still a reader over one recovered KMP answer, not the future agentic
   loop that can call `ask`, `near`, `trace`, `inspect`, and temporal moves
@@ -308,21 +308,21 @@ completion_tokens: 2
 
 `memoryarena_kmp_runner --smart-writer` is the first MemoryArena writer layer
 that exercises the write protocol instead of replaying every ingest event
-through low-level `kernel_ingest`.
+through low-level `kmp_ingest`.
 
 For each staged memory entry, the runner:
 
-- builds one `kernel_write_memory` request;
+- builds one `kmp_write_memory` request;
 - derives candidate target refs from the adapter's deterministic relation plan;
-- reads prior context before writing by calling `kernel_near` and
-  `kernel_inspect` on candidate targets;
+- reads prior context before writing by calling `kmp_near` and
+  `kmp_inspect` on candidate targets;
 - optionally calls an LLM to choose a canonical `connect_to` relation;
 - validates the LLM output before dry-run: target ref must be a candidate, the
   relation/class pair must match the canonical writer vocabulary, and `why` plus
   `evidence` must be present;
-- runs `kernel_write_memory` in strict dry-run mode, then commits the same
+- runs `kmp_write_memory` in strict dry-run mode, then commits the same
   request with `dry_run=false`;
-- verifies the written node with `kernel_inspect`;
+- verifies the written node with `kmp_inspect`;
 - falls back explicitly to deterministic anemic or structural relations when no
   richer relation is justified or the proposed relation is rejected.
 
@@ -332,7 +332,7 @@ surface. The benchmark harness acts as the LLM-powered writer client.
 
 Pass `--log-mcp-navigation` or set `MEMORYARENA_LOG_MCP_NAVIGATION=1` to emit
 JSONL diagnostics to stderr. The log stream records every writer pre-read
-(`kernel_near`/`kernel_inspect`), the LLM relation-selection call, the selected
+(`kmp_near`/`kmp_inspect`), the LLM relation-selection call, the selected
 `connect_to` relation summary, strict dry-run, commit, and post-write inspect
 verification. This keeps the stdout run summary parseable while making it clear
 when the LLM is making a relation decision from MCP-read context.
@@ -358,7 +358,7 @@ The digest reports:
 - ask navigation growth by subtask for `near`, `trace`, and `inspect`.
 
 Large answer-feedback entries are compacted deterministically before
-`kernel_write_memory`: `current.summary`, `current.evidence`, and fallback
+`kmp_write_memory`: `current.summary`, `current.evidence`, and fallback
 relation evidence are bounded while preserving an `Exact Answer:` line when one
 is present. This keeps writer payloads focused on auditable memory rather than
 duplicating entire benchmark transcripts into every generated evidence record.
@@ -442,9 +442,9 @@ but grew from about 115 ms to about 1010 ms. This is a production exposure gap
 for the write path, not a relation-prompt size problem.
 
 P0 status after the 2026-05-07 trace and ingest scaling slices:
-`kernel_trace` now exposes `page.entries` and `page.cursor`, returns
+`kmp_trace` now exposes `page.entries` and `page.cursor`, returns
 `page.next_cursor`/`page.has_more`, and calls the path query as a path proof
-rather than expanding the target subtree. `kernel_write_memory` commit latency
+rather than expanding the target subtree. `kmp_write_memory` commit latency
 was then fixed by making existing-ref validation use a shallow direct
 memory-edge lookup instead of a full semantic traversal of the about on every
 ingest.
@@ -694,7 +694,7 @@ the read path. Temporal response page metadata is now part of the API/MCP
 contract, but expansion budgets still need operational pressure at larger
 scale:
 
-- `kernel_near`, `goto`, `rewind`, and `forward` must make entry windows,
+- `kmp_near`, `goto`, `rewind`, and `forward` must make entry windows,
   relation expansion, evidence expansion, and proof expansion independently
   bounded.
 - MCP tools expose the same pagination contract as the API, with explicit
@@ -753,7 +753,7 @@ Operational finding:
 - the failed node was not present after the timeout, so the write did not commit
   behind the client's back;
 - the same final write succeeded over direct cluster gRPC and took 67s;
-- therefore `kernel_write_memory` dry-run is a semantic/protocol check, not a
+- therefore `kmp_write_memory` dry-run is a semantic/protocol check, not a
   performance or `read_after_write_ready` guarantee;
 - the runtime Helm profile now sets NGINX gRPC ingress read/send timeouts to
   300s; direct LoadBalancer exposure or an async accepted-write contract remain
@@ -819,22 +819,22 @@ for the evaluator contract and extraction plan for a standalone public repo.
 | File | Purpose |
 | --- | --- |
 | `events.jsonl` | Ordered mixed ingest/ask stream for a future stage-aware runner. |
-| `ingest.jsonl` | KMP `kernel_ingest` events only. |
-| `ask.jsonl` | KMP `kernel_ask` events only, with required ingest count and event index. |
+| `ingest.jsonl` | KMP `kmp_ingest` events only. |
+| `ask.jsonl` | KMP `kmp_ask` events only, with required ingest count and event index. |
 | `expected.jsonl` | Expected answer and known-at-time refs for each subtask. |
 | `replay.jsonl` | Timeline, known-at-time snapshots, and final path refs per task. |
 | `summary.json` | Aggregate counts for tasks, subtasks, events, and backgrounds. |
 | `manifest.json` | Run metadata and artifact paths. |
-| `writer_results.jsonl` | Runner output when `--smart-writer` is enabled: one row per `kernel_write_memory` entry, including pre-read calls, dry-run/commit/verify content, LLM metadata, and relation quality diagnostics. |
+| `writer_results.jsonl` | Runner output when `--smart-writer` is enabled: one row per `kmp_write_memory` entry, including pre-read calls, dry-run/commit/verify content, LLM metadata, and relation quality diagnostics. |
 
 When `memoryarena_kmp_runner` is executed with `--mcp-navigation-probe`, each
 `results.jsonl` ask row also includes `mcp_navigation`. This records the exact
 MCP tool calls made after the deterministic ask:
 
-- `kernel_near` around the current question ref, with `after_entries=0` so the
+- `kmp_near` around the current question ref, with `after_entries=0` so the
   probe cannot intentionally move into future feedback;
-- `kernel_inspect` on the current question ref, with raw expansion disabled;
-- `kernel_trace` from the current question to the latest prior known entry when
+- `kmp_inspect` on the current question ref, with raw expansion disabled;
+- `kmp_trace` from the current question to the latest prior known entry when
   such a target exists.
 
 This probe is not the future LLM-driven reader/writer loop. It is a fail-fast
@@ -877,9 +877,9 @@ Implemented:
 - replay artifact generation;
 - run-id isolation;
 - live stage-aware runner against a deployed kernel;
-- optional MCP navigation probe over `kernel_near`, `kernel_inspect`, and
-  `kernel_trace`;
-- optional MCP smart writer harness over `kernel_write_memory`, with
+- optional MCP navigation probe over `kmp_near`, `kmp_inspect`, and
+  `kmp_trace`;
+- optional MCP smart writer harness over `kmp_write_memory`, with
   read-before-write, LLM relation selection, strict dry-run, commit, verify, and
   relation quality aggregation;
 - known-at correctness and future-answer leak diagnostics;
@@ -979,7 +979,7 @@ known. The second ask retrieves the first answer feedback and proves it through
 the staged memory path without leaking the second answer. With the navigation
 probe enabled, the runner also records a temporal neighborhood around each
 question, node details for each current question, and a trace to the latest
-prior known entry. In the second subtask, `kernel_trace` returns the procedural
+prior known entry. In the second subtask, `kmp_trace` returns the procedural
 `follows` relation from the current question to the previous answer feedback and
 the evidential `answers` relation from that answer feedback to the previous
 question.
@@ -1118,7 +1118,7 @@ Interpretation:
   is `1.0` for this slice.
 - `PS` is lower than `SR` because early progressive subtasks can be correct
   process memory without the current answer text being emitted by
-  `kernel_ask.answer`. This is useful signal for separating memory substrate
+  `kmp_ask.answer`. This is useful signal for separating memory substrate
   behavior from reader/agent answer formatting.
 - One task required alias-aware matching: the expected answer used `Daniel Delos
   Santos`, while the retrieved candidate used `John Daniel delos Santos` with an
@@ -1208,7 +1208,7 @@ Interpretation:
 - `progressive_search` is the cleanest current fit because later answers can
   often be recovered directly from prior feedback.
 - `bundled_shopping` and `group_travel_planner` need an agent/environment or
-  domain reader. The kernel retrieves the staged evidence, but `kernel_ask`
+  domain reader. The kernel retrieves the staged evidence, but `kmp_ask`
   currently replays prior feedback instead of choosing the current product or
   composing the current itinerary.
 - The formal domains need a specialized exact-answer reader over recovered
@@ -1251,7 +1251,7 @@ missing_allowed_ref_asks: 0
    `inspect`, and temporal moves before answering.
 3. Persist projection/traversal/proof metrics needed to classify benchmark
    failures without reading raw logs.
-4. Fix production write exposure for slow `kernel_write_memory` commits:
+4. Fix production write exposure for slow `kmp_write_memory` commits:
    configure ingress timeout, expose direct gRPC, or introduce async accepted
    writes with explicit completion polling.
 5. Extract the paper-aligned evaluator into a standalone public repository once

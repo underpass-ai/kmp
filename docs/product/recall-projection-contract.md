@@ -1,6 +1,6 @@
 # Recall projection contract
 
-`kernel_ask` and `kernel_wake` expose a deterministic core-plus-prefix
+`kmp_ask` and `kmp_wake` expose a deterministic core-plus-prefix
 projection at the MCP host boundary. The kernel remains responsible for
 retrieval, temporal currentness, confidence, and ranking. The projection
 gateway is responsible for preserving that selected core under a host-safe

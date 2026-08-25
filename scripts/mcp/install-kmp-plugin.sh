@@ -147,20 +147,30 @@ if [ "$DO_CODEX" -eq 1 ]; then
   CODEX_HOME="$HOME/.codex"
   CODEX_CONFIG="$CODEX_HOME/config.toml"
 
-  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory\]' "$CODEX_CONFIG"; then
-    say "   config.toml — kernel-memory already registered, left untouched"
+  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
+    say "   config.toml — kmp already registered, left untouched"
+  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory\]' "$CODEX_CONFIG"; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      act "rename [mcp_servers.kernel-memory] to [mcp_servers.kmp] in $CODEX_CONFIG"
+    else
+      cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
+      sed -i.bak 's/^\[mcp_servers\.kernel-memory\]$/[mcp_servers.kmp]/' "$CODEX_CONFIG"
+      rm -f "$CODEX_CONFIG.bak"
+      say "   config.toml — migrated kernel-memory to kmp"
+      say "   previous config saved as $CODEX_CONFIG.kmp-backup"
+    fi
   elif [ "$DRY_RUN" -eq 1 ]; then
-    act "append [mcp_servers.kernel-memory] to $CODEX_CONFIG"
+    act "append [mcp_servers.kmp] to $CODEX_CONFIG"
   else
     mkdir -p "$CODEX_HOME"
     [ -f "$CODEX_CONFIG" ] && cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
     cat >>"$CODEX_CONFIG" <<EOF
 
-[mcp_servers.kernel-memory]
+[mcp_servers.kmp]
 command = "$BIN"
 env = { KMP_MCP_BACKEND = "embedded" }
 EOF
-    say "   config.toml — registered kernel-memory (embedded)"
+    say "   config.toml — registered kmp (embedded)"
     [ -f "$CODEX_CONFIG.kmp-backup" ] && say "   previous config saved as $CODEX_CONFIG.kmp-backup"
   fi
 
@@ -229,10 +239,10 @@ if [ "$DO_CLAUDE" -eq 1 ]; then
   say "     /plugin install kmp@underpass"
   say ""
   say "   That gives you /kmp:doctor, /kmp:moves and /kmp:setup, the"
-  say "   kmp-memory skill, and the kernel-memory server — no extra wiring."
+  say "   kmp-memory skill, and the kmp server — no extra wiring."
   say ""
   say "   To register the server on its own, without the plugin:"
-  say "     claude mcp add kernel-memory --scope user \\"
+  say "     claude mcp add kmp --scope user \\"
   say "       --env KMP_MCP_BACKEND=embedded -- $BIN"
 fi
 

@@ -455,7 +455,7 @@ async fn the_kernel_accounts_for_contract_recalls_in_its_own_telemetry() {
     assert!(
         observed
             .iter()
-            .any(|observation| observation.rpc() == "kernel_wake"),
+            .any(|observation| observation.rpc() == "kmp_wake"),
         "a recall served through the contract must appear in the kernel's own \
          quality telemetry — no consumer remembered anything to make it so: \
          {observed:?}"

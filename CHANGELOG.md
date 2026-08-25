@@ -59,7 +59,7 @@ implemented, with deprecated fields removed in `v1`.
   string inside `changes[]`, so anyone who wanted a document wrote a throwaway
   script to pull the entries out — and wrote it again next time.
   Entries in temporal order grouped by kind, each with its own evidence beside
-  it and its ref kept visible for `kernel_inspect`; relations rendered as
+  it and its ref kept visible for `kmp_inspect`; relations rendered as
   prose carrying the `why`, which is the connective tissue a bare node list
   loses; supersession and contradiction in separate closing sections, because
   one is history and the other is a live disagreement.
@@ -68,6 +68,19 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **The MCP surface now says KMP.** `tools/list` advertises `kmp_ingest`,
+  `kmp_write_memory`, `kmp_wake`, `kmp_ask`, `kmp_goto`, `kmp_near`,
+  `kmp_rewind`, `kmp_forward`, `kmp_trace`, and `kmp_inspect`; plugin and
+  standalone host recipes register the server as `kmp`. The former
+  `kernel_*` tool names remain accepted, but are not advertised, for this
+  migration release, and the installer migrates the former Codex server id.
+  `.kernel/` remains the embedded store directory: `.kmp/` already names the
+  commit-native bundle, so changing it would strand existing memories.
+  Historical event evidence such as `kernel_write_memory:<actor>` is immutable
+  provenance and deliberately stays as written; dated evaluation reports keep
+  the tool names they actually measured. New events cite
+  `kmp_write_memory:<actor>`.
+
 - **The ten tools now describe what they return.** Every `tools/list` entry
   carries an `outputSchema` for its structured response, including proof
   semantics, the different units and cursor kinds behind `page.total`, recall
@@ -75,13 +88,13 @@ implemented, with deprecated fields removed in `v1`.
   contract test fails if a response mapper grows a top-level field without
   describing it. Per-verb token and depth defaults are published from the same
   surface the caller reads; the writer says which values are caller assertions
-  and which are kernel observations; and `kernel_trace` says plainly that
+  and which are kernel observations; and `kmp_trace` says plainly that
   abouts are not joined.
 - Retrieval no longer becomes a support claim on the gRPC mapping path when
   exactly one citation survives. MCP and gRPC now both say the item was
   retrieved by term overlap and require the caller to judge the canonical
   evidence.
-- `kernel_inspect` accepts a normative `budget.max_bytes` and refuses an
+- `kmp_inspect` accepts a normative `budget.max_bytes` and refuses an
   oversized hub with concrete include flags to narrow, rather than overflowing
   a bounded host. Wake's structured blocker, next-action, and guardrail lists
   now agree with the L0 summary instead of remaining empty beside asserted
@@ -142,10 +155,10 @@ implemented, with deprecated fields removed in `v1`.
 - **`additionalProperties: false` is enforced.** All ten tools declared it and
   nothing applied it, which made the surface a silent-failure generator: a
   misspelled `dimensions`, a `budget` key one level too deep, a `from` sent to
-  `kernel_goto` where the cursor is `at` — each accepted, dropped, and
+  `kmp_goto` where the cursor is `at` — each accepted, dropped, and
   answered with a well-formed success built from defaults, so the agent read
   the result as proof its arguments were understood. Unknown keys are now
-  refused, named, and given their path. The hand-written `kernel_ask.prefer`
+  refused, named, and given their path. The hand-written `kmp_ask.prefer`
   rejection is gone with it: that branch was only reachable because the
   declared strictness was not applied.
 
@@ -154,14 +167,14 @@ implemented, with deprecated fields removed in `v1`.
   frontier ended up three hours and twenty minutes ahead of the wall clock:
   agents wrote local time with a `Z`, which RFC3339 permits, so nothing was out
   of spec and nothing complained. The read path is ordered by that field, so
-  `kernel_forward` from a correct present returned nothing while unread entries
+  `kmp_forward` from a correct present returned nothing while unread entries
   sat above it — an empty delta that looks exactly like a quiet week. A stamp
   more than five minutes ahead of the kernel's clock is now refused at write
   time, saying how far out it is and naming the cause. Earlier times are
   untouched: a backfill is legitimate. Nothing already written is edited — the
   record says what it said.
-- **The temporal verbs apply the budget they advertise.** `kernel_goto`,
-  `kernel_near`, `kernel_rewind` and `kernel_forward` declared the full
+- **The temporal verbs apply the budget they advertise.** `kmp_goto`,
+  `kmp_near`, `kmp_rewind` and `kmp_forward` declared the full
   `budget` object — `max_bytes` among it, described as normative — and
   enforced none of it: a `max_bytes: 9000` request came back at 17.3 KB, past
   the caller's ceiling and past the tool's own published
@@ -174,7 +187,7 @@ implemented, with deprecated fields removed in `v1`.
   and `page.returned`, `page.total` and `page.has_more` say so. Both the
   embedded and the gRPC paths, which had the same gap.
 
-- **`kernel_ask` stops claiming support it has not established.** The `answer`
+- **`kmp_ask` stops claiming support it has not established.** The `answer`
   field opened "Memory answer supported by cited evidence" — a claim the
   kernel cannot make: it retrieves by term overlap, and whether those items
   answer the question is a judgement it does not perform. It now says what it
@@ -186,18 +199,18 @@ implemented, with deprecated fields removed in `v1`.
   `proof.missing` follows — two situations that lead to different next moves,
   and only one of them means the memory has not been written yet. An UNKNOWN
   answer no longer ships five citations beside it.
-- **The tool surface explains itself.** `kernel_ask` says what
+- **The tool surface explains itself.** `kmp_ask` says what
   `proof.confidence` measures (lexical term overlap with the best-matching
   evidence item — not a judgement that the evidence answers, and not the
-  `confidence` on a relation, which is writer certainty). `kernel_write_memory`
-  says it is the writer to reach for and `kernel_ingest` the low-level form.
+  `confidence` on a relation, which is writer certainty). `kmp_write_memory`
+  says it is the writer to reach for and `kmp_ingest` the low-level form.
   The four temporal verbs each name their own cursor parameter, since they are
-  taught as one family and three of the four differ. `kernel_goto` stops
+  taught as one family and three of the four differ. `kmp_goto` stops
   advertising `dimensions` as if the other three lacked it.
 - `observed_at` says **UTC**. RFC3339 alone permits an offset, so writers
   sending local wall-clock time with a `Z` were not out of spec — and put the
   memory's frontier hours into the future.
-- The agent skill stops teaching a `kernel_goto` default of 50 entries. There
+- The agent skill stops teaching a `kmp_goto` default of 50 entries. There
   is no default; the only `50` was in a unit test.
 
 - **The default is the embedded kernel.** `kmp-mcp` with nothing set serves

@@ -3,14 +3,14 @@ use serde_json::{Map, Value};
 
 pub fn kernel_operator_allowed_read_tools() -> Vec<String> {
     [
-        "kernel_wake",
-        "kernel_ask",
-        "kernel_near",
-        "kernel_goto",
-        "kernel_rewind",
-        "kernel_forward",
-        "kernel_trace",
-        "kernel_inspect",
+        "kmp_wake",
+        "kmp_ask",
+        "kmp_near",
+        "kmp_goto",
+        "kmp_rewind",
+        "kmp_forward",
+        "kmp_trace",
+        "kmp_inspect",
     ]
     .iter()
     .map(ToString::to_string)
@@ -18,7 +18,7 @@ pub fn kernel_operator_allowed_read_tools() -> Vec<String> {
 }
 
 pub fn kernel_operator_allowed_write_tools() -> Vec<String> {
-    ["kernel_ingest", "kernel_write_memory"]
+    ["kmp_ingest", "kmp_write_memory"]
         .iter()
         .map(ToString::to_string)
         .collect()
@@ -32,13 +32,13 @@ pub fn kernel_operator_allowed_full_tools() -> Vec<String> {
 
 pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bool {
     match tool {
-        "kernel_wake" => {
+        "kmp_wake" => {
             path_non_empty_string(arguments, &["about"])
                 && optional_limit(arguments, &["budget", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["depth"], 8)
         }
-        "kernel_near" => {
+        "kmp_near" => {
             positive_limit(arguments, &["limit", "entries"], 64)
                 && positive_limit(arguments, &["limit", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "tokens"], 16_000)
@@ -47,35 +47,35 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 && optional_limit(arguments, &["window", "after_entries"], 64)
                 && path_cursor(arguments, &["around"]).is_some()
         }
-        "kernel_trace" => {
+        "kmp_trace" => {
             path_string(arguments, &["from"]).is_some()
                 && path_string(arguments, &["to"]).is_some()
                 && positive_limit(arguments, &["budget", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["page", "entries"], 256)
         }
-        "kernel_inspect" => {
+        "kmp_inspect" => {
             path_string(arguments, &["ref"]).is_some()
                 && arguments
                     .pointer("/include/raw")
                     .and_then(Value::as_bool)
                     .is_some_and(|raw| !raw)
         }
-        "kernel_goto" => {
+        "kmp_goto" => {
             path_cursor(arguments, &["at"]).is_some()
                 && optional_limit(arguments, &["limit", "entries"], 64)
                 && optional_limit(arguments, &["limit", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "tokens"], 16_000)
         }
-        "kernel_rewind" | "kernel_forward" => {
+        "kmp_rewind" | "kmp_forward" => {
             path_cursor(arguments, &["from"]).is_some()
                 && optional_limit(arguments, &["limit", "entries"], 64)
                 && optional_limit(arguments, &["limit", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "tokens"], 16_000)
         }
-        "kernel_ask" => optional_limit(arguments, &["budget", "tokens"], 16_000),
-        "kernel_write_memory" => bounded_write_memory(arguments),
-        "kernel_ingest" => bounded_ingest(arguments),
+        "kmp_ask" => optional_limit(arguments, &["budget", "tokens"], 16_000),
+        "kmp_write_memory" => bounded_write_memory(arguments),
+        "kmp_ingest" => bounded_ingest(arguments),
         _ => false,
     }
 }
@@ -108,13 +108,13 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
         return Vec::new();
     };
     match tool {
-        "kernel_near" => path_string(arguments, &["around", "ref"])
+        "kmp_near" => path_string(arguments, &["around", "ref"])
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
-        "kernel_inspect" => path_string(arguments, &["ref"])
+        "kmp_inspect" => path_string(arguments, &["ref"])
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
-        "kernel_trace" => {
+        "kmp_trace" => {
             let mut refs = Vec::new();
             if let Some(from) = path_string(arguments, &["from"]) {
                 refs.push(from.to_string());
@@ -124,13 +124,13 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
             }
             refs
         }
-        "kernel_goto" => path_string(arguments, &["at", "ref"])
+        "kmp_goto" => path_string(arguments, &["at", "ref"])
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
-        "kernel_rewind" | "kernel_forward" => path_string(arguments, &["from", "ref"])
+        "kmp_rewind" | "kmp_forward" => path_string(arguments, &["from", "ref"])
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
-        "kernel_write_memory" => arguments
+        "kmp_write_memory" => arguments
             .get("connect_to")
             .and_then(Value::as_array)
             .into_iter()
@@ -158,16 +158,16 @@ fn validate_tool_call_shape(action: &Value) -> Result<(), String> {
     let arguments = required_value(action, "arguments", "action")?;
     object(arguments, "action.arguments")?;
     match tool {
-        "kernel_wake" => validate_wake_arguments(arguments),
-        "kernel_ask" => validate_ask_arguments(arguments),
-        "kernel_near" => validate_temporal_arguments(arguments, "around", "kernel_near"),
-        "kernel_goto" => validate_temporal_arguments(arguments, "at", "kernel_goto"),
-        "kernel_rewind" => validate_temporal_arguments(arguments, "from", "kernel_rewind"),
-        "kernel_forward" => validate_temporal_arguments(arguments, "from", "kernel_forward"),
-        "kernel_trace" => validate_trace_arguments(arguments),
-        "kernel_inspect" => validate_inspect_arguments(arguments),
-        "kernel_write_memory" => validate_write_memory_arguments(arguments),
-        "kernel_ingest" => validate_ingest_arguments(arguments),
+        "kmp_wake" => validate_wake_arguments(arguments),
+        "kmp_ask" => validate_ask_arguments(arguments),
+        "kmp_near" => validate_temporal_arguments(arguments, "around", "kmp_near"),
+        "kmp_goto" => validate_temporal_arguments(arguments, "at", "kmp_goto"),
+        "kmp_rewind" => validate_temporal_arguments(arguments, "from", "kmp_rewind"),
+        "kmp_forward" => validate_temporal_arguments(arguments, "from", "kmp_forward"),
+        "kmp_trace" => validate_trace_arguments(arguments),
+        "kmp_inspect" => validate_inspect_arguments(arguments),
+        "kmp_write_memory" => validate_write_memory_arguments(arguments),
+        "kmp_ingest" => validate_ingest_arguments(arguments),
         other => Err(format!("unsupported tool `{other}`")),
     }
 }
@@ -1134,7 +1134,7 @@ mod tests {
     #[test]
     fn bounded_tool_detection_accepts_expected_navigation_calls() {
         assert!(kernel_operator_is_bounded_tool_call(
-            "kernel_near",
+            "kmp_near",
             &json!({
                 "around": { "time": "2026-05-14T00:00:00Z" },
                 "limit": { "entries": 12, "tokens": 2400 },
@@ -1143,7 +1143,7 @@ mod tests {
             })
         ));
         assert!(kernel_operator_is_bounded_tool_call(
-            "kernel_trace",
+            "kmp_trace",
             &json!({
                 "from": "node:2",
                 "to": "node:1",
@@ -1151,7 +1151,7 @@ mod tests {
             })
         ));
         assert!(kernel_operator_is_bounded_tool_call(
-            "kernel_inspect",
+            "kmp_inspect",
             &json!({
                 "ref": "node:1",
                 "include": { "details": true, "incoming": true, "outgoing": true, "raw": false }
@@ -1162,14 +1162,14 @@ mod tests {
     #[test]
     fn bounded_tool_detection_rejects_unbounded_calls() {
         assert!(!kernel_operator_is_bounded_tool_call(
-            "kernel_near",
+            "kmp_near",
             &json!({
                 "around": { "ref": "node:1" },
                 "limit": { "entries": 500, "tokens": 2400 }
             })
         ));
         assert!(!kernel_operator_is_bounded_tool_call(
-            "kernel_inspect",
+            "kmp_inspect",
             &json!({
                 "ref": "node:1",
                 "include": { "raw": true }
@@ -1182,7 +1182,7 @@ mod tests {
         assert_eq!(
             kernel_operator_primary_refs(&json!({
                 "type": "tool_call",
-                "tool": "kernel_trace",
+                "tool": "kmp_trace",
                 "arguments": {
                     "from": "node:2",
                     "to": "node:1"
@@ -1193,7 +1193,7 @@ mod tests {
         assert_eq!(
             kernel_operator_primary_refs(&json!({
                 "type": "tool_call",
-                "tool": "kernel_write_memory",
+                "tool": "kmp_write_memory",
                 "arguments": {
                     "connect_to": [
                         { "ref": "node:prior", "rel": "chosen_because" },
@@ -1210,7 +1210,7 @@ mod tests {
         for action in [
             json!({
                 "type": "tool_call",
-                "tool": "kernel_wake",
+                "tool": "kmp_wake",
                 "arguments": {
                     "about": "about:1",
                     "intent": "continue investigation",
@@ -1220,7 +1220,7 @@ mod tests {
             }),
             json!({
                 "type": "tool_call",
-                "tool": "kernel_near",
+                "tool": "kmp_near",
                 "arguments": {
                     "about": "about:1",
                     "around": { "sequence": 7 },
@@ -1233,7 +1233,7 @@ mod tests {
             }),
             json!({
                 "type": "tool_call",
-                "tool": "kernel_inspect",
+                "tool": "kmp_inspect",
                 "arguments": {
                     "ref": "node:1",
                     "include": {
@@ -1246,7 +1246,7 @@ mod tests {
             }),
             json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
@@ -1303,7 +1303,7 @@ mod tests {
         ] {
             let action = json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
@@ -1323,7 +1323,7 @@ mod tests {
     fn action_shape_rejects_ambiguous_temporal_cursor() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "ref": "node:1", "sequence": 1 },
@@ -1353,7 +1353,7 @@ mod tests {
         ] {
             let action = json!({
                 "type": "tool_call",
-                "tool": "kernel_near",
+                "tool": "kmp_near",
                 "arguments": {
                     "about": "about:1",
                     "around": cursor,
@@ -1373,7 +1373,7 @@ mod tests {
     fn action_shape_rejects_extra_tool_argument_fields() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_ask",
+            "tool": "kmp_ask",
             "arguments": {
                 "about": "about:1",
                 "answer_policy": "evidence_or_unknown",
@@ -1393,7 +1393,7 @@ mod tests {
     fn action_shape_rejects_extra_top_level_fields() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_inspect",
+            "tool": "kmp_inspect",
             "arguments": {
                 "ref": "node:1",
                 "include": {
@@ -1416,7 +1416,7 @@ mod tests {
     fn action_contract_rejects_unbounded_navigation() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "ref": "node:1" },
@@ -1430,7 +1430,7 @@ mod tests {
 
         assert_eq!(
             kernel_operator_action_contract_error(&action),
-            Some("unbounded or invalid tool call for `kernel_near`".to_string())
+            Some("unbounded or invalid tool call for `kmp_near`".to_string())
         );
     }
 
@@ -1438,7 +1438,7 @@ mod tests {
     fn action_contract_accepts_smart_write_memory() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_write_memory",
+            "tool": "kmp_write_memory",
             "arguments": valid_write_memory_arguments()
         });
 
@@ -1453,7 +1453,7 @@ mod tests {
         });
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_write_memory",
+            "tool": "kmp_write_memory",
             "arguments": arguments
         });
 
@@ -1472,7 +1472,7 @@ mod tests {
         arguments["connect_to"][0]["evidence"] = json!("");
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_write_memory",
+            "tool": "kmp_write_memory",
             "arguments": arguments
         });
 
@@ -1486,7 +1486,7 @@ mod tests {
     fn action_contract_accepts_canonical_ingest_write() {
         let action = json!({
             "type": "tool_call",
-            "tool": "kernel_ingest",
+            "tool": "kmp_ingest",
             "arguments": valid_ingest_arguments()
         });
 
@@ -1595,7 +1595,7 @@ mod tests {
                 "source_kind": "agent",
                 "source_agent": "agent:backend",
                 "observed_at": "2026-05-06T10:00:00Z",
-                "correlation_id": "kernel_write:incident:mobile-login",
+                "correlation_id": "kmp_write:incident:mobile-login",
                 "causation_id": "ingest:incident-mobile-login:1"
             }
         })

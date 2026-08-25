@@ -68,8 +68,8 @@ FunctionGemma-native follow-up: KMP actions were mapped to FunctionGemma tool
 declarations and predictions were parsed back into the same policy-eval
 contract. The native cut trained cleanly and reached final eval loss 0.05202,
 but policy quality remained weak: 39/60 parsed predictions, 0.4667 exact action
-accuracy, 0 unbounded tool calls. It overused `kernel_ask` and `kernel_stop`
-and did not reliably choose `kernel_near` or `kernel_inspect`. FunctionGemma
+accuracy, 0 unbounded tool calls. It overused `kmp_ask` and `kernel_stop`
+and did not reliably choose `kmp_near` or `kmp_inspect`. FunctionGemma
 270M is therefore not the current Operator backbone.
 
 Llama 3.2 1B control note: `meta-llama/Llama-3.2-1B-Instruct` was added as a
@@ -107,8 +107,8 @@ about 7.8 GiB VRAM and reaching final eval loss 0.0589. Policy quality matched
 Hammer but did not beat the Qwen v7 baseline: exact action accuracy reached
 0.6500, with 46/60 parsed predictions, 14 strict prediction failures, and zero
 unbounded tool calls. Stop accuracy was perfect. The valid action distribution
-contained `kernel_ask`, `kernel_near`, and `stop`, but no valid
-`kernel_inspect` predictions, which explains the remaining gap on smart-writer
+contained `kmp_ask`, `kmp_near`, and `stop`, but no valid
+`kmp_inspect` predictions, which explains the remaining gap on smart-writer
 read steps. The failure reasons were 8 unsupported action types, 2 incomplete
 JSON responses, 2 extra-content-after-JSON responses, and 2 missing action
 types. Keep this as a useful non-Qwen control, not a release candidate.
@@ -119,7 +119,7 @@ path is valid: the same effective batch size trained in about 29 minutes, with
 all 4 GPUs saturated, about 13 GiB VRAM used per GPU, final eval loss 0.0590,
 and eval token accuracy 0.9873. The policy result is not valid as an
 improvement: only 42/60 predictions parsed, exact action accuracy dropped to
-0.5167, and the model still produced zero valid `kernel_inspect` predictions.
+0.5167, and the model still produced zero valid `kmp_inspect` predictions.
 All 18 strict failures were `longmemeval.smart_writer` steps. Failure analysis
 showed the model copying large `writer_*` visible-state fragments into the
 action JSON, producing incomplete or malformed actions. Do not continue this
@@ -136,8 +136,8 @@ holdout using 4 RTX 3090 GPUs. Training completed in 5m12s with final
 improved materially versus the earlier Hammer v7 run: exact action accuracy
 rose from 0.6500 to 0.7500, missing predictions fell from 7 to 1, and primary
 ref accuracy rose from 0.7727 to 0.9545. This confirms the leak cleanup matters.
-The model is still not a release candidate: it emits no valid `kernel_inspect`
-predictions and 6/60 predictions are unbounded, mostly `kernel_near` calls
+The model is still not a release candidate: it emits no valid `kmp_inspect`
+predictions and 6/60 predictions are unbounded, mostly `kmp_near` calls
 missing `limit.tokens`. The next gate is stronger action-shape supervision or
 constrained emission for required bounded fields, then rerun Qwen/Hammer/LFM on
 the same clean split.
@@ -150,7 +150,7 @@ stable run used per-device batch size 1 and gradient accumulation 4. Training
 completed in 4m15s with final `eval_loss=0.05393` and
 `eval_mean_token_accuracy=0.9879`, but policy quality remained weak: only 33/60
 predictions parsed, exact action accuracy reached 0.5000, and valid predicted
-tools were limited to `kernel_ask` and `stop`. The main failure mode is native
+tools were limited to `kmp_ask` and `stop`. The main failure mode is native
 function-call corruption: incomplete calls, copied function declarations, and
 overlong `kernel_stop` calls with large `final_refs`. FunctionGemma remains a
 useful small-model control, but not a viable Operator backbone in this setup.
@@ -165,10 +165,10 @@ Policy quality improved versus the earlier Qwen v7 run: exact action accuracy
 rose from 0.7000 to 0.7500, strict parse failures fell from 12 to 4, and stop
 accuracy stayed at 1.000. The remaining dominant gap is not generic JSON
 emission. It is tool semantics in smart-writer read steps: the held-out target
-contains 14 `kernel_inspect` actions, but Qwen produced zero valid
-`kernel_inspect` predictions, mapping 10 of them to `kernel_near` and missing
+contains 14 `kmp_inspect` actions, but Qwen produced zero valid
+`kmp_inspect` predictions, mapping 10 of them to `kmp_near` and missing
 the other 4. One valid prediction was unbounded because it mixed a
-`kernel_near` tool name with `kernel_ask`-shaped arguments, omitting
+`kmp_near` tool name with `kmp_ask`-shaped arguments, omitting
 `around.ref` and `limit`. Qwen and Hammer now tie on exact action accuracy
 (`0.7500`) on this clean split, but neither is a release candidate until the
 training data or constrained emission teaches the inspect-vs-near boundary.
@@ -177,7 +177,7 @@ Prompt-only v9 negative result: adding a longer textual tool-selection policy
 to the SFT system prompt did not solve the inspect-vs-near boundary. It made
 Qwen more verbose and less stable under strict JSON generation: exact action
 accuracy dropped to 0.5167, strict prediction failures rose to 7/60, and the
-model still emitted zero valid `kernel_inspect` predictions. Keep the base
+model still emitted zero valid `kmp_inspect` predictions. Keep the base
 prompt compact. The problem is representation and action-shape learning, not
 more prose.
 
@@ -190,13 +190,13 @@ state and exposes already-visible navigation facts such as
 counts, observed-ref counts, and the primary visible candidate. On the same
 LongMemEval holdout, Qwen trained in 3m18s with final `eval_loss=0.04027` and
 `eval_mean_token_accuracy=0.9890`. The model produced the full expected action
-distribution including all 14 `kernel_inspect` actions. A follow-up hardening
+distribution including all 14 `kmp_inspect` actions. A follow-up hardening
 pass moved action-shape validation into the shared testkit contract and rejected
 extra fields in tool arguments. Under that stricter evaluator, the same
 prediction file has 59/60 valid predictions, 1 invalid prediction, zero
 unbounded tool calls, 0.9773 tool accuracy, 0.9773 primary-ref accuracy, 0.9773
 scope accuracy, 1.000 stop accuracy, and 0.9833 exact action accuracy. The
-invalid row was a semantically correct `kernel_ask` that added `final_refs`
+invalid row was a semantically correct `kmp_ask` that added `final_refs`
 inside `arguments`, which is not part of the KMP/MCP tool schema. The 2026-05-14
 strict predictor rerun now rejects that shape at parse time, writes 59
 predictions and 1 failure, and policy eval reports 1 missing prediction, 0
@@ -222,8 +222,8 @@ zero invalid predictions, zero unbounded calls, and no invalid reasons.
 LongMemEval v8 clean was also revalidated and is not release-grade under the
 strict contract: 4 missing predictions, 2 invalid predictions, 0 unbounded
 calls, and 0.7500 exact action accuracy. The invalid v8 reasons were one extra
-`remaining_context_chars` field inside `kernel_ask.arguments` and one
-`kernel_near` action missing required `around`, `include`, and `limit` fields.
+`remaining_context_chars` field inside `kmp_ask.arguments` and one
+`kmp_near` action missing required `around`, `include`, and `limit` fields.
 
 Update 2026-05-14, benchmark boundary: the current benchmark status and next
 steps are summarized in
@@ -282,7 +282,7 @@ The operator model may:
 - choose one KMP/MCP tool call at a time;
 - choose scoped, bounded arguments;
 - decide whether to continue, inspect, trace, move temporally, or stop;
-- execute prepared `kernel_write_memory` calls only when the relation, `why`,
+- execute prepared `kmp_write_memory` calls only when the relation, `why`,
   evidence, and read-context proof are already visible.
 
 The operator model must not:
@@ -310,17 +310,17 @@ Kernel responsibilities remain deterministic:
 
 Read/navigation tools:
 
-- `kernel_ask`
-- `kernel_near`
-- `kernel_trace`
-- `kernel_inspect`
-- `kernel_goto`
-- `kernel_rewind`
-- `kernel_forward`
+- `kmp_ask`
+- `kmp_near`
+- `kmp_trace`
+- `kmp_inspect`
+- `kmp_goto`
+- `kmp_rewind`
+- `kmp_forward`
 
 Write tool:
 
-- `kernel_write_memory`
+- `kmp_write_memory`
 
 Write mode is a separate policy mode. The first operator slice should focus on
 read/navigation trajectories. Writer mode must be added only after the
@@ -381,7 +381,7 @@ Minimal shape:
   "visible_state": {
     "current_ref": "memoryarena:...:subtask:9:answer",
     "known_refs": ["..."],
-    "last_tool": "kernel_near",
+    "last_tool": "kmp_near",
     "last_observed_refs": ["..."],
     "remaining_budget": {
       "tool_calls": 4,
@@ -389,17 +389,17 @@ Minimal shape:
     }
   },
   "allowed_tools": [
-    "kernel_near",
-    "kernel_trace",
-    "kernel_inspect",
-    "kernel_goto",
-    "kernel_rewind",
-    "kernel_forward",
-    "kernel_ask"
+    "kmp_near",
+    "kmp_trace",
+    "kmp_inspect",
+    "kmp_goto",
+    "kmp_rewind",
+    "kmp_forward",
+    "kmp_ask"
   ],
   "target_action": {
     "type": "tool_call",
-    "tool": "kernel_inspect",
+    "tool": "kmp_inspect",
     "arguments": {
       "about": "memoryarena:run:...",
       "ref": "memoryarena:...:subtask:9:answer",
@@ -536,14 +536,14 @@ visible_state -> target_action
 
 The first exported action space is read/navigation:
 
-- `kernel_near`
-- `kernel_inspect`
-- `kernel_trace`
+- `kmp_near`
+- `kmp_inspect`
+- `kmp_trace`
 - `stop`
 
 `--include-writer-reads` additionally exports read-before-write tool calls from
 the smart writer as `write_context_read` mode, but it does not yet train the
-model to author `kernel_write_memory` relations. Writer-side training remains
+model to author `kmp_write_memory` relations. Writer-side training remains
 limited to kernel operation until a strong-teacher semantic writer dataset
 exists.
 
@@ -559,9 +559,9 @@ Real export checks:
 The first 100-task read-only export produced:
 
 ```text
-kernel_near    753
-kernel_inspect 753
-kernel_trace   653
+kmp_near    753
+kmp_inspect 753
+kmp_trace   653
 stop           753
 ```
 
@@ -711,7 +711,7 @@ Guardrails:
 - tool names must be present in the trajectory action space;
 - tool refs and stop refs must already be visible in `current_ref`,
   `trace_target_ref`, `known_refs`, or `last_observed_refs`;
-- `kernel_inspect.include.raw` must be `false`.
+- `kmp_inspect.include.raw` must be `false`.
 
 Evaluation command after a run:
 
@@ -732,7 +732,7 @@ Real OpenAI baseline smoke:
 | `gpt-4o-mini` | first 30 trajectories | explicit `about` rule | 30 | 0 | 0.533 | 1.000 | 1.000 | 1.000 | 1.000 | 0 | 0 |
 
 The initial failure mode was useful: the generalist model used `current_ref` as
-`kernel_near.arguments.about` instead of the top-level `about`. The prompt and
+`kmp_near.arguments.about` instead of the top-level `about`. The prompt and
 training data now state explicitly that `about` must equal the top-level scope.
 
 ### P1.5 First Small-Model Experiment
@@ -947,7 +947,7 @@ last_observed_refs
 ```
 
 This matters because the first writer-read export exposed a real issue: some
-read-before-write `kernel_near` targets were only recoverable from the raw ref
+read-before-write `kmp_near` targets were only recoverable from the raw ref
 naming pattern, not from visible state. Those rows are not valid training
 examples for an operator model.
 
@@ -983,9 +983,9 @@ Kept target actions:
 
 | Target action | Rows |
 | --- | ---: |
-| `kernel_near` | 753 |
-| `kernel_inspect` | 2,159 |
-| `kernel_trace` | 653 |
+| `kmp_near` | 753 |
+| `kmp_inspect` | 2,159 |
+| `kmp_trace` | 653 |
 | `stop` | 753 |
 
 The dropped rows are currently the first writer context-read step where the
@@ -1071,7 +1071,7 @@ Held-out ref-safe eval result:
 
 The two V3 misses are both in `write_context_read`. In both cases the model
 selected the correct tool, bounded scope, and action type, but chose a different
-visible `kernel_inspect` ref from the same candidate set. There were no missing
+visible `kmp_inspect` ref from the same candidate set. There were no missing
 predictions, invalid JSON actions, unbounded tool calls, wrong tools, wrong
 scopes, or wrong stop actions.
 
@@ -1161,9 +1161,9 @@ Target actions:
 
 | Target action | Rows |
 | --- | ---: |
-| `kernel_near` | 2,159 |
-| `kernel_inspect` | 2,159 |
-| `kernel_trace` | 653 |
+| `kmp_near` | 2,159 |
+| `kmp_inspect` | 2,159 |
+| `kmp_trace` | 653 |
 | `stop` | 753 |
 
 Eval-set baselines:
@@ -1384,9 +1384,9 @@ Eval-set composition:
 
 | Target action | Rows |
 | --- | ---: |
-| `kernel_near` | 424 |
-| `kernel_inspect` | 424 |
-| `kernel_trace` | 128 |
+| `kmp_near` | 424 |
+| `kmp_inspect` | 424 |
+| `kmp_trace` | 128 |
 | `stop` | 148 |
 
 Leak audit returned no model-facing rows for raw MemoryArena refs, target
@@ -1562,13 +1562,13 @@ Full strict replay latency by action against the public TLS endpoint:
 
 | Action | Count | Avg ms | Max ms |
 | --- | ---: | ---: | ---: |
-| `kernel_near` | 424 | 1,302.7 | 2,517 |
-| `kernel_inspect` | 424 | 110.0 | 198 |
-| `kernel_trace` | 128 | 127.1 | 181 |
+| `kmp_near` | 424 | 1,302.7 | 2,517 |
+| `kmp_inspect` | 424 | 110.0 | 198 |
+| `kmp_trace` | 128 | 127.1 | 181 |
 | `stop` | 148 | 0.0 | 0 |
 
 The current signal is good: correctness holds through MCP under the strict
-action contract, and every partial result is explicit. `kernel_near` dominates
+action contract, and every partial result is explicit. `kmp_near` dominates
 live replay latency, so candidate retrieval performance and pagination/budget
 behavior remain the main operational things to watch as the holdout scales.
 
@@ -1581,9 +1581,9 @@ scale the same training/evaluation path.
 
 Top 1 requirement: P1.11.0 pagination/progress/resume gate.
 
-- `kernel_trace` must keep returning bounded paths with explicit page metadata:
+- `kmp_trace` must keep returning bounded paths with explicit page metadata:
   cursor, `has_more`, returned count, and budget consumed.
-- `kernel_near`, `goto`, `rewind`, and `forward` must expose the same bounded
+- `kmp_near`, `goto`, `rewind`, and `forward` must expose the same bounded
   pagination semantics through both gRPC/KMP and MCP.
 - Remote audit tools must report progress by about/task and support limit,
   offset or cursor-based resume. A long audit must not look like a hung
@@ -1610,8 +1610,8 @@ P1.11.0 first implementation slice:
   errors.
 - Temporal movement responses now carry `PageInfo` in the API contract for
   `Goto`, `Near`, `Rewind`, and `Forward`; the MCP adapter maps the same page
-  object into `kernel_goto`, `kernel_near`, `kernel_rewind`, and
-  `kernel_forward` structured output.
+  object into `kmp_goto`, `kmp_near`, `kmp_rewind`, and
+  `kmp_forward` structured output.
 - `kernel_operator_mcp_replay` already exposes `--limit`, `--offset`, and
   `--log-progress-every`; replay rows now record `partial_result` and `page`,
   and summaries count partial results by action.
@@ -1653,9 +1653,9 @@ Observed 221-task progressive-search run on 2026-05-12:
 | Subtasks / asks | 1,641 |
 | Ingest writes | 3,282 |
 | MCP navigation asks | 1,641 |
-| `kernel_near` probe calls | 1,641 |
-| `kernel_inspect` probe calls | 1,641 |
-| `kernel_trace` probe calls | 1,420 |
+| `kmp_near` probe calls | 1,641 |
+| `kmp_inspect` probe calls | 1,641 |
+| `kmp_trace` probe calls | 1,420 |
 | Future answer leaks | 0 |
 | Unexpected refs | 0 |
 | Smart-writer LLM invalid outputs | 0 |
@@ -1710,7 +1710,7 @@ Post-deploy P1.11.0 checks on 2026-05-12:
 | Check | Result |
 | --- | ---: |
 | Deployed image | `ghcr.io/underpass-ai/kmp:dev-78e9a9f` |
-| MCP temporal page smoke | `kernel_forward` page 1 `has_more=true`, page 2 `has_more=false` |
+| MCP temporal page smoke | `kmp_forward` page 1 `has_more=true`, page 2 `has_more=false` |
 | Remote inspect audit smoke | 100 / 100 refs found |
 | Remote inspect audit errors | 0 |
 | Remote inspect audit total refs | 12,150 |
@@ -1775,7 +1775,7 @@ Exit criteria:
 - no model-facing leak of raw MemoryArena refs or benchmark answers;
 - zero invalid and unbounded operator actions on the held-out set;
 - live MCP replay has zero MCP failures and zero missing expected refs;
-- latency report shows whether `kernel_near` remains the dominant cost;
+- latency report shows whether `kmp_near` remains the dominant cost;
 - failures, if any, are classified as operator, kernel retrieval, writer,
   reader, or benchmark/domain reasoning.
 
@@ -1823,17 +1823,17 @@ answers in the model-facing input.
 
 Initial read/navigation actions:
 
-- `kernel_near`
-- `kernel_inspect`
-- `kernel_trace`
+- `kmp_near`
+- `kmp_inspect`
+- `kmp_trace`
 - `stop`
 
 Hold back until later:
 
-- `kernel_goto`
-- `kernel_rewind`
-- `kernel_forward`
-- `kernel_write_memory`
+- `kmp_goto`
+- `kmp_rewind`
+- `kmp_forward`
+- `kmp_write_memory`
 
 This reduces ambiguity and lets the first model learn the highest-frequency
 navigation moves before temporal movement and write policy are added.
@@ -1956,9 +1956,9 @@ Exported LongMemEval trajectory counts:
 
 | Source | Trajectories | Notes |
 | --- | ---: | --- |
-| Balanced60 v6 | 120 | `kernel_ask` + stop rows |
-| 100-prefix v6 | 200 | `kernel_ask` + stop rows |
-| MS30 smart writer | 268 | `kernel_ask`, stop, `kernel_near`, `kernel_inspect` writer reads |
+| Balanced60 v6 | 120 | `kmp_ask` + stop rows |
+| 100-prefix v6 | 200 | `kmp_ask` + stop rows |
+| MS30 smart writer | 268 | `kmp_ask`, stop, `kmp_near`, `kmp_inspect` writer reads |
 
 Mixed MemoryArena P1.11 + LongMemEval SFT output:
 
@@ -1979,10 +1979,10 @@ Action mix:
 
 | Action | Rows |
 | --- | ---: |
-| `kernel_near` | 4,806 |
-| `kernel_inspect` | 4,806 |
-| `kernel_trace` | 1,420 |
-| `kernel_ask` | 190 |
+| `kmp_near` | 4,806 |
+| `kmp_inspect` | 4,806 |
+| `kmp_trace` | 1,420 |
+| `kmp_ask` | 190 |
 | `stop` | 1,831 |
 
 The no-gold audit checks the model-facing OpenAI JSONL files for
@@ -2028,7 +2028,7 @@ completed:
 | Elapsed | 130,052 ms |
 
 The smoke used the MCP runner path. A direct Codex MCP check also exercised
-`kernel_ingest`, `kernel_ask`, `kernel_near`, and `kernel_inspect` against the
+`kmp_ingest`, `kmp_ask`, `kmp_near`, and `kmp_inspect` against the
 same live kernel boundary on the isolated about
 `codex:mcp:operator-longmemeval-smoke:20260512`.
 
@@ -2113,7 +2113,7 @@ Corrected v7 policy evaluation:
 | Stop accuracy | 1.0000 |
 
 The 12 prediction failures are all in MS30 smart-writer `read:1` steps. The
-target action in those rows is typically `kernel_inspect`, but the model tends
+target action in those rows is typically `kmp_inspect`, but the model tends
 to over-generate: it starts with a plausible JSON-like action and then emits
 additional JSON/action fragments until the strict parser rejects the response.
 
@@ -2152,7 +2152,7 @@ trained from a clean, versioned dataset after the audit gates pass.
 
 - Should write-mode trajectories be a separate dataset from read-mode
   trajectories? Initial answer: yes.
-- Should the operator be allowed to call `kernel_ask`, or should `ask` be the
+- Should the operator be allowed to call `kmp_ask`, or should `ask` be the
   reader's terminal move? Initial answer: allow it, but score overuse.
 - Should the model learn relation writing directly? Initial answer: only after
   read/navigation is stable, and only with proof-cited relations.

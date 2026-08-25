@@ -1,21 +1,21 @@
 ---
 description: Revert a decision in memory without deleting it — write the compensating entry, then show that both states still exist
 argument-hint: "[what to revert]"
-allowed-tools: mcp__plugin_kmp_kernel-memory__kernel_wake, mcp__plugin_kmp_kernel-memory__kernel_inspect, mcp__plugin_kmp_kernel-memory__kernel_rewind, mcp__plugin_kmp_kernel-memory__kernel_write_memory, mcp__plugin_kmp_kernel-memory__kernel_ask
+allowed-tools: mcp__plugin_kmp_kmp__kmp_wake, mcp__plugin_kmp_kmp__kmp_inspect, mcp__plugin_kmp_kmp__kmp_rewind, mcp__plugin_kmp_kmp__kmp_write_memory, mcp__plugin_kmp_kmp__kmp_ask
 ---
 
 Undo a decision the way an append-only log undoes things: by recording that
 it was undone, never by removing it.
 
 `$ARGUMENTS` says what to revert. If it is vague — "the last decision", "that
-thing about retries" — find the candidate first with `kernel_wake` or
-`kernel_ask` and **confirm which ref you mean before writing**. Reverting the
+thing about retries" — find the candidate first with `kmp_wake` or
+`kmp_ask` and **confirm which ref you mean before writing**. Reverting the
 wrong entry is not undoable by a second revert; it just adds a second wrong
 entry to a permanent record.
 
 ## Read before you write
 
-`kernel_inspect` the target. You need three things from it: that the ref
+`kmp_inspect` the target. You need three things from it: that the ref
 exists, what it actually said, and whether something already supersedes it —
 reverting an entry that was already reverted means the story is more tangled
 than "undo the last thing", and the user should hear that rather than get a
@@ -23,7 +23,7 @@ duplicate.
 
 ## The compensating write
 
-One `kernel_write_memory` with `intent: "record_decision"`, and a
+One `kmp_write_memory` with `intent: "record_decision"`, and a
 `connect_to` carrying `rel: "supersedes"`, `class: "evidential"`:
 
 - **`current.summary`** — what is true *now*. Not "reverting X": the entry has
@@ -41,8 +41,8 @@ without a reason is a deletion with extra steps.
 
 This is the point of the command, so do it rather than describe it:
 
-1. `kernel_ask` about the subject — the answer now leads with the new state.
-2. `kernel_rewind` from a time *before* the reversal — the old decision is
+1. `kmp_ask` about the subject — the answer now leads with the new state.
+2. `kmp_rewind` from a time *before* the reversal — the old decision is
    still there, still saying what it said, with the evidence it had.
 
 Report both. **"The memory now says X. As of <before>, it said Y, and here is
@@ -60,8 +60,8 @@ different operation with different consequences, and this command is not it.
 Say so and stop.
 
 **Known limit, and say it if it matters here.** A superseded entry is not yet
-marked as superseded in `kernel_wake` or `kernel_ask` output; the supersession
-is visible on the relation, through `kernel_inspect`, and by rewinding. A
+marked as superseded in `kmp_wake` or `kmp_ask` output; the supersession
+is visible on the relation, through `kmp_inspect`, and by rewinding. A
 reader who does neither may still act on the old decision. That is why this
 command shows both states rather than trusting the reader to notice.
 

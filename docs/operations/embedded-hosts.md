@@ -24,18 +24,18 @@ pin a fixed store.
 ## Claude Code — tested 2026-07-23
 
 ```bash
-claude mcp add kernel-memory --scope user \
+claude mcp add kmp --scope user \
   -- ~/.cargo/bin/kmp-mcp
 ```
 
 `--scope user` registers it for every project; each project still gets its
 own `.kernel/` store. Verify with `claude mcp list` and, inside a session,
-call `kernel_wake` on any about you have written.
+call `kmp_wake` on any about you have written.
 
 ## Codex CLI — tested 2026-07-23
 
 `~/.codex/config.toml` (applied and verified in a live Codex session:
-`kernel_wake` recovered a real checkpoint with proof). Two field notes from
+`kmp_wake` recovered a real checkpoint with proof). Two field notes from
 the verification: sessions started before a registration change keep the old
 MCP inventory (restart the session), and opening a host in a project whose
 `.kernel/` is held by another session fails fast per the single-writer
@@ -43,7 +43,7 @@ contract — the tools then do not appear in the inventory (open the host in a
 project with a free store, or close the other session):
 
 ```toml
-[mcp_servers.kernel-memory]
+[mcp_servers.kmp]
 command = "/home/YOU/.cargo/bin/kmp-mcp"
 # no env: the embedded kernel is the default
 ```
@@ -55,7 +55,7 @@ Project or global config (`opencode.json`):
 ```json
 {
   "mcp": {
-    "kernel-memory": {
+    "kmp": {
       "type": "local",
       "command": ["/home/YOU/.cargo/bin/kmp-mcp"],
       "environment": {}
@@ -71,7 +71,7 @@ Project or global config (`opencode.json`):
 ```json
 {
   "servers": {
-    "kernel-memory": {
+    "kmp": {
       "command": "/home/YOU/.cargo/bin/kmp-mcp",
       "env": {}
     }
@@ -88,10 +88,10 @@ the plugin does not cover.
 
 ```markdown
 ## Kernel memory (KMP)
-- On session start for known work, call `kernel_wake {about}` before
+- On session start for known work, call `kmp_wake {about}` before
   re-deriving context; abouts follow `project:<name>` / `incident:<id>`.
-- Ask targeted questions with `kernel_ask`; navigate history with
-  `kernel_goto/near/rewind/forward`; audit claims with `kernel_inspect`.
+- Ask targeted questions with `kmp_ask`; navigate history with
+  `kmp_goto/near/rewind/forward`; audit claims with `kmp_inspect`.
 - Write memory when you decide, constrain, or conclude — decisions,
   constraints, outcomes with coordinates and evidence. Never transcripts.
 - One `idempotency_key` per logical write; a conflict on retry means

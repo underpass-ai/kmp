@@ -506,12 +506,12 @@ fn relation_why_seed_arguments() -> Value {
 async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
-    call(&server, 1, "kernel_ingest", ingest_arguments()).await;
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
 
     let goto = call(
         &server,
         2,
-        "kernel_goto",
+        "kmp_goto",
         json!({
             "about": "question:e3",
             "at": {"sequence": 2},
@@ -563,7 +563,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         "2026-07-22T10:20:00Z"
     );
 
-    let wake = call(&server, 5, "kernel_wake", json!({"about": "question:e3"})).await;
+    let wake = call(&server, 5, "kmp_wake", json!({"about": "question:e3"})).await;
     let wake_evidence = wake["proof"]["evidence"]
         .as_array()
         .expect("wake proof evidence is an array")
@@ -575,7 +575,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     let ask = call(
         &server,
         6,
-        "kernel_ask",
+        "kmp_ask",
         json!({"about": "question:e3", "question": "What was accepted?"}),
     )
     .await;
@@ -587,14 +587,13 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         .expect("ask returns explicit evidence");
     assert_eq!(ask_evidence["source"], "embedded backend test");
 
-    let inspected_entry = call(&server, 3, "kernel_inspect", json!({"ref": "claim:e3"})).await;
+    let inspected_entry = call(&server, 3, "kmp_inspect", json!({"ref": "claim:e3"})).await;
     assert_eq!(
         inspected_entry["object"]["metadata"]["window"],
         "10:00-10:20"
     );
 
-    let inspected_evidence =
-        call(&server, 4, "kernel_inspect", json!({"ref": "evidence:e3"})).await;
+    let inspected_evidence = call(&server, 4, "kmp_inspect", json!({"ref": "evidence:e3"})).await;
     assert_eq!(
         inspected_evidence["object"]["source"],
         "embedded backend test"
@@ -611,7 +610,7 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
     const EXACT_ANSWER: &str = "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.";
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
-    call(&server, 1, "kernel_ingest", large_recall_ingest_arguments()).await;
+    call(&server, 1, "kmp_ingest", large_recall_ingest_arguments()).await;
     let budget = json!({
         "tokens": TOKEN_LIMIT,
         "detail": "balanced",
@@ -621,7 +620,7 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
     let ask = call(
         &server,
         2,
-        "kernel_ask",
+        "kmp_ask",
         json!({
             "about": "project:large-recall",
             "question": "What exact deficiencies caused rejection and what authority remains withheld?",
@@ -655,7 +654,7 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
     let wake = call(
         &server,
         3,
-        "kernel_wake",
+        "kmp_wake",
         json!({
             "about": "project:large-recall",
             "intent": "continue gate remediation",
@@ -695,7 +694,7 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
     call(
         &server,
         1,
-        "kernel_ingest",
+        "kmp_ingest",
         paraphrase_recall_ingest_arguments(),
     )
     .await;
@@ -711,7 +710,7 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
             let ask = call(
                 &server,
                 2 + (question_index * 3 + repeat) as u64,
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": "project:live-validation",
                     "question": question,
@@ -793,7 +792,7 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
     let unrelated = call(
         &server,
         10,
-        "kernel_ask",
+        "kmp_ask",
         json!({
             "about": "project:live-validation",
             "question": "Which catering vendor supplies the launch dinner?",
@@ -811,13 +810,7 @@ async fn ask_recalls_supported_constraint_across_morphology_and_clause_reorderin
 async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
-    let ingest = call(
-        &server,
-        1,
-        "kernel_ingest",
-        graph_reranker_ingest_arguments(),
-    )
-    .await;
+    let ingest = call(&server, 1, "kmp_ingest", graph_reranker_ingest_arguments()).await;
     assert_eq!(
         ingest["memory"]["about"], "decision:sqlite-wal",
         "fixture ingest failed: {ingest}"
@@ -836,7 +829,7 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
 
     let mut first = None;
     for repeat in 0..3 {
-        let ask = call(&server, 2 + repeat, "kernel_ask", arguments.clone()).await;
+        let ask = call(&server, 2 + repeat, "kmp_ask", arguments.clone()).await;
         assert_ne!(ask["answer"], "UNKNOWN", "{ask}");
         let evidence_ids = ask["proof"]["evidence"]
             .as_array()
@@ -877,7 +870,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     call(
         &server,
         1,
-        "kernel_ingest",
+        "kmp_ingest",
         partial_default_update_ingest_arguments(),
     )
     .await;
@@ -892,7 +885,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
             let ask = call(
                 &server,
                 2 + (question_index * 3 + repeat) as u64,
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": "decision:fresh-store-default",
                     "question": question,
@@ -939,7 +932,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let before = call(
         &server,
         8,
-        "kernel_goto",
+        "kmp_goto",
         json!({
             "about": "decision:fresh-store-default",
             "at": {"sequence": 2},
@@ -959,7 +952,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let after = call(
         &server,
         9,
-        "kernel_goto",
+        "kmp_goto",
         json!({
             "about": "decision:fresh-store-default",
             "at": {"sequence": 3},
@@ -979,7 +972,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let architecture = call(
         &server,
         10,
-        "kernel_inspect",
+        "kmp_inspect",
         json!({
             "ref": "decision:two-engine-architecture",
             "include": {"incoming": true, "outgoing": true}
@@ -992,7 +985,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     let unrelated = call(
         &server,
         11,
-        "kernel_ask",
+        "kmp_ask",
         json!({
             "about": "decision:fresh-store-default",
             "question": "Which catering vendor supplies the launch dinner?",
@@ -1010,12 +1003,12 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
 
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
-    call(&server, 1, "kernel_ingest", relation_why_seed_arguments()).await;
+    call(&server, 1, "kmp_ingest", relation_why_seed_arguments()).await;
 
     let inspected = call(
         &server,
         2,
-        "kernel_inspect",
+        "kmp_inspect",
         json!({"ref": "constraint:share-embedded-store"}),
     )
     .await;
@@ -1053,7 +1046,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         })
     };
 
-    let preview = call(&server, 3, "kernel_write_memory", write_arguments(true)).await;
+    let preview = call(&server, 3, "kmp_write_memory", write_arguments(true)).await;
     assert_eq!(preview["accepted"], false);
     assert_eq!(preview["dry_run"], true);
     assert_eq!(
@@ -1065,13 +1058,13 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         RELATION_EVIDENCE
     );
 
-    let committed = call(&server, 4, "kernel_write_memory", write_arguments(false)).await;
+    let committed = call(&server, 4, "kmp_write_memory", write_arguments(false)).await;
     assert_eq!(committed["accepted"], true, "{committed}");
 
     let wake = call(
         &server,
         5,
-        "kernel_wake",
+        "kmp_wake",
         json!({"about": "project:relation-why-conformance"}),
     )
     .await;
@@ -1083,7 +1076,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     let ask = call(
         &server,
         6,
-        "kernel_ask",
+        "kmp_ask",
         json!({
             "about": "project:relation-why-conformance",
             "question": "Which embedded storage engine should independent KMP processes sharing one store use, and why was redb replaced?",
@@ -1110,7 +1103,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     let trace = call(
         &server,
         7,
-        "kernel_trace",
+        "kmp_trace",
         json!({
             "from": "decision:sqlite-wal-shared-store",
             "to": "constraint:share-embedded-store"
@@ -1123,7 +1116,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     let relation_proof = call(
         &server,
         8,
-        "kernel_inspect",
+        "kmp_inspect",
         json!({"ref": "evidence:decision:sqlite-wal-shared-store:relation:1"}),
     )
     .await;
@@ -1140,7 +1133,7 @@ async fn embedded_backend_returns_structured_not_found_errors() {
     let error = call(
         &server,
         1,
-        "kernel_goto",
+        "kmp_goto",
         json!({
             "about": "question:unknown",
             "at": {"sequence": 1}
@@ -1175,11 +1168,11 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
 
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
-    let ingest = call(&server, 1, "kernel_ingest", ingest_arguments()).await;
+    let ingest = call(&server, 1, "kmp_ingest", ingest_arguments()).await;
     assert_eq!(ingest["memory"]["about"], "question:e3");
     assert_eq!(ingest["memory"]["read_after_write_ready"], true);
 
-    let wake = call(&server, 2, "kernel_wake", json!({"about": "question:e3"})).await;
+    let wake = call(&server, 2, "kmp_wake", json!({"about": "question:e3"})).await;
     let wake_text = wake.to_string();
     assert!(
         wake_text.contains("claim:e3"),
@@ -1190,7 +1183,7 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
     let telemetry = RedbQualityTelemetryReader::open(data_dir.path())
         .expect("quality telemetry journal opens after the session");
     let wake_observations = telemetry
-        .query_since(0, Some("kernel_wake"), 10)
+        .query_since(0, Some("kmp_wake"), 10)
         .expect("wake quality observations are queryable");
     assert_eq!(wake_observations.len(), 1);
     assert_eq!(wake_observations[0].root_node_id(), "question:e3");
@@ -1198,7 +1191,7 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
 
     // A brand-new session on the same data dir recovers the memory.
     let second = KernelMcpServer::embedded(data_dir.path()).expect("second session opens");
-    let recovered = call(&second, 3, "kernel_wake", json!({"about": "question:e3"})).await;
+    let recovered = call(&second, 3, "kmp_wake", json!({"about": "question:e3"})).await;
     assert!(
         recovered.to_string().contains("claim:e3"),
         "second session must recover memory written by the first"
@@ -1213,16 +1206,16 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
     let backend = EmbeddedKernelMcpBackend::open(data_dir.path()).expect("backend opens");
 
     backend
-        .call_tool("kernel_ingest", &ingest_arguments())
+        .call_tool("kmp_ingest", &ingest_arguments())
         .await
         .expect("ingest succeeds");
     backend
-        .call_tool("kernel_wake", &serde_json::json!({"about": "question:e3"}))
+        .call_tool("kmp_wake", &serde_json::json!({"about": "question:e3"}))
         .await
         .expect("wake succeeds");
     backend
         .call_tool(
-            "kernel_ask",
+            "kmp_ask",
             &serde_json::json!({
                 "about": "question:e3",
                 "question": "What was accepted?"
@@ -1232,7 +1225,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .expect("ask succeeds");
     backend
         .call_tool(
-            "kernel_trace",
+            "kmp_trace",
             &serde_json::json!({
                 "from": "claim:e3",
                 "to": "claim:e3-detail"
@@ -1242,7 +1235,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .expect("trace succeeds");
     backend
         .call_tool(
-            "kernel_goto",
+            "kmp_goto",
             &serde_json::json!({
                 "about": "question:e3",
                 "at": {"sequence": 2}
@@ -1254,16 +1247,16 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
 
     let telemetry = RedbQualityTelemetryReader::open(data_dir.path()).expect("journal opens");
     let wakes = telemetry
-        .query_since(0, Some("kernel_wake"), 10)
+        .query_since(0, Some("kmp_wake"), 10)
         .expect("wake observations query");
     let asks = telemetry
-        .query_since(0, Some("kernel_ask"), 10)
+        .query_since(0, Some("kmp_ask"), 10)
         .expect("ask observations query");
     let traces = telemetry
-        .query_since(0, Some("kernel_trace"), 10)
+        .query_since(0, Some("kmp_trace"), 10)
         .expect("trace observations query");
     let gotos = telemetry
-        .query_since(0, Some("kernel_goto"), 10)
+        .query_since(0, Some("kmp_goto"), 10)
         .expect("goto observations query");
     assert_eq!(wakes.len(), 1, "wake must journal one observation");
     assert_eq!(asks.len(), 1, "ask must journal one observation");

@@ -247,7 +247,7 @@ The sibling runtime profile enables this directly with:
 - annotation: `nginx.ingress.kubernetes.io/backend-protocol: GRPC`
 - TLS secret: `kmp-tls-prod`
 - NGINX gRPC timeouts: 30s connect and 300s read/send, so synchronous
-  `kernel_write_memory` commits with `read_after_write_ready` are not cut at the
+  `kmp_write_memory` commits with `read_after_write_ready` are not cut at the
   controller default 60s timeout.
 
 ### GRPCS Upstream To Kernel

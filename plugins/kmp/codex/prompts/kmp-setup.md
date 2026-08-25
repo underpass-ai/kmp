@@ -19,7 +19,7 @@ If Codex is not wired, register the server. The binary needs no configuration
 
 ```toml
 # ~/.codex/config.toml
-[mcp_servers.kernel-memory]
+[mcp_servers.kmp]
 command = "kmp-mcp"
 ```
 

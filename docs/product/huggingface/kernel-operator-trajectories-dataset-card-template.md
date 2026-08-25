@@ -82,17 +82,17 @@ Each raw trajectory row follows `kernel-operator-trajectory-v1`:
   "visible_state": {
     "current_ref": "ref_0001",
     "known_refs": ["ref_0001"],
-    "last_tool": "kernel_near",
+    "last_tool": "kmp_near",
     "last_observed_refs": ["ref_0002"],
     "remaining_budget": {
       "tool_calls": 4,
       "context_chars": 12000
     }
   },
-  "allowed_tools": ["kernel_near", "kernel_trace", "kernel_inspect"],
+  "allowed_tools": ["kmp_near", "kmp_trace", "kmp_inspect"],
   "target_action": {
     "type": "tool_call",
-    "tool": "kernel_inspect",
+    "tool": "kmp_inspect",
     "arguments": {
       "ref": "ref_0002"
     }

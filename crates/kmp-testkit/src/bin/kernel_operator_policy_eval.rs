@@ -530,7 +530,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
     match last_tool {
         None => json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": trajectory.about,
                 "around": { "ref": current_ref },
@@ -541,9 +541,9 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "window": { "before_entries": 6, "after_entries": 0 }
             }
         }),
-        Some("kernel_near") => json!({
+        Some("kmp_near") => json!({
             "type": "tool_call",
-            "tool": "kernel_inspect",
+            "tool": "kmp_inspect",
             "arguments": {
                 "ref": current_ref,
                 "include": {
@@ -554,9 +554,9 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 }
             }
         }),
-        Some("kernel_inspect") if trace_target_ref.is_some() => json!({
+        Some("kmp_inspect") if trace_target_ref.is_some() => json!({
             "type": "tool_call",
-            "tool": "kernel_trace",
+            "tool": "kmp_trace",
             "arguments": {
                 "from": current_ref,
                 "to": trace_target_ref,
@@ -564,13 +564,8 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
                 "budget": { "depth": 1, "tokens": 1600 }
             }
         }),
-        Some("kernel_trace")
-        | Some("kernel_inspect")
-        | Some("kernel_goto")
-        | Some("kernel_rewind")
-        | Some("kernel_forward")
-        | Some("kernel_ask")
-        | Some(_) => {
+        Some("kmp_trace") | Some("kmp_inspect") | Some("kmp_goto") | Some("kmp_rewind")
+        | Some("kmp_forward") | Some("kmp_ask") | Some(_) => {
             json!({
                 "type": "stop",
                 "answer_policy": "evidence_or_unknown",
@@ -754,9 +749,9 @@ fn scope_about(action: &Value) -> Option<String> {
 fn target_cursor_mode(action: &Value) -> Option<&'static str> {
     let arguments = action.get("arguments")?;
     let cursor_key = match tool(action)? {
-        "kernel_near" => "around",
-        "kernel_goto" => "at",
-        "kernel_rewind" | "kernel_forward" => "from",
+        "kmp_near" => "around",
+        "kmp_goto" => "at",
+        "kmp_rewind" | "kmp_forward" => "from",
         _ => return None,
     };
     let cursor = arguments.get(cursor_key)?.as_object()?;
@@ -796,7 +791,7 @@ fn dimension_scope(action: &Value) -> Option<&str> {
 }
 
 fn trace_page_mode(action: &Value) -> &'static str {
-    if tool(action) != Some("kernel_trace") {
+    if tool(action) != Some("kmp_trace") {
         return "none";
     }
     let Some(page) = action
@@ -813,7 +808,7 @@ fn trace_page_mode(action: &Value) -> &'static str {
 }
 
 fn trace_page_cursor(action: &Value) -> Option<&str> {
-    if tool(action) != Some("kernel_trace") {
+    if tool(action) != Some("kmp_trace") {
         return None;
     }
     action
@@ -845,7 +840,7 @@ mod tests {
         };
         let action = deterministic_action(&trajectory);
         assert_eq!(action_type(&action), Some("tool_call"));
-        assert_eq!(tool(&action), Some("kernel_near"));
+        assert_eq!(tool(&action), Some("kmp_near"));
         let refs = kernel_operator_primary_refs(&action);
         if refs != ["memoryarena:run:r1:task_type:progressive_search:task:1:subtask:1:question"] {
             return Err(format!("unexpected refs: {refs:?}").into());
@@ -866,7 +861,7 @@ mod tests {
             }),
             target_action: json!({
                 "type": "tool_call",
-                "tool": "kernel_inspect",
+                "tool": "kmp_inspect",
                 "arguments": {
                     "ref": "node:1",
                     "include": {
@@ -897,7 +892,7 @@ mod tests {
     fn summary_reports_mode_specific_gate_metrics() -> Result<(), Box<dyn Error + Send + Sync>> {
         let read_action = json!({
             "type": "tool_call",
-            "tool": "kernel_inspect",
+            "tool": "kmp_inspect",
             "arguments": {
                 "ref": "node:read",
                 "include": {
@@ -910,7 +905,7 @@ mod tests {
         });
         let writer_target = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "ref": "node:writer" },
@@ -923,7 +918,7 @@ mod tests {
         });
         let writer_prediction = json!({
             "type": "tool_call",
-            "tool": "kernel_trace",
+            "tool": "kmp_trace",
             "arguments": {
                 "from": "node:writer",
                 "to": "node:prior",
@@ -995,7 +990,7 @@ mod tests {
             }),
             target_action: json!({
                 "type": "tool_call",
-                "tool": "kernel_near",
+                "tool": "kmp_near",
                 "arguments": {
                     "about": "about:1",
                     "around": { "ref": "node:1" },
@@ -1012,7 +1007,7 @@ mod tests {
             "s1".to_string(),
             json!({
                 "type": "tool_call",
-                "tool": "kernel_near",
+                "tool": "kmp_near",
                 "arguments": {
                     "about": "about:1",
                     "around": { "ref": "node:1" },
@@ -1040,7 +1035,7 @@ mod tests {
         assert_eq!(
             summary
                 .invalid_prediction_reasons
-                .get("unbounded or invalid tool call for `kernel_near`"),
+                .get("unbounded or invalid tool call for `kmp_near`"),
             Some(&1)
         );
         Ok(())
@@ -1059,7 +1054,7 @@ mod tests {
             }),
             target_action: json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
@@ -1073,7 +1068,7 @@ mod tests {
             "s1".to_string(),
             json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": {
                     "about": "about:1",
                     "answer_policy": "evidence_or_unknown",
@@ -1110,7 +1105,7 @@ mod tests {
     -> Result<(), Box<dyn Error + Send + Sync>> {
         let near_action = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "sequence": 7 },
@@ -1123,7 +1118,7 @@ mod tests {
         });
         let trace_action = json!({
             "type": "tool_call",
-            "tool": "kernel_trace",
+            "tool": "kmp_trace",
             "arguments": {
                 "from": "node:1",
                 "to": "node:3",
@@ -1185,7 +1180,7 @@ mod tests {
     -> Result<(), Box<dyn Error + Send + Sync>> {
         let target_near = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "sequence": 7 },
@@ -1198,7 +1193,7 @@ mod tests {
         });
         let predicted_near = json!({
             "type": "tool_call",
-            "tool": "kernel_near",
+            "tool": "kmp_near",
             "arguments": {
                 "about": "about:1",
                 "around": { "time": "2026-05-14T00:00:00Z" },
@@ -1211,7 +1206,7 @@ mod tests {
         });
         let target_trace = json!({
             "type": "tool_call",
-            "tool": "kernel_trace",
+            "tool": "kmp_trace",
             "arguments": {
                 "from": "node:1",
                 "to": "node:3",
@@ -1221,7 +1216,7 @@ mod tests {
         });
         let predicted_trace = json!({
             "type": "tool_call",
-            "tool": "kernel_trace",
+            "tool": "kmp_trace",
             "arguments": {
                 "from": "node:1",
                 "to": "node:3",

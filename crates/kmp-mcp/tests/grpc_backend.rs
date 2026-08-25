@@ -30,7 +30,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let wake = call_tool(
         &server,
         1,
-        "kernel_wake",
+        "kmp_wake",
         json!({
             "about": "node:root",
             "role": "implementer",
@@ -77,7 +77,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let ask = call_tool(
         &server,
         2,
-        "kernel_ask",
+        "kmp_ask",
         json!({
             "about": "node:root",
             "question": "What should the next agent trust?",
@@ -101,7 +101,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let trace = call_tool(
         &server,
         3,
-        "kernel_trace",
+        "kmp_trace",
         json!({
             "from": "node:root",
             "to": "node:target",
@@ -126,7 +126,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
     let inspect = call_tool(
         &server,
         4,
-        "kernel_inspect",
+        "kmp_inspect",
         json!({
             "ref": "node:target",
             "include": {
@@ -162,7 +162,7 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         7,
-        "kernel_forward",
+        "kmp_forward",
         json!({
             "about": "question:temporal",
             "from": {
@@ -228,7 +228,7 @@ async fn grpc_backend_maps_temporal_tools_to_kernel_memory_service() {
     let near = call_tool(
         &server,
         8,
-        "kernel_near",
+        "kmp_near",
         json!({
             "about": "question:temporal",
             "around": {
@@ -265,7 +265,7 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
     let forward = call_tool(
         &server,
         17,
-        "kernel_forward",
+        "kmp_forward",
         json!({
             "about": "question:temporal",
             "from": {
@@ -294,7 +294,7 @@ async fn grpc_backend_maps_temporal_raw_refs_to_kernel_memory_service() {
 }
 
 #[tokio::test]
-async fn grpc_backend_maps_kernel_ingest_to_kernel_memory_service() {
+async fn grpc_backend_maps_kmp_ingest_to_kernel_memory_service() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
     let server = KernelMcpServer::grpc(endpoint);
@@ -302,7 +302,7 @@ async fn grpc_backend_maps_kernel_ingest_to_kernel_memory_service() {
     let ingest = call_tool(
         &server,
         5,
-        "kernel_ingest",
+        "kmp_ingest",
         json!({
             "about": "question:830ce83f",
             "memory": {
@@ -406,7 +406,7 @@ async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
     let ingest = call_tool(
         &server,
         6,
-        "kernel_ingest",
+        "kmp_ingest",
         json!({
             "about": "question:830ce83f",
             "memory": {
@@ -451,7 +451,7 @@ async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
     let ingest = call_tool(
         &server,
         6,
-        "kernel_ingest",
+        "kmp_ingest",
         json!({
             "about": "question:dry-run",
             "memory": {
@@ -499,7 +499,7 @@ async fn grpc_backend_connects_to_mutual_tls_kernel_memory_service() {
     let inspect = call_tool(
         &server,
         9,
-        "kernel_inspect",
+        "kmp_inspect",
         json!({
             "ref": "node:mtls"
         }),

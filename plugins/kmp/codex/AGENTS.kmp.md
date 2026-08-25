@@ -1,22 +1,22 @@
 <!-- kmp:begin -->
 ## Kernel memory (KMP)
 
-Graph-temporal memory over the `kernel-memory` MCP server. Every answer is
-derived from stored evidence; nothing here generates prose. `kernel_ask`
+Graph-temporal memory over the `kmp` MCP server. Every answer is
+derived from stored evidence; nothing here generates prose. `kmp_ask`
 returning `UNKNOWN` is a correct result, not a failure to work around.
 
 - **Recover before re-deriving.** On session start for known work, call
-  `kernel_wake {about}` before reading files to reconstruct context. Abouts
+  `kmp_wake {about}` before reading files to reconstruct context. Abouts
   are stable ids: `project:<name>`, `incident:<id>`. An empty wake packet
   means there is no memory yet — start writing one.
-- **Ask, then navigate, then audit.** `kernel_ask` for targeted questions;
-  `kernel_goto` / `kernel_near` / `kernel_rewind` / `kernel_forward` to move
-  through history by timestamp, sequence or ref; `kernel_trace` for the proof
-  path between two refs; `kernel_inspect` for one ref's object, links and
+- **Ask, then navigate, then audit.** `kmp_ask` for targeted questions;
+  `kmp_goto` / `kmp_near` / `kmp_rewind` / `kmp_forward` to move
+  through history by timestamp, sequence or ref; `kmp_trace` for the proof
+  path between two refs; `kmp_inspect` for one ref's object, links and
   evidence.
 - **Write decisions, constraints and outcomes — never transcripts.** Memory
   is the durable shape of the work, not a log of the conversation. Prefer
-  `kernel_write_memory`, which validates intent and relation quality before
+  `kmp_write_memory`, which validates intent and relation quality before
   compiling to canonical ingest; use `options.dry_run=true` to see what a
   write would commit.
 - **Relations carry the why.** `why` explains why the specific semantic link

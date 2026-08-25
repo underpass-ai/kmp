@@ -42,7 +42,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let ingest = call_tool(
             &server,
             2,
-            "kernel_ingest",
+            "kmp_ingest",
             json!({
                 "about": "question:mcp-ingest-smoke",
                 "memory": {
@@ -95,7 +95,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                         {
                             "id": "evidence:mcp-ingest-smoke",
                             "supports": ["claim:mcp-ingest-after"],
-                            "text": "The live smoke accepted kernel_ingest over gRPC.",
+                            "text": "The live smoke accepted kmp_ingest over gRPC.",
                             "source": "mcp_real_kernel_integration"
                         }
                     ]
@@ -133,7 +133,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let ingested_wake = call_tool(
             &server,
             3,
-            "kernel_wake",
+            "kmp_wake",
             json!({
                 "about": "question:mcp-ingest-smoke",
                 "role": "memory",
@@ -177,7 +177,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let temporal_forward = call_tool(
             &server,
             31,
-            "kernel_forward",
+            "kmp_forward",
             json!({
                 "about": "question:mcp-ingest-smoke",
                 "from": {
@@ -209,7 +209,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let ingested_ask = call_tool(
             &server,
             32,
-            "kernel_ask",
+            "kmp_ask",
             json!({
                 "about": "question:mcp-ingest-smoke",
                 "question": "What proved the MCP ingest path?",
@@ -248,7 +248,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let wake = call_tool(
             &server,
             4,
-            "kernel_wake",
+            "kmp_wake",
             json!({
                 "about": ROOT_NODE_ID,
                 "role": DEVELOPER_ROLE,
@@ -269,7 +269,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let ask = call_tool(
             &server,
             5,
-            "kernel_ask",
+            "kmp_ask",
             json!({
                 "about": ROOT_NODE_ID,
                 "question": "Which seeded decision should the next agent inspect?",
@@ -297,7 +297,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let trace = call_tool(
             &server,
             6,
-            "kernel_trace",
+            "kmp_trace",
             json!({
                 "from": ROOT_NODE_ID,
                 "to": TASK_ID,
@@ -322,7 +322,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         let inspect = call_tool(
             &server,
             7,
-            "kernel_inspect",
+            "kmp_inspect",
             json!({
                 "ref": DECISION_ID,
                 "include": {
@@ -345,7 +345,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             array_at(inspect_content, "/evidence")
                 .iter()
                 .any(|value| value.get("text").and_then(Value::as_str) == Some(DECISION_DETAIL)),
-            "kernel_inspect should expose the live Valkey detail"
+            "kmp_inspect should expose the live Valkey detail"
         );
 
         Ok::<(), Box<dyn Error + Send + Sync>>(())

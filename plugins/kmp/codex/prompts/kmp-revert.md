@@ -5,10 +5,10 @@ Tell me what you are about to revert and confirm the ref before writing —
 reverting the wrong entry is not undoable by a second revert, it just adds a
 second wrong entry to a permanent record.
 
-`kernel_inspect` the target first: that it exists, what it said, and whether
+`kmp_inspect` the target first: that it exists, what it said, and whether
 something already supersedes it.
 
-Then one `kernel_write_memory` with `intent: "record_decision"` and a
+Then one `kmp_write_memory` with `intent: "record_decision"` and a
 `connect_to` of `rel: "supersedes"`, `class: "evidential"`. The summary says
 what is true now — not "reverting X", because the entry has to stand on its
 own for whoever reads it later. The `why` on the relation says why the earlier
@@ -17,8 +17,8 @@ without a reason is a deletion with extra steps.
 
 Then show me nothing was lost, rather than telling me:
 
-1. `kernel_ask` about the subject — the answer now leads with the new state.
-2. `kernel_rewind` from before the reversal — the old decision is still there,
+1. `kmp_ask` about the subject — the answer now leads with the new state.
+2. `kmp_rewind` from before the reversal — the old decision is still there,
    with the evidence it had.
 
 Report both: "the memory now says X; as of <before> it said Y, and here is why

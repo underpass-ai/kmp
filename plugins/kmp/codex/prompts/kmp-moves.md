@@ -1,6 +1,6 @@
 Show me the KMP tool surface — the ten moves and when to use each.
 
-Prefer the live surface: if the `kernel-memory` MCP server is available in
+Prefer the live surface: if the `kmp` MCP server is available in
 this session, describe what it actually exposes, including the relation
 vocabulary carried on `connect_to.rel`. That catalog is generated from the
 kernel's own writer spec and is the authority on relation types. Fall back to
@@ -8,24 +8,24 @@ the map below only if the server is unreachable, and say that you are doing
 so.
 
 **Entry**
-- `kernel_wake {about}` — compact packet: state, decisions, open threads.
+- `kmp_wake {about}` — compact packet: state, decisions, open threads.
   Call it before re-deriving context by reading files.
-- `kernel_ask` — deterministic evidence answer, or `UNKNOWN`. Never generated.
+- `kmp_ask` — deterministic evidence answer, or `UNKNOWN`. Never generated.
 
 **Time** — each takes a timestamp, a sequence number, or a ref
-- `kernel_goto` — the state at a point (defaults to 50 entries)
-- `kernel_near` — the neighborhood around a point
-- `kernel_rewind` — how we got here
-- `kernel_forward` — what happened next
+- `kmp_goto` — the state at a point (defaults to 50 entries)
+- `kmp_near` — the neighborhood around a point
+- `kmp_rewind` — how we got here
+- `kmp_forward` — what happened next
 
 **Audit**
-- `kernel_trace` — the proof path between two refs
-- `kernel_inspect` — one ref: stored object, links, evidence
+- `kmp_trace` — the proof path between two refs
+- `kmp_inspect` — one ref: stored object, links, evidence
 
 **Write**
-- `kernel_write_memory` — the default. Validates intent and relation quality,
+- `kmp_write_memory` — the default. Validates intent and relation quality,
   then compiles to canonical ingest. Supports `options.dry_run`.
-- `kernel_ingest` — canonical low-level form.
+- `kmp_ingest` — canonical low-level form.
 
 Close with the two rules that matter: **write decisions, constraints and
 outcomes — never transcripts**, and for a rich relation **`why` explains the

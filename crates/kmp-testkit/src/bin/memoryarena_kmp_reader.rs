@@ -595,7 +595,7 @@ fn rewrite_run_row_with_reader_answer(
         .cloned()
         .ok_or("run result row must be a JSON object")?;
     output.insert(
-        "kernel_ask_answer".to_string(),
+        "kmp_ask_answer".to_string(),
         output.get("ask_answer").cloned().unwrap_or(Value::Null),
     );
     output.insert(

@@ -6,22 +6,22 @@ Status: first MCP writer helper implemented; P1 hardening remains active.
 
 Implementation checkpoint, 2026-05-09:
 
-- `kernel_write_memory` is exposed by the stdio MCP server.
+- `kmp_write_memory` is exposed by the stdio MCP server.
 - The helper plans writer-friendly memory, validates relation vocabulary and
-  relation quality, returns a canonical `kernel_ingest` preview in dry-run, and
+  relation quality, returns a canonical `kmp_ingest` preview in dry-run, and
   commits by forwarding the generated ingest payload through the same backend
-  path as `kernel_ingest`.
+  path as `kmp_ingest`.
 - Strict mode rejects vague relations, missing evidence/why, missing
   `scope.process`, missing `current.evidence`, self-links, and rich external
   relations without prior read context.
 - Relation quality diagnostics and metrics are returned in dry-run and commit
   responses.
 - This is still an MCP/helper surface above KMP. The canonical write contract
-  remains `KernelMemoryService.Ingest` / `kernel_ingest`.
+  remains `KernelMemoryService.Ingest` / `kmp_ingest`.
 
 ## Problem
 
-`kernel_ingest` is the canonical low-level write operation for Kernel Memory
+`kmp_ingest` is the canonical low-level write operation for Kernel Memory
 Protocol. It is correct for adapters and machines, but it is too low-level as
 the primary writing surface for LLMs and humans.
 
@@ -43,26 +43,26 @@ connects a new node to previous memory.
 
 The kernel is designed to store, validate, traverse, trace, inspect, and render
 semantic memory. It should not invent semantic relations itself. The missing
-piece is a writer-first protocol above `kernel_ingest` that lets an LLM or
+piece is a writer-first protocol above `kmp_ingest` that lets an LLM or
 human express what changed, why it matters, and what prior refs it depends on.
 
 ## Product Decision
 
-Keep `kernel_ingest` as the canonical low-level contract.
+Keep `kmp_ingest` as the canonical low-level contract.
 
 Add a higher-level Kernel Write Protocol for LLM and human writers:
 
 ```text
 LLM / human
-  -> kernel_write_memory
+  -> kmp_write_memory
   -> writer planner and validator
-  -> kernel_ingest
+  -> kmp_ingest
   -> wake / ask / trace / inspect / temporal moves
 ```
 
 This protocol belongs above the core memory model. It may be exposed first as
 MCP tools and later through SDKs or HTTP. Internally it compiles to normal
-`kernel_ingest` requests.
+`kmp_ingest` requests.
 
 ## API/MCP Gap Rule
 
@@ -72,9 +72,9 @@ Every writer helper is a transport binding over the same Kernel Memory
 Protocol contract:
 
 ```text
-kernel_write_memory request
+kmp_write_memory request
   -> writer validation and deterministic planning
-  -> canonical kernel_ingest request
+  -> canonical kmp_ingest request
   -> KernelMemoryService.Ingest in live gRPC mode
 ```
 
@@ -83,11 +83,11 @@ The public contract must stay aligned across:
 - `api/examples/kernel/v1beta1/kmp/write-memory.request.json`;
 - `api/examples/kernel/v1beta1/kmp/write-memory.response.json`;
 - `api/examples/kernel/v1beta1/kmp/kernel-memory-protocol.schema.json`;
-- MCP `tools/list` input schema for `kernel_write_memory`;
-- server routing that forwards committed writes through `kernel_ingest`.
+- MCP `tools/list` input schema for `kmp_write_memory`;
+- server routing that forwards committed writes through `kmp_ingest`.
 
 If one of these surfaces changes, the others must change in the same slice.
-`kernel_write_memory` may reduce authoring complexity, but it must always
+`kmp_write_memory` may reduce authoring complexity, but it must always
 return or call the exact low-level ingest shape the API already understands.
 
 ## Semantic Integrity Rule
@@ -143,7 +143,7 @@ motivational, or constraint semantics.
 
 ## Non-Goals
 
-- Do not replace `kernel_ingest`.
+- Do not replace `kmp_ingest`.
 - Do not add generative reasoning inside kernel core.
 - Do not let MCP become the owner of memory behavior.
 - Do not create benchmark-specific write rules in core.
@@ -187,12 +187,12 @@ dimensions + entries + relations + evidence + provenance + idempotency
 P0 introduces one general writer-first MCP tool:
 
 ```text
-kernel_write_memory
+kmp_write_memory
 ```
 
-The tool supports `dry_run` and returns the generated `kernel_ingest` preview.
+The tool supports `dry_run` and returns the generated `kmp_ingest` preview.
 When `dry_run=false`, the tool validates, compiles, and forwards to
-`kernel_ingest`.
+`kmp_ingest`.
 
 Specialized helper aliases can come later:
 
@@ -283,7 +283,7 @@ Initial shape:
 | `record_delta` | semantic difference between old and new state | `semantic_delta_from`, `updates_state`, `contradicts` |
 
 `link_existing` is intentionally not part of P0 because the canonical
-`kernel_ingest` contract currently requires at least one entry. A future
+`kmp_ingest` contract currently requires at least one entry. A future
 `kernel_link` helper must either introduce a proper link-event entry or extend
 the low-level API explicitly; it must not silently invent a dummy node.
 
@@ -302,7 +302,7 @@ P0 allows a small, stable set of writer-friendly entry kinds:
 - `error_path`;
 - `success_path`.
 
-The low-level `kernel_ingest` remains more general. This list only constrains
+The low-level `kmp_ingest` remains more general. This list only constrains
 the first writer helper.
 
 ## Relation Vocabulary
@@ -341,7 +341,7 @@ P0 canonical relation names:
 | `qualifies_as` | `evidential` | A ref qualifies as a specific semantic item. |
 | `matches_requirement` | `constraint` | A ref satisfies a query or requirement predicate. |
 
-Relations outside this vocabulary are rejected by `kernel_write_memory` in
+Relations outside this vocabulary are rejected by `kmp_write_memory` in
 strict mode unless the caller explicitly opts into an extension namespace. The
 first implementation should prefer rejecting an unclear relation over accepting
 a weak rich relation.
@@ -406,7 +406,7 @@ Per-relation diagnostic fields:
   "fallback": false,
   "requires_prior_context": true,
   "prior_context_observed": true,
-  "prior_context_sources": ["kernel_inspect"]
+  "prior_context_sources": ["kmp_inspect"]
 }
 ```
 
@@ -439,14 +439,14 @@ it must use kernel read tools first:
 
 | Need | Tool |
 | --- | --- |
-| Resume current state | `kernel_wake` |
-| Inspect a candidate prior ref | `kernel_inspect` |
-| Understand a path between two refs | `kernel_trace` |
-| See temporal neighborhood | `kernel_near` |
-| Move backward through a process | `kernel_rewind` |
-| Move forward after a known ref | `kernel_forward` |
-| Reconstruct state at a point | `kernel_goto` |
-| Ask for deterministic evidence | `kernel_ask` |
+| Resume current state | `kmp_wake` |
+| Inspect a candidate prior ref | `kmp_inspect` |
+| Understand a path between two refs | `kmp_trace` |
+| See temporal neighborhood | `kmp_near` |
+| Move backward through a process | `kmp_rewind` |
+| Move forward after a known ref | `kmp_forward` |
+| Reconstruct state at a point | `kmp_goto` |
+| Ask for deterministic evidence | `kmp_ask` |
 
 P1 makes this auditable through `read_context`:
 
@@ -492,7 +492,7 @@ Example diagnostic:
   ],
   "next_suggested_reads": [
     {
-      "tool": "kernel_near",
+      "tool": "kmp_near",
       "about": "incident:mobile-login",
       "around": { "ref": "incident:mobile-login:latest" }
     }
@@ -532,7 +532,7 @@ This keeps arithmetic outside core while making operand selection auditable.
 
 ## Generated Low-Level Memory
 
-`kernel_write_memory` generates:
+`kmp_write_memory` generates:
 
 - dimensions:
   - `task` when provided;
@@ -581,7 +581,7 @@ Dry run response:
   "diagnostics": [],
   "next_suggested_reads": [
     {
-      "tool": "kernel_trace",
+      "tool": "kmp_trace",
       "from": "incident:mobile-login:decision:use-refresh-retry",
       "to": "incident:mobile-login:observation:401-refresh-race"
     }
@@ -622,21 +622,21 @@ Strict mode should be the default.
 
 The intended LLM loop is:
 
-1. `kernel_wake` the current memory anchor.
-2. Use `kernel_near`, `kernel_rewind`, `kernel_forward`, or `kernel_goto` when
+1. `kmp_wake` the current memory anchor.
+2. Use `kmp_near`, `kmp_rewind`, `kmp_forward`, or `kmp_goto` when
    the next node depends on temporal or cross-dimensional context.
-3. `kernel_inspect` important refs before creating causal, motivational, or
+3. `kmp_inspect` important refs before creating causal, motivational, or
    constraint relations.
-4. `kernel_trace` candidate paths when the writer needs to understand why a
+4. `kmp_trace` candidate paths when the writer needs to understand why a
    prior state led to the current one.
-5. Write a concise semantic memory event through `kernel_write_memory`.
+5. Write a concise semantic memory event through `kmp_write_memory`.
 6. Read the dry-run preview.
 7. Commit only when generated refs, relations, evidence, and suggested trace
    look correct.
-8. Use `kernel_trace` or `kernel_near` to verify the new graph shape.
+8. Use `kmp_trace` or `kmp_near` to verify the new graph shape.
 
 This gives the LLM a safe writing workflow without requiring it to manually
-construct the full `kernel_ingest` payload.
+construct the full `kmp_ingest` payload.
 
 ## MCP Implementation Plan
 
@@ -644,11 +644,11 @@ P0.1:
 
 - [x] add this planning document;
 - [x] link it from the documentation index;
-- [x] document that `kernel_ingest` remains canonical.
+- [x] document that `kmp_ingest` remains canonical.
 
 P0.2:
 
-- [x] add `kernel_write_memory` to MCP `tools/list`;
+- [x] add `kmp_write_memory` to MCP `tools/list`;
 - [x] implement a writer planner module in `kmp-mcp`;
 - [x] support `dry_run=true`;
 - [x] reject vague or unsupported relation names in strict mode;
@@ -658,13 +658,13 @@ P0.2:
   `uses_background`) when a rich relation is not justified;
 - [x] classify every relation as `rich`, `anemic`, `structural`, `invalid`, or
   `suspect` and return relation quality metrics in the write response;
-- [x] generate the canonical `kernel_ingest` payload;
+- [x] generate the canonical `kmp_ingest` payload;
 - [x] validate fail-fast before forwarding;
 - [x] return generated refs, relations, preview, and suggested reads.
 
 P0.3:
 
-- [x] when `dry_run=false`, call the same backend path as `kernel_ingest`;
+- [x] when `dry_run=false`, call the same backend path as `kmp_ingest`;
 - [x] preserve backend independence: fixture and gRPC both use the same planner;
 - [x] add tests for dry-run, invalid relation, missing process scope, and stable
   idempotency.
@@ -682,8 +682,8 @@ P1:
   rich-relation author;
 - [ ] add specialized helper aliases for common writer tasks;
 - [x] add schema-constrained LLM writer prompts/templates outside core
-  (`api/examples/inference-prompts/kernel-write-memory.txt` and
-  `kernel-write-memory.request.json`);
+  (`api/examples/inference-prompts/kmp-write-memory.txt` and
+  `kmp-write-memory.request.json`);
 - [ ] add broader read-before-write writer policies across dimensions and temporal
   windows;
 - [ ] add graph-quality metrics for process elongation and explanatory relation
@@ -699,6 +699,6 @@ P1:
   low-level coordinates.
 - The generated ingest request is inspectable and deterministic.
 - The resulting graph has meaningful causal/motivational/constraint relations.
-- `kernel_trace` explains why a node follows from a prior node.
-- `kernel_ask` can surface the right evidence without relying only on blobs.
+- `kmp_trace` explains why a node follows from a prior node.
+- `kmp_ask` can surface the right evidence without relying only on blobs.
 - The core remains free of LLM-specific behavior.

@@ -618,7 +618,7 @@ fn render_probe_growth(output: &mut String, digest: &Digest) {
 
     for (subtask_index, by_tool) in by_subtask {
         let mut segments = Vec::new();
-        for tool in ["kernel_near", "kernel_trace", "kernel_inspect"] {
+        for tool in ["kmp_near", "kmp_trace", "kmp_inspect"] {
             let Some(probes) = by_tool.get(tool) else {
                 continue;
             };
@@ -646,7 +646,9 @@ fn render_probe_growth(output: &mut String, digest: &Digest) {
 }
 
 fn short_tool(tool: &str) -> &str {
-    tool.strip_prefix("kernel_").unwrap_or(tool)
+    tool.strip_prefix("kmp_")
+        .or_else(|| tool.strip_prefix("kernel_"))
+        .unwrap_or(tool)
 }
 
 fn format_usize_range(values: &[usize]) -> String {
@@ -988,7 +990,7 @@ mod tests {
             serde_json::json!({
                 "event": "memoryarena_smart_writer.mcp_read.done",
                 "entry_ref": entry,
-                "tool": "kernel_near",
+                "tool": "kmp_near",
                 "target_ref": "memoryarena:run:r1:task_type:progressive_search:task:1:subtask:9:answer",
                 "elapsed_ms": 702,
                 "observed_entry_refs": ["memoryarena:run:r1:task_type:progressive_search:task:1:subtask:9:answer"]

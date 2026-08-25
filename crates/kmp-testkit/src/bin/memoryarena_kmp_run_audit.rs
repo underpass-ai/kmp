@@ -474,7 +474,7 @@ async fn inspect_one_ref(
         "id": id,
         "method": "tools/call",
         "params": {
-            "name": "kernel_inspect",
+            "name": "kmp_inspect",
             "arguments": {
                 "ref": reference,
                 "include": {
@@ -489,7 +489,7 @@ async fn inspect_one_ref(
     let response = server
         .handle_json_line(&request.to_string())
         .await
-        .ok_or("kernel_inspect returned no JSON-RPC response")?;
+        .ok_or("kmp_inspect returned no JSON-RPC response")?;
     let value = serde_json::from_str::<Value>(&response)?;
     if let Some(error) = value.get("error") {
         return Ok(InspectRefOutcome::Error(error.to_string()));

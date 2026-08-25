@@ -342,7 +342,7 @@ fn write_entry(
         .map(|when| format!(" · {when}"))
         .unwrap_or_default();
     // The ref stays visible: a reader who wants the stored object rather than
-    // the prose can take it straight to `kernel_inspect`.
+    // the prose can take it straight to `kmp_inspect`.
     let _ = writeln!(out, "`{}`{}\n", entry.reference, when);
     let _ = writeln!(out, "{}\n", entry.text);
 
@@ -443,7 +443,7 @@ mod tests {
             {"entity_kind":"memory_relation","entity_id":"rel:1",
              "payload_json":"{\"from\":\"project:t:dec:retry\",\"to\":\"project:t:obs:slow\",\"rel\":\"chosen_because\",\"class\":\"motivational\",\"why\":\"Six retries per request is the amplifier.\",\"evidence\":\"Client timeout change at 14:40.\"}"},
             {"entity_kind":"memory_evidence","entity_id":"ev:rel:1:relation:1",
-             "payload_json":"{\"id\":\"ev:rel:1:relation:1\",\"supports\":[\"project:t:dec:retry\"],\"text\":\"Client timeout change at 14:40.\",\"source\":\"kernel_write_memory:agent:relation:chosen_because\"}"},
+             "payload_json":"{\"id\":\"ev:rel:1:relation:1\",\"supports\":[\"project:t:dec:retry\"],\"text\":\"Client timeout change at 14:40.\",\"source\":\"kmp_write_memory:agent:relation:chosen_because\"}"},
             {"entity_kind":"memory_relation","entity_id":"rel:2",
              "payload_json":"{\"from\":\"project:t:dec:retry\",\"to\":\"project:t:dec:rollback\",\"rel\":\"supersedes\",\"class\":\"evidential\",\"why\":\"The rollback did not help.\"}"}
         ]}"#;
@@ -467,7 +467,7 @@ mod tests {
         assert!(document.contains("## Observations"));
         assert!(document.contains("Cap the retry budget."));
         assert!(document.contains("Checkout p99 tripled after the deploy."));
-        // The ref is the way back to `kernel_inspect`; a document that drops
+        // The ref is the way back to `kmp_inspect`; a document that drops
         // it is prose about memory rather than a view of it.
         assert!(document.contains("`project:t:dec:retry`"));
         assert!(

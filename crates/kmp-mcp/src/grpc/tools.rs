@@ -48,17 +48,17 @@ pub(super) async fn grpc_tool_result(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     match name {
-        "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
+        "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             grpc_ingest(endpoint, tls, arguments).await
         }
-        "kernel_wake" => grpc_wake(endpoint, tls, arguments).await,
-        "kernel_ask" => grpc_ask(endpoint, tls, arguments).await,
-        "kernel_goto" => grpc_temporal_move(endpoint, tls, "goto", arguments).await,
-        "kernel_near" => grpc_temporal_near(endpoint, tls, arguments).await,
-        "kernel_rewind" => grpc_temporal_move(endpoint, tls, "rewind", arguments).await,
-        "kernel_forward" => grpc_temporal_move(endpoint, tls, "forward", arguments).await,
-        "kernel_trace" => grpc_trace(endpoint, tls, arguments).await,
-        "kernel_inspect" => grpc_inspect(endpoint, tls, arguments).await,
+        "kmp_wake" => grpc_wake(endpoint, tls, arguments).await,
+        "kmp_ask" => grpc_ask(endpoint, tls, arguments).await,
+        "kmp_goto" => grpc_temporal_move(endpoint, tls, "goto", arguments).await,
+        "kmp_near" => grpc_temporal_near(endpoint, tls, arguments).await,
+        "kmp_rewind" => grpc_temporal_move(endpoint, tls, "rewind", arguments).await,
+        "kmp_forward" => grpc_temporal_move(endpoint, tls, "forward", arguments).await,
+        "kmp_trace" => grpc_trace(endpoint, tls, arguments).await,
+        "kmp_inspect" => grpc_inspect(endpoint, tls, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),

@@ -41,17 +41,17 @@ Current revalidation result:
   invalid, zero unbounded, both anonymized and de-anonymized.
 - The same strict raw predictions replayed through the public TLS MCP/gRPC
   endpoint: 976/976 tool calls succeeded, 148 stop actions, zero missing
-  expected refs, and 424 explicit partial results from `kernel_near`.
+  expected refs, and 424 explicit partial results from `kmp_near`.
 - LongMemEval v8 clean is internal only under the strict contract: 4 missing
   predictions, 2 invalid predictions, 0 unbounded, 0.7500 exact.
 
 Current contract-coverage status:
 
-- `operator-read` contract coverage is 100% after adding `kernel_wake`,
+- `operator-read` contract coverage is 100% after adding `kmp_wake`,
   time/sequence temporal cursors, full dimension mode/scope validation, trace
   pagination, and window-policy capability checks.
 - `operator-full` contract coverage is 100%; the contract now includes
-  `kernel_ingest`, `kernel_write_memory`, relation-quality validation, and
+  `kmp_ingest`, `kmp_write_memory`, relation-quality validation, and
   read-context proof.
 - MemoryArena V6 target capability coverage is only 41.67% for the read
   profile. The model has not yet seen all API/MCP use cases.
@@ -59,14 +59,14 @@ Current contract-coverage status:
   because it has not yet seen write actions.
 - The synthetic KMP conformance exporter now produces 58 strict trajectories
   that cover 100% of the `operator-full` target capabilities, including
-  `kernel_write_memory`, `kernel_ingest`, relation quality, read-context proof,
+  `kmp_write_memory`, `kmp_ingest`, relation quality, read-context proof,
   trace pagination, temporal cursor modes, dimension modes/scopes, dynamic
   window cases, stop decisions, and write/read fail-fast behavior.
 - The conformance SFT prompt now includes the top-level `goal`. Earlier
   conformance predictions without `goal` are diagnostic only: they exposed a
   dataset-preparation gap, not a stable model-quality result.
 - The v4 conformance SFT path exposed a second dataset problem: some write
-  samples required the model to invent `kernel_ingest`/`kernel_write_memory`
+  samples required the model to invent `kmp_ingest`/`kmp_write_memory`
   payloads that were not visible in the prompt.
 - The v5 conformance SFT path fixes that corpus honesty issue by keeping
   `about_*` separate from node `ref_*`, by exposing `canonical_payload` for
@@ -200,22 +200,22 @@ switching models.
 The 0.5B Operator can still learn valuable kernel-operation behavior around
 writer workflows:
 
-- when to call `kernel_near`, `kernel_trace`, or `kernel_inspect` before write;
-- when visible context is enough to execute a prepared `kernel_write_memory`;
+- when to call `kmp_near`, `kmp_trace`, or `kmp_inspect` before write;
+- when visible context is enough to execute a prepared `kmp_write_memory`;
 - when a relation needs escalation to the teacher/large reasoning model;
 - when only an explicit anemic fallback is allowed;
 - how to emit one bounded KMP/MCP action without inventing refs or arguments.
 
 Observed failure classes:
 
-- two `kernel_ask` generations used `dimensions.mode=only` without `include`,
+- two `kmp_ask` generations used `dimensions.mode=only` without `include`,
   which the strict validator rejects;
-- one `kernel_write_memory` generation omitted the top-level action type;
-- one `kernel_write_memory` generation added `semantic_delta` but omitted the
+- one `kmp_write_memory` generation omitted the top-level action type;
+- one `kmp_write_memory` generation added `semantic_delta` but omitted the
   required `semantic_delta.why`;
-- one `kernel_write_memory` generation added an unexpected `strategy` object;
-- several `kernel_goto`/`kernel_rewind` targets were predicted as
-  `kernel_forward`, showing that temporal direction and cursor-mode selection
+- one `kmp_write_memory` generation added an unexpected `strategy` object;
+- several `kmp_goto`/`kmp_rewind` targets were predicted as
+  `kmp_forward`, showing that temporal direction and cursor-mode selection
   still need more data.
 
 Next P0 before scaling benchmarks: grow the `operator-read` conformance corpus
@@ -273,7 +273,7 @@ python scripts/operator/prepare_operator_sft_dataset.py \
 ```
 
 Use `--include-mode read` to create a pure read conformance slice without
-`kernel_ingest` or `kernel_write_memory`. Use `task_or_step` when mixing real
+`kmp_ingest` or `kmp_write_memory`. Use `task_or_step` when mixing real
 benchmark tasks with synthetic conformance rows: real benchmark rows remain
 grouped by task/question id, while synthetic rows without task ids fall back to
 their `step_id`.
@@ -342,7 +342,7 @@ python scripts/operator/prepare_operator_sft_dataset.py \
 The `writer-pre-read` profile requires bounded `near`, `inspect`, `trace`, and
 `stop`, ref cursors, current-about dimensions, shrink/expand/stop window
 policy, `inspect.raw=false`, first and continuation trace pages, writer
-`last_tool` states through `kernel_trace`, candidate roles for previous answers
+`last_tool` states through `kmp_trace`, candidate roles for previous answers
 and same-subtask questions, and explicit ambiguous candidate pools.
 
 `writer-pre-read-v1` is retained as a historical fixture. Use
@@ -638,7 +638,7 @@ Observed V3 ref-safe run on 2026-05-11 with `--batch-size 8`:
 
 The V3 run produced 464 predictions with zero parse failures. The only two
 exact mismatches used the correct tool and bounded arguments but selected a
-different visible `kernel_inspect` ref in writer-context-read steps.
+different visible `kmp_inspect` ref in writer-context-read steps.
 
 The batched Kubernetes prediction job completed in 3m24s including dependency
 installation, model load, and generation. The previous unbatched path took 16m
@@ -864,12 +864,12 @@ Full strict replay action latency against the public TLS endpoint:
 
 | Action | Count | Avg ms | Max ms |
 | --- | ---: | ---: | ---: |
-| `kernel_near` | 424 | 1,302.7 | 2,517 |
-| `kernel_inspect` | 424 | 110.0 | 198 |
-| `kernel_trace` | 128 | 127.1 | 181 |
+| `kmp_near` | 424 | 1,302.7 | 2,517 |
+| `kmp_inspect` | 424 | 110.0 | 198 |
+| `kmp_trace` | 128 | 127.1 | 181 |
 | `stop` | 148 | 0.0 | 0 |
 
-All partial results in the strict replay came from `kernel_near`. That is the
+All partial results in the strict replay came from `kmp_near`. That is the
 expected bounded behavior: the replay records `partial_result=true` and the page
 object instead of accepting an unbounded traversal.
 
@@ -906,8 +906,8 @@ evidence.
 `--offset`. It writes `inspect.next_offset` in the summary and emits JSONL
 progress events to stderr and, optionally, `--progress-output`.
 
-Temporal reads are also page-aware. `kernel_goto`, `kernel_near`,
-`kernel_rewind`, `kernel_forward`, and `kernel_trace` expose a `page` object in
+Temporal reads are also page-aware. `kmp_goto`, `kmp_near`,
+`kmp_rewind`, `kmp_forward`, and `kmp_trace` expose a `page` object in
 MCP structured output. Live replay writes that page into `results.jsonl`,
 marks rows with `partial_result=true` when `page.has_more=true`, and reports
 partial-result counts in `summary.json`.

@@ -319,7 +319,7 @@ pub fn prepare_memoryarena_item(
             },
         );
         ingest_events.push(MemoryArenaIngestArtifact {
-            tool: "kernel_ingest",
+            tool: "kmp_ingest",
             task_id: task_id.clone(),
             task_type: task_type.clone(),
             category: category.clone(),
@@ -474,7 +474,7 @@ pub fn prepare_memoryarena_item(
             },
         );
         ingest_events.push(MemoryArenaIngestArtifact {
-            tool: "kernel_ingest",
+            tool: "kmp_ingest",
             task_id: task_id.clone(),
             task_type: task_type.clone(),
             category: category.clone(),
@@ -489,7 +489,7 @@ pub fn prepare_memoryarena_item(
         event_index += 1;
 
         ask_events.push(MemoryArenaAskArtifact {
-            tool: "kernel_ask",
+            tool: "kmp_ask",
             task_id: task_id.clone(),
             task_type: task_type.clone(),
             category: category.clone(),
@@ -597,7 +597,7 @@ pub fn prepare_memoryarena_item(
             },
         );
         ingest_events.push(MemoryArenaIngestArtifact {
-            tool: "kernel_ingest",
+            tool: "kmp_ingest",
             task_id: task_id.clone(),
             task_type: task_type.clone(),
             category: category.clone(),

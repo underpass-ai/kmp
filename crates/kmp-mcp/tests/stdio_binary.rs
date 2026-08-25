@@ -112,7 +112,7 @@ fn stdio_binary_serves_explicit_fixture_jsonrpc_until_stdin_eof() {
     assert_eq!(responses[1]["id"], 2);
     assert_eq!(
         responses[1]["result"]["tools"][0]["name"],
-        Value::String("kernel_ingest".to_string())
+        Value::String("kmp_ingest".to_string())
     );
 }
 
@@ -342,7 +342,7 @@ fn cli_surface_version_export_import_and_errors() {
             ("KMP_MCP_BACKEND", "embedded"),
             ("KMP_MCP_DATA_DIR", source.path().to_str().expect("utf8")),
         ],
-        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kernel_ingest\",\"arguments\":{\"about\":\"project:cli\",\"idempotency_key\":\"ingest:cli\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:cli\",\"kind\":\"decision\",\"text\":\"cli\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:cli\",\"idempotency_key\":\"ingest:cli\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:cli\",\"kind\":\"decision\",\"text\":\"cli\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
     );
     assert!(ingest.status.success());
 
@@ -377,7 +377,7 @@ fn cli_surface_version_export_import_and_errors() {
             ("KMP_MCP_BACKEND", "embedded"),
             ("KMP_MCP_DATA_DIR", target.path().to_str().expect("utf8")),
         ],
-        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"kernel_wake\",\"arguments\":{\"about\":\"project:cli\"}}}\n",
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_wake\",\"arguments\":{\"about\":\"project:cli\"}}}\n",
     );
     assert!(String::from_utf8_lossy(&wake.stdout).contains("decision:cli"));
 }

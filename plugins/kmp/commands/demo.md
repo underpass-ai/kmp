@@ -18,10 +18,10 @@ is to watch the moves answer, not to read about them. Set
 `KMP_MCP_DATA_DIR` to the directory the script printed and walk three moves
 against `incident:checkout-latency`:
 
-1. `kernel_wake` — where the incident stood and how it closed.
-2. `kernel_ask` with *"why did the rollback not fix the latency"* — and show
+1. `kmp_wake` — where the incident stood and how it closed.
+2. `kmp_ask` with *"why did the rollback not fix the latency"* — and show
    that the answer arrives with its evidence attached, not as prose.
-3. `kernel_trace` from `incident:checkout-latency:obs:p99-tripled` to
+3. `kmp_trace` from `incident:checkout-latency:obs:p99-tripled` to
    `incident:checkout-latency:constraint:retry-budget` — six hops from the
    first symptom to the rule that ended it.
 

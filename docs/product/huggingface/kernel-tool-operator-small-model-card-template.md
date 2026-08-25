@@ -113,7 +113,7 @@ The output must be a single JSON object with either a tool call:
 ```json
 {
   "type": "tool_call",
-  "tool": "kernel_inspect",
+  "tool": "kmp_inspect",
   "arguments": {
     "ref": "ref_0003",
     "include": {
@@ -143,13 +143,13 @@ non-visible ref must be rejected by the caller.
 
 Initial read/navigation release:
 
-- `kernel_ask`
-- `kernel_near`
-- `kernel_trace`
-- `kernel_inspect`
-- `kernel_goto`
-- `kernel_rewind`
-- `kernel_forward`
+- `kmp_ask`
+- `kmp_near`
+- `kmp_trace`
+- `kmp_inspect`
+- `kmp_goto`
+- `kmp_rewind`
+- `kmp_forward`
 
 Writer mode is out of scope for the first public release unless it has its own
 separate evaluation.

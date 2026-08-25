@@ -1,6 +1,6 @@
 ---
 name: kmp-memory
-description: Operate KMP agent memory through the kernel-memory MCP server — recover context at session start instead of re-deriving it, answer questions from stored evidence, navigate history in time, audit a claim back to its proof, and record decisions with relations that carry their why. Use whenever the work continues something earlier (an ongoing project, an incident, a task with prior decisions), whenever you are about to re-derive context you may already have, whenever you need to justify a claim with evidence, and whenever a decision, constraint or outcome is reached that later sessions will need.
+description: Operate KMP agent memory through the kmp MCP server — recover context at session start instead of re-deriving it, answer questions from stored evidence, navigate history in time, audit a claim back to its proof, and record decisions with relations that carry their why. Use whenever the work continues something earlier (an ongoing project, an incident, a task with prior decisions), whenever you are about to re-derive context you may already have, whenever you need to justify a claim with evidence, and whenever a decision, constraint or outcome is reached that later sessions will need.
 ---
 
 # KMP agent memory
@@ -8,7 +8,7 @@ description: Operate KMP agent memory through the kernel-memory MCP server — r
 KMP is graph-temporal memory for agents, reachable over MCP as ten tools. It
 is a **kernel, not a model**: every answer is derived from stored evidence by
 construction. Nothing here generates prose. If the memory does not support an
-answer, `kernel_ask` returns `UNKNOWN` — that is a correct result, not a
+answer, `kmp_ask` returns `UNKNOWN` — that is a correct result, not a
 failure to work around.
 
 ## Start here: recover before you re-derive
@@ -16,15 +16,15 @@ failure to work around.
 When the work continues something earlier, the first move is:
 
 ```
-kernel_wake { about: "project:kmp" }
+kmp_wake { about: "project:kmp" }
 ```
 
-`kernel_wake` returns a compact wake packet: where the work stood, what was
+`kmp_wake` returns a compact wake packet: where the work stood, what was
 decided, what is open. Call it **before** reading files to reconstruct
 context you may already have stored. Abouts are stable ids, conventionally
 `project:<name>` or `incident:<id>`.
 
-If `kernel_wake` comes back empty, there is no memory for that about yet.
+If `kmp_wake` comes back empty, there is no memory for that about yet.
 That is the signal to start writing one, not to keep guessing.
 
 Wake also hands back `resume_cursor` — the newest coordinate the packet
@@ -32,7 +32,7 @@ covers. Carry it, and the next question ("what changed since I looked?") is
 one call:
 
 ```
-kernel_forward { about: "project:kmp", from: <the resume_cursor> }
+kmp_forward { about: "project:kmp", from: <the resume_cursor> }
 ```
 
 The kernel does not remember where each reader got to, deliberately: that
@@ -46,33 +46,33 @@ temporal coordinate.
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
-| `kernel_ask` | You have a specific question. Deterministic evidence answer, or `UNKNOWN`. |
+| `kmp_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
+| `kmp_ask` | You have a specific question. Deterministic evidence answer, or `UNKNOWN`. |
 
 **Navigate time** — all four take a timestamp, a sequence number, or a ref.
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_goto` | Jump to the state at a point in time. Set `limit.entries` — there is no default. |
-| `kernel_near` | See the neighborhood around a point — what surrounded it. |
-| `kernel_rewind` | Walk backward: how did we get here. |
-| `kernel_forward` | Walk forward: what happened after this. |
+| `kmp_goto` | Jump to the state at a point in time. Set `limit.entries` — there is no default. |
+| `kmp_near` | See the neighborhood around a point — what surrounded it. |
+| `kmp_rewind` | Walk backward: how did we get here. |
+| `kmp_forward` | Walk forward: what happened after this. |
 
 ### Catching up
 
 "What happened since I last looked" is two of those moves, not a separate
-feature, and it is the second thing to reach for after `kernel_wake` on work
+feature, and it is the second thing to reach for after `kmp_wake` on work
 that has been touched by someone else — another session, another host, a
 colleague who imported a bundle.
 
-The frontier first: `kernel_rewind` from now with `limit: { entries: 1 }` and
+The frontier first: `kmp_rewind` from now with `limit: { entries: 1 }` and
 `budget: { detail: "full" }` returns the newest entry with its
 `coordinates[].observed_at`. In this temporal response, `page.total` counts
 temporal entries in the selected move; it is not the same unit as recall
 `projection.page.total`, which counts eligible expansion items. That timestamp
 is the bookmark.
 
-Then the delta: `kernel_forward` from that timestamp — or from a plain
+Then the delta: `kmp_forward` from that timestamp — or from a plain
 "since Friday" the user gives you — returns exactly what came after, in order.
 `page.has_more` says whether the slice was cut; a truncated delta reported as
 the whole one is worse than no delta.
@@ -86,15 +86,15 @@ work.
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_trace` | Prove a connection between two refs in the same memory graph. Abouts are never joined, so cross-about refs have no path. |
-| `kernel_inspect` | Examine one ref: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
+| `kmp_trace` | Prove a connection between two refs in the same memory graph. Abouts are never joined, so cross-about refs have no path. |
+| `kmp_inspect` | Examine one ref: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
 
 **Write**
 
 | Move | Use it when |
 | --- | --- |
-| `kernel_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then compiles to canonical ingest. Supports `options.dry_run` to check before committing. |
-| `kernel_ingest` | Canonical low-level form. Use when you are producing the exact graph yourself. |
+| `kmp_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then compiles to canonical ingest. Supports `options.dry_run` to check before committing. |
+| `kmp_ingest` | Canonical low-level form. Use when you are producing the exact graph yourself. |
 
 Temporal reads return a `page` object whose total is temporal entries and whose
 continuation is a memory-ref cursor. Wake and Ask return `projection.page`,
@@ -126,7 +126,7 @@ bundle is the hygiene of the store.
 
 ## The viewer, when it offers itself
 
-`kernel_write_memory` sometimes comes back with a `viewer` block:
+`kmp_write_memory` sometimes comes back with a `viewer` block:
 
 ```json
 "viewer": {
@@ -160,7 +160,7 @@ was already applied — that is success, not an error to retry around.
 Every write carries `observed_at`, and the whole read path is ordered by it.
 **Read the clock; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
-above the present — where `kernel_forward` from a correct "now" never finds
+above the present — where `kmp_forward` from a correct "now" never finds
 it, and the delta comes back empty looking exactly like a quiet week.
 
 A stamp more than five minutes ahead of the kernel's clock is refused at
@@ -181,11 +181,11 @@ supersession without a reason — a supersession with no why is a deletion with
 extra steps, and it destroys the one thing the record was for.
 
 What this buys is visible only if you show it: after reverting, the current
-answer leads with the new state, and `kernel_rewind` to before the reversal
+answer leads with the new state, and `kmp_rewind` to before the reversal
 still returns the old decision with the evidence it had. Both are true, at
 different times, and that is the whole point of keeping a log.
 
-A replaced entry comes back **marked**. `kernel_wake` and `kernel_ask` carry
+A replaced entry comes back **marked**. `kmp_wake` and `kmp_ask` carry
 `proof.superseded`, one line per entry that a later one replaced:
 
 ```json
@@ -228,15 +228,15 @@ evidence-backed relation and its `why` can then improve the ordering and
 explain the match, but relation prose cannot promote unrelated evidence into
 an answer. The selected relation types are exposed in
 `proof.matched_relations`, and the original rationale remains auditable in
-`proof.path`, `kernel_trace`, and `kernel_inspect`.
+`proof.path`, `kmp_trace`, and `kmp_inspect`.
 
 That gives the agent a complete read path:
 
-1. `kernel_wake` recovers the durable state and its causal or motivational
+1. `kmp_wake` recovers the durable state and its causal or motivational
    spine.
-2. `kernel_ask` answers a paraphrased question from direct evidence and uses
+2. `kmp_ask` answers a paraphrased question from direct evidence and uses
    the graph context to keep the right citation in the core.
-3. `kernel_trace` proves the path between two refs; `kernel_inspect` shows the
+3. `kmp_trace` proves the path between two refs; `kmp_inspect` shows the
    stored object, links, and evidence verbatim.
 
 ### Write the rationale and its proof as a pair
@@ -353,7 +353,7 @@ whole point of the mechanism.
 
 ## When the tools are not there
 
-If the kernel-memory tools are missing from your inventory, do not silently
+If the kmp tools are missing from your inventory, do not silently
 fall back to re-deriving everything — say so. The usual causes are specific
 and fixable, and `/kmp:doctor` distinguishes them:
 

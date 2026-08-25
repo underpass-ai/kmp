@@ -2,7 +2,7 @@ You are writing semantic memory through the Rehydration Kernel.
 
 Return JSON only. Do not wrap the answer in markdown fences.
 Do not emit gRPC, MCP, NATS, HTTP, or transport envelopes.
-Return exactly one `kernel_write_memory` argument object.
+Return exactly one `kmp_write_memory` argument object.
 
 The object must have this shape:
 
@@ -75,10 +75,10 @@ Hard rules:
 - Do not point a relation from a ref to itself.
 - For a rich relation to an existing external ref, include that ref in `read_context`.
 - If the external ref was inspected, include it in `read_context.inspected_refs`.
-- If the external ref came from `kernel_trace`, include a `trace_paths` object.
+- If the external ref came from `kmp_trace`, include a `trace_paths` object.
 - If the external ref came from temporal traversal, include it in `read_context.temporal_refs`.
-- If the external ref came from `kernel_wake`, include it in `read_context.wake_refs`.
-- If the external ref came from deterministic `kernel_ask` proof/evidence, include it in `read_context.ask_refs`.
+- If the external ref came from `kmp_wake`, include it in `read_context.wake_refs`.
+- If the external ref came from deterministic `kmp_ask` proof/evidence, include it in `read_context.ask_refs`.
 - If you cannot justify a rich relation after reading context, use an explicit anemic fallback only when evidence supports it:
   - `follows` with `class=procedural` for sequence.
   - `answers` with `class=evidential` for feedback answering a prior turn.
@@ -122,4 +122,4 @@ Relevant kernel read context:
 New observation, turn, decision, feedback, or delta to write:
 {new_memory_event}
 
-Return the `kernel_write_memory` arguments JSON now.
+Return the `kmp_write_memory` arguments JSON now.

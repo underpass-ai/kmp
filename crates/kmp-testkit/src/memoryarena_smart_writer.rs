@@ -224,7 +224,7 @@ impl MemoryArenaSmartWriter {
             let dry_run_call = match call_writer_tool_with_record(
                 server,
                 request_id,
-                "kernel_write_memory",
+                "kmp_write_memory",
                 &request,
             )
             .await
@@ -255,13 +255,8 @@ impl MemoryArenaSmartWriter {
                             "connect_to": connect_to_summary(&proposal.connect_to)
                         }),
                     );
-                    call_writer_tool_with_record(
-                        server,
-                        request_id,
-                        "kernel_write_memory",
-                        &request,
-                    )
-                    .await?
+                    call_writer_tool_with_record(server, request_id, "kmp_write_memory", &request)
+                        .await?
                 }
                 Err(error) => return Err(error),
             };
@@ -290,7 +285,7 @@ impl MemoryArenaSmartWriter {
                 }),
             );
             let commit_call =
-                call_writer_tool_with_record(server, request_id, "kernel_write_memory", &request)
+                call_writer_tool_with_record(server, request_id, "kmp_write_memory", &request)
                     .await?;
             let commit_content = commit_call.content.clone();
             log_writer_navigation(
@@ -322,16 +317,12 @@ impl MemoryArenaSmartWriter {
                     "request_id": *request_id,
                     "about": event.about,
                     "entry_ref": input.entry_ref.as_str(),
-                    "tool": "kernel_inspect"
+                    "tool": "kmp_inspect"
                 }),
             );
-            let verify_call = call_writer_tool_with_record(
-                server,
-                request_id,
-                "kernel_inspect",
-                &verify_arguments,
-            )
-            .await?;
+            let verify_call =
+                call_writer_tool_with_record(server, request_id, "kmp_inspect", &verify_arguments)
+                    .await?;
             let verify_content = verify_call.content.clone();
             let verify_observed_refs = verify_call.observed_refs.clone();
             let verify_observed_entry_refs = observed_entry_refs(&verify_observed_refs);
@@ -406,14 +397,14 @@ impl MemoryArenaSmartWriter {
                     "about": about,
                     "entry_ref": input.entry_ref.as_str(),
                     "target_ref": target_ref.as_str(),
-                    "tool": "kernel_near",
+                    "tool": "kmp_near",
                     "window": {"before_entries": 3, "after_entries": 0}
                 }),
             );
             let near = call_writer_tool_with_record(
                 server,
                 request_id,
-                "kernel_near",
+                "kmp_near",
                 &json!({
                     "about": about,
                     "around": {"ref": target_ref.as_str()},
@@ -455,13 +446,13 @@ impl MemoryArenaSmartWriter {
                     "about": about,
                     "entry_ref": input.entry_ref.as_str(),
                     "target_ref": target_ref.as_str(),
-                    "tool": "kernel_inspect"
+                    "tool": "kmp_inspect"
                 }),
             );
             let inspect = call_writer_tool_with_record(
                 server,
                 request_id,
-                "kernel_inspect",
+                "kmp_inspect",
                 &json!({
                     "ref": target_ref.as_str(),
                     "include": {
@@ -1100,7 +1091,7 @@ fn set_dry_run(request: &mut Value, dry_run: bool) -> Result<(), Box<dyn Error +
     let options = request
         .get_mut("options")
         .and_then(Value::as_object_mut)
-        .ok_or("kernel_write_memory request requires options")?;
+        .ok_or("kmp_write_memory request requires options")?;
     options.insert("dry_run".to_string(), json!(dry_run));
     Ok(())
 }
@@ -1593,7 +1584,7 @@ mod tests {
         };
         let read_context = ReadContextPlan {
             calls: vec![MemoryArenaSmartWriterToolCall {
-                tool: "kernel_inspect".to_string(),
+                tool: "kmp_inspect".to_string(),
                 arguments: json!({}),
                 elapsed_ms: 1,
                 content: json!({

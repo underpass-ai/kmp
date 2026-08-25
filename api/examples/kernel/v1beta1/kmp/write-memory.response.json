@@ -24,7 +24,7 @@
       "requires_prior_context": true,
       "prior_context_observed": true,
       "prior_context_sources": [
-        "kernel_inspect"
+        "kmp_inspect"
       ],
       "proof_complete": true,
       "target_present": true
@@ -58,7 +58,7 @@
       "requires_prior_context": true,
       "prior_context_observed": true,
       "prior_context_sources": [
-        "kernel_inspect"
+        "kmp_inspect"
       ],
       "proof_complete": true,
       "target_present": true
@@ -203,7 +203,7 @@
             "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout"
           ],
           "text": "Logs show 401 immediately after token refresh.",
-          "source": "kernel_write_memory:agent:backend",
+          "source": "kmp_write_memory:agent:backend",
           "time": "2026-05-06T10:00:00Z"
         },
         {
@@ -213,7 +213,7 @@
             "incident:mobile-login:observation:401-refresh-race"
           ],
           "text": "The chosen retry targets the refresh race seen in auth logs.",
-          "source": "kernel_write_memory:agent:backend:relation:chosen_because",
+          "source": "kmp_write_memory:agent:backend:relation:chosen_because",
           "time": "2026-05-06T10:00:00Z"
         },
         {
@@ -223,7 +223,7 @@
             "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout"
           ],
           "text": "Auth logs show refresh success followed by 401 on the next request.",
-          "source": "kernel_write_memory:agent:backend:semantic_delta",
+          "source": "kmp_write_memory:agent:backend:semantic_delta",
           "time": "2026-05-06T10:00:00Z"
         }
       ]
@@ -232,14 +232,14 @@
       "source_kind": "agent",
       "source_agent": "agent:backend",
       "observed_at": "2026-05-06T10:00:00Z",
-      "correlation_id": "kernel_write:incident:mobile-login",
+      "correlation_id": "kmp_write:incident:mobile-login",
       "causation_id": "write:incident-mobile-login-decision-v1"
     }
   },
   "diagnostics": [],
   "next_suggested_reads": [
     {
-      "tool": "kernel_trace",
+      "tool": "kmp_trace",
       "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
       "to": "incident:mobile-login:observation:401-refresh-race"
     }

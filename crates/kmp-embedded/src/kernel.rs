@@ -219,7 +219,7 @@ mod tests {
         kernel.quality_observer.observe(
             &metrics,
             &QualityObservationContext {
-                rpc: "kernel_wake".to_string(),
+                rpc: "kmp_wake".to_string(),
                 root_node_id: "question:fail-open".to_string(),
                 role: "resumer".to_string(),
             },

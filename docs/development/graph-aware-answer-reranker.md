@@ -1,10 +1,10 @@
-# Graph-aware `kernel_ask` reranker
+# Graph-aware `kmp_ask` reranker
 
 Status: implemented for the release following `0.1.10`.
 
 ## Contract
 
-`kernel_ask` ranks canonical evidence once, before response budgeting. The
+`kmp_ask` ranks canonical evidence once, before response budgeting. The
 pipeline is deterministic and embedded:
 
 ```text

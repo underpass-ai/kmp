@@ -1,16 +1,15 @@
 use kmp_domain::KnownMemoryRelationType;
 use serde_json::Value;
 
-const PROMPT: &str =
-    include_str!("../../../api/examples/inference-prompts/kernel-write-memory.txt");
+const PROMPT: &str = include_str!("../../../api/examples/inference-prompts/kmp-write-memory.txt");
 const REQUEST: &str =
-    include_str!("../../../api/examples/inference-prompts/kernel-write-memory.request.json");
+    include_str!("../../../api/examples/inference-prompts/kmp-write-memory.request.json");
 const KMP_SCHEMA: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/kernel-memory-protocol.schema.json");
 
 #[test]
-fn kernel_write_memory_prompt_fixture_is_schema_constrained() {
-    assert!(PROMPT.contains("kernel_write_memory"));
+fn kmp_write_memory_prompt_fixture_is_schema_constrained() {
+    assert!(PROMPT.contains("kmp_write_memory"));
     assert!(PROMPT.contains("read_context"));
     assert!(PROMPT.contains("Do not use vague relations"));
     assert!(PROMPT.contains("`why` explains why the specific semantic"));
@@ -28,7 +27,7 @@ fn kernel_write_memory_prompt_fixture_is_schema_constrained() {
     assert!(request_prompt.contains("does not generate a missing rationale or proof"));
     assert_eq!(
         request["response_format"]["json_schema"]["name"],
-        "kernel_write_memory_arguments"
+        "kmp_write_memory_arguments"
     );
 
     let schema = &request["response_format"]["json_schema"]["schema"];
@@ -52,7 +51,7 @@ fn kernel_write_memory_prompt_fixture_is_schema_constrained() {
 }
 
 #[test]
-fn kernel_write_memory_schema_uses_core_relation_vocabulary() {
+fn kmp_write_memory_schema_uses_core_relation_vocabulary() {
     let schema: Value =
         serde_json::from_str(KMP_SCHEMA).expect("KMP schema fixture should be valid JSON");
     let rel_enum = schema["$defs"]["writer_relation_name"]["enum"]

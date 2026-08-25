@@ -584,7 +584,7 @@ mod tests {
 
     /// The first write to a fresh about has nothing of its own to relate to.
     ///
-    /// Strict `kernel_write_memory` demands a relation, every ref inside the
+    /// Strict `kmp_write_memory` demands a relation, every ref inside the
     /// about is being created by the very ingest that declares it, and the
     /// one node that certainly exists — the about's own anchor, which the
     /// projection materialises and hangs `records` off — was refused as an

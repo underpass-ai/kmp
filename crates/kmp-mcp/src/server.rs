@@ -12,8 +12,8 @@ use crate::fixture::FixtureKernelMcpBackend;
 use crate::grpc::GrpcKernelMcpBackend;
 use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::protocol::{
-    initialize_result, jsonrpc_error, jsonrpc_result, reject_unknown_arguments, tool_error_result,
-    tool_success_result, tools_list_result,
+    canonical_tool_name, initialize_result, jsonrpc_error, jsonrpc_result,
+    reject_unknown_arguments, tool_error_result, tool_success_result, tools_list_result,
 };
 use crate::tool_error::ToolError;
 use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
@@ -263,9 +263,10 @@ impl KernelMcpServer {
         let Some(params) = params.and_then(Value::as_object) else {
             return jsonrpc_error(id, -32602, "tools/call requires object params");
         };
-        let Some(name) = params.get("name").and_then(Value::as_str) else {
+        let Some(requested_name) = params.get("name").and_then(Value::as_str) else {
             return jsonrpc_error(id, -32602, "tools/call requires params.name");
         };
+        let name = canonical_tool_name(requested_name);
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
 
@@ -285,8 +286,8 @@ impl KernelMcpServer {
             return jsonrpc_result(id, tool_error_result(&error));
         }
 
-        if name == "kernel_write_memory" {
-            return self.handle_kernel_write_memory(id, arguments, start).await;
+        if name == "kmp_write_memory" {
+            return self.handle_kmp_write_memory(id, arguments, start).await;
         }
 
         match self.backend.call_tool(name, arguments).await {
@@ -316,7 +317,7 @@ impl KernelMcpServer {
         }
     }
 
-    async fn handle_kernel_write_memory(
+    async fn handle_kmp_write_memory(
         &self,
         id: Value,
         arguments: &Value,
@@ -328,7 +329,7 @@ impl KernelMcpServer {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
-                    "kernel_write_memory",
+                    "kmp_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
@@ -348,7 +349,7 @@ impl KernelMcpServer {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
-                    "kernel_write_memory",
+                    "kmp_write_memory",
                     arguments,
                     ToolErrorKind::Validation,
                     &error.message,
@@ -363,7 +364,7 @@ impl KernelMcpServer {
             record_tool_success(
                 self.backend_name(),
                 self.grpc_tls_mode_name(),
-                "kernel_write_memory",
+                "kmp_write_memory",
                 arguments,
                 &result,
                 start.elapsed(),
@@ -373,7 +374,7 @@ impl KernelMcpServer {
 
         match self
             .backend
-            .call_tool("kernel_ingest", &plan.ingest_arguments)
+            .call_tool("kmp_ingest", &plan.ingest_arguments)
             .await
         {
             Ok(result) => {
@@ -386,7 +387,7 @@ impl KernelMcpServer {
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
-                    "kernel_write_memory",
+                    "kmp_write_memory",
                     arguments,
                     &result,
                     start.elapsed(),
@@ -397,7 +398,7 @@ impl KernelMcpServer {
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
-                    "kernel_write_memory",
+                    "kmp_write_memory",
                     arguments,
                     ToolErrorKind::Backend,
                     &error.message,
@@ -436,7 +437,7 @@ impl KernelMcpServer {
 
         match self
             .backend
-            .call_tool("kernel_inspect", &serde_json::json!({"ref": about}))
+            .call_tool("kmp_inspect", &serde_json::json!({"ref": about}))
             .await
         {
             Ok(_) => Ok(false),
@@ -448,7 +449,7 @@ impl KernelMcpServer {
             Err(error) => Err(ToolError::new(
                 error.code,
                 format!(
-                    "kernel_write_memory could not verify whether `{about}` is a new about: {}",
+                    "kmp_write_memory could not verify whether `{about}` is a new about: {}",
                     error.message
                 ),
             )),

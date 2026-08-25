@@ -28,27 +28,27 @@ Do not explain. Do not include markdown. Do not invent refs, scopes, or hidden m
 
 Allowed action shapes:
 
-{"action":{"type":"tool_call","tool":"kernel_wake","arguments":{"about":"...","role":"operator","intent":"...","dimensions":{"mode":"all","scope":"current_about"},"budget":{"depth":2,"tokens":2400}}}}
+{"action":{"type":"tool_call","tool":"kmp_wake","arguments":{"about":"...","role":"operator","intent":"...","dimensions":{"mode":"all","scope":"current_about"},"budget":{"depth":2,"tokens":2400}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_ask","arguments":{"about":"...","answer_policy":"evidence_or_unknown","dimensions":{"mode":"all","scope":"current_about"},"question":"...","budget":{"tokens":2400}}}}
+{"action":{"type":"tool_call","tool":"kmp_ask","arguments":{"about":"...","answer_policy":"evidence_or_unknown","dimensions":{"mode":"all","scope":"current_about"},"question":"...","budget":{"tokens":2400}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_ask","arguments":{"about":"...","answer_policy":"show_conflicts","dimensions":{"mode":"only","scope":"current_about","include":["..."]},"question":"...","budget":{"tokens":2400}}}}
+{"action":{"type":"tool_call","tool":"kmp_ask","arguments":{"about":"...","answer_policy":"show_conflicts","dimensions":{"mode":"only","scope":"current_about","include":["..."]},"question":"...","budget":{"tokens":2400}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_near","arguments":{"about":"...","around":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
+{"action":{"type":"tool_call","tool":"kmp_near","arguments":{"about":"...","around":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_goto","arguments":{"about":"...","at":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
+{"action":{"type":"tool_call","tool":"kmp_goto","arguments":{"about":"...","at":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_rewind","arguments":{"about":"...","from":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
+{"action":{"type":"tool_call","tool":"kmp_rewind","arguments":{"about":"...","from":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_forward","arguments":{"about":"...","from":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
+{"action":{"type":"tool_call","tool":"kmp_forward","arguments":{"about":"...","from":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_trace","arguments":{"from":"...","to":"...","goal":"Kernel operator trace probe","role":"operator","budget":{"depth":1,"tokens":1600},"page":{"entries":16}}}}
+{"action":{"type":"tool_call","tool":"kmp_trace","arguments":{"from":"...","to":"...","goal":"Kernel operator trace probe","role":"operator","budget":{"depth":1,"tokens":1600},"page":{"entries":16}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_inspect","arguments":{"ref":"...","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}
+{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"...","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_write_memory","arguments":{"about":"...","intent":"record_decision","actor":"...","observed_at":"...","scope":{"process":"..."},"current":{"kind":"decision","summary":"...","evidence":"..."},"connect_to":[{"ref":"...","rel":"chosen_because","class":"causal","why":"...","evidence":"...","confidence":"high"}],"read_context":{"inspected_refs":["..."]},"idempotency_key":"...","options":{"dry_run":true,"strict":true}}}}
+{"action":{"type":"tool_call","tool":"kmp_write_memory","arguments":{"about":"...","intent":"record_decision","actor":"...","observed_at":"...","scope":{"process":"..."},"current":{"kind":"decision","summary":"...","evidence":"..."},"connect_to":[{"ref":"...","rel":"chosen_because","class":"causal","why":"...","evidence":"...","confidence":"high"}],"read_context":{"inspected_refs":["..."]},"idempotency_key":"...","options":{"dry_run":true,"strict":true}}}}
 
-{"action":{"type":"tool_call","tool":"kernel_ingest","arguments":{"about":"...","memory":{"dimensions":[{"id":"...","kind":"task"}],"entries":[{"id":"...","kind":"decision","text":"..."}],"relations":[{"from":"...","to":"...","rel":"chosen_because","class":"causal","why":"...","evidence":"..."}],"evidence":[{"id":"...","supports":["..."],"text":"..."}]},"provenance":{"source_kind":"agent","source_agent":"...","observed_at":"...","correlation_id":"...","causation_id":"..."},"idempotency_key":"...","dry_run":true}}}
+{"action":{"type":"tool_call","tool":"kmp_ingest","arguments":{"about":"...","memory":{"dimensions":[{"id":"...","kind":"task"}],"entries":[{"id":"...","kind":"decision","text":"..."}],"relations":[{"from":"...","to":"...","rel":"chosen_because","class":"causal","why":"...","evidence":"..."}],"evidence":[{"id":"...","supports":["..."],"text":"..."}]},"provenance":{"source_kind":"agent","source_agent":"...","observed_at":"...","correlation_id":"...","causation_id":"..."},"idempotency_key":"...","dry_run":true}}}
 
 {"action":{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}
 
@@ -56,9 +56,9 @@ Rules:
 - Use only tools present in `allowed_tools`.
 - Use only refs visible in `current_ref`, `trace_target_ref`, `candidate_refs`, `candidate_ref_details`, `known_refs`, `last_observed_refs`, or `read_context`.
 - If `visible_state` contains `requested_wake`, `requested_ask`, `requested_move`, `requested_scope`, `requested_bounds`, `requested_trace`, `inspection_request`, or `requested_stop`, copy those requested fields exactly into the matching action.
-- If `requested_wake` is present, call `kernel_wake`; do not convert it into `kernel_near` even when `current_ref` is visible or the previous tool was `kernel_near`.
+- If `requested_wake` is present, call `kmp_wake`; do not convert it into `kmp_near` even when `current_ref` is visible or the previous tool was `kmp_near`.
 - If `requested_move` is present, its `kind` is the tool to call and its `cursor_key` is the cursor argument name.
-- If `requested_trace`, `inspection_request`, or `requested_stop` is present, choose `kernel_trace`, `kernel_inspect`, or `stop` respectively.
+- If `requested_trace`, `inspection_request`, or `requested_stop` is present, choose `kmp_trace`, `kmp_inspect`, or `stop` respectively.
 - Supported ask `answer_policy` values are `evidence_or_unknown` and `show_conflicts`; do not invent aliases.
 - For `dimensions.scope=abouts`, `abouts` must be a flat list of about ids.
 - Dimension filters such as `include` and `exclude` belong only inside `arguments.dimensions`; never create top-level dimension filter fields.
@@ -67,12 +67,12 @@ Rules:
 - Every tool call must be bounded.
 - For tools with `arguments.about`, that value must equal the top-level `about` value exactly.
 - Do not use `current_ref` as `arguments.about`.
-- `kernel_inspect` arguments must use the key `ref`, never `an`, `id`, or `target`.
-- `kernel_inspect.include.raw` must be false.
-- Rich `kernel_write_memory.connect_to` targets require visible evidence and read_context proof.
+- `kmp_inspect` arguments must use the key `ref`, never `an`, `id`, or `target`.
+- `kmp_inspect.include.raw` must be false.
+- Rich `kmp_write_memory.connect_to` targets require visible evidence and read_context proof.
 - If a rich write lacks read_context proof, stop instead of inventing a relation.
 - Use an anemic relation such as `follows` only when no richer relation is justified.
-- Use `kernel_ingest` only when a complete typed memory payload is already visible.
+- Use `kmp_ingest` only when a complete typed memory payload is already visible.
 """
 
 FNV64_OFFSET = 0xCBF29CE484222325
@@ -99,14 +99,14 @@ CAP_TRACE_PAGE_CONTINUE = "trace.page:continue"
 CAP_WINDOW_STOP_SUFFICIENT = "window:stop_sufficient"
 
 READ_REQUIRED_CAPABILITIES = (
-    "tool:kernel_wake",
-    "tool:kernel_ask",
-    "tool:kernel_near",
-    "tool:kernel_goto",
-    "tool:kernel_rewind",
-    "tool:kernel_forward",
-    "tool:kernel_trace",
-    "tool:kernel_inspect",
+    "tool:kmp_wake",
+    "tool:kmp_ask",
+    "tool:kmp_near",
+    "tool:kmp_goto",
+    "tool:kmp_rewind",
+    "tool:kmp_forward",
+    "tool:kmp_trace",
+    "tool:kmp_inspect",
     CAP_TOOL_STOP,
     "cursor:ref",
     "cursor:time",
@@ -126,17 +126,17 @@ READ_REQUIRED_CAPABILITIES = (
 )
 
 FULL_REQUIRED_CAPABILITIES = READ_REQUIRED_CAPABILITIES + (
-    "tool:kernel_ingest",
-    "tool:kernel_write_memory",
+    "tool:kmp_ingest",
+    "tool:kmp_write_memory",
     "write:relation_quality",
     "write:read_context_proof",
 )
 
 WRITER_PRE_READ_REQUIRED_CAPABILITIES = (
     "mode:write_context_read",
-    "tool:kernel_near",
-    "tool:kernel_inspect",
-    "tool:kernel_trace",
+    "tool:kmp_near",
+    "tool:kmp_inspect",
+    "tool:kmp_trace",
     CAP_TOOL_STOP,
     "cursor:ref",
     "dimensions.mode:all",
@@ -148,9 +148,9 @@ WRITER_PRE_READ_REQUIRED_CAPABILITIES = (
     "trace.page:first",
     CAP_TRACE_PAGE_CONTINUE,
     "writer.last_tool:none",
-    "writer.last_tool:kernel_near",
-    "writer.last_tool:kernel_inspect",
-    "writer.last_tool:kernel_trace",
+    "writer.last_tool:kmp_near",
+    "writer.last_tool:kmp_inspect",
+    "writer.last_tool:kmp_trace",
     "writer.candidate_role:previous_subtask_answer",
     "writer.candidate_role:same_subtask_question",
     "writer.candidate_pool:ambiguous",
@@ -1422,23 +1422,23 @@ def action_capabilities(action: dict[str, Any]) -> set[str]:
         return capabilities
 
     capabilities.update(dimension_capabilities(arguments))
-    if tool == "kernel_near":
+    if tool == "kmp_near":
         capabilities.update(cursor_capabilities(arguments.get("around")))
-    elif tool == "kernel_goto":
+    elif tool == "kmp_goto":
         capabilities.update(cursor_capabilities(arguments.get("at")))
-    elif tool in {"kernel_rewind", "kernel_forward"}:
+    elif tool in {"kmp_rewind", "kmp_forward"}:
         capabilities.update(cursor_capabilities(arguments.get("from")))
-    elif tool == "kernel_trace":
+    elif tool == "kmp_trace":
         page = arguments.get("page")
         if isinstance(page, dict):
             capabilities.add(
                 CAP_TRACE_PAGE_CONTINUE if "cursor" in page else "trace.page:first"
             )
-    elif tool == "kernel_inspect":
+    elif tool == "kmp_inspect":
         include = arguments.get("include")
         if isinstance(include, dict) and include.get("raw") is False:
             capabilities.add("inspect.raw:false")
-    elif tool == "kernel_write_memory":
+    elif tool == "kmp_write_memory":
         capabilities.update(write_memory_capabilities(arguments))
 
     capabilities.update(window_capabilities(arguments))
@@ -1447,16 +1447,16 @@ def action_capabilities(action: dict[str, Any]) -> set[str]:
 
 def tool_capability_id(tool: str) -> str | None:
     if tool in {
-        "kernel_wake",
-        "kernel_ask",
-        "kernel_near",
-        "kernel_goto",
-        "kernel_rewind",
-        "kernel_forward",
-        "kernel_trace",
-        "kernel_inspect",
-        "kernel_ingest",
-        "kernel_write_memory",
+        "kmp_wake",
+        "kmp_ask",
+        "kmp_near",
+        "kmp_goto",
+        "kmp_rewind",
+        "kmp_forward",
+        "kmp_trace",
+        "kmp_inspect",
+        "kmp_ingest",
+        "kmp_write_memory",
     }:
         return f"tool:{tool}"
     return None
@@ -1814,13 +1814,13 @@ def target_cursor_values(item: dict[str, Any]) -> list[dict[str, str]]:
         return []
 
     cursors: list[dict[str, str]] = []
-    if tool == "kernel_near":
+    if tool == "kmp_near":
         record_target_cursor(cursors, "arguments.around", args.get("around"))
-    elif tool == "kernel_goto":
+    elif tool == "kmp_goto":
         record_target_cursor(cursors, "arguments.at", args.get("at"))
-    elif tool in {"kernel_rewind", "kernel_forward"}:
+    elif tool in {"kmp_rewind", "kmp_forward"}:
         record_target_cursor(cursors, "arguments.from", args.get("from"))
-    elif tool == "kernel_trace":
+    elif tool == "kmp_trace":
         page = args.get("page")
         if isinstance(page, dict) and isinstance(page.get("cursor"), str):
             cursors.append(
@@ -1894,13 +1894,13 @@ def missing_visible_target_cursors(item: dict[str, Any]) -> list[dict[str, str]]
         return []
 
     missing: list[dict[str, str]] = []
-    if tool == "kernel_near":
+    if tool == "kmp_near":
         record_missing_cursor(missing, "arguments.around", args.get("around"), visible)
-    elif tool == "kernel_goto":
+    elif tool == "kmp_goto":
         record_missing_cursor(missing, "arguments.at", args.get("at"), visible)
-    elif tool in {"kernel_rewind", "kernel_forward"}:
+    elif tool in {"kmp_rewind", "kmp_forward"}:
         record_missing_cursor(missing, "arguments.from", args.get("from"), visible)
-    elif tool == "kernel_trace":
+    elif tool == "kmp_trace":
         page = args.get("page")
         if isinstance(page, dict) and isinstance(page.get("cursor"), str):
             cursor = page["cursor"]
@@ -2134,9 +2134,9 @@ def first_primary_candidate(candidate_details: list[Any]) -> dict[str, Any] | No
 def navigation_phase(last_tool: str | None, observed_ref_count: int) -> str:
     if last_tool is None:
         return "start"
-    if last_tool == "kernel_near" and observed_ref_count > 0:
+    if last_tool == "kmp_near" and observed_ref_count > 0:
         return "after_near_with_observed_refs"
-    if last_tool == "kernel_near":
+    if last_tool == "kmp_near":
         return "after_near_without_observed_refs"
     return f"after_{last_tool}"
 
@@ -2204,11 +2204,11 @@ def inject_target_request_fields(item: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(tool, str) or not isinstance(arguments, dict):
         return cloned
 
-    if tool == "kernel_wake":
+    if tool == "kmp_wake":
         state["requested_wake"] = without_keys(arguments, {"about"})
-    elif tool == "kernel_ask":
+    elif tool == "kmp_ask":
         state["requested_ask"] = without_keys(arguments, {"about"})
-    elif tool in {"kernel_near", "kernel_goto", "kernel_rewind", "kernel_forward"}:
+    elif tool in {"kmp_near", "kmp_goto", "kmp_rewind", "kmp_forward"}:
         cursor_key = temporal_cursor_key(tool)
         cursor = arguments.get(cursor_key)
         if cursor is not None:
@@ -2227,9 +2227,9 @@ def inject_target_request_fields(item: dict[str, Any]) -> dict[str, Any]:
         }
         if bounds:
             state["requested_bounds"] = bounds
-    elif tool == "kernel_trace":
+    elif tool == "kmp_trace":
         state["requested_trace"] = dict(arguments)
-    elif tool == "kernel_inspect":
+    elif tool == "kmp_inspect":
         state["inspection_request"] = dict(arguments)
     return cloned
 
@@ -2239,9 +2239,9 @@ def without_keys(value: dict[str, Any], keys: set[str]) -> dict[str, Any]:
 
 
 def temporal_cursor_key(tool: str) -> str:
-    if tool == "kernel_near":
+    if tool == "kmp_near":
         return "around"
-    if tool == "kernel_goto":
+    if tool == "kmp_goto":
         return "at"
     return "from"
 
