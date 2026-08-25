@@ -39,7 +39,10 @@ move forward from start, merge/deduplicate refs and exclude the end.
 
 **Write**
 - `kmp_write_memory` — the default. Validates intent and relation quality,
-  then compiles to canonical ingest. Supports `options.dry_run`.
+  then commits through canonical ingest. Normal writes use one call with
+  `options.dry_run=false` or the option omitted; invalid writes write nothing.
+  `options.dry_run=true` is only for an explicit preview, payload debugging or
+  deliberate human review.
 - `kmp_ingest` — canonical low-level form, when you are producing the
   exact graph yourself.
 
@@ -51,8 +54,8 @@ rationale. KMP uses both in recall and audit but does not generate either.
 Point writers to “Why the `why` matters” in the `kmp-memory` skill; a vague
 `related_to` is a bug, not a shortcut.
 
-If the user asked about writing, point them at `options.dry_run=true` as the
-safe way to see what a write would commit before committing it.
+If the user explicitly asked to preview a write, point them at
+`options.dry_run=true` and do not infer authorization to commit it afterwards.
 
 For language fallback, translate only the query and answer in the user's
 language. Stored evidence, refs, relation `why`, and source metadata stay

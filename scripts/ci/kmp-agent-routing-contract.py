@@ -124,7 +124,32 @@ for asset in instruction_assets:
     if missing:
         fail(f"{asset.relative_to(ROOT)} lacks routing clauses: {missing}")
 
+write_instruction_assets = [
+    ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
+    ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
+    ROOT / "plugins/kmp/codex/prompts/kmp-moves.md",
+    ROOT / "plugins/kmp/claude/commands/moves.md",
+]
+for asset in write_instruction_assets:
+    text = asset.read_text(encoding="utf-8").casefold()
+    if "dry_run=false" not in text:
+        fail(f"{asset.relative_to(ROOT)} does not select commit as the default")
+    if "one call" not in text and "single-call" not in text:
+        fail(f"{asset.relative_to(ROOT)} reintroduced a two-call writer workflow")
+    if "dry_run=true" not in text or "preview" not in text:
+        fail(f"{asset.relative_to(ROOT)} lost the explicit preview path")
+    if ("invalid" not in text and "validation fail" not in text) or "nothing" not in text:
+        fail(f"{asset.relative_to(ROOT)} does not state fail-before-write behavior")
+
+api_design = (ROOT / "docs/product/kernel-context-api-design.md").read_text(
+    encoding="utf-8"
+)
+if "defaults to\n`dry_run = false`" not in api_design:
+    fail("API design does not document the live dry_run=false default")
+if "defaults to `dry_run = true`" in api_design:
+    fail("API design still documents the retired preview-by-default behavior")
+
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "
-    "bounded semantic fallback, byte-exact evidence"
+    "bounded semantic fallback, byte-exact evidence, single-call validated writes"
 )

@@ -28,8 +28,11 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
 - **Write decisions, constraints and outcomes — never transcripts.** Memory
   is the durable shape of the work, not a log of the conversation. Prefer
   `kmp_write_memory`, which validates intent and relation quality before
-  compiling to canonical ingest; use `options.dry_run=true` to see what a
-  write would commit.
+  canonical ingest. Normal writes commit in one call with
+  `options.dry_run=false` (or the option omitted); validation failures write
+  nothing.
+  Use `options.dry_run=true` only for an explicitly requested preview,
+  debugging the compiled payload or deliberate human review.
 - **Relations carry the why.** `why` explains why the specific semantic link
   holds; `evidence` is the concrete observation or source that proves that
   rationale. KMP preserves and uses this context in wake, recall and audit,
