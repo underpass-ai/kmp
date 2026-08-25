@@ -2,6 +2,22 @@
 
 Navigation hub for kernel documentation.
 
+## Four doors
+
+Start with the question you have. Every Markdown document in this repository
+is reachable from this page in at most two links; CI proves that property.
+
+| I need to... | Door |
+|:--|:--|
+| install KMP, write a first memory, or learn the moves | [Use KMP](usage-guide.md) |
+| integrate a product or understand a protocol decision | [Build on KMP](product/README.md) |
+| run, secure, diagnose, or release it | [Operate KMP](operations/README.md) |
+| audit an old claim, experiment, migration, or decision | [Follow the evidence](documentation-catalog.md) |
+
+The complete current/research/historical judgement is in
+[`documentation-inventory.tsv`](documentation-inventory.tsv). “Historical”
+means retained evidence, not a contract the binary still promises.
+
 Current integration stance:
 
 - `GraphBatch -> translator -> async projection events` is the recommended write path for model-driven producers.
@@ -26,6 +42,12 @@ Current integration stance:
 | [security-model.md](security-model.md) | Transport security, threat model, TLS configuration |
 | [testing.md](testing.md) | Unit, integration, benchmark, live vLLM smoke, and experimental repair-judge coverage |
 | [observability.md](observability.md) | Quality metrics, OTel, Loki, Grafana stack |
+| [operator.md](operator.md) | What the separate benchmark-only Operator is, and is not |
+| [release.md](release.md) | Version bump, tag, publication and rollback ritual |
+| [development/running-e2e.md](development/running-e2e.md) | Contributor E2E loop |
+| [development/graph-aware-answer-reranker.md](development/graph-aware-answer-reranker.md) | Experimental graph-aware reranker |
+| [runbooks/README.md](runbooks/README.md) | Recovery and incident runbook index |
+| [showcase/README.md](showcase/README.md) | The public pitch, with reproducible recordings for every claim |
 
 ## Product Plans
 

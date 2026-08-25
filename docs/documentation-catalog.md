@@ -1,11 +1,17 @@
 # Documentation Catalog
 
-Date: 2026-05-11
+Date: 2026-08-25
 Status: active documentation hygiene map
 
 This catalog separates authoritative documentation from historical artifacts.
 When a document conflicts with this catalog, prefer the active documents below
 and fix or archive the conflicting note.
+
+The exhaustive judgement is machine-readable in
+[`documentation-inventory.tsv`](documentation-inventory.tsv): every Markdown
+file is `current`, `research`, or `historical`, exactly once. The first class is
+checked against the binary's public vocabulary. The other two remain
+navigable evidence but do not define what a current KMP install promises.
 
 ## Authoritative Current Docs
 
@@ -26,11 +32,6 @@ These documents are the current source of truth for users and maintainers:
 | Typed KMS/gRPC status | [product/kernel-memory-service-grpc-plan.md](product/kernel-memory-service-grpc-plan.md) |
 | Writer helper protocol | [product/kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md) |
 | Kernel tool-operator model | [product/kernel-tool-operator-model-plan.md](product/kernel-tool-operator-model-plan.md) |
-| Operator training process | [product/operator-training-experiment-process.md](product/operator-training-experiment-process.md), [product/operator-training-runs/README.md](product/operator-training-runs/README.md) |
-| Operator benchmark status | [product/operator-benchmark-status-and-next-steps-2026-05-14.md](product/operator-benchmark-status-and-next-steps-2026-05-14.md) |
-| Operator MCP/API coverage audit | [product/operator-mcp-api-contract-gap-audit-2026-05-14.md](product/operator-mcp-api-contract-gap-audit-2026-05-14.md) |
-| Operator publication gate | [product/kernel-tool-operator-publication-plan.md](product/kernel-tool-operator-publication-plan.md) |
-| Hugging Face publication assets | [product/huggingface/README.md](product/huggingface/README.md) |
 | Plugin architecture | [product/kernel-plugin-architecture.md](product/kernel-plugin-architecture.md) |
 | Interpretation plugins | [product/reusable-interpretation-plugins.md](product/reusable-interpretation-plugins.md) |
 | MCP stdio operations | [operations/mcp-stdio.md](operations/mcp-stdio.md) |
@@ -40,6 +41,7 @@ These documents are the current source of truth for users and maintainers:
 | Getting started / usage guide | [usage-guide.md](usage-guide.md) |
 | GraphBatch ingestion quickstart | [graph-batch-quickstart.md](graph-batch-quickstart.md) |
 | Runtime guarantees | [runtime-guarantees.md](runtime-guarantees.md) |
+| Public claim recordings | [showcase/README.md](showcase/README.md) |
 
 ## Active Roadmap
 
@@ -97,7 +99,28 @@ current kernel contract:
 | PIR/fix-planning migration reports | Historical integration evidence. They should not drive current kernel API decisions without revalidation. |
 | Paper drafts under [paper/](paper/README.md) and [research/PAPER_*](research/README.md) | Publication artifacts. They may lag implementation and must be checked against `beta-status.md` before reuse. |
 
-## Gaps Found In This Pass
+## Phase 03 authority decision
+
+The inventory is now the decision, rather than an open question:
+
+- dated Operator audits, training runs, model plans and Hugging Face templates
+  are **research evidence** for a separate benchmark project; they are not a
+  live KMP runtime contract;
+- `migration/` and `archived/` are **historical evidence**, even where a file
+  remains useful to an integrating product;
+- papers, completed research roadmaps, incident reports and ADR spikes are
+  **research evidence** and may describe the vocabulary that existed when an
+  experiment ran;
+- guides, operations, accepted ADRs and the core product/protocol documents
+  listed above are **current** and must not use a former public tool name.
+
+This is deliberately a status change, not a deletion or bulk move. Old names
+inside an experiment are evidence about that experiment; putting them in the
+current contract is the contradiction. `scripts/ci/documentation-spine.sh`
+ensures every document stays classified and reachable from `docs/index.md` in
+at most two links.
+
+## Gaps Found In Earlier Passes
 
 Fixed or clarified:
 
@@ -119,14 +142,15 @@ Fixed or clarified:
 
 Open documentation gaps:
 
-- Add a short KMP "happy path" guide showing a human and an LLM using
-  `kmp_write_memory`, `near`, `trace`, and `inspect` together.
-- Add a conformance-oriented API page that says which behavior is protocol
-  semantics and which behavior is adapter/backend-specific.
 - Keep benchmark docs marked as "official", "local scorecard", "reader check",
   or "planned" so public claims do not overreach.
 - Add an operations note for external GPU/RunPod benchmark execution once the
   first serious run is completed.
+
+The former happy-path and conformance gaps are closed by the README first
+memory route, the live tool descriptions, the transport-neutral
+[`product/recall-projection-contract.md`](product/recall-projection-contract.md)
+and the four-path parity matrix in [`testing.md`](testing.md).
 
 ## Documentation Rules
 

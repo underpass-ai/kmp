@@ -15,6 +15,12 @@
 | [ADR-015](ADR-015-consumer-memory-api-contract.md) | `kmp-memory-api` — the contract an embedding product compiles against | — (2026-08-04) |
 | [ADR-016](ADR-016-consumer-memory-record-contract.md) | The consumer contract gains a record surface | — (2026-08-05) |
 | [ADR-017](ADR-017-embedded-memory-viewer.md) | In-process web viewer over the embedded kernel | — (2026-08-06) |
+| [ADR-018](ADR-018-multi-process-embedded-store.md) | SQLite as the opt-in multi-process embedded store | — (2026-08-15) |
+
+## Decision evidence
+
+- [Storage-engine spike](spikes/e0-storage-spike/README.md)
+- [Multi-process concurrency spike](spikes/e-concurrency-spike/README.md)
 
 ## Not Yet Written (decisions implicit in PRs)
 

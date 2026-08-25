@@ -14,6 +14,9 @@ Current contents:
 - [`mcp-stdio.md`](./mcp-stdio.md) — Stdio MCP adapter exposing the KMP tools
 - [`mcp-http.md`](./mcp-http.md) — Public authenticated Streamable HTTP MCP adapter
 - [`preflight.md`](./preflight.md) — E2E version preflight checklist before live runs
+- [`embedded-hosts.md`](./embedded-hosts.md) — Claude Code, Codex and manual host wiring
+- [`embedded-release.md`](./embedded-release.md) — prebuilt binaries, installer and store compatibility
+- [`viewer.md`](./viewer.md) — local read-only memory graph and timeline
 
 Related docs:
 

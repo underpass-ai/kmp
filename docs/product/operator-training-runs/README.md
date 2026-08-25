@@ -10,11 +10,7 @@
 
 This directory contains one document per serious Operator training attempt.
 
-Use:
-
-```text
-../operator-training-run-template.md
-```
+Use the [operator training run template](../operator-training-run-template.md).
 
 as the source template.
 
