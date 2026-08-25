@@ -28,14 +28,39 @@ impl AgentPolicy {
 }
 
 pub fn config_path() -> Result<PathBuf, String> {
-    if let Some(root) = std::env::var_os("XDG_CONFIG_HOME").filter(|value| !value.is_empty()) {
-        return Ok(PathBuf::from(root).join("kmp").join("config.toml"));
+    let path_from = |name| {
+        std::env::var_os(name)
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+    };
+    config_path_from(
+        path_from("XDG_CONFIG_HOME"),
+        path_from("HOME"),
+        path_from("APPDATA"),
+        path_from("USERPROFILE"),
+    )
+}
+
+fn config_path_from(
+    xdg_config_home: Option<PathBuf>,
+    home: Option<PathBuf>,
+    app_data: Option<PathBuf>,
+    user_profile: Option<PathBuf>,
+) -> Result<PathBuf, String> {
+    if let Some(root) = xdg_config_home {
+        return Ok(root.join("kmp").join("config.toml"));
     }
-    std::env::var_os("HOME")
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
-        .map(|home| home.join(".config").join("kmp").join("config.toml"))
-        .ok_or_else(|| "neither XDG_CONFIG_HOME nor HOME is available".to_string())
+    if let Some(root) = home {
+        return Ok(root.join(".config").join("kmp").join("config.toml"));
+    }
+    if let Some(root) = app_data {
+        return Ok(root.join("kmp").join("config.toml"));
+    }
+    user_profile
+        .map(|root| root.join(".config").join("kmp").join("config.toml"))
+        .ok_or_else(|| {
+            "none of XDG_CONFIG_HOME, HOME, APPDATA, or USERPROFILE is available".to_string()
+        })
 }
 
 pub fn load() -> Result<AgentPolicy, String> {
@@ -262,6 +287,40 @@ mod tests {
         .expect("configured list");
 
         assert_eq!(parsed, ["en", "es-es"]);
+    }
+
+    #[test]
+    fn config_path_supports_windows_native_environment_fallbacks() {
+        assert_eq!(
+            config_path_from(
+                Some(PathBuf::from("xdg")),
+                Some(PathBuf::from("home")),
+                Some(PathBuf::from("appdata")),
+                Some(PathBuf::from("profile")),
+            )
+            .expect("XDG path"),
+            PathBuf::from("xdg/kmp/config.toml")
+        );
+        assert_eq!(
+            config_path_from(
+                None,
+                Some(PathBuf::from("home")),
+                Some(PathBuf::from("appdata")),
+                Some(PathBuf::from("profile")),
+            )
+            .expect("HOME path"),
+            PathBuf::from("home/.config/kmp/config.toml")
+        );
+        assert_eq!(
+            config_path_from(None, None, Some(PathBuf::from("appdata")), None)
+                .expect("APPDATA path"),
+            PathBuf::from("appdata/kmp/config.toml")
+        );
+        assert_eq!(
+            config_path_from(None, None, None, Some(PathBuf::from("profile")))
+                .expect("USERPROFILE path"),
+            PathBuf::from("profile/.config/kmp/config.toml")
+        );
     }
 
     #[test]

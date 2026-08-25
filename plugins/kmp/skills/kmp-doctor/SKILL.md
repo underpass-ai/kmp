@@ -5,9 +5,13 @@ description: Diagnose KMP binary, backend, selected store, tool surface, and hos
 
 # KMP doctor
 
-Run `kmp-mcp doctor`. If the plugin-bundled doctor is needed, resolve the
-plugin root as two directories above this `SKILL.md` and run
-`<plugin-root>/scripts/kmp-doctor.sh`.
+Resolve the plugin root as two directories above this `SKILL.md` and run
+`<plugin-root>/scripts/kmp-doctor.sh`. This is the primary doctor because it
+checks the binary and store plus effective Claude/Codex wiring, retired tool
+policies, and plugin/global MCP ownership.
+
+Only if the bundled script is unavailable, fall back to `kmp-mcp doctor` and
+state explicitly that host wiring and ownership were not checked.
 
 Show the first branded block verbatim. Then give the usable/not-usable verdict,
 the first blocking cause, and the exact repair named by the doctor. Preserve

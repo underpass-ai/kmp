@@ -5,8 +5,16 @@ description: Install, update, and configure KMP for Codex. Use for first setup, 
 
 # KMP setup
 
-Diagnose first with `kmp-mcp doctor`. Resolve the plugin root as two directories
-above this `SKILL.md`.
+Resolve the plugin root as two directories above this `SKILL.md`. Diagnose
+first with `<plugin-root>/scripts/kmp-doctor.sh`; it includes host ownership
+and effective wiring checks that the process-local `kmp-mcp doctor` cannot
+see. Fall back to `kmp-mcp doctor` only if the bundled script is unavailable,
+and say that host ownership was not checked.
+
+When a session notice or version comparison says a newer release exists, run
+`<plugin-root>/scripts/kmp-update.sh --codex`. That updates the native Codex
+plugin and installs the checksummed engine from the same release. Do not update
+only one half.
 
 For an enabled Codex plugin, the plugin owns MCP. Install or update the engine
 with `<plugin-root>/scripts/kmp-install-binary.sh`, but do not add a global
@@ -26,5 +34,5 @@ translated: answer in the user's language and preserve stored evidence, refs,
 relation `why`, and source metadata byte-for-byte. Temporal requests navigate
 time and never enter this fallback. Upgrades must leave this policy intact.
 
-Finish by rerunning the doctor. A running Codex session needs one restart to
-load changed skills or MCP wiring.
+Finish by rerunning `<plugin-root>/scripts/kmp-doctor.sh`. A running Codex
+session needs one restart to load changed skills or MCP wiring.

@@ -63,5 +63,16 @@ migrated = cache / ".codex-plugin/migrated-command-skills"
 if migrated.exists() and any(migrated.glob("*/SKILL.md")):
     names = sorted(path.parent.name for path in migrated.glob("*/SKILL.md"))
     raise SystemExit(f"Codex created an accidental second workflow surface: {names}")
+effective_clauses = {
+    "kmp-setup": ("scripts/kmp-doctor.sh", "scripts/kmp-update.sh --codex"),
+    "kmp-doctor": ("scripts/kmp-doctor.sh", "host wiring and ownership"),
+}
+for skill_name, clauses in effective_clauses.items():
+    text = (cache / "skills" / skill_name / "SKILL.md").read_text()
+    for clause in clauses:
+        if clause not in text:
+            raise SystemExit(
+                f"installed {skill_name} lost executable workflow clause: {clause}"
+            )
 print(f"KMP installed Codex smoke passed: {len(actual)} native skills, no migrated commands")
 PY

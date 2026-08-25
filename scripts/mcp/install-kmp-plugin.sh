@@ -147,25 +147,6 @@ else
   fi
 fi
 
-# ---------------------------------------------------------- agent policy ----
-step "Agent policy"
-if [ "$DRY_RUN" -eq 1 ]; then
-  if [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
-    act "set semantic Ask fallback languages to $ASK_FALLBACK_LANGUAGES"
-  else
-    act "show the active semantic Ask fallback languages (default: en)"
-  fi
-elif [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
-  if ! "$BIN" config ask-fallback-languages "$ASK_FALLBACK_LANGUAGES"; then
-    echo "   this kmp-mcp predates configurable Ask fallback; update the engine first" >&2
-    exit 1
-  fi
-else
-  if ! "$BIN" config; then
-    say "   this kmp-mcp predates configurable Ask fallback; update the engine and re-run setup"
-  fi
-fi
-
 # Shared doctor, used by both hosts' prompts.
 DOCTOR_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/kmp/bin"
 DOCTOR="$DOCTOR_DIR/kmp-doctor.sh"
@@ -376,6 +357,27 @@ if [ "$DO_CLAUDE" -eq 1 ]; then
   say "   To register the server on its own, without the plugin:"
   say "     claude mcp add kmp --scope user \\"
   say "       --env KMP_MCP_BACKEND=embedded -- $BIN"
+fi
+
+# ---------------------------------------------------------- agent policy ----
+# Ownership and migration checks above must finish first. A setup rejected for
+# duplicate MCP owners must not leave an unrelated user policy half-applied.
+step "Agent policy"
+if [ "$DRY_RUN" -eq 1 ]; then
+  if [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
+    act "set semantic Ask fallback languages to $ASK_FALLBACK_LANGUAGES"
+  else
+    act "show the active semantic Ask fallback languages (default: en)"
+  fi
+elif [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
+  if ! "$BIN" config ask-fallback-languages "$ASK_FALLBACK_LANGUAGES"; then
+    echo "   this kmp-mcp predates configurable Ask fallback; update the engine first" >&2
+    exit 1
+  fi
+else
+  if ! "$BIN" config; then
+    say "   this kmp-mcp predates configurable Ask fallback; update the engine and re-run setup"
+  fi
 fi
 
 step "Check"
