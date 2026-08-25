@@ -125,5 +125,5 @@ See:
   [`usage-guide.md`](usage-guide.md)
 - If you want the proposed ingress API:
   [`graph-batch-ingestion-api.md`](graph-batch-ingestion-api.md)
-- If you want the stable contract boundary:
-  [`migration/kernel-node-centric-integration-contract.md`](migration/kernel-node-centric-integration-contract.md)
+- If you want the current KMP API boundary:
+  [`product/kernel-context-api-design.md`](product/kernel-context-api-design.md)

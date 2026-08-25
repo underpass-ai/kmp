@@ -178,7 +178,7 @@ General:
 
 - `NAMESPACE` (default: `underpass-runtime`)
 - `RELEASE_PREFIX` (default: `kmp-smoke`)
-- `VALUES_FILE` (default: `charts/kmp/values.underpass-runtime.yaml`)
+- `VALUES_FILE` (default: `distribution/charts/kmp/values.underpass-runtime.yaml`)
 - `IMAGE_TAG`
 - `IMAGE_DIGEST`
 - `HELM_TIMEOUT` (default: `10m`)

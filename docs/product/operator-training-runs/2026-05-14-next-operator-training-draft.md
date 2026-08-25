@@ -256,7 +256,7 @@ Training was launched after the dataset gate passed.
 | Field | Value |
 | --- | --- |
 | Kubernetes job | `underpass-runtime/kop-qwen05-lora-read-v7-4gpu-20260514` |
-| Manifest | `k8s/kernel-operator-qwen05-lora-read-v7-4gpu-20260514-job.yaml` |
+| Manifest | `archive/k8s/kernel-operator-qwen05-lora-read-v7-4gpu-20260514-job.yaml` |
 | Base model | `Qwen/Qwen2.5-0.5B-Instruct` |
 | Train file | `/tmp/kernel-operator-sft-capability-split-read-v7-20260514/openai_train.jsonl` |
 | Eval file | `/tmp/kernel-operator-sft-capability-split-read-v7-20260514/openai_eval.jsonl` |

@@ -137,7 +137,7 @@ prerequisites: [operations/cluster-prerequisites.md](operations/cluster-prerequi
 ### Verify a deployment
 
 ```bash
-helm upgrade kmp charts/kmp --reuse-values --set e2e.enabled=true
+helm upgrade kmp distribution/charts/kmp --reuse-values --set e2e.enabled=true
 helm test kmp --timeout 5m
 ```
 

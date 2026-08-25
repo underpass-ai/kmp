@@ -58,9 +58,9 @@ Deliverables:
 Exit criteria:
 
 - `docs/product/queryable-agentic-memory-layer.md` documents the product thesis;
-- `docs/research/agentic-memory-benchmark-strategy-2026-05-06.md` documents the
+- `archive/docs/research/agentic-memory-benchmark-strategy-2026-05-06.md` documents the
   benchmark pivot;
-- `docs/research/longmemeval-benchmark.md` documents LongMemEval as secondary;
+- `archive/docs/research/longmemeval-benchmark.md` documents LongMemEval as secondary;
 - roadmap is linked from the documentation index.
 
 ## Milestone 1: Agentic Benchmark Feasibility

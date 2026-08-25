@@ -24,7 +24,6 @@ These documents are the current source of truth for users and maintainers:
 | v1beta1 maturity and limitations | [beta-status.md](beta-status.md) |
 | Product roadmap | [product/kernel-roadmap-milestones.md](product/kernel-roadmap-milestones.md) |
 | Embedded edition roadmap | [product/kmp-embedded-edition-roadmap.md](product/kmp-embedded-edition-roadmap.md) |
-| MADE incident-memory integration | [integrations/made-kmp.md](integrations/made-kmp.md) |
 | Embedded host recipes + playbook | [operations/embedded-hosts.md](operations/embedded-hosts.md) |
 | Embedded releases + format compatibility | [operations/embedded-release.md](operations/embedded-release.md) |
 | Release process (tags, crates.io, artefacts) | [release.md](release.md) |
@@ -41,7 +40,6 @@ These documents are the current source of truth for users and maintainers:
 | Getting started / usage guide | [usage-guide.md](usage-guide.md) |
 | GraphBatch ingestion quickstart | [graph-batch-quickstart.md](graph-batch-quickstart.md) |
 | Runtime guarantees | [runtime-guarantees.md](runtime-guarantees.md) |
-| Public claim recordings | [showcase/README.md](showcase/README.md) |
 
 ## Active Roadmap
 
@@ -73,17 +71,13 @@ The current roadmap is:
 12. Continue reducing infrastructure coupling through conformance tests and
     backend-independent semantics.
 
-## Active Research And Benchmark Docs
+## Research Status
 
-Use these for current benchmark work:
-
-| Benchmark / topic | Document |
-| --- | --- |
-| Benchmark positioning | [research/agentic-memory-benchmark-strategy-2026-05-06.md](research/agentic-memory-benchmark-strategy-2026-05-06.md) |
-| MemoryArena | [research/memoryarena-benchmark.md](research/memoryarena-benchmark.md) |
-| MemoryArena evaluator | [research/memoryarena-paper-aligned-evaluator.md](research/memoryarena-paper-aligned-evaluator.md) |
-| MemoryAgentBench | [research/memoryagentbench-benchmark.md](research/memoryagentbench-benchmark.md) |
-| LongMemEval | [research/longmemeval-benchmark.md](research/longmemeval-benchmark.md) |
+[Research Summary](research/README.md) records what the research phase
+completed and the active direction toward state-of-the-art agentic context,
+including temporal and multidimensional memory analysis. Detailed benchmarks,
+paper drafts, demos, and incident reports are preserved in the
+[research archive](../archive/docs/research/README.md).
 
 ## Historical Or Needs Review
 
@@ -92,12 +86,13 @@ current kernel contract:
 
 | Area | Status |
 | --- | --- |
-| [archived/](archived/README.md) | Explicitly historical or superseded. |
-| [migration/](migration/README.md) | Historical migration area. Use only the files listed by its README and review against current KMP before applying. |
-| [research/ROADMAP_MASTER.md](research/ROADMAP_MASTER.md) | Legacy master roadmap. The active roadmap is now [product/kernel-roadmap-milestones.md](product/kernel-roadmap-milestones.md). |
-| [research/PLAN_GRAPH_EXPLORER.md](research/PLAN_GRAPH_EXPLORER.md), [research/REQUIREMENTS_GRAPH_EXPLORER.md](research/REQUIREMENTS_GRAPH_EXPLORER.md) | Completed graph-explorer plan and requirements. Retained for traceability; the depth clamp described was since removed, so check current explorer contracts before reuse. |
+| [archive/docs/](../archive/docs/README.md) | Explicitly historical or superseded documentation. |
+| [archive/docs/migration/](../archive/docs/migration/README.md) | Migration-era integration evidence. Review against current KMP before applying. |
+| [archive/docs/integrations/](../archive/docs/integrations/made-kmp.md) | Superseded product-integration guidance. |
+| [archive/docs/research/](../archive/docs/research/README.md) | Benchmark notebooks, paper drafts, demos, incidents, and legacy roadmaps. |
+| [archive/docs/showcase/](../archive/docs/showcase/README.md) | Former public-pitch recordings and their reproducible sources. |
 | PIR/fix-planning migration reports | Historical integration evidence. They should not drive current kernel API decisions without revalidation. |
-| Paper drafts under [paper/](paper/README.md) and [research/PAPER_*](research/README.md) | Publication artifacts. They may lag implementation and must be checked against `beta-status.md` before reuse. |
+| Paper sources under [paper/](paper/README.md) and drafts in the [research archive](../archive/docs/research/README.md) | Publication artifacts. They may lag implementation and must be checked against `beta-status.md` before reuse. |
 
 ## Phase 03 authority decision
 
@@ -106,19 +101,19 @@ The inventory is now the decision, rather than an open question:
 - dated Operator audits, training runs, model plans and Hugging Face templates
   are **research evidence** for a separate benchmark project; they are not a
   live KMP runtime contract;
-- `migration/` and `archived/` are **historical evidence**, even where a file
-  remains useful to an integrating product;
+- `archive/docs/` and all of its subdirectories are **historical evidence**,
+  even where a file remains useful to an integrating product;
 - papers, completed research roadmaps, incident reports and ADR spikes are
   **research evidence** and may describe the vocabulary that existed when an
   experiment ran;
 - guides, operations, accepted ADRs and the core product/protocol documents
   listed above are **current** and must not use a former public tool name.
 
-This is deliberately a status change, not a deletion or bulk move. Old names
+The archive is deliberately outside the current documentation spine. Old names
 inside an experiment are evidence about that experiment; putting them in the
 current contract is the contradiction. `scripts/ci/documentation-spine.sh`
-ensures every document stays classified and reachable from `docs/index.md` in
-at most two links.
+ensures every current document stays classified and reachable from
+`docs/index.md` in at most two links.
 
 ## Gaps Found In Earlier Passes
 

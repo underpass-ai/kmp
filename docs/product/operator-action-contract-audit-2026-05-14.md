@@ -237,7 +237,7 @@ Artefactos nuevos:
 - predictions dir: `/tmp/kernel-operator-qwen05-predictions-lme-v10-operator-state-strict-20260514`;
 - policy eval: `/tmp/kernel-operator-qwen05-predictions-lme-v10-operator-state-strict-20260514-policy-eval.json`;
 - Kubernetes job: `kop-qwen05-predict-lme-v10-state-strict`;
-- manifest: `k8s/kernel-operator-qwen05-predict-longmemeval-v10-operator-state-strict-20260514-job.yaml`.
+- manifest: `archive/k8s/kernel-operator-qwen05-predict-longmemeval-v10-operator-state-strict-20260514-job.yaml`.
 
 Predictor summary:
 
@@ -296,7 +296,7 @@ MemoryArena V6 strict outputs:
 - de-anonymized eval: `/tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-raw-policy-eval.json`;
 - live MCP replay: `/tmp/kernel-operator-qwen05-predictions-v6-holdout20-strict-20260514-mcp-replay-full`;
 - Kubernetes job: `kernel-operator-qwen05-predict-v6-holdout20-strict`;
-- manifest: `k8s/kernel-operator-qwen05-predict-v6-holdout20-strict-20260514-job.yaml`.
+- manifest: `archive/k8s/kernel-operator-qwen05-predict-v6-holdout20-strict-20260514-job.yaml`.
 
 Both MemoryArena outputs report:
 

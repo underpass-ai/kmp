@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CHART_PATH="${1:-charts/kmp}"
+CHART_PATH="${1:-distribution/charts/kmp}"
 DEV_VALUES="${CHART_PATH}/values.dev.yaml"
 UNDERPASS_RUNTIME_VALUES="${CHART_PATH}/values.underpass-runtime.yaml"
 UNDERPASS_RUNTIME_MTLS_VALUES="${CHART_PATH}/values.underpass-runtime.mtls.example.yaml"

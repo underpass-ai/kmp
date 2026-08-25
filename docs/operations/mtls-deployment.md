@@ -195,9 +195,9 @@ done
 ## Step 3 — Deploy with Helm
 
 ```bash
-helm upgrade --install kmp charts/kmp \
+helm upgrade --install kmp distribution/charts/kmp \
   -n underpass-runtime \
-  -f charts/kmp/values.underpass-runtime.mtls.example.yaml \
+  -f distribution/charts/kmp/values.underpass-runtime.mtls.example.yaml \
   --set image.tag=mtls \
   --timeout 120s
 ```

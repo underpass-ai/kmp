@@ -760,7 +760,7 @@ operator actually walks — sharing one memory between hosts, and updating.
   instead of a contributor quickstart, and leads with the plugin for Claude
   Code. New `docs/editions.md` is the canonical embedded-vs-cluster
   comparison; the operations index is grouped by edition.
-- The Choreographer integration guide is now `docs/integrations/made-kmp.md`
+- The Choreographer integration guide is preserved at `archive/docs/integrations/made-kmp.md`
   after the MADE rename.
 
 ## [0.1.2] - 2026-08-16

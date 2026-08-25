@@ -1,7 +1,7 @@
 # ACL Submission Package
 
 This directory contains an ACL-style LaTeX package derived from
-[`docs/research/PAPER_SUBMISSION_DRAFT.md`](../../research/PAPER_SUBMISSION_DRAFT.md).
+[`archive/docs/research/PAPER_SUBMISSION_DRAFT.md`](../../../archive/docs/research/PAPER_SUBMISSION_DRAFT.md).
 
 The current manuscript covers four use cases:
 
@@ -55,10 +55,10 @@ bash scripts/ci/integration-paper-use-cases.sh
 
 That script writes:
 
-- `artifacts/paper-use-cases/summary.json`
-- `artifacts/paper-use-cases/results.md`
-- `artifacts/paper-use-cases/results.csv`
-- `artifacts/paper-use-cases/results-figures.md`
+- `archive/artifacts/paper-use-cases/summary.json`
+- `archive/artifacts/paper-use-cases/results.md`
+- `archive/artifacts/paper-use-cases/results.csv`
+- `archive/artifacts/paper-use-cases/results-figures.md`
 
 `main.tex` defaults to anonymous review mode:
 

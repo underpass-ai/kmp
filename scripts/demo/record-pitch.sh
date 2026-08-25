@@ -15,8 +15,8 @@ if [ ! -x "$BIN" ]; then
 fi
 export KMP_MCP_BIN="$BIN"
 
-mkdir -p docs/showcase/recordings
-for tape in docs/showcase/tapes/*.tape; do
+mkdir -p archive/docs/showcase/recordings
+for tape in archive/docs/showcase/tapes/*.tape; do
   echo "recording ${tape}"
   vhs --quiet "$tape"
 done

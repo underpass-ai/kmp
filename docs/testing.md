@@ -263,7 +263,7 @@ bash scripts/ci/e2e-kernel-runner-image.sh kmp-e2e-runner:dev
 
 Cluster job template:
 
-- [`k8s/kmp-e2e-runner.example.yaml`](../k8s/kmp-e2e-runner.example.yaml)
+- [`archive/k8s/kmp-e2e-runner.example.yaml`](../archive/k8s/kmp-e2e-runner.example.yaml)
 
 Supported `TEST_ID` values:
 
@@ -451,7 +451,7 @@ because this is the PIR LLM-consumption path, not a compact UI preview.
 For cluster-managed runs, do not keep these values as ad-hoc shell exports.
 Prefer a `ConfigMap` for non-secret LLM client settings and a `Secret` for API
 keys, then inject them with `envFrom`. A reference manifest lives at
-[`k8s/llm-client-config.example.yaml`](../k8s/llm-client-config.example.yaml).
+[`archive/k8s/llm-client-config.example.yaml`](../archive/k8s/llm-client-config.example.yaml).
 
 ## Benchmark Tests (LLM-as-Judge)
 
@@ -726,8 +726,8 @@ One yaml per model — all include `--reasoning-parser=qwen3`:
 
 | Model | Manifest | GPUs |
 |-------|----------|:----:|
-| Qwen3-8B | `k8s/vllm-qwen3-8b.yaml` | 1 |
-| Qwen3-14B | `k8s/vllm-qwen3-14b.yaml` | 2 |
+| Qwen3-8B | `archive/k8s/vllm-qwen3-8b.yaml` | 1 |
+| Qwen3-14B | `archive/k8s/vllm-qwen3-14b.yaml` | 2 |
 
 Qwen3 thinks by default. The reasoning parser separates `<think>` tags into
 the `reasoning_content` response field and returns clean content.
@@ -757,7 +757,7 @@ enable or stabilize this capability.
 Deploying a model:
 
 ```bash
-kubectl apply -f k8s/vllm-qwen3-8b.yaml
+kubectl apply -f archive/k8s/vllm-qwen3-8b.yaml
 kubectl rollout status deployment/vllm-server -n underpass-runtime --timeout=180s
 
 # Verify
@@ -926,10 +926,10 @@ tail -f /path/to/output.log | grep -E '\[RESULT\]|\[EVAL\]|\[CAPTURE\]'
 
 ### Output artifacts
 
-Results are saved to `artifacts/e2e-runs/<timestamp>/`:
+Results are saved to `archive/artifacts/e2e-runs/<timestamp>/`:
 
 ```
-artifacts/e2e-runs/<timestamp>/
+archive/artifacts/e2e-runs/<timestamp>/
 ├── results/           # One JSON per evaluation
 │   ├── micro-ops-explanatory-seed0.json
 │   ├── micro-ops-structural-seed0.json

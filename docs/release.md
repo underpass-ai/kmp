@@ -16,7 +16,7 @@ Semver. Five things must stay in lockstep, and one script keeps them there:
 
 - `Cargo.toml` → `[workspace.package].version`
 - `Cargo.toml` → the `version` next to each internal crate's `path`
-- `charts/kmp/Chart.yaml` → `version` + `appVersion`
+- `distribution/charts/kmp/Chart.yaml` → `version` + `appVersion`
 - both plugin host manifests
 - `server.json` and `distribution/mcpb/manifest.json`
 

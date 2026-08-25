@@ -434,7 +434,7 @@ https://kmp.underpassai.com
 Implemented documentation updates:
 
 - `docs/beta-status.md` records `KernelMemoryService` maturity separately.
-- `docs/migration/kernel-node-centric-integration-contract.md` lists the
+- `archive/docs/migration/kernel-node-centric-integration-contract.md` lists the
   additive service and states that lower-level query/command services remain.
 - `docs/operations/mcp-stdio.md` describes live MCP as
   `KernelMemoryService`-backed.

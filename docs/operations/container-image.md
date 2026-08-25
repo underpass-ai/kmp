@@ -121,7 +121,7 @@ gh workflow run deploy-kubernetes.yml \
 # Or locally
 RELEASE_NAME=kmp \
 NAMESPACE=underpass-runtime \
-VALUES_FILE=charts/kmp/values.underpass-runtime.yaml \
+VALUES_FILE=distribution/charts/kmp/values.underpass-runtime.yaml \
 IMAGE_TAG=dev-$(git rev-parse --short HEAD) \
 bash scripts/ci/deploy-kubernetes.sh
 ```
@@ -141,7 +141,7 @@ When `GITHUB_TOKEN` cannot push to GHCR, set repo secrets:
 
 ## Helm Chart
 
-The kernel ships a Helm chart at [`charts/kmp`](../../charts/kmp).
+The kernel ships a Helm chart at [`distribution/charts/kmp`](../../distribution/charts/kmp).
 OCI target: `oci://ghcr.io/underpass-ai/charts/kmp`.
 
 For Helm deployment, values, TLS, and observability stack configuration,

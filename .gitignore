@@ -2,7 +2,7 @@
 /CONTEXT_SERVICE_RUST_MIGRATION_PLAN.md
 /rollout-*.jsonl
 /to-delete-when-finish-the-standalone-extraction/
-/artifacts/e2e-runs/
+/archive/artifacts/e2e-runs/
 /.codex
 /.rehydration
 *.pyc
@@ -13,6 +13,6 @@
 /.claude/settings.local.json.tmp.*
 
 # Temporary public article draft.
-/docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md
+/archive/docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md
 /dist/
 /tmp/

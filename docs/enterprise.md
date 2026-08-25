@@ -69,7 +69,7 @@ If none applies, local KMP is simpler and remains the recommended mode.
 
 ## Deployment path
 
-The chart lives in [`charts/kmp`](../charts/kmp). Before deploying, choose:
+The chart lives in [`distribution/charts/kmp`](../distribution/charts/kmp). Before deploying, choose:
 
 1. a pinned `v*` image tag or digest;
 2. in-chart or externally managed Neo4j, Valkey and NATS;
@@ -82,12 +82,12 @@ The chart lives in [`charts/kmp`](../charts/kmp). Before deploying, choose:
 Render and review the release before applying it:
 
 ```bash
-helm template kmp charts/kmp \
+helm template kmp distribution/charts/kmp \
   --namespace kmp \
   --values <enterprise-values.yaml> \
   --set image.tag=vX.Y.Z
 
-helm upgrade --install kmp charts/kmp \
+helm upgrade --install kmp distribution/charts/kmp \
   --namespace kmp --create-namespace \
   --values <enterprise-values.yaml> \
   --set image.tag=vX.Y.Z \
@@ -144,7 +144,7 @@ hole in memory.
 After deployment, enable and run the Helm tests:
 
 ```bash
-helm upgrade kmp charts/kmp --reuse-values --set e2e.enabled=true
+helm upgrade kmp distribution/charts/kmp --reuse-values --set e2e.enabled=true
 helm test kmp --timeout 5m
 ```
 

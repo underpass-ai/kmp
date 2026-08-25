@@ -421,7 +421,6 @@ from a local store.
   [AsyncAPI](./api/asyncapi/context-projection.v1beta1.yaml) — enterprise and
   integration boundaries
 - [Examples](./api/examples/README.md)
-- [Integration contract](./docs/migration/kernel-node-centric-integration-contract.md)
 - [Beta status](./docs/beta-status.md) — maturity, limitations, path to v1
 
 ## Repo Layout
@@ -440,8 +439,11 @@ crates/
   kmp-adapter-{neo4j,valkey,nats}/  enterprise persistence
   kmp-testkit/      conformance, datasets and evaluation helpers
 api/                gRPC, AsyncAPI and example contracts
-charts/kmp/         optional enterprise Kubernetes deployment
-docs/               product, operation, security and research guides
+distribution/
+  charts/kmp/       optional enterprise Kubernetes deployment
+  mcpb/             packaged MCP distribution
+docs/               current product, operation, security and research guides
+archive/            historical docs, manifests, run configs and evidence
 scripts/ci/         quality gates and verification runners
 ```
 
@@ -478,12 +480,14 @@ random seeds. Null hypothesis rejected at 95% confidence.
 > Agent: Qwen3-8B with chain-of-thought (local). Judge: GPT-5.4. Wilson 95% CI in brackets.
 > Cross-judge validated: Sonnet 4.6 produces the same gap (+67pp).
 > Synthetic graphs, not production workloads.
-> Full results, methodology, and statistical analysis: [docs/research/](./docs/research/)
+> Full results, methodology, and statistical analysis:
+> [research archive](./archive/docs/research/)
 
 ## Research
 
-The repository includes a paper draft on explanatory graph context
-rehydration: [docs/research/](./docs/research/). The separate
+The current conclusions and possible follow-up work are summarized in
+[docs/research/](./docs/research/); the paper drafts and detailed notebooks are
+kept in the [research archive](./archive/docs/research/). The separate
 [Operator benchmark thread](./docs/operator.md) studies whether a small model
 can operate the KMP API; Operator is research, not part of the local or
 enterprise runtime.

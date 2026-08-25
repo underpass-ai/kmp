@@ -1,0 +1,149 @@
+# Full mTLS deployment example for underpass-runtime.
+#
+# All boundaries encrypted with mutual TLS where supported.
+# Requires secrets pre-created in the namespace:
+#
+#   kubectl create secret tls grpc-tls --cert=server.crt --key=server.key -n underpass-runtime
+#   kubectl create secret generic grpc-ca --from-file=ca.crt -n underpass-runtime
+#   kubectl create secret tls nats-tls --cert=nats.crt --key=nats.key -n underpass-runtime
+#   kubectl create secret generic nats-ca --from-file=ca.crt -n underpass-runtime
+#   kubectl create secret tls valkey-tls --cert=valkey.crt --key=valkey.key -n underpass-runtime
+#   kubectl create secret generic valkey-ca --from-file=ca.crt -n underpass-runtime
+#   kubectl create secret tls otel-tls --cert=otel.crt --key=otel.key -n underpass-runtime
+#   kubectl create secret generic neo4j-tls --from-file=ca.crt -n underpass-runtime
+
+image:
+  pullPolicy: Always
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: GRPCS
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+    nginx.ingress.kubernetes.io/proxy-ssl-name: kmp-grpc
+    nginx.ingress.kubernetes.io/proxy-ssl-secret: underpass-runtime/kmp-client-tls
+    nginx.ingress.kubernetes.io/proxy-ssl-server-name: "on"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "on"
+    nginx.ingress.kubernetes.io/proxy-ssl-verify-depth: "2"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: kmp.underpassai.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+development:
+  allowMutableImageTags: true
+  allowInlineConnections: true
+
+connections:
+  graphUri: "neo4j+s://neo4j:underpassai@kmp-neo4j:7687"
+  detailUri: "rediss://kmp-valkey:6379"
+  snapshotUri: "rediss://kmp-valkey:6379"
+  runtimeStateUri: "rediss://kmp-valkey:6379"
+  natsUrl: "nats://kmp-nats:4222"
+
+# --- gRPC inbound mTLS ---
+tls:
+  mode: mutual
+  existingSecret: kmp-grpc-tls
+  keys:
+    cert: tls.crt
+    key: tls.key
+    clientCa: ca.crt
+
+# --- NATS mTLS ---
+nats:
+  enabled: true
+  tls:
+    enabled: true
+    existingSecret: kmp-nats-tls
+    caSecret: kmp-nats-ca
+
+natsTls:
+  mode: mutual
+  existingSecret: kmp-nats-tls
+  tlsFirst: false
+  keys:
+    ca: ca.crt
+    cert: tls.crt
+    key: tls.key
+
+# --- Valkey mTLS ---
+valkey:
+  enabled: true
+  tls:
+    enabled: true
+    existingSecret: kmp-valkey-tls
+    caSecret: kmp-valkey-ca
+
+valkeyTls:
+  enabled: true
+  existingSecret: kmp-valkey-tls
+  keys:
+    ca: ca.crt
+    cert: tls.crt
+    key: tls.key
+
+# --- Neo4j TLS (CA trust only — mTLS pending neo4rs upgrade) ---
+neo4j:
+  enabled: true
+  auth: "neo4j/underpassai"
+  tls:
+    enabled: true
+    existingSecret: kmp-neo4j-tls
+    caSecret: neo4j-tls
+
+neo4jTls:
+  enabled: true
+  existingSecret: kmp-neo4j-tls
+  keys:
+    ca: ca.crt
+    # cert and key pending neo4rs 0.8 driver support
+    cert: ""
+    key: ""
+
+# --- Observability stack with mTLS ---
+loki:
+  enabled: true
+
+grafana:
+  enabled: true
+  adminPassword: change-me-in-production
+  anonymousAccess: false
+
+otelCollector:
+  enabled: true
+  tls:
+    enabled: true
+    existingSecret: kmp-otel-tls
+    keys:
+      ca: ca.crt
+      cert: tls.crt
+      key: tls.key
+
+# --- Kernel OTLP mTLS env vars ---
+# The Helm chart auto-wires OTEL_EXPORTER_OTLP_ENDPOINT and mounts the OTel TLS
+# secret into the kernel pod. These env vars point the OTLP exporter at those
+# mounted files.
+extraEnv:
+  - name: OTEL_EXPORTER_OTLP_CA_PATH
+    value: /var/run/kmp/otel-tls/ca.crt
+  - name: OTEL_EXPORTER_OTLP_CERT_PATH
+    value: /var/run/kmp/otel-tls/tls.crt
+  - name: OTEL_EXPORTER_OTLP_KEY_PATH
+    value: /var/run/kmp/otel-tls/tls.key
+
+# --- Optional in-cluster LLM endpoints ---
+# Apply archive/k8s/llm-client-config.example.yaml first, then load the config and
+# secret through envFrom. This keeps the primary model, repair judge, and
+# semantic reranker outside the chart's static values.
+extraEnvFrom:
+  - configMapRef:
+      name: kmp-llm-client
+  - secretRef:
+      name: kmp-llm-client-secrets

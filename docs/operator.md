@@ -152,5 +152,4 @@ Honest publication claim:
 
 ## 7. Deeper background
 
-- Full design write-up: [`docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md`](./research/entrenando-un-modelo-pequeno-para-operar-kmp.md)
-- Benchmark methodology + numbers: [`docs/research/longmemeval-benchmark.md`](./research/longmemeval-benchmark.md)
+- Archived benchmark methodology + numbers: [`archive/docs/research/longmemeval-benchmark.md`](../archive/docs/research/longmemeval-benchmark.md)

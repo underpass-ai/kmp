@@ -10,7 +10,7 @@ This repo owns:
 - kernel quality gates (CI workflows, contract checks, coverage)
 - kernel-focused documentation
 - standalone kernel container image (`ghcr.io/underpass-ai/kmp`)
-- standalone kernel Helm chart (`charts/kmp`)
+- standalone kernel Helm chart (`distribution/charts/kmp`)
 
 The Helm chart includes **optional infrastructure sidecars** for self-contained
 development and testing:

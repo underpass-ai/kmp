@@ -303,7 +303,7 @@ async fn call_openai(
     //   - Qwen3: huggingface.co/Qwen/Qwen3-8B
     //
     // Server requires: --reasoning-parser=qwen3 --reasoning-config '{"think_start_str":"<think>","think_end_str":"</think>"}'
-    // See k8s/vllm-thinking.yaml.
+    // See archive/k8s/vllm-thinking.yaml.
     //
     // With --reasoning-config, thinking_token_budget is a hard cap enforced by
     // the server, independent of max_tokens. Without it, max_tokens controls
@@ -323,7 +323,7 @@ async fn call_openai(
             body["chat_template_kwargs"] = serde_json::json!({"enable_thinking": false});
         } else {
             // Limit reasoning tokens so the model has room for the JSON answer.
-            // Requires --reasoning-config on the server (k8s/vllm-qwen3-8b.yaml).
+            // Requires --reasoning-config on the server (archive/k8s/vllm-qwen3-8b.yaml).
             // vLLM forces </think> when the budget is exhausted.
             body["thinking_token_budget"] = serde_json::json!(512);
         }

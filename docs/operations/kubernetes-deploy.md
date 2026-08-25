@@ -10,7 +10,7 @@ Document the manual deployment workflow for the standalone kernel Helm chart.
 - trigger: `workflow_dispatch`
 
 The workflow deploys the chart in
-[`charts/kmp`](../../charts/kmp) with
+[`distribution/charts/kmp`](../../distribution/charts/kmp) with
 `helm upgrade --install`.
 
 ## Required Secret
@@ -45,7 +45,7 @@ Set either `image_tag` or `image_digest`.
 
 The default values file is:
 
-- [`charts/kmp/values.underpass-runtime.yaml`](../../charts/kmp/values.underpass-runtime.yaml)
+- [`distribution/charts/kmp/values.underpass-runtime.yaml`](../../distribution/charts/kmp/values.underpass-runtime.yaml)
 
 The chart deploys all infrastructure self-contained within the target namespace:
 Neo4j, Valkey, and NATS are managed as in-chart optional components (`neo4j.enabled`,
@@ -54,7 +54,7 @@ release name. There are no cross-namespace dependencies.
 
 The secure follow-up profile is:
 
-- [`charts/kmp/values.underpass-runtime.secure.example.yaml`](../../charts/kmp/values.underpass-runtime.secure.example.yaml)
+- [`distribution/charts/kmp/values.underpass-runtime.secure.example.yaml`](../../distribution/charts/kmp/values.underpass-runtime.secure.example.yaml)
 
 That file captures the intended target once TLS is enabled across all
 connections.
@@ -73,7 +73,7 @@ For development, build and push a `dev-<sha>` tag first (see [container-image.md
 # Deploy the latest CI build
 RELEASE_NAME=kmp \
 NAMESPACE=underpass-runtime \
-VALUES_FILE=charts/kmp/values.underpass-runtime.yaml \
+VALUES_FILE=distribution/charts/kmp/values.underpass-runtime.yaml \
 IMAGE_TAG=main \
 bash scripts/ci/deploy-kubernetes.sh
 ```
@@ -88,7 +88,7 @@ docker push ghcr.io/underpass-ai/kmp:dev-$(git rev-parse --short HEAD)
 # 2. Deploy
 RELEASE_NAME=kmp \
 NAMESPACE=underpass-runtime \
-VALUES_FILE=charts/kmp/values.underpass-runtime.yaml \
+VALUES_FILE=distribution/charts/kmp/values.underpass-runtime.yaml \
 IMAGE_TAG=dev-$(git rev-parse --short HEAD) \
 bash scripts/ci/deploy-kubernetes.sh
 
@@ -103,7 +103,7 @@ of reapplying the default values file. This avoids accidentally dropping mTLS,
 Ingress, `imagePullSecrets`, or cluster-specific secrets:
 
 ```bash
-helm upgrade --install kmp charts/kmp \
+helm upgrade --install kmp distribution/charts/kmp \
   -n underpass-runtime \
   --reuse-values \
   --set image.tag=dev-$(git rev-parse --short HEAD) \
@@ -115,7 +115,7 @@ helm upgrade --install kmp charts/kmp \
 To force a restart with the same image tag, add a simple pod annotation:
 
 ```bash
-helm upgrade --install kmp charts/kmp \
+helm upgrade --install kmp distribution/charts/kmp \
   -n underpass-runtime \
   --reuse-values \
   --set image.tag=dev-$(git rev-parse --short HEAD) \
@@ -378,7 +378,7 @@ The chart now supports first-class mounting of a custom Neo4j CA for inline
 
 The self-contained Neo4j serves over plaintext `neo4j://` by default. The
 staged secure target lives in
-[`charts/kmp/values.underpass-runtime.secure.example.yaml`](../../charts/kmp/values.underpass-runtime.secure.example.yaml)
+[`distribution/charts/kmp/values.underpass-runtime.secure.example.yaml`](../../distribution/charts/kmp/values.underpass-runtime.secure.example.yaml)
 and switches the graph connection to `neo4j+s://...` plus `neo4jTls.*`.
 
 Example values override:
@@ -455,9 +455,9 @@ and architecture details.
 For a deployment with mutual TLS on supported boundaries:
 
 ```bash
-helm upgrade --install kmp charts/kmp \
+helm upgrade --install kmp distribution/charts/kmp \
   -n underpass-runtime \
-  -f charts/kmp/values.underpass-runtime.mtls.example.yaml \
+  -f distribution/charts/kmp/values.underpass-runtime.mtls.example.yaml \
   --set image.tag=<your-tag>
 ```
 
@@ -472,7 +472,7 @@ This configures:
 - Grafana with anonymous access disabled
 
 Requires secrets pre-created in the namespace. See
-[`values.underpass-runtime.mtls.example.yaml`](../../charts/kmp/values.underpass-runtime.mtls.example.yaml)
+[`values.underpass-runtime.mtls.example.yaml`](../../distribution/charts/kmp/values.underpass-runtime.mtls.example.yaml)
 for the full values file with secret names and cert paths.
 
 ## Notes

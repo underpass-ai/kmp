@@ -462,9 +462,9 @@ Use already audited runs first:
 - MemoryArena prepared 221-task artifacts:
   `/tmp/memoryarena-progressive-221-cost-estimate-artifacts`
 - Live MCP story demo docs:
-  `docs/research/kernel-memory-story-demo-2026-05-05.md`
+  `archive/docs/research/kernel-memory-story-demo-2026-05-05.md`
 - Live mobile incident MCP demo docs:
-  `docs/research/mobile-login-resolution-replay-demo-2026-05-05.md`
+  `archive/docs/research/mobile-login-resolution-replay-demo-2026-05-05.md`
 
 The 100-task MemoryArena run is the best first corpus because it includes real
 MCP navigation, smart-writer read-before-write decisions, relation quality
@@ -822,7 +822,7 @@ These are environment issues, not dataset or code issues.
 First local Kubernetes training run:
 
 ```text
-kubectl apply -f k8s/kernel-operator-qwen05-lora-job.yaml
+kubectl apply -f archive/k8s/kernel-operator-qwen05-lora-job.yaml
 ```
 
 Training environment:
@@ -847,7 +847,7 @@ Final training metrics:
 Prediction run:
 
 ```text
-kubectl apply -f k8s/kernel-operator-qwen05-predict-job.yaml
+kubectl apply -f archive/k8s/kernel-operator-qwen05-predict-job.yaml
 ```
 
 Prediction output:

@@ -48,7 +48,6 @@ Current integration stance:
 | [development/running-e2e.md](development/running-e2e.md) | Contributor E2E loop |
 | [development/graph-aware-answer-reranker.md](development/graph-aware-answer-reranker.md) | Experimental graph-aware reranker |
 | [runbooks/README.md](runbooks/README.md) | Recovery and incident runbook index |
-| [showcase/README.md](showcase/README.md) | The public pitch, with reproducible recordings for every claim |
 
 ## Product Plans
 
@@ -121,27 +120,27 @@ Six earlier decisions (command/query split, projection model, TLS, compatibility
 removal, multi-resolution tiers) are documented in PRs but not yet written as
 formal ADRs. See [adr/README.md](adr/README.md) for the source PRs.
 
-## Current Integration Contracts
+## Current API Contracts
 
 | Document | Content |
 |:---------|:--------|
-| [kernel-node-centric-integration-contract.md](migration/kernel-node-centric-integration-contract.md) | Public gRPC + async contract for consumers |
-| [kernel-runtime-integration-reference.md](migration/kernel-runtime-integration-reference.md) | Recommended consumer runtime shape |
 | [graph-batch-ingestion-api.md](graph-batch-ingestion-api.md) | Experimental ingress API proposal over GraphBatch |
 
 ## Historical Migration References
 
-PIR and fix-planning migration notes are retained for traceability but are not
-the current kernel contract. Use [migration/README.md](migration/README.md) and
-[documentation-catalog.md](documentation-catalog.md) to decide whether a note is
-still relevant before applying it to current work.
+PIR and fix-planning migration notes are retained in
+[archive/docs/migration/](../archive/docs/migration/README.md). They are not the
+current kernel contract; use [documentation-catalog.md](documentation-catalog.md)
+to decide whether an archived note is still relevant before applying it.
 
 ## Research
 
-Papers, roadmaps, benchmarks, and incident reports: [research/](research/README.md)
+Completed work and the active memory-analysis direction:
+[research summary](research/README.md)
 
 LaTeX submission package: [paper/](paper/README.md)
 
 ## Archived
 
-Historical and superseded documents: [archived/](archived/README.md)
+Historical docs, migrations, integrations, research, and showcase material:
+[archive/docs/](../archive/docs/README.md)

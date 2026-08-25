@@ -306,7 +306,7 @@ Tool → RPC binding: `kmp_ingest`/`kmp_write_memory` →
   allowed semantic classes, and when to use it. A model operating KMP reads
   the doctrine in the schema itself; see the
   [usage guide](../usage-guide.md#relations-carry-the-why) and
-  [RELATION_EXPLANATION_MODEL.md](../research/RELATION_EXPLANATION_MODEL.md).
+  [kernel-write-protocol-plan.md](../product/kernel-write-protocol-plan.md).
 - Tool failures set `isError=true` and include
   `structuredContent.error.{code,message}` while retaining textual MCP
   content for compatibility.

@@ -21,7 +21,7 @@ env:
   IMAGE_NAME: ghcr.io/underpass-ai/kmp
   CHART_NAME: kmp
   CHART_REGISTRY: oci://ghcr.io/underpass-ai/charts
-  CHART_PATH: charts/kmp
+  CHART_PATH: distribution/charts/kmp
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:

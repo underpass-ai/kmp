@@ -394,7 +394,7 @@ proving wake, known-at-time and relation-proof parity
 smoke. Conformance for all three adapter sets already permanent in CI (E1).
 Benchmark parity: **LongMemEval deterministic recall run recorded**
 (2026-07-23, 470/470 full evidence hits on 500 oracle items in 112.6s —
-see [longmemeval-benchmark.md](../research/longmemeval-benchmark.md));
+see [the archived LongMemEval benchmark](../../archive/docs/research/longmemeval-benchmark.md));
 MemoryArena/MemoryAgentBench runs remain optional follow-ups.
 Closed 2026-07-24 with binary-level CLI coverage (version, export/import
 round trip, error exits) and explicit fail-fast coverage for malformed

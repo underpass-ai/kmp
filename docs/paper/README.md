@@ -15,12 +15,12 @@ rehydration paper.
 Primary entrypoints:
 
 - manuscript source:
-  [`../research/PAPER_SUBMISSION_DRAFT.md`](../research/PAPER_SUBMISSION_DRAFT.md)
+  [`archive/docs/research/PAPER_SUBMISSION_DRAFT.md`](../../archive/docs/research/PAPER_SUBMISSION_DRAFT.md)
 - ACL package guide:
   [`acl/README.md`](./acl/README.md)
   (PDFs are built locally from LaTeX sources; not committed to preserve anonymity)
 
 The accompanying experimental artifact lives outside this directory under:
 
-- [`../../artifacts/paper-use-cases/results.md`](../../artifacts/paper-use-cases/results.md)
-- [`../../artifacts/paper-use-cases/summary.json`](../../artifacts/paper-use-cases/summary.json)
+- [`../../archive/artifacts/paper-use-cases/results.md`](../../archive/artifacts/paper-use-cases/results.md)
+- [`../../archive/artifacts/paper-use-cases/summary.json`](../../archive/artifacts/paper-use-cases/summary.json)

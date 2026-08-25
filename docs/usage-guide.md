@@ -528,7 +528,7 @@ relation spec, so it cannot drift):
   relation's own temporal coordinate.
 
 The full model is specified in
-[research/RELATION_EXPLANATION_MODEL.md](research/RELATION_EXPLANATION_MODEL.md).
+[kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md).
 
 ## Further Reading
 
@@ -539,7 +539,6 @@ The full model is specified in
 - [MCP stdio adapter](operations/mcp-stdio.md) — run the KMP tools over MCP stdio
 - [AsyncAPI contract](../api/asyncapi/context-projection.v1beta1.yaml) — event schema
 - [Reference fixtures](../api/examples/kernel/v1beta1/grpc/) — example request/response JSON
-- [Integration contract](migration/kernel-node-centric-integration-contract.md) — stability rules
 - [Beta status](beta-status.md) — RPC maturity, path to v1, known limitations
 - [Observability](observability.md) — quality metrics, OTel, Loki, Grafana
 - [Testing](testing.md) — how to run the test suite
