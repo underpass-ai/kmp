@@ -1,7 +1,8 @@
 # kmp-memory-api
 
-The published consumer contract of the embedded
-[KMP by Underpass](https://github.com/underpass-ai/kmp) kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate is the published consumer
+contract of its embedded kernel.
 
 Sibling of [`kmp-plugin-api`](https://crates.io/crates/kmp-plugin-api),
 pointing the other way: that crate is what a plugin may know about the kernel,

@@ -3,11 +3,11 @@ name = "kmp-embedded"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Embedded edition composition root: the KMP kernel in-process over the redb store"
+description = "In-process KMP composition root over a stamped local SQLite or redb-compatible store"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["kmp", "embedded", "memory", "context", "redb"]
+keywords = ["kmp", "embedded", "memory", "sqlite", "agents"]
 categories = ["database"]
 publish = true
 

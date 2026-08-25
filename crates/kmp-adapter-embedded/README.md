@@ -1,8 +1,8 @@
 # kmp-adapter-embedded
 
-The embedded-edition storage adapters of
-[KMP by Underpass](https://github.com/underpass-ai/kmp), the Kernel Memory
-Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate supplies its embedded
+storage adapters.
 
 One `EmbeddedKernelStore` opens one data directory — a `FORMAT_VERSION` marker
 next to `store/` — and implements every persistence port the kernel needs:
@@ -16,19 +16,18 @@ The ports are written once against a small storage seam; the engine behind
 it is chosen when the directory is created and recorded in `FORMAT_VERSION`,
 so a store is never reopened by the wrong one.
 
-| engine | `FORMAT_VERSION` | store file | build |
+| Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |
-| redb (default) | 1 | `store/kernel.redb` | always |
-| SQLite, WAL mode | 2 | `store/kernel.sqlite3` | `--features sqlite` |
+| SQLite, WAL mode | 2 | `store/kernel.sqlite3` | `sqlite` feature; enabled by default in `kmp-mcp` |
+| redb compatibility | 1 | `store/kernel.redb` | always |
 
-redb is pure Rust, one file, one process: the default binary carries no C
-toolchain and no store you already have changes. SQLite is the opt-in for the
-case redb cannot serve — **two agent hosts open at once**, Claude Code and
-Codex CLI on the same project — where readers never block the writer and a
-second writer waits for the commit lock instead of being refused. Both engines
-pass the same conformance suite, the same `kill -9` recovery test, and the
-SQLite engine additionally passes a two-process, no-lost-events scenario that
-redb is asserted to fail. See ADR-018.
+SQLite is the engine for a fresh user-facing `kmp-mcp` store: two agent hosts
+can open the same project memory, readers do not block the writer, and a
+second writer waits for the commit lock. The crate keeps SQLite feature-gated
+so a library consumer can still choose a pure-Rust build. Existing redb stores
+remain readable from their format stamp and never change engine implicitly.
+Both engines pass the same conformance and `kill -9` recovery suites; SQLite
+also passes a two-process, no-lost-events scenario. See ADR-018.
 
 A binary built without the feature still recognises a SQLite store and
 refuses it by name, saying which feature to enable; a binary older than the

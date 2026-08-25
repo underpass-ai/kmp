@@ -1,8 +1,9 @@
 # kmp-domain
 
-The domain model of [KMP by Underpass](https://github.com/underpass-ai/kmp) —
-the Kernel Memory Protocol. Aggregates, value objects, repository traits and
-projection types. No IO, no transport, no storage engine.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate is its domain model:
+aggregates, value objects, repository traits and projection types. No IO, no
+transport, no storage engine.
 
 Memory here is what the protocol says it is: an **about** scope, the
 **dimensions** inside it, typed **relations** carrying semantic class,

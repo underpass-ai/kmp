@@ -3,7 +3,7 @@ name = "kmp-adapter-embedded"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Embedded edition storage adapters: every KMP kernel port on a single local store file (redb by default, SQLite opt-in)"
+description = "Embedded SQLite and redb-compatible storage adapters for every KMP persistence port"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
@@ -13,9 +13,9 @@ publish = true
 
 [features]
 default = []
-# A second engine behind the storage seam (ADR-018). Off by default on
-# purpose: it brings a C toolchain into the build, and the default binary
-# stays pure Rust. Turn it on to let two agent hosts share one store.
+# A second engine behind the storage seam (ADR-018). The library keeps it
+# opt-in because it brings a C toolchain into downstream builds; the
+# user-facing kmp-mcp binary enables it by default for shareable fresh stores.
 sqlite = ["dep:rusqlite"]
 
 [lints]

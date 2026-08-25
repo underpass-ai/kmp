@@ -33,7 +33,7 @@ edition = "2024"
 rust-version = "1.97"
 version = "0.1.18"
 license = "Apache-2.0"
-description = "KMP by Underpass — node-centric context rehydration engine for agentic systems"
+description = "Local-first agent memory that preserves what happened, when and why"
 repository = "https://github.com/underpass-ai/kmp"
 
 [workspace.dependencies]

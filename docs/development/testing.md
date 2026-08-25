@@ -20,6 +20,12 @@ Run clippy before proposing Rust changes:
 cargo clippy --workspace --all-targets --locked -- -D warnings
 ```
 
+Crates.io documentation is a public build, not a README preview:
+
+```bash
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
+```
+
 The aggregate local gate is:
 
 ```bash

@@ -1,7 +1,8 @@
 # kmp-plugin-api
 
-The public plugin API of [KMP by Underpass](https://github.com/underpass-ai/kmp),
-the Kernel Memory Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate is its public Rust plugin
+API.
 
 Deliberately small. A plugin can depend on this crate without pulling in
 kernel aggregates, ports, adapters, storage clients, gRPC, MCP or any runtime

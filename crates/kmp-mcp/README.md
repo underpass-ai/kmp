@@ -1,8 +1,8 @@
 # kmp-mcp
 
-The stdio MCP adapter for
-[KMP by Underpass](https://github.com/underpass-ai/kmp), the Kernel Memory
-Protocol — navigable, temporal, multidimensional memory for AI agents.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. `kmp-mcp` gives an agent that memory as
+ten typed MCP tools.
 
 - MCP Registry name: `mcp-name: io.github.underpass-ai/kmp`
 
@@ -15,12 +15,19 @@ broken wiring, see the
 [KMP plugin](https://github.com/underpass-ai/kmp/tree/main/plugins/kmp) for
 Codex and Claude Code.
 
+## Local by default
+
+Run `kmp-mcp` with nothing configured and the kernel stays in this process,
+the memory stays on your disk and the viewer binds to loopback. There is no
+KMP account, API key or service to contact. A remote kernel is used only when
+you configure one.
+
 ## Three backends
 
 | `KMP_MCP_BACKEND` | What it talks to | What it needs |
 |:--|:--|:--|
-| `embedded` | the kernel in this process; fresh stores use shareable SQLite, existing redb stores remain compatible | `KMP_MCP_DATA_DIR` (or the default data directory) |
-| `grpc` (default) | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
+| `embedded` (default) | the kernel in this process; fresh stores use shareable SQLite, existing redb stores remain compatible | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
+| `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 
 `embedded` is the one to start with: no server, no cluster, memory that
@@ -80,7 +87,7 @@ KMP_KERNEL_GRPC_ENDPOINT=http://127.0.0.1:50054 cargo run -p kmp-mcp --locked
 Public HTTPS endpoint:
 
 ```bash
-KMP_KERNEL_GRPC_ENDPOINT=https://kmp.underpassai.com cargo run -p kmp-mcp --locked
+KMP_KERNEL_GRPC_ENDPOINT=https://kmp.example.com cargo run -p kmp-mcp --locked
 ```
 
 The server reads newline-delimited JSON-RPC requests from stdin and writes

@@ -555,7 +555,7 @@ message DimensionSelection {
   repeated string abouts = 5;
   // Optional exact dimension scope filter. Values may be local dimension ids
   // from MemoryDimension.id or fully namespaced ids shaped as
-  // about:<about>:dimension:<dimension_id>.
+  // about:{about}:dimension:{dimension_id}.
   repeated string scope_ids = 6;
 }
 

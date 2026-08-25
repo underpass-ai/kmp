@@ -1,29 +1,37 @@
 # kmp-embedded
 
-The in-process edition of [KMP by Underpass](https://github.com/underpass-ai/kmp),
-the Kernel Memory Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate is its in-process edition.
 
-The composition root: it wires the application services over the redb store
+The composition root wires application services over a stamped local store
 with synchronous in-process projection and resolves the data directory. No
 transport, no infrastructure clients, no cluster — the same kernel semantics
 the deployed service exposes over gRPC, running inside your process.
 
 ```rust
-use kmp_embedded::{EmbeddedKernel, resolve_data_dir_from_env};
+use kmp_embedded::{
+    EmbeddedKernel, default_engine_for_data_dir, resolve_data_dir_from_env,
+};
 
 // Data directory from KMP_MCP_DATA_DIR, or an explicit path.
 let dir = resolve_data_dir_from_env()?;
-let kernel = EmbeddedKernel::open(dir.path())?;
+let engine = default_engine_for_data_dir(dir.path());
+let kernel = EmbeddedKernel::open_with_engine(dir.path(), engine)?;
 ```
+
+Enable the `sqlite` feature for shareable fresh stores; this is what the
+user-facing `kmp-mcp` binary does by default. An existing store always opens
+with the engine recorded in its `FORMAT_VERSION`, including redb stores from
+earlier versions. KMP never guesses or silently changes that engine.
 
 Projection is synchronous on purpose: when a write returns, what it
 materialized is already readable. There is no queue to drain and no eventual
 window where memory disagrees with itself.
 
-The store is single-writer, so one process owns one data directory at a time.
-That is why anything that wants to watch a live session — the
-[viewer](https://crates.io/crates/kmp-viewer), for instance — mounts inside
-the same process instead of opening the file a second time.
+SQLite stores support multiple agent processes. The
+[viewer](https://crates.io/crates/kmp-viewer) still mounts in-process so it
+shares the exact live kernel and adds no daemon, network hop or second read
+model.
 
 For the consumer-facing surface, see
 [`kmp-memory-api`](https://crates.io/crates/kmp-memory-api). For an MCP server

@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.underpass-ai/kmp",
   "title": "KMP",
-  "description": "Durable, temporal and auditable memory for AI agents in one local MCP binary",
+  "description": "Local-first agent memory that preserves what happened, when and why",
   "version": "0.1.18",
   "websiteUrl": "https://github.com/underpass-ai/kmp",
   "repository": {

@@ -1,8 +1,8 @@
 # kmp-proto-mapping
 
-The mapping between the `v1beta1` proto contract of
-[KMP by Underpass](https://github.com/underpass-ai/kmp) and the kernel's
-application and domain types.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate maps its `v1beta1` proto
+contract to kernel application and domain types.
 
 Transport-neutral on purpose. It was extracted from the gRPC transport so
 that any composition — the gRPC server, the embedded MCP backend, a test
