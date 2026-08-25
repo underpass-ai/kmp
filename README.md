@@ -1,11 +1,11 @@
-<h1 align="center">KMP by Underpass</h1>
+<h1 align="center">KMP — Agent memory that remembers why</h1>
 
 <p align="center">
   <img src="docs/assets/kmp-wordmark.svg" width="680" alt="KMP">
 </p>
 
 <p align="center">
-  <strong>Durable memory for coding agents. Local first. Evidence attached. Time included.</strong>
+  <strong>Local first. Evidence attached. Time included.</strong>
 </p>
 
 <p align="center">
