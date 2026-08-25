@@ -325,6 +325,35 @@ grep -q 'codex plugin add kmp@underpass' "$WORK_DIR/codex-plugin-update-dry-run.
 if grep -q 'standalone Codex prompts' "$WORK_DIR/codex-plugin-update-dry-run.txt"; then
   fail "Codex plugin update attempted to refresh standalone assets"
 fi
+
+# Codex replaces an installed plugin's cache directory during `plugin add`.
+# Reproduce that host behavior with a fake command which deletes the updater's
+# own plugin root. The engine half must still run from the copy staged before
+# the host mutation.
+CACHE_REPLACED_PLUGIN="${WORK_DIR}/cache-replaced-plugin"
+FAKE_HOST_BIN="${WORK_DIR}/fake-host-bin"
+ENGINE_MARKER="${WORK_DIR}/cache-replaced-engine-installed"
+mkdir -p "${CACHE_REPLACED_PLUGIN}/scripts" "$FAKE_HOST_BIN"
+cp "$INSTALLED/scripts/kmp-update.sh" \
+  "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf installed > "${KMP_FAKE_ENGINE_MARKER:?}"' \
+  > "${CACHE_REPLACED_PLUGIN}/scripts/kmp-install-binary.sh"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'rm -rf "${KMP_FAKE_OLD_PLUGIN_ROOT:?}"' \
+  > "${FAKE_HOST_BIN}/codex"
+chmod +x "${FAKE_HOST_BIN}/codex"
+KMP_FAKE_OLD_PLUGIN_ROOT="$CACHE_REPLACED_PLUGIN" \
+KMP_FAKE_ENGINE_MARKER="$ENGINE_MARKER" \
+PATH="${FAKE_HOST_BIN}:${PATH}" \
+  bash "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh" \
+    --codex --version "$WORKSPACE_VERSION" \
+    > "${WORK_DIR}/cache-replaced-update.txt"
+[ -f "$ENGINE_MARKER" ] \
+  || { cat "${WORK_DIR}/cache-replaced-update.txt" >&2; fail "Codex cache replacement lost the staged engine installer"; }
+
 if [ -s "${WORK_DIR}/quiet.txt" ]; then
   cat "${WORK_DIR}/quiet.txt" >&2
   fail "the notice spoke while the engine and the plugin agree"
