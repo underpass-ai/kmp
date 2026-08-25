@@ -13,10 +13,10 @@ and so is the tool surface. Nothing in the protocol is edition-specific.
 |:--|:--|:--|
 | Who it is for | one developer, one project | a team sharing and auditing memory |
 | Kernel runs | in-process, inside the `kmp-mcp` binary | remote `KernelMemoryService` over gRPC |
-| Storage | one local data dir (`.kernel/`, redb) | Neo4j (graph) · Valkey (detail) · NATS JetStream (events) |
+| Storage | one local data dir (`.kernel/`; SQLite for fresh stores, existing redb stores remain supported) | Neo4j (graph) · Valkey (detail) · NATS JetStream (events) |
 | Requires | nothing — no service, no database, no key | a deployed kernel plus TLS configuration |
 | Projection | synchronous; `read_after_write_ready` always `true` | durable consumers; `true` on live ingest |
-| Concurrency | **single writer per data dir** | server-side |
+| Concurrency | SQLite supports concurrent local hosts; existing redb stores remain single-process | server-side |
 | Transport security | no network surface | TLS / mTLS on gRPC, Valkey, NATS, OTLP |
 | Observability | bounded local quality journal | OpenTelemetry + Loki |
 | Deployment | `cargo install kmp-mcp` | Helm chart, container image |
@@ -29,8 +29,9 @@ There is also a **fixture backend** (`KMP_MCP_BACKEND=fixture`) that returns
 deterministic canned responses. It is for wiring an MCP client and validating
 tool choice; it is not an edition and must be selected explicitly.
 
-The binary is fail-fast: with no configuration at all it exits with guidance
-rather than guessing which mode you meant.
+With no configuration the binary starts the embedded kernel. It fails fast on
+an explicit invalid combination, such as requesting gRPC without an endpoint,
+rather than guessing or opening a different store.
 
 ## Embedded edition
 
@@ -62,7 +63,8 @@ Data-dir resolution, with the winning rule logged at startup (ADR-012):
    working directory to the `.git` root and auto-gitignores the store;
 3. otherwise `$XDG_DATA_HOME/kmp/default`.
 
-Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`, `logs/`
+Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.sqlite3` for a
+fresh shipped store or `store/kernel.redb` for an existing redb store, `logs/`
 (rotating JSON; stderr also, because stdout carries JSON-RPC only), and
 `telemetry/quality.redb` (bounded, fail-open quality journal, ADR-014).
 
@@ -81,17 +83,18 @@ Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`, `logs/`
 
 ### What it does not give you
 
-- **Concurrent sessions.** The store is single-writer (ADR-011). A second host
-  session on the same data dir fails fast with an explicit "store is in use"
-  error rather than corrupting memory — and when that happens the tools do not
-  appear in that host's inventory at all. Open the host in a project with a free
-  store, or point the second session at a different `KMP_MCP_DATA_DIR`. If
-  concurrent sessions on one store become a real workflow, the documented
-  evolution is a local daemon.
-- **Live sharing.** The machine store remains local; two people do not see each
-  other's uncommitted writes. The committed head and named snapshots travel
-  with git, can be reviewed in a pull request, verified by digest and restored
-  or read without replacing the live store.
+- **Remote collaboration.** SQLite lets multiple local agent hosts share one
+  data directory. It does not turn that directory into a remotely operated
+  service for a team; use the Kubernetes edition when live access must cross
+  machines or organizational boundaries.
+- **Concurrent access to an existing redb store.** redb remains single-process
+  by contract (ADR-011). A second session fails fast instead of corrupting
+  memory. `kmp-mcp share-memory` snapshots, migrates and verifies it on SQLite
+  when two local hosts need the same store.
+- **Git sharing is deliberate.** The committed head and named snapshots can
+  travel with git, be reviewed in a pull request, verified by digest and
+  restored or read without replacing the live store. Uncommitted memory stays
+  on the machine.
 - **Transport security controls.** There is no transport. That is a feature
   here, not a gap — but it means there is nothing to configure and nothing to
   audit at the boundary.

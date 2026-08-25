@@ -9,7 +9,7 @@ is reachable from this page in at most two links; CI proves that property.
 
 | I need to... | Door |
 |:--|:--|
-| install KMP, write a first memory, or learn the moves | [Use KMP](usage-guide.md) |
+| install KMP, write a first local memory, or learn the moves | [Use KMP locally](../README.md#your-first-local-memory-in-two-minutes) |
 | integrate a product or understand a protocol decision | [Build on KMP](product/README.md) |
 | run, secure, diagnose, or release it | [Operate KMP](operations/README.md) |
 | audit an old claim, experiment, migration, or decision | [Follow the evidence](documentation-catalog.md) |
@@ -35,7 +35,8 @@ Current integration stance:
 | Document | Content |
 |:---------|:--------|
 | [editions.md](editions.md) | **Start here**: embedded vs cluster — which one to run, what each guarantees, how to move |
-| [usage-guide.md](usage-guide.md) | Getting started: 3 steps to graph-aware LLM context |
+| [enterprise.md](enterprise.md) | Free and open-source enterprise KMP on Kubernetes: architecture, deployment, security, observability and local-to-cluster migration |
+| [usage-guide.md](usage-guide.md) | Model-producer and gRPC integration: GraphBatch to graph-aware LLM context |
 | [documentation-catalog.md](documentation-catalog.md) | Authoritative docs, historical docs, active roadmap, and documentation hygiene rules |
 | [graph-batch-quickstart.md](graph-batch-quickstart.md) | Fastest path for model-driven graph ingestion |
 | [beta-status.md](beta-status.md) | v1beta1 maturity matrix, path to v1, known limitations |

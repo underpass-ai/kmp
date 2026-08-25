@@ -15,10 +15,10 @@ switches modes by changing environment variables only:
 | --- | --- | --- | --- |
 | Select with | nothing — it is the default | `KMP_KERNEL_GRPC_ENDPOINT=…` | `KMP_MCP_BACKEND=fixture` |
 | Kernel runs | in-process, inside this binary | remote `KernelMemoryService` gRPC | none (canned responses) |
-| Storage | one local data dir (`.kernel/`, redb) | Neo4j / Valkey / NATS behind the server | none |
+| Storage | one local data dir (`.kernel/`; SQLite for fresh stores, existing redb supported) | Neo4j / Valkey / NATS behind the server | none |
 | `read_after_write_ready` | always `true` (synchronous projection) | `true` on live ingest | `false` |
 | Requires | nothing | deployed kernel + TLS config | nothing |
-| Concurrency | single writer per data dir (ADR-011) | server-side | n/a |
+| Concurrency | SQLite supports concurrent local hosts; redb remains single-process | server-side | n/a |
 
 With no configuration the binary runs the embedded kernel — the mode the
 product is. An endpoint in the environment chooses gRPC instead, which is how
