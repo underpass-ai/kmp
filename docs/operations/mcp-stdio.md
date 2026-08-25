@@ -352,11 +352,14 @@ for memory, and `/kmp:doctor` to diagnose a setup that is not answering:
 /plugin install kmp@underpass
 
 # Codex CLI
-bash scripts/mcp/install-kmp-plugin.sh --codex
+codex plugin marketplace add underpass-ai/plugins
+codex plugin add kmp@underpass
 ```
 
 The manual registrations below remain valid for hosts the plugin does not
-cover, or when you want the server without the plugin.
+cover, or when you explicitly want the server without the plugin. For the
+complete standalone Codex workflow use
+`bash scripts/mcp/install-kmp-plugin.sh --codex --standalone`.
 
 Embedded (recommended default — per-project memory, zero infrastructure):
 

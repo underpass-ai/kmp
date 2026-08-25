@@ -69,17 +69,18 @@ not mistaken for freshness — and offers one command:
 /kmp:setup
 ```
 
-Setup runs `scripts/kmp-update.sh`: Claude's native plugin update plus the
-checksummed engine from the same release. Codex uses `/kmp-setup`, which
-refreshes its prompts and doctrine from the versioned release as well. Both
-paths finish with one restart because a running host keeps the MCP inventory
-it started with.
+Setup runs `scripts/kmp-update.sh`: the host's native plugin update plus the
+checksummed engine from the same release. Codex uses the native `kmp-setup`
+skill; it does not copy prompts, edit `AGENTS.md`, or add global MCP wiring.
+Both paths finish with one restart because a running host keeps the MCP
+inventory it started with.
 
 **Codex CLI** — install the native plugin. It owns both the skills and the
 PATH-based MCP declaration, so it does not need a second registration in
 `~/.codex/config.toml`:
 
 ```bash
+codex plugin marketplace add underpass-ai/plugins
 codex plugin add kmp@underpass
 ```
 

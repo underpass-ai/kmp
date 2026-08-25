@@ -109,6 +109,25 @@ if table_names != ids:
 if "For you — ten commands" not in readme:
     fail("README does not state the ten-command contract")
 
+# Public setup docs must agree on ownership. A bare `--codex` installer was
+# the former global-wiring path; prescribing it beside the native plugin
+# recreates the duplicate MCP owner that setup now refuses.
+ownership_docs = [
+    ROOT / "README.md",
+    PLUGIN / "README.md",
+    ROOT / "docs" / "operations" / "embedded-hosts.md",
+    ROOT / "docs" / "operations" / "mcp-stdio.md",
+]
+for asset in ownership_docs:
+    text = asset.read_text(encoding="utf-8")
+    if "codex plugin add kmp@underpass" not in text:
+        fail(f"Codex native-plugin setup is missing: {asset.relative_to(ROOT)}")
+    standalone_removed = text.replace(
+        "scripts/mcp/install-kmp-plugin.sh --codex --standalone", ""
+    )
+    if "scripts/mcp/install-kmp-plugin.sh --codex" in standalone_removed:
+        fail(f"Codex docs prescribe ambiguous global wiring: {asset.relative_to(ROOT)}")
+
 manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
 if manifest.get("skills") != "./skills/":
     fail("Codex manifest does not expose the native skills directory")

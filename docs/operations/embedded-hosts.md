@@ -32,7 +32,17 @@ claude mcp add kmp --scope user \
 own `.kernel/` store. Verify with `claude mcp list` and, inside a session,
 call `kmp_wake` on any about you have written.
 
-## Codex CLI — tested 2026-07-23
+## Codex CLI — native plugin
+
+```bash
+codex plugin marketplace add underpass-ai/plugins
+codex plugin add kmp@underpass
+```
+
+The plugin owns MCP and the native KMP skills. Use `kmp-setup` to install the
+matching engine; do not also add a global `mcp_servers.kmp` table.
+
+## Codex CLI without the plugin — tested 2026-07-23
 
 `~/.codex/config.toml` (applied and verified in a live Codex session:
 `kmp_wake` recovered a real checkpoint with proof). Two field notes from
@@ -81,10 +91,10 @@ Project or global config (`opencode.json`):
 
 ## Context-recovery playbook (paste into CLAUDE.md / AGENTS.md / rules)
 
-The [KMP plugin](../../plugins/kmp/README.md) ships this playbook already —
-as the `kmp-memory` skill in Claude Code, and written into
-`~/.codex/AGENTS.md` by the Codex installer. Paste it by hand only for hosts
-the plugin does not cover.
+The [KMP plugin](../../plugins/kmp/README.md) ships this playbook already as
+the native `kmp-memory` skill in both Claude Code and Codex. The standalone
+Codex installer writes the equivalent fenced block into `~/.codex/AGENTS.md`.
+Paste it by hand only for hosts the plugin does not cover.
 
 ```markdown
 ## Kernel memory (KMP)
