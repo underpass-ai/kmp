@@ -23,9 +23,9 @@ Then tell them, in a few lines:
   from the working directory, so the same command run somewhere else opens a
   different memory. Say which rule won: an explicit `KMP_MCP_DATA_DIR`, the
   enclosing project, or the per-user default;
-- whether that store exists yet, and whether there is a committed bundle
-  beside it — `(not exported yet)` means the only copy of this memory is on
-  this disk;
+- whether that store exists yet, and the **Durability** verdict for its
+  maintained committed bundle. A `FAIL` means the gitignored store may be the
+  only current copy; name the exact `kmp-mcp export` repair the output gives;
 - **where the viewer is**, as a link they can open. Most people never find out
   it exists;
 - the backend, but only if it is not the plain embedded default. `fixture` is

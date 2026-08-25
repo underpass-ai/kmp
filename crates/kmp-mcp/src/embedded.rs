@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use kmp_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
-use kmp_embedded::{EmbeddedKernel, EmbeddedMemoryService};
+use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
@@ -35,6 +35,7 @@ use crate::tool_error::{ToolError, ToolErrorCode};
 pub struct EmbeddedKernelMcpBackend {
     kernel: EmbeddedKernel,
     data_dir: String,
+    commit_native: Option<CommitNativeBundle>,
 }
 
 /// Embedded backend that opens the store on the first memory call and retries
@@ -48,14 +49,24 @@ pub struct EmbeddedKernelMcpBackend {
 pub struct RetryingEmbeddedKernelMcpBackend {
     data_dir: PathBuf,
     engine: Option<kmp_embedded::StorageEngine>,
+    commit_native: Option<CommitNativeBundle>,
     opened: Mutex<Option<Arc<EmbeddedKernelMcpBackend>>>,
 }
 
 impl RetryingEmbeddedKernelMcpBackend {
     pub fn new(data_dir: &Path, engine: Option<kmp_embedded::StorageEngine>) -> Self {
+        Self::new_with_commit_native(data_dir, engine, None)
+    }
+
+    pub fn new_with_commit_native(
+        data_dir: &Path,
+        engine: Option<kmp_embedded::StorageEngine>,
+        commit_native: Option<CommitNativeBundle>,
+    ) -> Self {
         Self {
             data_dir: data_dir.to_path_buf(),
             engine,
+            commit_native,
             opened: Mutex::new(None),
         }
     }
@@ -86,7 +97,11 @@ impl RetryingEmbeddedKernelMcpBackend {
 
         let mut last_error = String::new();
         for attempt in 0..3 {
-            match EmbeddedKernelMcpBackend::open_with_engine(&self.data_dir, self.engine) {
+            match EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+                &self.data_dir,
+                self.engine,
+                self.commit_native.clone(),
+            ) {
                 Ok(backend) => {
                     let backend = Arc::new(backend);
                     let mut opened = self
@@ -126,11 +141,20 @@ impl EmbeddedKernelMcpBackend {
         data_dir: &Path,
         engine: Option<kmp_embedded::StorageEngine>,
     ) -> Result<Self, String> {
+        Self::open_with_engine_and_commit_native(data_dir, engine, None)
+    }
+
+    pub fn open_with_engine_and_commit_native(
+        data_dir: &Path,
+        engine: Option<kmp_embedded::StorageEngine>,
+        commit_native: Option<CommitNativeBundle>,
+    ) -> Result<Self, String> {
         let kernel = EmbeddedKernel::open_with_engine(data_dir, engine)
             .map_err(|error| error.to_string())?;
         Ok(Self {
             kernel,
             data_dir: data_dir.display().to_string(),
+            commit_native,
         })
     }
 
@@ -160,8 +184,68 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         let service = self.kernel.service();
         let quality_observer = self.kernel.quality_observer();
+        let commit_native = self.commit_native.as_ref();
+        let store = self.kernel.store();
         Box::pin(async move {
-            embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await
+            let writes = matches!(
+                name,
+                "kmp_ingest" | "kernel_remember" | "kernel_ingest_context"
+            ) && !arguments
+                .get("dry_run")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            let Some(commit_native) = commit_native.filter(|_| writes) else {
+                return embedded_tool_result(&service, quality_observer.as_ref(), name, arguments)
+                    .await;
+            };
+            let pending = commit_native.begin_write().map_err(|error| {
+                ToolError::unavailable(format!(
+                    "memory write was refused before changing the store because its committed \
+                     bundle could not be guarded: {error}"
+                ))
+            })?;
+            let result =
+                embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await;
+            match result {
+                Ok(result) => {
+                    let header = commit_native.publish(store).await.map_err(|error| {
+                        ToolError::backend(format!(
+                            "memory write committed, but the commit-native bundle `{}` did not: \
+                             {error}. The pending marker remains; run `kmp-mcp export` before \
+                             trusting or committing this memory.",
+                            commit_native.path().display()
+                        ))
+                    })?;
+                    pending.complete().map_err(|error| {
+                        ToolError::backend(format!(
+                            "memory and bundle {} are current at snapshot {}, but the pending \
+                             marker could not be cleared: {error}",
+                            commit_native.path().display(),
+                            header.snapshot_id
+                        ))
+                    })?;
+                    Ok(result)
+                }
+                Err(error)
+                    if matches!(
+                        error.code,
+                        ToolErrorCode::InvalidArgument
+                            | ToolErrorCode::NotFound
+                            | ToolErrorCode::Conflict
+                            | ToolErrorCode::UnknownTool
+                    ) =>
+                {
+                    pending.complete().map_err(|marker_error| {
+                        ToolError::backend(format!(
+                            "write was rejected as {}, but its commit-native pending marker \
+                             could not be cleared: {marker_error}",
+                            error.code
+                        ))
+                    })?;
+                    Err(error)
+                }
+                Err(error) => Err(error),
+            }
         })
     }
 }

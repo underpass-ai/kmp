@@ -183,8 +183,13 @@ impl KernelMcpServer {
                 if let Some(data_home) = kmp_embedded::user_data_home() {
                     crate::memories::remember(&data_home, resolved.path());
                 }
+                let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
                 Ok(Self::with_retrying_embedded_backend(
-                    crate::embedded::RetryingEmbeddedKernelMcpBackend::new(resolved.path(), engine),
+                    crate::embedded::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
+                        resolved.path(),
+                        engine,
+                        commit_native,
+                    ),
                 ))
             }
             other => Err(format!(

@@ -31,10 +31,10 @@ async fn unknown_bundle_format_is_rejected() {
 }
 
 #[tokio::test]
-async fn mismatched_store_format_is_rejected() {
+async fn mismatched_event_format_is_rejected() {
     expect_import_error(
         r#"{"bundle_format":1,"store_format":99,"event_count":0,"kernel_version":"x"}"#,
-        "store format 99",
+        "event format 99",
     )
     .await;
 }

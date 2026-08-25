@@ -15,8 +15,8 @@ Then tell me, in a few lines:
 - which memory this project opens and **why that one** — the `chosen by:` line.
   The store is resolved from the working directory, so the same command in
   another directory opens another memory, and that is the part people miss;
-- whether the store exists yet, and whether a committed bundle sits beside it.
-  `(not exported yet)` means this disk holds the only copy;
+- whether the store exists yet, and the **Durability** verdict for its
+  maintained committed bundle. If it says `FAIL`, name the exact export repair;
 - where the viewer is, as a link I can open;
 - the backend, but only if it is not the plain embedded default. Say `fixture`
   out loud every time: it looks real and stores nothing.

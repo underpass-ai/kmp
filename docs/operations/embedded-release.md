@@ -102,15 +102,34 @@ the Neo4j schema of the deployed edition, not the embedded redb file.
 ```bash
 kmp-mcp export memory-backup.jsonl   # data dir per ADR-012 resolution
 kmp-mcp import memory-backup.jsonl   # into an EMPTY store only
+kmp-mcp snapshot create pre-release  # .kmp/snapshots/pre-release.jsonl
+kmp-mcp snapshot verify pre-release  # identity, range, abouts and SHA-256
 kmp-mcp migrate <old-dir> <new-dir>  # when the format moved
 kmp-mcp --version                    # binary + store format
 ```
 
-The bundle is the append-only event log (JSON Lines, header with format
-versions and event count). Import replays it reproducing exact revisions and
-rebuilding projections — temporal reads and relation proof survive the round
-trip. Merging into a non-empty store is deliberately unsupported.
+The bundle is the append-only event log (JSON Lines). Format 2's header carries
+the portable event format and count plus a snapshot id, creation time,
+inclusive event range, sorted about coverage and a SHA-256 digest of the event
+lines. Import verifies that identity before replay, reproduces exact revisions
+and rebuilds projections — temporal reads and relation proof survive the round
+trip. Format-1 bundles remain readable.
 
-Export/import is a same-format path: `import` refuses a bundle whose
-`store_format` differs from the binary's, on purpose. Crossing a format
-boundary is what `migrate` is for.
+For a project-scoped MCP session `.kmp/memory.jsonl` is atomically maintained
+after every successful write. A pending marker exists before the store can
+change and is cleared only after export, so `doctor` can distinguish a current
+committed copy from a crash between the two. Named snapshots are immutable
+recovery points; `snapshot read` attaches one through an isolated temporary
+store without touching live memory. Recovery from a pending marker is
+deliberately two-step: after stopping other sessions, export and inspect first,
+then `kmp-mcp export --repair-pending`; a normal export never erases another
+process's in-flight marker.
+
+Export/import is an event-format path. `event_format` is engine-agnostic: redb
+layout 1 and SQLite layout 2 both carry event format 1. Crossing an on-disk
+layout boundary is what `migrate` is for.
+
+Merging into a non-empty store remains deliberately unsupported. Snapshot
+merge accepts only identical streams or one exact prefix of the other; two
+branches that append at the same position are refused because causal order is
+a semantic decision, not a JSONL edit.

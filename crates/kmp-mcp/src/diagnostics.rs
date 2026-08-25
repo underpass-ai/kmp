@@ -113,6 +113,120 @@ fn data_dir_finding() -> (Finding, Option<ResolvedDataDir>) {
     }
 }
 
+/// Whether the machine state has a current, verifiable git-native copy. The
+/// store itself is never opened: the pending marker brackets every write, and
+/// file modification times catch stores written by older binaries that did
+/// not create one.
+fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Finding> {
+    let bundle = kmp_embedded::project_bundle_path(resolved)?;
+    let store = engine_on_disk(resolved.path())
+        .map(|engine| kmp_embedded::store_file_path_for(resolved.path(), engine));
+    let pending = kmp_embedded::pending_bundle_exports(resolved.path());
+    if !pending.is_empty() {
+        let mut finding = Finding::new(
+            Level::Fail,
+            format!(
+                "{} write {} not proved in the committed bundle",
+                pending.len(),
+                if pending.len() == 1 { "is" } else { "are" }
+            ),
+        )
+        .with(format!("bundle: {}", bundle.display()))
+        .with(
+            "the store may contain a write whose process stopped before export completed; stop \
+             other KMP sessions, run `kmp-mcp export`, inspect the diff, then run `kmp-mcp \
+             export --repair-pending` and commit it",
+        );
+        for marker in pending {
+            finding = finding.with(format!("pending: {}", marker.display()));
+        }
+        return Some(finding);
+    }
+
+    if !bundle.exists() {
+        return Some(if store.is_some() {
+            Finding::new(Level::Fail, "memory exists only in the gitignored store")
+                .with(format!("missing: {}", bundle.display()))
+                .with("run `kmp-mcp export`, inspect the diff, and commit it")
+        } else {
+            Finding::new(Level::Ok, "no memory to protect yet").with(format!(
+                "the first write will maintain {}",
+                bundle.display()
+            ))
+        });
+    }
+
+    let text = match std::fs::read_to_string(&bundle) {
+        Ok(text) => text,
+        Err(error) => {
+            return Some(
+                Finding::new(Level::Fail, "the committed memory cannot be read")
+                    .with(format!("{}: {error}", bundle.display())),
+            );
+        }
+    };
+    let header = match kmp_embedded::verify_bundle(&text) {
+        Ok(header) => header,
+        Err(error) => {
+            return Some(
+                Finding::new(Level::Fail, "the committed memory does not verify")
+                    .with(format!("{}: {error}", bundle.display()))
+                    .with("do not restore it; regenerate with `kmp-mcp export` first"),
+            );
+        }
+    };
+    if let Some(store) = store
+        && newer_than(&store, &bundle)
+    {
+        return Some(
+            Finding::new(
+                Level::Fail,
+                "the gitignored store is newer than its committed memory",
+            )
+            .with(format!("store:  {}", store.display()))
+            .with(format!("bundle: {}", bundle.display()))
+            .with("run `kmp-mcp export`, inspect the diff, and commit it"),
+        );
+    }
+    if header.bundle_format < kmp_embedded::BUNDLE_FORMAT_VERSION {
+        return Some(
+            Finding::new(
+                Level::Warn,
+                "the committed memory uses a legacy bundle header",
+            )
+            .with(format!(
+                "{} events · no snapshot identity or digest",
+                header.event_count
+            ))
+            .with("run `kmp-mcp export` to upgrade it without changing the events"),
+        );
+    }
+
+    Some(
+        Finding::new(
+            Level::Ok,
+            format!(
+                "snapshot {} protects {} {}",
+                header.snapshot_id,
+                header.event_count,
+                if header.event_count == 1 {
+                    "event"
+                } else {
+                    "events"
+                }
+            ),
+        )
+        .with(format!("bundle: {}", bundle.display()))
+        .with(format!("digest: {}", header.content_digest))
+        .with(format!("abouts: {}", header.abouts.join(" "))),
+    )
+}
+
+fn newer_than(left: &Path, right: &Path) -> bool {
+    let modified = |path: &Path| std::fs::metadata(path).and_then(|metadata| metadata.modified());
+    matches!((modified(left), modified(right)), (Ok(left), Ok(right)) if left > right)
+}
+
 fn backend_finding() -> Finding {
     let configured = std::env::var(crate::MCP_BACKEND_ENV)
         .ok()
@@ -341,6 +455,9 @@ pub fn info() -> String {
     section(&mut out, "Backend", &[backend_finding()]);
     let (data_dir, resolved) = data_dir_finding();
     section(&mut out, "Memory", &[data_dir]);
+    if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {
+        section(&mut out, "Durability", &[durability]);
+    }
 
     let names = crate::tool_names();
     let surface = Finding::new(
@@ -389,6 +506,13 @@ pub fn doctor() -> (String, i32) {
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.level;
     section(&mut out, "Memory", &[data_dir]);
+    let durability = resolved.as_ref().and_then(committed_bundle_finding);
+    let durability_level = durability
+        .as_ref()
+        .map_or(Level::Ok, |finding| finding.level);
+    if let Some(durability) = durability {
+        section(&mut out, "Durability", &[durability]);
+    }
 
     let tools = crate::tool_names();
     let surface = if tools.len() == 10 {
@@ -420,14 +544,20 @@ pub fn doctor() -> (String, i32) {
         section(&mut out, "History", &[finding]);
     }
 
-    let worst = [data_dir_level, surface_level, backend.level, history_level]
-        .into_iter()
-        .max_by_key(|level| match level {
-            Level::Ok => 0,
-            Level::Warn => 1,
-            Level::Fail => 2,
-        })
-        .unwrap_or(Level::Ok);
+    let worst = [
+        data_dir_level,
+        durability_level,
+        surface_level,
+        backend.level,
+        history_level,
+    ]
+    .into_iter()
+    .max_by_key(|level| match level {
+        Level::Ok => 0,
+        Level::Warn => 1,
+        Level::Fail => 2,
+    })
+    .unwrap_or(Level::Ok);
 
     match worst {
         Level::Fail => {
@@ -546,6 +676,59 @@ mod tests {
     fn a_missing_log_directory_is_silence_rather_than_an_error() {
         let dir = tempfile::tempdir().expect("tempdir");
         assert!(startup_history(dir.path(), 5).is_empty());
+    }
+
+    #[test]
+    fn a_project_store_without_a_committed_copy_is_a_durability_failure() {
+        let project = tempfile::tempdir().expect("project");
+        let data_dir = project.path().join(".kernel");
+        let store = data_dir.join("store");
+        std::fs::create_dir_all(&store).expect("store dir");
+        std::fs::write(store.join("kernel.redb"), b"store").expect("store marker");
+        let resolved = ResolvedDataDir::Project(data_dir);
+
+        let finding = committed_bundle_finding(&resolved).expect("project finding");
+        assert_eq!(finding.level, Level::Fail);
+        assert!(finding.headline.contains("only in the gitignored store"));
+        assert!(
+            finding
+                .detail
+                .iter()
+                .any(|line| line.contains("kmp-mcp export"))
+        );
+    }
+
+    #[test]
+    fn a_pending_write_is_louder_than_an_existing_bundle() {
+        let project = tempfile::tempdir().expect("project");
+        let data_dir = project.path().join(".kernel");
+        let pending = data_dir.join(kmp_embedded::PENDING_EXPORT_DIR);
+        std::fs::create_dir_all(&pending).expect("pending dir");
+        std::fs::write(pending.join("write.pending"), b"pending").expect("marker");
+        let resolved = ResolvedDataDir::Project(data_dir);
+
+        let finding = committed_bundle_finding(&resolved).expect("project finding");
+        assert_eq!(finding.level, Level::Fail);
+        assert!(finding.headline.contains("not proved"));
+        assert!(finding.detail.iter().any(|line| line.contains("pending:")));
+    }
+
+    #[test]
+    fn a_legacy_bundle_is_readable_but_not_mistaken_for_an_identified_snapshot() {
+        let project = tempfile::tempdir().expect("project");
+        let data_dir = project.path().join(".kernel");
+        let bundle = project.path().join(".kmp/memory.jsonl");
+        std::fs::create_dir_all(bundle.parent().expect("parent")).expect("bundle dir");
+        std::fs::write(
+            bundle,
+            r#"{"bundle_format":1,"store_format":1,"event_count":0,"kernel_version":"0.1.3"}"#,
+        )
+        .expect("legacy bundle");
+        let resolved = ResolvedDataDir::Project(data_dir);
+
+        let finding = committed_bundle_finding(&resolved).expect("project finding");
+        assert_eq!(finding.level, Level::Warn);
+        assert!(finding.headline.contains("legacy"));
     }
 
     /// The mark reaches a user through `/kmp:info` and `/kmp:doctor` and
