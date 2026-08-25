@@ -1,5 +1,6 @@
 ---
 description: Show what this KMP install is and which memory this project opens — version, store, engine, tools and the viewer
+argument-hint: "[no arguments]"
 allowed-tools: Bash(kmp-mcp:*)
 ---
 

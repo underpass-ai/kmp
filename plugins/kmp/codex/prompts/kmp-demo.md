@@ -17,7 +17,7 @@ the script printed and walk three moves against `incident:checkout-latency`:
 3. `kmp_trace` from `incident:checkout-latency:obs:p99-tripled` to
    `incident:checkout-latency:constraint:retry-budget`.
 
-If this session has no `kernel_*` tools, say so plainly and stop after the
+If this session has no `kmp_*` tools, say so plainly and stop after the
 import: the memory is loaded, the session simply cannot reach it until it is
 restarted. Do not simulate the answers.
 

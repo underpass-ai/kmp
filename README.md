@@ -57,14 +57,17 @@ agent graph-aware context, with sequence diagrams and examples.
 <details>
 <summary><b>Another host, or no plugin at all</b></summary>
 
-**Codex CLI** — no plugin system, so a script does the whole wiring (binary,
-`~/.codex/config.toml`, prompts, and the memory doctrine in `~/.codex/AGENTS.md`
-behind replace-in-place markers). Re-running is safe; `--dry-run` shows the
-changes first:
+**Codex CLI** — install the native plugin. It owns the MCP server and all KMP
+skills, so setup must not add a second global registration:
 
 ```bash
-bash scripts/mcp/install-kmp-plugin.sh --codex
+codex plugin marketplace add underpass-ai/plugins
+codex plugin add kmp@underpass
 ```
+
+Then use the native `kmp-setup` skill to install the matching engine and run
+the doctor. Plugin-free standalone wiring remains an explicit advanced mode:
+`bash scripts/mcp/install-kmp-plugin.sh --codex --standalone`.
 
 **Claude Code without the plugin** — install the binary and register the server
 by hand:

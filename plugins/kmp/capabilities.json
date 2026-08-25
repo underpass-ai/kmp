@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "mcp_tools": [
+    "kmp_ingest",
+    "kmp_write_memory",
+    "kmp_wake",
+    "kmp_ask",
+    "kmp_goto",
+    "kmp_near",
+    "kmp_rewind",
+    "kmp_forward",
+    "kmp_trace",
+    "kmp_inspect"
+  ],
+  "agent_workflows": [
+    {
+      "id": "memory",
+      "owner": "skill",
+      "implementation": "skills/kmp-memory/SKILL.md",
+      "codex": "kmp-memory",
+      "claude": "kmp-memory"
+    }
+  ],
+  "human_workflows": [
+    {
+      "id": "setup",
+      "owner": "host-adapter",
+      "implementation": "skills/kmp-setup/SKILL.md",
+      "codex_skill": "kmp-setup",
+      "codex_standalone_prompt": "kmp-setup",
+      "claude_command": "setup"
+    },
+    {
+      "id": "doctor",
+      "owner": "diagnostic-cli",
+      "implementation": "skills/kmp-doctor/SKILL.md",
+      "codex_skill": "kmp-doctor",
+      "codex_standalone_prompt": "kmp-doctor",
+      "claude_command": "doctor"
+    },
+    {
+      "id": "info",
+      "owner": "diagnostic-cli",
+      "implementation": "skills/kmp-info/SKILL.md",
+      "codex_skill": "kmp-info",
+      "codex_standalone_prompt": "kmp-info",
+      "claude_command": "info"
+    },
+    {
+      "id": "moves",
+      "owner": "mcp-discovery",
+      "implementation": "skills/kmp-moves/SKILL.md",
+      "codex_skill": "kmp-moves",
+      "codex_standalone_prompt": "kmp-moves",
+      "claude_command": "moves"
+    },
+    {
+      "id": "demo",
+      "owner": "plugin-script",
+      "implementation": "skills/kmp-demo/SKILL.md",
+      "codex_skill": "kmp-demo",
+      "codex_standalone_prompt": "kmp-demo",
+      "claude_command": "demo"
+    },
+    {
+      "id": "catchup",
+      "owner": "mcp-orchestration",
+      "implementation": "skills/kmp-catchup/SKILL.md",
+      "codex_skill": "kmp-catchup",
+      "codex_standalone_prompt": "kmp-catchup",
+      "claude_command": "catchup"
+    },
+    {
+      "id": "save",
+      "owner": "maintenance-cli",
+      "implementation": "skills/kmp-save/SKILL.md",
+      "codex_skill": "kmp-save",
+      "codex_standalone_prompt": "kmp-save",
+      "claude_command": "save"
+    },
+    {
+      "id": "restore",
+      "owner": "maintenance-cli",
+      "implementation": "skills/kmp-restore/SKILL.md",
+      "codex_skill": "kmp-restore",
+      "codex_standalone_prompt": "kmp-restore",
+      "claude_command": "restore"
+    },
+    {
+      "id": "revert",
+      "owner": "mcp-orchestration",
+      "implementation": "skills/kmp-revert/SKILL.md",
+      "codex_skill": "kmp-revert",
+      "codex_standalone_prompt": "kmp-revert",
+      "claude_command": "revert"
+    },
+    {
+      "id": "uninstall",
+      "owner": "maintenance-cli",
+      "implementation": "skills/kmp-uninstall/SKILL.md",
+      "codex_skill": "kmp-uninstall",
+      "codex_standalone_prompt": "kmp-uninstall",
+      "claude_command": "uninstall"
+    }
+  ]
+}

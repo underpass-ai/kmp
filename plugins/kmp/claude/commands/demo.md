@@ -1,5 +1,6 @@
 ---
 description: Load an example KMP memory — a real incident with a wrong turn in it — into its own data directory, so memory can be seen before it is written
+argument-hint: "[no arguments]"
 allowed-tools: Bash(bash:*), Bash(kmp-mcp:*)
 ---
 
@@ -25,7 +26,7 @@ against `incident:checkout-latency`:
    `incident:checkout-latency:constraint:retry-budget` — six hops from the
    first symptom to the rule that ended it.
 
-If this session has no `kernel_*` tools, say so plainly and stop after the
+If this session has no `kmp_*` tools, say so plainly and stop after the
 import: the memory is loaded and ready, the session simply cannot reach it
 until it is restarted. Do not simulate the answers.
 

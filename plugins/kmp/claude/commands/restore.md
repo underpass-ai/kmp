@@ -1,5 +1,6 @@
 ---
 description: Restore this project's memory from the copy committed in the repository
+argument-hint: "[no arguments]"
 allowed-tools: Bash(kmp-mcp:*), Bash(ls:*), Bash(git log:*)
 ---
 

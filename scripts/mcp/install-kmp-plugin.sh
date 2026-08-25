@@ -4,7 +4,8 @@
 # machine.
 #
 #   bash scripts/mcp/install-kmp-plugin.sh            # detect and wire both
-#   bash scripts/mcp/install-kmp-plugin.sh --codex    # Codex CLI only
+#   bash scripts/mcp/install-kmp-plugin.sh --codex    # Codex plugin setup
+#   bash scripts/mcp/install-kmp-plugin.sh --codex --standalone
 #   bash scripts/mcp/install-kmp-plugin.sh --claude   # Claude Code only
 #   bash scripts/mcp/install-kmp-plugin.sh --dry-run  # show, change nothing
 #   bash scripts/mcp/install-kmp-plugin.sh --version 0.1.14 --codex
@@ -13,9 +14,9 @@
 # duplicating configuration. Works from a checkout or standalone, in which
 # case the assets it needs are fetched from the repository.
 #
-# Claude Code installs the plugin natively from the marketplace, which brings
-# the MCP server with it, so there is nothing to write into its config here.
-# Codex has no plugin system, so this script does the wiring by hand.
+# Claude Code and Codex both support native plugins. A native plugin owns its
+# MCP declaration. The copied prompts, AGENTS doctrine and global MCP table
+# below are retained only for an explicit standalone Codex installation.
 
 set -euo pipefail
 
@@ -23,12 +24,14 @@ REPO_RAW="${KMP_PLUGIN_RAW_BASE:-https://raw.githubusercontent.com/underpass-ai/
 DO_CODEX=0
 DO_CLAUDE=0
 DRY_RUN=0
+STANDALONE=0
 TARGET_VERSION=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --codex)   DO_CODEX=1 ;;
     --claude)  DO_CLAUDE=1 ;;
+    --standalone) STANDALONE=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --version) TARGET_VERSION="${2:?--version needs X.Y.Z}"; shift ;;
     -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -36,6 +39,11 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+if [ "$STANDALONE" -eq 1 ] && [ "$DO_CODEX" -eq 0 ]; then
+  echo "--standalone is a Codex mode; use it with --codex" >&2
+  exit 2
+fi
 
 if [ "$DO_CODEX" -eq 0 ] && [ "$DO_CLAUDE" -eq 0 ]; then
   command -v codex  >/dev/null 2>&1 && DO_CODEX=1
@@ -187,83 +195,118 @@ if [ "$DO_CODEX" -eq 1 ]; then
   CODEX_HOME="$HOME/.codex"
   CODEX_CONFIG="$CODEX_HOME/config.toml"
 
-  # Rename the whole table prefix, not just the transport table. Codex keeps
-  # tool policy in child tables such as
-  # [mcp_servers.kernel-memory.tools.kernel_wake]; leaving one behind creates
-  # a second server with no command or URL, and Codex then refuses to start
-  # with "invalid transport in mcp_servers.kernel-memory".
-  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG"; then
-    if [ "$DRY_RUN" -eq 1 ]; then
-      act "rename every [mcp_servers.kernel-memory...] table to [mcp_servers.kmp...] in $CODEX_CONFIG"
-    else
-      MIGRATED_CONFIG="$(mktemp)"
-      sed 's/^\[mcp_servers\.kernel-memory/[mcp_servers.kmp/' \
-        "$CODEX_CONFIG" > "$MIGRATED_CONFIG"
-      if ! python3 - "$MIGRATED_CONFIG" <<'PY'
+  if [ "${KMP_CODEX_PLUGIN_LIST+x}" = x ]; then
+    CODEX_PLUGIN_LIST="$KMP_CODEX_PLUGIN_LIST"
+  elif command -v codex >/dev/null 2>&1; then
+    CODEX_PLUGIN_LIST="$(codex plugin list 2>/dev/null || true)"
+  else
+    CODEX_PLUGIN_LIST=""
+  fi
+  if printf '%s\n' "$CODEX_PLUGIN_LIST" \
+      | grep -Eq '^kmp@[^[:space:]]+[[:space:]]+installed, enabled([[:space:]]|$)'; then
+    CODEX_PLUGIN_ENABLED=1
+  else
+    CODEX_PLUGIN_ENABLED=0
+  fi
+
+  if [ "$STANDALONE" -eq 0 ]; then
+    if [ "$CODEX_PLUGIN_ENABLED" -eq 0 ]; then
+      echo "   KMP is not an enabled Codex plugin; standard setup will not create global wiring" >&2
+      echo "   install kmp@underpass, or request the advanced path with --codex --standalone" >&2
+      exit 1
+    fi
+    if [ -f "$CODEX_CONFIG" ] \
+        && grep -Eq '^\[mcp_servers\.(kmp|kernel-memory)(\]|\.tools\.)' "$CODEX_CONFIG"; then
+      echo "   Codex has two possible KMP MCP owners: the enabled plugin and global config" >&2
+      echo "   plugin-managed setup left $CODEX_CONFIG untouched" >&2
+      echo "   remove the global owner with: codex mcp remove kmp" >&2
+      exit 1
+    fi
+    say "   mode — plugin-managed; the plugin owns MCP, skills and routing"
+    say "   config.toml — no global mcp_servers.kmp registration created"
+  else
+    if [ "$CODEX_PLUGIN_ENABLED" -eq 1 ]; then
+      echo "   standalone setup refused: an enabled KMP plugin already owns MCP" >&2
+      echo "   disable or remove the plugin before choosing standalone wiring" >&2
+      exit 1
+    fi
+    say "   mode — standalone; global config owns MCP"
+
+    # Atomically migrate the former server id and every former public tool
+    # name. Policy values remain byte-for-byte unchanged; only table headers
+    # move. Parsing the candidate before replacement catches old/new table
+    # conflicts and leaves the original file in place.
+    if [ -f "$CODEX_CONFIG" ] \
+        && { grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG" \
+          || grep -Eq '^\[mcp_servers\.kmp\.tools\.kernel_(ingest|write_memory|wake|ask|goto|near|rewind|forward|trace|inspect)\]$' "$CODEX_CONFIG"; }; then
+      if [ "$DRY_RUN" -eq 1 ]; then
+        act "rename the former Codex server id and all ten tool-policy names in $CODEX_CONFIG"
+      else
+        MIGRATED_CONFIG="$(mktemp)"
+        sed -E \
+          -e 's/^\[mcp_servers\.kernel-memory/[mcp_servers.kmp/' \
+          -e 's/\.tools\.kernel_(ingest|write_memory|wake|ask|goto|near|rewind|forward|trace|inspect)\]$/.tools.kmp_\1]/' \
+          "$CODEX_CONFIG" > "$MIGRATED_CONFIG"
+        if ! python3 - "$MIGRATED_CONFIG" <<'PY'
 import pathlib
 import sys
 import tomllib
 
 tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
 PY
-      then
+        then
+          rm -f "$MIGRATED_CONFIG"
+          echo "   cannot migrate Codex config: old and new KMP tables conflict" >&2
+          echo "   left $CODEX_CONFIG untouched" >&2
+          exit 1
+        fi
+        cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
+        cp "$MIGRATED_CONFIG" "$CODEX_CONFIG"
         rm -f "$MIGRATED_CONFIG"
-        echo "   cannot migrate Codex config: kmp and kernel-memory tables conflict" >&2
-        echo "   left $CODEX_CONFIG untouched" >&2
-        exit 1
+        say "   config.toml — migrated the server id and all former tool policies to kmp_*"
+        say "   previous config saved as $CODEX_CONFIG.kmp-backup"
       fi
-      cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
-      cp "$MIGRATED_CONFIG" "$CODEX_CONFIG"
-      rm -f "$MIGRATED_CONFIG"
-      say "   config.toml — migrated the kernel-memory registration and tool policies to kmp"
-      say "   previous config saved as $CODEX_CONFIG.kmp-backup"
-    fi
-  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
-    say "   config.toml — kmp already registered, left untouched"
-  elif [ "$DRY_RUN" -eq 1 ]; then
-    act "append [mcp_servers.kmp] to $CODEX_CONFIG"
-  else
-    mkdir -p "$CODEX_HOME"
-    [ -f "$CODEX_CONFIG" ] && cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
-    cat >>"$CODEX_CONFIG" <<EOF
+    elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
+      say "   config.toml — kmp already registered, left untouched"
+    elif [ "$DRY_RUN" -eq 1 ]; then
+      act "append [mcp_servers.kmp] to $CODEX_CONFIG"
+    else
+      mkdir -p "$CODEX_HOME"
+      [ -f "$CODEX_CONFIG" ] && cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
+      cat >>"$CODEX_CONFIG" <<EOF
 
 [mcp_servers.kmp]
 command = "$BIN"
 env = { KMP_MCP_BACKEND = "embedded" }
 EOF
-    say "   config.toml — registered kmp (embedded)"
-    [ -f "$CODEX_CONFIG.kmp-backup" ] && say "   previous config saved as $CODEX_CONFIG.kmp-backup"
-  fi
+      say "   config.toml — registered kmp (embedded)"
+      [ -f "$CODEX_CONFIG.kmp-backup" ] && say "   previous config saved as $CODEX_CONFIG.kmp-backup"
+    fi
 
-  # Every prompt the plugin ships, not a hand-picked three. The repository
-  # carried nine and installed three, so /kmp-save and /kmp-catchup existed
-  # for Claude Code users and silently did not for Codex ones.
-  CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
-  if [ "$DRY_RUN" -eq 1 ]; then
-    act "install $(printf '/%s ' $CODEX_PROMPTS)into $CODEX_HOME/prompts"
-  else
-    mkdir -p "$CODEX_HOME/prompts"
-    for p in $CODEX_PROMPTS; do
-      fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
-      # The Codex prompts have no plugin-root variable to lean on.
-      sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
-        -e "s#@@SETUP@@#$SETUP#g" -e "s#@@UPDATE@@#$UPDATE#g" \
-        "$CODEX_HOME/prompts/$p.md"
-      rm -f "$CODEX_HOME/prompts/$p.md.bak"
-    done
-    say "   prompts — $(printf '/%s ' $CODEX_PROMPTS)installed"
-  fi
+    CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
+    if [ "$DRY_RUN" -eq 1 ]; then
+      act "install $(printf '/%s ' $CODEX_PROMPTS)into $CODEX_HOME/prompts"
+    else
+      mkdir -p "$CODEX_HOME/prompts"
+      for p in $CODEX_PROMPTS; do
+        fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
+        sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
+          -e "s#@@SETUP@@#$SETUP#g" -e "s#@@UPDATE@@#$UPDATE#g" \
+          "$CODEX_HOME/prompts/$p.md"
+        rm -f "$CODEX_HOME/prompts/$p.md.bak"
+      done
+      say "   prompts — $(printf '/%s ' $CODEX_PROMPTS)installed"
+    fi
 
-  # The memory doctrine. Codex has no skills, so it lives in AGENTS.md,
-  # fenced by markers so re-running replaces it instead of stacking copies.
-  AGENTS="$CODEX_HOME/AGENTS.md"
-  if [ "$DRY_RUN" -eq 1 ]; then
-    act "add the KMP section to $AGENTS"
-  else
-    SNIPPET="$(mktemp)"
-    fetch_asset "codex/AGENTS.kmp.md" "$SNIPPET"
-    if [ -f "$AGENTS" ] && grep -q '<!-- kmp:begin -->' "$AGENTS"; then
-      python3 - "$AGENTS" "$SNIPPET" <<'PY'
+    # Standalone Codex has no plugin skill, so keep its fenced doctrine.
+    AGENTS="$CODEX_HOME/AGENTS.md"
+    if [ "$DRY_RUN" -eq 1 ]; then
+      act "add the KMP section to $AGENTS"
+    else
+      SNIPPET="$(mktemp)"
+      fetch_asset "codex/AGENTS.kmp.md" "$SNIPPET"
+      if [ -f "$AGENTS" ] && grep -q '<!-- kmp:begin -->' "$AGENTS"; then
+        python3 - "$AGENTS" "$SNIPPET" <<'PY'
 import re, sys
 target, snippet = sys.argv[1], sys.argv[2]
 with open(target) as fh:
@@ -279,12 +322,13 @@ body = re.sub(
 with open(target, "w") as fh:
     fh.write(body)
 PY
-      say "   AGENTS.md — KMP section refreshed in place"
-    else
-      { [ -f "$AGENTS" ] && printf '\n'; cat "$SNIPPET"; } >>"$AGENTS"
-      say "   AGENTS.md — KMP section added"
+        say "   AGENTS.md — KMP section refreshed in place"
+      else
+        { [ -f "$AGENTS" ] && printf '\n'; cat "$SNIPPET"; } >>"$AGENTS"
+        say "   AGENTS.md — KMP section added"
+      fi
+      rm -f "$SNIPPET"
     fi
-    rm -f "$SNIPPET"
   fi
 
   say "   restart any running Codex session: it keeps the MCP inventory it started with"
