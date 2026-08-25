@@ -146,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let manifest = Manifest {
         benchmark: "MemoryArena",
-        methodology: "docs/product/kernel-roadmap-milestones.md",
+        methodology: "archive/docs/product/kernel-roadmap-milestones.md",
         source_path: args.input.display().to_string(),
         generated_at_unix_seconds: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
         adapter: "memoryarena-kmp-adapter-v1",

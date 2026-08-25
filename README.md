@@ -209,7 +209,7 @@ the memory protocol.
 
 [`plugins/kmp/capabilities.json`](./plugins/kmp/capabilities.json) is the
 machine-checked map from every workflow to its owner and host exposure. The
-read-only [memory viewer](./docs/operations/viewer.md) presents the same graph,
+read-only [memory viewer](./docs/operations/embedded/README.md#local-data) presents the same graph,
 timeline, evidence and traces visually; it does not add another memory verb.
 
 <details>
@@ -233,9 +233,8 @@ embedded kernel.
 `--scope user` registers it for every project; each project still keeps its own
 `.kernel/` store. Verify with `claude mcp list`.
 
-**Every other host**: [embedded-hosts.md](./docs/operations/embedded-hosts.md).
-Prebuilt binaries and the one-command installer:
-[embedded-release.md](./docs/operations/embedded-release.md). What the plugin
+**Every other host and manual installation**:
+[embedded operations](./docs/operations/embedded/README.md). What the plugin
 itself contains: [plugins/kmp/README.md](./plugins/kmp/README.md).
 
 </details>
@@ -301,9 +300,10 @@ the person.
 
 ## Current Status
 
-The local plugin and MCP path is usable today; the underlying RPC contract is
-`v1beta1`, with limitations tracked in
-[`docs/beta-status.md`](./docs/beta-status.md).
+The local plugin and MCP path is usable today; the deployed RPC contract is
+still versioned `v1beta1`. Current behavior is pinned by the
+[runtime guarantees](./docs/runtime-guarantees.md), [security model](./docs/security-model.md)
+and test suite.
 
 The local path includes:
 
@@ -414,14 +414,14 @@ from a local store.
 
 ## Contracts
 
-- [MCP operation and mode contract](./docs/operations/mcp-stdio.md)
+- [Embedded operation and MCP mode](./docs/operations/embedded/README.md)
 - [Plugin capability inventory](./plugins/kmp/capabilities.json) — exact MCP
   tools, workflows, owners and host exposure
 - [gRPC proto](./api/proto/underpass/rehydration/kernel/v1beta1) and
   [AsyncAPI](./api/asyncapi/context-projection.v1beta1.yaml) — enterprise and
   integration boundaries
 - [Examples](./api/examples/README.md)
-- [Beta status](./docs/beta-status.md) — maturity, limitations, path to v1
+- [Runtime guarantees](./docs/runtime-guarantees.md) and [security model](./docs/security-model.md)
 
 ## Repo Layout
 
@@ -488,7 +488,7 @@ random seeds. Null hypothesis rejected at 95% confidence.
 The current conclusions and possible follow-up work are summarized in
 [docs/research/](./docs/research/); the paper drafts and detailed notebooks are
 kept in the [research archive](./archive/docs/research/). The separate
-[Operator benchmark thread](./docs/operator.md) studies whether a small model
+[Operator benchmark thread](./docs/research/operator.md) studies whether a small model
 can operate the KMP API; Operator is research, not part of the local or
 enterprise runtime.
 

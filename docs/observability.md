@@ -5,13 +5,10 @@ backends. Every successful render (`GetContext`, `GetContextPath`, `RehydrateSes
 produces metrics that flow through both OTel (Prometheus/Grafana) and structured logs
 (Loki/Grafana).
 
-Architecture reference: [ADR-007](adr/ADR-007-quality-metrics-observability.md)
-
-Embedded local-telemetry reference:
-[ADR-014](adr/ADR-014-embedded-quality-telemetry.md).
-
-Product direction reference:
-[Queryable Agentic Memory Layer](product/queryable-agentic-memory-layer.md).
+Historical design records are preserved in the archive:
+[ADR-007](../archive/docs/adr/ADR-007-quality-metrics-observability.md) and
+[ADR-014](../archive/docs/adr/ADR-014-embedded-quality-telemetry.md). They
+explain provenance but do not override the current metrics and code below.
 
 ## Current Status And Gap
 

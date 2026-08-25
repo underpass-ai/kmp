@@ -141,13 +141,11 @@ for asset in write_instruction_assets:
     if ("invalid" not in text and "validation fail" not in text) or "nothing" not in text:
         fail(f"{asset.relative_to(ROOT)} does not state fail-before-write behavior")
 
-api_design = (ROOT / "docs/product/kernel-context-api-design.md").read_text(
-    encoding="utf-8"
-)
-if "defaults to\n`dry_run = false`" not in api_design:
-    fail("API design does not document the live dry_run=false default")
-if "defaults to `dry_run = true`" in api_design:
-    fail("API design still documents the retired preview-by-default behavior")
+protocol = (ROOT / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
+if "Normal writes are one call: omit `options.dry_run` or set it to false" not in protocol:
+    fail("live MCP schema does not document the dry_run=false write default")
+if "Set it to true only for an explicitly requested preview" not in protocol:
+    fail("live MCP schema lost the explicit dry-run preview path")
 
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "

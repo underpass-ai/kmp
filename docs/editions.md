@@ -46,13 +46,13 @@ cargo install kmp-mcp
 
 Host recipes — including which hosts are *tested on a real machine* versus
 *derived from the host's documentation and pending verification* — are in
-[operations/embedded-hosts.md](operations/embedded-hosts.md). Claude Code and
+[embedded operations](operations/embedded/README.md). Claude Code and
 Codex CLI are both tested. For those two, the
 [KMP plugin](../plugins/kmp/README.md) performs the registration and adds the
 agent-facing skill plus `/kmp:doctor`.
 
 Prebuilt binaries and the one-command installer:
-[operations/embedded-release.md](operations/embedded-release.md).
+[embedded operations](operations/embedded/README.md).
 
 ### Where memory lives
 
@@ -107,7 +107,7 @@ graph with typed relations, the note behind each node, a "known at" timeline
 cursor, traces highlighted on the graph, and the exact rendered context a model
 would receive with the hash covering it. Loopback only, non-local `Host`
 headers refused, no authentication — see
-[operations/viewer.md](operations/viewer.md).
+[embedded operations](operations/embedded/README.md#local-data).
 
 `KMP_VIEWER_ADDR` moves it to another address, and `off` declines it. If the
 port is already taken — usually by another project's session — the one that
@@ -131,8 +131,7 @@ docker pull ghcr.io/underpass-ai/kmp:latest
 digest in production.
 
 Deployment guide, values and TLS configuration:
-[operations/kubernetes-deploy.md](operations/kubernetes-deploy.md). Cluster
-prerequisites: [operations/cluster-prerequisites.md](operations/cluster-prerequisites.md).
+[Docker and Kubernetes operations](operations/deployment/README.md).
 
 ### Verify a deployment
 
@@ -164,8 +163,8 @@ endpoint/model mismatches *before* the expensive tests run.
   are supported; client-cert auth is limited by the Rust driver stack.
 - **There is no authorization backend.** `ValidateScope` is set comparison
   only. Access control belongs to the caller today.
-- Full maturity matrix: [beta-status.md](beta-status.md). Threat model and Helm
-  TLS configuration: [security-model.md](security-model.md).
+- Current behavior: [runtime guarantees](runtime-guarantees.md). Threat model
+  and Helm TLS configuration: [security model](security-model.md).
 
 ## Moving between them
 
@@ -184,7 +183,7 @@ KMP_KERNEL_GRPC_TLS_DOMAIN_NAME=kmp-grpc \
 
 HTTPS endpoints enable server TLS with system/webpki roots automatically;
 private CAs and mTLS are explicit, as above. Full matrix:
-[operations/mcp-stdio.md](operations/mcp-stdio.md).
+[embedded operations](operations/embedded/README.md).
 
 **Moving the memory itself** is a separate step from moving the process.
 `kmp-mcp export` produces a portable bundle from an embedded store; loading it

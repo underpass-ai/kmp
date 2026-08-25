@@ -13,6 +13,10 @@ For current documentation, see [docs/index.md](../../docs/index.md).
 
 Archived sections:
 
+- [Architecture decisions](adr/README.md)
+- [Former product plans and roadmaps](product/README.md)
+- [Superseded operations guides](operations/README.md)
+- [Former runbooks](runbooks/README.md)
 - [Migration and PIR material](migration/README.md)
 - [Former product integrations](integrations/made-kmp.md)
 - [Research, benchmarks, papers, demos, and incidents](research/README.md)

@@ -527,18 +527,17 @@ relation spec, so it cannot drift):
   `motivation`, `method`, `decision_id`, `caused_by_node_id`, and the
   relation's own temporal coordinate.
 
-The full model is specified in
-[kernel-write-protocol-plan.md](product/kernel-write-protocol-plan.md).
+The current writer doctrine and worked examples live in the
+[`kmp-memory` skill](../plugins/kmp/skills/kmp-memory/SKILL.md#why-the-why-matters).
 
 ## Further Reading
 
 - [GraphBatch Quickstart](graph-batch-quickstart.md) — fastest model-driven path
 - [GraphBatch ingestion API](graph-batch-ingestion-api.md) — experimental ingress proposal
 - [Proto contracts](../api/proto/underpass/rehydration/kernel/v1beta1/) — gRPC API definition
-- [Kernel Memory Protocol API design](product/kernel-context-api-design.md) — the typed `kernel_*` tool surface (wake/ask/near/trace/inspect/write_memory)
-- [MCP stdio adapter](operations/mcp-stdio.md) — run the KMP tools over MCP stdio
+- [Embedded operations](operations/embedded/README.md) — run the KMP tools locally over MCP stdio
 - [AsyncAPI contract](../api/asyncapi/context-projection.v1beta1.yaml) — event schema
 - [Reference fixtures](../api/examples/kernel/v1beta1/grpc/) — example request/response JSON
-- [Beta status](beta-status.md) — RPC maturity, path to v1, known limitations
+- [Runtime guarantees](runtime-guarantees.md) and [security model](security-model.md)
 - [Observability](observability.md) — quality metrics, OTel, Loki, Grafana
 - [Testing](testing.md) — how to run the test suite

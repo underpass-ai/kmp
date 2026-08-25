@@ -1,4 +1,4 @@
-//! The SQLite engine ([ADR-018](../../../../../docs/adr/ADR-018-multi-process-embedded-store.md))
+//! The SQLite engine ([ADR-018](../../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md))
 //! behind the seam. Opt-in via the `sqlite` feature.
 //!
 //! One SQL table per seam table, keyed by the seam's key shape. Text keys are

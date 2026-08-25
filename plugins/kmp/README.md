@@ -210,6 +210,5 @@ infrastructure. For a shared deployed kernel, point the server at it with
 `KMP_KERNEL_GRPC_ENDPOINT` instead — the tool surface is identical by
 construction, so nothing else changes.
 
-See [mcp-stdio.md](../../docs/operations/mcp-stdio.md) for the full mode
-matrix and [embedded-hosts.md](../../docs/operations/embedded-hosts.md) for
-per-host recipes, including hosts this plugin does not cover.
+See [embedded operations](../../docs/operations/embedded/README.md) for the
+current local mode, storage and maintenance contract.

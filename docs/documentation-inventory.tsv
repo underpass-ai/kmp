@@ -3,27 +3,12 @@
 # checked against the binary's public tool vocabulary; research and historical
 # files remain navigable evidence but do not define the live contract.
 current	docs/*.md	Current user, contributor and protocol entrypoints.
-current	docs/operations/*.md	Current embedded and cluster operations.
-current	docs/adr/README.md	Decision index.
-current	docs/adr/ADR-*.md	Accepted architecture decisions.
-research	docs/adr/spikes/*/README.md	Evidence behind accepted decisions, not a runtime contract.
+current	docs/operations/README.md	Current operations topology router.
+current	docs/operations/embedded/README.md	Current local embedded operations.
+current	docs/operations/deployment/README.md	Current Docker and Kubernetes operations.
 current	docs/research/README.md	Current summary of completed research and the active memory-analysis direction.
+research	docs/research/operator.md	Separate benchmark-only Operator research.
 research	docs/paper/*.md	Publication packages that may lag implementation.
 research	docs/paper/acl/*.md	ACL package source notes.
-current	docs/product/README.md	Product navigation and authority boundary.
-current	docs/product/kernel-context-*.md	Current KMP API and traversal contracts.
-current	docs/product/kernel-memory-service-grpc-plan.md	Current typed service contract and status.
-current	docs/product/kernel-plugin-architecture.md	Current extension contract.
-current	docs/product/kernel-roadmap-milestones.md	Current product roadmap.
-current	docs/product/kernel-write-protocol-plan.md	Current writer contract and status.
-current	docs/product/kmp-embedded-edition-roadmap.md	Current embedded-edition direction.
-current	docs/product/queryable-agentic-memory-layer.md	Current product model.
-current	docs/product/recall-projection-contract.md	Current transport-neutral recall contract.
-current	docs/product/reusable-interpretation-plugins.md	Current plugin boundary.
-research	docs/product/kernel-tool-operator-*.md	Separate Operator research and publication plans.
-research	docs/product/operator-*.md	Dated Operator audits, templates and experiment process.
-research	docs/product/operator-training-runs/*.md	Recorded Operator experiments.
-research	docs/product/huggingface/*.md	Unpublished Operator release templates.
 research	docs/development/graph-aware-answer-reranker.md	Experimental reranker design.
 current	docs/development/running-e2e.md	Current contributor procedure.
-current	docs/runbooks/README.md	Current runbook index.

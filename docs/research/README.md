@@ -65,8 +65,9 @@ leakage, prioritization quality, and whether a reviewer can audit the result.
 The existing MemoryArena, MemoryAgentBench, and LongMemEval adapters remain
 useful regression and evaluation infrastructure for this work. External
 comparisons, human studies, or a revived paper are possible later, but are not
-release promises. Product priorities remain in the
-[product roadmap](../product/kernel-roadmap-milestones.md).
+release promises. Release commitments remain in the current code, tests,
+release process and [documentation catalog](../documentation-catalog.md), not
+in research notes.
 
 ## Archive map
 
@@ -74,3 +75,7 @@ release promises. Product priorities remain in the
 - [Benchmark and experiment artifacts](../../archive/artifacts/)
 - [Historical Kubernetes manifests](../../archive/k8s/)
 - [Current testing and quality gates](../testing.md)
+- [Operator model research](operator.md)
+- [Experimental graph-aware reranker](../development/graph-aware-answer-reranker.md)
+- [Paper package](../paper/README.md)
+- [ACL paper package](../paper/acl/README.md)

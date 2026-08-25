@@ -1,10 +1,10 @@
-//! Embedded edition storage adapters ([ADR-009](../../../docs/adr/ADR-009-embedded-storage-engine.md)).
+//! Embedded edition storage adapters ([ADR-009](../../../archive/docs/adr/ADR-009-embedded-storage-engine.md)).
 //!
 //! One [`EmbeddedKernelStore`] opens one data directory
-//! ([ADR-012](../../../docs/adr/ADR-012-embedded-data-directory.md) layout:
+//! ([ADR-012](../../../archive/docs/adr/ADR-012-embedded-data-directory.md) layout:
 //! `FORMAT_VERSION` + `store/kernel.redb`) and implements every persistence
 //! port the kernel needs: graph reads (materialized adjacency per
-//! [ADR-010](../../../docs/adr/ADR-010-embedded-graph-representation.md)),
+//! [ADR-010](../../../archive/docs/adr/ADR-010-embedded-graph-representation.md)),
 //! node details, the append-only context event log, projection runtime state,
 //! and snapshots. Commits are fsync-durable (redb immediate durability), so
 //! the crash contract is: no data loss beyond the in-flight event, no

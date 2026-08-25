@@ -1,10 +1,10 @@
 # Running E2E tests
 
 Use `./scripts/e2e/regen.sh` before any live E2E, replay validation, or
-infra-touching run. The script automates the version verification preflight in
-[docs/operations/preflight.md](../operations/preflight.md): it checks git state,
+infra-touching run. The script is the executable preflight: it checks git state,
 refreshes local binaries when relevant, verifies cluster/model reachability, and
-fails fast on stale or drifted configuration.
+fails fast on stale or drifted configuration. Deployment authority is indexed
+in [Docker and Kubernetes operations](../operations/deployment/README.md).
 
 Default mode is read-only except for user-local `cargo install` steps in Rust
 repos. Cluster mutations require explicit runbooks and must not be inferred from

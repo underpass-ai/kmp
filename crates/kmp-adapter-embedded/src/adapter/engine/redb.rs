@@ -1,4 +1,4 @@
-//! The redb engine ([ADR-009](../../../../../docs/adr/ADR-009-embedded-storage-engine.md))
+//! The redb engine ([ADR-009](../../../../../archive/docs/adr/ADR-009-embedded-storage-engine.md))
 //! behind the seam.
 //!
 //! On-disk layout is unchanged from before the seam existed: the same typed

@@ -1,34 +1,27 @@
 # Operations
 
-Operational docs for the kernel live here.
+KMP has two operational topologies. Start with the embedded topology unless
+you need one centrally operated memory shared by several people, agents or
+services.
 
-Current contents:
+| Topology | Use it when | Start here |
+|:--|:--|:--|
+| Embedded | One workstation or repository needs local, private memory with no service to operate. This is the default. | [Embedded operations](embedded/README.md) |
+| Deployed | Several clients need one live service operated with Docker or Kubernetes. | [Docker and Kubernetes operations](deployment/README.md) |
 
-- [`deployment-boundary.md`](./deployment-boundary.md)
-- [`container-image.md`](./container-image.md)
-- [`kubernetes-deploy.md`](./kubernetes-deploy.md)
-- [`kubernetes-transport-smoke.md`](./kubernetes-transport-smoke.md)
-- [`cluster-prerequisites.md`](./cluster-prerequisites.md) — MetalLB, cert-manager, Route 53, NGINX Ingress
-- [`mtls-deployment.md`](./mtls-deployment.md) — Full mTLS deployment guide
-- [`neo4j-schema-migrations.md`](./neo4j-schema-migrations.md) — Explicit projection graph indexes and constraints
-- [`mcp-stdio.md`](./mcp-stdio.md) — Stdio MCP adapter exposing the KMP tools
-- [`mcp-http.md`](./mcp-http.md) — Public authenticated Streamable HTTP MCP adapter
-- [`preflight.md`](./preflight.md) — E2E version preflight checklist before live runs
-- [`embedded-hosts.md`](./embedded-hosts.md) — Claude Code, Codex and manual host wiring
-- [`embedded-release.md`](./embedded-release.md) — prebuilt binaries, installer and store compatibility
-- [`viewer.md`](./viewer.md) — local read-only memory graph and timeline
+Both use the same KMP memory model and ten MCP tools. The difference is where
+the kernel and its storage run.
 
-Related docs:
+The former detailed runbooks were archived after an August 2026 review found
+that they mixed superseded release, storage and cluster assumptions. They are
+available as historical evidence under
+[`archive/docs/operations`](../../archive/docs/operations/README.md), but they
+are not an operational contract.
 
-- [`../testing.md`](../testing.md) — Testing guide
-- [`../observability.md`](../observability.md) — Observability stack
-- [`../adr/ADR-007-quality-metrics-observability.md`](../adr/ADR-007-quality-metrics-observability.md) — Architecture decision
+Related current documentation:
 
-Key rule:
-
-- this repo owns kernel operations and contract documentation
-- this repo owns the standalone kernel image artifact
-- this repo owns the standalone kernel Helm chart
-- sibling repos may own runnable deployment packaging such as GHCR images,
-  Docker Compose bundles, or Helm charts when those artifacts package a runtime
-  or product layer rather than the kernel itself
+- [edition comparison](../editions.md);
+- [enterprise topology](../enterprise.md);
+- [security model](../security-model.md);
+- [release process](../release.md);
+- [testing](../testing.md) and [observability](../observability.md).

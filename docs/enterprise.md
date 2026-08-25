@@ -97,7 +97,7 @@ helm upgrade --install kmp distribution/charts/kmp \
 Do not copy the repository's Underpass runtime values unchanged into another
 organization: hostnames, ingress, image-pull secrets and security choices are
 environment-specific. The complete workflow is in the
-[Kubernetes deployment guide](./operations/kubernetes-deploy.md).
+[Docker and Kubernetes operations](./operations/deployment/README.md).
 
 ## Connecting an agent
 
@@ -132,7 +132,7 @@ navigation, audit and writes keep the same request and response contracts.
 
 Threat model and configuration details:
 [security model](./security-model.md) and
-[Kubernetes transport smoke](./operations/kubernetes-transport-smoke.md).
+[Docker and Kubernetes operations](./operations/deployment/README.md#operational-authority).
 
 ## Observability and verification
 
@@ -177,8 +177,6 @@ Never copy engine files into cluster storage or hand-interleave JSONL histories.
 - Moving a local bundle into a cluster is an ingest migration, not an automatic
   sync feature.
 
-See the [edition comparison](./editions.md),
-[beta status](./beta-status.md),
-[cluster prerequisites](./operations/cluster-prerequisites.md) and
-[Kubernetes deployment guide](./operations/kubernetes-deploy.md) for the
-operational contracts behind this overview.
+See the [edition comparison](./editions.md), [runtime guarantees](./runtime-guarantees.md)
+and [Docker and Kubernetes operations](./operations/deployment/README.md) for
+the operational contracts behind this overview.

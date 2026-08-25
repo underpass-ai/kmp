@@ -152,4 +152,4 @@ Honest publication claim:
 
 ## 7. Deeper background
 
-- Archived benchmark methodology + numbers: [`archive/docs/research/longmemeval-benchmark.md`](../archive/docs/research/longmemeval-benchmark.md)
+- Archived benchmark methodology + numbers: [`archive/docs/research/longmemeval-benchmark.md`](../../archive/docs/research/longmemeval-benchmark.md)

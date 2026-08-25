@@ -15,7 +15,7 @@ The kernel targets a stable `v1` contract once these conditions are met:
 | Authorization backend for scope validation | Not started |
 | Timeline and summary filtering in RehydrateSession | Not started |
 | Quality metrics in all render paths (including RehydrateSession) | Done — GetContext, GetContextPath, and RehydrateSession emit quality metrics |
-| Full benchmark matrix validated (3 agents x 3 judges x 4 noise) | Planned — see [kernel-roadmap-milestones.md](product/kernel-roadmap-milestones.md) |
+| Full benchmark matrix validated (3 agents x 3 judges x 4 noise) | Planned research — see [research summary](research/README.md) |
 | Async contract: `context.bundle.generated` actually emitted by runtime | Not started — contract-only today |
 | OTLP mTLS to OTel Collector | Done — env-var TLS config, Helm wiring, cert-manager |
 | Neo4j client mTLS (2FA since Neo4j 5.19+) | Partial — Helm + URI parsing done, neo4rs client cert pending |
@@ -123,7 +123,7 @@ See:
 
 - [graph-batch-quickstart.md](graph-batch-quickstart.md)
 - [graph-batch-ingestion-api.md](graph-batch-ingestion-api.md)
-- [ADR-008](adr/ADR-008-graph-batch-ingestion-boundary.md)
+- [archived ADR-008](../archive/docs/adr/ADR-008-graph-batch-ingestion-boundary.md)
 
 ## Removed
 

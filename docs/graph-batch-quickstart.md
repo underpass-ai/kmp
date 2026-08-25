@@ -117,7 +117,7 @@ See:
 
 - [`docs/testing.md`](testing.md)
 - [`docs/graph-batch-ingestion-api.md`](graph-batch-ingestion-api.md)
-- [`docs/adr/ADR-008-graph-batch-ingestion-boundary.md`](adr/ADR-008-graph-batch-ingestion-boundary.md)
+- [archived GraphBatch decision record](../archive/docs/adr/ADR-008-graph-batch-ingestion-boundary.md)
 
 ## Next documents
 
@@ -125,5 +125,5 @@ See:
   [`usage-guide.md`](usage-guide.md)
 - If you want the proposed ingress API:
   [`graph-batch-ingestion-api.md`](graph-batch-ingestion-api.md)
-- If you want the current KMP API boundary:
-  [`product/kernel-context-api-design.md`](product/kernel-context-api-design.md)
+- If you want the current typed KMP boundary:
+  [`api/proto/README.md`](../api/proto/README.md)
