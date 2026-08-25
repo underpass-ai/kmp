@@ -133,14 +133,16 @@ impl StartupFailure {
 }
 
 /// Builds the MCP server, mounting the local web viewer over the embedded
-/// backend. The viewer must share this process's kernel: the embedded store
-/// is single-writer (ADR-011), so an in-process mount is the only way to
-/// watch a live session.
+/// backend. Sharing this process's kernel keeps the viewer on the exact live
+/// facade without a second store connection or read model.
 async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
     let viewer = kmp_mcp::viewer::viewer_addr_from_env();
-    let backend_is_embedded = std::env::var(MCP_BACKEND_ENV)
-        .map(|value| value.trim().eq_ignore_ascii_case("embedded"))
-        .unwrap_or(false);
+    let configured_backend = std::env::var(MCP_BACKEND_ENV).ok();
+    let endpoint = std::env::var(kmp_mcp::GRPC_ENDPOINT_ENV).ok();
+    let backend_is_embedded = match configured_backend.as_deref().map(str::trim) {
+        Some(value) if !value.is_empty() => value.eq_ignore_ascii_case("embedded"),
+        _ => endpoint.is_none_or(|value| value.trim().is_empty()),
+    };
 
     let Some(addr) = viewer.addr() else {
         return KernelMcpServer::try_from_env().map_err(StartupFailure::selecting_a_backend);
@@ -1347,9 +1349,9 @@ fn parse_engine_flag(rest: &[&str]) -> Result<kmp_embedded::StorageEngine, Strin
 }
 
 /// Standalone viewer over the env-resolved data dir (same resolution as
-/// `export`/`import`). Only works while no agent session holds the store —
-/// the embedded engine is single-writer per ADR-011; to watch a live session,
-/// set `KMP_VIEWER_ADDR` on that session instead.
+/// `export`/`import`). A redb store must be idle; SQLite can be shared, but
+/// setting `KMP_VIEWER_ADDR` on the agent session remains the direct path to
+/// its already-open kernel.
 async fn run_viewer_command(addr: Option<&str>) -> i32 {
     // `viewer` with no argument honours the same env the MCP mode uses.
     let addr = addr

@@ -48,6 +48,35 @@ fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
     );
 }
 
+/// The viewer follows the same implicit embedded default as the MCP backend.
+/// Previously this branch looked only for an explicit `KMP_MCP_BACKEND` and
+/// silently skipped the viewer in the zero-configuration path.
+#[test]
+fn unconfigured_embedded_backend_mounts_the_viewer() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let output = run_binary(
+        &[
+            (
+                "KMP_MCP_DATA_DIR",
+                data_dir.path().to_str().expect("utf8 data path"),
+            ),
+            ("KMP_VIEWER_ADDR", "127.0.0.1:0"),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}\n",
+    );
+
+    assert!(
+        output.status.success(),
+        "the zero-config embedded backend should still serve: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
+    assert!(
+        stderr.contains("memory viewer at http://127.0.0.1:"),
+        "the implicit embedded backend must mount its viewer: {stderr}"
+    );
+}
+
 /// gRPC by name and nothing to talk to is the one backend failure left, and
 /// the way out it offers must be the mode the product actually is.
 #[test]
