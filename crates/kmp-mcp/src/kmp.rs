@@ -82,7 +82,7 @@ pub(crate) fn wake_from_response(response: WakeResponse) -> Value {
         },
         "proof": response.proof.as_ref().map(proof_json).unwrap_or_else(empty_proof_json),
         // Where this packet ends, so the next question — "and what changed
-        // since?" — is one call to kernel_forward rather than a rewind whose
+        // since?" — is one call to kmp_forward rather than a rewind whose
         // only purpose is to recover a timestamp.
         "resume_cursor": response
             .resume_cursor
@@ -1280,7 +1280,7 @@ mod tests {
             value["wake"]["causal_spine"][0]["evidence_ref"],
             "evidence:1"
         );
-        // The bookmark a caller carries to kernel_forward, so catching up is
+        // The bookmark a caller carries to kmp_forward, so catching up is
         // one more call rather than a rewind that exists to find a timestamp.
         assert_eq!(value["resume_cursor"]["ref"], "decision:latest");
         assert_eq!(value["resume_cursor"]["sequence"], 3);

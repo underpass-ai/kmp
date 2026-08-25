@@ -78,7 +78,7 @@ if [[ "$(printf '%s\n' "${responses}" | wc -l)" -ne 2 ]]; then
   exit 1
 fi
 
-for tool in kernel_wake kernel_ask kernel_write_memory kernel_trace; do
+for tool in kmp_wake kmp_ask kmp_write_memory kmp_trace; do
   if ! response_contains "\"name\":\"${tool}\"" <<<"${responses}"; then
     echo "KMP plugin smoke did not advertise ${tool}" >&2
     exit 1

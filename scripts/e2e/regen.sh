@@ -86,12 +86,12 @@ else
 fi
 
 if command -v kmp-mcp >/dev/null 2>&1; then
-  request=$(printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kernel_wake","arguments":{"about":"%s"}}}' "$REAL_ANCHOR")
+  request=$(printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_wake","arguments":{"about":"%s"}}}' "$REAL_ANCHOR")
   if response=$(printf '%s\n' "$request" | KMP_MCP_BACKEND=grpc KMP_KERNEL_GRPC_ENDPOINT="$KMP_PUBLIC_ENDPOINT" kmp-mcp 2>&1); then
     if printf '%s' "$response" | grep -Fq '"isError":false'; then
-      ok "kmp-mcp smoke" "kernel_wake succeeded for $REAL_ANCHOR"
+      ok "kmp-mcp smoke" "kmp_wake succeeded for $REAL_ANCHOR"
     else
-      fail "kmp-mcp smoke" "kernel_wake did not return isError=false: $response"
+      fail "kmp-mcp smoke" "kmp_wake did not return isError=false: $response"
     fi
   else
     fail "kmp-mcp smoke" "kmp-mcp command failed: $response"

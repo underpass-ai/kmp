@@ -19,7 +19,7 @@ without being asked. There is nothing to add to the MCP config.
 ```json
 {
   "mcpServers": {
-    "kernel-memory": {
+    "kmp": {
       "command": "kmp-mcp",
       "env": { "KMP_MCP_BACKEND": "embedded" }
     }
@@ -71,7 +71,7 @@ use the in-session mount above instead.
 
 | Viewer | Kernel read | Notes |
 |:-------|:------------|:------|
-| Sidebar abouts | about index | same list `kernel_wake` scopes against |
+| Sidebar abouts | about index | same list `kmp_wake` scopes against |
 | Graph tab | `wake` | depth/budget/scope controls mirror the tool arguments |
 | Node panel | `inspect` | detail text, properties, raw coordinates, typed links both ways with `why`/`evidence` quoted verbatim |
 | Timeline tab | `temporal` | `known at` = `goto` with a time cursor; `near`/`rewind`/`forward` with the selected node as `ref` cursor |

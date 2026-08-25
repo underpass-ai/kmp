@@ -477,7 +477,7 @@ def validate_action_shape(action: dict[str, Any]) -> str | None:
 
 
 def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
-    if tool == "kernel_wake":
+    if tool == "kmp_wake":
         key_error = exact_keys(
             arguments,
             {"about"},
@@ -504,7 +504,7 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
             return validate_budget(arguments["budget"], "action.arguments.budget")
         return None
 
-    if tool == "kernel_ask":
+    if tool == "kmp_ask":
         key_error = exact_keys(
             arguments,
             {"about", "answer_policy", "dimensions", "question"},
@@ -529,16 +529,16 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
                 return error
         return validate_optional_positive_int(arguments, "depth", "action.arguments")
 
-    if tool in {"kernel_near", "kernel_goto", "kernel_rewind", "kernel_forward"}:
+    if tool in {"kmp_near", "kmp_goto", "kmp_rewind", "kmp_forward"}:
         cursor_key = {
-            "kernel_near": "around",
-            "kernel_goto": "at",
-            "kernel_rewind": "from",
-            "kernel_forward": "from",
+            "kmp_near": "around",
+            "kmp_goto": "at",
+            "kmp_rewind": "from",
+            "kmp_forward": "from",
         }[tool]
         return validate_temporal_arguments(arguments, cursor_key)
 
-    if tool == "kernel_trace":
+    if tool == "kmp_trace":
         key_error = exact_keys(
             arguments,
             {"from", "to", "budget"},
@@ -562,7 +562,7 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
             return validate_page(arguments["page"], "action.arguments.page")
         return None
 
-    if tool == "kernel_inspect":
+    if tool == "kmp_inspect":
         key_error = exact_keys(arguments, {"ref", "include"}, set(), "action.arguments")
         if key_error is not None:
             return key_error
@@ -573,10 +573,10 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
             arguments.get("include"), "action.arguments.include"
         )
 
-    if tool == "kernel_write_memory":
+    if tool == "kmp_write_memory":
         return validate_write_memory_arguments(arguments)
 
-    if tool == "kernel_ingest":
+    if tool == "kmp_ingest":
         return validate_ingest_arguments(arguments)
 
     return f"unsupported_tool:{tool}"
@@ -1222,14 +1222,14 @@ def validate_answer_policy(value: Any) -> str | None:
 
 
 def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
-    if tool == "kernel_wake":
+    if tool == "kmp_wake":
         return (
             path_non_empty_string(arguments, ("about",))
             and optional_limit(arguments, ("budget", "tokens"), 16_000)
             and optional_limit(arguments, ("budget", "depth"), 8)
             and optional_limit(arguments, ("depth",), 8)
         )
-    if tool == "kernel_near":
+    if tool == "kmp_near":
         return (
             positive_limit(arguments, ("limit", "entries"), 64)
             and positive_limit(arguments, ("limit", "tokens"), 16_000)
@@ -1239,7 +1239,7 @@ def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
             and optional_limit(arguments, ("window", "after_entries"), 64)
             and path_cursor(arguments, ("around",)) is not None
         )
-    if tool == "kernel_trace":
+    if tool == "kmp_trace":
         return (
             path_string(arguments, ("from",)) is not None
             and path_string(arguments, ("to",)) is not None
@@ -1247,22 +1247,22 @@ def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
             and optional_limit(arguments, ("budget", "depth"), 8)
             and optional_limit(arguments, ("page", "entries"), 256)
         )
-    if tool == "kernel_inspect":
+    if tool == "kmp_inspect":
         return (
             path_string(arguments, ("ref",)) is not None
             and arguments.get("include", {}).get("raw") is False
         )
-    if tool in {"kernel_goto", "kernel_rewind", "kernel_forward"}:
-        cursor_key = "at" if tool == "kernel_goto" else "from"
+    if tool in {"kmp_goto", "kmp_rewind", "kmp_forward"}:
+        cursor_key = "at" if tool == "kmp_goto" else "from"
         return (
             path_cursor(arguments, (cursor_key,)) is not None
             and optional_limit(arguments, ("limit", "entries"), 64)
             and optional_limit(arguments, ("limit", "tokens"), 16_000)
             and optional_limit(arguments, ("budget", "tokens"), 16_000)
         )
-    if tool == "kernel_ask":
+    if tool == "kmp_ask":
         return optional_limit(arguments, ("budget", "tokens"), 16_000)
-    if tool == "kernel_write_memory":
+    if tool == "kmp_write_memory":
         connect_to = arguments.get("connect_to")
         return (
             validate_write_memory_arguments(arguments) is None
@@ -1272,7 +1272,7 @@ def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
             and isinstance(connect_to, list)
             and 0 < len(connect_to) <= 32
         )
-    if tool == "kernel_ingest":
+    if tool == "kmp_ingest":
         memory = arguments.get("memory", {})
         dimensions = memory.get("dimensions") if isinstance(memory, dict) else None
         entries = memory.get("entries") if isinstance(memory, dict) else None

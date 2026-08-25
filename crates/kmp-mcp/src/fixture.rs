@@ -45,29 +45,25 @@ impl KernelMcpToolBackend for FixtureKernelMcpBackend {
 
 pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value, ToolError> {
     match name {
-        "kernel_ingest" | "kernel_remember" | "kernel_ingest_context" => {
+        "kmp_ingest" | "kernel_remember" | "kernel_ingest_context" => {
             build_ingest_plan(arguments)?;
             read_fixture_tool_result(arguments, &[], INGEST_RESPONSE_FIXTURE)
         }
-        "kernel_wake" => {
+        "kmp_wake" => {
             read_recall_fixture_tool_result(arguments, &["about"], WAKE_RESPONSE_FIXTURE, 1600)
         }
-        "kernel_ask" => read_recall_fixture_tool_result(
+        "kmp_ask" => read_recall_fixture_tool_result(
             arguments,
             &["about", "question"],
             ASK_RESPONSE_FIXTURE,
             2400,
         ),
-        "kernel_goto" => read_fixture_tool_result(arguments, &["about"], GOTO_RESPONSE_FIXTURE),
-        "kernel_near" => read_fixture_tool_result(arguments, &["about"], NEAR_RESPONSE_FIXTURE),
-        "kernel_rewind" => read_fixture_tool_result(arguments, &["about"], REWIND_RESPONSE_FIXTURE),
-        "kernel_forward" => {
-            read_fixture_tool_result(arguments, &["about"], FORWARD_RESPONSE_FIXTURE)
-        }
-        "kernel_trace" => {
-            read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE)
-        }
-        "kernel_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
+        "kmp_goto" => read_fixture_tool_result(arguments, &["about"], GOTO_RESPONSE_FIXTURE),
+        "kmp_near" => read_fixture_tool_result(arguments, &["about"], NEAR_RESPONSE_FIXTURE),
+        "kmp_rewind" => read_fixture_tool_result(arguments, &["about"], REWIND_RESPONSE_FIXTURE),
+        "kmp_forward" => read_fixture_tool_result(arguments, &["about"], FORWARD_RESPONSE_FIXTURE),
+        "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
+        "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),

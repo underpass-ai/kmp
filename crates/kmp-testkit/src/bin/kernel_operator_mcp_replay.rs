@@ -844,7 +844,7 @@ mod tests {
             "same-step".to_string(),
             VecDeque::from([
                 Prediction {
-                    action: json!({"type": "tool_call", "tool": "kernel_ask"}),
+                    action: json!({"type": "tool_call", "tool": "kmp_ask"}),
                 },
                 Prediction {
                     action: json!({"type": "stop"}),
@@ -855,7 +855,7 @@ mod tests {
         let first = take_prediction(&mut predictions, "same-step").expect("first prediction");
         let second = take_prediction(&mut predictions, "same-step").expect("second prediction");
 
-        assert_eq!(first.action["tool"], "kernel_ask");
+        assert_eq!(first.action["tool"], "kmp_ask");
         assert_eq!(second.action["type"], "stop");
         assert!(take_prediction(&mut predictions, "same-step").is_none());
     }

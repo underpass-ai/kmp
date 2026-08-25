@@ -29,26 +29,26 @@ flag required. `KMP_VIEWER_ADDR` moves it; `off` declines it.
 
 Current status:
 
-- exposes `kernel_ingest`, `kernel_write_memory`, `kernel_wake`, `kernel_ask`,
-  `kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`,
-  `kernel_trace`, and `kernel_inspect`;
+- exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
+  `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
+  `kmp_trace`, and `kmp_inspect`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
 - can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;
 - live mode calls the typed `KernelMemoryService` gRPC API directly;
-- live `kernel_ask` returns a deterministic citation-oriented answer or
+- live `kmp_ask` returns a deterministic citation-oriented answer or
   `UNKNOWN`, not a generated answer; complete bodies are canonical in
   `proof.evidence`, joined from `because[].ref` and
   `proof.path[].evidence_refs`; successful asks expose retained recall terms
   and contributing semantic relation types in `proof` without exposing scoring
   internals;
-- `kernel_ask` and `kernel_wake` preserve a stable core and fill a deterministic
+- `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
   proof returns `projection.page.next_cursor`, while `budget.tokens` remains an
   advisory cl100k planning hint rather than a cross-model hard ceiling;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index;
-- `kernel_inspect` supports typed detail/link lookup and typed raw audit refs
+- `kmp_inspect` supports typed detail/link lookup and typed raw audit refs
   when `include.raw=true`, including dimension coordinates when the inspected
   object is contained by memory dimensions;
 - temporal `include.raw_refs=true` returns typed raw audit refs for the selected
@@ -104,7 +104,7 @@ KMP_MCP_BACKEND=fixture KMP_MCP_BIN=kmp-mcp \
 Tool call example:
 
 ```json
-{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kernel_ask","arguments":{"about":"question:830ce83f","question":"Where did Rachel move after her recent relocation?","answer_policy":"evidence_or_unknown","budget":{"detail":"balanced","max_bytes":10000}}}}
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kmp_ask","arguments":{"about":"question:830ce83f","question":"Where did Rachel move after her recent relocation?","answer_policy":"evidence_or_unknown","budget":{"detail":"balanced","max_bytes":10000}}}}
 ```
 
 When `projection.page.has_more` is true, repeat the same tool and bound
@@ -117,16 +117,16 @@ Live backend mapping:
 
 | Tool | Kernel read/write |
 |:-----|:------------------|
-| `kernel_ingest` | `KernelMemoryService.Ingest` |
-| `kernel_write_memory` | writer-friendly helper that validates relation quality and compiles to `KernelMemoryService.Ingest` |
-| `kernel_wake` | `KernelMemoryService.Wake` |
-| `kernel_ask` | `KernelMemoryService.Ask` |
-| `kernel_goto` | `KernelMemoryService.Goto` |
-| `kernel_near` | `KernelMemoryService.Near` |
-| `kernel_rewind` | `KernelMemoryService.Rewind` |
-| `kernel_forward` | `KernelMemoryService.Forward` |
-| `kernel_trace` | `KernelMemoryService.Trace` |
-| `kernel_inspect` | `KernelMemoryService.Inspect` |
+| `kmp_ingest` | `KernelMemoryService.Ingest` |
+| `kmp_write_memory` | writer-friendly helper that validates relation quality and compiles to `KernelMemoryService.Ingest` |
+| `kmp_wake` | `KernelMemoryService.Wake` |
+| `kmp_ask` | `KernelMemoryService.Ask` |
+| `kmp_goto` | `KernelMemoryService.Goto` |
+| `kmp_near` | `KernelMemoryService.Near` |
+| `kmp_rewind` | `KernelMemoryService.Rewind` |
+| `kmp_forward` | `KernelMemoryService.Forward` |
+| `kmp_trace` | `KernelMemoryService.Trace` |
+| `kmp_inspect` | `KernelMemoryService.Inspect` |
 
 ## License
 

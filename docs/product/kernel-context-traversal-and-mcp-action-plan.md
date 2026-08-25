@@ -287,15 +287,15 @@ trace why two entries are connected
 Most callers should only need:
 
 ```text
-kernel_ingest
-kernel_wake
-kernel_ask
-kernel_goto
-kernel_near
-kernel_rewind
-kernel_forward
-kernel_trace
-kernel_inspect
+kmp_ingest
+kmp_wake
+kmp_ask
+kmp_goto
+kmp_near
+kmp_rewind
+kmp_forward
+kmp_trace
+kmp_inspect
 ```
 
 These are not CRUD endpoints. They are memory moves:
@@ -520,7 +520,7 @@ as a synthetic `proof.position` field on `ask`.
 Primary write move:
 
 ```text
-kernel_ingest
+kmp_ingest
 ```
 
 Minimal input:
@@ -621,7 +621,7 @@ Hybrid mode:
 Primary continuation move:
 
 ```text
-kernel_wake
+kmp_wake
 ```
 
 Minimal input:
@@ -649,7 +649,7 @@ Minimal input:
 Primary question move:
 
 ```text
-kernel_ask
+kmp_ask
 ```
 
 Minimal input:
@@ -662,7 +662,7 @@ Minimal input:
 }
 ```
 
-Current live `kernel_ask` behavior is deterministic and bounded:
+Current live `kmp_ask` behavior is deterministic and bounded:
 
 - omitted dimension selection defaults to all dimensions in the current `about`;
 - callers may select one, several, or all abouts through `dimensions`;
@@ -754,7 +754,7 @@ Reading defaults:
 Detailed request and response shapes are specified in
 [`kernel-context-api-design.md`](kernel-context-api-design.md).
 
-### `kernel_ingest`
+### `kmp_ingest`
 
 Ingests memory: dimensions, entries, relations, evidence, and provenance.
 
@@ -787,7 +787,7 @@ Output:
 }
 ```
 
-### `kernel_wake`
+### `kmp_wake`
 
 Default continuation tool. Use this when a human or agent needs to resume work.
 
@@ -804,7 +804,7 @@ Input:
 }
 ```
 
-### `kernel_ask`
+### `kmp_ask`
 
 Evidence-backed question tool. Use this when the caller needs an answer from
 memory.
@@ -819,7 +819,7 @@ Input:
 }
 ```
 
-### `kernel_goto`
+### `kmp_goto`
 
 Temporal traversal tool. Use this when the caller needs memory state at a
 concrete timestamp, sequence, or ref.
@@ -838,7 +838,7 @@ Input:
 }
 ```
 
-### `kernel_near`
+### `kmp_near`
 
 Temporal traversal tool. Use this when the caller needs the temporal
 neighborhood around a timestamp, sequence, or ref.
@@ -862,7 +862,7 @@ Input:
 }
 ```
 
-### `kernel_rewind`
+### `kmp_rewind`
 
 Temporal traversal tool. Use this when the caller needs to know what memory knew
 before a cursor, timestamp, or sequence point.
@@ -885,13 +885,13 @@ Input:
 }
 ```
 
-`kernel_rewind` can apply to:
+`kmp_rewind` can apply to:
 
 - one dimension;
 - a selected set of dimensions;
 - all dimensions in the memory.
 
-### `kernel_forward`
+### `kmp_forward`
 
 Temporal traversal tool. Use this when the caller needs to know what changed
 after a cursor, timestamp, or sequence point.
@@ -917,7 +917,7 @@ Temporal tool outputs include a `page` object with `returned`, `total`,
 `has_more`, and `next_cursor`. A partial temporal read is therefore visible to
 both humans and LLM clients instead of being confused with a complete traversal.
 
-### `kernel_trace`
+### `kmp_trace`
 
 Proof-path tool. Use this when the caller needs to know why a memory answer is
 true.
@@ -932,7 +932,7 @@ Input:
 }
 ```
 
-### `kernel_inspect`
+### `kmp_inspect`
 
 Raw audit tool for an anchor, scope, claim, entry, relation path, node id, or
 correlation id.
@@ -959,11 +959,11 @@ adapter exposes two ingest aliases plus one distinct writer-friendly tool, for
 ten tools total:
 
 ```text
-kernel_remember           -> alias for kernel_ingest
-kernel_ingest_context     -> alias for kernel_ingest
-kernel_write_memory       -> distinct writer-friendly tool with its own schema;
+kernel_remember           -> alias for kmp_ingest
+kernel_ingest_context     -> alias for kmp_ingest
+kmp_write_memory       -> distinct writer-friendly tool with its own schema;
                              validates writer intent and relation quality, then
-                             compiles to canonical kernel_ingest
+                             compiles to canonical kmp_ingest
 ```
 
 ## Storage And Indexing Requirements
@@ -1102,9 +1102,9 @@ example packs can still be added without changing the protocol.
 
 Delivered:
 
-- schemas for `kernel_ingest`, `kernel_wake`, `kernel_ask`, `kernel_goto`,
-  `kernel_near`, `kernel_rewind`, `kernel_forward`, `kernel_trace`, and
-  `kernel_inspect` under
+- schemas for `kmp_ingest`, `kmp_wake`, `kmp_ask`, `kmp_goto`,
+  `kmp_near`, `kmp_rewind`, `kmp_forward`, `kmp_trace`, and
+  `kmp_inspect` under
   [`api/examples/kernel/v1beta1/kmp`](../../api/examples/kernel/v1beta1/kmp);
 - migration note for legacy API names that still say "session"; new kernel
   vocabulary should use "scope".
@@ -1139,15 +1139,15 @@ Status: delivered.
 
 Exposed `KernelMemoryService` over gRPC:
 
-- `kernel_ingest`;
-- `kernel_wake`;
-- `kernel_ask`;
-- `kernel_goto`;
-- `kernel_near`;
-- `kernel_rewind`;
-- `kernel_forward`;
-- `kernel_trace`;
-- `kernel_inspect`;
+- `kmp_ingest`;
+- `kmp_wake`;
+- `kmp_ask`;
+- `kmp_goto`;
+- `kmp_near`;
+- `kmp_rewind`;
+- `kmp_forward`;
+- `kmp_trace`;
+- `kmp_inspect`;
 
 Also delivered:
 

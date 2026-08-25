@@ -34,8 +34,8 @@ Implemented:
 - projection processing latency via `rehydration.projection.lag` for NATS
   projection consumer loops;
 - OTel mTLS configuration support.
-- embedded quality observations for `kernel_wake`, `kernel_ask`, and
-  `kernel_trace`, buffered fail-open into a separate
+- embedded quality observations for `kmp_wake`, `kmp_ask`, and
+  `kmp_trace`, buffered fail-open into a separate
   `telemetry/quality.redb` journal with retention and time-window queries.
 
 Still important:
@@ -87,8 +87,8 @@ The MCP adapter emits one structured log event per completed or rejected
 `tools/call` request:
 
 ```text
-event=kernel_mcp_tool
-kmp_move=kernel_write_memory|kernel_ingest|kernel_wake|...
+event=kmp_mcp_tool
+kmp_move=kmp_write_memory|kmp_ingest|kmp_wake|...
 backend=fixture|grpc
 grpc_tls=disabled|server|mutual
 status=success|error
@@ -179,7 +179,7 @@ bounded `BufferedQualityMetricsObserver` to a runtime-neutral worker and a
 separate redb writer:
 
 ```text
-kernel_wake | kernel_ask | kernel_trace
+kmp_wake | kmp_ask | kmp_trace
         → QualityMetricsObserver
         → bounded try_send (drop counter on overflow)
         → batch worker

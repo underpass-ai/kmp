@@ -4,10 +4,10 @@ One binary, one tool surface, two operating modes. The KMP tools are
 identical in both — same schemas, same JSON by construction — so a client
 switches modes by changing environment variables only:
 
-- `kernel_ingest`, `kernel_write_memory`
-- `kernel_wake`, `kernel_ask`
-- `kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`
-- `kernel_trace`, `kernel_inspect`
+- `kmp_ingest`, `kmp_write_memory`
+- `kmp_wake`, `kmp_ask`
+- `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`
+- `kmp_trace`, `kmp_inspect`
 
 ## Modes at a glance
 
@@ -128,7 +128,7 @@ kmp-mcp document project:kmp --out HOW-THIS-WAS-BUILT.md
 
 `document` renders everything stored under one about as Markdown: entries in
 temporal order grouped by kind, each with its own evidence beside it and its
-ref kept visible so a reader can take it back to `kernel_inspect`; relations
+ref kept visible so a reader can take it back to `kmp_inspect`; relations
 as prose lines carrying their `why`; and two closing sections for what was
 superseded and what still contradicts, because one is history and the other
 is a live disagreement.
@@ -201,14 +201,14 @@ KMP_KERNEL_GRPC_TLS_DOMAIN_NAME=kmp-grpc \
   kmp-mcp
 ```
 
-Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
-`Ingest` (write_memory compiles to canonical ingest), `kernel_wake` → `Wake`,
-`kernel_ask` → `Ask`, temporal tools → `Goto`/`Near`/`Rewind`/`Forward`,
-`kernel_trace` → `Trace`, `kernel_inspect` → `Inspect`.
+Tool → RPC binding: `kmp_ingest`/`kmp_write_memory` →
+`Ingest` (write_memory compiles to canonical ingest), `kmp_wake` → `Wake`,
+`kmp_ask` → `Ask`, temporal tools → `Goto`/`Near`/`Rewind`/`Forward`,
+`kmp_trace` → `Trace`, `kmp_inspect` → `Inspect`.
 
 ## Tool semantics (identical in both modes)
 
-- `kernel_ask` returns a deterministic citation-oriented answer or `UNKNOWN`;
+- `kmp_ask` returns a deterministic citation-oriented answer or `UNKNOWN`;
   it never generates an LLM answer. Complete bodies occur once in
   `proof.evidence`, joined from `because[].ref` and
   `proof.path[].evidence_refs`. For a retained answer,
@@ -236,14 +236,14 @@ Tool → RPC binding: `kernel_ingest`/`kernel_write_memory` →
   instead of silently recomputing a different answer.
 - Temporal tools return deterministic kernel-owned traversal slices with a
   `page` object, so bounded partial reads are visible to operators and
-  clients. `kernel_goto` defaults to at most 50 entries when no explicit
+  clients. `kmp_goto` defaults to at most 50 entries when no explicit
   `limit.entries` is supplied.
 - Dimension scope is explicit and auditable: omitted → `current_about`;
   `abouts` requires a non-empty list; `all_abouts` traverses every memory
   anchor; `scope_ids` accepts local or namespaced
   `about:<about>:dimension:<id>` ids. Coordinate dimension kinds are checked
   against their declarations during ingest.
-- `kernel_inspect` supports object/detail/incoming/outgoing/evidence lookup;
+- `kmp_inspect` supports object/detail/incoming/outgoing/evidence lookup;
   `include.raw=true` returns typed raw audit refs including dimension
   coordinates. Temporal `include.raw_refs/evidence/relations` are supported.
 - Entry metadata and evidence metadata/source round-trip through typed reads;
@@ -309,13 +309,13 @@ cover, or when you want the server without the plugin.
 Embedded (recommended default — per-project memory, zero infrastructure):
 
 ```toml
-[mcp_servers.kernel-memory]
+[mcp_servers.kmp]
 command = "kmp-mcp"
 env = { KMP_MCP_BACKEND = "embedded" }
 ```
 
 ```bash
-claude mcp add kernel-memory --scope user \
+claude mcp add kmp --scope user \
   --env KMP_MCP_BACKEND=embedded -- ~/.cargo/bin/kmp-mcp
 ```
 

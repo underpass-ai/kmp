@@ -37,15 +37,15 @@ This was the legacy behavior to remove from MCP live mode:
 
 | MCP tool | Legacy live binding |
 |:---------|:---------------------|
-| `kernel_ingest` | `ContextCommandService.UpdateContext` |
-| `kernel_wake` | `ContextQueryService.GetContext` |
-| `kernel_ask` | `ContextQueryService.GetContext` |
-| `kernel_goto` | `ContextQueryService.GetContext` |
-| `kernel_near` | `ContextQueryService.GetContext` |
-| `kernel_rewind` | `ContextQueryService.GetContext` |
-| `kernel_forward` | `ContextQueryService.GetContext` |
-| `kernel_trace` | `ContextQueryService.GetContextPath` |
-| `kernel_inspect` | `ContextQueryService.GetNodeDetail` |
+| `kmp_ingest` | `ContextCommandService.UpdateContext` |
+| `kmp_wake` | `ContextQueryService.GetContext` |
+| `kmp_ask` | `ContextQueryService.GetContext` |
+| `kmp_goto` | `ContextQueryService.GetContext` |
+| `kmp_near` | `ContextQueryService.GetContext` |
+| `kmp_rewind` | `ContextQueryService.GetContext` |
+| `kmp_forward` | `ContextQueryService.GetContext` |
+| `kmp_trace` | `ContextQueryService.GetContextPath` |
+| `kmp_inspect` | `ContextQueryService.GetNodeDetail` |
 
 The durable surface is now `KernelMemoryService`. MCP must not own temporal or
 multidimensional traversal logic.

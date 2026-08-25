@@ -574,7 +574,7 @@ mod tests {
         let report = info();
         assert!(report.contains("Kernel Memory Protocol"));
         assert!(report.contains("10 tools on the MCP surface"));
-        assert!(report.contains("kernel_write_memory"));
+        assert!(report.contains("kmp_write_memory"));
         assert!(!report.contains("Usable"), "info states, doctor judges");
     }
 

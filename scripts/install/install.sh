@@ -52,13 +52,13 @@ echo
 echo "Register it in your agent host (memory is per-project by default):"
 echo
 echo "  Claude Code:"
-echo "    claude mcp add kernel-memory --scope user \\"
+echo "    claude mcp add kmp --scope user \\"
 echo "      --env KMP_MCP_BACKEND=embedded \\"
 echo "      -- ${INSTALL_DIR}/kmp-mcp"
 echo
 echo "  Codex CLI (~/.codex/config.toml):"
-echo "    [mcp_servers.kernel-memory]"
+echo "    [mcp_servers.kmp]"
 echo "    command = \"${INSTALL_DIR}/kmp-mcp\""
 echo "    env = { KMP_MCP_BACKEND = \"embedded\" }"
 echo
-echo "Then, inside a session: kernel_wake {\"about\":\"project:<name>\"}"
+echo "Then, inside a session: kmp_wake {\"about\":\"project:<name>\"}"

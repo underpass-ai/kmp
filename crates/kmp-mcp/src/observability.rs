@@ -89,7 +89,7 @@ pub(crate) fn record_tool_error(
         duration,
     );
     tracing::warn!(
-        event = "kernel_mcp_tool",
+        event = "kmp_mcp_tool",
         kmp_move = %canonical_move(name),
         backend,
         grpc_tls,
@@ -174,7 +174,7 @@ fn record_count_metrics(
         .build()
         .record(result.path_length as u64, &attrs);
 
-    if canonical_move(name) == "kernel_write_memory" {
+    if canonical_move(name) == "kmp_write_memory" {
         record_writer_relation_metric("rich", result.relation_rich);
         record_writer_relation_metric("anemic", result.relation_anemic);
         record_writer_relation_metric("structural", result.relation_structural);
@@ -206,7 +206,7 @@ fn log_tool_success(
     result: &ToolResultShape,
 ) {
     tracing::info!(
-        event = "kernel_mcp_tool",
+        event = "kmp_mcp_tool",
         kmp_move = %canonical_move(name),
         backend,
         grpc_tls,
@@ -246,7 +246,7 @@ fn log_tool_success(
 
 fn canonical_move(name: &str) -> &str {
     match name {
-        "kernel_remember" | "kernel_ingest_context" => "kernel_ingest",
+        "kernel_remember" | "kernel_ingest_context" => "kmp_ingest",
         other => other,
     }
 }
@@ -350,22 +350,22 @@ impl ToolResultShape {
 
 fn tool_dry_run(name: &str, arguments: &Value) -> Option<bool> {
     match canonical_move(name) {
-        "kernel_write_memory" => arguments
+        "kmp_write_memory" => arguments
             .get("options")
             .and_then(|options| options.get("dry_run"))
             .and_then(Value::as_bool),
-        "kernel_ingest" => arguments.get("dry_run").and_then(Value::as_bool),
+        "kmp_ingest" => arguments.get("dry_run").and_then(Value::as_bool),
         _ => None,
     }
 }
 
 fn include_raw(name: &str, arguments: &Value) -> Option<bool> {
     match canonical_move(name) {
-        "kernel_inspect" => arguments
+        "kmp_inspect" => arguments
             .get("include")
             .and_then(|include| include.get("raw"))
             .and_then(Value::as_bool),
-        "kernel_goto" | "kernel_near" | "kernel_rewind" | "kernel_forward" => arguments
+        "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward" => arguments
             .get("include")
             .and_then(|include| include.get("raw_refs"))
             .and_then(Value::as_bool),
@@ -437,7 +437,7 @@ mod tests {
     #[test]
     fn writer_argument_shape_counts_without_text_or_refs() {
         let shape = ToolArgumentShape::from_tool_arguments(
-            "kernel_write_memory",
+            "kmp_write_memory",
             &json!({
                 "about": "incident:mobile-login",
                 "intent": "record_decision",
@@ -474,7 +474,7 @@ mod tests {
     #[test]
     fn ingest_argument_shape_counts_canonical_memory_sections() {
         let shape = ToolArgumentShape::from_tool_arguments(
-            "kernel_ingest",
+            "kmp_ingest",
             &json!({
                 "about": "incident:mobile-login",
                 "dry_run": false,

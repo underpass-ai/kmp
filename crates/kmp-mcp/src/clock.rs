@@ -4,7 +4,7 @@
 //! On this project's own store that produced a frontier in the future: agents
 //! wrote local wall-clock time with a `Z`, and since RFC3339 permits an
 //! offset they were not even out of spec. The whole read path is ordered by
-//! this field, so `kernel_forward` from a correct present returned nothing
+//! this field, so `kmp_forward` from a correct present returned nothing
 //! while unread entries sat above it — an empty delta that looks exactly like
 //! a quiet week.
 //!

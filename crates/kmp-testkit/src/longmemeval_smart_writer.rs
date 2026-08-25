@@ -212,7 +212,7 @@ impl LongMemEvalSmartWriter {
             let dry_run_call = match call_writer_tool_with_record(
                 server,
                 request_id,
-                "kernel_write_memory",
+                "kmp_write_memory",
                 &request,
             )
             .await
@@ -222,13 +222,8 @@ impl LongMemEvalSmartWriter {
                     proposal =
                         fallback_after_rejected_llm_plan(&input, proposal, &error.to_string());
                     request = write_memory_request(&input, &proposal, &read_context);
-                    call_writer_tool_with_record(
-                        server,
-                        request_id,
-                        "kernel_write_memory",
-                        &request,
-                    )
-                    .await?
+                    call_writer_tool_with_record(server, request_id, "kmp_write_memory", &request)
+                        .await?
                 }
                 Err(error) => return Err(error),
             };
@@ -236,7 +231,7 @@ impl LongMemEvalSmartWriter {
 
             set_dry_run(&mut request, false)?;
             let commit_call =
-                call_writer_tool_with_record(server, request_id, "kernel_write_memory", &request)
+                call_writer_tool_with_record(server, request_id, "kmp_write_memory", &request)
                     .await?;
             let commit_content = commit_call.content.clone();
 
@@ -249,13 +244,9 @@ impl LongMemEvalSmartWriter {
                     "raw": false
                 }
             });
-            let verify_call = call_writer_tool_with_record(
-                server,
-                request_id,
-                "kernel_inspect",
-                &verify_arguments,
-            )
-            .await?;
+            let verify_call =
+                call_writer_tool_with_record(server, request_id, "kmp_inspect", &verify_arguments)
+                    .await?;
             let verify_content = verify_call.content.clone();
 
             log_writer_navigation(
@@ -318,7 +309,7 @@ impl LongMemEvalSmartWriter {
         let near = call_writer_tool_with_record(
             server,
             request_id,
-            "kernel_near",
+            "kmp_near",
             &json!({
                 "about": input.about,
                 "around": {"ref": input.target_ref},
@@ -340,7 +331,7 @@ impl LongMemEvalSmartWriter {
         let inspect = call_writer_tool_with_record(
             server,
             request_id,
-            "kernel_inspect",
+            "kmp_inspect",
             &json!({
                 "ref": input.target_ref,
                 "include": {
@@ -786,7 +777,7 @@ fn set_dry_run(request: &mut Value, dry_run: bool) -> Result<(), Box<dyn Error +
     let options = request
         .get_mut("options")
         .and_then(Value::as_object_mut)
-        .ok_or("kernel_write_memory request requires options")?;
+        .ok_or("kmp_write_memory request requires options")?;
     options.insert("dry_run".to_string(), json!(dry_run));
     Ok(())
 }

@@ -3,7 +3,7 @@
 A local, read-only web viewer over
 [KMP by Underpass](https://github.com/underpass-ai/kmp) memory: the graph, its
 notes, the timeline and causal traces — rendered for a human the way
-`kernel_wake`, `kernel_inspect`, `kernel_near` and `kernel_trace` render them
+`kmp_wake`, `kmp_inspect`, `kmp_near` and `kmp_trace` render them
 for an agent. Same facade, same semantics, no parallel read model.
 
 ## Why in-process

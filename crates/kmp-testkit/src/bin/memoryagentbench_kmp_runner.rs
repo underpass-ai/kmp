@@ -425,10 +425,10 @@ fn normalize_for_lexical_match(value: &str) -> String {
 
 fn validate_event(event: &MemoryAgentBenchEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
     match event.event.as_str() {
-        "ingest" if event.tool == "kernel_ingest" => Ok(()),
-        "ask" if event.tool == "kernel_ask" && event.query_index.is_some() => Ok(()),
+        "ingest" if event.tool == "kmp_ingest" => Ok(()),
+        "ask" if event.tool == "kmp_ask" && event.query_index.is_some() => Ok(()),
         "ask" => Err(format!(
-            "MemoryAgentBench ask event {} for item {} must use kernel_ask and include query_index",
+            "MemoryAgentBench ask event {} for item {} must use kmp_ask and include query_index",
             event.event_index, event.item_id
         )
         .into()),
@@ -811,7 +811,7 @@ mod tests {
             phase: "query".to_string(),
             query_index: Some(1),
             about: "memoryagentbench:split:conflict_resolution:source:fact:item:item-1".to_string(),
-            tool: "kernel_ask".to_string(),
+            tool: "kmp_ask".to_string(),
             arguments: json!({}),
         };
         let expected = MemoryAgentBenchExpected {

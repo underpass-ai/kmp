@@ -191,7 +191,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_wake",
+                "kmp_wake",
                 json!({
                     "about": about,
                     "role": "operator",
@@ -218,7 +218,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": null,
                 "known_refs": [],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [],
                 "last_result_count": 0,
                 "remaining_budget": budget(4),
@@ -235,7 +235,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_wake",
+                "kmp_wake",
                 json!({
                     "about": about,
                     "role": "operator",
@@ -262,7 +262,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_wake",
+                "last_tool": "kmp_wake",
                 "last_observed_refs": [current_ref, prior_observation_ref],
                 "remaining_budget": budget(4),
                 "requested_ask": requested_ask(
@@ -279,7 +279,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
@@ -306,7 +306,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref, prior_timeout_ref, prior_observation_ref],
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": [prior_timeout_ref, prior_observation_ref],
                 "remaining_budget": budget(4),
                 "requested_ask": requested_ask(
@@ -327,7 +327,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": about,
                     "answer_policy": "show_conflicts",
@@ -358,7 +358,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": [],
                 "remaining_budget": budget(3),
                 "requested_ask": requested_ask(
@@ -375,7 +375,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
@@ -402,7 +402,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref, "incident:payments:hint:auth-regression"],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": ["incident:payments:hint:auth-regression"],
                 "remaining_budget": budget(3),
                 "requested_ask": requested_ask(
@@ -419,7 +419,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_ask",
+                "kmp_ask",
                 json!({
                     "about": about,
                     "answer_policy": "evidence_or_unknown",
@@ -446,11 +446,11 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": [current_ref],
                 "remaining_budget": budget(4),
                 "requested_move": requested_move(
-                    "kernel_near",
+                    "kmp_near",
                     "around",
                     json!({ "ref": current_ref })
                 ),
@@ -466,7 +466,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             temporal_call(
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "ref": current_ref }),
                 json!({ "mode": "except", "scope": "current_about", "exclude": ["attempt:discarded"] }),
@@ -490,10 +490,10 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [prior_observation_ref],
                 "requested_move": requested_move(
-                    "kernel_near",
+                    "kmp_near",
                     "around",
                     json!({ "time": "2026-05-06T10:04:00Z" })
                 ),
@@ -514,7 +514,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             temporal_call(
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "time": "2026-05-06T10:04:00Z" }),
                 json!({
@@ -533,7 +533,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_goto",
+        "kmp_goto",
         "at",
         json!({ "ref": prior_observation_ref }),
         "goto-by-ref",
@@ -543,7 +543,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_goto",
+        "kmp_goto",
         "at",
         json!({ "time": "2026-05-06T10:04:00Z" }),
         "goto-by-time",
@@ -553,7 +553,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_goto",
+        "kmp_goto",
         "at",
         json!({ "sequence": 7 }),
         "goto-by-sequence",
@@ -563,7 +563,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_rewind",
+        "kmp_rewind",
         "from",
         json!({ "ref": final_decision_ref }),
         "rewind-from-decision-ref",
@@ -573,7 +573,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_rewind",
+        "kmp_rewind",
         "from",
         json!({ "time": "2026-05-06T10:05:00Z" }),
         "rewind-from-time",
@@ -583,7 +583,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_rewind",
+        "kmp_rewind",
         "from",
         json!({ "sequence": 9 }),
         "rewind-from-sequence",
@@ -593,7 +593,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_forward",
+        "kmp_forward",
         "from",
         json!({ "ref": prior_observation_ref }),
         "forward-from-ref",
@@ -603,7 +603,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_forward",
+        "kmp_forward",
         "from",
         json!({ "time": "2026-05-06T10:00:00Z" }),
         "forward-from-time",
@@ -613,7 +613,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
     push_temporal_tool(
         &mut items,
         run_id,
-        "kernel_forward",
+        "kmp_forward",
         "from",
         json!({ "sequence": 4 }),
         "forward-from-sequence",
@@ -633,13 +633,13 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [],
                 "last_result_count": 0,
                 "last_result_partial": false,
                 "remaining_budget": budget(4),
                 "requested_move": requested_move(
-                    "kernel_near",
+                    "kmp_near",
                     "around",
                     json!({ "ref": current_ref })
                 ),
@@ -655,7 +655,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             temporal_call(
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "ref": current_ref }),
                 json!({ "mode": "all", "scope": "current_about" }),
@@ -679,11 +679,11 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": final_decision_ref,
                 "known_refs": [final_decision_ref, prior_observation_ref],
-                "last_tool": "kernel_forward",
+                "last_tool": "kmp_forward",
                 "last_observed_refs": [final_decision_ref],
                 "last_result_count": 1,
                 "requested_move": requested_move(
-                    "kernel_near",
+                    "kmp_near",
                     "around",
                     json!({ "sequence": 9 })
                 ),
@@ -700,7 +700,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             temporal_call(
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "sequence": 9 }),
                 json!({ "mode": "all", "scope": "current_about" }),
@@ -730,7 +730,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     stale_decision_ref,
                     final_decision_ref
                 ],
-                "last_tool": "kernel_forward",
+                "last_tool": "kmp_forward",
                 "last_observed_refs": [final_decision_ref],
                 "last_result_page": null,
                 "remaining_budget": budget(3),
@@ -744,7 +744,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
@@ -780,7 +780,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     prior_observation_ref,
                     final_decision_ref
                 ],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [prior_timeout_ref, prior_observation_ref],
                 "last_result_page": null,
                 "remaining_budget": budget(3),
@@ -794,7 +794,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": prior_timeout_ref,
                     "to": final_decision_ref,
@@ -831,7 +831,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     stale_decision_ref,
                     final_decision_ref
                 ],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [prior_observation_ref, final_decision_ref],
                 "last_result_page": {
                     "entries": 16,
@@ -850,7 +850,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
@@ -882,7 +882,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "current_ref": prior_observation_ref,
                 "trace_target_ref": final_decision_ref,
                 "known_refs": [prior_observation_ref, stale_decision_ref, final_decision_ref],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [prior_observation_ref, stale_decision_ref],
                 "last_result_page": {
                     "entries": 16,
@@ -901,7 +901,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": prior_observation_ref,
                     "to": final_decision_ref,
@@ -932,7 +932,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": prior_observation_ref,
                 "known_refs": [prior_observation_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [prior_observation_ref],
                 "remaining_budget": budget(2),
                 "inspection_request": inspection_request(prior_observation_ref),
@@ -943,7 +943,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_inspect",
+                "kmp_inspect",
                 json!({
                     "ref": prior_observation_ref,
                     "include": {
@@ -971,7 +971,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": final_decision_ref,
                 "known_refs": [final_decision_ref, prior_observation_ref],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [final_decision_ref, prior_observation_ref],
                 "remaining_budget": budget(2),
                 "inspection_request": inspection_request(final_decision_ref),
@@ -982,7 +982,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_inspect",
+                "kmp_inspect",
                 json!({
                     "ref": final_decision_ref,
                     "include": {
@@ -1010,7 +1010,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": prior_timeout_ref,
                 "known_refs": [prior_timeout_ref, prior_observation_ref],
-                "last_tool": "kernel_rewind",
+                "last_tool": "kmp_rewind",
                 "last_observed_refs": [prior_timeout_ref],
                 "remaining_budget": budget(2),
                 "inspection_request": inspection_request(prior_timeout_ref),
@@ -1021,7 +1021,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_inspect",
+                "kmp_inspect",
                 json!({
                     "ref": prior_timeout_ref,
                     "include": {
@@ -1049,7 +1049,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": stale_decision_ref,
                 "known_refs": [stale_decision_ref, final_decision_ref],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [stale_decision_ref, final_decision_ref],
                 "remaining_budget": budget(2),
                 "inspection_request": inspection_request(stale_decision_ref),
@@ -1060,7 +1060,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_inspect",
+                "kmp_inspect",
                 json!({
                     "ref": stale_decision_ref,
                     "include": {
@@ -1088,7 +1088,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref, prior_observation_ref, final_decision_ref],
-                "last_tool": "kernel_inspect",
+                "last_tool": "kmp_inspect",
                 "last_observed_refs": [prior_observation_ref, final_decision_ref],
                 "remaining_budget": budget(0),
                 "requested_stop": requested_stop(
@@ -1124,7 +1124,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:draft:decision:refresh-retry",
                 "known_refs": [prior_observation_ref, stale_decision_ref],
-                "last_tool": "kernel_inspect",
+                "last_tool": "kmp_inspect",
                 "last_observed_refs": [prior_observation_ref],
                 "candidate_refs": [prior_observation_ref, stale_decision_ref],
                 "read_context": {
@@ -1149,11 +1149,11 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }
             }),
             full_tools.clone(),
-            tool_call("kernel_write_memory", write_memory_arguments(true)),
+            tool_call("kmp_write_memory", write_memory_arguments(true)),
             json!({
                 "success": true,
                 "dry_run": true,
-                "compiled_to": "kernel_ingest",
+                "compiled_to": "kmp_ingest",
                 "relation_quality": {
                     "relation_rich_count": 1,
                     "relation_anemic_count": 0,
@@ -1181,7 +1181,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:draft:observation:refresh-race-confirmed",
                 "known_refs": [prior_observation_ref],
-                "last_tool": "kernel_inspect",
+                "last_tool": "kmp_inspect",
                 "last_observed_refs": [prior_observation_ref],
                 "candidate_refs": [prior_observation_ref],
                 "read_context": {
@@ -1207,13 +1207,13 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             full_tools.clone(),
             tool_call(
-                "kernel_write_memory",
+                "kmp_write_memory",
                 write_memory_rich_without_delta_arguments(),
             ),
             json!({
                 "success": true,
                 "dry_run": true,
-                "compiled_to": "kernel_ingest",
+                "compiled_to": "kmp_ingest",
                 "relation_quality": {
                     "relation_rich_count": 1,
                     "relation_anemic_count": 0,
@@ -1242,7 +1242,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:draft:turn:follow-up",
                 "known_refs": [final_decision_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [final_decision_ref],
                 "candidate_refs": [final_decision_ref],
                 "read_context": { "temporal_refs": [final_decision_ref] },
@@ -1264,11 +1264,11 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }
             }),
             full_tools.clone(),
-            tool_call("kernel_write_memory", write_memory_anemic_arguments()),
+            tool_call("kmp_write_memory", write_memory_anemic_arguments()),
             json!({
                 "success": true,
                 "dry_run": true,
-                "compiled_to": "kernel_ingest",
+                "compiled_to": "kmp_ingest",
                 "relation_quality": {
                     "relation_rich_count": 0,
                     "relation_anemic_count": 1,
@@ -1296,7 +1296,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:draft:turn:operator-note",
                 "known_refs": [final_decision_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [final_decision_ref],
                 "candidate_refs": [final_decision_ref],
                 "read_context": { "temporal_refs": [final_decision_ref] },
@@ -1320,13 +1320,13 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             full_tools.clone(),
             tool_call(
-                "kernel_write_memory",
+                "kmp_write_memory",
                 write_memory_anemic_without_delta_arguments(),
             ),
             json!({
                 "success": true,
                 "dry_run": true,
-                "compiled_to": "kernel_ingest",
+                "compiled_to": "kmp_ingest",
                 "relation_quality": {
                     "relation_rich_count": 0,
                     "relation_anemic_count": 1,
@@ -1410,7 +1410,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:draft:decision:ambiguous",
                 "known_refs": [prior_observation_ref, stale_decision_ref],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [prior_observation_ref, stale_decision_ref],
                 "candidate_refs": [prior_observation_ref, stale_decision_ref],
                 "read_context": {
@@ -1463,7 +1463,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": "incident:mobile-login:entry:decision:refresh-retry",
                 "known_refs": [prior_observation_ref],
-                "last_tool": "kernel_write_memory",
+                "last_tool": "kmp_write_memory",
                 "last_observed_refs": [prior_observation_ref],
                 "canonical_payload_ready": true,
                 "canonical_payload": ingest_arguments(),
@@ -1474,7 +1474,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }
             }),
             full_tools.clone(),
-            tool_call("kernel_ingest", ingest_arguments()),
+            tool_call("kmp_ingest", ingest_arguments()),
             json!({
                 "success": true,
                 "dry_run": true,
@@ -1508,7 +1508,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     stale_decision_ref,
                     final_decision_ref
                 ],
-                "last_tool": "kernel_write_memory",
+                "last_tool": "kmp_write_memory",
                 "last_observed_refs": [prior_observation_ref, final_decision_ref],
                 "canonical_payload_ready": true,
                 "canonical_payload": ingest_multi_entry_arguments(),
@@ -1519,7 +1519,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }
             }),
             full_tools.clone(),
-            tool_call("kernel_ingest", ingest_multi_entry_arguments()),
+            tool_call("kmp_ingest", ingest_multi_entry_arguments()),
             json!({
                 "success": true,
                 "dry_run": true,
@@ -1561,7 +1561,7 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [],
                 "last_result_count": 0,
                 "remaining_budget": budget(4),
@@ -1578,7 +1578,7 @@ fn golden_v3_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools,
             tool_call(
-                "kernel_wake",
+                "kmp_wake",
                 json!({
                     "about": about,
                     "role": "operator",
@@ -1621,13 +1621,13 @@ fn golden_v4_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref, prior_observation_ref, prior_timeout_ref, final_decision_ref],
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": [prior_observation_ref],
                 "last_result_count": 1,
                 "last_result_partial": false,
                 "remaining_budget": budget(3),
                 "requested_move": requested_move(
-                    "kernel_near",
+                    "kmp_near",
                     "around",
                     json!({ "ref": prior_observation_ref })
                 ),
@@ -1647,7 +1647,7 @@ fn golden_v4_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools,
             temporal_call(
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "ref": prior_observation_ref }),
                 json!({
@@ -1715,7 +1715,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_wake",
+                "kmp_wake",
                 json!({
                     "about": about,
                     "role": "operator",
@@ -1742,7 +1742,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [],
                 "last_result_count": 0,
                 "remaining_budget": budget(3),
@@ -1755,7 +1755,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_wake",
+                "kmp_wake",
                 json!({
                     "about": about,
                     "role": "operator",
@@ -1812,7 +1812,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({
                     "current_ref": current_ref,
                     "known_refs": refs,
-                    "last_tool": "kernel_near",
+                    "last_tool": "kmp_near",
                     "last_observed_refs": [observation_ref, decision_ref],
                     "remaining_budget": budget(3),
                     "requested_ask": requested_ask(
@@ -1825,7 +1825,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }),
                 read_tools.clone(),
                 tool_call(
-                    "kernel_ask",
+                    "kmp_ask",
                     json!({
                         "about": about,
                         "answer_policy": answer_policy,
@@ -1879,24 +1879,18 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({
                     "current_ref": current_ref,
                     "known_refs": refs,
-                    "last_tool": "kernel_ask",
+                    "last_tool": "kmp_ask",
                     "last_observed_refs": [observation_ref],
                     "last_result_count": if policy == "expand_window" { 0 } else { 1 },
                     "last_result_partial": policy == "expand_window",
                     "remaining_budget": budget(3),
-                    "requested_move": requested_move("kernel_near", "around", around.clone()),
+                    "requested_move": requested_move("kmp_near", "around", around.clone()),
                     "requested_scope": dimensions.clone(),
                     "requested_bounds": requested_bounds(limit.clone(), window.clone())
                 }),
                 read_tools.clone(),
                 temporal_call_for_about(
-                    about,
-                    "kernel_near",
-                    "around",
-                    around,
-                    dimensions,
-                    limit,
-                    window,
+                    about, "kmp_near", "around", around, dimensions, limit, window,
                 ),
                 json!({ "success": true, "observed_refs": [observation_ref, decision_ref] }),
                 json!({ "bounded": true, "contract_expected": true, "holdout": true, "policy": policy }),
@@ -1906,7 +1900,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
 
     for (tool, cursor_key, cursor, step_id, limit, window) in [
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "ref": observation_ref }),
             "holdout-goto-ref",
@@ -1914,7 +1908,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 3, "after_entries": 2 }),
         ),
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "time": "2026-05-14T09:22:00Z" }),
             "holdout-goto-time",
@@ -1922,7 +1916,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "sequence": 21 }),
             "holdout-goto-sequence",
@@ -1930,7 +1924,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "ref": decision_ref }),
             "holdout-rewind-ref",
@@ -1938,7 +1932,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "time": "2026-05-14T09:27:00Z" }),
             "holdout-rewind-time",
@@ -1946,7 +1940,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "sequence": 24 }),
             "holdout-rewind-sequence",
@@ -1954,7 +1948,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 9, "after_entries": 0 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "ref": stale_hypothesis_ref }),
             "holdout-forward-ref",
@@ -1962,7 +1956,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 0, "after_entries": 9 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "time": "2026-05-14T09:12:00Z" }),
             "holdout-forward-time",
@@ -1970,7 +1964,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({ "before_entries": 0, "after_entries": 9 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "sequence": 17 }),
             "holdout-forward-sequence",
@@ -1990,7 +1984,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({
                     "current_ref": decision_ref,
                     "known_refs": refs,
-                    "last_tool": "kernel_trace",
+                    "last_tool": "kmp_trace",
                     "last_observed_refs": [observation_ref, decision_ref],
                     "remaining_budget": budget(3),
                     "requested_move": requested_move(tool, cursor_key, cursor.clone()),
@@ -2026,7 +2020,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "current_ref": observation_ref,
                 "trace_target_ref": decision_ref,
                 "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
-                "last_tool": "kernel_forward",
+                "last_tool": "kmp_forward",
                 "last_observed_refs": [decision_ref],
                 "last_result_page": null,
                 "remaining_budget": budget(2),
@@ -2039,7 +2033,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": observation_ref,
                     "to": decision_ref,
@@ -2067,7 +2061,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "current_ref": observation_ref,
                 "trace_target_ref": decision_ref,
                 "known_refs": [observation_ref, stale_hypothesis_ref, decision_ref],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [observation_ref, stale_hypothesis_ref],
                 "last_result_page": {
                     "entries": 14,
@@ -2085,7 +2079,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             }),
             read_tools.clone(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": observation_ref,
                     "to": decision_ref,
@@ -2116,13 +2110,13 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({
                     "current_ref": target_ref,
                     "known_refs": [target_ref, observation_ref, decision_ref],
-                    "last_tool": "kernel_trace",
+                    "last_tool": "kmp_trace",
                     "last_observed_refs": [target_ref],
                     "remaining_budget": budget(2),
                     "inspection_request": inspection_request(target_ref)
                 }),
                 read_tools.clone(),
-                tool_call("kernel_inspect", inspection_request(target_ref)),
+                tool_call("kmp_inspect", inspection_request(target_ref)),
                 json!({ "success": true, "observed_refs": [target_ref] }),
                 json!({ "bounded": true, "contract_expected": true, "holdout": true, "raw_access": false }),
             ),
@@ -2141,9 +2135,9 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref],
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": [],
-                "proposed_tool": "kernel_ask",
+                "proposed_tool": "kmp_ask",
                 "proposed_arguments": {
                     "about": about,
                     "dimensions": { "mode": "all", "scope": "abouts", "abouts": [] },
@@ -2179,7 +2173,7 @@ fn read_generalization_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
             json!({
                 "current_ref": current_ref,
                 "known_refs": [current_ref, observation_ref, decision_ref],
-                "last_tool": "kernel_inspect",
+                "last_tool": "kmp_inspect",
                 "last_observed_refs": [observation_ref, decision_ref],
                 "remaining_budget": budget(0),
                 "requested_stop": requested_stop(
@@ -2264,7 +2258,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }),
                 read_tools.clone(),
                 tool_call(
-                    "kernel_wake",
+                    "kmp_wake",
                     json!({
                         "about": about,
                         "role": "operator",
@@ -2322,7 +2316,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     json!({
                         "current_ref": current_ref,
                         "known_refs": refs,
-                        "last_tool": "kernel_near",
+                        "last_tool": "kmp_near",
                         "last_observed_refs": [observation_ref, decision_ref],
                         "remaining_budget": budget(3),
                         "requested_ask": requested_ask(
@@ -2339,7 +2333,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     }),
                     read_tools.clone(),
                     tool_call(
-                        "kernel_ask",
+                        "kmp_ask",
                         json!({
                             "about": about,
                             "answer_policy": answer_policy,
@@ -2394,12 +2388,12 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     json!({
                         "current_ref": current_ref,
                         "known_refs": refs,
-                        "last_tool": "kernel_ask",
+                        "last_tool": "kmp_ask",
                         "last_observed_refs": [observation_ref],
                         "last_result_count": if policy == "expand_window" { 0 } else { 1 },
                         "last_result_partial": policy == "expand_window",
                         "remaining_budget": budget(3),
-                        "requested_move": requested_move("kernel_near", "around", around.clone()),
+                        "requested_move": requested_move("kmp_near", "around", around.clone()),
                         "requested_scope": dimensions.clone(),
                         "requested_bounds": requested_bounds(limit.clone(), window.clone()),
                         "operator_state": {
@@ -2409,13 +2403,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     }),
                     read_tools.clone(),
                     temporal_call_for_about(
-                        &about,
-                        "kernel_near",
-                        "around",
-                        around,
-                        dimensions,
-                        limit,
-                        window,
+                        &about, "kmp_near", "around", around, dimensions, limit, window,
                     ),
                     json!({ "success": true, "observed_refs": [observation_ref, decision_ref] }),
                     json!({ "bounded": true, "contract_expected": true, "rare_expansion": true, "policy": policy }),
@@ -2425,7 +2413,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
 
         for (tool, cursor_key, cursor, step_suffix, limit, window) in [
             (
-                "kernel_goto",
+                "kmp_goto",
                 "at",
                 json!({ "sequence": later_sequence }),
                 "goto-sequence",
@@ -2433,7 +2421,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({ "before_entries": 4, "after_entries": 2 }),
             ),
             (
-                "kernel_rewind",
+                "kmp_rewind",
                 "from",
                 json!({ "time": later_time }),
                 "rewind-time",
@@ -2441,7 +2429,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 json!({ "before_entries": 8, "after_entries": 0 }),
             ),
             (
-                "kernel_forward",
+                "kmp_forward",
                 "from",
                 json!({ "ref": stale_ref }),
                 "forward-ref",
@@ -2462,7 +2450,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     json!({
                         "current_ref": decision_ref,
                         "known_refs": refs,
-                        "last_tool": "kernel_trace",
+                        "last_tool": "kmp_trace",
                         "last_observed_refs": [observation_ref, decision_ref],
                         "remaining_budget": budget(3),
                         "requested_move": requested_move(tool, cursor_key, cursor.clone()),
@@ -2505,7 +2493,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "current_ref": observation_ref,
                     "trace_target_ref": decision_ref,
                     "known_refs": [observation_ref, stale_ref, decision_ref],
-                    "last_tool": "kernel_forward",
+                    "last_tool": "kmp_forward",
                     "last_observed_refs": [decision_ref],
                     "last_result_page": null,
                     "remaining_budget": budget(2),
@@ -2522,7 +2510,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }),
                 read_tools.clone(),
                 tool_call(
-                    "kernel_trace",
+                    "kmp_trace",
                     json!({
                         "from": observation_ref,
                         "to": decision_ref,
@@ -2557,7 +2545,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "current_ref": observation_ref,
                     "trace_target_ref": decision_ref,
                     "known_refs": [observation_ref, stale_ref, decision_ref],
-                    "last_tool": "kernel_trace",
+                    "last_tool": "kmp_trace",
                     "last_observed_refs": [observation_ref, stale_ref],
                     "last_result_page": {
                         "entries": 14,
@@ -2579,7 +2567,7 @@ fn read_rare_expansion_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 }),
                 read_tools.clone(),
                 tool_call(
-                    "kernel_trace",
+                    "kmp_trace",
                     json!({
                         "from": observation_ref,
                         "to": decision_ref,
@@ -2956,7 +2944,7 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": current_ref,
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_near",
+                    "last_tool": "kmp_near",
                     "last_observed_refs": [prior_observation_ref, final_decision_ref],
                     "remaining_budget": budget(3),
                     "requested_ask": requested_ask(
@@ -2973,7 +2961,7 @@ fn push_training_corpus_variants(
                 }),
                 read_tools.to_vec(),
                 tool_call(
-                    "kernel_ask",
+                    "kmp_ask",
                     json!({
                         "about": about,
                         "answer_policy": answer_policy,
@@ -3023,9 +3011,9 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": current_ref,
                     "known_refs": [current_ref],
-                    "last_tool": "kernel_ask",
+                    "last_tool": "kmp_ask",
                     "last_observed_refs": [],
-                    "proposed_tool": "kernel_ask",
+                    "proposed_tool": "kmp_ask",
                     "proposed_arguments": {
                         "about": about,
                         "dimensions": invalid_dimensions,
@@ -3057,7 +3045,7 @@ fn push_training_corpus_variants(
 
     for (tool, cursor_key, cursor, step_id, decision, limit, window) in [
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "ref": race_confirmed_ref }),
             "goto-by-ref-confirmed-observation",
@@ -3066,7 +3054,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 2, "after_entries": 2 }),
         ),
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "time": "2026-05-06T10:06:00Z" }),
             "goto-by-time-confirmation-snapshot",
@@ -3075,7 +3063,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
-            "kernel_goto",
+            "kmp_goto",
             "at",
             json!({ "sequence": 11 }),
             "goto-by-sequence-final-remediation",
@@ -3084,7 +3072,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 4, "after_entries": 2 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "ref": race_confirmed_ref }),
             "rewind-from-confirmed-observation",
@@ -3093,7 +3081,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "time": "2026-05-06T10:07:00Z" }),
             "rewind-from-time-before-final-decision",
@@ -3102,7 +3090,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
-            "kernel_rewind",
+            "kmp_rewind",
             "from",
             json!({ "sequence": 11 }),
             "rewind-from-sequence-before-remediation",
@@ -3111,7 +3099,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 8, "after_entries": 0 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "ref": stale_decision_ref }),
             "forward-from-stale-decision",
@@ -3120,7 +3108,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 0, "after_entries": 8 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "time": "2026-05-06T10:03:00Z" }),
             "forward-from-time-find-confirmation",
@@ -3129,7 +3117,7 @@ fn push_training_corpus_variants(
             json!({ "before_entries": 0, "after_entries": 8 }),
         ),
         (
-            "kernel_forward",
+            "kmp_forward",
             "from",
             json!({ "sequence": 7 }),
             "forward-from-sequence-find-decision",
@@ -3150,7 +3138,7 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": final_decision_ref,
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_trace",
+                    "last_tool": "kmp_trace",
                     "last_observed_refs": [prior_observation_ref, final_decision_ref],
                     "requested_move": requested_move(tool, cursor_key, cursor.clone()),
                     "requested_scope": json!({ "mode": "all", "scope": "current_about" }),
@@ -3228,11 +3216,11 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": current_ref,
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_near",
+                    "last_tool": "kmp_near",
                     "last_observed_refs": [prior_observation_ref, final_decision_ref],
                     "last_result_count": last_count,
                     "last_result_partial": partial,
-                    "requested_move": requested_move("kernel_near", "around", around.clone()),
+                    "requested_move": requested_move("kmp_near", "around", around.clone()),
                     "requested_scope": dimensions.clone(),
                     "requested_bounds": requested_bounds(limit.clone(), window.clone()),
                     "remaining_budget": budget(3),
@@ -3242,7 +3230,7 @@ fn push_training_corpus_variants(
                     }
                 }),
                 read_tools.to_vec(),
-                temporal_call("kernel_near", "around", around, dimensions, limit, window),
+                temporal_call("kmp_near", "around", around, dimensions, limit, window),
                 json!({ "success": true, "observed_refs": [prior_observation_ref, final_decision_ref] }),
                 json!({ "bounded": true, "contract_expected": true, "policy": policy }),
             ),
@@ -3261,7 +3249,7 @@ fn push_training_corpus_variants(
             json!({
                 "current_ref": current_ref,
                 "known_refs": [prior_observation_ref, stale_decision_ref, final_decision_ref],
-                "last_tool": "kernel_trace",
+                "last_tool": "kmp_trace",
                 "last_observed_refs": [prior_observation_ref, stale_decision_ref, final_decision_ref],
                 "last_result_page": {
                     "entries": 12,
@@ -3333,7 +3321,7 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": format!("incident:mobile-login:draft:{step_id}"),
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_inspect",
+                    "last_tool": "kmp_inspect",
                     "last_observed_refs": [prior_observation_ref, final_decision_ref],
                     "candidate_refs": reader_refs,
                     "read_context": {
@@ -3344,7 +3332,7 @@ fn push_training_corpus_variants(
                     "draft_write": {
                         "intent": "record_memory",
                         "prepared_arguments": arguments.clone(),
-                        "relation_requirement": "use only strict kernel_write_memory fields; do not add strategy or helper metadata"
+                        "relation_requirement": "use only strict kmp_write_memory fields; do not add strategy or helper metadata"
                     },
                     "remaining_budget": budget(2),
                     "operator_state": {
@@ -3354,11 +3342,11 @@ fn push_training_corpus_variants(
                     }
                 }),
                 full_tools.to_vec(),
-                tool_call("kernel_write_memory", arguments),
+                tool_call("kmp_write_memory", arguments),
                 json!({
                     "success": true,
                     "dry_run": true,
-                    "compiled_to": "kernel_ingest"
+                    "compiled_to": "kmp_ingest"
                 }),
                 json!({
                     "bounded": true,
@@ -3405,7 +3393,7 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": format!("incident:mobile-login:draft:{step_id}"),
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_near",
+                    "last_tool": "kmp_near",
                     "last_observed_refs": [prior_observation_ref],
                     "candidate_refs": [prior_observation_ref],
                     "read_context": {
@@ -3458,7 +3446,7 @@ fn push_training_corpus_variants(
                 json!({
                     "current_ref": format!("incident:mobile-login:entry:{step_id}"),
                     "known_refs": reader_refs,
-                    "last_tool": "kernel_write_memory",
+                    "last_tool": "kmp_write_memory",
                     "last_observed_refs": [prior_observation_ref, final_decision_ref],
                     "canonical_payload_ready": true,
                     "canonical_payload": arguments.clone(),
@@ -3469,7 +3457,7 @@ fn push_training_corpus_variants(
                     }
                 }),
                 full_tools.to_vec(),
-                tool_call("kernel_ingest", arguments),
+                tool_call("kmp_ingest", arguments),
                 json!({ "success": true, "dry_run": true, "entries": entries }),
                 json!({ "bounded": true, "contract_expected": true, "canonical_write": true }),
             ),
@@ -3540,7 +3528,7 @@ fn push_writer_pre_read_near(
             read_tools.to_vec(),
             temporal_call_for_about(
                 about,
-                "kernel_near",
+                "kmp_near",
                 "around",
                 json!({ "ref": target_ref }),
                 json!({ "mode": "all", "scope": "current_about" }),
@@ -3592,7 +3580,7 @@ fn push_writer_pre_read_inspect(
                 entry_ref,
                 candidate_ref_details,
                 vec![target_ref.to_string()],
-                Some("kernel_near"),
+                Some("kmp_near"),
                 vec![target_ref.to_string()],
                 Some(json!({
                     "returned": 3,
@@ -3604,7 +3592,7 @@ fn push_writer_pre_read_inspect(
                 2,
             ),
             read_tools.to_vec(),
-            tool_call("kernel_inspect", inspection_request(target_ref)),
+            tool_call("kmp_inspect", inspection_request(target_ref)),
             json!({
                 "success": true,
                 "observed_refs": [target_ref, entry_ref],
@@ -3644,7 +3632,7 @@ fn push_writer_pre_read_trace(
                 entry_ref,
                 candidate_ref_details,
                 vec![target_ref.to_string()],
-                Some("kernel_inspect"),
+                Some("kmp_inspect"),
                 vec![target_ref.to_string(), entry_ref.to_string()],
                 None,
                 Some(false),
@@ -3652,7 +3640,7 @@ fn push_writer_pre_read_trace(
             ),
             read_tools.to_vec(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": entry_ref,
                     "to": target_ref,
@@ -3753,7 +3741,7 @@ fn push_writer_pre_read_inspect_ambiguous(
                     entry_ref,
                     candidate_ref_details,
                     vec![target_ref.to_string()],
-                    Some("kernel_near"),
+                    Some("kmp_near"),
                     last_observed_refs,
                     Some(json!({
                         "returned": 3,
@@ -3767,7 +3755,7 @@ fn push_writer_pre_read_inspect_ambiguous(
                 "ambiguous",
             ),
             read_tools.to_vec(),
-            tool_call("kernel_inspect", inspection_request(target_ref)),
+            tool_call("kmp_inspect", inspection_request(target_ref)),
             json!({
                 "success": true,
                 "observed_refs": [target_ref, entry_ref],
@@ -3814,7 +3802,7 @@ fn push_writer_pre_read_trace_continue(
                 entry_ref,
                 candidate_ref_details,
                 vec![target_ref.to_string()],
-                Some("kernel_trace"),
+                Some("kmp_trace"),
                 last_observed_refs,
                 Some(json!({
                     "returned": 16,
@@ -3827,7 +3815,7 @@ fn push_writer_pre_read_trace_continue(
             ),
             read_tools.to_vec(),
             tool_call(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "from": entry_ref,
                     "to": target_ref,
@@ -3891,7 +3879,7 @@ fn push_writer_pre_read_stop(
                 entry_ref,
                 candidate_ref_details,
                 known_refs,
-                Some("kernel_trace"),
+                Some("kmp_trace"),
                 last_observed_refs,
                 Some(json!({
                     "returned": 12,
@@ -3948,7 +3936,7 @@ fn push_temporal_tool(
                     "incident:mobile-login:observation:401-refresh-race",
                     current_ref
                 ],
-                "last_tool": "kernel_near",
+                "last_tool": "kmp_near",
                 "last_observed_refs": [current_ref],
                 "requested_move": requested_move(tool, cursor_key, cursor.clone()),
                 "requested_scope": json!({ "mode": "all", "scope": "current_about" }),
@@ -4974,11 +4962,10 @@ mod tests {
             .collect::<BTreeSet<_>>();
         assert_eq!(step_ids.len(), trajectories.len());
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str)
-                == Some("kernel_write_memory")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_write_memory")
         }));
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_ingest")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_ingest")
         }));
         assert!(trajectories.iter().any(|trajectory| {
             trajectory.mode == "write"
@@ -5007,10 +4994,10 @@ mod tests {
                 .all(|trajectory| trajectory.mode == "read")
         );
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_trace")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_trace")
         }));
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_inspect")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_inspect")
         }));
         assert!(trajectories.iter().any(|trajectory| {
             trajectory.target_action.get("type").and_then(Value::as_str) == Some("stop")
@@ -5036,8 +5023,7 @@ mod tests {
             trajectories
                 .iter()
                 .filter(|trajectory| {
-                    trajectory.target_action.get("tool").and_then(Value::as_str)
-                        == Some("kernel_wake")
+                    trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_wake")
                 })
                 .count()
                 >= 8
@@ -5060,7 +5046,7 @@ mod tests {
                 .iter()
                 .filter(|trajectory| {
                     trajectory.target_action.get("tool").and_then(Value::as_str)
-                        == Some("kernel_trace")
+                        == Some("kmp_trace")
                         && trajectory
                             .target_action
                             .pointer("/arguments/page/cursor")
@@ -5087,7 +5073,7 @@ mod tests {
                 .all(|trajectory| trajectory.mode == "write_context_read")
         );
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_near")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_near")
                 && trajectory
                     .target_action
                     .pointer("/arguments/window/before_entries")
@@ -5095,7 +5081,7 @@ mod tests {
                     == Some(3)
         }));
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_near")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_near")
                 && trajectory
                     .target_action
                     .pointer("/arguments/window/before_entries")
@@ -5103,10 +5089,10 @@ mod tests {
                     == Some(12)
         }));
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_inspect")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_inspect")
         }));
         assert!(trajectories.iter().any(|trajectory| {
-            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kernel_trace")
+            trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_trace")
                 && trajectory
                     .target_action
                     .pointer("/arguments/page/entries")
@@ -5135,7 +5121,7 @@ mod tests {
                 .iter()
                 .filter(|trajectory| {
                     trajectory.target_action.get("tool").and_then(Value::as_str)
-                        == Some("kernel_trace")
+                        == Some("kmp_trace")
                         && trajectory
                             .target_action
                             .pointer("/arguments/page/cursor")
@@ -5165,7 +5151,7 @@ mod tests {
                         .visible_state
                         .get("last_tool")
                         .and_then(Value::as_str)
-                        == Some("kernel_trace")
+                        == Some("kmp_trace")
                 })
                 .count()
                 >= 4
@@ -5181,8 +5167,7 @@ mod tests {
             trajectory
                 .step_id
                 .ends_with("wake-after-empty-near-current-ref-visible")
-                && trajectory.target_action.get("tool").and_then(Value::as_str)
-                    == Some("kernel_wake")
+                && trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_wake")
         }));
     }
 
@@ -5195,8 +5180,7 @@ mod tests {
             trajectory
                 .step_id
                 .ends_with("near-by-ref-except-discarded-and-scratch-training-contrast")
-                && trajectory.target_action.get("tool").and_then(Value::as_str)
-                    == Some("kernel_near")
+                && trajectory.target_action.get("tool").and_then(Value::as_str) == Some("kmp_near")
         }));
     }
 }

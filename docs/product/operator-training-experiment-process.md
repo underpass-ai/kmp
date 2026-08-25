@@ -197,7 +197,7 @@ Synthetic conformance data must be deterministic and honest:
 - if both train and eval are required to cover a profile, each required
   capability must appear in at least two distinct groups before splitting;
 - a capability reported by the SFT preparer must match the shared contract
-  coverage semantics; `kernel_trace` pagination only counts as
+  coverage semantics; `kmp_trace` pagination only counts as
   `trace.page:first` or `trace.page:continue` when the action carries an
   explicit `page` object;
 - write rows may test prepared writes, anti-invention, and fail-fast behavior,
@@ -240,7 +240,7 @@ When comparing two datasets, classify each added data block as:
 
 This is especially important for mixed datasets. A larger corpus can make
 training loss look better while making the Operator worse at a rare capability
-such as `kernel_inspect`, trace pagination, dynamic windows, or multi-about
+such as `kmp_inspect`, trace pagination, dynamic windows, or multi-about
 scope selection.
 
 If a dataset block is marked `regresses` or `unsafe`, do not patch it in place.

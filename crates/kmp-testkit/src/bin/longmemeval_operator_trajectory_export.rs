@@ -382,14 +382,14 @@ fn export_results(
             .map_or(0, Vec::len);
         let lexical_answer_hit = bool_field(&value, "lexical_answer_hit");
         let abstention = bool_field(&value, "abstention").unwrap_or(false);
-        let bounded = kernel_operator_is_bounded_tool_call("kernel_ask", &ask.arguments);
+        let bounded = kernel_operator_is_bounded_tool_call("kmp_ask", &ask.arguments);
         if !bounded {
             data.failures.push(FailureRow {
                 source: "longmemeval.results".to_string(),
                 location: location.clone(),
                 reason: "unbounded_tool_call".to_string(),
                 detail: json!({
-                    "tool": "kernel_ask",
+                    "tool": "kmp_ask",
                     "arguments": ask.arguments,
                 }),
             });
@@ -409,7 +409,7 @@ fn export_results(
             run_id: String::new(),
             task_family: task_family.clone(),
             mode: "read".to_string(),
-            source: "longmemeval.results.kernel_ask".to_string(),
+            source: "longmemeval.results.kmp_ask".to_string(),
             about: about.to_string(),
             step_id: format!("longmemeval:{question_type}:{question_id}:read:0"),
             step_index: 0,
@@ -437,7 +437,7 @@ fn export_results(
             allowed_tools: allowed_tools.clone(),
             target_action: json!({
                 "type": "tool_call",
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "arguments": ask.arguments,
             }),
             observed_outcome: Some(json!({
@@ -467,7 +467,7 @@ fn export_results(
             run_id: String::new(),
             task_family,
             mode: "read".to_string(),
-            source: "longmemeval.results.kernel_ask".to_string(),
+            source: "longmemeval.results.kmp_ask".to_string(),
             about: about.to_string(),
             step_id: format!("longmemeval:{question_type}:{question_id}:stop"),
             step_index: 1,
@@ -476,7 +476,7 @@ fn export_results(
             visible_state: json!({
                 "current_ref": question_ref,
                 "known_refs": observed_refs,
-                "last_tool": "kernel_ask",
+                "last_tool": "kmp_ask",
                 "last_observed_refs": observed_refs,
                 "last_result_page": null,
                 "last_result_partial": null,

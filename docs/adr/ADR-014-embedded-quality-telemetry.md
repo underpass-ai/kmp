@@ -20,7 +20,7 @@ an OTel Collector, Prometheus, Loki, or any other service:
 - `RedbQualityTelemetryReader` provides bounded time-window and latest-first
   queries for maintenance tooling;
 - the embedded composition root owns the observer, worker, and writer. The MCP
-  adapter only emits successful `kernel_wake`, `kernel_ask`, and `kernel_trace`
+  adapter only emits successful `kmp_wake`, `kmp_ask`, and `kmp_trace`
   renders through the domain port.
 
 `kmp-observability` keeps OTEL behind its `otel` Cargo feature. The

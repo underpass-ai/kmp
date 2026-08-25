@@ -68,15 +68,15 @@ KMP exposes nine memory moves.
 
 | Move | MCP tool | gRPC method | NATS subject | Purpose |
 |:-----|:---------|:------------|:-------------|:--------|
-| `ingest` | `kernel_ingest` | `Ingest` | `kernel.memory.ingest` | Submit memory with dimensions, entries, relations, evidence, and provenance. |
-| `wake` | `kernel_wake` | `Wake` | Optional notification only | Return the compact state needed to continue work. |
-| `ask` | `kernel_ask` | `Ask` | Not recommended for async MVP | Answer a question from memory, or say what is missing. |
-| `goto` | `kernel_goto` | `Goto` | Not recommended for async MVP | Jump to memory state at a timestamp, sequence, or memory ref over selected dimensions. |
-| `near` | `kernel_near` | `Near` | Not recommended for async MVP | Return the temporal neighborhood around a timestamp, sequence, or memory ref. |
-| `rewind` | `kernel_rewind` | `Rewind` | Not recommended for async MVP | Move backward in time over one, several, or all dimensions of a memory. |
-| `forward` | `kernel_forward` | `Forward` | Not recommended for async MVP | Move forward in time over one, several, or all dimensions of a memory. |
-| `trace` | `kernel_trace` | `Trace` | Not recommended for async MVP | Return the relationship path and evidence trail behind an answer. |
-| `inspect` | `kernel_inspect` | `Inspect` | Not recommended for async MVP | Show typed graph/detail/link/raw audit state for audits and debugging. |
+| `ingest` | `kmp_ingest` | `Ingest` | `kernel.memory.ingest` | Submit memory with dimensions, entries, relations, evidence, and provenance. |
+| `wake` | `kmp_wake` | `Wake` | Optional notification only | Return the compact state needed to continue work. |
+| `ask` | `kmp_ask` | `Ask` | Not recommended for async MVP | Answer a question from memory, or say what is missing. |
+| `goto` | `kmp_goto` | `Goto` | Not recommended for async MVP | Jump to memory state at a timestamp, sequence, or memory ref over selected dimensions. |
+| `near` | `kmp_near` | `Near` | Not recommended for async MVP | Return the temporal neighborhood around a timestamp, sequence, or memory ref. |
+| `rewind` | `kmp_rewind` | `Rewind` | Not recommended for async MVP | Move backward in time over one, several, or all dimensions of a memory. |
+| `forward` | `kmp_forward` | `Forward` | Not recommended for async MVP | Move forward in time over one, several, or all dimensions of a memory. |
+| `trace` | `kmp_trace` | `Trace` | Not recommended for async MVP | Return the relationship path and evidence trail behind an answer. |
+| `inspect` | `kmp_inspect` | `Inspect` | Not recommended for async MVP | Show typed graph/detail/link/raw audit state for audits and debugging. |
 
 Current live MCP mode exposes the canonical KMP tools above and routes them to
 `KernelMemoryService`. MCP is a transport adapter over the typed API; it must
@@ -88,25 +88,25 @@ product moves:
 
 | Alias | Canonical move |
 |:------|:---------------|
-| `kernel_remember` | `kernel_ingest` |
-| `kernel_ingest_context` | `kernel_ingest` |
+| `kernel_remember` | `kmp_ingest` |
+| `kernel_ingest_context` | `kmp_ingest` |
 
 Live MCP also exposes a tenth tool that is not a memory move:
 
 | MCP tool | Canonical write path | Purpose |
 |:---------|:---------------------|:--------|
-| `kernel_write_memory` | compiles to `kernel_ingest` | Writer-friendly helper above canonical ingest: validates writer intent, relation quality, and read-context proof, then compiles to a `kernel_ingest` call. |
+| `kmp_write_memory` | compiles to `kmp_ingest` | Writer-friendly helper above canonical ingest: validates writer intent, relation quality, and read-context proof, then compiles to a `kmp_ingest` call. |
 
-`kernel_write_memory` is neither a memory move nor an ingest alias. It is the
+`kmp_write_memory` is neither a memory move nor an ingest alias. It is the
 ergonomic entry point for writers above the canonical low-level write path
-(`kernel_ingest` / `KernelMemoryService.Ingest`). It defaults to `dry_run = true`
+(`kmp_ingest` / `KernelMemoryService.Ingest`). It defaults to `dry_run = true`
 and `strict = true`, so a writer previews the compiled canonical ingest and
 fails fast on unsupported relations or missing proof before committing. In
 `strict` mode it requires `current.evidence` and at least one `connect_to`
 relation.
 
 So the live MCP surface is **ten tools**: the nine memory moves above plus
-`kernel_write_memory`, with `kernel_remember` and `kernel_ingest_context` as
+`kmp_write_memory`, with `kernel_remember` and `kernel_ingest_context` as
 hidden ingest aliases (not counted as product moves).
 
 ## Why These Moves
@@ -1157,19 +1157,19 @@ MCP is the first-class interactive binding.
 Required tools:
 
 ```text
-kernel_ingest
-kernel_write_memory
-kernel_wake
-kernel_ask
-kernel_goto
-kernel_near
-kernel_rewind
-kernel_forward
-kernel_trace
-kernel_inspect
+kmp_ingest
+kmp_write_memory
+kmp_wake
+kmp_ask
+kmp_goto
+kmp_near
+kmp_rewind
+kmp_forward
+kmp_trace
+kmp_inspect
 ```
 
-`kernel_write_memory` is the writer helper above `kernel_ingest`; see the Memory
+`kmp_write_memory` is the writer helper above `kmp_ingest`; see the Memory
 Moves section. `kernel_remember` and `kernel_ingest_context` remain as hidden
 ingest aliases.
 
@@ -1185,7 +1185,7 @@ MCP must not duplicate kernel logic. The current stdio adapter is a thin live
 client of the typed `KernelMemoryService`; it does not call
 `ContextQueryService` or `ContextCommandService` directly for KMP moves.
 
-`kernel_ask` and `kernel_wake` apply the MCP recall projection gateway after
+`kmp_ask` and `kmp_wake` apply the MCP recall projection gateway after
 the typed service response. Its stable core, deterministic expansion order,
 byte ceiling, detail fieldsets, and stateless cursor contract are specified in
 [`recall-projection-contract.md`](./recall-projection-contract.md).
@@ -1461,9 +1461,9 @@ The differentiated product is:
 Implemented:
 
 1. Rename the public API direction to Kernel Memory Protocol in product docs.
-2. Add JSON schemas for `kernel_ingest`, `kernel_wake`, `kernel_ask`,
-   `kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`,
-   `kernel_trace`, and `kernel_inspect`.
+2. Add JSON schemas for `kmp_ingest`, `kmp_wake`, `kmp_ask`,
+   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
+   `kmp_trace`, and `kmp_inspect`.
    Contract fixtures live under
    [`api/examples/kernel/v1beta1/kmp`](../../api/examples/kernel/v1beta1/kmp).
 3. Add examples for conversation memory, incident memory, workflow memory, and

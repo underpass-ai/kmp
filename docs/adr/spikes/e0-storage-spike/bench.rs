@@ -11,7 +11,7 @@
 //!   1. per-event durable ingest (fsync per event commit)   - interactive writes
 //!   2. batched ingest (1000 events/commit)                 - import / replay
 //!   3. reopen (close, open, one point read)                - session start
-//!   4. random point reads (node details)                   - kernel_inspect
+//!   4. random point reads (node details)                   - kmp_inspect
 //!   5. adjacency prefix scans                              - load_neighborhood
 //!   6. on-disk size
 

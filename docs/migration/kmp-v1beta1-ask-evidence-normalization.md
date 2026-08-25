@@ -1,6 +1,6 @@
 # KMP v1beta1 Ask evidence normalization
 
-`kernel_ask` now serializes each complete evidence body once, in
+`kmp_ask` now serializes each complete evidence body once, in
 `proof.evidence[]`. The answer, cited reasons, and proof hops join that registry
 by stable evidence id instead of copying the body into every layer.
 
@@ -33,7 +33,7 @@ while consumers that read `AnswerReason.evidence` must switch to the id join.
 3. Resolve each `proof.path[].evidence_refs[]` through the same map.
 4. Treat inline relation `why` and `evidence` as relation-specific explanation,
    not another copy of the evidence registry.
-5. Use `kernel_inspect` with a cited ref when the inline registry was omitted by
+5. Use `kmp_inspect` with a cited ref when the inline registry was omitted by
    an output budget.
 
 This preserves provenance, confidence, conflicts, supersession, and stable

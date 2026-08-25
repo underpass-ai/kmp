@@ -34,15 +34,15 @@ write-memory -> ingest -> wake -> ask -> goto/near/rewind/forward -> trace -> in
 
 Transport bindings:
 
-- MCP tools expose `kernel_ingest`, `kernel_write_memory`, `kernel_wake`,
-  `kernel_ask`, `kernel_goto`, `kernel_near`, `kernel_rewind`,
-  `kernel_forward`, `kernel_trace`, and `kernel_inspect`.
-- `kernel_write_memory` is a writer helper, not a parallel memory model. It
+- MCP tools expose `kmp_ingest`, `kmp_write_memory`, `kmp_wake`,
+  `kmp_ask`, `kmp_goto`, `kmp_near`, `kmp_rewind`,
+  `kmp_forward`, `kmp_trace`, and `kmp_inspect`.
+- `kmp_write_memory` is a writer helper, not a parallel memory model. It
   validates writer intent and relation quality, then compiles to the canonical
-  `kernel_ingest` payload. With `dry_run=true` it returns that payload as
+  `kmp_ingest` payload. With `dry_run=true` it returns that payload as
   `ingest_preview`; with `dry_run=false` it forwards the same payload through
-  the configured `kernel_ingest` backend.
-- Rich external relations in `kernel_write_memory` must carry `read_context`
+  the configured `kmp_ingest` backend.
+- Rich external relations in `kmp_write_memory` must carry `read_context`
   evidence in strict mode, so a writer can prove it inspected, traced, asked,
   woke, or temporally traversed the target before claiming a rich semantic
   relation.
@@ -79,9 +79,9 @@ Current binding note:
   ids shaped as `about:<about>:dimension:<dimension_id>`.
 - MCP live mode is a thin `KernelMemoryService` client. It must not call
   `ContextQueryService` or `ContextCommandService` directly for KMP moves.
-- `kernel_ask.answer` is deterministic evidence text, or `UNKNOWN`, not a
+- `kmp_ask.answer` is deterministic evidence text, or `UNKNOWN`, not a
   generated answer and not an anchor summary.
-- `kernel_inspect` supports typed object/detail/link/evidence lookup and typed
+- `kmp_inspect` supports typed object/detail/link/evidence lookup and typed
   raw audit refs when `include.raw=true`.
 - Temporal `include.raw_refs=true` returns typed raw audit refs for selected
   entries without polluting normal semantic reads.

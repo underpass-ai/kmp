@@ -64,10 +64,10 @@ Native gRPC is also available (proto contract in `crates/kmp-proto`,
 
 ## 3. Tool surface (10 tools + aliases)
 
-`kernel_ingest` (aliases `kernel_remember`, `kernel_ingest_context`),
-`kernel_write_memory`, `kernel_wake`, `kernel_ask`, `kernel_goto`,
-`kernel_near`, `kernel_rewind`, `kernel_forward`, `kernel_trace`,
-`kernel_inspect`. Canonical request/response examples:
+`kmp_ingest` (aliases `kernel_remember`, `kernel_ingest_context`),
+`kmp_write_memory`, `kmp_wake`, `kmp_ask`, `kmp_goto`,
+`kmp_near`, `kmp_rewind`, `kmp_forward`, `kmp_trace`,
+`kmp_inspect`. Canonical request/response examples:
 `api/examples/kernel/v1beta1/kmp/*.json`.
 
 ### Incident-memory conventions
@@ -99,19 +99,19 @@ Native gRPC is also available (proto contract in `crates/kmp-proto`,
 
 | Moment | Tool |
 | --- | --- |
-| Incident (re)opened / responder joins | `kernel_wake {about}` — full anchored context with proof |
-| Specific question ("did we restart X?") | `kernel_ask {about, question}` |
-| "What did we know at 03:20?" | `kernel_goto {about, cursor:{time}}` |
-| Context around a decision | `kernel_near {about, around:{ref}}` |
-| Step back/forward through the timeline | `kernel_rewind` / `kernel_forward` |
-| Why-chain between two refs | `kernel_trace {from, to}` |
-| Audit one claim + its proof | `kernel_inspect {ref, include_raw:true}` |
+| Incident (re)opened / responder joins | `kmp_wake {about}` — full anchored context with proof |
+| Specific question ("did we restart X?") | `kmp_ask {about, question}` |
+| "What did we know at 03:20?" | `kmp_goto {about, cursor:{time}}` |
+| Context around a decision | `kmp_near {about, around:{ref}}` |
+| Step back/forward through the timeline | `kmp_rewind` / `kmp_forward` |
+| Why-chain between two refs | `kmp_trace {from, to}` |
+| Audit one claim + its proof | `kmp_inspect {ref, include_raw:true}` |
 
 ## 4. Guarantees and sharp edges
 
 - Embedded ingest is synchronous: `read_after_write_ready=true` — wake
   immediately after write sees the memory.
-- `kernel_goto` returns up to 50 entries by default. Every temporal result
+- `kmp_goto` returns up to 50 entries by default. Every temporal result
   includes `page.returned`, `page.total`, and `page.has_more`; set
   `limit.entries` explicitly when the caller needs a different bound.
 - MCP tool failures retain human-readable `content` and also return
@@ -129,9 +129,9 @@ Native gRPC is also available (proto contract in `crates/kmp-proto`,
 
 ## 5. Quality telemetry for MADE (ADR-014)
 
-Every embedded context, temporal, and trace read (`kernel_wake`, `kernel_ask`,
-`kernel_goto`, `kernel_near`, `kernel_rewind`, `kernel_forward`, and
-`kernel_trace`) journals a
+Every embedded context, temporal, and trace read (`kmp_wake`, `kmp_ask`,
+`kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`, and
+`kmp_trace`) journals a
 `QualityTelemetryObservation` (compression ratio, causal density, noise
 ratio, detail coverage, raw-equivalent tokens, rpc/about/role, timestamp)
 into `<data-dir>/telemetry/quality.redb` — a **separate, fail-open, bounded**

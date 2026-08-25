@@ -470,8 +470,8 @@ for line in sys.stdin:
 print(" ".join(names))
 ' 2>/dev/null)"
   else
-    TOOLS="$(printf '%s' "$RESPONSE" | grep -o '"name":"kernel_[a-z_]*"' \
-      | sed 's/.*"kernel_/kernel_/; s/"$//' | tr '\n' ' ')"
+    TOOLS="$(printf '%s' "$RESPONSE" | grep -o '"name":"kmp_[a-z_]*"' \
+      | sed 's/.*"kmp_/kmp_/; s/"$//' | tr '\n' ' ')"
   fi
 fi
 
@@ -504,16 +504,24 @@ if command -v claude >/dev/null 2>&1; then
   # user happened to be standing in. Point that start at the throwaway dir
   # the tool probe already uses: the answer is the same, the footprint is
   # none.
-  if env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null | grep -qi 'kernel-memory'; then
-    ok "Claude Code — kernel-memory registered"
+  CLAUDE_MCP_LIST="$(env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null)"
+  if printf '%s\n' "$CLAUDE_MCP_LIST" | grep -Eqi '(^|[[:space:]])kmp([[:space:]]|:)'; then
+    ok "Claude Code — kmp registered"
+  elif printf '%s\n' "$CLAUDE_MCP_LIST" | grep -Eqi '(^|[[:space:]])kernel-memory([[:space:]]|:)'; then
+    warn "Claude Code — registered under the former kernel-memory id"
+    offer "/kmp:setup" "Claude Code still uses the former server id"
+    info "replace it with:"
+    info "  claude mcp remove kernel-memory"
+    info "  claude mcp add kmp --scope user \\"
+    info "    --env KMP_MCP_BACKEND=embedded -- $BIN"
   else
-    warn "Claude Code — kernel-memory not in 'claude mcp list'"
-    offer "/kmp:setup" "Claude Code has no kernel-memory server registered"
+    warn "Claude Code — kmp not in 'claude mcp list'"
+    offer "/kmp:setup" "Claude Code has no kmp server registered"
     info "installing the kmp plugin wires it automatically:"
     info "  /plugin marketplace add underpass-ai/plugins"
     info "  /plugin install kmp@underpass"
     info "or register the server directly:"
-    info "  claude mcp add kernel-memory --scope user \\"
+    info "  claude mcp add kmp --scope user \\"
     info "    --env KMP_MCP_BACKEND=embedded -- $BIN"
   fi
 fi
@@ -528,7 +536,7 @@ CODEX_EXPECTED_PROMPTS=10
 CODEX_CONFIG="$HOME/.codex/config.toml"
 if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
   FOUND_HOST=1
-  if [ -f "$CODEX_CONFIG" ] && grep -q 'mcp_servers.kernel-memory' "$CODEX_CONFIG"; then
+  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
     # Registration is not the whole install. Four prompts shipped in every
     # release and landed nowhere, because the installer copied a hardcoded
     # three — and this line said `ok` the whole time, which is how it stayed
@@ -550,8 +558,12 @@ if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
       info "missing:$CODEX_MISSING"
       info "re-run:  bash scripts/mcp/install-kmp-plugin.sh --codex"
     fi
+  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory\]' "$CODEX_CONFIG"; then
+    warn "Codex CLI — registered under the former kernel-memory id"
+    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI still uses the former server id"
+    info "re-run the installer to rename the registration without changing its command or environment"
   else
-    warn "Codex CLI — kernel-memory not in $CODEX_CONFIG"
+    warn "Codex CLI — kmp not in $CODEX_CONFIG"
     offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI is not wired"
     info "wire it with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
   fi

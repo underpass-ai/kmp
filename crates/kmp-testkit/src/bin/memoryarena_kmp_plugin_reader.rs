@@ -144,7 +144,7 @@ fn read_row_with_plugins(
         .ok_or("run result row must be a JSON object")?;
     let changed_answer = if let Some(answer) = deterministic_answer {
         output.insert(
-            "kernel_ask_answer".to_string(),
+            "kmp_ask_answer".to_string(),
             output.get("ask_answer").cloned().unwrap_or(Value::Null),
         );
         output.insert("ask_answer".to_string(), Value::String(answer));

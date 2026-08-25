@@ -7,6 +7,29 @@ const PROTOCOL_VERSION: &str = "2024-11-05";
 const SERVER_NAME: &str = "underpass-kmp-mcp";
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Resolves the one-minor compatibility aliases to the names advertised by
+/// `tools/list`.
+///
+/// Alias resolution happens at the JSON-RPC boundary. Backends, telemetry and
+/// newly written provenance therefore see one canonical vocabulary, while a
+/// saved permission rule or script using the former names keeps working for
+/// the migration release.
+pub(crate) fn canonical_tool_name(name: &str) -> &str {
+    match name {
+        "kernel_ingest" => "kmp_ingest",
+        "kernel_write_memory" => "kmp_write_memory",
+        "kernel_wake" => "kmp_wake",
+        "kernel_ask" => "kmp_ask",
+        "kernel_goto" => "kmp_goto",
+        "kernel_near" => "kmp_near",
+        "kernel_rewind" => "kmp_rewind",
+        "kernel_forward" => "kmp_forward",
+        "kernel_trace" => "kmp_trace",
+        "kernel_inspect" => "kmp_inspect",
+        _ => name,
+    }
+}
+
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
     json!({
         "protocolVersion": PROTOCOL_VERSION,
@@ -38,8 +61,8 @@ pub(crate) fn tools_list_result() -> Value {
         },
         "tools": [
             tool_definition_with_output(
-                "kernel_ingest",
-                "Low-level batch writer for callers producing the exact graph themselves. Prefer kernel_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
+                "kmp_ingest",
+                "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -168,13 +191,13 @@ pub(crate) fn tools_list_result() -> Value {
                 ingest_output_schema(),
             ),
             tool_definition_with_output(
-                "kernel_write_memory",
-                "Write to memory. This is the writer to use: it validates intent and relation quality, then compiles to canonical kernel_ingest, and `options.dry_run` shows what a write would commit before committing it. Reach for kernel_ingest only when producing the exact graph yourself.",
+                "kmp_write_memory",
+                "Write to memory. This is the writer to use: it validates intent and relation quality, then compiles to canonical kmp_ingest, and `options.dry_run` shows what a write would commit before committing it. Reach for kmp_ingest only when producing the exact graph yourself.",
                 write_memory_schema(),
                 write_memory_output_schema(),
             ),
             tool_definition_with_output(
-                "kernel_wake",
+                "kmp_wake",
                 "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
                 json!({
                     "type": "object",
@@ -193,7 +216,7 @@ pub(crate) fn tools_list_result() -> Value {
                 wake_output_schema(),
             ),
             tool_definition_with_output(
-                "kernel_ask",
+                "kmp_ask",
                 "Retrieve stored evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — read it, and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching evidence item; it is not a judgement that the evidence answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
                 json!({
                     "type": "object",
@@ -216,27 +239,27 @@ pub(crate) fn tools_list_result() -> Value {
                 ask_output_schema(),
             ),
             temporal_tool_definition(
-                "kernel_goto",
+                "kmp_goto",
                 "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`.",
                 "at",
             ),
             temporal_tool_definition(
-                "kernel_near",
+                "kmp_near",
                 "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`.",
                 "around",
             ),
             temporal_tool_definition(
-                "kernel_rewind",
+                "kmp_rewind",
                 "Move backward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
                 "from",
             ),
             temporal_tool_definition(
-                "kernel_forward",
+                "kmp_forward",
                 "Move forward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
                 "from",
             ),
             tool_definition_with_output(
-                "kernel_trace",
+                "kmp_trace",
                 "Trace the proof path between two memory refs in the same connected memory graph. Trace has no implicit cross-about scope: abouts are never joined, so refs from different abouts cannot produce a path.",
                 json!({
                     "type": "object",
@@ -254,7 +277,7 @@ pub(crate) fn tools_list_result() -> Value {
                 trace_output_schema(),
             ),
             tool_definition_with_output(
-                "kernel_inspect",
+                "kmp_inspect",
                 "Inspect the typed stored memory object, direct links, and evidence for one ref.",
                 json!({
                     "type": "object",
@@ -390,7 +413,7 @@ fn write_memory_schema() -> Value {
                 "properties": {
                     "dry_run": {
                         "type": "boolean",
-                        "description": "When true, only return the compiled canonical kernel_ingest preview and write nothing. Defaults to false: the call commits."
+                        "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits."
                     },
                     "strict": {
                         "type": "boolean",
@@ -432,19 +455,19 @@ fn read_context_schema() -> Value {
         "properties": {
             "inspected_refs": {
                 "type": "array",
-                "items": string_schema("Memory ref inspected with kernel_inspect before writing.")
+                "items": string_schema("Memory ref inspected with kmp_inspect before writing.")
             },
             "temporal_refs": {
                 "type": "array",
-                "items": string_schema("Memory ref observed through kernel_goto, kernel_near, kernel_rewind, or kernel_forward before writing.")
+                "items": string_schema("Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.")
             },
             "wake_refs": {
                 "type": "array",
-                "items": string_schema("Memory ref observed in a kernel_wake packet before writing.")
+                "items": string_schema("Memory ref observed in a kmp_wake packet before writing.")
             },
             "ask_refs": {
                 "type": "array",
-                "items": string_schema("Memory ref observed in deterministic kernel_ask proof/evidence before writing.")
+                "items": string_schema("Memory ref observed in deterministic kmp_ask proof/evidence before writing.")
             },
             "trace_paths": {
                 "type": "array",
@@ -722,8 +745,8 @@ fn write_memory_output_schema() -> Value {
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
         "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
         "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),
-        "ingest_preview": described("object", "Canonical kernel_ingest arguments. Present only on dry-run."),
-        "ingest_result": described("object", "Canonical kernel_ingest result. Present only after a committed write."),
+        "ingest_preview": described("object", "Canonical kmp_ingest arguments. Present only on dry-run."),
+        "ingest_result": described("object", "Canonical kmp_ingest result. Present only after a committed write."),
         "diagnostics": described("array", "Planner diagnostics that qualify the write."),
         "next_suggested_reads": string_array("Concrete refs worth reading next to verify or continue the write."),
         "viewer": output_object(json!({
@@ -1114,7 +1137,7 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
 /// Every one of the ten tools says `"additionalProperties": false` and nothing
 /// enforced it, which made the surface a silent-failure generator: a
 /// misspelled `dimensions`, a `budget` nested one level too deep, a `from`
-/// sent to `kernel_goto` where the cursor is `at` — each accepted, dropped,
+/// sent to `kmp_goto` where the cursor is `at` — each accepted, dropped,
 /// and answered with a well-formed success built from defaults. The agent has
 /// no way to tell a request that was honoured from one that was discarded, so
 /// it reads the result as proof its arguments were understood and makes the
@@ -1233,6 +1256,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn former_tool_names_resolve_to_the_advertised_kmp_surface() {
+        let former = [
+            "kernel_ingest",
+            "kernel_write_memory",
+            "kernel_wake",
+            "kernel_ask",
+            "kernel_goto",
+            "kernel_near",
+            "kernel_rewind",
+            "kernel_forward",
+            "kernel_trace",
+            "kernel_inspect",
+        ];
+        let tools = tools_list_result();
+        let current = tools["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .map(|tool| tool["name"].as_str().expect("tool name"))
+            .collect::<Vec<_>>();
+
+        assert_eq!(former.map(canonical_tool_name).as_slice(), current);
+        assert!(current.iter().all(|name| name.starts_with("kmp_")));
+    }
+
+    #[test]
     fn initialize_result_reports_backend_metadata() {
         let result = initialize_result("stub", "mutual");
 
@@ -1250,9 +1299,9 @@ mod tests {
             .expect("tools should be an array");
 
         assert_eq!(tools.len(), 10);
-        assert_eq!(tools[0]["name"], "kernel_ingest");
+        assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
-        assert_eq!(tools[1]["name"], "kernel_write_memory");
+        assert_eq!(tools[1]["name"], "kmp_write_memory");
         assert_eq!(tools[1]["inputSchema"]["required"][1], "intent");
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["rel"]["enum"]
@@ -1277,7 +1326,7 @@ mod tests {
         assert!(why_description.contains("later reader"));
         assert!(evidence_description.contains("concrete observation or source"));
         assert!(evidence_description.contains("relation rationale"));
-        assert_eq!(tools[2]["name"], "kernel_wake");
+        assert_eq!(tools[2]["name"], "kmp_wake");
         assert_eq!(tools[2]["inputSchema"]["required"][0], "about");
         assert_eq!(tools[2]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
         assert_eq!(
@@ -1285,7 +1334,7 @@ mod tests {
             512
         );
         assert!(tools[2]["inputSchema"]["properties"].get("page").is_some());
-        assert_eq!(tools[3]["name"], "kernel_ask");
+        assert_eq!(tools[3]["name"], "kmp_ask");
         assert_eq!(tools[3]["inputSchema"]["required"][1], "question");
         assert_eq!(tools[3]["_meta"]["anthropic/maxResultSizeChars"], 10_000);
         assert!(tools[3]["inputSchema"]["properties"].get("page").is_some());
@@ -1294,7 +1343,7 @@ mod tests {
                 .get("prefer")
                 .is_none()
         );
-        assert_eq!(tools[4]["name"], "kernel_goto");
+        assert_eq!(tools[4]["name"], "kmp_goto");
         assert_eq!(tools[4]["inputSchema"]["required"][1], "at");
     }
 
@@ -1346,11 +1395,11 @@ mod tests {
         let recall_arguments = json!({});
         let samples = [
             (
-                "kernel_ingest",
+                "kmp_ingest",
                 crate::kmp::ingest_from_response(IngestResponse::default()),
             ),
             (
-                "kernel_wake",
+                "kmp_wake",
                 crate::kmp::enforce_recall_output_budget(
                     crate::kmp::wake_from_response(WakeResponse::default()),
                     &recall_arguments,
@@ -1358,7 +1407,7 @@ mod tests {
                 ),
             ),
             (
-                "kernel_ask",
+                "kmp_ask",
                 crate::kmp::enforce_recall_output_budget(
                     crate::kmp::ask_from_response(AskResponse::default()),
                     &recall_arguments,
@@ -1366,15 +1415,15 @@ mod tests {
                 ),
             ),
             (
-                "kernel_goto",
+                "kmp_goto",
                 crate::kmp::temporal_from_response(TemporalMoveResponse::default()),
             ),
             (
-                "kernel_trace",
+                "kmp_trace",
                 crate::kmp::trace_from_response(TraceResponse::default()),
             ),
             (
-                "kernel_inspect",
+                "kmp_inspect",
                 crate::kmp::inspect_from_response(InspectResponse::default()),
             ),
         ];
@@ -1391,14 +1440,14 @@ mod tests {
             }
         }
 
-        for name in ["kernel_near", "kernel_rewind", "kernel_forward"] {
+        for name in ["kmp_near", "kmp_rewind", "kmp_forward"] {
             assert_eq!(
                 schemas[name]["properties"]
                     .as_object()
                     .expect("temporal properties")
                     .keys()
                     .collect::<Vec<_>>(),
-                schemas["kernel_goto"]["properties"]
+                schemas["kmp_goto"]["properties"]
                     .as_object()
                     .expect("temporal properties")
                     .keys()
@@ -1417,7 +1466,7 @@ mod tests {
             "next_suggested_reads",
         ] {
             assert!(
-                schemas["kernel_write_memory"]["properties"]
+                schemas["kmp_write_memory"]["properties"]
                     .get(field)
                     .is_some(),
                 "writer output describes `{field}`"
@@ -1430,13 +1479,13 @@ mod tests {
         let tools = tools_list_result();
         let tools = tools["tools"].as_array().expect("tools");
         let defaults = [
-            ("kernel_wake", 1_600, 2),
-            ("kernel_ask", 2_400, 2),
-            ("kernel_goto", 2_400, 3),
-            ("kernel_near", 2_400, 3),
-            ("kernel_rewind", 2_400, 3),
-            ("kernel_forward", 2_400, 3),
-            ("kernel_trace", 1_600, 1),
+            ("kmp_wake", 1_600, 2),
+            ("kmp_ask", 2_400, 2),
+            ("kmp_goto", 2_400, 3),
+            ("kmp_near", 2_400, 3),
+            ("kmp_rewind", 2_400, 3),
+            ("kmp_forward", 2_400, 3),
+            ("kmp_trace", 1_600, 1),
         ];
 
         for (name, tokens, depth) in defaults {

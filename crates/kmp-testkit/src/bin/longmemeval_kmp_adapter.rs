@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         &args.output.join("ingest.jsonl"),
         prepared.iter().map(|item| {
             json!({
-                "tool": "kernel_ingest",
+                "tool": "kmp_ingest",
                 "question_id": item.question_id,
                 "question_type": item.question_type,
                 "about": item.about,
@@ -84,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         &args.output.join("ask.jsonl"),
         prepared.iter().map(|item| {
             json!({
-                "tool": "kernel_ask",
+                "tool": "kmp_ask",
                 "question_id": item.question_id,
                 "question_type": item.question_type,
                 "about": item.about,

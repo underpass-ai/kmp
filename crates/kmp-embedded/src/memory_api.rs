@@ -43,7 +43,7 @@ impl MemoryRecallApi for EmbeddedKernel {
             max_entries: request.max_entries.map(|entries| entries as usize),
         };
         let result = self.service().wake(query).await.map_err(translate_error)?;
-        self.observe_recall_quality("kernel_wake", &result);
+        self.observe_recall_quality("kmp_wake", &result);
         Ok(recall_view(about, &result))
     }
 
@@ -60,7 +60,7 @@ impl MemoryRecallApi for EmbeddedKernel {
             max_entries: None,
         };
         let result = self.service().ask(query).await.map_err(translate_error)?;
-        self.observe_recall_quality("kernel_ask", &result);
+        self.observe_recall_quality("kmp_ask", &result);
         Ok(recall_view(about, &result))
     }
 }

@@ -123,18 +123,82 @@ async fn tools_list_exposes_read_only_kmp_tools() {
     assert_eq!(
         tool_names,
         vec![
-            "kernel_ingest",
-            "kernel_write_memory",
-            "kernel_wake",
-            "kernel_ask",
-            "kernel_goto",
-            "kernel_near",
-            "kernel_rewind",
-            "kernel_forward",
-            "kernel_trace",
-            "kernel_inspect"
+            "kmp_ingest",
+            "kmp_write_memory",
+            "kmp_wake",
+            "kmp_ask",
+            "kmp_goto",
+            "kmp_near",
+            "kmp_rewind",
+            "kmp_forward",
+            "kmp_trace",
+            "kmp_inspect"
         ]
     );
+}
+
+#[tokio::test]
+async fn former_kernel_names_are_accepted_but_not_advertised() {
+    let calls = [
+        ("kernel_ingest", sample_ingest_arguments()),
+        ("kernel_write_memory", sample_write_arguments(true)),
+        ("kernel_wake", json!({"about": "question:830ce83f"})),
+        (
+            "kernel_ask",
+            json!({
+                "about": "question:830ce83f",
+                "question": "Where did Rachel move?"
+            }),
+        ),
+        (
+            "kernel_goto",
+            json!({
+                "about": "question:830ce83f",
+                "at": {"ref": "claim:rachel-austin"}
+            }),
+        ),
+        (
+            "kernel_near",
+            json!({
+                "about": "question:830ce83f",
+                "around": {"ref": "claim:rachel-austin"}
+            }),
+        ),
+        (
+            "kernel_rewind",
+            json!({
+                "about": "question:830ce83f",
+                "from": {"ref": "claim:rachel-austin"}
+            }),
+        ),
+        (
+            "kernel_forward",
+            json!({
+                "about": "question:830ce83f",
+                "from": {"ref": "claim:rachel-austin"}
+            }),
+        ),
+        (
+            "kernel_trace",
+            json!({
+                "from": "claim:rachel-austin",
+                "to": "claim:rachel-denver"
+            }),
+        ),
+        ("kernel_inspect", json!({"ref": "claim:rachel-austin"})),
+    ];
+
+    for (id, (name, arguments)) in calls.into_iter().enumerate() {
+        let response = handle(json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        }))
+        .await;
+
+        assert_eq!(response["result"]["isError"], false, "alias {name}");
+    }
 }
 
 #[tokio::test]
@@ -144,7 +208,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 23,
         "method": "tools/call",
         "params": {
-            "name": "kernel_ingest",
+            "name": "kmp_ingest",
             "arguments": sample_ingest_arguments()
         }
     }))
@@ -160,7 +224,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 24,
         "method": "tools/call",
         "params": {
-            "name": "kernel_wake",
+            "name": "kmp_wake",
             "arguments": {
                 "about": "memory:kernel-memory-protocol"
             }
@@ -175,7 +239,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 25,
         "method": "tools/call",
         "params": {
-            "name": "kernel_trace",
+            "name": "kmp_trace",
             "arguments": {
                 "from": "claim:rachel-austin",
                 "to": "claim:rachel-denver"
@@ -194,7 +258,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 28,
         "method": "tools/call",
         "params": {
-            "name": "kernel_near",
+            "name": "kmp_near",
             "arguments": {
                 "about": "question:830ce83f",
                 "around": {
@@ -215,7 +279,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "id": 26,
         "method": "tools/call",
         "params": {
-            "name": "kernel_inspect",
+            "name": "kmp_inspect",
             "arguments": {
                 "ref": "claim:rachel-austin"
             }
@@ -230,13 +294,13 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
 }
 
 #[tokio::test]
-async fn kernel_ask_returns_fixture_backed_structured_content() {
+async fn kmp_ask_returns_fixture_backed_structured_content() {
     let response = handle(json!({
         "jsonrpc": "2.0",
         "id": 3,
         "method": "tools/call",
         "params": {
-            "name": "kernel_ask",
+            "name": "kmp_ask",
             "arguments": {
                 "about": "question:830ce83f",
                 "question": "Where did Rachel move after her recent relocation?",
@@ -262,13 +326,13 @@ async fn kernel_ask_returns_fixture_backed_structured_content() {
 }
 
 #[tokio::test]
-async fn kernel_ask_rejects_a_cursor_from_another_projection() {
+async fn kmp_ask_rejects_a_cursor_from_another_projection() {
     let response = handle(json!({
         "jsonrpc": "2.0",
         "id": 30,
         "method": "tools/call",
         "params": {
-            "name": "kernel_ask",
+            "name": "kmp_ask",
             "arguments": {
                 "about": "question:830ce83f",
                 "question": "Where did Rachel move after her recent relocation?",
@@ -312,13 +376,13 @@ async fn ingest_aliases_return_fixture_backed_structured_content() {
 }
 
 #[tokio::test]
-async fn kernel_write_memory_dry_run_returns_canonical_ingest_preview() {
+async fn kmp_write_memory_dry_run_returns_canonical_ingest_preview() {
     let response = handle(json!({
         "jsonrpc": "2.0",
         "id": 33,
         "method": "tools/call",
         "params": {
-            "name": "kernel_write_memory",
+            "name": "kmp_write_memory",
             "arguments": sample_write_arguments(true)
         }
     }))
@@ -346,14 +410,11 @@ async fn kernel_write_memory_dry_run_returns_canonical_ingest_preview() {
         structured["ingest_preview"]["memory"]["relations"][0]["rel"],
         "chosen_because"
     );
-    assert_eq!(
-        structured["next_suggested_reads"][0]["tool"],
-        "kernel_trace"
-    );
+    assert_eq!(structured["next_suggested_reads"][0]["tool"], "kmp_trace");
 }
 
 #[tokio::test]
-async fn kernel_write_memory_commit_uses_canonical_ingest_backend_path() {
+async fn kmp_write_memory_commit_uses_canonical_ingest_backend_path() {
     let calls = Arc::new(Mutex::new(Vec::new()));
     let server = KernelMcpServer::with_backend(StubBackend {
         calls: Arc::clone(&calls),
@@ -386,7 +447,7 @@ async fn kernel_write_memory_commit_uses_canonical_ingest_backend_path() {
             "id": 34,
             "method": "tools/call",
             "params": {
-                "name": "kernel_write_memory",
+                "name": "kmp_write_memory",
                 "arguments": sample_write_arguments(false)
             }
         }),
@@ -402,7 +463,7 @@ async fn kernel_write_memory_commit_uses_canonical_ingest_backend_path() {
 
     let calls = calls.lock().expect("stub calls should be available");
     assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, "kernel_ingest");
+    assert_eq!(calls[0].0, "kmp_ingest");
     assert_eq!(calls[0].1["about"], "incident:mobile-login");
     assert_eq!(calls[0].1["dry_run"], false);
     assert_eq!(
@@ -474,7 +535,7 @@ fn write_request(id: u64) -> Value {
         "id": id,
         "method": "tools/call",
         "params": {
-            "name": "kernel_write_memory",
+            "name": "kmp_write_memory",
             "arguments": sample_write_arguments(false)
         }
     })
@@ -503,7 +564,7 @@ fn stub_ingest_response() -> Value {
 /// proof its arguments were understood and made the same call again.
 #[tokio::test]
 async fn an_argument_a_tool_does_not_have_is_refused_on_every_tool() {
-    for name in kmp_mcp::kernel_mcp_tool_names() {
+    for name in kmp_mcp::kmp_mcp_tool_names() {
         let server = KernelMcpServer::fixture();
         let response = handle_with(
             &server,
@@ -553,7 +614,7 @@ async fn an_unknown_key_inside_budget_is_refused_with_its_path() {
             "id": 91,
             "method": "tools/call",
             "params": {
-                "name": "kernel_wake",
+                "name": "kmp_wake",
                 "arguments": {"about": "question:x", "budget": {"max_bytes": 4000, "tokns": 900}}
             }
         }),
@@ -567,7 +628,7 @@ async fn an_unknown_key_inside_budget_is_refused_with_its_path() {
     assert_eq!(response["result"]["isError"], true);
     assert!(message.contains("tokns"), "{message}");
     assert!(
-        message.contains("kernel_wake.budget"),
+        message.contains("kmp_wake.budget"),
         "say where it was, not just what it was: {message}"
     );
 }
@@ -585,7 +646,7 @@ async fn prefer_is_refused_by_the_schema_rather_than_by_a_special_case() {
             "id": 92,
             "method": "tools/call",
             "params": {
-                "name": "kernel_ask",
+                "name": "kmp_ask",
                 "arguments": {"about": "question:x", "question": "why?", "prefer": {"time": "latest"}}
             }
         }),
@@ -627,7 +688,7 @@ async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link
             "jsonrpc": "2.0",
             "id": id,
             "method": "tools/call",
-            "params": {"name": "kernel_write_memory", "arguments": arguments.clone()}
+            "params": {"name": "kmp_write_memory", "arguments": arguments.clone()}
         })
     };
 
@@ -652,7 +713,7 @@ async fn invalid_ingest_arguments_return_tool_error() {
         "id": 32,
         "method": "tools/call",
         "params": {
-            "name": "kernel_ingest",
+            "name": "kmp_ingest",
             "arguments": {
                 "about": "question:830ce83f",
                 "idempotency_key": "ingest:830ce83f:1"
@@ -729,7 +790,7 @@ async fn tools_call_without_id_has_no_response() {
                 "jsonrpc": "2.0",
                 "method": "tools/call",
                 "params": {
-                    "name": "kernel_ask",
+                    "name": "kmp_ask",
                     "arguments": {
                         "about": "question:830ce83f",
                         "question": "Where did Rachel move?"
@@ -753,7 +814,7 @@ async fn grpc_backend_returns_tool_error_when_live_kernel_is_unavailable() {
             "id": 31,
             "method": "tools/call",
             "params": {
-                "name": "kernel_inspect",
+                "name": "kmp_inspect",
                 "arguments": {
                     "ref": "node:missing"
                 }
@@ -778,7 +839,7 @@ async fn invalid_tool_arguments_return_tool_error() {
         "id": 4,
         "method": "tools/call",
         "params": {
-            "name": "kernel_trace",
+            "name": "kmp_trace",
             "arguments": {
                 "from": "claim:rachel-austin"
             }
@@ -852,7 +913,7 @@ async fn server_can_use_injected_stub_backend() {
             "id": 41,
             "method": "tools/call",
             "params": {
-                "name": "kernel_wake",
+                "name": "kmp_wake",
                 "arguments": {
                     "about": "node:stub"
                 }
@@ -868,7 +929,7 @@ async fn server_can_use_injected_stub_backend() {
             .lock()
             .expect("stub calls should be available")
             .as_slice(),
-        [("kernel_wake".to_string(), json!({"about": "node:stub"}))]
+        [("kmp_wake".to_string(), json!({"about": "node:stub"}))]
     );
 }
 
@@ -891,7 +952,7 @@ async fn server_wraps_injected_backend_errors_as_mcp_tool_errors() {
             "id": 42,
             "method": "tools/call",
             "params": {
-                "name": "kernel_trace",
+                "name": "kmp_trace",
                 "arguments": {
                     "from": "a",
                     "to": "b"
@@ -923,8 +984,8 @@ async fn shared_stub_backend_can_be_reused_by_multiple_servers() {
     let server_a = KernelMcpServer::with_shared_backend(backend.clone());
     let server_b = KernelMcpServer::with_shared_backend(backend);
 
-    let response_a = call_named_tool(&server_a, 43, "kernel_inspect").await;
-    let response_b = call_named_tool(&server_b, 44, "kernel_ask").await;
+    let response_a = call_named_tool(&server_a, 43, "kmp_inspect").await;
+    let response_b = call_named_tool(&server_b, 44, "kmp_ask").await;
 
     assert_eq!(response_a["result"]["structuredContent"]["shared"], true);
     assert_eq!(response_b["result"]["structuredContent"]["shared"], true);
@@ -935,7 +996,7 @@ async fn shared_stub_backend_can_be_reused_by_multiple_servers() {
             .iter()
             .map(|(name, _)| name.as_str())
             .collect::<Vec<_>>(),
-        vec!["kernel_inspect", "kernel_ask"]
+        vec!["kmp_inspect", "kmp_ask"]
     );
 }
 

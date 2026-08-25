@@ -283,7 +283,7 @@ window.MOBILE_LOGIN_REPLAY = {
       text: "10:20 mitigation-agent verified iOS login failures returned to baseline after rollback, not after earlier attempts.",
       evidence: [
         "Attempt log: backoff, scale-out, and cache purge did not restore login; rollback did.",
-        "kernel_inspect returned five incoming links and one evidence item for this node.",
+        "kmp_inspect returned five incoming links and one evidence item for this node.",
       ],
     },
     {
@@ -447,11 +447,11 @@ window.MOBILE_LOGIN_REPLAY = {
     },
   ],
   queryResults: [
-    { tool: "kernel_rewind", scope: "core abouts", result: "15 entries" },
-    { tool: "kernel_rewind", scope: "core plus infra", result: "16 entries" },
-    { tool: "kernel_near", scope: "around cache purge", result: "6 entries" },
-    { tool: "kernel_trace", scope: "rollout to recovery", result: "2 edges" },
-    { tool: "kernel_trace", scope: "failed attempts to recovery", result: "4 edges" },
-    { tool: "kernel_inspect", scope: "attempt recovery", result: "5 incoming links, 1 evidence item" },
+    { tool: "kmp_rewind", scope: "core abouts", result: "15 entries" },
+    { tool: "kmp_rewind", scope: "core plus infra", result: "16 entries" },
+    { tool: "kmp_near", scope: "around cache purge", result: "6 entries" },
+    { tool: "kmp_trace", scope: "rollout to recovery", result: "2 edges" },
+    { tool: "kmp_trace", scope: "failed attempts to recovery", result: "4 edges" },
+    { tool: "kmp_inspect", scope: "attempt recovery", result: "5 incoming links, 1 evidence item" },
   ],
 };

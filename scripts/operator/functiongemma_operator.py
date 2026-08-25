@@ -21,9 +21,9 @@ Rules:
 - Use only refs visible in current_ref, trace_target_ref, candidate_refs, candidate_ref_details, known_refs, or last_observed_refs.
 - Prefer candidate_ref_details when choosing between writer candidates.
 - Every tool call must be bounded.
-- For kernel_near and kernel_ask, about must equal the top-level about value exactly.
+- For kmp_near and kmp_ask, about must equal the top-level about value exactly.
 - Do not use current_ref as about.
-- kernel_inspect.include.raw must be false.
+- kmp_inspect.include.raw must be false.
 - Use kernel_stop only when the visible state already contains sufficient evidence.
 """
 
@@ -32,7 +32,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "kernel_ask",
+            "name": "kmp_ask",
             "description": "Ask KMP for deterministic evidence under the current about scope.",
             "parameters": {
                 "type": "object",
@@ -68,7 +68,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "kernel_near",
+            "name": "kmp_near",
             "description": "Read bounded temporal/multidimensional context near a ref.",
             "parameters": {
                 "type": "object",
@@ -142,7 +142,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "kernel_inspect",
+            "name": "kmp_inspect",
             "description": "Inspect one visible KMP ref without raw memory.",
             "parameters": {
                 "type": "object",
@@ -167,7 +167,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "kernel_trace",
+            "name": "kmp_trace",
             "description": "Trace a bounded path between two visible refs.",
             "parameters": {
                 "type": "object",

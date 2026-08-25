@@ -47,12 +47,12 @@ pub use grpc::GrpcKernelMcpBackend;
 pub use server::KernelMcpServer;
 pub use tool_error::{ToolError, ToolErrorCode};
 
-pub fn kernel_mcp_tools_list_result() -> serde_json::Value {
+pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
     protocol::tools_list_result()
 }
 
-pub fn kernel_mcp_tool_names() -> Vec<String> {
-    kernel_mcp_tools_list_result()
+pub fn kmp_mcp_tool_names() -> Vec<String> {
+    kmp_mcp_tools_list_result()
         .get("tools")
         .and_then(serde_json::Value::as_array)
         .into_iter()
@@ -68,15 +68,15 @@ mod tests {
 
     #[test]
     fn public_tool_helpers_expose_the_kmp_tool_contract() {
-        let result = kernel_mcp_tools_list_result();
+        let result = kmp_mcp_tools_list_result();
         let tools = result
             .get("tools")
             .and_then(serde_json::Value::as_array)
             .expect("tools list result must expose tools");
 
-        assert_eq!(tools.len(), kernel_mcp_tool_names().len());
-        assert!(kernel_mcp_tool_names().contains(&"kernel_ingest".to_string()));
-        assert!(kernel_mcp_tool_names().contains(&"kernel_write_memory".to_string()));
-        assert!(kernel_mcp_tool_names().contains(&"kernel_inspect".to_string()));
+        assert_eq!(tools.len(), kmp_mcp_tool_names().len());
+        assert!(kmp_mcp_tool_names().contains(&"kmp_ingest".to_string()));
+        assert!(kmp_mcp_tool_names().contains(&"kmp_write_memory".to_string()));
+        assert!(kmp_mcp_tool_names().contains(&"kmp_inspect".to_string()));
     }
 }

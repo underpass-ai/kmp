@@ -465,7 +465,7 @@ async fn run_mcp_navigation_probe(
         call_mcp_navigation_tool(
             server,
             request_id,
-            "kernel_near",
+            "kmp_near",
             &near_probe_arguments(event, expected),
             event,
             log_mcp_navigation,
@@ -476,7 +476,7 @@ async fn run_mcp_navigation_probe(
         call_mcp_navigation_tool(
             server,
             request_id,
-            "kernel_inspect",
+            "kmp_inspect",
             &inspect_probe_arguments(expected),
             event,
             log_mcp_navigation,
@@ -490,7 +490,7 @@ async fn run_mcp_navigation_probe(
             call_mcp_navigation_tool(
                 server,
                 request_id,
-                "kernel_trace",
+                "kmp_trace",
                 &trace_probe_arguments(expected, target_ref),
                 event,
                 log_mcp_navigation,
@@ -804,10 +804,10 @@ fn normalize_for_lexical_match(value: &str) -> String {
 
 fn validate_event(event: &MemoryArenaEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
     match event.event.as_str() {
-        "ingest" if event.tool == "kernel_ingest" => Ok(()),
-        "ask" if event.tool == "kernel_ask" && event.subtask_index.is_some() => Ok(()),
+        "ingest" if event.tool == "kmp_ingest" => Ok(()),
+        "ask" if event.tool == "kmp_ask" && event.subtask_index.is_some() => Ok(()),
         "ask" => Err(format!(
-            "MemoryArena ask event {} for task {} must use kernel_ask and include subtask_index",
+            "MemoryArena ask event {} for task {} must use kmp_ask and include subtask_index",
             event.event_index, event.task_id
         )
         .into()),
@@ -908,12 +908,9 @@ fn summarize_run(
             .iter()
             .filter(|result| result.mcp_navigation.is_some())
             .count(),
-        mcp_navigation_near_calls: count_mcp_navigation_tool_calls(ask_results, "kernel_near"),
-        mcp_navigation_inspect_calls: count_mcp_navigation_tool_calls(
-            ask_results,
-            "kernel_inspect",
-        ),
-        mcp_navigation_trace_calls: count_mcp_navigation_tool_calls(ask_results, "kernel_trace"),
+        mcp_navigation_near_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_near"),
+        mcp_navigation_inspect_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_inspect"),
+        mcp_navigation_trace_calls: count_mcp_navigation_tool_calls(ask_results, "kmp_trace"),
         mcp_navigation_known_at_clean_asks: ask_results
             .iter()
             .filter(|result| {
@@ -1372,7 +1369,7 @@ mod tests {
             phase: "ask".to_string(),
             subtask_index: Some(1),
             about: "memoryarena:task_type:progressive_search:task:1".to_string(),
-            tool: "kernel_ask".to_string(),
+            tool: "kmp_ask".to_string(),
             arguments: json!({}),
         };
         let expected = MemoryArenaExpected {
@@ -1496,7 +1493,7 @@ mod tests {
         );
         let calls = vec![
             navigation_call_fixture(
-                "kernel_near",
+                "kmp_near",
                 json!({
                     "entries": [
                         {"ref": "memoryarena:task_type:progressive_search:task:1:subtask:1:answer"},
@@ -1505,7 +1502,7 @@ mod tests {
                 }),
             ),
             navigation_call_fixture(
-                "kernel_trace",
+                "kmp_trace",
                 json!({
                     "trace": [
                         {
@@ -1540,7 +1537,7 @@ mod tests {
             phase: "ask".to_string(),
             subtask_index: Some(subtask_index),
             about: format!("memoryarena:task_type:{task_type}:task:{task_id}"),
-            tool: "kernel_ask".to_string(),
+            tool: "kmp_ask".to_string(),
             arguments: json!({}),
         }
     }

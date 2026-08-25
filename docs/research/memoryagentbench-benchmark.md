@@ -104,8 +104,8 @@ fact supersedes another belongs in a reader/plugin above deterministic memory.
 | File | Purpose |
 | --- | --- |
 | `events.jsonl` | Ordered mixed ingest/ask stream for the live runner. |
-| `ingest.jsonl` | KMP `kernel_ingest` events only. |
-| `ask.jsonl` | KMP `kernel_ask` events only. |
+| `ingest.jsonl` | KMP `kmp_ingest` events only. |
+| `ask.jsonl` | KMP `kmp_ask` events only. |
 | `expected.jsonl` | Expected answers and all refs available after context injection. |
 | `replay.jsonl` | Context timeline and known-at snapshots per query. |
 | `summary.json` | Aggregate counts for rows, queries, context entries, and filters. |
@@ -247,7 +247,7 @@ Interpretation:
 - KMP substrate path is stable for a real official row: ingest and asks
   complete, refs stay scoped to the current about, and no known-at leaks are
   detected.
-- `kernel_ask` is not a MemoryAgentBench reader. For these questions it returns
+- `kmp_ask` is not a MemoryAgentBench reader. For these questions it returns
   a generic deterministic evidence summary from the beginning of the context,
   not a question-directed answer.
 - Full `factconsolidation_mh_6k` has 455 facts and 100 questions in this row.

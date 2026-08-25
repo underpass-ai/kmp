@@ -291,7 +291,7 @@ fn window_param(request: &HttpRequest, key: &str) -> Result<usize, HttpResponse>
 
 /// `scope=all` widens recall to every about the kernel indexes — the global
 /// graph. `dims=a,b` restricts to those dimension kinds. Defaults mirror
-/// `kernel_wake`: the current about, all dimensions.
+/// `kmp_wake`: the current about, all dimensions.
 fn dimension_selection(request: &HttpRequest) -> Result<DimensionSelection, HttpResponse> {
     let selection = match request.param("dims") {
         Some(dims) => {

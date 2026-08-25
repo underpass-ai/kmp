@@ -58,7 +58,7 @@ For each LongMemEval item:
   conversation coordinates.
 - evidence turns produce `supports_answer` evidential relations and explicit
   evidence records.
-- `kernel_ask` requests use `dimensions.scope=current_about` and
+- `kmp_ask` requests use `dimensions.scope=current_about` and
   `dimensions.mode=all`.
 
 This preserves the kernel rule that dimensions are namespaced by `about` while
@@ -513,8 +513,8 @@ cargo run -p rehydration-testkit --bin longmemeval_kmp_adapter -- \
 
 Generated files:
 
-- `ingest.jsonl`: MCP-style `kernel_ingest` tool calls.
-- `ask.jsonl`: MCP-style `kernel_ask` tool calls.
+- `ingest.jsonl`: MCP-style `kmp_ingest` tool calls.
+- `ask.jsonl`: MCP-style `kmp_ask` tool calls.
 - `expected.jsonl`: deterministic expected answer/evidence metadata.
 - `summary.json`: aggregate item/session/turn counts, gold expected evidence
   refs, and relation evidence refs actually ingested.
@@ -612,7 +612,7 @@ P0 measures adapter correctness and deterministic retrieval coverage:
 - temporal coordinate parseability;
 - per-item evidence-turn coverage;
 - per-item evidence-session coverage;
-- `kernel_ask` proof hit rate against `answer_turn_refs`;
+- `kmp_ask` proof hit rate against `answer_turn_refs`;
 - live ingest and ask latency per item.
 - optional LLM evidence-builder token usage and selected-turn coverage.
 - optional embedding candidate recall@K before evidence construction.
@@ -717,7 +717,7 @@ Lexical answer hits by type:
 
 Interpretation: KMP ingest and deterministic evidence retrieval work across all
 question types in this balanced slice. The low lexical answer-hit rate is
-expected because `kernel_ask.answer` currently returns evidence/context, not a
+expected because `kmp_ask.answer` currently returns evidence/context, not a
 LongMemEval-normalized QA answer. Official accuracy requires running the
 LongMemEval evaluator over `hypotheses.jsonl`.
 
@@ -1065,7 +1065,7 @@ observed in the kernel output:
 
 Interpretation: the main failure was upstream relation construction and answer
 aggregation, not multidimensional kernel traversal. Session was already modeled
-as a dimension, and `kernel_ask` recovered the selected evidence. The weak part
+as a dimension, and `kmp_ask` recovered the selected evidence. The weak part
 was that every selected edge had the same semantic meaning:
 `supports_answer`.
 
@@ -1313,7 +1313,7 @@ Potential next cuts:
   port, not turn KMP into a vector database API.
 - Negative evidence support: model excluded candidates explicitly when they are
   needed to avoid over-counting.
-- Reader contract separation: keep `kernel_ask` deterministic, but expose
+- Reader contract separation: keep `kmp_ask` deterministic, but expose
   enough structured evidence for an external reader to compute aggregate
   answers without guessing relation semantics from prose.
 - Benchmark-independent relation taxonomy: if relation types return, define
@@ -1333,7 +1333,7 @@ shapes and should not silently change each other's behavior.
 This slice is a writer-quality benchmark, not evidence discovery. The
 smart-writer consumes `supports_answer` / `supports` candidate relations already
 present in the generated artifacts, reads the target/question through MCP, and
-rewrites those candidate edges through `kernel_write_memory` with richer,
+rewrites those candidate edges through `kmp_write_memory` with richer,
 auditable relation semantics. A blind LongMemEval claim still requires an
 upstream candidate generator, such as the embedding candidate stage or the LLM
 evidence builder, before this writer step.
@@ -1345,10 +1345,10 @@ Flow:
 2. `longmemeval_kmp_runner --smart-writer` first ingests the item normally so all
    turn/question refs exist.
 3. The LongMemEval smart writer then reads each candidate target with
-   `kernel_near` and `kernel_inspect`.
-4. The writer LLM emits one strict `kernel_write_memory.connect_to` relation per
+   `kmp_near` and `kmp_inspect`.
+4. The writer LLM emits one strict `kmp_write_memory.connect_to` relation per
    evidence relation.
-5. The runner dry-runs, commits, verifies with `kernel_inspect`, and records
+5. The runner dry-runs, commits, verifies with `kmp_inspect`, and records
    writer quality diagnostics in `writer_results.jsonl`.
 
 The first public TLS smoke used 3 `multi-session` items:
@@ -1616,8 +1616,8 @@ official gpt-4o autoeval judge; the only variable is how memory was written:
 | Derivation reader (embedding candidates top-30 + typed contract) | 91/118 = 0.7712 |
 
 Smart-writer quality on the slice: **323/323 rich relations, 0 anemic, 0
-invalid LLM outputs** (one `kernel_write_memory` relation per evidence
-candidate, dry-run → commit → `kernel_inspect` verification).
+invalid LLM outputs** (one `kmp_write_memory` relation per evidence
+candidate, dry-run → commit → `kmp_inspect` verification).
 
 Readings:
 

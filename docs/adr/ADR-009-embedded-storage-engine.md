@@ -59,7 +59,7 @@ root should not have to own.
   and would be paid by every agent session on a corpus that only grows.
 - **Write throughput is not the differentiator.** Per-event durable ingest is
   fsync-bound and statistically identical across engines (~265–294 ev/s —
-  far above interactive `kernel_write_memory` rates). Batched ingest
+  far above interactive `kmp_write_memory` rates). Batched ingest
   (~29–33k ev/s) replays a 100k-event log in ~3.5s on all three.
 - **Fastest at the query shape that matters.** The port surface is
   neighborhood-shaped ([ADR-010](ADR-010-embedded-graph-representation.md));
