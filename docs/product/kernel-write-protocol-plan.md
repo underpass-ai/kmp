@@ -190,9 +190,11 @@ P0 introduces one general writer-first MCP tool:
 kmp_write_memory
 ```
 
-The tool supports `dry_run` and returns the generated `kmp_ingest` preview.
-When `dry_run=false`, the tool validates, compiles, and forwards to
-`kmp_ingest`.
+The tool validates, compiles, and forwards to `kmp_ingest` in one call by
+default (`dry_run=false`, also the behavior when the option is omitted).
+Validation failure writes nothing. Set `dry_run=true` only for an explicitly
+requested preview or payload debugging; that response returns the generated
+`kmp_ingest` payload and never commits it.
 
 Specialized helper aliases can come later:
 
@@ -246,7 +248,7 @@ Initial shape:
   },
   "idempotency_key": "write:incident-mobile-login-decision-v1",
   "options": {
-    "dry_run": true,
+    "dry_run": false,
     "strict": true
   }
 }
@@ -629,14 +631,17 @@ The intended LLM loop is:
    constraint relations.
 4. `kmp_trace` candidate paths when the writer needs to understand why a
    prior state led to the current one.
-5. Write a concise semantic memory event through `kmp_write_memory`.
-6. Read the dry-run preview.
-7. Commit only when generated refs, relations, evidence, and suggested trace
-   look correct.
-8. Use `kmp_trace` or `kmp_near` to verify the new graph shape.
+5. Write a concise semantic memory event once through `kmp_write_memory`; omit
+   `options.dry_run` or set it to `false`. The planner validates before ingest
+   and an invalid request writes nothing.
+6. Use `options.dry_run=true` instead only when the user requested a preview,
+   the compiled payload needs debugging, or a deliberate human review must
+   precede mutation. A preview does not authorize a later commit.
+7. Use `kmp_trace` or `kmp_near` to verify the new graph shape when needed.
 
-This gives the LLM a safe writing workflow without requiring it to manually
-construct the full `kmp_ingest` payload.
+This gives the LLM a validated single-call writing workflow without requiring
+it to manually construct the full `kmp_ingest` payload or pay for a redundant
+preview round trip.
 
 ## MCP Implementation Plan
 

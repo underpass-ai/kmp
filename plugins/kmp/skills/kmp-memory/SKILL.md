@@ -134,7 +134,7 @@ work.
 
 | Move | Use it when |
 | --- | --- |
-| `kmp_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then compiles to canonical ingest. Supports `options.dry_run` to check before committing. |
+| `kmp_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then commits through canonical ingest. Omit `options.dry_run` or set it to `false` for the normal single-call write. |
 | `kmp_ingest` | Canonical low-level form. Use when you are producing the exact graph yourself. |
 
 Temporal reads return a `page` object whose total is temporal entries and whose
@@ -352,8 +352,14 @@ Before committing a rich relation:
 - choose the most specific relation supported by what you read;
 - make `why` mention the actual relationship between the two endpoints;
 - make `evidence` concrete and independent enough to audit;
-- preview with `options.dry_run=true`, inspect the compiled relation, then
-  commit the same logical write with a stable `idempotency_key`.
+- call `kmp_write_memory` once with `options.dry_run=false` (or omit that
+  option) and a stable `idempotency_key`. The planner validates the complete
+  write before ingest, so an invalid request writes nothing.
+
+Set `options.dry_run=true` only when the user explicitly asks for a preview,
+when debugging the compiled ingest payload, or when a deliberate human review
+must happen before mutation. A preview writes nothing and does not imply a
+follow-up commit.
 
 A relation is **rich** or **anemic**. Rich relations — causal, motivational,
 evidential, constraint — require both `why` and `evidence`. If the context

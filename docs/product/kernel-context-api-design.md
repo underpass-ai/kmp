@@ -99,11 +99,12 @@ Live MCP also exposes a tenth tool that is not a memory move:
 
 `kmp_write_memory` is neither a memory move nor an ingest alias. It is the
 ergonomic entry point for writers above the canonical low-level write path
-(`kmp_ingest` / `KernelMemoryService.Ingest`). It defaults to `dry_run = true`
-and `strict = true`, so a writer previews the compiled canonical ingest and
-fails fast on unsupported relations or missing proof before committing. In
-`strict` mode it requires `current.evidence` and at least one `connect_to`
-relation.
+(`kmp_ingest` / `KernelMemoryService.Ingest`). It defaults to
+`dry_run = false` and `strict = true`: the normal path validates the complete
+plan and commits in one call, while an invalid request writes nothing. Set
+`dry_run = true` only for an explicitly requested preview or payload
+debugging. In `strict` mode it requires `current.evidence` and at least one
+`connect_to` relation.
 
 So the live MCP surface is **ten tools**: the nine memory moves above plus
 `kmp_write_memory`, with `kernel_remember` and `kernel_ingest_context` as

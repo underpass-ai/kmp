@@ -33,7 +33,10 @@ move forward from start, merge/deduplicate refs and exclude the end.
 
 **Write**
 - `kmp_write_memory` — the default. Validates intent and relation quality,
-  then compiles to canonical ingest. Supports `options.dry_run`.
+  then commits through canonical ingest. Normal writes use one call with
+  `options.dry_run=false` or the option omitted; invalid writes write nothing.
+  `options.dry_run=true` is only for an explicit preview, payload debugging or
+  deliberate human review.
 - `kmp_ingest` — canonical low-level form.
 
 Close with the two rules that matter: **write decisions, constraints and

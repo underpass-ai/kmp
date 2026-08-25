@@ -193,7 +193,7 @@ pub(crate) fn tools_list_result() -> Value {
             ),
             tool_definition_with_output(
                 "kmp_write_memory",
-                "Write to memory. This is the writer to use: it validates intent and relation quality, then compiles to canonical kmp_ingest, and `options.dry_run` shows what a write would commit before committing it. Reach for kmp_ingest only when producing the exact graph yourself.",
+                "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
                 write_memory_schema(),
                 write_memory_output_schema(),
             ),
@@ -1306,6 +1306,12 @@ mod tests {
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
+        let writer_description = tools[1]["description"]
+            .as_str()
+            .expect("writer description");
+        assert!(writer_description.contains("Normal writes are one call"));
+        assert!(writer_description.contains("validation failures write nothing"));
+        assert!(writer_description.contains("explicitly requested preview"));
         assert_eq!(tools[1]["inputSchema"]["required"][1], "intent");
         assert_eq!(
             tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["rel"]["enum"]
