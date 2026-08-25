@@ -1,9 +1,12 @@
 # kmp-proto
 
-Protobuf and tonic bindings for
-`underpass.rehydration.kernel.v1beta1` — the typed gRPC contract of
-[KMP by Underpass](https://github.com/underpass-ai/kmp), the Kernel Memory
-Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate contains the Protobuf and
+tonic bindings for its typed gRPC contract.
+
+The wire package remains `underpass.rehydration.kernel.v1beta1` for backward
+compatibility. Changing that identifier would break existing clients; it is a
+transport namespace, not the current product name.
 
 Generated at build time from the `.proto` files shipped inside this crate, with
 both client and server stubs plus the file descriptor set (exported as

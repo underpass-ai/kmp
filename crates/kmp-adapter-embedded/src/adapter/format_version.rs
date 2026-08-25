@@ -90,8 +90,8 @@ pub fn format_version_path(data_dir: &Path) -> PathBuf {
 
 /// The version stamped in `data_dir`, without applying the gate.
 ///
-/// The migration needs to know what it is looking at precisely when
-/// [`check_or_stamp`] would refuse to open it.
+/// The migration needs to know what it is looking at precisely when the
+/// internal `check_or_stamp` gate would refuse to open it.
 pub fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
     let version_path = format_version_path(data_dir);
     let raw = fs::read_to_string(&version_path).map_err(|error| {

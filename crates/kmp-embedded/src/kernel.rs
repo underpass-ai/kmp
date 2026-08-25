@@ -14,8 +14,8 @@ use kmp_observability::{BufferedQualityMetricsObserver, EmbeddedTelemetryGuard};
 
 const GENERATOR_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// The KMP memory facade composed over the embedded store: every port is the
-/// same single-file redb store, and ingest projects synchronously in-process,
+/// The KMP memory facade composed over one stamped embedded store: every port
+/// shares the selected engine, and ingest projects synchronously in-process,
 /// which is what makes `read_after_write_ready` unconditionally true.
 pub type EmbeddedMemoryService = KernelMemoryApplicationService<
     EmbeddedKernelStore,

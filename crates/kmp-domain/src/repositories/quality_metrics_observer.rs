@@ -16,7 +16,7 @@ pub struct QualityObservationContext {
 /// Adapters implement this to push metrics to different backends:
 /// OTel histograms, Loki structured logs, Prometheus push gateway, etc.
 ///
-/// The kernel calls [`observe`] after every successful render. Adapters
+/// The kernel calls [`Self::observe`] after every successful render. Adapters
 /// must be non-blocking — an adapter that blocks on I/O should buffer
 /// internally and flush asynchronously.
 pub trait QualityMetricsObserver: Send + Sync {

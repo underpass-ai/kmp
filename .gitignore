@@ -1,18 +1,28 @@
-/target
-/CONTEXT_SERVICE_RUST_MIGRATION_PLAN.md
-/rollout-*.jsonl
-/to-delete-when-finish-the-standalone-extraction/
-/archive/artifacts/e2e-runs/
-/.codex
-/.rehydration
+# Build and disposable test output.
+/target/
+/dist/
+/tmp/
 *.pyc
+__pycache__/
+.DS_Store
+
+# Local KMP machine state. The reviewable `.kmp/memory.jsonl` recovery
+# bundle is deliberately not ignored.
+/.kernel/
+/.rehydration/
+
+# Generated test evidence that is not part of the maintained archive.
+/archive/artifacts/e2e-runs/
+
+# Per-developer agent configuration.
+/.codex/
 
 # Per-developer agent settings and the temp files the harness writes beside
 # them. These carry local paths and internal hostnames; this repo is public.
 /.claude/settings.local.json
 /.claude/settings.local.json.tmp.*
 
-# Temporary public article draft.
-/archive/docs/research/entrenando-un-modelo-pequeno-para-operar-kmp.md
-/dist/
-/tmp/
+# Local credentials and overrides must never enter the public repository.
+.env
+.env.*
+!.env.example

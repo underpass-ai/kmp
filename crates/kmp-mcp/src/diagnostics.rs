@@ -1,8 +1,8 @@
 //! `info` and `doctor`: what this binary is, and why the memory is not answering.
 //!
 //! Both read the layout from the filesystem and never open the store. A
-//! diagnostic that creates a store, or takes the single-writer lock out from
-//! under a live session, has changed the thing it was asked to describe.
+//! diagnostic that creates a store, or contends with a live session for its
+//! engine, has changed the thing it was asked to describe.
 
 use std::fmt::Write as _;
 use std::path::Path;

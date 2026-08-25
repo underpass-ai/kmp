@@ -1,7 +1,7 @@
 # kmp-application
 
-The application layer of [KMP by Underpass](https://github.com/underpass-ai/kmp),
-the Kernel Memory Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate is its application layer.
 
 Use cases, not infrastructure: ingest and write memory, wake an about, ask a
 question against recovered evidence, go to a node, look around it, rewind and

@@ -25,6 +25,7 @@ RUN apt-get update \
 COPY --from=builder /workspace/target/release/kmp-server /usr/local/bin/kmp-server
 COPY --from=builder /workspace/target/release/kmp-mcp-http /usr/local/bin/kmp-mcp-http
 COPY --from=builder /workspace/target/release/runtime_reference_client /usr/local/bin/runtime-reference-client
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md /usr/share/doc/kmp/
 
 ENV KMP_SERVICE_NAME=kmp \
     KMP_GRPC_BIND=0.0.0.0:50054 \

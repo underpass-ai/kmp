@@ -3,10 +3,10 @@
 //! `kmp_inspect`, `kmp_near` and `kmp_trace` render them for an
 //! agent — same facade, same semantics, no parallel read model.
 //!
-//! Served in-process over an already-open kernel on purpose: the embedded
-//! store is single-writer per ADR-011, so a separate viewer process could
-//! never watch a live agent session. Mounted inside the session's own
-//! process, the viewer sees every write the moment it projects.
+//! Served in-process over an already-open kernel on purpose: the viewer sees
+//! every write the moment it projects and shares the exact same facade. There
+//! is no second database connection, daemon, sync protocol or parallel read
+//! model.
 //!
 //! The surface is deliberately small: a hand-rolled HTTP/1.1 GET server on a
 //! loopback address, a UI compiled into the binary with `include_str!`, and
@@ -45,8 +45,8 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// The viewer over one memory facade.
 ///
 /// Generic over the same stores as [`KernelMemoryApplicationService`], so the
-/// embedded edition mounts it over redb today and any future edition can
-/// mount it over its own composition unchanged.
+/// embedded edition mounts it over the selected local engine and any future
+/// edition can mount it over its own composition unchanged.
 pub struct MemoryViewerServer<G, D, S, E, W> {
     service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
     data_dir: Option<String>,

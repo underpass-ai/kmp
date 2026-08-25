@@ -1,7 +1,8 @@
 # kmp-observability
 
-Telemetry wiring for [KMP by Underpass](https://github.com/underpass-ai/kmp),
-the Kernel Memory Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate supplies its telemetry and
+quality-observer wiring.
 
 Two things live here: the OpenTelemetry pipeline (tracing subscriber, OTLP
 export over gRPC, optional mutual TLS to the collector, meter provider) and

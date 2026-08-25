@@ -1,13 +1,14 @@
 # kmp-ports
 
-The command and query ports of [KMP by Underpass](https://github.com/underpass-ai/kmp),
-the Kernel Memory Protocol kernel.
+[KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
+preserves what happened, when and why. This crate defines its command and
+query ports.
 
 A thin crate on purpose: it names the operations the kernel drives its
 adapters through — commands that change memory, queries that read it — and
-re-exports the domain vocabulary those signatures speak. Adapters (embedded
-redb, Neo4j, Valkey, NATS) implement these; the application layer composes
-them.
+re-exports the domain vocabulary those signatures speak. Local embedded,
+Neo4j, Valkey and NATS adapters implement these; the application layer
+composes them.
 
 Depending on this crate means depending on the shape of the kernel's
 boundary, not on any implementation of it.
