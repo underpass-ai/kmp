@@ -13,8 +13,10 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   `since`, `before`, `after`, `during`, explicit dates/timestamps and release
   windows — in the user's language — use `kmp_goto` / `kmp_near` /
   `kmp_rewind` / `kmp_forward` before `kmp_ask`. Resolve the user's timezone
-  to a half-open UTC interval `[start, end)` and follow temporal pagination to
-  completion or report its exact continuation.
+  to a half-open UTC interval `[start, end)`. Capture entries exactly at the
+  inclusive start with `kmp_goto`, then use the strictly-after `kmp_forward`
+  from start; paginate, merge/deduplicate refs and exclude the end. Complete
+  the traversal or report its exact continuation.
 - **Ask semantically, with bounded language fallback.** For a non-temporal
   question, `kmp_ask` in the user's language first. On `UNKNOWN` or evidence
   that does not answer, retry once per fallback language configured by

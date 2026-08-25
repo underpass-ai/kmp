@@ -8,13 +8,22 @@
     "start": "2026-08-23T22:00:00Z",
     "end": "2026-08-24T22:00:00Z"
   },
+  "temporal_boundary": {
+    "entries": [
+      {
+        "ref": "project:kmp:outcome:before-day",
+        "timestamp": "2026-08-23T21:59:59Z"
+      },
+      {
+        "ref": "project:kmp:outcome:day-start",
+        "timestamp": "2026-08-23T22:00:00Z"
+      }
+    ],
+    "next_cursor": null
+  },
   "temporal_pages": [
     {
       "entries": [
-        {
-          "ref": "project:kmp:outcome:day-start",
-          "timestamp": "2026-08-23T22:00:00Z"
-        },
         {
           "ref": "project:kmp:decision:language-routing",
           "timestamp": "2026-08-24T10:15:00Z"
@@ -36,11 +45,16 @@
       "next_cursor": null
     }
   ],
+  "excluded_refs": [
+    "project:kmp:outcome:before-day",
+    "project:kmp:outcome:next-day"
+  ],
   "temporal_cases": [
     {
       "language": "en",
       "prompt": "What happened yesterday, 24 August, in KMP?",
       "tool_trace": [
+        "kmp_goto:2026-08-23T22:00:00Z",
         "kmp_forward:2026-08-23T22:00:00Z",
         "kmp_forward:project:kmp:decision:language-routing"
       ],
@@ -54,6 +68,7 @@
       "language": "es",
       "prompt": "¿Qué se hizo ayer, 24 de agosto, en KMP?",
       "tool_trace": [
+        "kmp_goto:2026-08-23T22:00:00Z",
         "kmp_forward:2026-08-23T22:00:00Z",
         "kmp_forward:project:kmp:decision:language-routing"
       ],
@@ -66,13 +81,13 @@
   ],
   "semantic_case": {
     "user_language": "es",
-    "question": "¿Por qué se eligió redb para el almacén embebido?",
+    "question": "¿Por qué un escritor corresponde a un agente por proyecto?",
     "primary_result": "UNKNOWN",
     "fallback_languages": [
       "en"
     ],
     "translated_queries": [
-      "Why was redb chosen for the embedded store?"
+      "Why does one writer correspond to one agent per project?"
     ],
     "answer_language": "es",
     "stored_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"docs/adr/ADR-011.md\",\"line\":42}}",

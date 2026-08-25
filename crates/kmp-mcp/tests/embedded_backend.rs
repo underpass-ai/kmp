@@ -645,8 +645,9 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         "kmp_ask",
         json!({
             "about": "project:language-fallback",
-            "question": "¿Qué motivó escoger el almacén local y con qué modelo de propiedad encaja?",
-            "answer_policy": "evidence_or_unknown"
+            "question": "¿Por qué un escritor corresponde a un agente por proyecto?",
+            "answer_policy": "evidence_or_unknown",
+            "budget": {"detail": "full"}
         }),
     )
     .await;
@@ -658,8 +659,9 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         "kmp_ask",
         json!({
             "about": "project:language-fallback",
-            "question": "Why does the embedded store use redb and which ownership model does it match?",
-            "answer_policy": "evidence_or_unknown"
+            "question": "Why does one writer correspond to one agent per project?",
+            "answer_policy": "evidence_or_unknown",
+            "budget": {"detail": "full"}
         }),
     )
     .await;

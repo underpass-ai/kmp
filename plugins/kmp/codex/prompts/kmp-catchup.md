@@ -7,6 +7,10 @@ Otherwise work it out, and ask rather than guess if it is ambiguous.
 This is temporal intent. Resolve my timezone and turn a bounded calendar
 period into a half-open UTC interval `[start, end)`. Do not call `kmp_ask`;
 Ask is semantic relevance retrieval, not an interval query.
+Because `kmp_forward` is strictly after its cursor, capture the inclusive
+start boundary with `kmp_goto` at `start` and keep only entries exactly at
+that time. Then move forward from `start`, merge and deduplicate refs, and
+exclude entries at or after `end`.
 
 **Finding the frontier.** `kmp_rewind` with `from: { time: <now> }`,
 `limit: { entries: 1 }` and `budget: { detail: "full" }`. The newest entry

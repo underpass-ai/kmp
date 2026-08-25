@@ -115,8 +115,9 @@ The fallback translates only the query. The answer follows the user's
 language; evidence text, refs, relation `why`, and source metadata remain
 byte-for-byte as stored. Temporal requests such as “yesterday” or a release
 window bypass semantic Ask: the agent resolves the user's timezone, navigates
-the half-open UTC interval and consumes every page. Setup and upgrades preserve
-the configured list.
+the half-open UTC interval and consumes every page. It captures the inclusive
+start with `kmp_goto` before the strictly-after `kmp_forward`, merges refs and
+excludes the end. Setup and upgrades preserve the configured list.
 
 ## What you get
 
