@@ -1,7 +1,12 @@
 # Third-Party Notices
 
-This project uses the following third-party libraries. We are grateful to
-their authors and contributors.
+This file calls out notable direct dependencies and assets that KMP ships or
+builds against. [`Cargo.lock`](./Cargo.lock) is the authoritative resolved Rust
+dependency graph; published crates declare their SPDX license metadata, while
+the repository and binary distributions carry the project license text. This
+summary is not an SBOM.
+
+We are grateful to their authors and contributors.
 
 ## Runtime Dependencies
 

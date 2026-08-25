@@ -33,6 +33,11 @@ trap 'rm -rf "${work}"' EXIT
 stage="${work}/kmp"
 mkdir -p "${stage}/server/bin" "${OUTPUT_DIR}"
 
+install -m 644 "${ROOT_DIR}/LICENSE" "${stage}/LICENSE"
+install -m 644 "${ROOT_DIR}/NOTICE" "${stage}/NOTICE"
+install -m 644 "${ROOT_DIR}/THIRD_PARTY_NOTICES.md" \
+  "${stage}/THIRD_PARTY_NOTICES.md"
+
 python3 - "${ROOT_DIR}/distribution/mcpb/manifest.json" "${stage}/manifest.json" "${VERSION}" <<'PY'
 import json
 import pathlib

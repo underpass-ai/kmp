@@ -1,8 +1,15 @@
-.git
-.github
-target
-docs
-to-delete-when-finish-the-standalone-extraction
-CONTEXT_SERVICE_RUST_MIGRATION_PLAN.md
-rollout-*.jsonl
-.DS_Store
+# The image build consumes only the Rust workspace and protobuf contract.
+# Keep documentation, archives, local memory and repository metadata out of
+# the context by default instead of maintaining an ever-growing denylist.
+**
+!Dockerfile
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!LICENSE
+!NOTICE
+!THIRD_PARTY_NOTICES.md
+!api/
+!api/**
+!crates/
+!crates/**
