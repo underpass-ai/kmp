@@ -48,6 +48,9 @@ Detailed notes from the early release cycle are preserved in the
 - Repository ignore rules and the Docker build context now exclude local
   stores, credentials, scratch data, archives and unrelated workspace files
   by default.
+- The marketplace install smoke can validate minor and major releases whose
+  patch number is zero instead of assuming every release is at least two
+  patches into its current series.
 
 ## [0.1.18] - 2026-08-25
 
