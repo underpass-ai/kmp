@@ -16,7 +16,11 @@
     "context-recovery"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": {
+    "kmp": {
+      "command": "kmp-mcp"
+    }
+  },
   "interface": {
     "displayName": "KMP by Underpass",
     "shortDescription": "Temporal, navigable memory for coding agents",

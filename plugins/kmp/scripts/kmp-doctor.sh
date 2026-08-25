@@ -552,7 +552,16 @@ CODEX_EXPECTED_PROMPTS=10
 CODEX_CONFIG="$HOME/.codex/config.toml"
 if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
   FOUND_HOST=1
-  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
+  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG"; then
+    warn "Codex CLI — config still contains former kernel-memory tables"
+    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex cannot safely load a partial server-id migration"
+    if grep -q '^\[mcp_servers\.kernel-memory\]$' "$CODEX_CONFIG"; then
+      info "the former registration and any child tool policies must move together"
+    else
+      info "stale child tool-policy tables create a server with no transport"
+      info "Codex reports: invalid transport in mcp_servers.kernel-memory"
+    fi
+  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
     # Registration is not the whole install. Four prompts shipped in every
     # release and landed nowhere, because the installer copied a hardcoded
     # three — and this line said `ok` the whole time, which is how it stayed
@@ -574,14 +583,24 @@ if command -v codex >/dev/null 2>&1 || [ -f "$CODEX_CONFIG" ]; then
       info "missing:$CODEX_MISSING"
       info "re-run:  bash scripts/mcp/install-kmp-plugin.sh --codex"
     fi
-  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory\]' "$CODEX_CONFIG"; then
-    warn "Codex CLI — registered under the former kernel-memory id"
-    offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI still uses the former server id"
-    info "re-run the installer to rename the registration without changing its command or environment"
   else
     warn "Codex CLI — kmp not in $CODEX_CONFIG"
     offer "bash scripts/mcp/install-kmp-plugin.sh --codex" "Codex CLI is not wired"
     info "wire it with:  bash scripts/mcp/install-kmp-plugin.sh --codex"
+  fi
+
+  # config.toml is only one input. Enabled Codex plugins can contribute MCP
+  # servers too, which is how a pre-rename kmp plugin kept starting a second
+  # `kernel-memory` after the user config had been migrated correctly.
+  if [ -n "${KMP_DOCTOR_CODEX_MCP_LIST+x}" ]; then
+    CODEX_MCP_LIST="$KMP_DOCTOR_CODEX_MCP_LIST"
+  else
+    CODEX_MCP_LIST="$(codex mcp list 2>/dev/null || true)"
+  fi
+  if host_list_has_server "$CODEX_MCP_LIST" kernel-memory; then
+    warn "Codex CLI — effective MCP list still contains kernel-memory"
+    offer "codex plugin remove kmp@underpass" "an enabled pre-rename plugin is still injecting the former server"
+    info "remove or reinstall the stale KMP plugin; the [mcp_servers.kmp] registration remains in place"
   fi
 fi
 

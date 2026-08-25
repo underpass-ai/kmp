@@ -22,6 +22,20 @@ python3 -m json.tool "${PLUGIN_DIR}/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "${PLUGIN_DIR}/.claude-plugin/plugin.json" >/dev/null
 python3 -m json.tool "${PLUGIN_DIR}/.mcp.json" >/dev/null
 
+# Codex and Claude share the plugin but not the process-root contract. Codex
+# must use an executable from PATH; a CLAUDE_PLUGIN_ROOT command is passed to
+# exec literally and fails with ENOENT before MCP can initialize.
+python3 - <<'PY'
+import json
+import pathlib
+
+plugin = pathlib.Path("plugins/kmp")
+manifest = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
+servers = manifest.get("mcpServers")
+if servers != {"kmp": {"command": "kmp-mcp"}}:
+    raise SystemExit(f"unexpected Codex MCP declaration: {servers!r}")
+PY
+
 # The demo bundle ships inside the plugin, so a packaging change that drops it
 # would leave /kmp:demo broken on every new install. That it *loads* is a Rust
 # test (tests/demo_bundle.rs); that it is *there* belongs here, where the
@@ -98,11 +112,65 @@ doctor_output="$(
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
   KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
 )"
 if ! grep -Fq '[✓] Hosts      Claude Code — kmp registered' <<<"${doctor_output}"; then
   echo "KMP plugin smoke: doctor rejected Claude Code's native plugin registration" >&2
   printf '%s\n' "${doctor_output}" >&2
+  exit 1
+fi
+
+# A clean user config can still be poisoned by an enabled pre-rename Codex
+# plugin. Doctor must inspect the effective MCP inventory and name that stale
+# server instead of declaring the host healthy from config.toml alone.
+CODEX_DOCTOR_HOME="${SMOKE_DATA_DIR}/codex-doctor-home"
+mkdir -p "${CODEX_DOCTOR_HOME}/.codex/prompts"
+printf '%s\n' \
+  '[mcp_servers.kmp]' \
+  'command = "kmp-mcp"' \
+  > "${CODEX_DOCTOR_HOME}/.codex/config.toml"
+for prompt in kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall; do
+  : > "${CODEX_DOCTOR_HOME}/.codex/prompts/${prompt}.md"
+done
+stale_codex_output="$(
+  HOME="${CODEX_DOCTOR_HOME}" \
+  NO_COLOR=1 \
+  KMP_MCP_BIN="${DOCTOR_BIN}" \
+  KMP_MCP_BACKEND=embedded \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_MCP_LIST='kernel-memory  ${CLAUDE_PLUGIN_ROOT}/scripts/run-embedded-mcp.sh  enabled' \
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
+)"
+if ! grep -Fq 'Codex CLI — effective MCP list still contains kernel-memory' <<<"${stale_codex_output}"; then
+  echo "KMP plugin smoke: doctor missed a stale plugin-provided Codex server" >&2
+  printf '%s\n' "${stale_codex_output}" >&2
+  exit 1
+fi
+
+# Reproduce the half-migrated file that made Codex reject config.toml before
+# it could start: the transport moved to kmp but one legacy tool table did not.
+printf '%s\n' \
+  '[mcp_servers.kmp]' \
+  'command = "kmp-mcp"' \
+  '' \
+  '[mcp_servers.kernel-memory.tools.kernel_wake]' \
+  'approval_mode = "approve"' \
+  > "${CODEX_DOCTOR_HOME}/.codex/config.toml"
+legacy_table_output="$(
+  HOME="${CODEX_DOCTOR_HOME}" \
+  NO_COLOR=1 \
+  KMP_MCP_BIN="${DOCTOR_BIN}" \
+  KMP_MCP_BACKEND=embedded \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
+)"
+if ! grep -Fq 'Codex CLI — config still contains former kernel-memory tables' <<<"${legacy_table_output}"; then
+  echo "KMP plugin smoke: doctor missed a legacy Codex child table" >&2
+  printf '%s\n' "${legacy_table_output}" >&2
   exit 1
 fi
 

@@ -10,6 +10,14 @@ implemented, with deprecated fields removed in `v1`.
 
 ## [Unreleased]
 
+### Fixed
+
+- Codex setup now migrates the complete former `kernel-memory` TOML table
+  prefix, including tool policy subtables, validates the result before
+  replacing `config.toml`, and reports stale plugin-provided registrations in
+  doctor. The Codex plugin now uses its own host-correct MCP declaration
+  instead of a Claude plugin-root path.
+
 ### Added
 
 - **KMP is ready for the official MCP Registry without submitting the listing

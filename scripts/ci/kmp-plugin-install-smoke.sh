@@ -8,7 +8,7 @@ set -euo pipefail
 # first and then invokes the launcher by path — so it exercises neither the
 # marketplace shape nor the .mcp.json declaration the host actually reads.
 #
-# Three shipped defects lived in exactly that gap, each leaving an install
+# Four shipped defects lived in exactly that gap, each leaving an install
 # that looked correct and did nothing:
 #
 #   1. the launcher exec'd bin/kmp-mcp, which only exists in a release
@@ -18,9 +18,11 @@ set -euo pipefail
 #   3. .mcp.json declared `cwd: "."` with a relative command, so the host
 #      spawned the launcher from wherever the session started and got
 #      ENOENT.
+#   4. Codex loaded that Claude-specific declaration literally, so an enabled
+#      plugin tried to execute a path rooted at `${CLAUDE_PLUGIN_ROOT}`.
 #
 # This gate reproduces a marketplace install and starts the server the way
-# the host does. It fails on all three.
+# the host does. It fails on all four.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PLUGIN_DIR="${ROOT_DIR}/plugins/kmp"
@@ -94,6 +96,33 @@ done
 cargo build --locked --quiet -p kmp-mcp
 export PATH="${ROOT_DIR}/target/debug:${PATH}"
 command -v kmp-mcp >/dev/null || fail "kmp-mcp is not on PATH after building it"
+
+# Codex resolves its own MCP declaration from the manifest. It does not
+# expand Claude's plugin-root placeholder in a stdio command, so the portable
+# declaration is the installed executable name.
+read -r CODEX_SERVER_NAME CODEX_SERVER_COMMAND <<<"$(
+  python3 - "${INSTALLED}" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+manifest = json.loads((root / ".codex-plugin/plugin.json").read_text())
+servers = manifest.get("mcpServers")
+if not isinstance(servers, dict):
+    sys.exit(f"unexpected Codex MCP manifest declaration: {servers!r}")
+if len(servers) != 1:
+    sys.exit(f"expected one Codex MCP server, found {len(servers)}")
+name, entry = next(iter(servers.items()))
+print(name, entry.get("command", ""))
+PY
+)"
+[[ "${CODEX_SERVER_NAME}" == "kmp" ]] \
+  || fail "the Codex plugin server id is ${CODEX_SERVER_NAME}; expected kmp"
+[[ "${CODEX_SERVER_COMMAND}" == "kmp-mcp" ]] \
+  || fail "the Codex plugin command is ${CODEX_SERVER_COMMAND}; expected kmp-mcp"
+command -v "${CODEX_SERVER_COMMAND}" >/dev/null \
+  || fail "the Codex plugin command is not resolvable from PATH"
 
 # --- 4. start it the way the host does ----------------------------------
 #
@@ -290,6 +319,9 @@ printf '%s\n' \
   '[mcp_servers.kernel-memory]' \
   'command = "/previous/kmp-mcp"' \
   'env = { KMP_MCP_BACKEND = "embedded" }' \
+  '' \
+  '[mcp_servers.kernel-memory.tools.kernel_wake]' \
+  'approval_mode = "approve"' \
   > "${MIGRATION_HOME}/.codex/config.toml"
 HOME="${MIGRATION_HOME}" \
 XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
@@ -298,12 +330,18 @@ KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
   > "${WORK_DIR}/migration.txt"
 grep -q '^\[mcp_servers\.kmp\]$' "${MIGRATION_HOME}/.codex/config.toml" \
   || fail "the installer did not migrate the Codex server id to kmp"
-if grep -q '^\[mcp_servers\.kernel-memory\]$' "${MIGRATION_HOME}/.codex/config.toml"; then
-  fail "the installer left the former Codex server id behind"
+grep -q '^\[mcp_servers\.kmp\.tools\.kernel_wake\]$' \
+  "${MIGRATION_HOME}/.codex/config.toml" \
+  || fail "the installer did not migrate the Codex tool policy table"
+if grep -q '^\[mcp_servers\.kernel-memory' "${MIGRATION_HOME}/.codex/config.toml"; then
+  fail "the installer left a former Codex server table behind"
 fi
 grep -q '^\[mcp_servers\.kernel-memory\]$' \
   "${MIGRATION_HOME}/.codex/config.toml.kmp-backup" \
   || fail "the installer did not preserve the pre-migration Codex config"
+python3 -c 'import pathlib,sys,tomllib;tomllib.loads(pathlib.Path(sys.argv[1]).read_text())' \
+  "${MIGRATION_HOME}/.codex/config.toml" \
+  || fail "the migrated Codex config is not valid TOML"
 
 # Codex copies the updater beside the binary installer rather than inside a
 # plugin root. Its one-command path must resolve that installed layout too.
