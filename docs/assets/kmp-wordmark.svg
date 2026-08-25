@@ -12,12 +12,12 @@
       .wordmark { fill: #c4b5fd; }
     }
   </style>
-  <text class="wordmark" x="380" y="42" text-anchor="middle" xml:space="preserve">
-    <tspan x="380" dy="0"> ██╗  ██╗███╗   ███╗██████╗ </tspan>
-    <tspan x="380" dy="34"> ██║ ██╔╝████╗ ████║██╔══██╗</tspan>
-    <tspan x="380" dy="34"> █████╔╝ ██╔████╔██║██████╔╝</tspan>
-    <tspan x="380" dy="34"> ██╔═██╗ ██║╚██╔╝██║██╔═══╝ </tspan>
-    <tspan x="380" dy="34"> ██║  ██╗██║ ╚═╝ ██║██║     </tspan>
-    <tspan x="380" dy="34"> ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     </tspan>
+  <text class="wordmark" x="52" y="42" text-anchor="start" xml:space="preserve">
+    <tspan x="52" dy="0"> ██╗  ██╗███╗   ███╗██████╗</tspan>
+    <tspan x="52" dy="34"> ██║ ██╔╝████╗ ████║██╔══██╗</tspan>
+    <tspan x="52" dy="34"> █████╔╝ ██╔████╔██║██████╔╝</tspan>
+    <tspan x="52" dy="34"> ██╔═██╗ ██║╚██╔╝██║██╔═══╝</tspan>
+    <tspan x="52" dy="34"> ██║  ██╗██║ ╚═╝ ██║██║</tspan>
+    <tspan x="52" dy="34"> ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝</tspan>
   </text>
 </svg>
