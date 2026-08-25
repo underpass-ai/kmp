@@ -66,6 +66,30 @@ run() {
 
 say "KMP ${VERSION} — updating the installed halves together"
 
+# A native plugin update may replace the cache directory this script is
+# running from. Resolve and stage the sibling engine installer before asking
+# either host to mutate that directory, so the second half of the update
+# remains available afterwards.
+if [ -f "${SCRIPT_DIR}/kmp-install-binary.sh" ]; then
+  # Codex installs both helpers beside each other under its data directory.
+  INSTALLER_SOURCE="${SCRIPT_DIR}/kmp-install-binary.sh"
+else
+  INSTALLER_SOURCE="${PLUGIN_ROOT}/scripts/kmp-install-binary.sh"
+fi
+[ -f "$INSTALLER_SOURCE" ] || {
+  echo "kmp-update: engine installer is missing at ${INSTALLER_SOURCE}" >&2
+  exit 1
+}
+
+INSTALLER="$INSTALLER_SOURCE"
+UPDATE_WORK=""
+if [ "$DRY_RUN" -eq 0 ]; then
+  UPDATE_WORK="$(mktemp -d)"
+  trap 'rm -rf "${UPDATE_WORK}"' EXIT
+  cp "$INSTALLER_SOURCE" "${UPDATE_WORK}/kmp-install-binary.sh"
+  INSTALLER="${UPDATE_WORK}/kmp-install-binary.sh"
+fi
+
 if [ "$DO_CLAUDE" -eq 1 ]; then
   if [ "$DRY_RUN" -eq 0 ]; then
     command -v claude >/dev/null 2>&1 || {
@@ -86,17 +110,6 @@ if [ "$DO_CODEX" -eq 1 ] && [ "$STANDALONE" -eq 0 ]; then
   run codex plugin add kmp@underpass
 fi
 
-if [ -f "${SCRIPT_DIR}/kmp-install-binary.sh" ]; then
-  # Codex installs both helpers beside each other under its data directory.
-  INSTALLER="${SCRIPT_DIR}/kmp-install-binary.sh"
-else
-  INSTALLER="${PLUGIN_ROOT}/scripts/kmp-install-binary.sh"
-fi
-[ -f "$INSTALLER" ] || {
-  echo "kmp-update: engine installer is missing at ${INSTALLER}" >&2
-  exit 1
-}
-
 if [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ]; then
   run bash "$INSTALLER" --version "$VERSION" --dir "${PLUGIN_ROOT}/bin"
 else
@@ -107,17 +120,17 @@ if [ "$DO_CODEX" -eq 1 ]; then
   if [ "$STANDALONE" -eq 0 ]; then
     say "Codex plugin owns MCP and skills; no standalone prompts or registration were changed"
   else
-    work="$(mktemp -d)"
-    trap 'rm -rf "$work"' EXIT
     tagged_raw="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
     if [ "$DRY_RUN" -eq 1 ]; then
       say "would: fetch ${tagged_raw}/scripts/mcp/install-kmp-plugin.sh"
       say "would: refresh the standalone Codex prompts, doctrine and registration from v${VERSION}"
     else
       curl --proto '=https' --tlsv1.2 -fsSL \
-        "${tagged_raw}/scripts/mcp/install-kmp-plugin.sh" -o "${work}/install-kmp-plugin.sh"
+        "${tagged_raw}/scripts/mcp/install-kmp-plugin.sh" \
+        -o "${UPDATE_WORK}/install-kmp-plugin.sh"
       KMP_PLUGIN_RAW_BASE="$tagged_raw" \
-        bash "${work}/install-kmp-plugin.sh" --codex --standalone --version "$VERSION"
+        bash "${UPDATE_WORK}/install-kmp-plugin.sh" \
+          --codex --standalone --version "$VERSION"
     fi
   fi
 fi
