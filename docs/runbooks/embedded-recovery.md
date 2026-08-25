@@ -1,0 +1,87 @@
+# Runbook: recover or move an embedded store
+
+This runbook protects the source first. Do not copy engine files between
+layouts or import a bundle over a non-empty store.
+
+## 1. Identify the exact store
+
+```bash
+kmp-mcp info
+kmp-mcp doctor
+```
+
+Record the selected path, the `chosen by` rule, engine and durability verdict.
+If `KMP_MCP_DATA_DIR` is set, resolve its exact value before continuing.
+
+## 2. Stop writers
+
+Stop agent sessions using that store. This is mandatory for a legacy redb store and
+for a pending bundle-recovery condition. Keep the viewer and diagnostic
+processes stopped as well if they open the same legacy store.
+
+## 3. Export and verify evidence
+
+For a project store:
+
+```bash
+kmp-mcp export
+git diff -- .kmp/memory.jsonl
+```
+
+If doctor reports a pending export after an interrupted commit, first stop all
+writers, run the normal export and inspect its diff. Only then acknowledge the
+recovery:
+
+```bash
+kmp-mcp export --repair-pending
+```
+
+For a recovery point before a risky operation:
+
+```bash
+kmp-mcp snapshot create pre-change
+kmp-mcp snapshot verify pre-change
+```
+
+## 4A. Migrate an existing redb store to SQLite
+
+```bash
+kmp-mcp share-memory /exact/path/to/data-dir
+```
+
+The command migrates to SQLite, verifies the result and keeps the original
+legacy directory. Rerun `kmp-mcp info` from every intended host and confirm that
+both resolve to the same SQLite data directory.
+
+## 4B. Move to a fresh directory or engine
+
+```bash
+kmp-mcp migrate /exact/source /exact/fresh-destination --engine sqlite
+```
+
+The destination must not contain a store. The source is preserved. Point one
+test session at the destination with `KMP_MCP_DATA_DIR`, verify it, then update
+the intended host configuration.
+
+## 4C. Restore a repository bundle
+
+Point KMP at an empty data directory and import:
+
+```bash
+KMP_MCP_DATA_DIR=/exact/empty/destination kmp-mcp import .kmp/memory.jsonl
+```
+
+Import is restore, not merge. It must refuse a non-empty destination.
+
+## 5. Verify before resuming
+
+```bash
+KMP_MCP_DATA_DIR=/exact/destination kmp-mcp info
+KMP_MCP_DATA_DIR=/exact/destination kmp-mcp doctor
+```
+
+Wake and inspect a known about from one agent host. If multiple hosts will
+share SQLite, verify the same about from each before normal work resumes.
+
+Keep the source or pre-change snapshot until the recovered store has been
+accepted.

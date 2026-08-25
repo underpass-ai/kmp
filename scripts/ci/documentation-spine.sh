@@ -87,7 +87,23 @@ if len(tool_names) != 10:
     sys.exit(f"documentation contract: expected ten tools in protocol.rs, found {sorted(tool_names)}")
 
 current_paths = [root / path for path, status in classified.items() if status == "current"]
+current_paths.extend(root / path for path, status in classified.items() if status == "research")
 current_paths.extend([root / "README.md", root / "plugins/kmp/README.md"])
+
+reference_pattern = re.compile(
+    r"!?\[[^\]]*\]\(([^)]+)\)|(?:href|src)=\"([^\"]+)\""
+)
+for asset in current_paths:
+    for match in reference_pattern.finditer(asset.read_text(encoding="utf-8", errors="replace")):
+        raw = next(value for value in match.groups() if value is not None)
+        raw = raw.split("#", 1)[0].strip().strip("<>")
+        if not raw or "://" in raw or raw.startswith(("mailto:", "data:")):
+            continue
+        target = (asset.parent / raw).resolve()
+        if not target.exists():
+            fail_path = asset.relative_to(root)
+            sys.exit(f"documentation links: {fail_path} points to missing {raw}")
+
 current_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in current_paths)
 
 former_tools = sorted(set(re.findall(

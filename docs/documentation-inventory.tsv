@@ -1,14 +1,10 @@
 # status<TAB>path-glob<TAB>why
-# Every docs/**/*.md file must match exactly one row. “current” documents are
-# checked against the binary's public tool vocabulary; research and historical
-# files remain navigable evidence but do not define the live contract.
-current	docs/*.md	Current user, contributor and protocol entrypoints.
-current	docs/operations/README.md	Current operations topology router.
-current	docs/operations/embedded/README.md	Current local embedded operations.
-current	docs/operations/deployment/README.md	Current Docker and Kubernetes operations.
-current	docs/research/README.md	Current summary of completed research and the active memory-analysis direction.
-research	docs/research/operator.md	Separate benchmark-only Operator research.
-research	docs/research/paper/*.md	Paused publication package retained for later recovery.
-research	docs/research/paper/acl/*.md	ACL package source notes retained for later recovery.
-research	docs/development/graph-aware-answer-reranker.md	Experimental reranker design.
-current	docs/development/running-e2e.md	Current contributor procedure.
+# Every maintained docs/**/*.md file must match exactly one row.
+current	docs/index.md	Documentation entry point.
+current	docs/documentation-catalog.md	Maintained authority and archive boundary.
+current	docs/embedded/*.md	Local private KMP documentation.
+current	docs/enterprise/*.md	Shared self-operated KMP documentation.
+current	docs/architecture/*.md	Technical component, flow and trust-boundary documentation.
+current	docs/runbooks/*.md	Current executable operational procedures.
+current	docs/development/*.md	Current contributor and release documentation.
+research	docs/research/*.md	Current research direction without product promises.

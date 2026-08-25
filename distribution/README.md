@@ -7,5 +7,5 @@ Release and deployment assets that ship KMP live here.
 
 Historical standalone Kubernetes manifests are retained under
 [`archive/k8s/`](../archive/k8s/) and are not the supported deployment path.
-See [`docs/enterprise.md`](../docs/enterprise.md) for the current shared KMP
+See [Enterprise KMP](../docs/enterprise/README.md) for the current shared KMP
 topology.

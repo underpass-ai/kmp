@@ -138,7 +138,7 @@ else
   else
     command -v cargo >/dev/null 2>&1 || {
       echo "   kmp-mcp is missing and cargo is not available to build it." >&2
-      echo "   Install Rust, or use the prebuilt path in docs/operations/embedded/README.md" >&2
+      echo "   Install Rust, or use the prebuilt path in docs/embedded/README.md" >&2
       exit 1
     }
     say "   installing kmp-mcp (this compiles, give it a few minutes)"

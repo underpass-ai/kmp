@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="230" viewBox="0 0 760 230" role="img" aria-labelledby="title description">
+  <title id="title">KMP by Underpass</title>
+  <desc id="description">The KMP terminal wordmark</desc>
+  <style>
+    .wordmark {
+      fill: #6d28d9;
+      font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+      font-size: 34px;
+      font-weight: 700;
+    }
+    @media (prefers-color-scheme: dark) {
+      .wordmark { fill: #c4b5fd; }
+    }
+  </style>
+  <text class="wordmark" x="380" y="42" text-anchor="middle" xml:space="preserve">
+    <tspan x="380" dy="0"> ██╗  ██╗███╗   ███╗██████╗ </tspan>
+    <tspan x="380" dy="34"> ██║ ██╔╝████╗ ████║██╔══██╗</tspan>
+    <tspan x="380" dy="34"> █████╔╝ ██╔████╔██║██████╔╝</tspan>
+    <tspan x="380" dy="34"> ██╔═██╗ ██║╚██╔╝██║██╔═══╝ </tspan>
+    <tspan x="380" dy="34"> ██║  ██╗██║ ╚═╝ ██║██║     </tspan>
+    <tspan x="380" dy="34"> ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝     </tspan>
+  </text>
+</svg>

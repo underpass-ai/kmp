@@ -9,10 +9,16 @@ path moved on.
 
 For current documentation, see [docs/index.md](../../docs/index.md).
 
+The complete documentation tree replaced on 2026-08-26, including the former
+root README, is preserved as one
+[audit snapshot](audit-2026-08-26/ARCHIVE.md). It is evidence of what the
+repository said at that point, not a second documentation site.
+
 ## Inventory
 
 Archived sections:
 
+- [2026-08-26 documentation audit snapshot](audit-2026-08-26/ARCHIVE.md)
 - [Architecture decisions](adr/README.md)
 - [Former product plans and roadmaps](product/README.md)
 - [Superseded operations guides](operations/README.md)

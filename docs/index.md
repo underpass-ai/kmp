@@ -1,38 +1,25 @@
-# Documentation index
+# KMP documentation
 
-KMP is local and private by default. Start with the repository
-[README](../README.md); come here when you need a specific contract or
-operational path.
+Start with the repository [README](../README.md). It covers normal local use,
+privacy, installation and interaction with an agent.
 
-## Use and operate KMP
+## Choose a topology
 
-| Need | Current document |
+| Need | Documentation |
 |:--|:--|
-| Install locally and understand normal interaction | [README](../README.md) |
-| Compare local and deployed topologies | [Editions](editions.md) |
-| Operate local KMP | [Embedded operations](operations/embedded/README.md) |
-| Operate the image or Helm chart | [Docker and Kubernetes operations](operations/deployment/README.md) |
-| Understand the shared Kubernetes topology | [Enterprise KMP](enterprise.md) |
-| Configure security boundaries | [Security model](security-model.md) |
-| Read runtime guarantees | [Runtime guarantees](runtime-guarantees.md) |
+| One developer or repository; no service to operate | [Embedded KMP](embedded/README.md) |
+| One live memory shared across machines, agents or services | [Enterprise KMP](enterprise/README.md) |
 
-The operations router is [`operations/README.md`](operations/README.md).
+Embedded is the default. Enterprise is optional and self-operated.
 
-## Integrate and develop
+## Other work
 
-| Need | Current document |
-|:--|:--|
-| Run tests and quality gates | [Testing](testing.md) |
-| Run the live E2E preflight | [Running E2E](development/running-e2e.md) |
-| Inspect telemetry | [Observability](observability.md) |
-| Cut and verify a release | [Release process](release.md) |
+- [Architecture](architecture/README.md) — components, data flows and trust boundaries.
+- [Runbooks](runbooks/README.md) — diagnosis, recovery and enterprise deployment.
+- [Development](development/README.md) — tests, contracts and releases.
+- [Research](research/README.md) — current questions and retained publication work.
+- [Documentation catalog](documentation-catalog.md) — authority and archive boundaries.
 
-## Research and history
-
-- [Research summary](research/README.md) describes completed work and the
-  current state-of-the-art agentic-context investigation.
-- [Documentation catalog](documentation-catalog.md) explains what is current,
-  research or archived.
-- [Archive](../archive/README.md) preserves former product plans, ADRs,
-  detailed operations guides, runbooks, migrations, integrations, experiments
-  and artifacts. Archived prose is evidence, not the current contract.
+The complete documentation tree was restarted on 2026-08-26. The previous
+tree is retained as untrusted audit material under
+[`archive/docs/audit-2026-08-26`](../archive/docs/audit-2026-08-26/ARCHIVE.md).

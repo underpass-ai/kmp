@@ -24,7 +24,7 @@
 //! translatable. Today one format exists (`1`), so migration is a faithful
 //! replay. When a format bump lands, the translation step belongs here, in
 //! `translate_event`, and the compatibility matrix in
-//! `docs/operations/embedded/README.md` moves in the same pull request.
+//! `docs/embedded/README.md` moves in the same pull request.
 
 use std::fs;
 use std::path::{Path, PathBuf};
