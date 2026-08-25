@@ -187,18 +187,39 @@ if [ "$DO_CODEX" -eq 1 ]; then
   CODEX_HOME="$HOME/.codex"
   CODEX_CONFIG="$CODEX_HOME/config.toml"
 
-  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
-    say "   config.toml — kmp already registered, left untouched"
-  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory\]' "$CODEX_CONFIG"; then
+  # Rename the whole table prefix, not just the transport table. Codex keeps
+  # tool policy in child tables such as
+  # [mcp_servers.kernel-memory.tools.kernel_wake]; leaving one behind creates
+  # a second server with no command or URL, and Codex then refuses to start
+  # with "invalid transport in mcp_servers.kernel-memory".
+  if [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kernel-memory' "$CODEX_CONFIG"; then
     if [ "$DRY_RUN" -eq 1 ]; then
-      act "rename [mcp_servers.kernel-memory] to [mcp_servers.kmp] in $CODEX_CONFIG"
+      act "rename every [mcp_servers.kernel-memory...] table to [mcp_servers.kmp...] in $CODEX_CONFIG"
     else
+      MIGRATED_CONFIG="$(mktemp)"
+      sed 's/^\[mcp_servers\.kernel-memory/[mcp_servers.kmp/' \
+        "$CODEX_CONFIG" > "$MIGRATED_CONFIG"
+      if ! python3 - "$MIGRATED_CONFIG" <<'PY'
+import pathlib
+import sys
+import tomllib
+
+tomllib.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+PY
+      then
+        rm -f "$MIGRATED_CONFIG"
+        echo "   cannot migrate Codex config: kmp and kernel-memory tables conflict" >&2
+        echo "   left $CODEX_CONFIG untouched" >&2
+        exit 1
+      fi
       cp "$CODEX_CONFIG" "$CODEX_CONFIG.kmp-backup"
-      sed -i.bak 's/^\[mcp_servers\.kernel-memory\]$/[mcp_servers.kmp]/' "$CODEX_CONFIG"
-      rm -f "$CODEX_CONFIG.bak"
-      say "   config.toml — migrated kernel-memory to kmp"
+      cp "$MIGRATED_CONFIG" "$CODEX_CONFIG"
+      rm -f "$MIGRATED_CONFIG"
+      say "   config.toml — migrated the kernel-memory registration and tool policies to kmp"
       say "   previous config saved as $CODEX_CONFIG.kmp-backup"
     fi
+  elif [ -f "$CODEX_CONFIG" ] && grep -q '^\[mcp_servers\.kmp\]' "$CODEX_CONFIG"; then
+    say "   config.toml — kmp already registered, left untouched"
   elif [ "$DRY_RUN" -eq 1 ]; then
     act "append [mcp_servers.kmp] to $CODEX_CONFIG"
   else

@@ -22,11 +22,13 @@ sha256sum -c kmp-plugin-<version>-<os>-<arch>.sha256
 tar -xzf kmp-plugin-<version>-<os>-<arch>.tar.gz
 ```
 
-Codex reads `.codex-plugin/plugin.json`, Claude Code reads
-`.claude-plugin/plugin.json`, and both start the MCP server through
-`.mcp.json` → `scripts/run-embedded-mcp.sh`. On Windows hosts, register
-`scripts\run-embedded-mcp.cmd` instead. To build the package from a
-checkout: `bash scripts/plugin/package-kmp-plugin.sh`.
+Codex reads `.codex-plugin/plugin.json` and starts the installed `kmp-mcp`
+from its inline MCP declaration. Claude Code reads
+`.claude-plugin/plugin.json` and starts through `.mcp.json` →
+`scripts/run-embedded-mcp.sh`, which can prefer the binary bundled in a
+release package. On Windows hosts, register `scripts\run-embedded-mcp.cmd`
+instead. To build the package from a checkout:
+`bash scripts/plugin/package-kmp-plugin.sh`.
 
 **Claude Code** — native install from the marketplace. The manifest lives in
 [underpass-ai/plugins](https://github.com/underpass-ai/plugins), which carries
@@ -73,7 +75,8 @@ refreshes its prompts and doctrine from the versioned release as well. Both
 paths finish with one restart because a running host keeps the MCP inventory
 it started with.
 
-**Codex CLI** — no plugin system, so a script does the wiring:
+**Codex CLI** — the plugin provides the skill and a PATH-based MCP
+declaration. The setup script also supports standalone and older installs:
 
 ```bash
 bash scripts/mcp/install-kmp-plugin.sh --codex
