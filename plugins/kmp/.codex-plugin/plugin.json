@@ -1,7 +1,7 @@
 {
   "name": "kmp",
-  "version": "0.1.18",
-  "description": "Discover and operate KMP agent memory from Codex: wires the kmp MCP server, teaches the ten moves, and diagnoses a broken setup.",
+  "version": "0.2.0",
+  "description": "Local-first agent memory that preserves what happened, when and why: wires the kmp MCP server, teaches the ten moves, and diagnoses setup.",
   "author": {
     "name": "Underpass AI"
   },
