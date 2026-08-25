@@ -67,7 +67,7 @@ bash scripts/ci/testcontainers-runtime.sh
 | `kernel_golden_integration` | Golden contract tests (4 RPCs) | Neo4j + Valkey + NATS + gRPC | — |
 | `agentic_integration` | Agent using kernel context | Neo4j + Valkey + NATS + gRPC | `scripts/ci/integration-agentic-context.sh` |
 | `agentic_event_integration` | Event-driven recording runtime | Neo4j + Valkey + NATS + gRPC | `scripts/ci/integration-agentic-event-context.sh` |
-| `mcp_real_kernel_integration` | MCP KMP tools reading from the live kernel gRPC server | Neo4j + Valkey + gRPC + MCP adapter | `scripts/ci/integration-mcp-real-kernel.sh` |
+| `mcp_real_kernel_integration` | All nine RPC moves and ten tools remain exact across direct gRPC, embedded MCP, stdio live MCP, and HTTP live MCP; also covers live kernel reads | Neo4j + Valkey + gRPC + both MCP adapters | `scripts/ci/integration-mcp-real-kernel.sh` |
 | `relation_materialization_integration` | Relation-only async subject adds a PIR-like spine edge across waves without re-materializing the source node | Neo4j + Valkey + NATS + gRPC | — |
 | `tier_resolution_integration` | Multi-resolution tiers L0/L1/L2 | Neo4j + Valkey + NATS + gRPC | — |
 | `kernel_p1_performance_measurement` | Performance regression (batch vs N+1) | Neo4j + Valkey + NATS + gRPC | — |

@@ -2,16 +2,466 @@
 
 mod support;
 
+use std::collections::BTreeSet;
 use std::error::Error;
+use std::sync::Arc;
+use std::time::Duration;
 
-use kmp_mcp::KernelMcpServer;
+use axum::Router;
+use axum::body::{Body, to_bytes};
+use axum::http::{Request, StatusCode};
+use kmp_mcp::{GrpcKernelMcpBackend, KernelMcpServer, KernelMcpToolBackend};
+use kmp_mcp_http::auth::{Identity, TokenVerifier, VerifyFuture};
+use kmp_mcp_http::config::HttpGatewayConfig;
+use kmp_mcp_http::{AppState, router};
 use kmp_tests_shared::seed::kernel_data::{
     DECISION_DETAIL, DECISION_ID, DECISION_KIND, DEVELOPER_ROLE, HAS_TASK_RELATION, ROOT_NODE_ID,
     TASK_ID,
 };
 use serde_json::{Value, json};
+use tower::ServiceExt;
+use url::Url;
 
 use crate::support::seeded_kernel_fixture::SeededKernelFixture;
+
+#[derive(Clone)]
+struct ParityVerifier;
+
+impl TokenVerifier for ParityVerifier {
+    fn verify<'a>(&'a self, _token: &'a str) -> VerifyFuture<'a> {
+        Box::pin(async {
+            Ok(Identity {
+                subject: "parity-test".to_string(),
+                workspace: Some("contract".to_string()),
+                scopes: BTreeSet::from([
+                    "kmp:read".to_string(),
+                    "kmp:write".to_string(),
+                    "kmp:inspect:raw".to_string(),
+                    "kmp:all-abouts".to_string(),
+                ]),
+                abouts: BTreeSet::from(["*".to_string()]),
+                scope_ids: BTreeSet::from(["*".to_string()]),
+                ref_prefixes: BTreeSet::from(["*".to_string()]),
+            })
+        })
+    }
+}
+
+#[tokio::test]
+async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let fixture = SeededKernelFixture::start().await?;
+    let endpoint = fixture.grpc_endpoint().to_string();
+    let direct = GrpcKernelMcpBackend::new(
+        endpoint.clone(),
+        kmp_mcp::KernelMcpGrpcTlsConfig::disabled(),
+    );
+    let stdio = KernelMcpServer::grpc(endpoint.clone());
+    let http = parity_http_app(KernelMcpServer::grpc(endpoint));
+    let embedded_dir = tempfile::tempdir()?;
+    let embedded = KernelMcpServer::embedded(embedded_dir.path()).map_err(std::io::Error::other)?;
+    direct
+        .call_tool("kmp_ingest", &parity_seed_arguments())
+        .await
+        .unwrap_or_else(|error| panic!("parity seed failed: {error:?}"));
+    let embedded_seed = call_tool(&embedded, 0, "kmp_ingest", parity_seed_arguments()).await;
+    assert_tool_success(&embedded_seed);
+
+    let cases = vec![
+        (
+            "kmp_ingest",
+            json!({
+                "about":"project:parity-preview",
+                "memory":{
+                    "dimensions":[{"id":"timeline:parity","kind":"timeline"}],
+                    "entries":[{"id":"observation:parity","kind":"observation","text":"parity",
+                        "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity","sequence":1}]}]
+                },
+                "idempotency_key":"parity-dry-run", "dry_run":true
+            }),
+        ),
+        (
+            "kmp_wake",
+            json!({"about":"project:parity-live","budget":{"detail":"compact","max_bytes":10000}}),
+        ),
+        ("kmp_wake", json!({"about":"project:parity-live","depth":2})),
+        (
+            "kmp_ask",
+            json!({"about":"project:parity-live","question":"What changed in the parity fixture?","budget":{"detail":"balanced","max_bytes":10000}}),
+        ),
+        (
+            "kmp_ask",
+            json!({
+                "about":"project:parity-live",
+                "question":"What changed in the parity fixture?",
+                "budget":{"detail":"full","max_bytes":100000,"max_entries":1}
+            }),
+        ),
+        (
+            "kmp_goto",
+            json!({"about":"project:parity-live","at":{"ref":"observation:parity-after"}}),
+        ),
+        (
+            "kmp_near",
+            json!({"about":"project:parity-live","around":{"ref":"observation:parity-before"}}),
+        ),
+        (
+            "kmp_rewind",
+            json!({"about":"project:parity-live","from":{"ref":"observation:parity-after"}}),
+        ),
+        (
+            "kmp_forward",
+            json!({"about":"project:parity-live","from":{"ref":"observation:parity-before"}}),
+        ),
+        (
+            "kmp_trace",
+            json!({"from":"observation:parity-after","to":"observation:parity-before"}),
+        ),
+        (
+            "kmp_inspect",
+            json!({"ref":"observation:parity-after","include":{"details":true}}),
+        ),
+    ];
+
+    for (index, (tool, arguments)) in cases.into_iter().enumerate() {
+        let direct_result = direct
+            .call_tool(tool, &arguments)
+            .await
+            .unwrap_or_else(|error| panic!("direct {tool} failed: {error:?}"));
+        let stdio_result = call_tool(&stdio, index as u64 + 1, tool, arguments.clone()).await;
+        let http_result = call_http_tool(&http, index as u64 + 1, tool, arguments.clone()).await;
+        let embedded_result = call_tool(&embedded, index as u64 + 1, tool, arguments).await;
+        assert_eq!(
+            stdio_result["result"], direct_result,
+            "stdio semantic result diverged for {tool}"
+        );
+        assert_eq!(
+            http_result["result"], direct_result,
+            "HTTP semantic result diverged for {tool}"
+        );
+        assert_eq!(
+            embedded_result["result"], direct_result,
+            "embedded semantic result diverged for {tool}"
+        );
+    }
+
+    let first_page_arguments = json!({
+        "about":"project:parity-live",
+        "depth":5,
+        "budget":{"tokens":30000,"detail":"full","max_bytes":100000},
+        "page":{"entries":4}
+    });
+    let mut unpaged_arguments = first_page_arguments.clone();
+    unpaged_arguments
+        .as_object_mut()
+        .expect("recall arguments")
+        .remove("page");
+    let direct_unpaged = direct
+        .call_tool("kmp_wake", &unpaged_arguments)
+        .await
+        .expect("direct unpaged recall");
+    let complete_items = recall_item_keys(&direct_unpaged["structuredContent"]);
+
+    let mut page_arguments = first_page_arguments.clone();
+    let mut expected_offset = 0_u64;
+    let mut expected_total = None;
+    let mut paged_items = BTreeSet::new();
+    let mut seen_cursors = BTreeSet::new();
+    loop {
+        let request_id = 30 + expected_offset;
+        let direct_page = direct
+            .call_tool("kmp_wake", &page_arguments)
+            .await
+            .expect("direct recall page");
+        let stdio_page = call_tool(&stdio, request_id, "kmp_wake", page_arguments.clone()).await;
+        let http_page = call_http_tool(&http, request_id, "kmp_wake", page_arguments.clone()).await;
+        let embedded_page =
+            call_tool(&embedded, request_id, "kmp_wake", page_arguments.clone()).await;
+        assert_eq!(stdio_page["result"], direct_page);
+        assert_eq!(http_page["result"], direct_page);
+        assert_eq!(embedded_page["result"], direct_page);
+
+        let content = &direct_page["structuredContent"];
+        paged_items.extend(recall_item_keys(content));
+        let page = content
+            .pointer("/projection/page")
+            .expect("recall projection page metadata");
+        let offset = page["offset"].as_u64().expect("page offset");
+        let returned = page["returned"].as_u64().expect("page returned");
+        let total = page["total"].as_u64().expect("page total");
+        assert_eq!(offset, expected_offset, "recall pages must be contiguous");
+        assert!(returned > 0, "a continuation page must make progress");
+        assert_eq!(*expected_total.get_or_insert(total), total);
+        expected_offset += returned;
+
+        if page["has_more"] == Value::Bool(false) {
+            assert!(page["next_cursor"].is_null());
+            assert_eq!(expected_offset, total, "all eligible items were traversed");
+            break;
+        }
+        let cursor = page["next_cursor"]
+            .as_str()
+            .expect("non-final page cursor")
+            .to_string();
+        assert!(
+            seen_cursors.insert(cursor.clone()),
+            "a continuation cursor must not repeat"
+        );
+        page_arguments["page"]["cursor"] = Value::String(cursor);
+    }
+    assert_eq!(
+        paged_items, complete_items,
+        "full cursor traversal must reconstruct the same eligible proof"
+    );
+
+    let cursor = first_page_cursor(&direct, &first_page_arguments).await;
+
+    assert_error_code_parity(
+        &direct,
+        &stdio,
+        &http,
+        &embedded,
+        "kmp_wake",
+        json!({}),
+        "invalid_argument",
+    )
+    .await;
+
+    let unavailable_endpoint = "http://127.0.0.1:9".to_string();
+    let unavailable_direct = GrpcKernelMcpBackend::new(
+        unavailable_endpoint.clone(),
+        kmp_mcp::KernelMcpGrpcTlsConfig::disabled(),
+    );
+    let unavailable_stdio = KernelMcpServer::grpc(unavailable_endpoint.clone());
+    let unavailable_http = parity_http_app(KernelMcpServer::grpc(unavailable_endpoint));
+    assert_remote_error_code_parity(
+        &unavailable_direct,
+        &unavailable_stdio,
+        &unavailable_http,
+        "kmp_wake",
+        json!({"about":"project:parity-live"}),
+        "unavailable",
+    )
+    .await;
+    assert_error_code_parity(
+        &direct,
+        &stdio,
+        &http,
+        &embedded,
+        "kmp_goto",
+        json!({"about":"project:parity-live","at":{"ref":"missing:temporal-ref"}}),
+        "invalid_argument",
+    )
+    .await;
+    assert_error_code_parity(
+        &direct,
+        &stdio,
+        &http,
+        &embedded,
+        "kmp_inspect",
+        json!({"ref":"missing:parity-ref"}),
+        "not_found",
+    )
+    .await;
+    let mut stale_arguments = first_page_arguments;
+    stale_arguments["role"] = Value::String("a-changed-selection".to_string());
+    stale_arguments["page"]["cursor"] = Value::String(cursor.to_string());
+    assert_error_code_parity(
+        &direct,
+        &stdio,
+        &http,
+        &embedded,
+        "kmp_wake",
+        stale_arguments,
+        "invalid_argument",
+    )
+    .await;
+
+    let write_arguments = json!({
+        "about":"project:parity-write",
+        "intent":"record_observation",
+        "actor":"parity-test",
+        "observed_at":"2026-08-25T00:00:00Z",
+        "scope":{"process":"parity"},
+        "current":{"kind":"observation","summary":"writer parity","evidence":"deterministic fixture"},
+        "connect_to":[{"ref":"project:parity-write","rel":"contains","class":"structural"}],
+        "idempotency_key":"parity-write-dry-run",
+        "options":{"dry_run":true}
+    });
+    let stdio_write = call_tool(&stdio, 20, "kmp_write_memory", write_arguments.clone()).await;
+    let http_write = call_http_tool(&http, 20, "kmp_write_memory", write_arguments.clone()).await;
+    let embedded_write = call_tool(&embedded, 20, "kmp_write_memory", write_arguments).await;
+    assert_eq!(stdio_write["result"], http_write["result"]);
+    assert_eq!(stdio_write["result"], embedded_write["result"]);
+    assert_eq!(
+        stdio_write.pointer("/result/structuredContent/ingest_preview/dry_run"),
+        Some(&Value::Bool(true)),
+        "writer helper must compile to canonical dry-run Ingest"
+    );
+
+    fixture.shutdown().await?;
+    Ok(())
+}
+
+async fn first_page_cursor(direct: &GrpcKernelMcpBackend, arguments: &Value) -> String {
+    direct
+        .call_tool("kmp_wake", arguments)
+        .await
+        .expect("direct first page")
+        .pointer("/structuredContent/projection/page/next_cursor")
+        .and_then(Value::as_str)
+        .expect("bounded page should expose a continuation cursor")
+        .to_string()
+}
+
+fn recall_item_keys(content: &Value) -> BTreeSet<String> {
+    [
+        "/wake/current_state",
+        "/wake/causal_spine",
+        "/wake/open_loops",
+        "/wake/next_actions",
+        "/wake/guardrails",
+        "/proof/evidence",
+        "/proof/path",
+        "/proof/missing",
+    ]
+    .into_iter()
+    .flat_map(|path| {
+        content
+            .pointer(path)
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(move |value| format!("{path}:{}", value))
+    })
+    .collect()
+}
+
+async fn assert_error_code_parity(
+    direct: &GrpcKernelMcpBackend,
+    stdio: &KernelMcpServer,
+    http: &Router,
+    embedded: &KernelMcpServer,
+    tool: &str,
+    arguments: Value,
+    expected: &str,
+) {
+    let direct_error = direct
+        .call_tool(tool, &arguments)
+        .await
+        .expect_err("direct call should fail");
+    assert_eq!(direct_error.code.as_str(), expected);
+    let stdio_error = call_tool(stdio, 40, tool, arguments.clone()).await;
+    let http_error = call_http_tool(http, 40, tool, arguments.clone()).await;
+    let embedded_error = call_tool(embedded, 40, tool, arguments).await;
+    for (path, response) in [
+        ("stdio", stdio_error),
+        ("http", http_error),
+        ("embedded", embedded_error),
+    ] {
+        assert_eq!(
+            response.pointer("/result/structuredContent/error/code"),
+            Some(&Value::String(expected.to_string())),
+            "{path} error code diverged for {tool}"
+        );
+    }
+}
+
+async fn assert_remote_error_code_parity(
+    direct: &GrpcKernelMcpBackend,
+    stdio: &KernelMcpServer,
+    http: &Router,
+    tool: &str,
+    arguments: Value,
+    expected: &str,
+) {
+    let direct_error = direct
+        .call_tool(tool, &arguments)
+        .await
+        .expect_err("direct remote call should fail");
+    assert_eq!(direct_error.code.as_str(), expected);
+    let stdio_error = call_tool(stdio, 50, tool, arguments.clone()).await;
+    let http_error = call_http_tool(http, 50, tool, arguments).await;
+    for (path, response) in [("stdio", stdio_error), ("http", http_error)] {
+        assert_eq!(
+            response.pointer("/result/structuredContent/error/code"),
+            Some(&Value::String(expected.to_string())),
+            "{path} remote error code diverged for {tool}"
+        );
+    }
+}
+
+fn parity_seed_arguments() -> Value {
+    json!({
+        "about":"project:parity-live",
+        "memory":{
+            "dimensions":[{"id":"timeline:parity-live","kind":"timeline"}],
+            "entries":[
+                {"id":"observation:parity-before","kind":"observation","text":"Parity had one transport.",
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:00:00Z","sequence":1}]},
+                {"id":"observation:parity-after","kind":"observation","text":"Parity now covers direct gRPC, stdio MCP, and HTTP MCP.",
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:01:00Z","sequence":2}]},
+                {"id":"observation:parity-proof-1","kind":"observation","text":"Compact projection remained bounded.",
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:02:00Z","sequence":3}]},
+                {"id":"observation:parity-proof-2","kind":"observation","text":"Balanced projection retained evidence.",
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:03:00Z","sequence":4}]},
+                {"id":"observation:parity-proof-3","kind":"observation","text":"Full projection retained relation why.",
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:04:00Z","sequence":5}]}
+            ],
+            "relations":[
+                {"from":"observation:parity-after","to":"observation:parity-before","rel":"supersedes","class":"evidential","why":"The later observation records the expanded transport matrix.","evidence":"The same test invokes all three paths.","confidence":"high"},
+                {"from":"observation:parity-proof-1","to":"observation:parity-after","rel":"follows","class":"procedural","why":"The compact check ran after base parity.","evidence":"The parity test sequence records this order.","confidence":"high"},
+                {"from":"observation:parity-proof-2","to":"observation:parity-proof-1","rel":"follows","class":"procedural","why":"The balanced check followed compact.","evidence":"The parity test sequence records this order.","confidence":"high"},
+                {"from":"observation:parity-proof-3","to":"observation:parity-proof-2","rel":"follows","class":"procedural","why":"The full check followed balanced.","evidence":"The parity test sequence records this order.","confidence":"high"}
+            ],
+            "evidence":[
+                {"id":"evidence:parity-live","supports":["observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:parity-compact","supports":["observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:parity-balanced","supports":["observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:parity-full","supports":["observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity"}
+            ]
+        },
+        "provenance":{"source_kind":"agent","source_agent":"grpc_mcp_semantic_parity","observed_at":"2026-08-25T00:01:00Z"},
+        "idempotency_key":"grpc-mcp-semantic-parity-seed"
+    })
+}
+
+fn parity_http_app(server: KernelMcpServer) -> Router {
+    let config = HttpGatewayConfig {
+        bind_addr: "127.0.0.1:0".parse().expect("address"),
+        public_url: Url::parse("https://kmp.example/mcp").expect("public URL"),
+        issuer: Url::parse("https://id.example/").expect("issuer"),
+        audience: "https://kmp.example/mcp".to_string(),
+        jwks_uri: Some(Url::parse("https://id.example/jwks").expect("JWKS")),
+        allowed_origins: BTreeSet::new(),
+        request_timeout: Duration::from_secs(20),
+        max_body_bytes: 1024 * 1024,
+        require_grpc_mtls: false,
+    };
+    router(AppState::new(config, server, Arc::new(ParityVerifier)))
+}
+
+async fn call_http_tool(app: &Router, id: u64, name: &str, arguments: Value) -> Value {
+    let request = json!({
+        "jsonrpc":"2.0", "id":id, "method":"tools/call",
+        "params":{"name":name,"arguments":arguments}
+    });
+    let response = app
+        .clone()
+        .oneshot(
+            Request::post("/mcp")
+                .header("content-type", "application/json")
+                .header("authorization", "Bearer parity-token")
+                .body(Body::from(request.to_string()))
+                .expect("HTTP request"),
+        )
+        .await
+        .expect("HTTP response");
+    assert_eq!(response.status(), StatusCode::OK, "HTTP {name} failed");
+    let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024)
+        .await
+        .expect("HTTP body");
+    serde_json::from_slice(&bytes).expect("HTTP JSON-RPC response")
+}
 
 #[tokio::test]
 async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Error + Send + Sync>> {

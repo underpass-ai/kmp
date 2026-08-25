@@ -12,6 +12,7 @@ COPY crates ./crates
 
 RUN cargo build --locked --release \
     -p kmp-server --bin kmp-server \
+    -p kmp-mcp-http --bin kmp-mcp-http \
     -p kmp-transport-grpc --bin runtime_reference_client
 
 FROM debian:bookworm-slim
@@ -22,6 +23,7 @@ RUN apt-get update \
     && useradd --system --create-home --home-dir /home/kmp --shell /usr/sbin/nologin kmp
 
 COPY --from=builder /workspace/target/release/kmp-server /usr/local/bin/kmp-server
+COPY --from=builder /workspace/target/release/kmp-mcp-http /usr/local/bin/kmp-mcp-http
 COPY --from=builder /workspace/target/release/runtime_reference_client /usr/local/bin/runtime-reference-client
 
 ENV KMP_SERVICE_NAME=kmp \
@@ -33,7 +35,7 @@ ENV KMP_SERVICE_NAME=kmp \
     KMP_EVENTS_PREFIX=rehydration \
     NATS_URL=nats://nats:4222
 
-EXPOSE 50054
+EXPOSE 50054 8080
 
 USER kmp
 

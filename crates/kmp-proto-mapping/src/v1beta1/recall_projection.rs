@@ -128,7 +128,6 @@ fn project_recall_output_typed(
 ) -> Result<ProjectionOutcome, RecallProjectionError> {
     let budget = ProjectionBudget::from_arguments(arguments, default_tokens)
         .map_err(RecallProjectionError::InvalidRequest)?;
-    let selection_hash = selection_hash(arguments, &value);
     let mut plan = ProjectionPlan::build(value, &budget);
     let eligible = plan
         .items
@@ -136,6 +135,7 @@ fn project_recall_output_typed(
         .filter(|item| item.min_detail <= budget.detail)
         .cloned()
         .collect::<Vec<_>>();
+    let selection_hash = selection_hash(arguments, &plan, &eligible);
     let excluded_by_detail = plan.items.len() - eligible.len();
     let offset = parse_cursor(
         arguments.pointer("/page/cursor").and_then(Value::as_str),
@@ -715,7 +715,7 @@ fn append_warning(value: &mut Value, warning: &str) {
     }
 }
 
-fn selection_hash(arguments: &Value, value: &Value) -> String {
+fn selection_hash(arguments: &Value, plan: &ProjectionPlan, eligible: &[ProjectionItem]) -> String {
     let mut bound_arguments = arguments.clone();
     if let Some(arguments) = bound_arguments.as_object_mut() {
         arguments.remove("page");
@@ -731,7 +731,22 @@ fn selection_hash(arguments: &Value, value: &Value) -> String {
         serde_json::to_vec(&bound_arguments).expect("projection arguments should serialize"),
     );
     hasher.update(b"\0");
-    hasher.update(serde_json::to_vec(value).expect("projection selection should serialize"));
+    // Bind the cursor to the canonical projection plan, not the raw response
+    // serialization returned by a graph adapter. Storage is allowed to return
+    // equal-ranked rows in any order; ProjectionPlan gives expansion items a
+    // total semantic order before this identity is computed. Hash the stable
+    // core plus that ordered selection so identical snapshots produce the
+    // same cursor across requests and transports, while any eligible semantic
+    // change still invalidates it.
+    hasher.update(
+        serde_json::to_vec(&plan.core).expect("projection core should serialize canonically"),
+    );
+    for item in eligible {
+        hasher.update(b"\0");
+        hasher.update(item.section.name().as_bytes());
+        hasher.update(b"\0");
+        hasher.update(item.stable_key.as_bytes());
+    }
     format!("{:x}", hasher.finalize())
 }
 
@@ -1927,6 +1942,32 @@ mod tests {
         assert_eq!(evidence, expected_evidence);
         assert_eq!(relations, expected_relations);
         assert_eq!(missing, expected_missing);
+    }
+
+    #[test]
+    fn cursor_identity_uses_the_canonical_ordered_selection() {
+        let packet = large_fixture(12);
+        let mut reordered = packet.clone();
+        reordered["proof"]["path"]
+            .as_array_mut()
+            .expect("proof path")
+            .reverse();
+        let base_arguments = json!({
+            "about": "project:kmp",
+            "question": "Which storage engine is current?",
+            "budget": {"tokens": 30_000, "max_bytes": 100_000, "detail": "full"},
+            "page": {"entries": 4}
+        });
+        let first = projected(packet, base_arguments.clone());
+        let cursor = first["projection"]["page"]["next_cursor"]
+            .as_str()
+            .expect("continuation cursor");
+        let mut continuation = base_arguments;
+        continuation["page"]["cursor"] = json!(cursor);
+
+        let second = projected(reordered, continuation);
+        assert_eq!(second["projection"]["page"]["offset"], 4);
+        assert!(second["projection"]["page"]["returned"].as_u64() > Some(0));
     }
 
     #[test]

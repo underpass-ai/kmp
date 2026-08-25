@@ -1348,6 +1348,144 @@ mod tests {
     }
 
     #[test]
+    fn semantic_input_fields_have_a_typed_grpc_or_explicit_helper_classification() {
+        fn keys(value: &Value) -> std::collections::BTreeSet<String> {
+            value
+                .get("properties")
+                .and_then(Value::as_object)
+                .expect("schema properties")
+                .keys()
+                .cloned()
+                .collect()
+        }
+
+        fn expected(values: &[&str]) -> std::collections::BTreeSet<String> {
+            values.iter().map(|value| (*value).to_string()).collect()
+        }
+
+        let contract = tools_list_result();
+        let tools = contract["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .map(|tool| (tool["name"].as_str().expect("name"), tool))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let schema = |name: &str| &tools[name]["inputSchema"];
+
+        assert_eq!(
+            keys(schema("kmp_ingest")),
+            expected(&[
+                "about",
+                "dry_run",
+                "idempotency_key",
+                "memory",
+                "provenance"
+            ])
+        );
+        assert_eq!(
+            keys(schema("kmp_wake")),
+            expected(&[
+                "about",
+                "budget",
+                "depth",
+                "dimensions",
+                "intent",
+                "page",
+                "role"
+            ])
+        );
+        assert_eq!(
+            keys(schema("kmp_ask")),
+            expected(&[
+                "about",
+                "answer_policy",
+                "budget",
+                "depth",
+                "dimensions",
+                "page",
+                "question",
+            ])
+        );
+        for (name, cursor) in [
+            ("kmp_goto", "at"),
+            ("kmp_near", "around"),
+            ("kmp_rewind", "from"),
+            ("kmp_forward", "from"),
+        ] {
+            assert_eq!(
+                keys(schema(name)),
+                expected(&[
+                    "about",
+                    "budget",
+                    "depth",
+                    "dimensions",
+                    "include",
+                    "limit",
+                    "window",
+                    cursor,
+                ]),
+                "{name} typed request crosswalk"
+            );
+            assert_eq!(
+                keys(&schema(name)["properties"][cursor]),
+                expected(&["ref", "sequence", "time"])
+            );
+        }
+        assert_eq!(
+            keys(schema("kmp_trace")),
+            expected(&["budget", "from", "goal", "page", "role", "to"])
+        );
+        assert_eq!(
+            keys(schema("kmp_inspect")),
+            expected(&["budget", "include", "ref"])
+        );
+
+        // These shared shapes are one-to-one with MemoryBudget,
+        // DimensionSelection and PageRequest. `depth` at the tool root is an
+        // explicit compatibility alias for MemoryBudget.depth; Trace.role is
+        // an alias for TraceRequest.goal. Inspect.budget is explicitly
+        // transport-only result-size protection and may only carry max_bytes.
+        let wake_properties = &schema("kmp_wake")["properties"];
+        assert_eq!(
+            keys(&wake_properties["budget"]),
+            expected(&["depth", "detail", "max_bytes", "max_entries", "tokens"])
+        );
+        assert_eq!(
+            keys(&wake_properties["dimensions"]),
+            expected(&["abouts", "exclude", "include", "mode", "scope", "scope_ids"])
+        );
+        assert_eq!(
+            keys(&wake_properties["page"]),
+            expected(&["cursor", "entries"])
+        );
+        assert_eq!(
+            keys(&schema("kmp_inspect")["properties"]["budget"]),
+            expected(&["max_bytes"])
+        );
+
+        // The writer is the sole non-RPC tool: every field belongs to the
+        // validated helper contract and its output is pinned to canonical
+        // Ingest by the writer compilation and four-path parity tests.
+        assert_eq!(
+            keys(schema("kmp_write_memory")),
+            expected(&[
+                "about",
+                "actor",
+                "connect_to",
+                "current",
+                "idempotency_key",
+                "intent",
+                "observed_at",
+                "options",
+                "read_context",
+                "scope",
+                "semantic_delta",
+                "source_kind",
+            ])
+        );
+    }
+
+    #[test]
     fn every_tool_describes_the_response_it_returns() {
         let tools = tools_list_result();
         let tools = tools["tools"].as_array().expect("tools");

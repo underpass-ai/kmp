@@ -17,6 +17,7 @@ OUTBOUND_TLS_VALUES="${TMPDIR:-/tmp}/kmp-helm-outbound-tls.yaml"
 INGRESS_VALUES="${TMPDIR:-/tmp}/kmp-helm-ingress.yaml"
 NEO4J_TLS_VALUES="${TMPDIR:-/tmp}/kmp-helm-neo4j-tls.yaml"
 SERVICE_ANNOTATIONS_VALUES="${TMPDIR:-/tmp}/kmp-helm-service-annotations.yaml"
+MCP_HTTP_VALUES="${TMPDIR:-/tmp}/kmp-helm-mcp-http.yaml"
 PINNED_IMAGE_VALUES="${TMPDIR:-/tmp}/kmp-helm-pinned-image.yaml"
 
 cat >"${SERVER_TLS_VALUES}" <<'EOF'
@@ -153,6 +154,48 @@ EOF
 
 helm template kmp "${CHART_PATH}" -f "${SERVICE_ANNOTATIONS_VALUES}" >/tmp/kmp-helm-service-annotations-template.yaml
 
+cat >"${MCP_HTTP_VALUES}" <<'EOF'
+image:
+  tag: latest
+tls:
+  mode: mutual
+  existingSecret: grpc-server-tls
+mcpHttp:
+  enabled: true
+  publicUrl: https://kmp.example.com/mcp
+  auth:
+    issuer: https://identity.example.com/
+    audience: https://kmp.example.com/mcp
+    allowedOrigins:
+      - https://client.example.com
+  grpcTls:
+    existingSecret: grpc-client-tls
+    domainName: kmp
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    hosts:
+      - host: kmp.example.com
+        paths:
+          - path: /mcp
+            pathType: Exact
+          - path: /.well-known/oauth-protected-resource
+            pathType: Prefix
+connections:
+  graphUri: neo4j://neo4j:7687
+  detailUri: redis://valkey:6379
+  snapshotUri: redis://valkey:6379
+  runtimeStateUri: redis://valkey:6379
+  natsUrl: nats://nats:4222
+development:
+  allowMutableImageTags: true
+  allowInlineConnections: true
+EOF
+
+helm template kmp "${CHART_PATH}" -f "${MCP_HTTP_VALUES}" >/tmp/kmp-helm-mcp-http-template.yaml
+
 cat >"${PINNED_IMAGE_VALUES}" <<'EOF'
 image:
   tag: latest
@@ -175,6 +218,13 @@ grep -q "host: \"kmp.example.com\"" /tmp/kmp-helm-ingress-template.yaml
 grep -q "bolt+s://neo4j:7687?tls_ca_path=/var/run/kmp/neo4j-tls/ca.crt" /tmp/kmp-helm-neo4j-tls-template.yaml
 grep -q "name: neo4j-tls" /tmp/kmp-helm-neo4j-tls-template.yaml
 grep -q "service.beta.kubernetes.io/aws-load-balancer-scheme: internal" /tmp/kmp-helm-service-annotations-template.yaml
+grep -q "app.kubernetes.io/component: mcp-http" /tmp/kmp-helm-mcp-http-template.yaml
+grep -q 'command:.*kmp-mcp-http' /tmp/kmp-helm-mcp-http-template.yaml
+grep -q "name: KMP_MCP_HTTP_AUTH_ISSUER" /tmp/kmp-helm-mcp-http-template.yaml
+grep -q "name: KMP_KERNEL_GRPC_TLS_CERT_PATH" /tmp/kmp-helm-mcp-http-template.yaml
+grep -q "secretName: \"grpc-client-tls\"" /tmp/kmp-helm-mcp-http-template.yaml
+grep -q "kind: NetworkPolicy" /tmp/kmp-helm-mcp-http-template.yaml
+grep -q 'path: "/mcp"' /tmp/kmp-helm-mcp-http-template.yaml
 grep -q "host: \"kmp.underpassai.com\"" /tmp/kmp-helm-underpass-runtime-template.yaml
 grep -q "nginx.ingress.kubernetes.io/backend-protocol: GRPC" /tmp/kmp-helm-underpass-runtime-template.yaml
 grep -q "OTEL_EXPORTER_OTLP_ENDPOINT" /tmp/kmp-helm-underpass-runtime-mtls-template.yaml

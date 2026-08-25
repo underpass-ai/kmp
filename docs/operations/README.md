@@ -12,6 +12,7 @@ Current contents:
 - [`mtls-deployment.md`](./mtls-deployment.md) — Full mTLS deployment guide
 - [`neo4j-schema-migrations.md`](./neo4j-schema-migrations.md) — Explicit projection graph indexes and constraints
 - [`mcp-stdio.md`](./mcp-stdio.md) — Stdio MCP adapter exposing the KMP tools
+- [`mcp-http.md`](./mcp-http.md) — Public authenticated Streamable HTTP MCP adapter
 - [`preflight.md`](./preflight.md) — E2E version preflight checklist before live runs
 
 Related docs:

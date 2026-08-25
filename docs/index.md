@@ -55,6 +55,7 @@ Grouped by edition — see [editions.md](editions.md) for the comparison.
 | Document | Content |
 |:---------|:--------|
 | [mcp-stdio.md](operations/mcp-stdio.md) | The `kmp-mcp` binary: tool surface, the three backends, and how each is selected |
+| [mcp-http.md](operations/mcp-http.md) | Public Streamable HTTP MCP, OAuth/OIDC grants, internal mTLS, Helm deployment, and parity gate |
 | [deployment-boundary.md](operations/deployment-boundary.md) | What this repo owns vs. what it does not |
 
 ### Embedded edition — in-process, no infrastructure
