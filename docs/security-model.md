@@ -113,6 +113,10 @@ graph LR
 | Data exfiltration from backends | TLS transport, network isolation | **Available** |
 | Man-in-the-middle on OTLP | mTLS via `OTEL_EXPORTER_OTLP_{CA,CERT,KEY}_PATH` env vars | **Implemented** |
 | Grafana anonymous access | Helm default: anonymous=false. Dev overlay enables it | Configurable via `grafana.anonymousAccess` |
+| Unauthenticated public MCP access | OAuth/OIDC JWT validation, audience binding, RFC 9728 challenge | **Implemented in `kmp-mcp-http`** |
+| Cross-tenant public MCP read/write | Explicit token grants for scopes, abouts, dimension scope ids, and ref prefixes; deny before gRPC | **Implemented in `kmp-mcp-http`** |
+| Raw inspect exposure | Separate `kmp:inspect:raw` permission | **Implemented in `kmp-mcp-http`** |
+| Public adapter bypasses kernel mTLS | Helm validation and gateway startup require mutual TLS | **Implemented** |
 
 
 ## Helm TLS Configuration Summary
@@ -124,6 +128,7 @@ graph LR
 | Valkey | `valkeyTls.enabled`, `valkeyTls.existingSecret` | TLS, mTLS with client cert |
 | NATS | `natsTls.mode`, `natsTls.existingSecret` | TLS, mTLS, tls_first |
 | OTel Collector | `otelCollector.tls.enabled`, `otelCollector.tls.existingSecret` | mTLS (receiver + Loki exporter + kernel OTLP client) |
+| Public MCP adapter | `mcpHttp.*`, `mcpHttp.grpcTls.existingSecret` | OAuth/OIDC externally; gRPC mTLS internally |
 
 ## Recommendations for Production
 
@@ -135,11 +140,14 @@ graph LR
 6. Set `grafana.adminPassword` to a strong value. Anonymous access is disabled
    by default (`grafana.anonymousAccess=false`); only the dev overlay enables it.
 7. Set `OTEL_EXPORTER_OTLP_CA_PATH`, `_CERT_PATH`, `_KEY_PATH` for OTLP mTLS.
+8. If public MCP is enabled, issue short-lived audience-bound tokens with the
+   smallest `kmp:*`, about, dimension-scope, and ref-prefix grants.
 
 ## What the Kernel Does NOT Do
 
 - Does not extract application-level caller identity from mTLS certificates.
-- Does not enforce fine-grained RBAC or scope-based access control.
+- The typed gRPC kernel does not enforce application RBAC. The optional public
+  HTTP MCP adapter enforces its documented token grants before gRPC.
 - Does not encrypt data at rest.
 - Does not manage secrets or rotate credentials.
 - Does not validate the truthfulness of application-supplied explanations.

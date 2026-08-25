@@ -12,6 +12,7 @@ members = [
     "crates/kmp-interpretation",
     "crates/kmp-observability",
     "crates/kmp-mcp",
+    "crates/kmp-mcp-http",
     "crates/kmp-memory-api",
     "crates/kmp-plugin-api",
     "crates/kmp-ports",
@@ -36,6 +37,9 @@ description = "KMP by Underpass — node-centric context rehydration engine for 
 repository = "https://github.com/underpass-ai/kmp"
 
 [workspace.dependencies]
+axum = "0.8.9"
+base64 = "0.22.1"
+jsonwebtoken = { version = "11.0.0", default-features = false, features = ["aws_lc_rs"] }
 neo4rs = "0.8.0"
 # Internal crates. The ones carrying a `version` are the twelve published to
 # crates.io — a path alone is enough to build here, but cargo refuses to
@@ -66,6 +70,7 @@ kmp-transport-grpc = { path = "crates/kmp-transport-grpc" }
 kmp-viewer = { path = "crates/kmp-viewer", version = "0.1.13" }
 prost = "0.13.5"
 prost-types = "0.13.5"
+reqwest = { version = "0.12.28", default-features = false, features = ["json", "rustls-tls"] }
 sha2 = "0.10"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
@@ -81,6 +86,7 @@ opentelemetry_sdk = { version = "0.32.1", features = ["rt-tokio"] }
 tracing = "0.1.44"
 tracing-opentelemetry = "0.33.0"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
+url = "2.5.8"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -1,0 +1,196 @@
+{{- if .Values.mcpHttp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kmp.mcpHttp.fullname" . }}
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-http
+spec:
+  replicas: {{ .Values.mcpHttp.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kmp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mcp-http
+  template:
+    metadata:
+      labels:
+        {{- include "kmp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mcp-http
+    spec:
+      serviceAccountName: {{ include "kmp.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: mcp-http
+          image: "{{ include "kmp.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/usr/bin/tini", "--", "/usr/local/bin/kmp-mcp-http"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.mcpHttp.service.port }}
+              protocol: TCP
+          env:
+            - name: KMP_MCP_BACKEND
+              value: grpc
+            - name: KMP_KERNEL_GRPC_ENDPOINT
+              value: {{ printf "https://%s:%v" (include "kmp.fullname" .) .Values.service.grpcPort | quote }}
+            - name: KMP_KERNEL_GRPC_TLS_MODE
+              value: mutual
+            - name: KMP_KERNEL_GRPC_TLS_CA_PATH
+              value: {{ printf "%s/%s" .Values.mcpHttp.grpcTls.mountPath .Values.mcpHttp.grpcTls.keys.ca | quote }}
+            - name: KMP_KERNEL_GRPC_TLS_CERT_PATH
+              value: {{ printf "%s/%s" .Values.mcpHttp.grpcTls.mountPath .Values.mcpHttp.grpcTls.keys.cert | quote }}
+            - name: KMP_KERNEL_GRPC_TLS_KEY_PATH
+              value: {{ printf "%s/%s" .Values.mcpHttp.grpcTls.mountPath .Values.mcpHttp.grpcTls.keys.key | quote }}
+            - name: KMP_KERNEL_GRPC_TLS_DOMAIN_NAME
+              value: {{ default (include "kmp.fullname" .) .Values.mcpHttp.grpcTls.domainName | quote }}
+            - name: KMP_MCP_HTTP_ADDR
+              value: {{ printf "0.0.0.0:%v" .Values.mcpHttp.service.port | quote }}
+            - name: KMP_MCP_HTTP_PUBLIC_URL
+              value: {{ .Values.mcpHttp.publicUrl | quote }}
+            - name: KMP_MCP_HTTP_AUTH_ISSUER
+              value: {{ .Values.mcpHttp.auth.issuer | quote }}
+            - name: KMP_MCP_HTTP_AUTH_AUDIENCE
+              value: {{ .Values.mcpHttp.auth.audience | quote }}
+            {{- with .Values.mcpHttp.auth.jwksUri }}
+            - name: KMP_MCP_HTTP_AUTH_JWKS_URI
+              value: {{ . | quote }}
+            {{- end }}
+            - name: KMP_MCP_HTTP_ALLOWED_ORIGINS
+              value: {{ join "," .Values.mcpHttp.auth.allowedOrigins | quote }}
+            - name: KMP_MCP_HTTP_REQUEST_TIMEOUT_SECS
+              value: {{ .Values.mcpHttp.requestTimeoutSeconds | quote }}
+            - name: KMP_MCP_HTTP_MAX_BODY_BYTES
+              value: {{ .Values.mcpHttp.maxBodyBytes | quote }}
+            - name: KMP_MCP_HTTP_REQUIRE_GRPC_MTLS
+              value: "true"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: grpc-client-tls
+              mountPath: {{ .Values.mcpHttp.grpcTls.mountPath | quote }}
+              readOnly: true
+          resources:
+            {{- toYaml .Values.mcpHttp.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: grpc-client-tls
+          secret:
+            secretName: {{ .Values.mcpHttp.grpcTls.existingSecret | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kmp.mcpHttp.fullname" . }}
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-http
+  {{- with .Values.mcpHttp.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "kmp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-http
+  ports:
+    - name: http
+      port: {{ .Values.mcpHttp.service.port }}
+      targetPort: http
+      protocol: TCP
+{{- if .Values.mcpHttp.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "kmp.mcpHttp.fullname" . }}
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-http
+  {{- with .Values.mcpHttp.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.mcpHttp.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  rules:
+    {{- range .Values.mcpHttp.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path | quote }}
+            pathType: {{ .pathType | quote }}
+            backend:
+              service:
+                name: {{ include "kmp.mcpHttp.fullname" $ }}
+                port:
+                  number: {{ $.Values.mcpHttp.service.port }}
+          {{- end }}
+    {{- end }}
+  {{- with .Values.mcpHttp.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.mcpHttp.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kmp.mcpHttp.fullname" . }}
+  labels:
+    {{- include "kmp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mcp-http
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "kmp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mcp-http
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            {{- toYaml .Values.mcpHttp.networkPolicy.ingressNamespaceSelector | nindent 12 }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.mcpHttp.service.port }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "kmp.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: server
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.grpcPort }}
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: TCP
+          port: 443
+{{- end }}
+{{- end }}

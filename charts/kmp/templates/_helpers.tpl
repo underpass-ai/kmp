@@ -40,6 +40,10 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- end -}}
 
+{{- define "kmp.mcpHttp.fullname" -}}
+{{- printf "%s-mcp-http" (include "kmp.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- define "kmp.validateValues" -}}
 {{- $tag := default "" .Values.image.tag -}}
 {{- $digest := default "" .Values.image.digest -}}
@@ -72,6 +76,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $otelTlsCertKey := default "" .Values.otelCollector.tls.keys.cert -}}
 {{- $otelTlsKeyKey := default "" .Values.otelCollector.tls.keys.key -}}
 {{- $neo4jEnabled := default false .Values.neo4j.enabled -}}
+{{- $mcpHttp := .Values.mcpHttp | default dict -}}
+{{- $mcpHttpEnabled := get $mcpHttp "enabled" | default false -}}
 {{- if and (eq $tag "") (eq $digest "") -}}
 {{- fail "set image.tag or image.digest; the chart no longer defaults to latest" -}}
 {{- end -}}
@@ -89,6 +95,26 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- if and $ingressEnabled (eq (len $ingressHosts) 0) -}}
 {{- fail "ingress.hosts must contain at least one host when ingress.enabled=true" -}}
+{{- end -}}
+{{- if $mcpHttpEnabled -}}
+{{- if ne $grpcTlsMode "mutual" -}}
+{{- fail "mcpHttp.enabled requires tls.mode=mutual on KernelMemoryService" -}}
+{{- end -}}
+{{- if eq (default "" $mcpHttp.publicUrl) "" -}}
+{{- fail "mcpHttp.publicUrl is required when mcpHttp.enabled=true" -}}
+{{- end -}}
+{{- if eq (default "" $mcpHttp.auth.issuer) "" -}}
+{{- fail "mcpHttp.auth.issuer is required when mcpHttp.enabled=true" -}}
+{{- end -}}
+{{- if eq (default "" $mcpHttp.auth.audience) "" -}}
+{{- fail "mcpHttp.auth.audience is required when mcpHttp.enabled=true" -}}
+{{- end -}}
+{{- if eq (default "" $mcpHttp.grpcTls.existingSecret) "" -}}
+{{- fail "mcpHttp.grpcTls.existingSecret is required for gateway-to-kernel mTLS" -}}
+{{- end -}}
+{{- if and $mcpHttp.ingress.enabled (eq (len (default (list) $mcpHttp.ingress.hosts)) 0) -}}
+{{- fail "mcpHttp.ingress.hosts must contain at least one host when enabled" -}}
+{{- end -}}
 {{- end -}}
 {{- if and $neo4jTlsEnabled (eq $neo4jTlsSecret "") (ne $neo4jTlsCaKey "") -}}
 {{- fail "neo4jTls.existingSecret is required when neo4jTls.keys.ca is configured" -}}

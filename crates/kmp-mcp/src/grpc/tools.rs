@@ -69,7 +69,7 @@ async fn grpc_ingest(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = ingest_request_from_arguments(arguments)?;
+    let request = ingest_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     if request.dry_run {
         let plan = build_ingest_plan(arguments)?;
         return Ok(tool_success_result(dry_run_ingest_from_plan(&plan)));
@@ -93,7 +93,7 @@ async fn grpc_wake(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = wake_request_from_arguments(arguments)?;
+    let request = wake_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
     let mut client = connect_memory_client(endpoint, tls)
         .await
@@ -112,7 +112,7 @@ async fn grpc_ask(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = ask_request_from_arguments(arguments)?;
+    let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
     let mut client = connect_memory_client(endpoint, tls)
         .await
@@ -132,7 +132,8 @@ async fn grpc_temporal_move(
     direction: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = temporal_move_request_from_arguments(arguments, direction)?;
+    let request = temporal_move_request_from_arguments(arguments, direction)
+        .map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
     let mut client = connect_memory_client(endpoint, tls)
         .await
@@ -169,7 +170,8 @@ async fn grpc_temporal_near(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = temporal_near_request_from_arguments(arguments)?;
+    let request =
+        temporal_near_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let about = request.about.clone();
     let mut client = connect_memory_client(endpoint, tls)
         .await
@@ -191,7 +193,7 @@ async fn grpc_trace(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = trace_request_from_arguments(arguments)?;
+    let request = trace_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let from = request.from.clone();
     let to = request.to.clone();
     let mut client = connect_memory_client(endpoint, tls)
@@ -211,7 +213,7 @@ async fn grpc_inspect(
     tls: &KernelMcpGrpcTlsConfig,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = inspect_request_from_arguments(arguments)?;
+    let request = inspect_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let ref_id = request.r#ref.clone();
     let mut client = connect_memory_client(endpoint, tls)
         .await

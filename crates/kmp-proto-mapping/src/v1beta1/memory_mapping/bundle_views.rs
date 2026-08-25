@@ -312,10 +312,9 @@ fn normalize_proof_path(
 /// `supersedes` says one replaced the other: no tension, a lifecycle, and the
 /// older entry is history rather than advice.
 fn superseded_from_relations(path: &[MemoryRelation]) -> Vec<SupersededMemory> {
-    let mut seen = BTreeSet::new();
-    path.iter()
+    let mut superseded = path
+        .iter()
         .filter(|relation| is_supersession(&relation.rel))
-        .filter(|relation| seen.insert(relation.target_ref.clone()))
         .map(|relation| SupersededMemory {
             r#ref: relation.target_ref.clone(),
             superseded_by: relation.source_ref.clone(),
@@ -325,7 +324,16 @@ fn superseded_from_relations(path: &[MemoryRelation]) -> Vec<SupersededMemory> {
                 relation.why.trim().to_string()
             },
         })
-        .collect()
+        .collect::<Vec<_>>();
+    superseded.sort_by(|left, right| {
+        (&left.r#ref, &left.superseded_by, &left.why).cmp(&(
+            &right.r#ref,
+            &right.superseded_by,
+            &right.why,
+        ))
+    });
+    superseded.dedup_by(|left, right| left.r#ref == right.r#ref);
+    superseded
 }
 
 fn is_supersession(value: &str) -> bool {
@@ -333,13 +341,11 @@ fn is_supersession(value: &str) -> bool {
 }
 
 fn conflicts_from_relations(path: &[MemoryRelation]) -> Vec<String> {
-    let mut seen = BTreeSet::new();
     path.iter()
         .filter(|relation| is_conflict_relation(&relation.rel))
-        .filter_map(|relation| {
-            let summary = conflict_summary(relation);
-            seen.insert(summary.clone()).then_some(summary)
-        })
+        .map(conflict_summary)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect()
 }
 
@@ -424,16 +430,23 @@ pub(super) fn rendered_current_state(
     // Minimal wake packets keep the first state item. Prefer the semantic
     // reason the graph changed, then concrete detail, then node anchors;
     // containment bookkeeping remains available but cannot displace state.
-    sections.sort_by_key(|section| {
-        if semantic_relationships.contains(&section.source_id) {
-            0
-        } else if section.source_id.starts_with("detail:") {
-            1
-        } else if structural_relationships.contains(&section.source_id) {
-            3
-        } else {
-            2
-        }
+    sections.sort_by(|left, right| {
+        let priority = |source_id: &str| {
+            if semantic_relationships.contains(source_id) {
+                0
+            } else if source_id.starts_with("detail:") {
+                1
+            } else if structural_relationships.contains(source_id) {
+                3
+            } else {
+                2
+            }
+        };
+        (priority(&left.source_id), &left.source_id, &left.content).cmp(&(
+            priority(&right.source_id),
+            &right.source_id,
+            &right.content,
+        ))
     });
     let sections = sections
         .into_iter()
@@ -884,12 +897,16 @@ mod superseded_tests {
 
     #[test]
     fn the_same_entry_replaced_twice_is_named_once() {
-        let superseded = superseded_from_relations(&[
+        let relations = [
             relation("supersedes", "decision:second", "decision:first", "a"),
             relation("supersedes", "decision:third", "decision:first", "b"),
-        ]);
+        ];
+        let superseded = superseded_from_relations(&relations);
+        let mut reversed = relations;
+        reversed.reverse();
 
         assert_eq!(superseded.len(), 1, "one line per replaced entry");
         assert_eq!(superseded[0].superseded_by, "decision:second");
+        assert_eq!(superseded_from_relations(&reversed), superseded);
     }
 }

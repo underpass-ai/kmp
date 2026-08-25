@@ -13,11 +13,12 @@ Published tags:
 
 ## Contents
 
-The image packages two binaries:
+The image packages three binaries:
 
 | Binary | Path | Purpose |
 |:-------|:-----|:--------|
 | `kmp-server` | `/usr/local/bin/kmp-server` | Kernel server (entrypoint) |
+| `kmp-mcp-http` | `/usr/local/bin/kmp-mcp-http` | Authenticated Streamable HTTP MCP adapter (selected by the gateway Deployment) |
 | `runtime-reference-client` | `/usr/local/bin/runtime-reference-client` | Reference agentic context client |
 
 Base: `debian:bookworm-slim` with `ca-certificates` and `tini` (PID 1).
@@ -26,6 +27,7 @@ Runs as non-root user `rehydration` (uid created at build time).
 ## Port
 
 - gRPC: `50054`
+- HTTP MCP: `8080` when `kmp-mcp-http` is selected
 
 ## Environment Variables
 

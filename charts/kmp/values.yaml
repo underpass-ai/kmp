@@ -44,6 +44,44 @@ ingress:
   hosts: []
   tls: []
 
+# Public, authenticated Streamable HTTP MCP adapter. It is a separate process
+# in the same image and never owns storage; every authorized call goes to the
+# release's KernelMemoryService over client mTLS.
+mcpHttp:
+  enabled: false
+  replicaCount: 1
+  publicUrl: ""
+  service:
+    port: 8080
+    annotations: {}
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    tls: []
+  auth:
+    issuer: ""
+    audience: ""
+    jwksUri: ""
+    allowedOrigins: []
+  grpcTls:
+    existingSecret: ""
+    mountPath: /var/run/kmp-mcp/grpc-tls
+    domainName: ""
+    keys:
+      ca: ca.crt
+      cert: tls.crt
+      key: tls.key
+  requestTimeoutSeconds: 20
+  maxBodyBytes: 1048576
+  resources: {}
+  networkPolicy:
+    enabled: true
+    ingressNamespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ingress-nginx
+
 tls:
   mode: disabled
   existingSecret: ""

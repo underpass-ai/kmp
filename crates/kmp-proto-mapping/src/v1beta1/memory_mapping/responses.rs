@@ -57,12 +57,21 @@ fn newest_cursor(relationships: &[MemoryRelation]) -> Option<TemporalCursor> {
             Some((time, coordinate.sequence, relation))
         })
         .max_by(
-            |(left_time, left_sequence, _), (right_time, right_sequence, _)| {
-                (left_time.seconds, left_time.nanos, *left_sequence).cmp(&(
-                    right_time.seconds,
-                    right_time.nanos,
-                    *right_sequence,
-                ))
+            |(left_time, left_sequence, left), (right_time, right_sequence, right)| {
+                (
+                    left_time.seconds,
+                    left_time.nanos,
+                    *left_sequence,
+                    &left.target_ref,
+                    &left.source_ref,
+                )
+                    .cmp(&(
+                        right_time.seconds,
+                        right_time.nanos,
+                        *right_sequence,
+                        &right.target_ref,
+                        &right.source_ref,
+                    ))
             },
         )
         .map(|(occurred_at, sequence, relation)| TemporalCursor {
@@ -301,8 +310,10 @@ pub fn ask_response_from_result(
 }
 
 fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<MemoryRelation> {
-    relationships.sort_by_key(|relationship| {
-        match MemorySemanticClass::try_from(relationship.semantic_class) {
+    relationships.sort_by(|left, right| {
+        let priority = |relationship: &MemoryRelation| match MemorySemanticClass::try_from(
+            relationship.semantic_class,
+        ) {
             Ok(MemorySemanticClass::Causal) => 0,
             Ok(MemorySemanticClass::Motivational) => 1,
             Ok(MemorySemanticClass::Evidential) => 2,
@@ -310,7 +321,25 @@ fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<
             Ok(MemorySemanticClass::Procedural) => 4,
             Ok(MemorySemanticClass::Structural) => 5,
             _ => 6,
-        }
+        };
+        (
+            priority(left),
+            &left.source_ref,
+            &left.target_ref,
+            &left.rel,
+            &left.why,
+            &left.evidence,
+            left.sequence,
+        )
+            .cmp(&(
+                priority(right),
+                &right.source_ref,
+                &right.target_ref,
+                &right.rel,
+                &right.why,
+                &right.evidence,
+                right.sequence,
+            ))
     });
     relationships
 }

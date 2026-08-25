@@ -12,6 +12,18 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **The cluster edition has an authenticated Streamable HTTP MCP boundary.**
+  `kmp-mcp-http` exposes the same ten schemas and structured results as stdio
+  MCP, validates asymmetric OAuth/OIDC bearer tokens and explicit KMP grants
+  before kernel access, separates raw-inspect permission, enforces Origin/body/
+  deadline bounds, and publishes RFC 9728 resource metadata. The standalone
+  adapter has no storage or semantic logic: it calls the existing
+  `KernelMemoryService`, and production startup requires client mTLS. The OCI
+  image and Helm chart now carry its separate Deployment, HTTP Ingress and
+  NetworkPolicy. `grpc_mcp_semantic_parity` seeds one deterministic snapshot
+  and asserts exact results for every move across direct gRPC, embedded MCP,
+  stdio MCP over gRPC, and HTTP MCP over gRPC.
+
 - **Project memory now maintains its own git-native recovery copy.** A
   successful embedded MCP write atomically refreshes `.kmp/memory.jsonl`
   before returning; a durable pending marker brackets the store mutation, so
@@ -303,6 +315,11 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Fixed
 
+- Recall cursors now bind to the canonical ordered projection plan instead of
+  raw adapter row order. Equal snapshots therefore keep the same cursor across
+  direct gRPC, embedded, stdio and HTTP requests, while a real semantic change
+  still invalidates it. The parity gate traverses every page and reconstructs
+  the complete eligible proof without gaps or duplicate cursors.
 - A start that failed for any reason other than backend selection used to end
   with "set `KMP_KERNEL_GRPC_ENDPOINT`…", because the follow-up advice was
   chosen by matching the front of the error message and everything unmatched

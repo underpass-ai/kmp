@@ -263,8 +263,8 @@ impl KernelMcpToolBackend for RetryingEmbeddedKernelMcpBackend {
     }
 }
 
-fn mapping_error(status: &tonic::Status) -> String {
-    status.message().to_string()
+fn mapping_error(status: &tonic::Status) -> ToolError {
+    ToolError::invalid_argument(status.message())
 }
 
 /// Carries the kernel's own classification out to the caller.
@@ -301,6 +301,28 @@ fn kernel_error<'a>(
             code,
             format!("embedded kernel {operation} failed for `{about}`: {error}"),
         )
+    }
+}
+
+/// Temporal selection turns a domain `InvalidState` into a caller error: the
+/// temporal domain uses that variant for an unresolved/invalid cursor, and the
+/// gRPC service exposes the same condition as `INVALID_ARGUMENT`. This is
+/// operation-specific classification, not message matching; port/store
+/// `InvalidState` remains a backend failure through `kernel_error`.
+fn temporal_error<'a>(
+    operation: &'a str,
+    about: &'a str,
+) -> impl FnOnce(kmp_application::ApplicationError) -> ToolError + 'a {
+    move |error| {
+        if matches!(
+            error,
+            kmp_application::ApplicationError::Domain(kmp_domain::DomainError::InvalidState(_))
+        ) {
+            return ToolError::invalid_argument(format!(
+                "embedded kernel {operation} failed for `{about}`: {error}"
+            ));
+        }
+        kernel_error(operation, about)(error)
     }
 }
 
@@ -376,7 +398,7 @@ async fn embedded_ingest(
     service: &EmbeddedMemoryService,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = ingest_request_from_arguments(arguments)?;
+    let request = ingest_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     if request.dry_run {
         let plan = build_ingest_plan(arguments)?;
         return Ok(tool_success_result(dry_run_ingest_from_plan(&plan)));
@@ -397,7 +419,7 @@ async fn embedded_wake(
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = wake_request_from_arguments(arguments)?;
+    let request = wake_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let query = wake_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let intent = query.intent.clone();
     let max_entries = query.max_entries;
@@ -426,7 +448,7 @@ async fn embedded_ask(
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = ask_request_from_arguments(arguments)?;
+    let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let query = ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
     let policy = query.answer_policy;
@@ -458,7 +480,8 @@ async fn embedded_temporal(
     direction_name: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = temporal_move_request_from_arguments(arguments, direction_name)?;
+    let request = temporal_move_request_from_arguments(arguments, direction_name)
+        .map_err(ToolError::invalid_argument)?;
     let requested_cursor = request.cursor.clone().unwrap_or_default();
     let query = temporal_query_from_move_proto(request, direction)
         .map_err(|status| mapping_error(&status))?;
@@ -466,7 +489,7 @@ async fn embedded_temporal(
     let result = service
         .temporal(query)
         .await
-        .map_err(kernel_error(direction_name, &about))?;
+        .map_err(temporal_error(direction_name, &about))?;
     observe_quality(
         observer,
         &format!("kmp_{direction_name}"),
@@ -489,14 +512,15 @@ async fn embedded_near(
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = temporal_near_request_from_arguments(arguments)?;
+    let request =
+        temporal_near_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let requested_cursor = request.around.clone().unwrap_or_default();
     let query = temporal_query_from_near_proto(request).map_err(|status| mapping_error(&status))?;
     let about = query.about.clone();
     let result = service
         .temporal(query)
         .await
-        .map_err(kernel_error("near", &about))?;
+        .map_err(temporal_error("near", &about))?;
     observe_quality(
         observer,
         "kmp_near",
@@ -519,7 +543,7 @@ async fn embedded_trace(
     observer: &dyn QualityMetricsObserver,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = trace_request_from_arguments(arguments)?;
+    let request = trace_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let query = trace_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let page = query.page.clone();
     let from = query.from.clone();
@@ -543,7 +567,7 @@ async fn embedded_inspect(
     service: &EmbeddedMemoryService,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
-    let request = inspect_request_from_arguments(arguments)?;
+    let request = inspect_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let query = inspect_query_from_proto(request).map_err(|status| mapping_error(&status))?;
     let ref_id = query.ref_id.clone();
     let result = service
