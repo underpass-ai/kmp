@@ -1,4 +1,6 @@
-Commit this project's memory to the repository.
+Checkpoint this project's maintained memory bundle and show me what changed.
+Project writes already refresh it before returning; this is also the repair
+command after a pending or stale export.
 
 ```bash
 kmp-mcp export
@@ -14,7 +16,8 @@ change carries the rationale verbatim.
 
 Do not `git add` unless I ask. If the diff is large and not append-only, say
 so: that means something rebuilt the log rather than a session being busy. If
-there is nothing to commit, that is a complete answer.
+there is nothing to commit, the maintained bundle already matches git and that
+is a complete answer.
 
 <!-- kmp:voice -->
 **Say it in the house voice.** One line per thing, and detail only where

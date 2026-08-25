@@ -12,6 +12,19 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **Project memory now maintains its own git-native recovery copy.** A
+  successful embedded MCP write atomically refreshes `.kmp/memory.jsonl`
+  before returning; a durable pending marker brackets the store mutation, so
+  a crash or ambiguous export failure becomes a `FAIL` in `kmp-mcp doctor`
+  instead of silent drift. Bundle format 2 gives every saved stream a snapshot
+  id, creation time, inclusive event range, sorted about coverage and SHA-256
+  content digest, while format-1 bundles remain importable. `kmp-mcp snapshot`
+  creates immutable named recovery points, verifies or lists them, runs the
+  existing read tools against one in an isolated temporary store, and merges
+  only identical histories or an exact prefix fast-forward. Divergent streams
+  are refused; `.gitattributes` makes git surface that semantic conflict rather
+  than interleaving JSONL lines.
+
 - **`kmp-mcp info` lists every memory on this machine**, not only the one this
   shell would open. On a real machine that was one of five, and two of the five
   were reachable by no rule at all — a pre-migration redb backup and whatever

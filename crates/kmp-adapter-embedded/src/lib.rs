@@ -17,8 +17,9 @@
 mod adapter;
 
 pub use adapter::{
-    BUNDLE_FORMAT_VERSION, BundleHeader, EVENT_FORMAT_VERSION, EmbeddedKernelStore, ImportReport,
-    ProjectionRebuildReport, QualityTelemetryRetention, RedbQualityTelemetryReader,
-    RedbQualityTelemetryWriter, SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt,
-    format_version_path, quality_telemetry_path, read_stamped_version, store_file_path_for,
+    BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, EVENT_FORMAT_VERSION,
+    EmbeddedKernelStore, ImportReport, ProjectionRebuildReport, QualityTelemetryRetention,
+    RedbQualityTelemetryReader, RedbQualityTelemetryWriter, SUPPORTED_FORMAT_VERSION,
+    StorageEngine, StoreMigrationReceipt, format_version_path, merge_bundles,
+    quality_telemetry_path, read_stamped_version, store_file_path_for, verify_bundle,
 };

@@ -122,6 +122,9 @@ kmp-mcp import memory.jsonl      # ...or an explicit path
 kmp-mcp migrate <old> <new> [--engine redb|sqlite]   # replay history into a fresh store
 kmp-mcp document project:kmp     # one about -> Markdown on stdout
 kmp-mcp document project:kmp --out HOW-THIS-WAS-BUILT.md
+kmp-mcp snapshot create pre-release
+kmp-mcp snapshot verify pre-release
+kmp-mcp snapshot read pre-release kmp_goto '{"about":"project:kmp","at":{"sequence":12}}'
 ```
 
 ### One about, as a document
@@ -151,16 +154,65 @@ root — the same root the data-directory rule walks up to find. The store
 log in one text file, and committing it is what makes a fresh clone arrive
 with the project's decisions rather than an empty memory.
 
+For a project-scoped embedded session this file is maintained, not remembered:
+before a write may change the store, KMP creates a durable pending marker;
+after the write succeeds, it exports the complete log through a same-directory
+atomic replacement and only then clears the marker and returns success. An
+ambiguous failure leaves the marker. `info` and `doctor` treat a missing,
+invalid, older or pending bundle as a loud durability failure and tell the
+operator how to repair it. For a pending marker, stop other KMP sessions, run
+`kmp-mcp export`, inspect the recovered diff, then explicitly acknowledge it
+with `kmp-mcp export --repair-pending`; the separate acknowledgement avoids
+erasing a marker owned by a concurrent SQLite writer. An idempotent retry whose
+content digest is already current does not churn the header.
+
 ```bash
-kmp-mcp export && git add .kmp/memory.jsonl   # after a session that decided things
+kmp-mcp export && git add .kmp/memory.jsonl   # explicit repair/checkpoint
 kmp-mcp import                                # in a fresh clone
 ```
 
+Bundle format 2 gives that saved stream an identity: `snapshot_id`,
+`created_at_unix_ms`, an inclusive `event_range`, sorted `abouts`, and a
+`sha256:` content digest over the exact event lines. Import and snapshot reads
+verify all of it before replay. Format-1 bundles remain readable and are
+upgraded by the next export; `event_format` names the portable payload and is
+deliberately independent of the redb/SQLite layout.
+
 Because it is one JSON object per line in sequence order, an append-only log
-diffs as appended lines: a session that recorded three decisions is three new
-lines plus the header's `event_count`. Each line carries `requested_by` and
-each change its `reason`, so a reviewer reads the rationale of every relation
-without leaving the diff.
+diffs as appended lines. Each line carries `requested_by` and each change its
+`reason`, so a reviewer reads the rationale of every relation without leaving
+the diff.
+
+### Named snapshots and safe historical reads
+
+Named recovery points live at `.kmp/snapshots/<name>.jsonl` and are immutable:
+creating an existing name with different contents is refused.
+
+```bash
+kmp-mcp snapshot create 2026-08-24-pre-release
+kmp-mcp snapshot list
+kmp-mcp snapshot verify 2026-08-24-pre-release
+kmp-mcp snapshot read 2026-08-24-pre-release kmp_near \
+  '{"about":"project:kmp","around":{"sequence":12}}'
+```
+
+`snapshot read` verifies the digest, imports into a fresh temporary store,
+runs one of the eight existing read tools, and removes that store afterwards.
+It never opens, moves or replaces `.kernel/`; `kmp_ingest` and
+`kmp_write_memory` are refused on this path.
+
+Two snapshots merge only when their event streams are identical or one is an
+exact prefix of the other:
+
+```bash
+kmp-mcp snapshot merge branch-a branch-b reconciled
+```
+
+That operation is a deterministic fast-forward. If both branches appended at
+the same event position, KMP refuses to invent causal order.
+`.gitattributes` assigns bundle JSONL files the binary merge driver so git also
+surfaces the conflict instead of interleaving lines; reconcile the decision in
+a live store and create a new snapshot rather than hand-editing history.
 
 The default only applies to a project-scoped store. An explicit
 `KMP_MCP_DATA_DIR` or the per-user default belongs to no repository, and both

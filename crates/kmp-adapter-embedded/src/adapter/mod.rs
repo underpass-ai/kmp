@@ -18,7 +18,10 @@ pub use format_version::{
     read_stamped_version, store_file_path_for,
 };
 pub use migration::StoreMigrationReceipt;
-pub use portability::{BUNDLE_FORMAT_VERSION, BundleHeader, ImportReport};
+pub use portability::{
+    BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, merge_bundles,
+    verify_bundle,
+};
 pub use replay::ProjectionRebuildReport;
 pub use store::EmbeddedKernelStore;
 pub use telemetry::{

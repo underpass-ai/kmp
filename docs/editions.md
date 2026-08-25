@@ -74,8 +74,10 @@ Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`, `logs/`
 - **Parity.** The embedded backend reuses the live JSON path through shared
   proto mapping, and the conformance suite pins storage semantics across all
   backends in CI. Identical JSON is a tested claim.
-- **Portability.** `kmp-mcp export memory.jsonl` writes the event log as a
-  portable bundle; `kmp-mcp import` loads one into an *empty* store, fail-fast.
+- **Portability.** Project writes atomically maintain `.kmp/memory.jsonl` as a
+  verifiable format-2 bundle; named snapshots provide immutable recovery
+  points and read-only historical navigation. `kmp-mcp import` loads a bundle
+  into an *empty* store, fail-fast.
 
 ### What it does not give you
 
@@ -86,8 +88,10 @@ Layout: `FORMAT_VERSION` (fail-fast on mismatch), `store/kernel.redb`, `logs/`
   store, or point the second session at a different `KMP_MCP_DATA_DIR`. If
   concurrent sessions on one store become a real workflow, the documented
   evolution is a local daemon.
-- **Sharing.** Memory is local to the machine and the data dir. Two people do
-  not see each other's memory.
+- **Live sharing.** The machine store remains local; two people do not see each
+  other's uncommitted writes. The committed head and named snapshots travel
+  with git, can be reviewed in a pull request, verified by digest and restored
+  or read without replacing the live store.
 - **Transport security controls.** There is no transport. That is a feature
   here, not a gap — but it means there is nothing to configure and nothing to
   audit at the boundary.

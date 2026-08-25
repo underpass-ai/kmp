@@ -1,0 +1,5 @@
+# Event histories are semantic streams. Git must surface two branches that
+# both append instead of interleaving JSONL lines or inviting a hand-edited
+# causal order; `kmp-mcp snapshot merge` accepts only an exact fast-forward.
+.kmp/*.jsonl text eol=lf -merge
+.kmp/**/*.jsonl text eol=lf -merge

@@ -4,7 +4,7 @@
 use kmp_adapter_embedded::RedbQualityTelemetryReader;
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
-use kmp_mcp::KernelMcpServer;
+use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpServer};
 use serde_json::{Value, json};
 
 fn tool_call(id: u64, name: &str, arguments: Value) -> String {
@@ -80,6 +80,85 @@ fn ingest_arguments() -> Value {
             }]
         }
     })
+}
+
+#[tokio::test]
+async fn a_project_write_maintains_its_commit_native_bundle() {
+    let project = tempfile::tempdir().expect("project");
+    let data_dir = project.path().join(".kernel");
+    let bundle_path = project.path().join(".kmp/memory.jsonl");
+    let commit_native = kmp_embedded::CommitNativeBundle::new(&data_dir, &bundle_path);
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        &data_dir,
+        None,
+        Some(commit_native),
+    )
+    .expect("embedded backend");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+
+    let response = server
+        .handle_json_line(&tool_call(1, "kmp_ingest", ingest_arguments()))
+        .await
+        .expect("response");
+    let response: Value = serde_json::from_str(&response).expect("json");
+    assert!(response.get("error").is_none(), "{response}");
+
+    let bundle = std::fs::read_to_string(&bundle_path).expect("auto-exported bundle");
+    let header = kmp_embedded::verify_bundle(&bundle).expect("verified bundle");
+    assert_eq!(header.event_count, 1);
+    assert_eq!(header.abouts, ["question:e3"]);
+    assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
+
+    let historical =
+        kmp_mcp::snapshot::read_only(&bundle, "kmp_inspect", json!({"ref": "claim:e3"}))
+            .await
+            .expect("read verified snapshot in isolation");
+    assert_eq!(
+        historical["result"]["structuredContent"]["object"]["ref"],
+        "claim:e3"
+    );
+    let refused = kmp_mcp::snapshot::read_only(&bundle, "kmp_ingest", ingest_arguments())
+        .await
+        .expect_err("snapshot attachment is read-only");
+    assert!(refused.contains("could mutate memory"));
+}
+
+#[tokio::test]
+async fn a_failed_bundle_refresh_leaves_a_loud_pending_marker() {
+    let project = tempfile::tempdir().expect("project");
+    let data_dir = project.path().join(".kernel");
+    let blocked_parent = project.path().join("blocked");
+    std::fs::write(&blocked_parent, b"not a directory").expect("blocker");
+    let bundle_path = blocked_parent.join("memory.jsonl");
+    let commit_native = kmp_embedded::CommitNativeBundle::new(&data_dir, &bundle_path);
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        &data_dir,
+        None,
+        Some(commit_native),
+    )
+    .expect("embedded backend");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+
+    let response = server
+        .handle_json_line(&tool_call(1, "kmp_ingest", ingest_arguments()))
+        .await
+        .expect("response");
+    let response: Value = serde_json::from_str(&response).expect("json");
+    assert_eq!(
+        response["result"]["structuredContent"]["error"]["code"],
+        "backend_error"
+    );
+    assert!(
+        response["result"]["structuredContent"]["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("write committed")),
+        "{response}"
+    );
+    assert_eq!(
+        kmp_embedded::pending_bundle_exports(&data_dir).len(),
+        1,
+        "doctor must have durable evidence that export did not complete"
+    );
 }
 
 fn large_recall_ingest_arguments() -> Value {

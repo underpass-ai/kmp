@@ -163,8 +163,13 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
-    let backend = EmbeddedKernelMcpBackend::open_with_engine(resolved.path(), engine)
-        .map_err(StartupFailure::after_the_backend_was_chosen)?;
+    let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        resolved.path(),
+        engine,
+        commit_native,
+    )
+    .map_err(StartupFailure::after_the_backend_was_chosen)?;
     remember_this_memory(resolved.path());
     let url = match spawn_viewer(backend.kernel(), addr).await {
         Ok(url) => Some(url),
@@ -297,14 +302,15 @@ fn user_state_home() -> std::path::PathBuf {
 /// serves the local web viewer over the store; stdout carries the command
 /// result only.
 async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
-    let path = args.first().copied();
+    let first_argument = args.first().copied();
     match command {
         "export" | "import" => {}
         "document" => return run_document_command(args).await,
+        "snapshot" => return run_snapshot_command(args).await,
         "uninstall" => return run_uninstall_command(args).await,
         "migrate" => return run_migrate_command(args).await,
-        "share-memory" => return run_share_memory_command(path).await,
-        "viewer" => return run_viewer_command(path).await,
+        "share-memory" => return run_share_memory_command(first_argument).await,
+        "viewer" => return run_viewer_command(first_argument).await,
         "--help" | "-h" | "help" => {
             print_help();
             return 0;
@@ -341,6 +347,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             eprintln!(
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
+                 `snapshot create|list|verify|read|merge ...` / \
                  `uninstall [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
@@ -349,6 +356,28 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             return 2;
         }
     }
+
+    let (path, repair_pending) = if command == "export" {
+        let mut path = None;
+        let mut repair_pending = false;
+        for argument in args {
+            if *argument == "--repair-pending" {
+                repair_pending = true;
+            } else if path.replace(*argument).is_some() {
+                eprintln!(
+                    "kmp-mcp: export takes at most one file path and optional --repair-pending"
+                );
+                return 2;
+            }
+        }
+        (path, repair_pending)
+    } else {
+        if args.len() > 1 {
+            eprintln!("kmp-mcp: import takes at most one file path");
+            return 2;
+        }
+        (first_argument, false)
+    };
 
     let resolved = match kmp_embedded::resolve_data_dir_from_env() {
         Ok(resolved) => resolved,
@@ -379,6 +408,14 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         },
     };
     let path = path.as_path();
+    let is_project_head = kmp_embedded::project_bundle_path(&resolved).as_deref() == Some(path);
+    if repair_pending && !is_project_head {
+        eprintln!(
+            "kmp-mcp: --repair-pending applies only to the project head \
+             `.kmp/memory.jsonl`, not an explicit export path"
+        );
+        return 2;
+    }
     let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
         Ok(engine) => engine,
         Err(error) => {
@@ -408,16 +445,51 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                     eprintln!("kmp-mcp: could not create `{}`: {error}", parent.display());
                     return 2;
                 }
-                if let Err(error) = std::fs::write(path, bundle) {
+                let header = match kmp_embedded::verify_bundle(&bundle) {
+                    Ok(header) => header,
+                    Err(error) => {
+                        eprintln!("kmp-mcp: generated bundle did not verify: {error}");
+                        return 2;
+                    }
+                };
+                if let Err(error) = kmp_embedded::write_bundle_atomically(path, &bundle) {
                     eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
                     return 2;
                 }
+                if repair_pending
+                    && let Err(error) = kmp_embedded::clear_pending_bundle_exports(resolved.path())
+                {
+                    eprintln!(
+                        "kmp-mcp: bundle was exported, but pending markers could not be \
+                         cleared: {error}"
+                    );
+                    return 2;
+                }
                 println!(
-                    "{{\"exported_to\":\"{}\",\"data_dir\":\"{}\"}}",
-                    path.display(),
-                    resolved.path().display()
+                    "{}",
+                    serde_json::json!({
+                        "exported_to": path.display().to_string(),
+                        "data_dir": resolved.path().display().to_string(),
+                        "snapshot_id": header.snapshot_id,
+                        "event_count": header.event_count,
+                        "content_digest": header.content_digest,
+                    })
                 );
-                0
+                let pending = if is_project_head {
+                    kmp_embedded::pending_bundle_exports(resolved.path()).len()
+                } else {
+                    0
+                };
+                if pending > 0 {
+                    eprintln!(
+                        "kmp-mcp: {pending} pending write marker(s) remain. Stop other KMP \
+                         sessions, inspect this exported bundle, then run `kmp-mcp export \
+                         --repair-pending` to acknowledge recovery safely."
+                    );
+                    1
+                } else {
+                    0
+                }
             }
             Err(error) => {
                 eprintln!("kmp-mcp: export failed: {error}");
@@ -462,8 +534,10 @@ Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
 kmp-mcp info                    What this binary is and which memory it opens\n  \
 kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
+kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\n  \
 kmp-mcp export [file]           Export the append-only event log\n  \
+kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
 kmp-mcp migrate <src> <dst> [--engine redb|sqlite]\n  \
 kmp-mcp share-memory [data-dir] Make an existing redb store shareable\n  \
@@ -472,6 +546,255 @@ kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
         kmp_mcp::banner::LARGE
     );
+}
+
+/// Named recovery points. Every operation except `create` reads only the
+/// committed JSONL files; `read` imports into an isolated temporary store and
+/// never opens the live one.
+async fn run_snapshot_command(args: &[&str]) -> i32 {
+    let Some((verb, rest)) = args.split_first() else {
+        eprintln!(
+            "kmp-mcp: snapshot needs create <name>, list, verify <name>, read <name> <tool> \
+             <arguments-json>, or merge <left> <right> <name>"
+        );
+        return 2;
+    };
+    let resolved = match if *verb == "create" {
+        kmp_embedded::resolve_data_dir_from_env()
+    } else {
+        kmp_embedded::locate_data_dir_from_env()
+    } {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+
+    match *verb {
+        "create" => snapshot_create(&resolved, rest).await,
+        "list" => snapshot_list(&resolved, rest),
+        "verify" => snapshot_verify(&resolved, rest),
+        "read" => snapshot_read(&resolved, rest).await,
+        "merge" => snapshot_merge(&resolved, rest),
+        other => {
+            eprintln!("kmp-mcp: snapshot has no `{other}` verb");
+            2
+        }
+    }
+}
+
+async fn snapshot_create(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]) -> i32 {
+    let [name] = args else {
+        eprintln!("kmp-mcp: snapshot create takes exactly one name");
+        return 2;
+    };
+    let path = match kmp_mcp::snapshot::path_for_name(resolved, name) {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let engine = match kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path()) {
+        Ok(engine) => engine,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let kernel = match kmp_embedded::EmbeddedKernel::open_with_engine(resolved.path(), engine) {
+        Ok(kernel) => kernel,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let bundle = match kernel.store().export_named_bundle(name).await {
+        Ok(bundle) => bundle,
+        Err(error) => {
+            eprintln!("kmp-mcp: snapshot create failed: {error}");
+            return 2;
+        }
+    };
+    match write_named_snapshot(&path, &bundle) {
+        Ok(header) => {
+            println!("{}", snapshot_result(&path, &header));
+            0
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            2
+        }
+    }
+}
+
+fn snapshot_list(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]) -> i32 {
+    if !args.is_empty() {
+        eprintln!("kmp-mcp: snapshot list takes no arguments");
+        return 2;
+    }
+    match kmp_mcp::snapshot::list(resolved) {
+        Ok(snapshots) => {
+            let snapshots: Vec<_> = snapshots
+                .into_iter()
+                .map(|(path, header)| snapshot_result(&path, &header))
+                .collect();
+            println!("{}", serde_json::json!({"snapshots": snapshots}));
+            0
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            2
+        }
+    }
+}
+
+fn snapshot_verify(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]) -> i32 {
+    let [name] = args else {
+        eprintln!("kmp-mcp: snapshot verify takes exactly one name");
+        return 2;
+    };
+    let path = match kmp_mcp::snapshot::path_for_name(resolved, name) {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    match kmp_mcp::snapshot::read_header(&path) {
+        Ok(header) => {
+            println!("{}", snapshot_result(&path, &header));
+            0
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            2
+        }
+    }
+}
+
+async fn snapshot_read(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]) -> i32 {
+    let [name, tool, raw_arguments] = args else {
+        eprintln!("kmp-mcp: snapshot read takes <name> <read-tool> <arguments-json>");
+        return 2;
+    };
+    let path = match kmp_mcp::snapshot::path_for_name(resolved, name) {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let bundle = match std::fs::read_to_string(&path) {
+        Ok(bundle) => bundle,
+        Err(error) => {
+            eprintln!("kmp-mcp: could not read `{}`: {error}", path.display());
+            return 2;
+        }
+    };
+    let arguments: serde_json::Value = match serde_json::from_str(raw_arguments) {
+        Ok(serde_json::Value::Object(arguments)) => serde_json::Value::Object(arguments),
+        Ok(_) => {
+            eprintln!("kmp-mcp: snapshot read arguments must be a JSON object");
+            return 2;
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: snapshot read arguments are not valid JSON: {error}");
+            return 2;
+        }
+    };
+    match kmp_mcp::snapshot::read_only(&bundle, tool, arguments).await {
+        Ok(response) => {
+            let failed = response.get("error").is_some()
+                || response["result"]["isError"].as_bool() == Some(true);
+            println!("{response}");
+            if failed { 1 } else { 0 }
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            2
+        }
+    }
+}
+
+fn snapshot_merge(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]) -> i32 {
+    let [left, right, name] = args else {
+        eprintln!("kmp-mcp: snapshot merge takes <left> <right> <new-name>");
+        return 2;
+    };
+    let path = |name: &str| kmp_mcp::snapshot::path_for_name(resolved, name);
+    let (left_path, right_path, output_path) = match (path(left), path(right), path(name)) {
+        (Ok(left), Ok(right), Ok(output)) => (left, right, output),
+        (Err(error), _, _) | (_, Err(error), _) | (_, _, Err(error)) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let read = |path: &std::path::Path| {
+        std::fs::read_to_string(path)
+            .map_err(|error| format!("could not read `{}`: {error}", path.display()))
+    };
+    let (left_bundle, right_bundle) = match (read(&left_path), read(&right_path)) {
+        (Ok(left), Ok(right)) => (left, right),
+        (Err(error), _) | (_, Err(error)) => {
+            eprintln!("kmp-mcp: {error}");
+            return 2;
+        }
+    };
+    let merged = match kmp_embedded::merge_bundles(&left_bundle, &right_bundle, name) {
+        Ok(merged) => merged,
+        Err(error) => {
+            eprintln!("kmp-mcp: snapshot merge refused: {error}");
+            return 2;
+        }
+    };
+    match write_named_snapshot(&output_path, &merged) {
+        Ok(header) => {
+            println!("{}", snapshot_result(&output_path, &header));
+            0
+        }
+        Err(error) => {
+            eprintln!("kmp-mcp: {error}");
+            2
+        }
+    }
+}
+
+fn write_named_snapshot(
+    path: &std::path::Path,
+    bundle: &str,
+) -> Result<kmp_embedded::BundleHeader, String> {
+    let header = kmp_embedded::verify_bundle(bundle).map_err(|error| error.to_string())?;
+    let created =
+        kmp_embedded::write_bundle_if_absent(path, bundle).map_err(|error| error.to_string())?;
+    if !created {
+        let existing = kmp_mcp::snapshot::read_header(path)?;
+        if existing.content_digest == header.content_digest {
+            return Ok(existing);
+        }
+        return Err(format!(
+            "snapshot `{}` already identifies digest {}; choose a new name instead of rewriting \
+             a recovery point",
+            existing.snapshot_id, existing.content_digest
+        ));
+    }
+    Ok(header)
+}
+
+fn snapshot_result(
+    path: &std::path::Path,
+    header: &kmp_embedded::BundleHeader,
+) -> serde_json::Value {
+    serde_json::json!({
+        "snapshot_id": header.snapshot_id,
+        "created_at_unix_ms": header.created_at_unix_ms,
+        "event_range": header.event_range,
+        "event_count": header.event_count,
+        "abouts": header.abouts,
+        "content_digest": header.content_digest,
+        "path": path.display().to_string(),
+    })
 }
 
 /// `migrate <source-dir> <destination-dir>`: replays the source's history

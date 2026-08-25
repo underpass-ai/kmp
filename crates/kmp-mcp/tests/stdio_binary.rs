@@ -142,15 +142,28 @@ fn stdio_binary_reports_live_grpc_backend_with_tls_envs() {
 }
 
 fn run_binary(envs: &[(&str, &str)], stdin: &str) -> std::process::Output {
+    run_binary_from(None, envs, stdin)
+}
+
+fn run_binary_from(
+    current_dir: Option<&std::path::Path>,
+    envs: &[(&str, &str)],
+    stdin: &str,
+) -> std::process::Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
+    if let Some(current_dir) = current_dir {
+        command.current_dir(current_dir);
+    }
+
     for name in TLS_ENV_VARS {
         command.env_remove(name);
     }
+    command.env_remove("KMP_MCP_DATA_DIR");
     for (name, value) in envs {
         command.env(name, value);
     }
@@ -248,6 +261,7 @@ fn cli_surface_version_export_import_and_errors() {
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
         assert!(stdout.contains("share-memory"), "{flag}: {stdout}");
+        assert!(stdout.contains("snapshot <verb>"), "{flag}: {stdout}");
     }
 
     let version = Command::new(bin)
@@ -329,6 +343,116 @@ fn cli_surface_version_export_import_and_errors() {
     assert!(
         String::from_utf8_lossy(&in_project.stdout).contains(".kmp/memory.jsonl"),
         "and the command says where it wrote"
+    );
+    let committed_text = std::fs::read_to_string(&committed).expect("committed bundle reads");
+    let committed_header = kmp_embedded::verify_bundle(&committed_text).expect("bundle verifies");
+    assert_eq!(committed_header.bundle_format, 2);
+    assert_eq!(committed_header.event_format, 1);
+    assert!(!committed_header.content_digest.is_empty());
+
+    for name in ["before-release", "same-history"] {
+        let snapshot = Command::new(bin)
+            .args(["snapshot", "create", name])
+            .current_dir(&nested)
+            .env_remove("KMP_MCP_DATA_DIR")
+            .output()
+            .expect("snapshot create runs");
+        assert!(
+            snapshot.status.success(),
+            "snapshot create: {}",
+            String::from_utf8_lossy(&snapshot.stderr)
+        );
+    }
+    let verify = Command::new(bin)
+        .args(["snapshot", "verify", "before-release"])
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("snapshot verify runs");
+    assert!(verify.status.success());
+    assert!(String::from_utf8_lossy(&verify.stdout).contains("before-release"));
+    let list = Command::new(bin)
+        .args(["snapshot", "list"])
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("snapshot list runs");
+    assert!(list.status.success());
+    assert!(String::from_utf8_lossy(&list.stdout).contains("same-history"));
+    let merge = Command::new(bin)
+        .args([
+            "snapshot",
+            "merge",
+            "before-release",
+            "same-history",
+            "merged",
+        ])
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("snapshot merge runs");
+    assert!(merge.status.success());
+    assert!(project.path().join(".kmp/snapshots/merged.jsonl").is_file());
+
+    let project_write = run_binary_from(
+        Some(&nested),
+        &[("KMP_MCP_BACKEND", "embedded")],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:commit-native\",\"idempotency_key\":\"ingest:commit-native\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:protected\",\"kind\":\"decision\",\"text\":\"protected\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+    );
+    assert!(
+        project_write.status.success(),
+        "project MCP write: {}",
+        String::from_utf8_lossy(&project_write.stderr)
+    );
+    let maintained = std::fs::read_to_string(&committed).expect("maintained bundle");
+    let maintained = kmp_embedded::verify_bundle(&maintained).expect("maintained verifies");
+    assert_eq!(maintained.event_count, 1);
+    assert_eq!(maintained.abouts, ["project:commit-native"]);
+    assert!(
+        kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty(),
+        "successful write clears its durable marker"
+    );
+    let pending_dir = project
+        .path()
+        .join(".kernel")
+        .join(kmp_embedded::PENDING_EXPORT_DIR);
+    std::fs::create_dir_all(&pending_dir).expect("pending dir");
+    std::fs::write(pending_dir.join("crashed.pending"), b"pending").expect("pending marker");
+    let guarded_export = Command::new(bin)
+        .arg("export")
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("guarded export runs");
+    assert_eq!(guarded_export.status.code(), Some(1));
+    assert_eq!(
+        kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).len(),
+        1,
+        "a normal export cannot erase a marker that may belong to a live writer"
+    );
+    let repaired_export = Command::new(bin)
+        .args(["export", "--repair-pending"])
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("repair export runs");
+    assert!(repaired_export.status.success());
+    assert!(kmp_embedded::pending_bundle_exports(&project.path().join(".kernel")).is_empty());
+    let unrelated_export = project.path().join("unrelated.jsonl");
+    let refused_repair = Command::new(bin)
+        .args([
+            "export",
+            unrelated_export.to_str().expect("utf-8 path"),
+            "--repair-pending",
+        ])
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("refused repair runs");
+    assert_eq!(refused_repair.status.code(), Some(2));
+    assert!(
+        !unrelated_export.exists(),
+        "an invalid repair target must be rejected before writing it"
     );
 
     // Full round trip through the binary: ingest (MCP mode) -> export -> import -> wake.
