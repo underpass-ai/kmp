@@ -334,6 +334,10 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Fixed
 
+- Release MCPBs now keep the Registry hash stable between a version-branch
+  build and its tag build. MSVC's default linker timestamp was the only byte
+  that changed; Windows release binaries now use reproducible linking, and the
+  0.1.14 descriptor is pinned to the artifact actually published on GitHub.
 - Recall cursors now bind to the canonical ordered projection plan instead of
   raw adapter row order. Equal snapshots therefore keep the same cursor across
   direct gRPC, embedded, stdio and HTTP requests, while a real semantic change

@@ -72,6 +72,11 @@ jobs:
 
       - name: Build release binary
         shell: bash
+        # MSVC otherwise writes the link time into the PE header. The version
+        # branch and tag can then produce byte-different MCPBs from the same
+        # tree, invalidating the hash that server.json must carry.
+        env:
+          RUSTFLAGS: ${{ runner.os == 'Windows' && '-C link-arg=/Brepro' || '' }}
         run: cargo build --release -p kmp-mcp --locked --features sqlite --target ${{ matrix.target }}
 
       - name: Package and checksum

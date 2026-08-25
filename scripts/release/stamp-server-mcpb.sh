@@ -4,7 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ARCHIVE="${1:?usage: stamp-server-mcpb.sh PATH/TO/kmp-mcp-vX.Y.Z.mcpb}"
 SERVER_JSON="${2:-${ROOT_DIR}/server.json}"
-VERSION="$(sed -n '0,/^version = /s/^version = "\([^"]*\)"/\1/p' "${ROOT_DIR}/Cargo.toml")"
+VERSION="$(
+  python3 -c \
+    'import tomllib, sys; print(tomllib.load(open(sys.argv[1], "rb"))["workspace"]["package"]["version"])' \
+    "${ROOT_DIR}/Cargo.toml"
+)"
 EXPECTED="kmp-mcp-v${VERSION}.mcpb"
 
 [ "$(basename "${ARCHIVE}")" = "${EXPECTED}" ] || {
