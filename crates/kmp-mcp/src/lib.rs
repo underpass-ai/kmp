@@ -17,7 +17,6 @@ mod ingest;
 mod kmp;
 mod observability;
 mod protocol;
-mod recall_projection;
 mod server;
 mod write;
 

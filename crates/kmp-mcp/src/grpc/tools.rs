@@ -16,8 +16,7 @@ use crate::ingest::build_ingest_plan;
 use crate::kmp::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
-    temporal_from_response, trace_from_response, try_enforce_recall_output_budget,
-    wake_from_response,
+    temporal_from_response, trace_from_response, wake_from_response,
 };
 use crate::protocol::tool_success_result;
 use crate::tool_error::{ToolError, ToolErrorCode};
@@ -105,11 +104,7 @@ async fn grpc_wake(
         .map_err(grpc_error("Wake", &about))?
         .into_inner();
 
-    Ok(tool_success_result(try_enforce_recall_output_budget(
-        wake_from_response(response),
-        arguments,
-        1600,
-    )?))
+    Ok(tool_success_result(wake_from_response(response)))
 }
 
 async fn grpc_ask(
@@ -128,11 +123,7 @@ async fn grpc_ask(
         .map_err(grpc_error("Ask", &about))?
         .into_inner();
 
-    Ok(tool_success_result(try_enforce_recall_output_budget(
-        ask_from_response(response),
-        arguments,
-        2400,
-    )?))
+    Ok(tool_success_result(ask_from_response(response)))
 }
 
 async fn grpc_temporal_move(

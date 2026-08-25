@@ -131,6 +131,9 @@ message WakeRequest {
   string intent = 3;
   MemoryBudget budget = 4;
   DimensionSelection dimensions = 5;
+  // Continuation of the canonical recall projection. The cursor is bound to
+  // the same request, snapshot and ordered eligible selection.
+  PageRequest page = 6;
 }
 
 message WakeResponse {
@@ -144,6 +147,8 @@ message WakeResponse {
   // this it took an extra call whose only purpose was to recover a timestamp.
   // The cursor is the caller's to carry — the kernel does not track readers.
   optional TemporalCursor resume_cursor = 5;
+  RecallProjection projection = 6;
+  RecallTruncation truncation = 7;
 }
 
 message WakePacket {
@@ -167,6 +172,7 @@ message AskRequest {
   AnswerPolicy answer_policy = 3;
   MemoryBudget budget = 4;
   DimensionSelection dimensions = 5;
+  PageRequest page = 6;
 }
 
 message AskResponse {
@@ -175,6 +181,8 @@ message AskResponse {
   repeated AnswerReason because = 3;
   Proof proof = 4;
   repeated string warnings = 5;
+  RecallProjection projection = 6;
+  RecallTruncation truncation = 7;
 }
 
 message AnswerReason {
@@ -464,6 +472,79 @@ message MemoryBudget {
   // filtering. Both report withheld sources through proof.missing and
   // proof.frontier_size so the client can expand deliberately.
   uint32 max_entries = 4;
+  // Normative ceiling for the serialized canonical recall value. Zero uses
+  // the host-safe 10,000-byte default; non-zero values must be at least 512.
+  uint64 max_bytes = 5;
+}
+
+// Transport-neutral accounting for the deterministic core-plus-prefix recall
+// projection. Wake and Ask carry the same shape through direct gRPC and every
+// MCP transport; envelopes are the only permitted difference.
+message RecallProjection {
+  string contract = 1;
+  MemoryDetailLevel detail = 2;
+  RecallProjectionBudget budget = 3;
+  RecallProjectionPage page = 4;
+  repeated RecallProjectionSection sections = 5;
+  uint64 excluded_by_detail = 6;
+  uint64 selection_omitted = 7;
+  bool core_text_shortened = 8;
+  optional string next_action = 9;
+}
+
+message RecallProjectionBudget {
+  uint64 max_bytes = 1;
+  uint64 used_bytes = 2;
+  uint32 tokens_advisory = 3;
+}
+
+message RecallProjectionPage {
+  uint64 offset = 1;
+  uint64 returned = 2;
+  uint64 total = 3;
+  bool has_more = 4;
+  optional string next_cursor = 5;
+}
+
+message RecallProjectionSection {
+  string name = 1;
+  uint64 core = 2;
+  uint64 returned_on_page = 3;
+  uint64 eligible = 4;
+  uint64 total = 5;
+}
+
+message RecallTruncation {
+  bool truncated = 1;
+  uint32 token_limit = 2;
+  uint64 byte_limit = 3;
+  RecallOmitted omitted = 4;
+}
+
+message RecallOmitted {
+  uint64 page_items = 1;
+  uint64 prior_page_items = 2;
+  uint64 remaining_page_items = 3;
+  uint64 excluded_by_detail = 4;
+  uint64 selection_items = 5;
+  bool core_text_shortened = 6;
+}
+
+// Machine-readable detail carried by INVALID_ARGUMENT when a Wake/Ask
+// continuation cursor cannot be used. Tonic serializes this message directly
+// into grpc-status-details-bin; clients can branch on `reason` without parsing
+// the human diagnostic.
+message RecallCursorError {
+  RecallCursorErrorReason reason = 1;
+  string cursor = 2;
+  string message = 3;
+}
+
+enum RecallCursorErrorReason {
+  RECALL_CURSOR_ERROR_REASON_UNSPECIFIED = 0;
+  RECALL_CURSOR_ERROR_REASON_MALFORMED = 1;
+  RECALL_CURSOR_ERROR_REASON_SELECTION_CHANGED = 2;
+  RECALL_CURSOR_ERROR_REASON_OFFSET_OUT_OF_RANGE = 3;
 }
 
 message DimensionSelection {

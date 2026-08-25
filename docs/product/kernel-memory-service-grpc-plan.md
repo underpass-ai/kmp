@@ -327,6 +327,12 @@ MCP live mode keeps only:
 - structuredContent conversion;
 - TLS endpoint configuration.
 
+`MemoryBudget.max_bytes`, `WakeRequest.page`, `AskRequest.page`, typed
+projection/truncation accounting, and `RecallCursorError` are part of the
+v1beta1 contract. `KernelMemoryService` applies the shared projector once;
+MCP-over-gRPC must not re-project the response. Embedded MCP uses that same
+transport-neutral mapper because it has no network service boundary.
+
 MCP live mode does not make direct client calls to:
 
 - `ContextCommandServiceClient`;
@@ -341,6 +347,8 @@ Contract tests:
 - descriptor set includes `memory.proto`;
 - `KernelMemoryService` method names are locked;
 - critical message field names are locked;
+- recall byte-budget, page, projection, truncation, and typed cursor-error
+  fields are locked in the descriptor contract;
 - temporal presence fields are locked as `optional` so zero can fail instead
   of being treated as absent;
 - KMP fixtures identify `memory.proto` as the typed gRPC binding for this cut.
@@ -362,6 +370,8 @@ Transport tests:
 - every `KernelMemoryService` method has a direct gRPC service test;
 - server descriptors/accessors expose the new service;
 - error mapping matches existing tonic status conventions;
+- stale recall cursors return `INVALID_ARGUMENT` with decodable
+  `RecallCursorError` details;
 - TLS/mTLS server tests continue to pass with the additional service.
 
 MCP tests:
@@ -370,6 +380,8 @@ MCP tests:
 - live MCP tests fail if the adapter still calls `ContextQueryService` or
   `ContextCommandService`;
 - dry-run ingest remains local and does not call gRPC.
+- Wake/Ask structured content reports the exact serialized byte count returned
+  by the typed service, proving the live adapter did not project twice.
 
 Current integration tests:
 

@@ -1,6 +1,7 @@
 mod bundle_mapping;
 mod graph_mapping;
 mod memory_mapping;
+pub mod recall_projection;
 mod rendered_mapping;
 mod scope_mapping;
 mod support;

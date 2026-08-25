@@ -36,12 +36,21 @@ pub(super) fn memory_budget_from_arguments(
         .transpose()?
         .flatten()
         .unwrap_or(0);
+    let max_bytes = budget
+        .map(|budget| optional_u64_field(budget, "max_bytes", "budget.max_bytes"))
+        .transpose()?
+        .flatten()
+        .unwrap_or(0);
+    if max_bytes != 0 && max_bytes < 512 {
+        return Err("argument `budget.max_bytes` must be at least 512".to_string());
+    }
 
     Ok(MemoryBudget {
         tokens,
         detail,
         depth,
         max_entries,
+        max_bytes,
     })
 }
 
@@ -265,6 +274,21 @@ pub(super) fn optional_u32_field(
     u32::try_from(value)
         .map(Some)
         .map_err(|_| format!("argument `{path}` must fit in uint32"))
+}
+
+pub(super) fn optional_u64_field(
+    object: &Map<String, Value>,
+    key: &str,
+    path: &str,
+) -> Result<Option<u64>, String> {
+    object
+        .get(key)
+        .map(|value| {
+            value
+                .as_u64()
+                .ok_or_else(|| format!("argument `{path}` must be a non-negative integer"))
+        })
+        .transpose()
 }
 
 pub(super) fn optional_positive_u32_field(

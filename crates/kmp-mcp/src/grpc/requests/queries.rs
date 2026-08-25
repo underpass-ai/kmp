@@ -8,9 +8,8 @@ use crate::args::{optional_string, required_string, validate_required_arguments}
 use super::common::{answer_policy_from_object, memory_budget_from_arguments, object};
 use super::dimensions::dimension_selection_from_arguments;
 use super::temporal::{
-    inspect_include_from_arguments, temporal_cursor_from_arguments,
+    inspect_include_from_arguments, page_from_arguments, temporal_cursor_from_arguments,
     temporal_include_from_arguments, temporal_limit_from_arguments, temporal_window_from_arguments,
-    trace_page_from_arguments,
 };
 
 pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeRequest, String> {
@@ -21,6 +20,7 @@ pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeReque
         intent: optional_string(arguments, "intent").unwrap_or_default(),
         budget: Some(memory_budget_from_arguments(arguments, 1600, 2)?),
         dimensions: dimension_selection_from_arguments(arguments)?,
+        page: page_from_arguments(arguments)?,
     })
 }
 
@@ -37,6 +37,7 @@ pub(crate) fn ask_request_from_arguments(arguments: &Value) -> Result<AskRequest
         answer_policy: answer_policy_from_object(arguments_object)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 2)?),
         dimensions: dimension_selection_from_arguments(arguments)?,
+        page: page_from_arguments(arguments)?,
     })
 }
 
@@ -86,7 +87,7 @@ pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceReq
             .or_else(|| optional_string(arguments, "role"))
             .unwrap_or_default(),
         budget: Some(memory_budget_from_arguments(arguments, 1600, 1)?),
-        page: trace_page_from_arguments(arguments)?,
+        page: page_from_arguments(arguments)?,
     })
 }
 
@@ -96,4 +97,46 @@ pub(crate) fn inspect_request_from_arguments(arguments: &Value) -> Result<Inspec
         r#ref: required_string(arguments, "ref")?,
         include: inspect_include_from_arguments(arguments)?,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn wake_and_ask_carry_byte_budget_and_recall_page_into_grpc() {
+        let wake = wake_request_from_arguments(&json!({
+            "about": "project:kmp",
+            "budget": {"max_bytes": 8192},
+            "page": {"entries": 7, "cursor": "kmp1:7:selection"}
+        }))
+        .expect("wake request");
+        assert_eq!(wake.budget.expect("wake budget").max_bytes, 8192);
+        assert_eq!(wake.page.expect("wake page").entries, 7);
+
+        let ask = ask_request_from_arguments(&json!({
+            "about": "project:kmp",
+            "question": "What is current?",
+            "budget": {"max_bytes": 4096},
+            "page": {"entries": 3, "cursor": "kmp1:3:selection"}
+        }))
+        .expect("ask request");
+        assert_eq!(ask.budget.expect("ask budget").max_bytes, 4096);
+        assert_eq!(ask.page.expect("ask page").cursor, "kmp1:3:selection");
+    }
+
+    #[test]
+    fn grpc_recall_rejects_a_byte_budget_below_the_contract_floor() {
+        let error = ask_request_from_arguments(&json!({
+            "about": "project:kmp",
+            "question": "What is current?",
+            "budget": {"max_bytes": 511}
+        }))
+        .expect_err("sub-floor byte budget");
+
+        assert!(error.contains("budget.max_bytes"));
+        assert!(error.contains("at least 512"));
+    }
 }

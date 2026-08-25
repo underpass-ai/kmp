@@ -23,15 +23,17 @@ use kmp_proto::v1beta1::{
     GetContextRequest, GetNodeDetailRequest, GotoRequest, IngestRequest, InspectInclude,
     InspectRequest, Memory, MemoryBudget, MemoryConfidence, MemoryDetailLevel, MemoryDimension,
     MemoryEntry, MemoryEvidence, MemoryProvenance, MemoryRelation, MemorySemanticClass,
-    MemorySourceKind, NearRequest, PageRequest, ResolutionTier, RewindRequest,
-    TemporalCoordinate as ProtoTemporalCoordinate, TemporalCursor as ProtoTemporalCursor,
-    TemporalDirection as ProtoTemporalDirection, TemporalInclude, TemporalLimit,
-    TemporalMoveRequest, TemporalWindow as ProtoTemporalWindow, TraceRequest, UpdateContextRequest,
-    ValidateScopeRequest, WakeRequest, context_command_service_server::ContextCommandService,
+    MemorySourceKind, NearRequest, PageRequest, RecallCursorError, RecallCursorErrorReason,
+    ResolutionTier, RewindRequest, TemporalCoordinate as ProtoTemporalCoordinate,
+    TemporalCursor as ProtoTemporalCursor, TemporalDirection as ProtoTemporalDirection,
+    TemporalInclude, TemporalLimit, TemporalMoveRequest, TemporalWindow as ProtoTemporalWindow,
+    TraceRequest, UpdateContextRequest, ValidateScopeRequest, WakeRequest,
+    context_command_service_server::ContextCommandService,
     context_query_service_server::ContextQueryService,
     kernel_memory_service_server::KernelMemoryService,
 };
 use kmp_testkit::InMemoryContextEventStore;
+use prost::Message;
 use prost_types::Timestamp;
 use tokio::sync::Mutex;
 use tonic::Request;
@@ -1320,6 +1322,7 @@ async fn memory_service_wake_and_ask_read_live_context() {
                 ..Default::default()
             }),
             dimensions: None,
+            page: None,
         }))
         .await
         .expect("wake should read live context")
@@ -1352,7 +1355,13 @@ async fn memory_service_wake_and_ask_read_live_context() {
         ask.summary
     );
     assert!(ask.because.is_empty());
-    assert!(ask.warnings.is_empty());
+    assert!(ask.projection.is_some());
+    assert!(ask.truncation.is_some());
+    assert!(
+        ask.warnings
+            .iter()
+            .any(|warning| warning.contains("detail excludes expansion items"))
+    );
 }
 
 #[tokio::test]
@@ -1369,6 +1378,7 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
                 tokens: 1024,
                 detail: MemoryDetailLevel::Full as i32,
                 depth: 3,
+                max_bytes: 0,
             }),
             dimensions: Some(ProtoDimensionSelection {
                 mode: ProtoDimensionSelectionMode::Only as i32,
@@ -1376,6 +1386,7 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
                 exclude: Vec::new(),
                 ..Default::default()
             }),
+            page: None,
         }))
         .await
         .expect("ask should use explicit evidence")
@@ -1414,6 +1425,7 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
                 tokens: 1024,
                 detail: MemoryDetailLevel::Full as i32,
                 depth: 3,
+                max_bytes: 0,
             }),
             dimensions: Some(ProtoDimensionSelection {
                 mode: ProtoDimensionSelectionMode::Only as i32,
@@ -1421,6 +1433,7 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
                 exclude: Vec::new(),
                 ..Default::default()
             }),
+            page: None,
         }
     }
 
@@ -1474,6 +1487,7 @@ async fn memory_service_ask_show_conflicts_surfaces_explicit_conflict_relations(
                 tokens: 1024,
                 detail: MemoryDetailLevel::Full as i32,
                 depth: 3,
+                max_bytes: 0,
             }),
             dimensions: Some(ProtoDimensionSelection {
                 mode: ProtoDimensionSelectionMode::Only as i32,
@@ -1481,6 +1495,7 @@ async fn memory_service_ask_show_conflicts_surfaces_explicit_conflict_relations(
                 exclude: Vec::new(),
                 ..Default::default()
             }),
+            page: None,
         }))
         .await
         .expect("ask should surface explicit conflicts")
@@ -1534,6 +1549,7 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 tokens: 1024,
                 detail: MemoryDetailLevel::Balanced as i32,
                 depth: 3,
+                max_bytes: 0,
             }),
             dimensions: Some(ProtoDimensionSelection {
                 mode: ProtoDimensionSelectionMode::Only as i32,
@@ -1541,6 +1557,7 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 exclude: Vec::new(),
                 ..Default::default()
             }),
+            page: None,
         }))
         .await
         .expect("wake should apply dimension selection")
@@ -1548,10 +1565,9 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
 
     let proof = wake.proof.expect("wake proof should be present");
     assert!(!proof.path.is_empty());
-    assert!(
-        proof.path.iter().any(|relationship| relationship.source_ref
-            == "about:question:830ce83f:dimension:conversation")
-    );
+    assert!(proof.path.iter().all(|relationship| {
+        relationship.semantic_class != MemorySemanticClass::Structural as i32
+    }));
     assert!(
         proof
             .path
@@ -1574,6 +1590,7 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 tokens: 1024,
                 detail: MemoryDetailLevel::Compact as i32,
                 depth: 3,
+                max_bytes: 0,
             }),
             dimensions: Some(ProtoDimensionSelection {
                 mode: ProtoDimensionSelectionMode::Only as i32,
@@ -1581,6 +1598,7 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 exclude: Vec::new(),
                 ..Default::default()
             }),
+            page: None,
         }))
         .await
         .expect("ask should apply answer policy")
@@ -1591,6 +1609,55 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
         ask.proof.expect("ask proof should be present").confidence,
         MemoryConfidence::Unknown as i32
     );
+}
+
+#[tokio::test]
+async fn memory_service_returns_typed_stale_recall_cursor_details() {
+    let service = memory_service(TemporalGraphNeighborhoodReader, EmptyNodeDetailReader);
+    let mut request = WakeRequest {
+        about: "question:830ce83f".to_string(),
+        role: "developer".to_string(),
+        intent: "resume relocation memory".to_string(),
+        budget: Some(MemoryBudget {
+            max_entries: 0,
+            tokens: 30_000,
+            detail: MemoryDetailLevel::Full as i32,
+            depth: 3,
+            max_bytes: 20_000,
+        }),
+        dimensions: None,
+        page: Some(PageRequest {
+            entries: 1,
+            cursor: String::new(),
+        }),
+    };
+    let first = service
+        .wake(Request::new(request.clone()))
+        .await
+        .expect("first recall page")
+        .into_inner();
+    let cursor = first
+        .projection
+        .as_ref()
+        .and_then(|projection| projection.page.as_ref())
+        .and_then(|page| page.next_cursor.clone())
+        .expect("continuation cursor");
+
+    request.intent = "changed continuation intent".to_string();
+    request.page.as_mut().expect("page").cursor = cursor.clone();
+    let status = service
+        .wake(Request::new(request))
+        .await
+        .expect_err("changed bound arguments invalidate the cursor");
+
+    assert_eq!(status.code(), tonic::Code::InvalidArgument);
+    let detail = RecallCursorError::decode(status.details()).expect("typed cursor detail");
+    assert_eq!(detail.cursor, cursor);
+    assert_eq!(
+        detail.reason,
+        RecallCursorErrorReason::SelectionChanged as i32
+    );
+    assert!(detail.message.contains("does not match"));
 }
 
 #[tokio::test]

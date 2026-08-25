@@ -1,14 +1,24 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
+use kmp_proto::v1beta1::{
+    AnswerReason, AskRequest, AskResponse, DimensionScopeMode, DimensionSelection,
+    DimensionSelectionMode, MemoryConfidence, MemoryDetailLevel, MemoryEvidence, MemoryRelation,
+    MemorySemanticClass, RecallCursorError as ProtoRecallCursorError, RecallCursorErrorReason,
+    RecallOmitted, RecallProjection, RecallProjectionBudget, RecallProjectionPage,
+    RecallProjectionSection, RecallTruncation, SupersededMemory, TemporalCoordinate,
+    TemporalCursor, WakeClaim, WakeRequest, WakeResponse,
+};
+use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
-pub(crate) const DEFAULT_MAX_BYTES: usize = 10_000;
+pub const DEFAULT_MAX_BYTES: usize = 10_000;
 
 /// Reads `budget.max_bytes` the way the recall projection does, so the
 /// temporal verbs cannot mean something different by the same argument.
-pub(crate) fn requested_byte_limit(arguments: &Value) -> Result<usize, String> {
+pub fn requested_byte_limit(arguments: &Value) -> Result<usize, String> {
     match arguments.pointer("/budget/max_bytes") {
         None | Some(Value::Null) => Ok(DEFAULT_MAX_BYTES),
         Some(value) => value
@@ -19,21 +29,105 @@ pub(crate) fn requested_byte_limit(arguments: &Value) -> Result<usize, String> {
     }
 }
 const CURSOR_VERSION: &str = "kmp1";
-const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v1";
+pub const PROJECTION_CONTRACT: &str = "kmp.recall.projection.v1";
 
 #[derive(Debug)]
-pub(super) enum ProjectionOutcome {
+pub enum ProjectionOutcome {
     Projected(Value),
     CoreTooLarge,
 }
 
-pub(super) fn project_recall_output(
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RecallProjectionError {
+    InvalidRequest(String),
+    Cursor {
+        reason: RecallCursorErrorReason,
+        cursor: String,
+        message: String,
+    },
+    CoreTooLarge,
+}
+
+impl RecallProjectionError {
+    pub fn cursor_detail(&self) -> Option<ProtoRecallCursorError> {
+        match self {
+            Self::Cursor {
+                reason,
+                cursor,
+                message,
+            } => Some(ProtoRecallCursorError {
+                reason: *reason as i32,
+                cursor: cursor.clone(),
+                message: message.clone(),
+            }),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for RecallProjectionError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidRequest(message) => formatter.write_str(message),
+            Self::Cursor { message, .. } => formatter.write_str(message),
+            Self::CoreTooLarge => formatter.write_str(
+                "recall projection byte budget is smaller than the stable citation core; \
+                 increase budget.max_bytes",
+            ),
+        }
+    }
+}
+
+impl std::error::Error for RecallProjectionError {}
+
+pub fn project_wake_response(
+    response: WakeResponse,
+    request: &WakeRequest,
+) -> Result<WakeResponse, RecallProjectionError> {
+    let arguments = wake_arguments(request);
+    project_typed_recall(response, arguments, 1_600, wake_value, apply_wake_value)
+}
+
+pub fn project_ask_response(
+    response: AskResponse,
+    request: &AskRequest,
+) -> Result<AskResponse, RecallProjectionError> {
+    let arguments = ask_arguments(request);
+    project_typed_recall(response, arguments, 2_400, ask_value, apply_ask_value)
+}
+
+fn project_typed_recall<T>(
+    response: T,
+    arguments: Value,
+    default_tokens: u32,
+    render: fn(&T) -> Value,
+    apply: fn(T, &Value) -> T,
+) -> Result<T, RecallProjectionError> {
+    let value = render(&response);
+    match project_recall_output_typed(value, &arguments, default_tokens, &Cl100kEstimator::new())? {
+        ProjectionOutcome::Projected(value) => Ok(apply(response, &value)),
+        ProjectionOutcome::CoreTooLarge => Err(RecallProjectionError::CoreTooLarge),
+    }
+}
+
+pub fn project_recall_output(
     value: Value,
     arguments: &Value,
     default_tokens: u32,
     estimator: &dyn TokenEstimator,
 ) -> Result<ProjectionOutcome, String> {
-    let budget = ProjectionBudget::from_arguments(arguments, default_tokens)?;
+    project_recall_output_typed(value, arguments, default_tokens, estimator)
+        .map_err(|error| error.to_string())
+}
+
+fn project_recall_output_typed(
+    value: Value,
+    arguments: &Value,
+    default_tokens: u32,
+    estimator: &dyn TokenEstimator,
+) -> Result<ProjectionOutcome, RecallProjectionError> {
+    let budget = ProjectionBudget::from_arguments(arguments, default_tokens)
+        .map_err(RecallProjectionError::InvalidRequest)?;
     let selection_hash = selection_hash(arguments, &value);
     let mut plan = ProjectionPlan::build(value, &budget);
     let eligible = plan
@@ -641,7 +735,11 @@ fn selection_hash(arguments: &Value, value: &Value) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-fn parse_cursor(cursor: Option<&str>, selection_hash: &str, total: usize) -> Result<usize, String> {
+fn parse_cursor(
+    cursor: Option<&str>,
+    selection_hash: &str,
+    total: usize,
+) -> Result<usize, RecallProjectionError> {
     let Some(cursor) = cursor else {
         return Ok(0);
     };
@@ -649,13 +747,53 @@ fn parse_cursor(cursor: Option<&str>, selection_hash: &str, total: usize) -> Res
     let version = parts.next();
     let offset = parts.next();
     let hash = parts.next();
-    if version != Some(CURSOR_VERSION) || parts.next().is_some() || hash != Some(selection_hash) {
-        return Err("invalid page.cursor: it does not match this recall selection".to_string());
+    if version != Some(CURSOR_VERSION)
+        || offset.is_none()
+        || hash.is_none()
+        || parts.next().is_some()
+    {
+        return Err(cursor_error(
+            RecallCursorErrorReason::Malformed,
+            cursor,
+            "invalid page.cursor: malformed recall continuation",
+        ));
     }
-    offset
+    if hash != Some(selection_hash) {
+        return Err(cursor_error(
+            RecallCursorErrorReason::SelectionChanged,
+            cursor,
+            "invalid page.cursor: it does not match this recall selection",
+        ));
+    }
+    let offset = offset
         .and_then(|offset| offset.parse::<usize>().ok())
-        .filter(|offset| *offset <= total)
-        .ok_or_else(|| "invalid page.cursor: continuation offset is out of range".to_string())
+        .ok_or_else(|| {
+            cursor_error(
+                RecallCursorErrorReason::Malformed,
+                cursor,
+                "invalid page.cursor: malformed recall continuation offset",
+            )
+        })?;
+    if offset > total {
+        return Err(cursor_error(
+            RecallCursorErrorReason::OffsetOutOfRange,
+            cursor,
+            "invalid page.cursor: continuation offset is out of range",
+        ));
+    }
+    Ok(offset)
+}
+
+fn cursor_error(
+    reason: RecallCursorErrorReason,
+    cursor: &str,
+    message: &str,
+) -> RecallProjectionError {
+    RecallProjectionError::Cursor {
+        reason,
+        cursor: cursor.to_string(),
+        message: message.to_string(),
+    }
 }
 
 fn make_cursor(offset: usize, selection_hash: &str) -> String {
@@ -832,6 +970,732 @@ fn serialized_bytes(value: &Value) -> usize {
 fn serialized_tokens(value: &Value, estimator: &dyn TokenEstimator) -> u32 {
     estimator
         .estimate_tokens(&serde_json::to_string(value).expect("recall projection should serialize"))
+}
+
+fn wake_arguments(request: &WakeRequest) -> Value {
+    let mut arguments = Map::new();
+    arguments.insert("about".to_string(), json!(request.about));
+    insert_non_empty(&mut arguments, "role", &request.role);
+    insert_non_empty(&mut arguments, "intent", &request.intent);
+    arguments.insert(
+        "budget".to_string(),
+        budget_value(request.budget.as_ref(), 1_600, 2),
+    );
+    if let Some(dimensions) = request.dimensions.as_ref() {
+        arguments.insert(
+            "dimensions".to_string(),
+            dimension_selection_value(dimensions),
+        );
+    }
+    if let Some(page) = request.page.as_ref() {
+        arguments.insert("page".to_string(), page_request_value(page));
+    }
+    Value::Object(arguments)
+}
+
+fn ask_arguments(request: &AskRequest) -> Value {
+    let mut arguments = Map::new();
+    arguments.insert("about".to_string(), json!(request.about));
+    arguments.insert("question".to_string(), json!(request.question));
+    arguments.insert(
+        "answer_policy".to_string(),
+        json!(
+            match kmp_proto::v1beta1::AnswerPolicy::try_from(request.answer_policy) {
+                Ok(kmp_proto::v1beta1::AnswerPolicy::ShowConflicts) => "show_conflicts",
+                Ok(kmp_proto::v1beta1::AnswerPolicy::BestEffort) => "best_effort",
+                _ => "evidence_or_unknown",
+            }
+        ),
+    );
+    arguments.insert(
+        "budget".to_string(),
+        budget_value(request.budget.as_ref(), 2_400, 2),
+    );
+    if let Some(dimensions) = request.dimensions.as_ref() {
+        arguments.insert(
+            "dimensions".to_string(),
+            dimension_selection_value(dimensions),
+        );
+    }
+    if let Some(page) = request.page.as_ref() {
+        arguments.insert("page".to_string(), page_request_value(page));
+    }
+    Value::Object(arguments)
+}
+
+fn budget_value(
+    budget: Option<&kmp_proto::v1beta1::MemoryBudget>,
+    default_tokens: u32,
+    default_depth: u32,
+) -> Value {
+    let budget = budget.cloned().unwrap_or_default();
+    json!({
+        "tokens": if budget.tokens == 0 { default_tokens } else { budget.tokens },
+        "detail": detail_label(budget.detail),
+        "depth": if budget.depth == 0 { default_depth } else { budget.depth },
+        "max_entries": budget.max_entries,
+        "max_bytes": if budget.max_bytes == 0 {
+            DEFAULT_MAX_BYTES as u64
+        } else {
+            budget.max_bytes
+        }
+    })
+}
+
+fn dimension_selection_value(selection: &DimensionSelection) -> Value {
+    json!({
+        "mode": match DimensionSelectionMode::try_from(selection.mode) {
+            Ok(DimensionSelectionMode::Only) => "only",
+            Ok(DimensionSelectionMode::Except) => "except",
+            _ => "all",
+        },
+        "include": selection.include,
+        "exclude": selection.exclude,
+        "scope": match DimensionScopeMode::try_from(selection.scope) {
+            Ok(DimensionScopeMode::Abouts) => "abouts",
+            Ok(DimensionScopeMode::AllAbouts) => "all_abouts",
+            _ => "current_about",
+        },
+        "abouts": selection.abouts,
+        "scope_ids": selection.scope_ids
+    })
+}
+
+fn page_request_value(page: &kmp_proto::v1beta1::PageRequest) -> Value {
+    let mut value = Map::new();
+    if page.entries != 0 {
+        value.insert("entries".to_string(), json!(page.entries));
+    }
+    insert_non_empty(&mut value, "cursor", &page.cursor);
+    Value::Object(value)
+}
+
+pub fn wake_value(response: &WakeResponse) -> Value {
+    let wake = response.wake.as_ref();
+    let mut value = json!({
+        "summary": response.summary,
+        "wake": {
+            "objective": wake.map(|wake| wake.objective.as_str()).unwrap_or(""),
+            "current_state": wake.map(|wake| wake.current_state.clone()).unwrap_or_default(),
+            "causal_spine": wake
+                .map(|wake| wake.causal_spine.iter().map(wake_claim_value).collect::<Vec<_>>())
+                .unwrap_or_default(),
+            "open_loops": wake.map(|wake| wake.open_loops.clone()).unwrap_or_default(),
+            "next_actions": wake.map(|wake| wake.next_actions.clone()).unwrap_or_default(),
+            "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
+        },
+        "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
+        "resume_cursor": response.resume_cursor.as_ref().map(temporal_cursor_value).unwrap_or(Value::Null),
+        "warnings": response.warnings
+    });
+    attach_typed_projection(
+        &mut value,
+        response.projection.as_ref(),
+        response.truncation.as_ref(),
+    );
+    value
+}
+
+pub fn ask_value(response: &AskResponse) -> Value {
+    let evidence = response
+        .proof
+        .as_ref()
+        .map(|proof| proof.evidence.as_slice())
+        .unwrap_or_default();
+    let answer = normalized_ask_answer(&response.answer, &response.because, evidence);
+    let mut value = json!({
+        "summary": response.summary,
+        "answer": if answer.trim().is_empty() { Value::Null } else { Value::String(answer) },
+        "because": response.because.iter().map(|reason| answer_reason_value(reason, evidence)).collect::<Vec<_>>(),
+        "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
+        "warnings": response.warnings
+    });
+    attach_typed_projection(
+        &mut value,
+        response.projection.as_ref(),
+        response.truncation.as_ref(),
+    );
+    value
+}
+
+fn apply_wake_value(mut response: WakeResponse, value: &Value) -> WakeResponse {
+    response.summary = string_at(value, "/summary");
+    if let Some(wake) = response.wake.as_mut() {
+        wake.objective = string_at(value, "/wake/objective");
+        wake.current_state = strings_at(value, "/wake/current_state");
+        wake.open_loops = strings_at(value, "/wake/open_loops");
+        wake.next_actions = strings_at(value, "/wake/next_actions");
+        wake.guardrails = strings_at(value, "/wake/guardrails");
+        wake.causal_spine = value
+            .pointer("/wake/causal_spine")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|claim| WakeClaim {
+                claim: string_at(claim, "/claim"),
+                because: string_at(claim, "/because"),
+                evidence_ref: string_at(claim, "/evidence_ref"),
+            })
+            .collect();
+    }
+    if let Some(proof) = response.proof.as_mut()
+        && let Some(projected) = value.get("proof")
+    {
+        apply_proof_value(proof, projected);
+    }
+    response.warnings = strings_at(value, "/warnings");
+    response.projection = value.get("projection").and_then(projection_from_value);
+    response.truncation = value.get("truncation").and_then(truncation_from_value);
+    response
+}
+
+fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskResponse {
+    response.summary = string_at(value, "/summary");
+    response.answer = value
+        .get("answer")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let projected_reasons = value
+        .get("because")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let evidence = response
+        .proof
+        .as_ref()
+        .map(|proof| proof.evidence.as_slice())
+        .unwrap_or_default();
+    let normalized = response
+        .because
+        .iter()
+        .map(|reason| normalized_answer_reason(reason, evidence))
+        .collect::<Vec<_>>();
+    response.because = select_projected(&normalized, &projected_reasons, |reason| {
+        answer_reason_value(reason, evidence)
+    });
+    if let Some(proof) = response.proof.as_mut()
+        && let Some(projected) = value.get("proof")
+    {
+        apply_proof_value(proof, projected);
+    }
+    response.warnings = strings_at(value, "/warnings");
+    response.projection = value.get("projection").and_then(projection_from_value);
+    response.truncation = value.get("truncation").and_then(truncation_from_value);
+    response
+}
+
+fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
+    let normalized_relations = proof
+        .path
+        .iter()
+        .map(|relation| normalized_proof_relation(relation, &proof.evidence))
+        .collect::<Vec<_>>();
+    let path = value
+        .get("path")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    proof.path = select_projected(&normalized_relations, &path, memory_relation_value);
+    let evidence = value
+        .get("evidence")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    proof.evidence = select_projected(&proof.evidence, &evidence, memory_evidence_value);
+    let superseded = value
+        .get("superseded")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    proof.superseded = select_projected(&proof.superseded, &superseded, superseded_value);
+    proof.conflicts = strings_at(value, "/conflicts");
+    proof.missing = strings_at(value, "/missing");
+    proof.matched_terms = strings_at(value, "/matched_terms");
+    proof.matched_relations = strings_at(value, "/matched_relations");
+    proof.frontier_size = value
+        .get("frontier_size")
+        .and_then(Value::as_u64)
+        .and_then(|value| u32::try_from(value).ok())
+        .unwrap_or_default();
+    proof.confidence = confidence_from_label(
+        value
+            .get("confidence")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown"),
+    );
+}
+
+fn select_projected<T: Clone>(
+    originals: &[T],
+    projected: &[Value],
+    render: impl Fn(&T) -> Value,
+) -> Vec<T> {
+    let mut used = vec![false; originals.len()];
+    projected
+        .iter()
+        .filter_map(|wanted| {
+            let index = originals
+                .iter()
+                .enumerate()
+                .find(|(index, item)| !used[*index] && render(item) == *wanted)
+                .map(|(index, _)| index)?;
+            used[index] = true;
+            Some(originals[index].clone())
+        })
+        .collect()
+}
+
+fn attach_typed_projection(
+    value: &mut Value,
+    projection: Option<&RecallProjection>,
+    truncation: Option<&RecallTruncation>,
+) {
+    let Some(object) = value.as_object_mut() else {
+        return;
+    };
+    if let Some(projection) = projection {
+        object.insert("projection".to_string(), projection_value(projection));
+    }
+    if let Some(truncation) = truncation {
+        object.insert("truncation".to_string(), truncation_value(truncation));
+    }
+}
+
+fn projection_value(projection: &RecallProjection) -> Value {
+    let mut sections = Map::new();
+    for section in &projection.sections {
+        sections.insert(
+            section.name.clone(),
+            json!({
+                "core": section.core,
+                "returned_on_page": section.returned_on_page,
+                "eligible": section.eligible,
+                "total": section.total
+            }),
+        );
+    }
+    let budget = projection.budget.unwrap_or_default();
+    let page = projection.page.clone().unwrap_or_default();
+    json!({
+        "contract": projection.contract,
+        "detail": detail_label(projection.detail),
+        "budget": {
+            "max_bytes": budget.max_bytes,
+            "used_bytes": budget.used_bytes,
+            "tokens_advisory": budget.tokens_advisory
+        },
+        "page": {
+            "offset": page.offset,
+            "returned": page.returned,
+            "total": page.total,
+            "has_more": page.has_more,
+            "next_cursor": page.next_cursor.clone().map(Value::String).unwrap_or(Value::Null)
+        },
+        "sections": sections,
+        "excluded_by_detail": projection.excluded_by_detail,
+        "selection_omitted": projection.selection_omitted,
+        "core_text_shortened": projection.core_text_shortened,
+        "next_action": projection.next_action.clone().map(Value::String).unwrap_or(Value::Null)
+    })
+}
+
+fn truncation_value(truncation: &RecallTruncation) -> Value {
+    let omitted = truncation.omitted.unwrap_or_default();
+    json!({
+        "truncated": truncation.truncated,
+        "token_limit": truncation.token_limit,
+        "byte_limit": truncation.byte_limit,
+        "omitted": {
+            "page_items": omitted.page_items,
+            "prior_page_items": omitted.prior_page_items,
+            "remaining_page_items": omitted.remaining_page_items,
+            "excluded_by_detail": omitted.excluded_by_detail,
+            "selection_items": omitted.selection_items,
+            "core_text_shortened": omitted.core_text_shortened
+        }
+    })
+}
+
+fn projection_from_value(value: &Value) -> Option<RecallProjection> {
+    let sections = value
+        .get("sections")?
+        .as_object()?
+        .iter()
+        .map(|(name, section)| RecallProjectionSection {
+            name: name.clone(),
+            core: u64_at(section, "/core"),
+            returned_on_page: u64_at(section, "/returned_on_page"),
+            eligible: u64_at(section, "/eligible"),
+            total: u64_at(section, "/total"),
+        })
+        .collect();
+    Some(RecallProjection {
+        contract: string_at(value, "/contract"),
+        detail: detail_from_label(value.get("detail")?.as_str()?),
+        budget: Some(RecallProjectionBudget {
+            max_bytes: u64_at(value, "/budget/max_bytes"),
+            used_bytes: u64_at(value, "/budget/used_bytes"),
+            tokens_advisory: u32_at(value, "/budget/tokens_advisory"),
+        }),
+        page: Some(RecallProjectionPage {
+            offset: u64_at(value, "/page/offset"),
+            returned: u64_at(value, "/page/returned"),
+            total: u64_at(value, "/page/total"),
+            has_more: value
+                .pointer("/page/has_more")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            next_cursor: value
+                .pointer("/page/next_cursor")
+                .and_then(Value::as_str)
+                .map(ToString::to_string),
+        }),
+        sections,
+        excluded_by_detail: u64_at(value, "/excluded_by_detail"),
+        selection_omitted: u64_at(value, "/selection_omitted"),
+        core_text_shortened: value
+            .get("core_text_shortened")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        next_action: value
+            .get("next_action")
+            .and_then(Value::as_str)
+            .map(ToString::to_string),
+    })
+}
+
+fn truncation_from_value(value: &Value) -> Option<RecallTruncation> {
+    Some(RecallTruncation {
+        truncated: value.get("truncated")?.as_bool()?,
+        token_limit: u32_at(value, "/token_limit"),
+        byte_limit: u64_at(value, "/byte_limit"),
+        omitted: Some(RecallOmitted {
+            page_items: u64_at(value, "/omitted/page_items"),
+            prior_page_items: u64_at(value, "/omitted/prior_page_items"),
+            remaining_page_items: u64_at(value, "/omitted/remaining_page_items"),
+            excluded_by_detail: u64_at(value, "/omitted/excluded_by_detail"),
+            selection_items: u64_at(value, "/omitted/selection_items"),
+            core_text_shortened: value
+                .pointer("/omitted/core_text_shortened")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+        }),
+    })
+}
+
+fn proof_value(proof: &kmp_proto::v1beta1::Proof) -> Value {
+    json!({
+        "path": proof.path.iter().map(|relation| memory_relation_value(&normalized_proof_relation(relation, &proof.evidence))).collect::<Vec<_>>(),
+        "evidence": proof.evidence.iter().map(memory_evidence_value).collect::<Vec<_>>(),
+        "conflicts": proof.conflicts,
+        "superseded": proof.superseded.iter().map(superseded_value).collect::<Vec<_>>(),
+        "missing": proof.missing,
+        "frontier_size": proof.frontier_size,
+        "matched_terms": proof.matched_terms,
+        "matched_relations": proof.matched_relations,
+        "confidence": confidence_label(proof.confidence)
+    })
+}
+
+fn normalized_proof_relation(
+    relation: &MemoryRelation,
+    evidence: &[MemoryEvidence],
+) -> MemoryRelation {
+    let mut relation = relation.clone();
+    let mut refs = relation
+        .evidence_refs
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut repeated_why = false;
+    let mut repeated_evidence = false;
+    for item in evidence {
+        let evidence_node_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
+        let incident = relation.source_ref == evidence_node_ref
+            || relation.target_ref == evidence_node_ref
+            || item.supports.iter().any(|supported_ref| {
+                relation.source_ref == *supported_ref || relation.target_ref == *supported_ref
+            });
+        let why_matches = !relation.why.is_empty() && relation.why == item.text;
+        let evidence_matches = !relation.evidence.is_empty() && relation.evidence == item.text;
+        if incident || why_matches || evidence_matches {
+            refs.insert(item.id.clone());
+        }
+        repeated_why |= why_matches;
+        repeated_evidence |= evidence_matches;
+    }
+    if repeated_why {
+        relation.why.clear();
+    }
+    if repeated_evidence {
+        relation.evidence.clear();
+    }
+    relation.evidence_refs = refs.into_iter().collect();
+    if relation.semantic_class != MemorySemanticClass::Structural as i32
+        && relation.why.is_empty()
+        && relation.evidence.is_empty()
+        && !relation.evidence_refs.is_empty()
+    {
+        relation.why = "Supported by canonical evidence refs.".to_string();
+    }
+    relation
+}
+
+fn empty_proof_value() -> Value {
+    json!({
+        "path": [], "evidence": [], "conflicts": [], "superseded": [],
+        "missing": ["proof"], "frontier_size": 1, "matched_terms": [],
+        "matched_relations": [], "confidence": "unknown"
+    })
+}
+
+fn wake_claim_value(claim: &WakeClaim) -> Value {
+    json!({"claim": claim.claim, "because": claim.because, "evidence_ref": claim.evidence_ref})
+}
+
+fn normalized_answer_reason(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> AnswerReason {
+    let mut reason = reason.clone();
+    if evidence.iter().any(|item| {
+        item.id == reason.r#ref && !item.text.is_empty() && item.text == reason.evidence
+    }) {
+        reason.evidence.clear();
+    }
+    reason
+}
+
+fn answer_reason_value(reason: &AnswerReason, evidence: &[MemoryEvidence]) -> Value {
+    let reason = normalized_answer_reason(reason, evidence);
+    let mut value = Map::new();
+    value.insert("claim".to_string(), json!(reason.claim));
+    insert_non_empty(&mut value, "evidence", &reason.evidence);
+    value.insert("ref".to_string(), json!(reason.r#ref));
+    Value::Object(value)
+}
+
+fn normalized_ask_answer(
+    answer: &str,
+    reasons: &[AnswerReason],
+    evidence: &[MemoryEvidence],
+) -> String {
+    let repeats_canonical_body = evidence.iter().any(|item| {
+        let body = item.text.trim();
+        !body.is_empty() && answer.contains(body)
+    });
+    if !repeats_canonical_body {
+        return answer.to_string();
+    }
+    let mut seen = BTreeSet::new();
+    let citations = reasons
+        .iter()
+        .filter_map(|reason| {
+            let evidence_ref = reason.r#ref.trim();
+            if evidence_ref.is_empty() || !seen.insert(evidence_ref.to_string()) {
+                return None;
+            }
+            let claim = reason.claim.trim();
+            Some(if claim.is_empty() {
+                evidence_ref.to_string()
+            } else {
+                format!("{claim} [{evidence_ref}]")
+            })
+        })
+        .collect::<Vec<_>>();
+    match citations.as_slice() {
+        [] => String::new(),
+        [single] => format!(
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether \
+             it answers: {single}"
+        ),
+        many => format!(
+            "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n{}",
+            many.iter()
+                .map(|item| format!("- {item}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
+    }
+}
+
+fn superseded_value(entry: &SupersededMemory) -> Value {
+    let mut value = Map::new();
+    value.insert("ref".to_string(), json!(entry.r#ref));
+    value.insert("superseded_by".to_string(), json!(entry.superseded_by));
+    insert_non_empty(&mut value, "why", &entry.why);
+    Value::Object(value)
+}
+
+fn memory_relation_value(relation: &MemoryRelation) -> Value {
+    let mut value = Map::new();
+    value.insert("from".to_string(), json!(relation.source_ref));
+    value.insert("to".to_string(), json!(relation.target_ref));
+    value.insert("rel".to_string(), json!(relation.rel));
+    value.insert(
+        "class".to_string(),
+        json!(semantic_class_label(relation.semantic_class)),
+    );
+    insert_non_empty(&mut value, "why", &relation.why);
+    insert_non_empty(&mut value, "evidence", &relation.evidence);
+    value.insert(
+        "confidence".to_string(),
+        json!(confidence_label(relation.confidence)),
+    );
+    if let Some(sequence) = relation.sequence {
+        value.insert("sequence".to_string(), json!(sequence));
+    }
+    if let Some(explanation) = relation.explanation.as_ref() {
+        insert_non_empty(&mut value, "motivation", &explanation.motivation);
+        insert_non_empty(&mut value, "method", &explanation.method);
+        insert_non_empty(&mut value, "decision_id", &explanation.decision_id);
+        insert_non_empty(
+            &mut value,
+            "caused_by_node_id",
+            &explanation.caused_by_node_id,
+        );
+        if let Some(coordinate) = explanation.coordinate.as_ref() {
+            value.insert(
+                "coordinate".to_string(),
+                temporal_coordinate_value(coordinate),
+            );
+        }
+    }
+    if !relation.evidence_refs.is_empty() {
+        value.insert("evidence_refs".to_string(), json!(relation.evidence_refs));
+    }
+    Value::Object(value)
+}
+
+fn memory_evidence_value(evidence: &MemoryEvidence) -> Value {
+    let mut value = Map::new();
+    value.insert("id".to_string(), json!(evidence.id));
+    value.insert("supports".to_string(), json!(evidence.supports));
+    value.insert("text".to_string(), json!(evidence.text));
+    insert_non_empty(&mut value, "source", &evidence.source);
+    insert_timestamp(&mut value, "time", evidence.time);
+    if !evidence.metadata.is_empty() {
+        value.insert("metadata".to_string(), json!(evidence.metadata));
+    }
+    Value::Object(value)
+}
+
+fn temporal_cursor_value(cursor: &TemporalCursor) -> Value {
+    let mut value = Map::new();
+    insert_non_empty(&mut value, "ref", &cursor.r#ref);
+    insert_timestamp(&mut value, "time", cursor.time);
+    if let Some(sequence) = cursor.sequence {
+        value.insert("sequence".to_string(), json!(sequence));
+    }
+    Value::Object(value)
+}
+
+fn temporal_coordinate_value(coordinate: &TemporalCoordinate) -> Value {
+    let mut value = Map::new();
+    insert_non_empty(&mut value, "dimension", &coordinate.dimension);
+    insert_non_empty(&mut value, "scope_id", &coordinate.scope_id);
+    insert_timestamp(&mut value, "occurred_at", coordinate.occurred_at);
+    insert_timestamp(&mut value, "observed_at", coordinate.observed_at);
+    insert_timestamp(&mut value, "ingested_at", coordinate.ingested_at);
+    insert_timestamp(&mut value, "valid_from", coordinate.valid_from);
+    insert_timestamp(&mut value, "valid_until", coordinate.valid_until);
+    if let Some(sequence) = coordinate.sequence {
+        value.insert("sequence".to_string(), json!(sequence));
+    }
+    if let Some(rank) = coordinate.rank {
+        value.insert("rank".to_string(), json!(rank));
+    }
+    if !coordinate.metadata.is_empty() {
+        value.insert("metadata".to_string(), json!(coordinate.metadata));
+    }
+    Value::Object(value)
+}
+
+fn insert_non_empty(object: &mut Map<String, Value>, key: &str, value: &str) {
+    if !value.trim().is_empty() {
+        object.insert(key.to_string(), json!(value));
+    }
+}
+
+fn insert_timestamp(object: &mut Map<String, Value>, key: &str, value: Option<Timestamp>) {
+    if let Some(value) = value {
+        object.insert(key.to_string(), json!(value.to_string()));
+    }
+}
+
+fn detail_label(value: i32) -> &'static str {
+    match MemoryDetailLevel::try_from(value) {
+        Ok(MemoryDetailLevel::Compact) => "compact",
+        Ok(MemoryDetailLevel::Full) => "full",
+        _ => "balanced",
+    }
+}
+
+fn detail_from_label(value: &str) -> i32 {
+    match value {
+        "compact" => MemoryDetailLevel::Compact as i32,
+        "full" => MemoryDetailLevel::Full as i32,
+        _ => MemoryDetailLevel::Balanced as i32,
+    }
+}
+
+fn semantic_class_label(value: i32) -> &'static str {
+    match MemorySemanticClass::try_from(value) {
+        Ok(MemorySemanticClass::Structural) => "structural",
+        Ok(MemorySemanticClass::Causal) => "causal",
+        Ok(MemorySemanticClass::Motivational) => "motivational",
+        Ok(MemorySemanticClass::Procedural) => "procedural",
+        Ok(MemorySemanticClass::Evidential) => "evidential",
+        Ok(MemorySemanticClass::Constraint) => "constraint",
+        _ => "unspecified",
+    }
+}
+
+fn confidence_label(value: i32) -> &'static str {
+    match MemoryConfidence::try_from(value) {
+        Ok(MemoryConfidence::High) => "high",
+        Ok(MemoryConfidence::Medium) => "medium",
+        Ok(MemoryConfidence::Low) => "low",
+        Ok(MemoryConfidence::Unknown) => "unknown",
+        _ => "unspecified",
+    }
+}
+
+fn confidence_from_label(value: &str) -> i32 {
+    match value {
+        "high" => MemoryConfidence::High as i32,
+        "medium" => MemoryConfidence::Medium as i32,
+        "low" => MemoryConfidence::Low as i32,
+        _ => MemoryConfidence::Unknown as i32,
+    }
+}
+
+fn string_at(value: &Value, pointer: &str) -> String {
+    value
+        .pointer(pointer)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string()
+}
+
+fn strings_at(value: &Value, pointer: &str) -> Vec<String> {
+    value
+        .pointer(pointer)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn u64_at(value: &Value, pointer: &str) -> u64 {
+    value
+        .pointer(pointer)
+        .and_then(Value::as_u64)
+        .unwrap_or_default()
+}
+
+fn u32_at(value: &Value, pointer: &str) -> u32 {
+    u64_at(value, pointer).try_into().unwrap_or(u32::MAX)
 }
 
 #[cfg(test)]
@@ -1100,6 +1964,114 @@ mod tests {
     }
 
     #[test]
+    fn typed_ask_projection_round_trips_exact_bytes_and_cursor() {
+        let response = typed_ask_fixture(24);
+        let mut request = AskRequest {
+            about: "project:kmp".to_string(),
+            question: "Which storage engine is current?".to_string(),
+            budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                tokens: 30_000,
+                detail: MemoryDetailLevel::Full as i32,
+                depth: 3,
+                max_entries: 0,
+                max_bytes: 4_000,
+            }),
+            page: Some(kmp_proto::v1beta1::PageRequest {
+                entries: 4,
+                cursor: String::new(),
+            }),
+            ..Default::default()
+        };
+
+        let first = project_ask_response(response.clone(), &request).expect("first typed page");
+        let first_value = ask_value(&first);
+        let first_bytes = serde_json::to_vec(&first_value).expect("serialized typed projection");
+        assert!(first_bytes.len() <= 4_000);
+        assert_eq!(
+            first
+                .projection
+                .as_ref()
+                .and_then(|projection| projection.budget.as_ref())
+                .expect("typed projection budget")
+                .used_bytes,
+            first_bytes.len() as u64
+        );
+        let cursor = first
+            .projection
+            .as_ref()
+            .and_then(|projection| projection.page.as_ref())
+            .and_then(|page| page.next_cursor.clone())
+            .expect("typed continuation cursor");
+
+        request.page.as_mut().expect("page").cursor = cursor;
+        let second = project_ask_response(response.clone(), &request).expect("second typed page");
+        let second_page = second
+            .projection
+            .as_ref()
+            .and_then(|projection| projection.page.as_ref())
+            .expect("second page accounting");
+        assert_eq!(second_page.offset, 4);
+        assert!(second_page.returned > 0);
+
+        request.question = "A changed question".to_string();
+        let error = project_ask_response(response, &request)
+            .expect_err("a typed cursor is bound to the recall selection");
+        assert!(error.to_string().contains("does not match"));
+    }
+
+    #[test]
+    fn typed_wake_projection_round_trips_exact_bytes_and_cursor() {
+        let response = typed_wake_fixture(24);
+        let mut request = WakeRequest {
+            about: "project:kmp".to_string(),
+            role: "implementer".to_string(),
+            intent: "continue parity work".to_string(),
+            budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                tokens: 30_000,
+                detail: MemoryDetailLevel::Full as i32,
+                depth: 3,
+                max_entries: 0,
+                max_bytes: 4_000,
+            }),
+            page: Some(kmp_proto::v1beta1::PageRequest {
+                entries: 4,
+                cursor: String::new(),
+            }),
+            ..Default::default()
+        };
+
+        let first = project_wake_response(response.clone(), &request).expect("first typed page");
+        let first_value = wake_value(&first);
+        let first_bytes = serde_json::to_vec(&first_value).expect("serialized typed projection");
+        assert!(first_bytes.len() <= 4_000);
+        assert_eq!(
+            first
+                .projection
+                .as_ref()
+                .and_then(|projection| projection.budget.as_ref())
+                .expect("typed projection budget")
+                .used_bytes,
+            first_bytes.len() as u64
+        );
+        let cursor = first
+            .projection
+            .as_ref()
+            .and_then(|projection| projection.page.as_ref())
+            .and_then(|page| page.next_cursor.clone())
+            .expect("typed continuation cursor");
+
+        request.page.as_mut().expect("page").cursor = cursor;
+        let second = project_wake_response(response, &request).expect("second typed page");
+        let second_page = second
+            .projection
+            .as_ref()
+            .and_then(|projection| projection.page.as_ref())
+            .expect("second page accounting");
+        assert_eq!(second_page.offset, 4);
+        assert!(second_page.returned > 0);
+    }
+
+    #[test]
     fn projection_does_not_tokenize_the_full_packet_once_per_omitted_item() {
         let estimator = CountingEstimator::default();
         let packet = large_fixture(480);
@@ -1228,6 +2200,97 @@ mod tests {
             },
             "warnings": []
         })
+    }
+
+    fn typed_ask_fixture(path_count: usize) -> AskResponse {
+        let evidence = (0..8)
+            .map(|index| MemoryEvidence {
+                id: format!("evidence:{index}"),
+                supports: vec![format!("claim:{index}")],
+                text: format!(
+                    "Canonical storage evidence {index}: {}",
+                    "grounded detail ".repeat(8)
+                ),
+                source: format!("source:{index}"),
+                time: None,
+                metadata: Default::default(),
+            })
+            .collect::<Vec<_>>();
+        let path = (0..path_count)
+            .map(|index| {
+                let (rel, semantic_class) = match index % 3 {
+                    0 => ("depends_on", MemorySemanticClass::Causal),
+                    1 => ("supports", MemorySemanticClass::Evidential),
+                    _ => ("contains_entry", MemorySemanticClass::Structural),
+                };
+                MemoryRelation {
+                    source_ref: format!("node:{index:04}"),
+                    target_ref: format!("claim:{}", index % 3),
+                    rel: rel.to_string(),
+                    semantic_class: semantic_class as i32,
+                    why: format!("Deterministic relation explanation {index}"),
+                    evidence: String::new(),
+                    confidence: MemoryConfidence::High as i32,
+                    sequence: None,
+                    explanation: None,
+                    evidence_refs: Vec::new(),
+                }
+            })
+            .collect();
+        let because = (0..3)
+            .map(|index| AnswerReason {
+                claim: format!("claim:{index}"),
+                evidence: String::new(),
+                r#ref: format!("evidence:{index}"),
+            })
+            .collect();
+        AskResponse {
+            summary: "Deterministic memory answer from 3 evidence items.".to_string(),
+            answer: "This legacy prose is normalized from typed citations.".to_string(),
+            because,
+            proof: Some(kmp_proto::v1beta1::Proof {
+                path,
+                evidence,
+                conflicts: Vec::new(),
+                missing: vec!["raw:one".to_string(), "raw:two".to_string()],
+                confidence: MemoryConfidence::High as i32,
+                superseded: Vec::new(),
+                frontier_size: 2,
+                matched_terms: vec!["storage".to_string(), "current".to_string()],
+                matched_relations: vec!["supports".to_string()],
+            }),
+            warnings: Vec::new(),
+            projection: None,
+            truncation: None,
+        }
+    }
+
+    fn typed_wake_fixture(path_count: usize) -> WakeResponse {
+        let proof = typed_ask_fixture(path_count)
+            .proof
+            .expect("typed ask fixture proof");
+        WakeResponse {
+            summary: "Deterministic wake packet.".to_string(),
+            wake: Some(kmp_proto::v1beta1::WakePacket {
+                objective: "continue parity work".to_string(),
+                current_state: (0..8)
+                    .map(|index| format!("Current state {index}"))
+                    .collect(),
+                causal_spine: vec![WakeClaim {
+                    claim: "claim:0".to_string(),
+                    because: "The canonical evidence supports it.".to_string(),
+                    evidence_ref: "evidence:0".to_string(),
+                }],
+                open_loops: (0..4).map(|index| format!("Open loop {index}")).collect(),
+                next_actions: (0..4).map(|index| format!("Next action {index}")).collect(),
+                guardrails: (0..4).map(|index| format!("Guardrail {index}")).collect(),
+            }),
+            proof: Some(proof),
+            warnings: Vec::new(),
+            resume_cursor: None,
+            projection: None,
+            truncation: None,
+        }
     }
 
     fn projected(packet: Value, arguments: Value) -> Value {

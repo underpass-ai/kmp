@@ -16,7 +16,8 @@ use kmp_proto::v1beta1::{
     kernel_memory_service_server::KernelMemoryService,
 };
 use opentelemetry::KeyValue;
-use tonic::{Request, Response, Status};
+use prost::Message;
+use tonic::{Code, Request, Response, Status};
 
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
@@ -26,6 +27,9 @@ use crate::transport::proto_mapping_v1beta1::{
     wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
+use kmp_proto_mapping::v1beta1::recall_projection::{
+    RecallProjectionError, project_ask_response, project_wake_response,
+};
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     application: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
@@ -94,6 +98,7 @@ where
     async fn wake(&self, request: Request<WakeRequest>) -> Result<Response<WakeResponse>, Status> {
         let start = Instant::now();
         let request = request.into_inner();
+        let projection_request = request.clone();
         let query = wake_query_from_proto(request.clone())
             .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?;
         let intent = query.intent.clone();
@@ -103,7 +108,17 @@ where
             map_application_error_with_log("KernelMemoryService.Wake", &start, error)
         })?;
         let selected_abouts = selected_abouts_from_bundle(&result.bundle);
-        let response = wake_response_from_result(&intent, max_entries, result);
+        let response = project_wake_response(
+            wake_response_from_result(&intent, max_entries, result),
+            &projection_request,
+        )
+        .map_err(|error| {
+            map_proto_error(
+                "KernelMemoryService.Wake",
+                &start,
+                recall_projection_status(error),
+            )
+        })?;
         let proof_paths = response
             .proof
             .as_ref()
@@ -130,6 +145,7 @@ where
     async fn ask(&self, request: Request<AskRequest>) -> Result<Response<AskResponse>, Status> {
         let start = Instant::now();
         let request = request.into_inner();
+        let projection_request = request.clone();
         let question = request.question.clone();
         let query = ask_query_from_proto(request)
             .map_err(|status| map_proto_error("KernelMemoryService.Ask", &start, *status))?;
@@ -140,7 +156,17 @@ where
             map_application_error_with_log("KernelMemoryService.Ask", &start, error)
         })?;
         let selected_abouts = selected_abouts_from_bundle(&result.bundle);
-        let response = ask_response_from_result(&question, answer_policy, max_entries, result);
+        let response = project_ask_response(
+            ask_response_from_result(&question, answer_policy, max_entries, result),
+            &projection_request,
+        )
+        .map_err(|error| {
+            map_proto_error(
+                "KernelMemoryService.Ask",
+                &start,
+                recall_projection_status(error),
+            )
+        })?;
         tracing::info!(
             rpc = "KernelMemoryService.Ask",
             selected_abouts = ?selected_abouts,
@@ -537,6 +563,18 @@ fn map_proto_error(rpc: &'static str, start: &Instant, status: Status) -> Status
         start.elapsed(),
     );
     status
+}
+
+fn recall_projection_status(error: RecallProjectionError) -> Status {
+    let message = error.to_string();
+    match error.cursor_detail() {
+        Some(detail) => Status::with_details(
+            Code::InvalidArgument,
+            message,
+            detail.encode_to_vec().into(),
+        ),
+        None => Status::invalid_argument(message),
+    }
 }
 
 fn map_application_error_with_log(

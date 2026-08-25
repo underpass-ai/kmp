@@ -81,6 +81,15 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Changed
 
+- **Recall projection is now a typed KMP contract, not an MCP-only transform.**
+  `MemoryBudget.max_bytes`, Wake/Ask continuation requests, projection and
+  truncation accounting, and machine-readable cursor errors travel through
+  gRPC v1beta1. `KernelMemoryService` and embedded MCP invoke the same
+  `kmp-proto-mapping` projector; stdio MCP over gRPC maps the projected response
+  without applying it a second time. The typed round-trip locks the exact
+  serialized-byte count, cursor binding, detail fieldsets, and stable citation
+  core, while descriptor tests prevent those fields from drifting silently.
+
 - **The MCP surface now says KMP.** `tools/list` advertises `kmp_ingest`,
   `kmp_write_memory`, `kmp_wake`, `kmp_ask`, `kmp_goto`, `kmp_near`,
   `kmp_rewind`, `kmp_forward`, `kmp_trace`, and `kmp_inspect`; plugin and

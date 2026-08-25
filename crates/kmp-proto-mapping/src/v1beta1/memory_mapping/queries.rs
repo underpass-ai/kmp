@@ -16,6 +16,7 @@ use super::scalars::{
 
 pub fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
+    validate_recall_budget(&budget)?;
     Ok(WakeMemoryQuery {
         about: request.about.clone(),
         role: non_empty(request.role).unwrap_or_else(|| "agent".to_string()),
@@ -35,6 +36,7 @@ pub fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMem
 
 pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
+    validate_recall_budget(&budget)?;
     Ok(AskMemoryQuery {
         about: request.about,
         question: request.question,
@@ -178,6 +180,15 @@ fn temporal_include_from_proto(
         relations: value.relations,
         raw_refs: value.raw_refs,
     })
+}
+
+fn validate_recall_budget(budget: &kmp_proto::v1beta1::MemoryBudget) -> ProtoMappingResult<()> {
+    if budget.max_bytes != 0 && budget.max_bytes < 512 {
+        return Err(invalid_argument(
+            "recall budget.max_bytes must be zero or at least 512",
+        ));
+    }
+    Ok(())
 }
 
 fn trace_page_from_proto(value: Option<PageRequest>) -> ProtoMappingResult<TracePageRequest> {
