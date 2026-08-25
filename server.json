@@ -1,0 +1,70 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.underpass-ai/kmp",
+  "title": "KMP",
+  "description": "Durable, temporal and auditable memory for AI agents in one local MCP binary",
+  "version": "0.1.14",
+  "websiteUrl": "https://github.com/underpass-ai/kmp",
+  "repository": {
+    "url": "https://github.com/underpass-ai/kmp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.1.14/kmp-mcp-v0.1.14.mcpb",
+      "fileSha256": "3f09afca6d2fd47ce6bad8b5377e1efdfecd8239c33b6328552bce276c313d3d",
+      "environmentVariables": [
+        {
+          "name": "KMP_MCP_DATA_DIR",
+          "description": "Optional memory directory; otherwise KMP uses the project or per-user default",
+          "format": "filepath",
+          "isRequired": false
+        },
+        {
+          "name": "KMP_VIEWER_ADDR",
+          "description": "Optional viewer address, or off to disable the local viewer",
+          "placeholder": "127.0.0.1:7317 or off",
+          "isRequired": false
+        },
+        {
+          "name": "KMP_KERNEL_GRPC_ENDPOINT",
+          "description": "Optional remote KMP endpoint; omit it to keep the kernel in this process",
+          "placeholder": "https://kmp.example.com",
+          "isRequired": false
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "cargo",
+      "identifier": "kmp-mcp",
+      "version": "0.1.14",
+      "environmentVariables": [
+        {
+          "name": "KMP_MCP_DATA_DIR",
+          "description": "Optional memory directory; otherwise KMP uses the project or per-user default",
+          "format": "filepath",
+          "isRequired": false
+        },
+        {
+          "name": "KMP_VIEWER_ADDR",
+          "description": "Optional viewer address, or off to disable the local viewer",
+          "placeholder": "127.0.0.1:7317 or off",
+          "isRequired": false
+        },
+        {
+          "name": "KMP_KERNEL_GRPC_ENDPOINT",
+          "description": "Optional remote KMP endpoint; omit it to keep the kernel in this process",
+          "placeholder": "https://kmp.example.com",
+          "isRequired": false
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

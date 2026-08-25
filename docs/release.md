@@ -7,18 +7,31 @@ from it:
 |:--|:--|
 | `publish-distribution.yml` | `ghcr.io/underpass-ai/kmp:vX.Y.Z`, `oci://ghcr.io/underpass-ai/charts/kmp:X.Y.Z`, and the crates.io chain |
 | `plugin-package.yml` | the Codex / Claude Code plugin bundles for linux-x86_64, linux-arm64, macos-arm64 and windows-x86_64, with checksums |
-| `release.yml` | `kmp-mcp` binaries for five host targets, stripped and checksummed |
+| `release.yml` | `kmp-mcp` binaries for five host targets plus one checksummed, multiplatform MCPB |
+| `mcp-registry.yml` | validates `server.json`; publishes it only on a tag when `MCP_REGISTRY_PUBLISH=true` |
 
 ## Versioning
 
-Semver. Three things must stay in lockstep, and one script keeps them there:
+Semver. Five things must stay in lockstep, and one script keeps them there:
 
 - `Cargo.toml` → `[workspace.package].version`
 - `Cargo.toml` → the `version` next to each internal crate's `path`
 - `charts/kmp/Chart.yaml` → `version` + `appVersion`
+- both plugin host manifests
+- `server.json` and `distribution/mcpb/manifest.json`
 
 ```bash
 bash scripts/release.sh version 0.2.0
+```
+
+The bump replaces the old MCPB hash with an all-zero sentinel. That sentinel
+cannot pass the registry gate. Push the version branch, run `release.yml` with
+`workflow_dispatch`, download its `kmp-mcpb-X.Y.Z` artifact and stamp the
+actual deterministic bundle before opening or merging the version PR:
+
+```bash
+bash scripts/release/stamp-server-mcpb.sh path/to/kmp-mcp-v0.2.0.mcpb
+bash scripts/ci/mcp-registry.sh
 ```
 
 The internal pins are the part that is easy to forget and expensive to get
@@ -37,26 +50,35 @@ resolve on crates.io.
    bash scripts/release.sh version 0.2.0
    git diff
    ```
-3. **Gates green locally**:
+3. **Build and stamp the MCPB** using the workflow-dispatch sequence above.
+4. **Gates green locally**:
    ```bash
    bash scripts/ci/quality-gate.sh   # contract + vendored copies + fmt + clippy + tests
    bash scripts/ci/helm-lint.sh
    ```
-4. **Commit and merge**:
+5. **Commit and merge**:
    ```bash
    git commit -am "chore: v0.2.0"
    gh pr create --fill
    # wait for CI green; merge
    ```
-5. **Tag from merged main**:
+6. **Tag from merged main**:
    ```bash
    git checkout main && git pull --ff-only
    bash scripts/release.sh release 0.2.0
    ```
-6. **Watch the publish**:
+7. **Watch the publish**:
    ```bash
    gh run watch $(gh run list --workflow publish-distribution.yml --json databaseId -q '.[0].databaseId')
    ```
+
+The official Registry listing is intentionally independent from creating the
+release artifacts. Namespace `io.github.underpass-ai/kmp` is permanent, Cargo
+ownership comes from the visible `mcp-name:` line in the published crate
+README, and the MCPB hash is checked against the GitHub Release before any
+publish attempt. Keep the repository variable `MCP_REGISTRY_PUBLISH` unset or
+false while the public listing is held. Setting it to `true` arms OIDC publish
+for subsequent `v*` tags; it does not retroactively submit an older tag.
 
 ## What reaches crates.io
 

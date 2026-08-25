@@ -1,7 +1,8 @@
 name: release
 
 # E5 distribution: a version tag produces stripped, checksummed binaries for
-# every developer platform and attaches them to the GitHub release.
+# every developer platform, combines them into one portable MCPB, and attaches
+# both forms to the GitHub release.
 # `workflow_dispatch` runs the same build matrix without publishing, so the
 # pipeline is verifiable without cutting a release.
 
@@ -76,7 +77,12 @@ jobs:
       - name: Package and checksum
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME:-dev}"
+          WORKSPACE_VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          VERSION="v${WORKSPACE_VERSION}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "${VERSION}" ]]; then
+            echo "tag ${GITHUB_REF_NAME} does not match workspace ${VERSION}" >&2
+            exit 1
+          fi
           case "${{ runner.os }}" in
             Windows) BIN="target/${{ matrix.target }}/release/kmp-mcp.exe"
                      OUT="kmp-mcp-${VERSION}-${{ matrix.target }}.exe" ;;
@@ -94,6 +100,13 @@ jobs:
           fi
           ls -la
 
+      - name: Upload binary for MCPB assembly
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmp-release-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
       - name: Upload to release
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash
@@ -102,3 +115,72 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes 2>/dev/null || true
           gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+
+  mcpb:
+    name: build universal MCPB
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Download the five release binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: kmp-release-*
+          path: dist/binaries
+          merge-multiple: true
+
+      - name: Validate the MCPB manifest
+        run: npx --yes @anthropic-ai/mcpb@2.1.2 validate distribution/mcpb/manifest.json
+
+      - name: Package the deterministic MCPB
+        id: package
+        shell: bash
+        run: |
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          bash scripts/release/package-kmp-mcpb.sh "${VERSION}" dist/binaries dist/mcpb
+          npx --yes @anthropic-ai/mcpb@2.1.2 info "dist/mcpb/kmp-mcp-v${VERSION}.mcpb"
+
+      - name: Smoke-test the MCPB launcher
+        shell: bash
+        run: |
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          mkdir -p tmp/mcpb-smoke
+          python3 -m zipfile -e "dist/mcpb/kmp-mcp-v${VERSION}.mcpb" tmp/mcpb-smoke
+          chmod +x tmp/mcpb-smoke/server/kmp-mcp tmp/mcpb-smoke/server/bin/*
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"mcpb-smoke","version":"1"}}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            | KMP_MCP_BACKEND=embedded KMP_MCP_DATA_DIR="${RUNNER_TEMP}/kmp-mcpb-smoke" \
+              tmp/mcpb-smoke/server/kmp-mcp > tmp/mcpb-smoke/responses.jsonl
+          python3 - tmp/mcpb-smoke/responses.jsonl <<'PY'
+          import json, sys
+          responses = {message.get("id"): message for message in map(json.loads, open(sys.argv[1]))}
+          tools = responses.get(2, {}).get("result", {}).get("tools", [])
+          if len(tools) != 10:
+              raise SystemExit(f"MCPB smoke expected ten tools, found {len(tools)}")
+          print("MCPB launcher started ten tools")
+          PY
+
+      - name: Upload MCPB as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmp-mcpb-${{ steps.package.outputs.version }}
+          path: |
+            dist/mcpb/*.mcpb
+            dist/mcpb/*.sha256
+          if-no-files-found: error
+
+      - name: Attach MCPB to the GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes 2>/dev/null || true
+          gh release upload "${GITHUB_REF_NAME}" dist/mcpb/* --clobber

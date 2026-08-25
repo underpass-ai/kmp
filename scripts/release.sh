@@ -5,8 +5,9 @@ set -euo pipefail
 #
 # Two verbs:
 #   version <X.Y.Z>   — rewrite every versioned artefact in the repo so
-#                       Cargo.toml and Chart.yaml stay in lockstep.
-#                       Idempotent; safe to re-run.
+#                       Cargo, Helm, plugin and MCP Registry metadata stay in
+#                       lockstep. Resets the MCPB hash until a matching bundle
+#                       is built and stamped; idempotent and safe to re-run.
 #
 #   release <X.Y.Z>   — verify the tree is clean and the versions already
 #                       point at X.Y.Z, then create an annotated `vX.Y.Z`
@@ -48,7 +49,7 @@ cmd_version() {
     cd "${root}"
 
     python3 - "${version}" <<'PY'
-import pathlib, re, sys
+import json, pathlib, re, sys
 
 version = sys.argv[1]
 
@@ -115,9 +116,39 @@ for manifest in manifests:
         sys.exit(f"{manifest}: no version line matched")
     manifest.write_text(text)
 
+# MCP Registry metadata. A release bump deliberately invalidates the previous
+# MCPB hash: keeping a syntactically valid stale hash is more dangerous than a
+# placeholder which the registry gate refuses. Build the workflow-dispatch
+# MCPB and run stamp-server-mcpb.sh before the version PR can go green.
+server_json = pathlib.Path("server.json")
+body = json.loads(server_json.read_text())
+previous_server_version = body.get("version")
+body["version"] = version
+mcpb_hash_reset = False
+for package in body.get("packages", []):
+    if package.get("registryType") == "cargo":
+        package["version"] = version
+    elif package.get("registryType") == "mcpb":
+        expected_identifier = (
+            f"https://github.com/underpass-ai/kmp/releases/download/v{version}/"
+            f"kmp-mcp-v{version}.mcpb"
+        )
+        if previous_server_version != version or package.get("identifier") != expected_identifier:
+            package["fileSha256"] = "0" * 64
+            mcpb_hash_reset = True
+        package["identifier"] = expected_identifier
+server_json.write_text(json.dumps(body, indent=2) + "\n")
+
+mcpb_manifest = pathlib.Path("distribution/mcpb/manifest.json")
+body = json.loads(mcpb_manifest.read_text())
+body["version"] = version
+mcpb_manifest.write_text(json.dumps(body, indent=2) + "\n")
+
 print(
     f"bumped to {version}: Cargo.toml ({pinned} internal pins), "
-    f"charts/kmp/Chart.yaml, {len(manifests)} plugin manifests"
+    f"charts/kmp/Chart.yaml, {len(manifests)} plugin manifests, "
+    "server.json and the MCPB manifest; "
+    + ("MCPB hash needs stamping" if mcpb_hash_reset else "MCPB hash retained")
 )
 PY
 
@@ -126,7 +157,8 @@ PY
 
     # Surface what changed — the caller reviews before committing.
     git --no-pager diff --stat -- Cargo.toml Cargo.lock charts/kmp/Chart.yaml \
-        plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json
+        plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json \
+        server.json distribution/mcpb/manifest.json
 }
 
 cmd_release() {
@@ -160,6 +192,11 @@ cmd_release() {
         fi
     done
 
+    # This also proves the Cargo marker, MCPB hash, package URLs and manifest
+    # all name this exact version. A tag never carries a listing that points
+    # at a different or not-yet-built artifact.
+    bash scripts/ci/mcp-registry.sh
+
     local tag="v${version}"
     if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
         echo "error: tag ${tag} already exists" >&2
@@ -178,7 +215,8 @@ cmd_release() {
     git push origin "${tag}"
     echo "tagged ${tag} and pushed."
     echo "publish-distribution: image + chart + crates.io chain."
-    echo "plugin-package: bundles attached to the release."
+    echo "plugin-package + release: host bundles, binaries and MCPB attached."
+    echo "mcp-registry: validates the tag; production publish remains gated."
 }
 
 if [ $# -lt 1 ]; then

@@ -12,6 +12,15 @@ implemented, with deprecated fields removed in `v1`.
 
 ### Added
 
+- **KMP is ready for the official MCP Registry without submitting the listing
+  early.** The permanent name is `io.github.underpass-ai/kmp`; the published
+  Cargo README carries its visible ownership marker, and root `server.json`
+  offers both crates.io and one deterministic, integrity-pinned MCPB containing
+  all five release binaries. Release CI validates the listing against the
+  staging Registry, checks package/version/tool drift, and can publish through
+  GitHub OIDC only on a version tag while the explicit
+  `MCP_REGISTRY_PUBLISH` repository variable is armed.
+
 - **The first-impression plan is now an enforced product contract.** Every
   Markdown document has an explicit current, research, or historical status
   and is reachable from `docs/index.md` in at most two links; CI rejects an
