@@ -3,7 +3,7 @@
   "manifest_version": "0.3",
   "name": "kmp",
   "display_name": "KMP",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Durable, temporal and auditable memory for AI agents",
   "long_description": "KMP gives an agent one local binary for durable memory, temporal navigation and auditable proof. The embedded kernel needs no service, database or API key.",
   "author": {
