@@ -9,6 +9,7 @@
 #   bash scripts/mcp/install-kmp-plugin.sh --claude   # Claude Code only
 #   bash scripts/mcp/install-kmp-plugin.sh --dry-run  # show, change nothing
 #   bash scripts/mcp/install-kmp-plugin.sh --version 0.1.14 --codex
+#   bash scripts/mcp/install-kmp-plugin.sh --ask-fallback-languages en,fr
 #
 # Idempotent: re-running it is safe and reports "already wired" rather than
 # duplicating configuration. Works from a checkout or standalone, in which
@@ -26,6 +27,8 @@ DO_CLAUDE=0
 DRY_RUN=0
 STANDALONE=0
 TARGET_VERSION=""
+ASK_FALLBACK_LANGUAGES=""
+ASK_FALLBACK_LANGUAGES_SET=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -33,6 +36,11 @@ while [ $# -gt 0 ]; do
     --claude)  DO_CLAUDE=1 ;;
     --standalone) STANDALONE=1 ;;
     --dry-run) DRY_RUN=1 ;;
+    --ask-fallback-languages)
+      ASK_FALLBACK_LANGUAGES="${2:?--ask-fallback-languages needs comma-separated tags or none}"
+      ASK_FALLBACK_LANGUAGES_SET=1
+      shift
+      ;;
     --version) TARGET_VERSION="${2:?--version needs X.Y.Z}"; shift ;;
     -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -349,6 +357,27 @@ if [ "$DO_CLAUDE" -eq 1 ]; then
   say "   To register the server on its own, without the plugin:"
   say "     claude mcp add kmp --scope user \\"
   say "       --env KMP_MCP_BACKEND=embedded -- $BIN"
+fi
+
+# ---------------------------------------------------------- agent policy ----
+# Ownership and migration checks above must finish first. A setup rejected for
+# duplicate MCP owners must not leave an unrelated user policy half-applied.
+step "Agent policy"
+if [ "$DRY_RUN" -eq 1 ]; then
+  if [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
+    act "set semantic Ask fallback languages to $ASK_FALLBACK_LANGUAGES"
+  else
+    act "show the active semantic Ask fallback languages (default: en)"
+  fi
+elif [ "$ASK_FALLBACK_LANGUAGES_SET" -eq 1 ]; then
+  if ! "$BIN" config ask-fallback-languages "$ASK_FALLBACK_LANGUAGES"; then
+    echo "   this kmp-mcp predates configurable Ask fallback; update the engine first" >&2
+    exit 1
+  fi
+else
+  if ! "$BIN" config; then
+    say "   this kmp-mcp predates configurable Ask fallback; update the engine and re-run setup"
+  fi
 fi
 
 step "Check"

@@ -307,6 +307,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "export" | "import" => {}
         "document" => return run_document_command(args).await,
         "snapshot" => return run_snapshot_command(args).await,
+        "config" => return run_config_command(args),
         "uninstall" => return run_uninstall_command(args).await,
         "migrate" => return run_migrate_command(args).await,
         "share-memory" => return run_share_memory_command(first_argument).await,
@@ -348,6 +349,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
+                 `config [ask-fallback-languages <tags>]` / \
                  `uninstall [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
@@ -533,6 +535,8 @@ fn print_help() {
 Usage:\n  kmp-mcp                         Serve MCP over stdio\n  \
 kmp-mcp info                    What this binary is and which memory it opens\n  \
 kmp-mcp doctor                  Diagnose the setup and name the one thing to fix\n  \
+kmp-mcp config                  Show the agent orchestration policy\n  \
+kmp-mcp config ask-fallback-languages <tags|none>\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\n  \
@@ -546,6 +550,46 @@ kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
         kmp_mcp::banner::LARGE
     );
+}
+
+fn run_config_command(args: &[&str]) -> i32 {
+    match args {
+        [] => match kmp_mcp::agent_policy::load() {
+            Ok(policy) => {
+                print!("{}", kmp_mcp::agent_policy::display(&policy));
+                0
+            }
+            Err(error) => {
+                eprintln!("kmp-mcp: agent policy is invalid: {error}");
+                2
+            }
+        },
+        ["ask-fallback-languages" | "--ask-fallback-languages", value] => {
+            let languages = match kmp_mcp::agent_policy::parse_cli_languages(value) {
+                Ok(languages) => languages,
+                Err(error) => {
+                    eprintln!("kmp-mcp: {error}");
+                    return 2;
+                }
+            };
+            match kmp_mcp::agent_policy::store(&languages) {
+                Ok(policy) => {
+                    print!("{}", kmp_mcp::agent_policy::display(&policy));
+                    0
+                }
+                Err(error) => {
+                    eprintln!("kmp-mcp: could not store agent policy: {error}");
+                    2
+                }
+            }
+        }
+        _ => {
+            eprintln!(
+                "kmp-mcp: config takes no arguments, or `ask-fallback-languages <comma-separated-tags|none>`"
+            );
+            2
+        }
+    }
 }
 
 /// Named recovery points. Every operation except `create` reads only the

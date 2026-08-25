@@ -122,6 +122,11 @@ if ! grep -Fq '[✓] Hosts      Claude Code — kmp registered' <<<"${doctor_out
   printf '%s\n' "${doctor_output}" >&2
   exit 1
 fi
+if ! grep -Fq 'Agent      semantic Ask fallback: en (default)' <<<"${doctor_output}"; then
+  echo "KMP plugin smoke: doctor did not report the active agent language policy" >&2
+  printf '%s\n' "${doctor_output}" >&2
+  exit 1
+fi
 
 # A clean user config can still be poisoned by an enabled pre-rename Codex
 # plugin. Doctor must inspect the effective MCP inventory and name that stale

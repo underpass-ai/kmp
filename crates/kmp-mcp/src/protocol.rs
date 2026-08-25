@@ -40,6 +40,7 @@ pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
             "name": SERVER_NAME,
             "version": SERVER_VERSION
         },
+        "instructions": crate::agent_policy::mcp_instructions(),
         "metadata": {
             "backend": backend,
             "grpc_tls": grpc_tls
@@ -1289,6 +1290,9 @@ mod tests {
         assert_eq!(result["serverInfo"]["name"], SERVER_NAME);
         assert_eq!(result["metadata"]["backend"], "stub");
         assert_eq!(result["metadata"]["grpc_tls"], "mutual");
+        let instructions = result["instructions"].as_str().expect("instructions");
+        assert!(instructions.contains("Temporal intent has precedence"));
+        assert!(instructions.contains("Preserve evidence text"));
     }
 
     #[test]

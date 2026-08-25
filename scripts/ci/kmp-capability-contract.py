@@ -82,6 +82,16 @@ for skill in sorted((PLUGIN / "skills").glob("*/SKILL.md")):
     if not match or match.group(1) != skill.parent.name:
         fail(f"skill name does not match its directory: {skill}")
 
+native_workflow_clauses = {
+    "kmp-setup": ("scripts/kmp-doctor.sh", "scripts/kmp-update.sh --codex"),
+    "kmp-doctor": ("scripts/kmp-doctor.sh", "host wiring and ownership"),
+}
+for skill_name, clauses in native_workflow_clauses.items():
+    text = (PLUGIN / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")
+    for clause in clauses:
+        if clause not in text:
+            fail(f"{skill_name} lost its executable workflow clause: {clause}")
+
 # Codex currently attempts best-effort conversion of simple Claude commands.
 # Every command is deliberately parameterized so Codex consumes the native
 # skills above instead of materializing an accidental partial second surface.

@@ -167,7 +167,7 @@ RESPONSES="$(
   cd "${WORK_DIR}" && printf '%s\n' \
     '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"install-smoke","version":"1"}}}' \
     '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-    | "${SERVER_COMMAND}" 2>/dev/null
+    | env XDG_CONFIG_HOME="${WORK_DIR}/config" "${SERVER_COMMAND}" 2>/dev/null
 )" || fail "the declared command failed to start"
 
 # --- 5. the surface the user came for -----------------------------------
@@ -224,6 +224,18 @@ if server_version != expected_version:
         f"note: the started binary reports {server_version}, workspace is "
         f"{expected_version} (PATH fallback resolved an older install)"
     )
+
+instructions = initialize["result"].get("instructions", "")
+for clause in (
+    "Temporal intent has precedence",
+    "half-open UTC interval [start, end)",
+    "Active Ask fallback languages: en",
+    "translate only the query",
+    "Answer in the user's language",
+    "Preserve evidence text, refs, relation why, and source metadata byte-for-byte",
+):
+    if clause not in instructions:
+        sys.exit(f"initialize agent policy omitted: {clause}")
 
 print(f"started {len(advertised)} tools from a marketplace-shaped install")
 PYCHECK
@@ -334,6 +346,7 @@ for tool in ingest write_memory wake ask goto near rewind forward trace inspect;
     "$tool" "$tool" >> "${MIGRATION_HOME}/.codex/config.toml"
 done
 HOME="${MIGRATION_HOME}" \
+XDG_CONFIG_HOME="${MIGRATION_HOME}/.config" \
 XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
 KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
 KMP_CODEX_PLUGIN_LIST='' \
@@ -367,7 +380,8 @@ python3 -c 'import pathlib,sys,tomllib;tomllib.loads(pathlib.Path(sys.argv[1]).r
 
 # Codex copies the updater beside the binary installer rather than inside a
 # plugin root. Its one-command path must resolve that installed layout too.
-HOME="${MIGRATION_HOME}" XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
+HOME="${MIGRATION_HOME}" XDG_CONFIG_HOME="${MIGRATION_HOME}/.config" \
+XDG_DATA_HOME="${MIGRATION_HOME}/.local/share" \
   bash "${MIGRATION_HOME}/.local/share/kmp/bin/kmp-update.sh" \
     --codex --standalone --dry-run --version "$WORKSPACE_VERSION" \
     > "${WORK_DIR}/codex-update-dry-run.txt"
@@ -377,18 +391,47 @@ grep -q 'refresh the standalone Codex prompts' "${WORK_DIR}/codex-update-dry-run
 # Plugin-managed setup owns no global server, prompts, or AGENTS doctrine.
 PLUGIN_HOME="${WORK_DIR}/plugin-home"
 mkdir -p "$PLUGIN_HOME"
-HOME="$PLUGIN_HOME" XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+HOME="$PLUGIN_HOME" XDG_CONFIG_HOME="$PLUGIN_HOME/.config" \
+XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
 KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
 KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
   > "${WORK_DIR}/plugin-mode.txt"
 grep -q 'mode — plugin-managed' "${WORK_DIR}/plugin-mode.txt" \
   || fail "setup did not select plugin-managed mode"
+grep -q 'ask fallback languages: en (default)' "${WORK_DIR}/plugin-mode.txt" \
+  || fail "setup did not report the default semantic Ask fallback"
 if [ -f "$PLUGIN_HOME/.codex/config.toml" ] \
     || [ -d "$PLUGIN_HOME/.codex/prompts" ] \
     || [ -f "$PLUGIN_HOME/.codex/AGENTS.md" ]; then
   fail "plugin-managed setup created standalone Codex wiring"
 fi
+if [ -f "$PLUGIN_HOME/.config/kmp/config.toml" ]; then
+  fail "reading the default agent policy created a user config"
+fi
+
+# Setup persists an explicitly selected fallback list, and a later upgrade
+# without that flag leaves the user-owned policy byte-for-byte unchanged.
+HOME="$PLUGIN_HOME" XDG_CONFIG_HOME="$PLUGIN_HOME/.config" \
+XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+    --ask-fallback-languages en,fr > "${WORK_DIR}/plugin-policy.txt"
+grep -q 'ask fallback languages: en, fr (configured)' "${WORK_DIR}/plugin-policy.txt" \
+  || fail "setup did not report the configured semantic Ask fallback"
+grep -qx 'ask_fallback_languages = \["en", "fr"\]' \
+  "$PLUGIN_HOME/.config/kmp/config.toml" \
+  || fail "setup did not persist the configured semantic Ask fallback"
+cp "$PLUGIN_HOME/.config/kmp/config.toml" "$WORK_DIR/policy-before.toml"
+HOME="$PLUGIN_HOME" XDG_CONFIG_HOME="$PLUGIN_HOME/.config" \
+XDG_DATA_HOME="$PLUGIN_HOME/.local/share" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+    > "${WORK_DIR}/plugin-policy-upgrade.txt"
+cmp "$WORK_DIR/policy-before.toml" "$PLUGIN_HOME/.config/kmp/config.toml" \
+  || fail "setup without a policy flag changed the configured fallback list"
 
 # A collision is diagnosed before config mutation. The plugin remains the
 # intended owner and setup names the exact command that removes the duplicate.
@@ -398,7 +441,8 @@ printf '%s\n' '[mcp_servers.kmp]' 'command = "/global/kmp-mcp"' \
   'env = { KMP_MCP_DATA_DIR = "/wrong/store" }' \
   > "$COLLISION_HOME/.codex/config.toml"
 cp "$COLLISION_HOME/.codex/config.toml" "$WORK_DIR/collision-before.toml"
-if HOME="$COLLISION_HOME" XDG_DATA_HOME="$COLLISION_HOME/.local/share" \
+if HOME="$COLLISION_HOME" XDG_CONFIG_HOME="$COLLISION_HOME/.config" \
+   XDG_DATA_HOME="$COLLISION_HOME/.local/share" \
    KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
    KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
      bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
@@ -409,6 +453,18 @@ cmp "$WORK_DIR/collision-before.toml" "$COLLISION_HOME/.codex/config.toml" \
   || fail "collision setup changed config before ownership was resolved"
 grep -q 'codex mcp remove kmp' "$WORK_DIR/collision.txt" \
   || fail "collision setup did not name the owner repair"
+
+if HOME="$COLLISION_HOME" XDG_CONFIG_HOME="$COLLISION_HOME/.config" \
+   XDG_DATA_HOME="$COLLISION_HOME/.local/share" \
+   KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+   KMP_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+     bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex \
+       --ask-fallback-languages fr > "$WORK_DIR/collision-policy.txt" 2>&1; then
+  fail "plugin/global collision with a policy update unexpectedly succeeded"
+fi
+if [ -f "$COLLISION_HOME/.config/kmp/config.toml" ]; then
+  fail "collision setup changed the agent policy before ownership was resolved"
+fi
 
 # An old/new policy conflict fails atomically and preserves the source file.
 CONFLICT_HOME="${WORK_DIR}/conflict-home"
@@ -422,7 +478,8 @@ printf '%s\n' \
   'approval_mode = "deny"' \
   > "$CONFLICT_HOME/.codex/config.toml"
 cp "$CONFLICT_HOME/.codex/config.toml" "$WORK_DIR/conflict-before.toml"
-if HOME="$CONFLICT_HOME" XDG_DATA_HOME="$CONFLICT_HOME/.local/share" \
+if HOME="$CONFLICT_HOME" XDG_CONFIG_HOME="$CONFLICT_HOME/.config" \
+   XDG_DATA_HOME="$CONFLICT_HOME/.local/share" \
    KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" KMP_CODEX_PLUGIN_LIST='' \
      bash "${ROOT_DIR}/scripts/mcp/install-kmp-plugin.sh" --codex --standalone \
      > "$WORK_DIR/conflict.txt" 2>&1; then

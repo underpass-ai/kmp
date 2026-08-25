@@ -252,6 +252,106 @@ fn info_and_doctor_report_the_data_dir_without_creating_it() {
 }
 
 #[test]
+fn config_persists_and_initialize_reports_the_agent_policy() {
+    let config_home = tempfile::tempdir().expect("config home");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    let initial = Command::new(bin)
+        .arg("config")
+        .env("XDG_CONFIG_HOME", config_home.path())
+        .output()
+        .expect("config runs");
+    assert!(initial.status.success());
+    let initial = String::from_utf8_lossy(&initial.stdout);
+    assert!(initial.contains("ask fallback languages: en (default)"));
+    assert!(!config_home.path().join("kmp/config.toml").exists());
+
+    let changed = Command::new(bin)
+        .args(["config", "ask-fallback-languages", "EN,fr"])
+        .env("XDG_CONFIG_HOME", config_home.path())
+        .output()
+        .expect("config update runs");
+    assert!(changed.status.success());
+    let changed = String::from_utf8_lossy(&changed.stdout);
+    assert!(changed.contains("ask fallback languages: en, fr (configured)"));
+    assert_eq!(
+        std::fs::read_to_string(config_home.path().join("kmp/config.toml"))
+            .expect("config written"),
+        "ask_fallback_languages = [\"en\", \"fr\"]\n"
+    );
+
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let output = run_binary(
+        &[
+            (
+                "XDG_CONFIG_HOME",
+                config_home.path().to_str().expect("utf8 config path"),
+            ),
+            (
+                "KMP_MCP_DATA_DIR",
+                data_dir.path().to_str().expect("utf8 data path"),
+            ),
+            ("KMP_VIEWER_ADDR", "off"),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n",
+    );
+    assert!(output.status.success());
+    let response: Value = serde_json::from_slice(&output.stdout).expect("initialize response");
+    let instructions = response["result"]["instructions"]
+        .as_str()
+        .expect("agent instructions");
+    assert!(instructions.contains("Active Ask fallback languages: en, fr"));
+    assert!(instructions.contains("Temporal intent has precedence"));
+    assert!(
+        instructions.contains(
+            "Preserve evidence text, refs, relation why, and source metadata byte-for-byte"
+        )
+    );
+
+    std::fs::write(
+        config_home.path().join("kmp/config.toml"),
+        "ask_fallback_languages = en\n",
+    )
+    .expect("invalid policy fixture written");
+    let invalid = Command::new(bin)
+        .arg("config")
+        .env("XDG_CONFIG_HOME", config_home.path())
+        .output()
+        .expect("invalid config is reported");
+    assert_eq!(invalid.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("agent policy is invalid"));
+
+    let safe = run_binary(
+        &[
+            (
+                "XDG_CONFIG_HOME",
+                config_home.path().to_str().expect("utf8 config path"),
+            ),
+            (
+                "KMP_MCP_DATA_DIR",
+                data_dir.path().to_str().expect("utf8 data path"),
+            ),
+            ("KMP_VIEWER_ADDR", "off"),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n",
+    );
+    let safe: Value = serde_json::from_slice(&safe.stdout).expect("safe initialize response");
+    let safe_instructions = safe["result"]["instructions"]
+        .as_str()
+        .expect("safe fallback instructions");
+    assert!(safe_instructions.contains("Do not perform cross-language Ask fallback"));
+
+    let doctor = Command::new(bin)
+        .arg("doctor")
+        .env("XDG_CONFIG_HOME", config_home.path())
+        .env("KMP_MCP_DATA_DIR", data_dir.path())
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("doctor reports invalid agent policy");
+    assert!(String::from_utf8_lossy(&doctor.stdout).contains("agent policy is invalid"));
+}
+
+#[test]
 fn cli_surface_version_export_import_and_errors() {
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
 

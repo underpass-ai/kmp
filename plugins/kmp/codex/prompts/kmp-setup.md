@@ -37,6 +37,19 @@ no configuration — an unconfigured `kmp-mcp` runs the embedded kernel:
 command = "kmp-mcp"
 ```
 
+Show the agent language policy as part of setup:
+
+```bash
+kmp-mcp config
+```
+
+The default is one bounded English retry for genuinely semantic `kmp_ask`
+after the user's-language query returns `UNKNOWN`. Configure another list with
+`kmp-mcp config ask-fallback-languages <comma-separated-tags|none>`; setup and
+upgrades preserve it. Temporal requests never use language fallback. Answer in
+the user's language, while leaving stored evidence, refs, relation `why`, and
+source metadata byte-for-byte unchanged.
+
 Then re-run the doctor and tell me whether it is usable now. One line for what
 was already fine, one for what you changed, and the next command if anything
 is still missing.

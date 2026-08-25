@@ -1,3 +1,4 @@
+pub mod agent_policy;
 pub mod banner;
 pub mod clock;
 pub mod diagnostics;

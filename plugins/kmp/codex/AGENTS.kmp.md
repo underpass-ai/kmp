@@ -9,11 +9,20 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   `kmp_wake {about}` before reading files to reconstruct context. Abouts
   are stable ids: `project:<name>`, `incident:<id>`. An empty wake packet
   means there is no memory yet — start writing one.
-- **Ask, then navigate, then audit.** `kmp_ask` for targeted questions;
-  `kmp_goto` / `kmp_near` / `kmp_rewind` / `kmp_forward` to move
-  through history by timestamp, sequence or ref; `kmp_trace` for the proof
-  path between two refs; `kmp_inspect` for one ref's object, links and
-  evidence.
+- **Route before retrieving; temporal intent wins.** `yesterday`, `today`,
+  `since`, `before`, `after`, `during`, explicit dates/timestamps and release
+  windows — in the user's language — use `kmp_goto` / `kmp_near` /
+  `kmp_rewind` / `kmp_forward` before `kmp_ask`. Resolve the user's timezone
+  to a half-open UTC interval `[start, end)` and follow temporal pagination to
+  completion or report its exact continuation.
+- **Ask semantically, with bounded language fallback.** For a non-temporal
+  question, `kmp_ask` in the user's language first. On `UNKNOWN` or evidence
+  that does not answer, retry once per fallback language configured by
+  `kmp-mcp config`. Translate only the query, answer in the user's language,
+  and preserve stored evidence, refs, relation `why` and source metadata
+  byte-for-byte. `UNKNOWN` remains valid after the bounded retries.
+- **Then audit.** `kmp_trace` proves a path between refs; `kmp_inspect` shows
+  one ref's object, links and evidence.
 - **Write decisions, constraints and outcomes — never transcripts.** Memory
   is the durable shape of the work, not a log of the conversation. Prefer
   `kmp_write_memory`, which validates intent and relation quality before

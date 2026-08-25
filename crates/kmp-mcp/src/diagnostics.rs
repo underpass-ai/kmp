@@ -437,6 +437,30 @@ fn viewer_finding() -> Finding {
     }
 }
 
+fn agent_policy_finding() -> Finding {
+    match crate::agent_policy::load() {
+        Ok(policy) => {
+            let languages = if policy.ask_fallback_languages.is_empty() {
+                "none".to_string()
+            } else {
+                policy.ask_fallback_languages.join(", ")
+            };
+            Finding::new(
+                Level::Ok,
+                format!(
+                    "semantic Ask fallback: {languages} ({})",
+                    policy.source_label()
+                ),
+            )
+            .with(format!("config: {}", policy.path.display()))
+            .with("temporal intent bypasses Ask and navigates time first")
+        }
+        Err(error) => Finding::new(Level::Warn, "agent policy is invalid")
+            .with(error)
+            .with("repair it with `kmp-mcp config ask-fallback-languages en`"),
+    }
+}
+
 /// `info` — the facts, with no verdict: what this binary is and what memory it
 /// would open here.
 pub fn info() -> String {
@@ -466,6 +490,7 @@ pub fn info() -> String {
     )
     .with(names.join(" "));
     section(&mut out, "Tools", &[surface]);
+    section(&mut out, "Agent", &[agent_policy_finding()]);
     section(&mut out, "Viewer", &[viewer_finding()]);
     section(&mut out, "Memories", &memories_finding());
 
@@ -525,6 +550,9 @@ pub fn doctor() -> (String, i32) {
     };
     let surface_level = surface.level;
     section(&mut out, "Tools", &[surface]);
+    let agent_policy = agent_policy_finding();
+    let agent_policy_level = agent_policy.level;
+    section(&mut out, "Agent", &[agent_policy]);
     section(&mut out, "Viewer", &[viewer_finding()]);
 
     let mut history_level = Level::Ok;
@@ -550,6 +578,7 @@ pub fn doctor() -> (String, i32) {
         surface_level,
         backend.level,
         history_level,
+        agent_policy_level,
     ]
     .into_iter()
     .max_by_key(|level| match level {

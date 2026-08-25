@@ -4,6 +4,10 @@ moves, not the files.
 If I named an about, use it. If I named a point in time, catch up from there.
 Otherwise work it out, and ask rather than guess if it is ambiguous.
 
+This is temporal intent. Resolve my timezone and turn a bounded calendar
+period into a half-open UTC interval `[start, end)`. Do not call `kmp_ask`;
+Ask is semantic relevance retrieval, not an interval query.
+
 **Finding the frontier.** `kmp_rewind` with `from: { time: <now> }`,
 `limit: { entries: 1 }` and `budget: { detail: "full" }`. The newest entry
 comes back with its `coordinates[].observed_at` — that is when this memory was
@@ -14,7 +18,9 @@ and stop.
 **The delta.** `kmp_forward` from that timestamp with
 `budget: { detail: "full" }` returns exactly the entries after it, in order.
 `page.has_more` tells you whether the slice was cut; if it was, say so rather
-than presenting a partial list as the whole delta.
+than presenting a partial list as the whole delta. Follow `page.next_cursor`
+through `from.ref`, with the other arguments unchanged, until the exclusive
+end bound is reached or report the exact continuation.
 
 For anything that changed an earlier decision — `contradicts`, `supersedes`,
 `corrects` — follow it with `kmp_inspect` and tell me what it replaced.

@@ -11,6 +11,10 @@ work belongs to, and if that is ambiguous, ask rather than guess. `$2` is the
 point to catch up from — a timestamp, or a phrase like "yesterday" you resolve
 to one.
 
+This is temporal intent. Resolve the user's timezone and turn a bounded
+calendar period into a half-open UTC interval `[start, end)`. Do not call
+`kmp_ask`; Ask is semantic relevance retrieval, not an interval query.
+
 ## Without a `since`
 
 Find the frontier first, then decide.
@@ -29,8 +33,10 @@ Find the frontier first, then decide.
 `kmp_forward` with `from: { time: <since> }` and
 `budget: { detail: "full" }` returns exactly the entries after that moment,
 in order, with their coordinates. `page.has_more` tells you whether the slice
-was cut — if it was, say so rather than presenting a partial list as the whole
-delta.
+was cut. Follow `page.next_cursor` through `from.ref`, keeping other arguments
+unchanged, until the exclusive end bound is reached. If a cap prevents that,
+report the exact continuation rather than presenting a partial list as the
+whole delta.
 
 For anything that changed a decision — a `contradicts`, a `supersedes`, a
 `corrects` — follow it with `kmp_inspect` and report what it replaced. That

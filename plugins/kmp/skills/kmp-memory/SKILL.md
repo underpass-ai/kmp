@@ -40,6 +40,40 @@ would be state about the reader rather than about the work. The bookmark is
 yours to hold. `resume_cursor` is `null` when nothing in the packet carries a
 temporal coordinate.
 
+## Route before retrieving: temporal intent wins
+
+Classify the request before choosing `kmp_ask`. `yesterday`, `today`, `since`,
+`before`, `after`, `during`, an explicit date or timestamp, and a release
+window are temporal intent. The same applies in the user's language — for
+example `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Enter the
+temporal lane first; do not spend an Ask call and do not present Ask as an
+exhaustive interval query.
+
+Resolve relative dates in the user's timezone. If the timezone is genuinely
+unknown and changes the answer, ask for it. Convert a bounded calendar window
+to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
+`kmp_near`, `kmp_rewind` or `kmp_forward`, keep only entries whose effective
+time is inside the interval, and continue while `page.has_more`. Put the
+returned `page.next_cursor` in the next move's cursor field — for example
+`from.ref` for `kmp_forward` — while keeping the other arguments unchanged.
+Stop after reaching the end bound. If a budget or selection cap prevents a
+complete interval, report the exact continuation action; never call a partial
+page the whole period.
+
+## Cross-language fallback is only for semantic Ask
+
+For a non-temporal semantic question, call `kmp_ask` in the user's language.
+If it returns `UNKNOWN`, or retrieved evidence does not actually answer, retry
+once per language in the configured fallback list. Translate only the query;
+never translate or rewrite stored evidence, refs, relation `why`, or source
+metadata. Cite the original evidence byte-for-byte and answer in the user's
+language. Stop after the configured list: `UNKNOWN` remains a valid final
+result.
+
+The active list comes from the MCP initialize instructions and is visible with
+`kmp-mcp config`. The default is `en`; setup can change or disable it. Do not
+apply this fallback to a temporal interval.
+
 ## The ten moves
 
 **Entry**
@@ -47,7 +81,7 @@ temporal coordinate.
 | Move | Use it when |
 | --- | --- |
 | `kmp_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
-| `kmp_ask` | You have a specific question. Deterministic evidence answer, or `UNKNOWN`. |
+| `kmp_ask` | You have a non-temporal semantic question. Deterministic evidence answer, or `UNKNOWN`. |
 
 **Navigate time** — all four take a timestamp, a sequence number, or a ref.
 
@@ -74,8 +108,10 @@ is the bookmark.
 
 Then the delta: `kmp_forward` from that timestamp — or from a plain
 "since Friday" the user gives you — returns exactly what came after, in order.
-`page.has_more` says whether the slice was cut; a truncated delta reported as
-the whole one is worse than no delta.
+For a bounded interval, stop at its exclusive UTC end. `page.has_more` says
+whether the slice was cut; follow `page.next_cursor` until complete or report
+the continuation. A truncated delta reported as the whole one is worse than no
+delta.
 
 Carry the newest timestamp forward into your own notes or your next write. The
 kernel does not remember where each reader got to, on purpose: a memory that
