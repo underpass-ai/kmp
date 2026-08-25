@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-MANIFEST="${ROOT}/docs/showcase/claims.tsv"
+MANIFEST="${ROOT}/archive/docs/showcase/claims.tsv"
 BIN="${KMP_MCP_BIN:-${1:-${ROOT}/target/debug/kmp-mcp}}"
 
 [ -x "$BIN" ] || {

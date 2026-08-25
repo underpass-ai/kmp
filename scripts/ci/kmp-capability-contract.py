@@ -125,8 +125,7 @@ if "For you — ten commands" not in readme:
 ownership_docs = [
     ROOT / "README.md",
     PLUGIN / "README.md",
-    ROOT / "docs" / "operations" / "embedded-hosts.md",
-    ROOT / "docs" / "operations" / "mcp-stdio.md",
+    ROOT / "docs" / "embedded" / "README.md",
 ]
 for asset in ownership_docs:
     text = asset.read_text(encoding="utf-8")

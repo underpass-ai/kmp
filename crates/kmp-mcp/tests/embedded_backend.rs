@@ -624,7 +624,7 @@ fn language_fallback_seed_arguments() -> Value {
                 "id": "evidence:embedded-redb-choice",
                 "supports": ["decision:embedded-redb"],
                 "text": "We chose redb because one writer matched one agent per project.",
-                "source": "docs/adr/ADR-011.md:42",
+                "source": "archive/docs/adr/ADR-011.md:42",
                 "metadata": {"language": "en", "digest": "sha256:language-fixture"}
             }]
         }
@@ -673,7 +673,7 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         .find(|evidence| evidence["id"] == "detail:evidence:embedded-redb-choice")
         .expect("English retry cites the stored evidence");
     assert_eq!(evidence["text"], TEXT);
-    assert_eq!(evidence["source"], "docs/adr/ADR-011.md:42");
+    assert_eq!(evidence["source"], "archive/docs/adr/ADR-011.md:42");
     assert_eq!(evidence["metadata"]["language"], "en");
     assert_eq!(evidence["metadata"]["digest"], "sha256:language-fixture");
     assert!(

@@ -26,7 +26,7 @@ INGEST='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_inge
     "relations":[],
     "evidence":[{"id":"evidence:spike","supports":["decision:redb"],
       "text":"Spike: redb reopen 2.9ms vs fjall 1329ms on 102k events.",
-      "source":"docs/adr/spikes/e0-storage-spike/"}]}}}}'
+      "source":"archive/docs/adr/spikes/e0-storage-spike/"}]}}}}'
 call "$(echo "$INGEST" | tr -d '\n')" | grep -o '"read_after_write_ready":[a-z]*'
 
 echo "== session 2: a fresh process recovers the memory =="

@@ -1,0 +1,541 @@
+\documentclass[11pt]{article}
+\usepackage[preprint]{acl}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{booktabs}
+\usepackage{url}
+
+\setlength{\emergencystretch}{2em}
+\newcommand{\code}[1]{\path{#1}}
+\newcommand{\metricbar}[1]{\rule{#1em}{0.8ex}}
+
+\title{Explanatory Graph Context Rehydration for Agentic Systems:\\Bounded Retrieval Across Pull and Event-Driven Runtimes}
+
+\author{Anonymous ACL submission}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Agent systems often assemble context through runtime-specific prompts,
+application endpoints, and ad hoc caches, making context management difficult
+to reuse, audit, or evaluate independently of execution. We present
+\texttt{rehydration-kernel}, a graph-native context service that reconstructs
+bounded operational context from projected state and exposes it through query
+and asynchronous interfaces. The kernel models context as nodes with optional
+detail plus typed relationship explanations that preserve why a downstream node
+exists, including rationale, motivation, method, and decision linkage. We
+evaluate the system with container-backed end-to-end workflows and four
+explanatory use cases: failure diagnosis with rehydration-point recovery,
+reconstruction of why a task was implemented in a particular way, interrupted
+handoff with resumable execution, and constraint-preserving retrieval under
+token pressure. Across these use cases, full explanatory context achieves
+\mbox{1.0} explanation roundtrip fidelity and \mbox{1.0} causal
+reconstruction in the full-detail setting, while retaining \mbox{1.0} causal
+reconstruction under a \mbox{192}-token budget in the constraint-preserving
+case. Removing node detail preserves explanation fidelity but reduces causal
+reconstruction to \mbox{0.857}, while replacing explanatory relations with
+structural edges reduces causal reconstruction to \mbox{0.143}, eliminates
+rehydration-point recovery, and fails to preserve the dominant reason under
+budget pressure. These results suggest that explanatory relationships carry
+the dominant signal for restartable and auditable agent workflows, while node
+detail primarily improves completeness. An LLM-in-the-loop evaluation with
+GPT-5.4 and Claude Opus~4 across 18 scale--domain--relation configurations
+confirms that explanatory context achieves 94\% on task, restart, and rationale
+metrics versus 61\% for structural-only bundles, with the gap widening at
+larger graph scales.
+\end{abstract}
+
+\section{Introduction}
+
+Context management remains an under-specified systems problem in agent
+architectures. In many practical stacks, the runtime that plans or executes
+actions also assembles its own context from prompts, application APIs, caches,
+and task-local heuristics. This coupling makes context assembly difficult to
+reuse across runtimes, difficult to audit after the fact, and difficult to
+evaluate as a system component in its own right.
+
+This paper explores a different separation of concerns. With
+\texttt{rehydration-kernel}, context rehydration is isolated into a reusable
+kernel that reconstructs bounded graph context from projection state. Runtimes
+consume already rehydrated context through stable query or event boundaries
+instead of rebuilding that context inside each execution loop.
+
+Our central claim is not merely that graph structure can hold context. It is
+that explanatory relationships materially improve the usefulness of rehydrated
+context for agent workflows. In our model, a relationship does not only encode
+connectivity between two nodes. It may also preserve why the downstream node
+exists, what decision produced it, what motivation drove it, or what method
+verified it.
+
+This distinction matters for operational questions that arise in realistic
+agent systems: why was a task implemented in a particular way, which
+relationships led to an incorrect implementation, and from which upstream node
+should the system rehydrate and retry.
+
+The paper makes three contributions. First, it presents a reusable kernel
+architecture for bounded graph context rehydration over projected state.
+Second, it introduces an explanatory relationship model that preserves
+transition-level intent without moving domain ownership into the kernel.
+Third, it provides a reproducible artifact showing that explanatory relations
+contribute more to causal reconstruction and recovery than node detail alone.
+
+\section{Problem Statement}
+
+An agent needs bounded, actionable context, not raw graph storage. A raw graph
+alone does not define what part of the graph should be selected, what
+explanatory fields should survive retrieval, how to preserve detail under
+token pressure, or how to present restartable reasoning context to the
+runtime.
+
+We therefore define the problem as follows: given projected graph state and
+optional node detail, construct a bounded context bundle that preserves enough
+local structure and explanation for an agent runtime to act, diagnose,
+justify, or recover.
+
+The design constraints in this repository are deliberate. The kernel must
+remain generic and avoid product-specific nouns, support both pull and
+event-driven entrypoints, avoid inventing semantic motivation on its own, and
+preserve explanations emitted by an agent or domain application.
+
+\section{Context Model}
+
+The context model has four primitives: a root node that anchors retrieval,
+neighbor nodes that define the selected local graph, relationships between
+nodes, and optional extended node detail stored separately from the graph.
+
+The model becomes stronger when relationships carry typed explanation. In the
+current implementation, representative explanation fields include
+\code{semantic_class}, \code{rationale}, \code{motivation}, and
+\code{method}. The model also preserves \code{decision_id},
+\code{caused_by_node_id}, \code{evidence}, \code{confidence}, and
+\code{sequence}. This is an application-supplied explanation of transition
+between nodes. The kernel preserves it, stores it, rehydrates it, and renders
+it. The kernel does not infer it.
+
+In addition to relationship explanation, the model supports provenance
+metadata on nodes: \code{source_kind} (human, agent, projection, derived),
+\code{source_agent}, and \code{observed_at}. Provenance flows through the
+same path as explanation: emitted in projection events, persisted in Neo4j,
+rehydrated in bundles, and surfaced in rendered context. When present, the
+rendering pipeline annotates nodes with provenance brackets (e.g.,
+\texttt{[source:agent agent=diagnostics observed=2026-03-25T14:00Z]}) so
+that downstream consumers can assess source trust without additional queries.
+
+Provenance is an observability feature, not an inference signal.
+Benchmarking with differentiated provenance (human sources on root nodes,
+agent on decisions, projection on distractors) shows no improvement in
+LLM accuracy: explanatory bundles score 18/18 with or without provenance,
+and the \mbox{${\sim}22\%$} token overhead from provenance brackets
+slightly degrades structural scores. The value of provenance is in
+auditability for human operators and trust-assessment systems, not in
+downstream model performance.
+
+That split matches the domain boundary we want. The domain that knows why a
+task exists or why a decision was taken is not the kernel. The kernel is the
+infrastructure that keeps that explanation and provenance intact across
+projection, storage, query, and rendering boundaries.
+
+\section{System Architecture}
+
+The repository implements the model as a graph-native context service with
+async projection inputs over NATS, graph state in Neo4j, extended node detail
+in Valkey, and query serving over gRPC. Runtime execution remains outside the
+kernel boundary.
+
+This architecture enables the same rehydrated context to be consumed by
+pull-driven runtimes that query context before execution and event-driven
+runtimes triggered from generated context bundles. The current quantitative
+paper harness focuses on explanatory use cases, while broader integration
+suites in the repository demonstrate cross-runtime and event-driven
+operability.
+
+\section{Related Work}
+
+Our work is closest to four lines of prior work, but differs from each in
+system boundary and objective.
+
+First, GraphRAG-style systems use graph structure to organize retrieval for
+language models. Edge et al. cast GraphRAG as graph-based query-focused
+summarization over large corpora~\citep{edge2024localglobal}. That work is
+close in its use of graph-shaped context, but it is document-centric. Our
+kernel instead rehydrates projected operational state and serves it as runtime
+context rather than constructing a graph from retrieved text.
+
+Second, event-graph and narrative-graph approaches preserve richer temporal and
+causal structure than plain knowledge graph triples. Our explanatory
+relationship model follows that direction by preserving why a downstream node
+exists rather than only which node comes next. ExCAR is especially relevant
+because it demonstrates the value of event-graph evidence for explainable
+causal reasoning~\citep{du2021excar}.
+
+Third, hyper-relational knowledge graph research shows that relation qualifiers
+carry contextual signal that plain triples lose. HAHE and HOLMES reinforce
+this point for representation learning and multi-hop reasoning over qualified
+relations~\citep{luo2023hahe,panda2024holmes}. Text2NKG extends the same
+direction by supporting n-ary and event-based schemas that more closely match
+how operational workflows are described in practice~\citep{luo2024text2nkg}.
+Our contribution is to apply this principle in a systems setting where
+qualified relationships must survive projection, storage, query, and rendered
+context boundaries.
+
+Finally, there is a semantic-modeling precedent for separating contextual and
+conceptual information. GKR uses a layered graph representation with a
+dedicated contextual layer rather than collapsing all semantics into a single
+flat structure~\citep{kalouli2018gkr}. Our model is not a semantic parser, but
+the split is aligned: node identity and node detail remain distinct from
+relationship-level explanation about why a transition occurred.
+
+\section{Experimental Setup}
+
+\subsection{Use Cases}
+
+We evaluate four explanatory use cases.
+
+\paragraph{UC1. Failure diagnosis and rehydration-point recovery.}
+Given a graph that implemented a task incorrectly, can the system isolate the
+suspect relationships and identify the upstream node from which context should
+be rehydrated for a corrected retry?
+
+\paragraph{UC2. Why-was-this-implemented-like-this analysis.}
+Given a task that was implemented in a specific way, can the system
+reconstruct the reason for that implementation choice from graph context
+alone?
+
+\paragraph{UC3. Interrupted handoff and resumable execution.}
+Given a task interrupted after a blocked execution step, can the system
+recover why the task was handed off and from which upstream node execution
+should resume?
+
+\paragraph{UC4. Constraint-preserving retrieval under token pressure.}
+Given a task chosen under a binding safety constraint, can the system preserve
+the dominant reason when the rendered context is restricted to a small token
+budget?
+
+\subsection{Variants}
+
+UC1--UC3 are executed under three variants: full explanatory context with
+detail, full explanatory context without detail, and structural-only context
+with detail. UC4 adds a budgeted comparison: a full explanatory baseline at
+\mbox{4096} tokens, a full explanatory variant at \mbox{192} tokens, a full
+explanatory variant at \mbox{96} tokens, and a structural-only variant at
+\mbox{96} tokens. This isolates the contribution of explanatory relationships
+from the contribution of extended node detail and tests whether those
+relationships survive bounded retrieval.
+
+\subsection{Metrics}
+
+The current harness records explanation roundtrip fidelity, detail roundtrip
+fidelity, causal reconstruction score, rendered token count,
+rehydration-point hit, retry-success hit, retry-success rate,
+dominant-reason hit, and suspect relationship count.
+
+\subsection{Reproducible Artifact}
+
+The paper artifact is generated by running \code{scripts/ci/integration-paper-use-cases.sh}
+with \code{bash}. It writes \code{summary.json}, \code{results.md}, \code{results.csv}, and
+\code{results-figures.md} under \code{archive/artifacts/paper-use-cases/}.
+
+\section{Results}
+
+Table~\ref{tab:main-results} summarizes the current explanatory-use-case
+results. The primary table keeps only the main comparison used in the paper's
+central claim. Detail-only and meso-scale ablations are moved to
+Appendix~\ref{sec:extended-artifact-results}.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llrrrrrrr}
+\toprule
+Use case & Variant & Budget & Expl. fid. & Detail fid. & Causal & Retry & Aux. hit & Tokens \\
+\midrule
+UC1 & full+detail & 4096 & 1.000 & 1.000 & 1.000 & 1 & 1 & 282 \\
+UC1 & full-no-detail & 4096 & 1.000 & 0.000 & 0.857 & 1 & 1 & 252 \\
+UC1 & detail-only & 4096 & 0.000 & 1.000 & 0.429 & 0 & 0 & 245 \\
+UC1 & structural & 4096 & 0.000 & 1.000 & 0.143 & 0 & 0 & 200 \\
+UC2 & full+detail & 4096 & 1.000 & 1.000 & 1.000 & n/a & n/a & 285 \\
+UC2 & full-no-detail & 4096 & 1.000 & 0.000 & 0.857 & n/a & n/a & 255 \\
+UC2 & detail-only & 4096 & 0.000 & 1.000 & 0.429 & n/a & n/a & 247 \\
+UC2 & structural & 4096 & 0.000 & 1.000 & 0.143 & n/a & n/a & 203 \\
+UC3 & full+detail & 4096 & 1.000 & 1.000 & 1.000 & 1 & 1 & 575 \\
+UC3 & full-no-detail & 4096 & 1.000 & 0.000 & 0.857 & 1 & 1 & 535 \\
+UC3 & detail-only & 4096 & 0.000 & 1.000 & 0.429 & 0 & 0 & 441 \\
+UC3 & structural & 4096 & 0.000 & 1.000 & 0.143 & 0 & 0 & 374 \\
+UC4 & full+detail & 4096 & 1.000 & 1.000 & 1.000 & n/a & 1 & 223 \\
+UC4 & full@192 & 192 & 1.000 & 0.000 & 1.000 & n/a & 1 & 175 \\
+UC4 & full@96 & 96 & 1.000 & 0.000 & 1.000 & n/a & 1 & 89 \\
+UC4 & structural@96 & 96 & 0.000 & 0.000 & 0.125 & n/a & 0 & 73 \\
+\bottomrule
+\end{tabular}
+\caption{Explanatory-use-case results from the current repository artifact.
+`Retry' reports corrected retry or resume success for UC1 and UC3. `Aux. hit'
+reports rehydration or continuation-point hit for UC1 and UC3, and
+dominant-reason hit for UC4.}
+\label{tab:main-results}
+\end{table*}
+
+\subsection{Explanatory Relations Carry the Dominant Signal}
+
+The cleanest result is the size and consistency of the degradation. In UC1,
+UC2, and UC3, removing explanation while keeping detail reduces causal
+reconstruction from \mbox{1.0} to \mbox{0.143}. Removing detail while
+preserving explanation reduces it only to \mbox{0.857}. The dominant loss is
+therefore not absence of detail. It is absence of relationship explanation.
+
+\subsection{Detail Improves Completeness, Not Primary Intent}
+
+Detail still matters. The repeated drop from \mbox{1.0} to \mbox{0.857} in
+UC1--UC3 shows that explanatory relations do not fully replace node detail.
+However, detail behaves as a completeness amplifier rather than the primary
+carrier of intent. The same pattern appears in UC4: at a \mbox{192}-token
+budget, the explanatory variant loses detail fidelity entirely while
+preserving both causal reconstruction and the dominant reason. This suggests
+that token budgets should prefer preserving explanatory edges before
+preserving every extended detail block.
+
+\subsection{Operational Continuation Depends on Explanation Fields}
+
+UC1 and UC3 show the operational value of the model. In both cases the
+explanatory variants recover the correct upstream continuation point, while
+the structural-only variants do not. That is strong evidence that fields such
+as \texttt{decision\_id} and \texttt{caused\_by\_node\_id} are carrying the
+restart or handoff signal.
+
+The closed-loop signal is sharper than continuation hit alone. In both UC1
+and UC3, the explanatory variants reach \mbox{1.0} retry-success rate,
+including the no-detail setting. Structural-only and detail-only variants stay
+at \mbox{0.0}. This matters because detail-only context can still recover part
+of the rationale text, but it does not expose a stable machine-readable anchor
+from which the system can restart or resume execution.
+
+\subsection{Bounded Retrieval Preserves Reasons When Explanation Survives}
+
+UC4 provides the strongest bounded-retrieval result. The full explanatory
+context rendered at \mbox{192} tokens still reaches \mbox{1.0} causal
+reconstruction and preserves the dominant reason, even though detail fidelity
+falls to \mbox{0.0}. The structural-only variant at \mbox{96} tokens drops to
+\mbox{0.125}. This is exactly the systems behavior we want: when budget forces
+truncation, explanation should survive before detail.
+
+\subsection{Shorter Context Can Be Worse Context}
+
+Structural-only context is shorter, but materially less useful. In UC1 the
+rendered context falls from 282 to 200 tokens. In UC2 it falls from 285 to 203.
+In UC3 it falls from 575 to 374. In UC4 the explanatory \mbox{@192} variant
+uses 175 tokens, while the structural-only \mbox{@96} variant uses 73. In all
+cases that shorter context coincides with severe degradation of causal
+reconstruction or loss of the dominant reason.
+
+\subsection{LLM-in-the-Loop Evaluation with Frontier Models}
+
+To validate that the kernel's explanatory context carries signal useful to
+actual language models, we run an 18-configuration benchmark with GPT-5.4
+(OpenAI) as the inference model and Claude Opus~4 (Anthropic) as an
+LLM-as-judge. The benchmark matrix crosses three graph scales (micro: 4~nodes,
+meso: 21~nodes, stress: 49~nodes), two domains (operations incident response,
+software debugging), and three relation mixes (explanatory, structural, mixed).
+For each configuration the kernel generates a synthetic graph, publishes it as
+NATS projection events, rehydrates the full bundle, and submits the rendered
+context to GPT-5.4 with a structured prompt. Claude Opus~4 then evaluates the
+response against domain-aware ground truth on three criteria: task
+identification, restart-point selection, and rationale preservation.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llccc}
+\toprule
+Scale & Domain & Expl. & Struct. & Mixed \\
+\midrule
+Micro & Ops    & 3/3 & 2/3 & 3/3 \\
+Micro & Debug  & 3/3 & 2/3 & 3/3 \\
+Meso  & Ops    & 2/3 & 2/3 & 3/3 \\
+Meso  & Debug  & 3/3 & 2/3 & 3/3 \\
+Stress & Ops   & 3/3 & 2/3 & 3/3 \\
+Stress & Debug & 3/3 & 1/3 & 3/3 \\
+\bottomrule
+\end{tabular}
+\caption{Frontier model benchmark (GPT-5.4 + Claude Opus~4 judge). Each cell
+reports TaskOK + RestartOK + ReasonPreserved out of~3.}
+\label{tab:frontier}
+\end{table}
+
+Explanatory bundles score 17/18 (94\%), structural 11/18 (61\%). Structural
+variants consistently lose \texttt{ReasonPreserved} because there is no
+rationale metadata to preserve. The judge is calibrated to distinguish
+preservation (citing context) from inference (inventing plausible reasons).
+
+To test robustness, we run the same benchmark with a local Qwen3-8B model
+(vLLM) and with Claude Opus~4 as inference in cross-validation:
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Model & Expl. & Struct. & Gap \\
+\midrule
+GPT-5.4          & 17/18 (94\%) & 11/18 (61\%) & 33pp \\
+Claude Opus~4    & 15/18 (83\%) & 10/18 (56\%) & 27pp \\
+Qwen3-8B (local) & 18/18 (100\%) & 9/18 (50\%) & 50pp \\
+\bottomrule
+\end{tabular}
+\caption{Cross-model comparison. With explanatory context all models converge
+to 83--100\%. Without it, structural accuracy degrades further with smaller
+models (61\% $\to$ 50\%). The gap widens from 27pp to 50pp.}
+\label{tab:crossmodel}
+\end{table}
+
+With explanatory context, all three models converge to near-perfect scores.
+Without it, the structural-only gap widens as model capability decreases.
+
+Under token pressure (512-token budget, forcing 68--85\% truncation on
+meso and stress graphs), Qwen3-8B with flat rendering drops from 100\% to
+83\% on explanatory bundles, with \texttt{stress-ops-explanatory} falling to
+0/3. The kernel addresses this through \texttt{RehydrationMode}: an
+auto-detection heuristic that selects \texttt{resume\_focused} when the
+tokens-per-node ratio falls below a threshold ($<$30). In this mode, the
+tiered renderer prunes all distractor branches and allocates the full budget
+to the causal spine (L1). Table~\ref{tab:modecomparison} shows the effect.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Rendering & Expl. & Struct. & Gap \\
+\midrule
+Flat @512             & 15/18 (83\%) & 8/18 (44\%) & 39pp \\
+Tiered + ResumeFocused @512 & 16/18 (89\%) & 5/18 (28\%) & 61pp \\
+\bottomrule
+\end{tabular}
+\caption{Effect of \texttt{resume\_focused} mode at 512-token budget with
+Qwen3-8B. The mode fixes \texttt{stress-ops-explanatory} from 0/3 to 3/3
+by pruning distractors and giving the causal spine the full budget.}
+\label{tab:modecomparison}
+\end{table}
+
+At full budget the local model achieves 100\% because rationale text is
+present verbatim and the model extracts rather than reasons. The 89\% result
+under token pressure with \texttt{resume\_focused} reflects genuine context
+quality: the kernel's mode-aware rendering selects which relationships
+survive truncation, and the causal spine is sufficient for task identification,
+restart-point selection, and rationale preservation.
+
+To stress-test robustness, we introduce \texttt{CompetingCausal} noise:
+distractor branches that use domain vocabulary, causal semantic classes, and
+plausible rationale mimicking real relationships. With competing noise,
+explanatory bundles maintain 100\% (18/18) while structural drops from 50\%
+to 28\% (5/18). The explanatory metadata is immune to plausible-looking
+noise because the model can anchor on specific rationale text; without it,
+competing causal distractors are indistinguishable from the real chain.
+
+\section{Discussion}
+
+The main implication of the current artifact is narrower and more useful than a
+generic claim about graph retrieval. The evidence supports a systems claim
+about preservation and reuse of explanatory context: when transition-level
+explanations are retained across projection, storage, query, and rendering
+boundaries, the resulting context is substantially more useful for diagnosis
+and recovery than context built from structure alone.
+
+This is also the right DDD split. The kernel does not decide why an action was
+taken and does not infer motivation on its own. That meaning is emitted by the
+agent or domain application. The kernel's responsibility is to preserve that
+meaning in a form that can be rehydrated later and consumed by another runtime.
+
+The result matters because many agent systems currently treat context assembly
+as an implementation detail of a single runtime. Our artifact suggests that it
+is better treated as a reusable service boundary. Once that boundary exists,
+diagnostic and recovery workflows can be evaluated directly instead of being
+hidden inside prompt construction logic.
+
+\section{Threats to Validity}
+
+The current evidence has several limitations. First, while the
+LLM-in-the-loop benchmark covers micro (4~nodes), meso (21~nodes), and stress
+(49~nodes) scales across two domains, these remain synthetic graphs designed to
+isolate the explanatory-variable effect. Real-world operational graphs are
+likely denser and noisier. Second, the frontier model evaluation uses a single
+inference model (GPT-5.4) and a single judge (Claude Opus~4); cross-model
+validation would strengthen the result. Third, the current metrics center on
+explanatory use cases rather than the full pull-driven and event-driven suite.
+Fourth, runtime diversity remains limited. Fifth, explanation quality is
+application-supplied; the kernel preserves typed shape and transport, but it
+does not validate truthfulness or completeness of emitted rationale. This means
+the present results are best interpreted as evidence about preservation and
+utility of explanatory context, not about automatic discovery of causal
+structure.
+
+Taken together, these limitations bound the claim. The current paper is best
+positioned as artifact-backed systems evidence rather than as a large-scale
+task benchmark.
+
+\section{Conclusion}
+
+\texttt{rehydration-kernel} supports a concrete systems claim: bounded context
+rehydration can be isolated into a reusable kernel, and typed explanatory
+relationships materially improve the usefulness of that context for diagnosis,
+justification, and recovery.
+
+Across four explanatory use cases, the dominant signal is carried by
+relationship explanation rather than by node detail alone. When explanation is
+removed, causal reconstruction collapses; when detail is removed but
+explanation is preserved, most of the useful trace remains. In operational
+cases, explanatory context recovers the correct rehydration or continuation
+point. Under token pressure, explanatory context preserves the dominant reason
+even after detail is dropped.
+
+The frontier model benchmark confirms this at scale: GPT-5.4 with explanatory
+bundles achieves 94\% on task, restart, and rationale metrics across 18
+configurations, while structural-only bundles reach 61\%. A local 8B model
+with explanatory context matches frontier accuracy, and a mode-aware rendering
+heuristic (\texttt{resume\_focused}) recovers the worst-case configuration
+from 0/3 to 3/3 under severe token pressure by pruning non-causal branches.
+The next step is noise injection experiments and closed-loop evaluation where
+the selected rehydration point leads to a corrected retry.
+
+\bibliography{references}
+
+\appendix
+\section{Extended Artifact Results}
+\label{sec:extended-artifact-results}
+
+\begin{figure*}[t]
+\centering
+\small
+\begin{minipage}{0.47\textwidth}
+\centering
+\textbf{Detail-only Ablation}\\[0.4ex]
+\begin{tabular}{lccc}
+\toprule
+Case & Causal & Retry & Tokens \\
+\midrule
+UC1 & 0.429 \metricbar{4.3} & 0 & 245 \\
+UC2 & 0.429 \metricbar{4.3} & n/a & 247 \\
+UC3 & 0.429 \metricbar{4.3} & 0 & 441 \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}{0.47\textwidth}
+\centering
+\textbf{Meso Robustness}\\[0.4ex]
+\begin{tabular}{lccc}
+\toprule
+Variant & Causal & Retry & Tokens \\
+\midrule
+UC1 micro & 1.000 \metricbar{10.0} & 1 & 282 \\
+UC1 meso & 1.000 \metricbar{10.0} & 1 & 282 \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\caption{Extended artifact ablations omitted from the main table for
+readability. `detail-only' preserves partial why-trace in node detail but does
+not recover a usable retry anchor. `meso' keeps the same operational result for
+UC1 under a denser noisy graph.}
+\label{tab:extended-results}
+\end{figure*}
+
+\end{document}

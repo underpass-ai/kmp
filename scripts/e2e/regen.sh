@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate and verify local KMP/MCP E2E tooling before live replay runs.
-# Reference: docs/operations/preflight.md
+# Reference: docs/enterprise/operations.md
 
 set -uo pipefail
 

@@ -5,7 +5,7 @@ set -euo pipefail
 MODE="${1:-all}"
 NAMESPACE="${NAMESPACE:-underpass-runtime}"
 RELEASE_PREFIX="${RELEASE_PREFIX:-kmp-smoke}"
-VALUES_FILE="${VALUES_FILE:-charts/kmp/values.underpass-runtime.yaml}"
+VALUES_FILE="${VALUES_FILE:-distribution/charts/kmp/values.underpass-runtime.yaml}"
 IMAGE_TAG="${IMAGE_TAG:-}"
 IMAGE_DIGEST="${IMAGE_DIGEST:-}"
 HELM_TIMEOUT="${HELM_TIMEOUT:-10m}"
@@ -318,7 +318,7 @@ helm_deploy() {
     set_image_args=(--set "image.tag=${IMAGE_TAG}" --set "image.digest=")
   fi
 
-  helm upgrade --install "${release_name}" charts/kmp \
+  helm upgrade --install "${release_name}" distribution/charts/kmp \
     --namespace "${NAMESPACE}" \
     --create-namespace \
     -f "${VALUES_FILE}" \

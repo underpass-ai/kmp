@@ -34,7 +34,7 @@ impl RunDir {
         let base = std::env::var("E2E_OUTPUT_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| {
-                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../artifacts/e2e-runs")
+                PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../archive/artifacts/e2e-runs")
             });
         let ts = chrono_stamp();
         let path = base.join(ts);

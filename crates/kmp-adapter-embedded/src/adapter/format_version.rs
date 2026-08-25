@@ -5,12 +5,12 @@ use std::path::{Path, PathBuf};
 use kmp_domain::PortError;
 
 /// The layout this binary creates for a fresh data directory, and the one it
-/// has always created: redb ([ADR-009](../../../../docs/adr/ADR-009-embedded-storage-engine.md)).
+/// has always created: redb ([ADR-009](../../../../archive/docs/adr/ADR-009-embedded-storage-engine.md)).
 ///
 /// `FORMAT_VERSION` in a data directory names the *layout* — which engine
 /// wrote `store/`, and how. Bumping it is what makes a binary that predates
 /// a layout refuse the directory instead of opening an empty store beside
-/// it, so a new engine is a new number ([ADR-018](../../../../docs/adr/ADR-018-multi-process-embedded-store.md)).
+/// it, so a new engine is a new number ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Redb.format_version();
 
 /// The logical shape of the event log — what a bundle carries and what a

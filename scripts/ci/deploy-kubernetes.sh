@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-CHART_PATH="${CHART_PATH:-charts/kmp}"
+CHART_PATH="${CHART_PATH:-distribution/charts/kmp}"
 RELEASE_NAME="${RELEASE_NAME:?RELEASE_NAME is required}"
 NAMESPACE="${NAMESPACE:?NAMESPACE is required}"
 VALUES_FILE="${VALUES_FILE:-}"

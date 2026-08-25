@@ -1,41 +1,38 @@
-# Research Artifacts
+# Research
 
-> **Status**: research and benchmark artifact index. The active product
-> roadmap is now
-> [product/kernel-roadmap-milestones.md](../product/kernel-roadmap-milestones.md).
-> [ROADMAP_MASTER.md](ROADMAP_MASTER.md) is a legacy research roadmap and should
-> not be treated as the current source of truth without revalidation.
+Research is part of how KMP gets built, not a folder where future ideas go to
+sleep. Development is guided by a sequence of evolving papers: each one makes
+the model, hypotheses, evidence, limits and open questions explicit enough to
+challenge.
 
-Paper drafts, methodology, roadmaps, and analysis artifacts for the
-rehydration kernel research track.
+KMP will continue examining the capabilities of temporal, multidimensional
+agent memory and comparing them with the state of the art in agentic context.
+Current questions include:
 
-## Contents
+- how dimensions, episodes, typed relations and known-at-time state expose
+  patterns that flat transcripts miss;
+- how to identify decisions that may have contributed to errors or successful
+  outcomes without presenting correlation as causation;
+- how to surface recurring conversations, incidents, unresolved loops and
+  decisions by frequency, recency, impact and evidence quality;
+- how to detect contradictions, missing rationale, weak evidence and repeated
+  failed paths;
+- which analysis belongs in deterministic kernel retrieval, which belongs in
+  a plugin or skill, and which requires a model above KMP;
+- how new benchmarks and context architectures compare on task success,
+  temporal correctness, auditability, latency and cost.
 
-- [ROADMAP_MASTER.md](ROADMAP_MASTER.md) — Legacy master roadmap, retained for traceability
-- [ROADMAP_SOTA_CONTEXT_REHYDRATION.md](ROADMAP_SOTA_CONTEXT_REHYDRATION.md) — Why the kernel is useful for agents
-- [PAPER_SUBMISSION_DRAFT.md](PAPER_SUBMISSION_DRAFT.md) — ACL-format manuscript
-- [PAPER_AGENTIC_CONTEXT_REHYDRATION.md](PAPER_AGENTIC_CONTEXT_REHYDRATION.md) — Working paper notes
-- [RELATION_EXPLANATION_MODEL.md](RELATION_EXPLANATION_MODEL.md) — Semantic class taxonomy
-- [small-open-models-semantic-class-agent-2026.md](small-open-models-semantic-class-agent-2026.md) — Small open-model shortlist for the semantic-class agent (curated April 10, 2026)
-- [vllm-graph-extraction-strategy.md](vllm-graph-extraction-strategy.md) — Research note on schema-constrained graph extraction with vLLM
-- [benchmark-paper-use-cases.md](benchmark-paper-use-cases.md) — E2E evaluation matrix
-- [benchmark-methodology-v1.md](benchmark-methodology-v1.md) — benchmark scoring and evidence contract
-- [agentic-memory-benchmark-strategy-2026-05-06.md](agentic-memory-benchmark-strategy-2026-05-06.md) — Benchmark positioning: LongMemEval as secondary conversational-memory regression, MemoryArena/MemoryAgentBench as primary agentic-memory candidates
-- [memoryarena-benchmark.md](memoryarena-benchmark.md) — MemoryArena-to-KMP feasibility adapter and artifact contract
-- [memoryarena-paper-aligned-evaluator.md](memoryarena-paper-aligned-evaluator.md) — MemoryArena paper-aligned local evaluator contract and public extraction plan
-- [memoryagentbench-benchmark.md](memoryagentbench-benchmark.md) — MemoryAgentBench-to-KMP feasibility adapter and inject-once/query-many artifact contract
-- [longmemeval-benchmark.md](longmemeval-benchmark.md) — LongMemEval-to-KMP benchmark adapter, live runner, and commands
-- [anexo-procedimiento-cientifico-analisis-datos.md](anexo-procedimiento-cientifico-analisis-datos.md) — Scientific analysis methodology
-- [PLAN_GRAPH_EXPLORER.md](PLAN_GRAPH_EXPLORER.md) — Graph explorer plan (completed)
-- [REQUIREMENTS_GRAPH_EXPLORER.md](REQUIREMENTS_GRAPH_EXPLORER.md) — Graph explorer requirements (fulfilled)
-- [REPORT_GRAPH_ORDERING.md](REPORT_GRAPH_ORDERING.md) — Neo4j ordering analysis
-- [kernel-memory-story-demo-2026-05-05.md](kernel-memory-story-demo-2026-05-05.md) — Live MCP story demo for scoped temporal memory traversal
-- [mobile-login-resolution-replay-demo-2026-05-05.md](mobile-login-resolution-replay-demo-2026-05-05.md) — Live MCP resolution replay demo for a multi-agent mobile login incident
-- [demos/mobile-login-resolution-replay/](demos/mobile-login-resolution-replay/) — Static interactive incident replay for the mobile login demo
-- [incidents/](incidents/) — Benchmark post-mortems (2026-03-26)
-- [benchmark technical review](incidents/benchmark-2026-03-26-technical-review.md)
-- [A/B thinking wasted-run incident](incidents/incident-ab-thinking-wasted-run-2026-03-29.md)
-- [benchmark incident report](incidents/incident-report-benchmark-2026-03-26.md)
-- [E2E ground-truth incident report](incidents/incident-report-e2e-ground-truth-2026-03-26.md)
-- [vLLM thinking-configuration incident](incidents/incident-vllm-thinking-config-2026-03-29.md)
-- [paper/](../paper/) — LaTeX submission package
+## Papers are how KMP evolves
+
+The first KMP paper is not published yet. It is the first complete expression
+of the graph-temporal memory model behind the project, and we are proud of it.
+Its draft, ACL sources and experimental material moved with the complete
+former documentation tree to
+[`archive/docs/audit-2026-08-26/research/paper`](../../archive/docs/audit-2026-08-26/research/paper/README.md).
+That move preserves one working version; it does not pause the research. The
+paper will return to this section as a living research artifact and evolve
+with the implementation and new evidence until it is ready to publish.
+
+The separate Operator investigation and earlier benchmark material are also
+retained in the same audit archive. None of those documents defines current
+product behavior.

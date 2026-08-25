@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUTPUT_DIR="${PAPER_OUTPUT_DIR:-${ROOT_DIR}/artifacts/paper-use-cases}"
+OUTPUT_DIR="${PAPER_OUTPUT_DIR:-${ROOT_DIR}/archive/artifacts/paper-use-cases}"
 SUMMARY_PATH="${OUTPUT_DIR}/summary.json"
 RESULTS_MD_PATH="${OUTPUT_DIR}/results.md"
 RESULTS_CSV_PATH="${OUTPUT_DIR}/results.csv"
@@ -63,7 +63,7 @@ jq -r '
   [
     "# Paper Use Case Results",
     "",
-    "Source: `artifacts/paper-use-cases/summary.json`",
+    "Source: `archive/artifacts/paper-use-cases/summary.json`",
     "",
     "## Metrics Table",
     "",

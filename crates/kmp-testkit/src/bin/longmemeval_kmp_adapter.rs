@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let manifest = Manifest {
         benchmark: "LongMemEval",
-        methodology: "docs/research/benchmark-methodology-v1.md",
+        methodology: "archive/docs/research/benchmark-methodology-v1.md",
         source_path: args.input.display().to_string(),
         generated_at_unix_seconds: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
         adapter: "longmemeval-kmp-adapter-v1",

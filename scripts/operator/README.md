@@ -15,7 +15,7 @@ Current training-data status, 2026-05-13:
 - fail fast on unsupported benchmark shapes instead of generating fallback ids.
 
 See
-[`docs/product/operator-training-data-audit-2026-05-13.md`](../../docs/product/operator-training-data-audit-2026-05-13.md)
+[`archive/docs/product/operator-training-data-audit-2026-05-13.md`](../../archive/docs/product/operator-training-data-audit-2026-05-13.md)
 for the current classification.
 
 Current action-contract status, 2026-05-14:
@@ -31,7 +31,7 @@ Current action-contract status, 2026-05-14:
   calls under the strict validator.
 
 See
-[`docs/product/operator-action-contract-audit-2026-05-14.md`](../../docs/product/operator-action-contract-audit-2026-05-14.md)
+[`archive/docs/product/operator-action-contract-audit-2026-05-14.md`](../../archive/docs/product/operator-action-contract-audit-2026-05-14.md)
 for impact, corrected v10 metrics, and the required revalidation plan.
 
 Current revalidation result:
@@ -979,11 +979,11 @@ Do not publish a model only from local accuracy. Package the release after the
 P1.11 gate is clean:
 
 - copy the model card template from
-  `docs/product/huggingface/kernel-tool-operator-small-model-card-template.md`;
+  `archive/docs/product/huggingface/kernel-tool-operator-small-model-card-template.md`;
 - copy the dataset card template from
-  `docs/product/huggingface/kernel-operator-trajectories-dataset-card-template.md`;
+  `archive/docs/product/huggingface/kernel-operator-trajectories-dataset-card-template.md`;
 - fill the release evaluation summary from
-  `docs/product/huggingface/operator-release-eval-summary-template.md`;
+  `archive/docs/product/huggingface/operator-release-eval-summary-template.md`;
 - keep Hugging Face repos private first;
 - verify download, local inference, offline eval, de-anonymization, and live MCP
   replay from the published artifacts;

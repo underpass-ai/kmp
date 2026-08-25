@@ -85,7 +85,7 @@ cargo.write_text(new_text)
 # release. CI overrides them when packaging from a tag; keeping them
 # correct here is what makes `helm lint` and a local `helm package` tell
 # the truth.
-chart = pathlib.Path("charts/kmp/Chart.yaml")
+chart = pathlib.Path("distribution/charts/kmp/Chart.yaml")
 text = chart.read_text()
 text, c1 = re.subn(r'^version:.*$', f'version: {version}', text, count=1, flags=re.MULTILINE)
 text, c2 = re.subn(r'^appVersion:.*$', f'appVersion: "{version}"', text, count=1, flags=re.MULTILINE)
@@ -146,7 +146,7 @@ mcpb_manifest.write_text(json.dumps(body, indent=2) + "\n")
 
 print(
     f"bumped to {version}: Cargo.toml ({pinned} internal pins), "
-    f"charts/kmp/Chart.yaml, {len(manifests)} plugin manifests, "
+    f"distribution/charts/kmp/Chart.yaml, {len(manifests)} plugin manifests, "
     "server.json and the MCPB manifest; "
     + ("MCPB hash needs stamping" if mcpb_hash_reset else "MCPB hash retained")
 )
@@ -156,7 +156,7 @@ PY
     cargo metadata --format-version 1 >/dev/null
 
     # Surface what changed — the caller reviews before committing.
-    git --no-pager diff --stat -- Cargo.toml Cargo.lock charts/kmp/Chart.yaml \
+    git --no-pager diff --stat -- Cargo.toml Cargo.lock distribution/charts/kmp/Chart.yaml \
         plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json \
         server.json distribution/mcpb/manifest.json
 }
@@ -181,8 +181,8 @@ cmd_release() {
     # finding out there instead of here means a failed release.
     local cargo_version chart_version chart_app_version
     cargo_version="$(grep -m1 '^version = ' Cargo.toml | sed -E 's/version = "([^"]+)"/\1/')"
-    chart_version="$(grep -m1 '^version:' charts/kmp/Chart.yaml | awk '{print $2}')"
-    chart_app_version="$(grep -m1 '^appVersion:' charts/kmp/Chart.yaml | awk '{print $2}' | tr -d '"')"
+    chart_version="$(grep -m1 '^version:' distribution/charts/kmp/Chart.yaml | awk '{print $2}')"
+    chart_app_version="$(grep -m1 '^appVersion:' distribution/charts/kmp/Chart.yaml | awk '{print $2}' | tr -d '"')"
 
     for field in cargo_version chart_version chart_app_version; do
         if [ "${!field}" != "${version}" ]; then

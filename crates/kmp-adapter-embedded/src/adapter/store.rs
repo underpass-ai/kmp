@@ -12,7 +12,7 @@ use super::format_version::{self, StorageEngine};
 ///
 /// The engine behind it is chosen when the data directory is created and
 /// hidden behind the storage seam
-/// ([ADR-018](../../../../docs/adr/ADR-018-multi-process-embedded-store.md)):
+/// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
 /// redb by default, SQLite when asked for and compiled in. Cloning is cheap
 /// (shared engine handle). Commits are fsync-durable on both engines, so
 /// each successful port write survives `kill -9`; a crash mid-transaction

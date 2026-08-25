@@ -24,7 +24,7 @@
 //! translatable. Today one format exists (`1`), so migration is a faithful
 //! replay. When a format bump lands, the translation step belongs here, in
 //! `translate_event`, and the compatibility matrix in
-//! `docs/operations/embedded-release.md` moves in the same pull request.
+//! `docs/embedded/README.md` moves in the same pull request.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -77,7 +77,7 @@ impl EmbeddedKernelStore {
 
     /// [`migrate_data_dir`](Self::migrate_data_dir) with the destination
     /// engine chosen. This is how a store changes engines
-    /// ([ADR-018](../../../../docs/adr/ADR-018-multi-process-embedded-store.md)):
+    /// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
     /// the event log is the source of truth and projections are derived, so
     /// a redb store becomes a SQLite store by replaying its history into a
     /// fresh SQLite directory — the same operation a format bump has always

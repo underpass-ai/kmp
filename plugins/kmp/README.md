@@ -188,7 +188,7 @@ doctor names both owners and the global store-affecting environment instead of
 declaring the setup healthy.
 
 Two failures it names rather than leaving you to guess: another session
-holding a redb store, which is the single-writer contract (ADR-011) doing its
+holding a legacy redb store, which is the single-writer contract (ADR-011) doing its
 job — the doctor says which engine the store is on and names `share-memory`,
 which snapshots, migrates and verifies it with the SQLite engine already
 carried by current bundles — and a session that
@@ -210,6 +210,5 @@ infrastructure. For a shared deployed kernel, point the server at it with
 `KMP_KERNEL_GRPC_ENDPOINT` instead — the tool surface is identical by
 construction, so nothing else changes.
 
-See [mcp-stdio.md](../../docs/operations/mcp-stdio.md) for the full mode
-matrix and [embedded-hosts.md](../../docs/operations/embedded-hosts.md) for
-per-host recipes, including hosts this plugin does not cover.
+See [Embedded KMP](../../docs/embedded/README.md) for the current local mode,
+storage and maintenance contract.

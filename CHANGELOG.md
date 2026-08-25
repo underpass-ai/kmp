@@ -4,9 +4,9 @@ Notable changes to KMP by Underpass. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-The `v1beta1` contract has its own maturity story, tracked in
-[docs/beta-status.md](docs/beta-status.md): stable for the fields that are
-implemented, with deprecated fields removed in `v1`.
+The former `v1beta1` maturity matrix is retained as
+[archived documentation](archive/docs/beta-status.md). Current behavior is
+pinned by executable contracts and tests.
 
 ## [Unreleased]
 
@@ -335,7 +335,7 @@ implemented, with deprecated fields removed in `v1`.
   honoured or the session fails — a typo that quietly serves nothing costs an
   afternoon — while an address the binary offered steps aside with a warning
   if the port is busy, because a port is not worth a session. Amends
-  [ADR-017](docs/adr/ADR-017-embedded-memory-viewer.md), which had it off by
+  [ADR-017](archive/docs/adr/ADR-017-embedded-memory-viewer.md), which had it off by
   default.
 - `/kmp:demo` points its viewer at port 7318, since 7317 is already serving
   the memory of the project running the demo.
@@ -603,7 +603,7 @@ operator actually walks — sharing one memory between hosts, and updating.
   exist yet could still lose one of them. Switching a new store into WAL takes
   a brief exclusive lock, and when the loser's connection holds a write lock
   the switch fails *immediately* — `busy_timeout`, armed before it exactly as
-  [ADR-018](docs/adr/ADR-018-multi-process-embedded-store.md)'s spike
+  [ADR-018](archive/docs/adr/ADR-018-multi-process-embedded-store.md)'s spike
   prescribed, is never consulted for that one. The switch is now retried under
   the same bounded deadline. The spike's conclusion that "the fix is ordering,
   not retry logic" is corrected in place with the measurements. (#34)
@@ -631,7 +631,7 @@ operator actually walks — sharing one memory between hosts, and updating.
 
 - **Two agent hosts can share one memory.** The embedded store now has a
   second engine behind a storage seam
-  ([ADR-018](docs/adr/ADR-018-multi-process-embedded-store.md)): WAL-mode
+  ([ADR-018](archive/docs/adr/ADR-018-multi-process-embedded-store.md)): WAL-mode
   SQLite, opt-in through the `sqlite` cargo feature. redb remains the default
   and the default build is unchanged — pure Rust, one file, no C toolchain,
   and nobody's existing store is touched.
@@ -760,7 +760,7 @@ operator actually walks — sharing one memory between hosts, and updating.
   instead of a contributor quickstart, and leads with the plugin for Claude
   Code. New `docs/editions.md` is the canonical embedded-vs-cluster
   comparison; the operations index is grouped by edition.
-- The Choreographer integration guide is now `docs/integrations/made-kmp.md`
+- The Choreographer integration guide is preserved at `archive/docs/integrations/made-kmp.md`
   after the MADE rename.
 
 ## [0.1.2] - 2026-08-16

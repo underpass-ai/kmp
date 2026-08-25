@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUTPUT_DIR="${PAPER_OUTPUT_DIR:-${ROOT_DIR}/artifacts/paper-use-cases}"
+OUTPUT_DIR="${PAPER_OUTPUT_DIR:-${ROOT_DIR}/archive/artifacts/paper-use-cases}"
 # Resolve to absolute path so the test binary finds it regardless of its cwd.
 OUTPUT_DIR="$(cd "${ROOT_DIR}" && realpath -m "${OUTPUT_DIR}")"
 METRICS_DIR="${OUTPUT_DIR}/cases"

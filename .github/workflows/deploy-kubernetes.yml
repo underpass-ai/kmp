@@ -16,7 +16,7 @@ on:
       values_file:
         description: Values file path relative to the repo
         required: true
-        default: charts/kmp/values.underpass-runtime.yaml
+        default: distribution/charts/kmp/values.underpass-runtime.yaml
         type: string
       image_tag:
         description: Image tag to deploy when not using a digest
