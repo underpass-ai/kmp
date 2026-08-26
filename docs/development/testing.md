@@ -35,6 +35,26 @@ bash scripts/ci/quality-gate.sh
 It is more expensive than the focused commands and should be used in
 proportion to the change.
 
+## Pull-request routing
+
+CI computes changed paths once with `scripts/ci/quality-gate-plan.py`. Rust
+changes expand through the workspace's reverse dependency graph, so a crate
+and its consumers are checked without retesting unrelated crates. Docs,
+plugin, container, Helm and publication contracts have independent routes.
+
+`Cargo.toml`, `Cargo.lock`, the toolchain, the quality workflow and the router
+itself deliberately select the full matrix. An unclassified path does the
+same: optimization may skip proven-unrelated work, but uncertainty never does.
+`workflow_dispatch` remains the explicit way to request a full gate.
+
+Inspect a proposed route locally without running it:
+
+```bash
+python3 scripts/ci/quality-gate-plan.py --path crates/kmp-adapter-valkey/src/lib.rs
+python3 scripts/ci/quality-gate-plan.py --path docs/architecture/index.md
+python3 scripts/ci/quality-gate-plan.py --self-test
+```
+
 ## Embedded gates
 
 ```bash

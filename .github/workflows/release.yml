@@ -1,10 +1,8 @@
 name: release
 
-# E5 distribution: a version tag produces stripped, checksummed binaries for
-# every developer platform, combines them into one portable MCPB, and attaches
-# both forms to the GitHub release.
-# `workflow_dispatch` runs the same build matrix without publishing, so the
-# pipeline is verifiable without cutting a release.
+# E5 distribution has two distinct moments. workflow_dispatch builds one
+# reviewed, checksummed candidate for every developer platform. A version tag
+# names that candidate and promotes those exact bytes; it never recompiles.
 
 on:
   push:
@@ -17,26 +15,32 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name == 'workflow_dispatch'
     name: build (${{ matrix.target }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
+            plugin_label: linux-x86_64
           - runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+            plugin_label: linux-arm64
           - runner: macos-14
             target: aarch64-apple-darwin
+            plugin_label: macos-arm64
           # macos-13 (Intel) runners are retired; cross-compile from arm64.
           - runner: macos-14
             target: x86_64-apple-darwin
+            plugin_label: ""
           - runner: windows-2022
             target: x86_64-pc-windows-msvc
+            plugin_label: windows-x86_64
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -112,22 +116,41 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-      - name: Upload to release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Package plugin around the reviewed binary
+        if: matrix.plugin_label != ''
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes 2>/dev/null || true
-          gh release upload "${GITHUB_REF_NAME}" dist/* --clobber
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          case "${{ runner.os }}" in
+            Windows) BINARY="dist/kmp-mcp-v${VERSION}-${{ matrix.target }}.exe" ;;
+            *)       BINARY="dist/kmp-mcp-v${VERSION}-${{ matrix.target }}" ;;
+          esac
+          KMP_PLUGIN_PREBUILT_BINARY="${BINARY}" KMP_PLUGIN_PACKAGE_RELEASE=1 \
+            bash scripts/plugin/package-kmp-plugin.sh
+
+      - name: Smoke-test Windows launcher against the candidate binary
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/ci/kmp-windows-launcher-smoke.ps1
+
+      - name: Upload candidate plugin package
+        if: matrix.plugin_label != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: kmp-plugin-${{ matrix.plugin_label }}
+          path: |
+            dist/plugin/*.tar.gz
+            dist/plugin/*.sha256
+          if-no-files-found: error
 
   mcpb:
     name: build universal MCPB
     needs: build
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -172,6 +195,24 @@ jobs:
           print("MCPB launcher started ten tools")
           PY
 
+      - name: Download the four candidate plugin packages
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: kmp-plugin-*
+          path: dist/plugins
+          merge-multiple: true
+
+      - name: Assemble the immutable release candidate
+        shell: bash
+        run: |
+          VERSION="${{ steps.package.outputs.version }}"
+          python3 scripts/release/release-candidate.py assemble \
+            --version "${VERSION}" \
+            --binaries dist/binaries \
+            --plugins dist/plugins \
+            --mcpb dist/mcpb \
+            --output dist/candidate
+
       - name: Upload MCPB as workflow artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -181,11 +222,65 @@ jobs:
             dist/mcpb/*.sha256
           if-no-files-found: error
 
-      - name: Attach MCPB to the GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Upload the complete release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: kmp-release-candidate-${{ steps.package.outputs.version }}
+          path: dist/candidate
+          if-no-files-found: error
+
+  promote:
+    name: promote reviewed candidate
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Checkout the tagged release tree
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the candidate named by the annotated tag
+        id: candidate
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          WORKSPACE_VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          [[ "${VERSION}" == "${WORKSPACE_VERSION}" ]] || {
+            echo "tag ${GITHUB_REF_NAME} does not match workspace ${WORKSPACE_VERSION}" >&2
+            exit 1
+          }
+          MESSAGE="$(git for-each-ref --format='%(contents)' "refs/tags/${GITHUB_REF_NAME}")"
+          RUN_ID="$(sed -n 's/^candidate-run: \([0-9][0-9]*\)$/\1/p' <<<"${MESSAGE}")"
+          [[ -n "${RUN_ID}" ]] || {
+            echo "annotated tag ${GITHUB_REF_NAME} does not name candidate-run" >&2
+            exit 1
+          }
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "run_id=${RUN_ID}" >> "${GITHUB_OUTPUT}"
+
+      - name: Download the approved candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: kmp-release-candidate-${{ steps.candidate.outputs.version }}
+          path: dist/candidate
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.candidate.outputs.run_id }}
+
+      - name: Verify release inputs, provenance and every asset
+        run: |
+          python3 scripts/release/release-candidate.py verify \
+            --version "${{ steps.candidate.outputs.version }}" \
+            --run-id "${{ steps.candidate.outputs.run_id }}" \
+            --directory dist/candidate
+
+      - name: Publish the candidate bytes
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" --verify-tag --generate-notes 2>/dev/null || true
-          gh release upload "${GITHUB_REF_NAME}" dist/mcpb/* --clobber
+          gh release upload "${GITHUB_REF_NAME}" dist/candidate/assets/* --clobber

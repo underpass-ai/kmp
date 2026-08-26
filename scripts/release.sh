@@ -9,12 +9,11 @@ set -euo pipefail
 #                       lockstep. Resets the MCPB hash until a matching bundle
 #                       is built and stamped; idempotent and safe to re-run.
 #
-#   release <X.Y.Z>   — verify the tree is clean and the versions already
-#                       point at X.Y.Z, then create an annotated `vX.Y.Z`
-#                       tag at HEAD and push it. publish-distribution takes
-#                       it from there: container image, Helm chart and the
-#                       crates.io chain. plugin-package attaches the plugin
-#                       bundles to the release.
+#   release <X.Y.Z>   — verify the tree is clean, versions already point at
+#                       X.Y.Z and a successful workflow_dispatch candidate
+#                       matches the release inputs, then create an annotated
+#                       `vX.Y.Z` tag naming that candidate. The tag promotes
+#                       its exact bytes and starts tag-only distribution.
 #
 # Typical flow:
 #   bash scripts/release.sh version 0.2.0
@@ -219,6 +218,43 @@ cmd_release() {
             ;;
     esac
 
+    # Building once means the tag must name one already-reviewed candidate,
+    # rather than quietly falling back to another five-platform compile. The
+    # digest covers every tracked input that can change the release bytes but
+    # deliberately excludes server.json: stamping the candidate MCPB hash is
+    # the final release-branch edit and cannot invalidate the bytes it names.
+    local candidate_input candidate_run candidate_root candidate_dir
+    candidate_input="$(python3 scripts/release/release-candidate.py inputs)"
+    mkdir -p "${root}/tmp"
+    candidate_root="$(mktemp -d "${root}/tmp/release-candidate-verify.XXXXXX")"
+    candidate_run=""
+    while IFS= read -r run_id; do
+        [ -n "${run_id}" ] || continue
+        candidate_dir="${candidate_root}/${run_id}"
+        mkdir -p "${candidate_dir}"
+        if gh run download "${run_id}" \
+            --name "kmp-release-candidate-${version}" \
+            --dir "${candidate_dir}" >/dev/null 2>&1 \
+            && python3 scripts/release/release-candidate.py verify \
+                --version "${version}" \
+                --directory "${candidate_dir}" \
+                --input-sha256 "${candidate_input}" \
+                --run-id "${run_id}" >/dev/null 2>&1; then
+            candidate_run="${run_id}"
+            break
+        fi
+    done < <(
+        gh run list --workflow release.yml --event workflow_dispatch \
+            --status success --limit 50 --json databaseId \
+            --jq '.[].databaseId'
+    )
+    rm -rf "${candidate_root}"
+    if [ -z "${candidate_run}" ]; then
+        echo "error: no successful release candidate matches ${version} and inputs ${candidate_input}" >&2
+        echo "  hint: run the release workflow manually on the reviewed version branch" >&2
+        exit 1
+    fi
+
     local tag="v${version}"
     if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
         echo "error: tag ${tag} already exists" >&2
@@ -233,11 +269,14 @@ cmd_release() {
         exit 1
     fi
 
-    git tag -a "${tag}" -m "Release ${tag}"
+    git tag -a "${tag}" \
+        -m "Release ${tag}" \
+        -m "candidate-run: ${candidate_run}" \
+        -m "candidate-inputs: ${candidate_input}"
     git push origin "${tag}"
-    echo "tagged ${tag} and pushed."
+    echo "tagged ${tag} and pushed; candidate run ${candidate_run} approved."
     echo "publish-distribution: image + chart + crates.io chain."
-    echo "plugin-package + release: host bundles, binaries and MCPB attached."
+    echo "release: promotes the candidate binaries, host bundles and MCPB without rebuilding."
     echo "Codex marketplace: verified kmp@underpass ${marketplace_version}."
     echo "mcp-registry: validates the tag; production publish remains gated."
 }

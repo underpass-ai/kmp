@@ -16,9 +16,12 @@ Keep these in lockstep with the release script:
 bash scripts/release.sh version X.Y.Z
 ```
 
-The script deliberately clears the MCPB digest to a sentinel. Build the MCPB
-through `release.yml`, then stamp and validate the real artifact before the
-version change is merged:
+The script deliberately clears the MCPB digest to a sentinel. Run
+`release.yml` with `workflow_dispatch` on the version branch. That one run
+builds the five binaries, four host plugin bundles and deterministic MCPB,
+then seals them with one release-input digest and per-asset hashes. Download
+its MCPB, stamp it and validate the registry metadata before the version
+change is merged:
 
 ```bash
 bash scripts/release/stamp-server-mcpb.sh path/to/kmp-mcp-vX.Y.Z.mcpb
@@ -50,15 +53,19 @@ bash scripts/release.sh release X.Y.Z
 ```
 
 The release command checks the public `underpass-ai/plugins` manifest and
-refuses to tag while its version is stale.
+refuses to tag while its version is stale. It also locates the newest
+successful candidate whose version and release-input digest match `main`,
+verifies all twenty files and records that workflow run in the annotated tag.
+If no candidate matches, tagging fails closed.
 
 ## Published artifacts
 
-- `release.yml` builds checksummed `kmp-mcp` binaries and the deterministic
-  multiplatform MCPB;
-- `plugin-package.yml` builds host plugin packages;
-- `publish-distribution.yml` publishes the server image, Helm chart and the
-  crates.io dependency chain;
+- `release.yml` builds one manual candidate; the version tag promotes those
+  exact binaries, plugin packages and MCPB without compiling again;
+- `plugin-package.yml` validates pull-request plugin changes and never
+  publishes;
+- `publish-distribution.yml` runs automatically only for a version tag and
+  publishes the server image, Helm chart and crates.io dependency chain;
 - `mcp-registry.yml` validates registry metadata and only publishes when the
   repository variable enables it.
 - `underpass-ai/plugins` is the reviewed Codex marketplace mirror and is
