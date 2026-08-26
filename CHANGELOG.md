@@ -9,6 +9,15 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Changed
+
+- The Claude Code plugin now ships its MCP server as `memory` instead of
+  `kmp`, so the host composes `plugin:kmp:memory` rather than repeating the
+  product name. The plugin segment already carries the identity; the server
+  segment now says what the server is. Codex registers the server flat and
+  keeps the `kmp` id, where nothing is composed and a bare `memory` would say
+  less. Hand-registered Claude servers are unaffected.
+
 ### Fixed
 
 - Doctor now counts the SQLite database, WAL and SHM files when reporting the

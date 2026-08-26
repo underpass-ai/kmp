@@ -573,6 +573,10 @@ if command -v claude >/dev/null 2>&1 || [ "${KMP_DOCTOR_CLAUDE_MCP_LIST+x}" = x 
   else
     CLAUDE_MCP_LIST="$(env KMP_MCP_DATA_DIR="$PROBE_DIR" claude mcp list 2>/dev/null)"
   fi
+  # The plugin ships the server as `memory`, so Claude Code composes the id
+  # `plugin:kmp:memory` — the plugin segment carries the identity and the
+  # server segment says what it is. A hand-registered server is a flat
+  # `kmp`. Matching the `kmp` segment recognises both shapes.
   if host_list_has_server "$CLAUDE_MCP_LIST" kmp; then
     ok "Claude Code — kmp registered"
   elif host_list_has_server "$CLAUDE_MCP_LIST" kernel-memory; then

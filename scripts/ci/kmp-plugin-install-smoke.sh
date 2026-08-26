@@ -156,8 +156,11 @@ print(name, command)
 PY
 )"
 
-[[ "${SERVER_NAME}" == "kmp" ]] \
-  || fail "the marketplace server id is ${SERVER_NAME}; expected kmp"
+# Claude Code composes a plugin server as `plugin:<plugin>:<server>`, so the
+# plugin segment already says KMP and the server segment is free to say what
+# the server is. Codex asserts `kmp` above because it registers flat.
+[[ "${SERVER_NAME}" == "memory" ]] \
+  || fail "the marketplace server id is ${SERVER_NAME}; expected memory"
 [[ -x "${SERVER_COMMAND}" ]] || fail "declared command is not executable: ${SERVER_COMMAND}"
 
 export KMP_MCP_BACKEND=embedded
