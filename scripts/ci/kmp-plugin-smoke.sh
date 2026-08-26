@@ -217,17 +217,18 @@ assert_doctor_memory() {
 }
 
 # SQLite commits can live in the WAL until a checkpoint updates the main
-# database. Doctor must report the complete store and whichever member was
-# written most recently, including retained sidecars after a checkpoint and
-# a fully checkpointed store where the WAL no longer exists.
+# database. Doctor must report the complete physical store, but its write time
+# comes only from the database and WAL. Readers update SHM read marks, so a
+# newer SHM must not make read activity look like a memory write. Cover active
+# WAL, retained sidecars after a checkpoint, and a store with no sidecars.
 WAL_STORE="${SMOKE_DATA_DIR}/doctor-store-wal"
 create_doctor_sqlite_store "$WAL_STORE"
 write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3" 1
 write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3-wal" 2
 write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3-shm" 3
 touch -t 202608260101 "$WAL_STORE/store/kernel.sqlite3"
-touch -t 202608260202 "$WAL_STORE/store/kernel.sqlite3-shm"
 touch -t 202608260303 "$WAL_STORE/store/kernel.sqlite3-wal"
+touch -t 202608260304 "$WAL_STORE/store/kernel.sqlite3-shm"
 WAL_SIZE="$(du -ch "$WAL_STORE"/store/kernel.sqlite3* | tail -1 | cut -f1)"
 assert_doctor_memory "$WAL_STORE" "$WAL_SIZE" '2026-08-26 03:03'
 
@@ -237,8 +238,8 @@ write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3" 3
 write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3-wal" 2
 write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3-shm" 1
 touch -t 202608260401 "$CHECKPOINT_STORE/store/kernel.sqlite3-wal"
-touch -t 202608260402 "$CHECKPOINT_STORE/store/kernel.sqlite3-shm"
 touch -t 202608260403 "$CHECKPOINT_STORE/store/kernel.sqlite3"
+touch -t 202608260404 "$CHECKPOINT_STORE/store/kernel.sqlite3-shm"
 CHECKPOINT_SIZE="$(du -ch "$CHECKPOINT_STORE"/store/kernel.sqlite3* | tail -1 | cut -f1)"
 assert_doctor_memory "$CHECKPOINT_STORE" "$CHECKPOINT_SIZE" '2026-08-26 04:03'
 

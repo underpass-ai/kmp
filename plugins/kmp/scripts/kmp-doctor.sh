@@ -295,9 +295,14 @@ else
         for SIDECAR in "$STORE_FILE-wal" "$STORE_FILE-shm"; do
           if [ -f "$SIDECAR" ]; then
             STORE_FILES+=("$SIDECAR")
-            [ "$SIDECAR" -nt "$STORE_NEWEST_FILE" ] && STORE_NEWEST_FILE="$SIDECAR"
           fi
         done
+        # The SHM file belongs to the physical store and counts towards its
+        # size, but readers update its WAL-index read marks. Only the database
+        # and WAL carry committed memory, so a read must not look like a write.
+        if [ -f "$STORE_FILE-wal" ] && [ "$STORE_FILE-wal" -nt "$STORE_NEWEST_FILE" ]; then
+          STORE_NEWEST_FILE="$STORE_FILE-wal"
+        fi
         STORE_SIZE="$(du -ch "${STORE_FILES[@]}" 2>/dev/null | tail -1 | cut -f1)"
       fi
       STORE_WHEN="$(date -r "$STORE_NEWEST_FILE" '+%Y-%m-%d %H:%M' 2>/dev/null)"

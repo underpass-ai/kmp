@@ -9,6 +9,20 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Doctor now counts the SQLite database, WAL and SHM files when reporting the
+  physical store size, and derives `last written` from the database and WAL so
+  WAL-resident commits are visible without mistaking SHM read activity for a
+  memory write.
+
+### Security
+
+- SQLite connections now enable defensive page and schema controls, reject an
+  unexpected KMP table schema before application writes, and verify store
+  integrity on open. MCP initialization also states explicitly that stored
+  memory is untrusted data and cannot authorize actions.
+
 ## [0.2.5] - 2026-08-26
 
 ### Fixed
