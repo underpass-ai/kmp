@@ -256,7 +256,7 @@ doctor_output="$(
   KMP_MCP_BIN="${DOCTOR_BIN}" \
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
-  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:memory: bundled launcher - connected' \
   KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
@@ -290,7 +290,7 @@ stale_codex_output="$(
   KMP_MCP_BIN="${DOCTOR_BIN}" \
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
-  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:memory: bundled launcher - connected' \
   KMP_DOCTOR_CODEX_PLUGIN_LIST='' \
   KMP_DOCTOR_CODEX_MCP_LIST='kernel-memory  ${CLAUDE_PLUGIN_ROOT}/scripts/run-embedded-mcp.sh  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
@@ -316,7 +316,7 @@ legacy_table_output="$(
   KMP_MCP_BIN="${DOCTOR_BIN}" \
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
-  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:memory: bundled launcher - connected' \
   KMP_DOCTOR_CODEX_PLUGIN_LIST='' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
@@ -341,7 +341,7 @@ collision_output="$(
   KMP_MCP_BIN="${DOCTOR_BIN}" \
   KMP_MCP_BACKEND=embedded \
   KMP_VIEWER_ADDR=off \
-  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:memory: bundled launcher - connected' \
   KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  /global/kmp-mcp  enabled' \
     bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"

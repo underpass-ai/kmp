@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "kmp": {
+    "memory": {
       "command": "${CLAUDE_PLUGIN_ROOT}/scripts/run-embedded-mcp.sh"
     }
   }
