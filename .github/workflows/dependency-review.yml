@@ -3,6 +3,14 @@ name: dependency-review
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Base ref for the dependency comparison
+        required: false
+        default: main
+      head_ref:
+        description: Head ref for the dependency comparison (defaults to this run's SHA)
+        required: false
 
 permissions:
   contents: read
@@ -20,8 +28,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Review dependency changes
+      - name: Review dependency changes (pull request)
+        if: ${{ github.event_name == 'pull_request' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
         continue-on-error: true
         with:
           fail-on-severity: moderate
+
+      - name: Review dependency changes (manual range)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+        continue-on-error: true
+        with:
+          fail-on-severity: moderate
+          base-ref: ${{ inputs.base_ref || github.event.repository.default_branch }}
+          head-ref: ${{ inputs.head_ref || github.sha }}

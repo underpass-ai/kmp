@@ -51,6 +51,21 @@ for action, count in seen.items():
     if count == 0:
         failures.append(f"no workflow references the guarded action {action}")
 
+dependency_review = (
+    GITHUB / "workflows/dependency-review.yml"
+).read_text(encoding="utf-8")
+for clause in (
+    "base_ref:",
+    "head_ref:",
+    "github.event_name == 'workflow_dispatch'",
+    "base-ref: ${{ inputs.base_ref || github.event.repository.default_branch }}",
+    "head-ref: ${{ inputs.head_ref || github.sha }}",
+):
+    if clause not in dependency_review:
+        failures.append(
+            "dependency-review workflow lost its manual comparison range: " + clause
+        )
+
 if failures:
     raise SystemExit("GitHub Actions contract failed:\n" + "\n".join(failures))
 

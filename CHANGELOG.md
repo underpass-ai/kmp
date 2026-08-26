@@ -19,6 +19,8 @@ Detailed notes from the early release cycle are preserved in the
 - Semantic Ask now permits one initial selection per language, distinguishes
   cursor pagination from retries, and treats bounded `UNKNOWN` as terminal
   instead of restarting with a larger budget or sweeping the graph.
+- Manual dependency-review runs now resolve an explicit base/head range instead
+  of hiding a missing-range failure annotation behind `continue-on-error`.
 
 ## [0.2.8] - 2026-08-26
 
