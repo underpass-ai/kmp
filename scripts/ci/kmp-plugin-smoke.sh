@@ -179,6 +179,76 @@ DOCTOR_BIN="${PLUGIN_DIR}/bin/kmp-mcp"
 if [[ ! -x "${DOCTOR_BIN}" ]]; then
   DOCTOR_BIN="${PLUGIN_DIR}/bin/kmp-mcp.exe"
 fi
+
+create_doctor_sqlite_store() {
+  local data_dir="$1"
+  mkdir -p "$data_dir/store" "$data_dir/logs"
+  printf '%s\n' '*' > "$data_dir/.gitignore"
+  printf '%s\n' '2' > "$data_dir/FORMAT_VERSION"
+}
+
+write_doctor_store_file() {
+  local path="$1" blocks="$2"
+  dd if=/dev/zero of="$path" bs=4096 count="$blocks" 2>/dev/null
+}
+
+doctor_memory_line() {
+  local data_dir="$1"
+  HOME="${SMOKE_DATA_DIR}/doctor-home" \
+  NO_COLOR=1 \
+  KMP_MCP_BIN="${DOCTOR_BIN}" \
+  KMP_MCP_BACKEND=embedded \
+  KMP_MCP_DATA_DIR="$data_dir" \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
+  KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh" | grep -F '[✓] Memory     '
+}
+
+assert_doctor_memory() {
+  local data_dir="$1" expected_size="$2" expected_time="$3"
+  local expected="[✓] Memory     ${expected_size} · sqlite · last written ${expected_time}"
+  local actual
+  actual="$(doctor_memory_line "$data_dir")"
+  if [ "$actual" != "$expected" ]; then
+    fail "doctor store stats mismatch: expected '$expected', got '$actual'"
+  fi
+}
+
+# SQLite commits can live in the WAL until a checkpoint updates the main
+# database. Doctor must report the complete store and whichever member was
+# written most recently, including retained sidecars after a checkpoint and
+# a fully checkpointed store where the WAL no longer exists.
+WAL_STORE="${SMOKE_DATA_DIR}/doctor-store-wal"
+create_doctor_sqlite_store "$WAL_STORE"
+write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3" 1
+write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3-wal" 2
+write_doctor_store_file "$WAL_STORE/store/kernel.sqlite3-shm" 3
+touch -t 202608260101 "$WAL_STORE/store/kernel.sqlite3"
+touch -t 202608260202 "$WAL_STORE/store/kernel.sqlite3-shm"
+touch -t 202608260303 "$WAL_STORE/store/kernel.sqlite3-wal"
+WAL_SIZE="$(du -ch "$WAL_STORE"/store/kernel.sqlite3* | tail -1 | cut -f1)"
+assert_doctor_memory "$WAL_STORE" "$WAL_SIZE" '2026-08-26 03:03'
+
+CHECKPOINT_STORE="${SMOKE_DATA_DIR}/doctor-store-checkpoint"
+create_doctor_sqlite_store "$CHECKPOINT_STORE"
+write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3" 3
+write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3-wal" 2
+write_doctor_store_file "$CHECKPOINT_STORE/store/kernel.sqlite3-shm" 1
+touch -t 202608260401 "$CHECKPOINT_STORE/store/kernel.sqlite3-wal"
+touch -t 202608260402 "$CHECKPOINT_STORE/store/kernel.sqlite3-shm"
+touch -t 202608260403 "$CHECKPOINT_STORE/store/kernel.sqlite3"
+CHECKPOINT_SIZE="$(du -ch "$CHECKPOINT_STORE"/store/kernel.sqlite3* | tail -1 | cut -f1)"
+assert_doctor_memory "$CHECKPOINT_STORE" "$CHECKPOINT_SIZE" '2026-08-26 04:03'
+
+NO_WAL_STORE="${SMOKE_DATA_DIR}/doctor-store-no-wal"
+create_doctor_sqlite_store "$NO_WAL_STORE"
+write_doctor_store_file "$NO_WAL_STORE/store/kernel.sqlite3" 2
+touch -t 202608260503 "$NO_WAL_STORE/store/kernel.sqlite3"
+NO_WAL_SIZE="$(du -ch "$NO_WAL_STORE/store/kernel.sqlite3" | tail -1 | cut -f1)"
+assert_doctor_memory "$NO_WAL_STORE" "$NO_WAL_SIZE" '2026-08-26 05:03'
+
 doctor_output="$(
   HOME="${SMOKE_DATA_DIR}/doctor-home" \
   NO_COLOR=1 \
