@@ -339,6 +339,51 @@ if grep -q 'standalone Codex prompts' "$WORK_DIR/codex-plugin-update-dry-run.txt
   fail "Codex plugin update attempted to refresh standalone assets"
 fi
 
+# The engine installer can populate the normal CLI and one plugin-owned bin
+# directory from the same verified download. Keep this black-box so the
+# updater cannot appear fixed while the installer silently ignores its second
+# destination.
+FAKE_DOWNLOAD_BIN="${WORK_DIR}/fake-download-bin"
+FAKE_ASSET="${WORK_DIR}/fake-release-kmp-mcp"
+FAKE_CHECKSUM="${WORK_DIR}/fake-release-kmp-mcp.sha256"
+INSTALL_PRIMARY="${WORK_DIR}/installer-primary"
+INSTALL_SECONDARY="${WORK_DIR}/installer-secondary"
+mkdir -p "$FAKE_DOWNLOAD_BIN"
+printf '#!/usr/bin/env bash\nprintf "kmp-mcp %s\\n"\n' \
+  "$WORKSPACE_VERSION" > "$FAKE_ASSET"
+chmod +x "$FAKE_ASSET"
+sha256sum "$FAKE_ASSET" > "$FAKE_CHECKSUM"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'out=""' \
+  'url=""' \
+  'while [ $# -gt 0 ]; do' \
+  '  case "$1" in' \
+  '    -o) out="$2"; shift 2 ;;' \
+  '    *) url="$1"; shift ;;' \
+  '  esac' \
+  'done' \
+  'case "$url" in' \
+  '  *.sha256) cp "${KMP_FAKE_CHECKSUM:?}" "$out" ;;' \
+  '  *) cp "${KMP_FAKE_ASSET:?}" "$out" ;;' \
+  'esac' \
+  > "$FAKE_DOWNLOAD_BIN/curl"
+chmod +x "$FAKE_DOWNLOAD_BIN/curl"
+KMP_FAKE_ASSET="$FAKE_ASSET" KMP_FAKE_CHECKSUM="$FAKE_CHECKSUM" \
+KMP_INSTALL_DIR="$INSTALL_PRIMARY" PATH="$FAKE_DOWNLOAD_BIN:$PATH" \
+  bash "$INSTALLED/scripts/kmp-install-binary.sh" \
+    --version "$WORKSPACE_VERSION" --also-dir "$INSTALL_SECONDARY" \
+    > "$WORK_DIR/dual-engine-install.txt"
+cmp "$FAKE_ASSET" "$INSTALL_PRIMARY/kmp-mcp" \
+  || fail "engine installer did not populate its primary destination"
+cmp "$FAKE_ASSET" "$INSTALL_SECONDARY/kmp-mcp" \
+  || fail "engine installer did not populate its secondary destination"
+grep -q "installed ${INSTALL_PRIMARY}/kmp-mcp" "$WORK_DIR/dual-engine-install.txt" \
+  || fail "engine installer did not report its primary destination"
+grep -q "installed ${INSTALL_SECONDARY}/kmp-mcp" "$WORK_DIR/dual-engine-install.txt" \
+  || fail "engine installer did not report its secondary destination"
+
 # Codex replaces an installed plugin's cache directory during `plugin add`.
 # Reproduce that host behavior with a fake command which deletes the updater's
 # own plugin root. The engine half must still run from the copy staged before
@@ -346,30 +391,90 @@ fi
 CACHE_REPLACED_PLUGIN="${WORK_DIR}/cache-replaced-plugin"
 FAKE_HOST_BIN="${WORK_DIR}/fake-host-bin"
 ENGINE_MARKER="${WORK_DIR}/cache-replaced-engine-installed"
+FAKE_CLI_BIN="${WORK_DIR}/fake-cli-bin"
+NEW_PLUGIN_ROOT="${WORK_DIR}/new-plugin"
+FAKE_ENGINE_INSTALLER="${WORK_DIR}/fake-kmp-install-binary.sh"
 mkdir -p "${CACHE_REPLACED_PLUGIN}/scripts" "$FAKE_HOST_BIN"
 cp "$INSTALLED/scripts/kmp-update.sh" \
   "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
-  'printf installed > "${KMP_FAKE_ENGINE_MARKER:?}"' \
-  > "${CACHE_REPLACED_PLUGIN}/scripts/kmp-install-binary.sh"
+  'set -euo pipefail' \
+  'primary="${KMP_INSTALL_DIR:-$HOME/.local/bin}"' \
+  'also=""' \
+  'version=""' \
+  'while [ $# -gt 0 ]; do' \
+  '  case "$1" in' \
+  '    --dir) primary="$2"; shift 2 ;;' \
+  '    --also-dir) also="$2"; shift 2 ;;' \
+  '    --version) version="$2"; shift 2 ;;' \
+  '    *) shift ;;' \
+  '  esac' \
+  'done' \
+  'mkdir -p "$primary"' \
+  'printf "#!/usr/bin/env bash\\nprintf '\''kmp-mcp %s\\n'\''\\n" "$version" > "$primary/kmp-mcp"' \
+  'chmod +x "$primary/kmp-mcp"' \
+  'if [ -n "$also" ]; then mkdir -p "$also"; cp "$primary/kmp-mcp" "$also/kmp-mcp"; fi' \
+  'printf "%s\\n%s\\n" "$primary" "$also" > "${KMP_FAKE_ENGINE_MARKER:?}"' \
+  > "$FAKE_ENGINE_INSTALLER"
+cp "$FAKE_ENGINE_INSTALLER" \
+  "${CACHE_REPLACED_PLUGIN}/scripts/kmp-install-binary.sh"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
   'if [ "$1 $2" = "plugin marketplace" ]; then exit 0; fi' \
-  'rm -rf "${KMP_FAKE_OLD_PLUGIN_ROOT:?}"' \
+  'if [ "${KMP_FAKE_DELETE_OLD:-1}" = 1 ]; then rm -rf "${KMP_FAKE_OLD_PLUGIN_ROOT:?}"; fi' \
   'printf '\''{"version":"%s","installedPath":"%s"}\n'\'' "${KMP_FAKE_PLUGIN_VERSION:?}" "${KMP_FAKE_INSTALLED_PLUGIN_ROOT:?}"' \
   > "${FAKE_HOST_BIN}/codex"
 chmod +x "${FAKE_HOST_BIN}/codex"
 KMP_FAKE_OLD_PLUGIN_ROOT="$CACHE_REPLACED_PLUGIN" \
 KMP_FAKE_ENGINE_MARKER="$ENGINE_MARKER" \
 KMP_FAKE_PLUGIN_VERSION="$WORKSPACE_VERSION" \
-KMP_FAKE_INSTALLED_PLUGIN_ROOT="${WORK_DIR}/new-plugin" \
+KMP_FAKE_INSTALLED_PLUGIN_ROOT="$NEW_PLUGIN_ROOT" \
+KMP_INSTALL_DIR="$FAKE_CLI_BIN" \
 PATH="${FAKE_HOST_BIN}:${PATH}" \
   bash "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh" \
     --codex --version "$WORKSPACE_VERSION" \
     > "${WORK_DIR}/cache-replaced-update.txt"
 [ -f "$ENGINE_MARKER" ] \
   || { cat "${WORK_DIR}/cache-replaced-update.txt" >&2; fail "Codex cache replacement lost the staged engine installer"; }
+[ -x "$FAKE_CLI_BIN/kmp-mcp" ] \
+  || fail "Codex cache replacement did not update the normal CLI engine"
+[ -x "$NEW_PLUGIN_ROOT/bin/kmp-mcp" ] \
+  || fail "Codex cache replacement did not populate the returned plugin root"
+
+# A previous plugin cache may already contain a local engine. It is not the
+# destination for the next release: Codex's returned installedPath is. Keep
+# the old binary byte-for-byte while updating both the normal CLI and the new
+# plugin-owned engine.
+OLD_PLUGIN_ROOT="${WORK_DIR}/old-plugin-with-engine"
+NEXT_PLUGIN_ROOT="${WORK_DIR}/next-plugin"
+NEXT_CLI_BIN="${WORK_DIR}/next-cli-bin"
+NEXT_ENGINE_MARKER="${WORK_DIR}/next-engine-installed"
+mkdir -p "$OLD_PLUGIN_ROOT/scripts" "$OLD_PLUGIN_ROOT/bin"
+cp "$INSTALLED/scripts/kmp-update.sh" "$OLD_PLUGIN_ROOT/scripts/kmp-update.sh"
+cp "$FAKE_ENGINE_INSTALLER" "$OLD_PLUGIN_ROOT/scripts/kmp-install-binary.sh"
+printf 'old-cache-engine\n' > "$OLD_PLUGIN_ROOT/bin/kmp-mcp"
+chmod +x "$OLD_PLUGIN_ROOT/bin/kmp-mcp"
+KMP_FAKE_DELETE_OLD=0 \
+KMP_FAKE_OLD_PLUGIN_ROOT="$OLD_PLUGIN_ROOT" \
+KMP_FAKE_ENGINE_MARKER="$NEXT_ENGINE_MARKER" \
+KMP_FAKE_PLUGIN_VERSION="$WORKSPACE_VERSION" \
+KMP_FAKE_INSTALLED_PLUGIN_ROOT="$NEXT_PLUGIN_ROOT" \
+KMP_INSTALL_DIR="$NEXT_CLI_BIN" \
+PATH="${FAKE_HOST_BIN}:${PATH}" \
+  bash "$OLD_PLUGIN_ROOT/scripts/kmp-update.sh" \
+    --codex --version "$WORKSPACE_VERSION" \
+    > "$WORK_DIR/next-cache-update.txt"
+grep -qx 'old-cache-engine' "$OLD_PLUGIN_ROOT/bin/kmp-mcp" \
+  || fail "Codex updater overwrote the previous plugin cache engine"
+"$NEXT_CLI_BIN/kmp-mcp" --version | grep -q "$WORKSPACE_VERSION" \
+  || fail "Codex updater left the normal CLI engine stale"
+"$NEXT_PLUGIN_ROOT/bin/kmp-mcp" --version | grep -q "$WORKSPACE_VERSION" \
+  || fail "Codex updater left the newly installed plugin without its engine"
+grep -qx "$NEXT_CLI_BIN" "$NEXT_ENGINE_MARKER" \
+  || fail "Codex updater did not retain the normal CLI as its primary engine destination"
+grep -qx "$NEXT_PLUGIN_ROOT/bin" "$NEXT_ENGINE_MARKER" \
+  || fail "Codex updater did not use the returned installedPath as its plugin engine destination"
 
 # Never update only the engine when the marketplace snapshot is stale. The
 # host install can succeed while returning an older plugin; that must be a

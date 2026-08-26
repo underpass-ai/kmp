@@ -13,6 +13,7 @@ DO_CLAUDE=0
 DO_CODEX=0
 DRY_RUN=0
 STANDALONE=0
+CODEX_PLUGIN_ROOT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -133,6 +134,17 @@ print(body["version"] + "\t" + body["installedPath"])
     fi
     CODEX_PLUGIN_VERSION="${CODEX_PLUGIN%%$'\t'*}"
     CODEX_PLUGIN_ROOT="${CODEX_PLUGIN#*$'\t'}"
+    case "$CODEX_PLUGIN_ROOT" in
+      /)
+        echo "kmp-update: Codex returned an unsafe installedPath '/'" >&2
+        exit 1
+        ;;
+      /*) ;;
+      *)
+        echo "kmp-update: Codex returned a non-absolute installedPath '${CODEX_PLUGIN_ROOT}'" >&2
+        exit 1
+        ;;
+    esac
     case "$CODEX_PLUGIN_VERSION" in
       "$VERSION"|"$VERSION"+*) ;;
       *)
@@ -145,7 +157,21 @@ print(body["version"] + "\t" + body["installedPath"])
   fi
 fi
 
-if [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ]; then
+if [ "$DO_CODEX" -eq 1 ] && [ "$STANDALONE" -eq 0 ] && [ "$DRY_RUN" -eq 0 ]; then
+  # PLUGIN_ROOT names the cache this updater started from. `plugin add` may
+  # install the requested release into a different cache, so only the exact
+  # installedPath returned by Codex is authoritative after that call.
+  if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] \
+      && [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ] \
+      && [ "$PLUGIN_ROOT" != "$CODEX_PLUGIN_ROOT" ]; then
+    run bash "$INSTALLER" --version "$VERSION" \
+      --also-dir "${CODEX_PLUGIN_ROOT}/bin" --also-dir "${PLUGIN_ROOT}/bin"
+  else
+    run bash "$INSTALLER" --version "$VERSION" --also-dir "${CODEX_PLUGIN_ROOT}/bin"
+  fi
+elif [ "$DO_CODEX" -eq 1 ] && [ "$STANDALONE" -eq 0 ] && [ "$DRY_RUN" -eq 1 ]; then
+  run bash "$INSTALLER" --version "$VERSION" --also-dir '<Codex installedPath>/bin'
+elif [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ]; then
   run bash "$INSTALLER" --version "$VERSION" --dir "${PLUGIN_ROOT}/bin"
 else
   run bash "$INSTALLER" --version "$VERSION"

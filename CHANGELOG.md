@@ -9,6 +9,15 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-08-26
+
+### Fixed
+
+- The Codex updater installs the matching engine into both the normal CLI
+  location and the exact new plugin cache returned by `codex plugin add`.
+  An engine already present in the previous cache can no longer redirect a
+  later release back into that stale directory.
+
 ## [0.2.2] - 2026-08-26
 
 ### Fixed
