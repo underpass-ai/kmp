@@ -57,7 +57,9 @@ The data directory is selected in this order:
 
 1. `KMP_MCP_DATA_DIR`, when explicitly set;
 2. `.kernel/` at the nearest git root;
-3. `$XDG_DATA_HOME/kmp/default`, or `~/.local/share/kmp/default`.
+3. the per-user local data directory: `$XDG_DATA_HOME/kmp/default` or
+   `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
+   on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
 The current shipped `kmp-mcp` binary creates fresh stores on SQLite. Existing
 redb stores are supported as a legacy migration path: KMP opens the engine
