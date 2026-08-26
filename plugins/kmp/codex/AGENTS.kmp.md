@@ -18,11 +18,20 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   from start; paginate, merge/deduplicate refs and exclude the end. Complete
   the traversal or report its exact continuation.
 - **Ask semantically, with bounded language fallback.** For a non-temporal
-  question, `kmp_ask` in the user's language first. On `UNKNOWN` or evidence
-  that does not answer, retry once per fallback language configured by
-  `kmp-mcp config`. Translate only the query, answer in the user's language,
-  and preserve stored evidence, refs, relation `why` and source metadata
-  byte-for-byte.
+  question, make one initial Ask selection per language: once in the user's
+  language, then at most once per fallback language configured by `kmp-mcp
+  config`. Changing budget, detail or optional arguments does not authorize
+  another selection in the same language. Only following
+  `projection.page.next_cursor` with every bound argument unchanged is a
+  continuation, not a retry. Translate only the query, answer in the user's
+  language, and preserve stored evidence, refs, relation `why` and source
+  metadata byte-for-byte. A genuinely semantic `UNKNOWN` after those bounded
+  selections is terminal: do not inspect the about/root, widen scope or
+  traverse the graph to bypass it.
+- **Abouts are opaque routing identifiers.** Copy an about supplied by the user
+  or returned by KMP byte-for-byte into every `about` argument. Never strip or
+  add a kind prefix such as `project:` or `incident:`, and never translate,
+  normalize, shorten, infer or rebuild it.
 - **Refs are opaque identifiers.** Pass every returned ref, and any exact
   stored ref supplied by the user, byte-for-byte. Never prefix or qualify it
   with an about, translate it, normalize it or reconstruct it. If a ref fails,

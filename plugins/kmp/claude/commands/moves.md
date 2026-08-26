@@ -57,9 +57,21 @@ Point writers to “Why the `why` matters” in the `kmp-memory` skill; a vague
 If the user explicitly asked to preview a write, point them at
 `options.dry_run=true` and do not infer authorization to commit it afterwards.
 
-For language fallback, translate only the query and answer in the user's
+For language fallback, make one initial Ask selection per language: once in
+the user's language, then at most once in each configured fallback language.
+Changing budget, detail or optional arguments does not authorize another
+selection in the same language. Only following
+`projection.page.next_cursor` with every bound argument unchanged is a
+continuation, not a retry. Translate only the query and answer in the user's
 language. Stored evidence, refs, relation `why`, and source metadata stay
-byte-for-byte unchanged. `UNKNOWN` after the configured retries is valid.
+byte-for-byte unchanged. A genuinely semantic `UNKNOWN` after those bounded
+selections is terminal: do not inspect the about/root, widen scope or traverse
+the graph to bypass it.
+
+Abouts are opaque routing identifiers. Copy an about supplied by the user or
+returned by KMP byte-for-byte into every `about` argument. Never strip or add a
+kind prefix such as `project:` or `incident:`, and never translate, normalize,
+shorten, infer or rebuild it.
 Refs are opaque identifiers: pass every returned ref, and any exact stored ref
 supplied by the user, byte-for-byte. Never prefix or qualify it with an about,
 translate it, normalize it or reconstruct it. If a ref fails, recover the exact

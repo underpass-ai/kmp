@@ -158,7 +158,7 @@
     ]
   },
   "opaque_ref_case": {
-    "about": "project:kmp-host-regression-0.2.6",
+    "about": "project:kmp-host-regression-0.2.8",
     "returned_refs": [
       "decision:local-first",
       "observation:embedded-stdio"
@@ -167,5 +167,61 @@
       "from_ref": "decision:local-first",
       "to_ref": "observation:embedded-stdio"
     }
+  },
+  "opaque_about_case": {
+    "supplied_about": "project:kmp-host-regression-0.2.8",
+    "tool_arguments": [
+      {
+        "tool": "kmp_ask",
+        "about": "project:kmp-host-regression-0.2.8"
+      },
+      {
+        "tool": "kmp_goto",
+        "about": "project:kmp-host-regression-0.2.8"
+      }
+    ],
+    "forbidden_variants": [
+      "kmp-host-regression-0.2.8",
+      "project:project:kmp-host-regression-0.2.8"
+    ]
+  },
+  "semantic_unknown_guard_case": {
+    "about": "project:kmp-host-regression-0.2.8",
+    "user_language": "es",
+    "fallback_languages": [
+      "en"
+    ],
+    "ask_selections": [
+      {
+        "language": "es",
+        "about": "project:kmp-host-regression-0.2.8",
+        "selection": "initial"
+      },
+      {
+        "language": "en",
+        "about": "project:kmp-host-regression-0.2.8",
+        "selection": "initial"
+      }
+    ],
+    "ask_results": [
+      "UNKNOWN",
+      "UNKNOWN"
+    ],
+    "same_language_restarts": [],
+    "page_continuation": {
+      "cursor": "kmp1:test-ask-cursor",
+      "bound_arguments_unchanged": true,
+      "counts_as_new_selection": false
+    },
+    "next_move": "return_UNKNOWN",
+    "post_unknown_tool_trace": [
+      "return_UNKNOWN"
+    ],
+    "forbidden_next_moves": [
+      "kmp_ask:es:expanded-budget",
+      "kmp_inspect:about",
+      "kmp_goto:about",
+      "kmp_near:about"
+    ]
   }
 }

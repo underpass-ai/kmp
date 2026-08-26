@@ -46,15 +46,25 @@ Route again after every response:
 - When Ask evidence answers the question, use the returned refs. Inspect a ref
   before relying on its object or evidence for a consequential claim; trace
   the path when the claim depends on a connection.
+- Abouts are opaque routing identifiers. Copy an about supplied by the user or
+  returned by KMP byte-for-byte into every `about` argument. Never strip or
+  add a kind prefix such as `project:` or `incident:`, and never translate,
+  normalize, shorten, infer or rebuild it.
 - Refs are opaque identifiers. Pass every returned ref, and any exact stored
   ref supplied by the user, byte-for-byte. Never prefix or qualify it with an
   about, translate it, normalize it or reconstruct it. If a ref fails, recover
   the exact stored ref through KMP instead of guessing.
+- Make one initial Ask selection per language: once in the user's language,
+  then at most once in each configured fallback language. Changing budget,
+  detail or optional arguments does not authorize another selection in the
+  same language. Only following `projection.page.next_cursor` with every bound
+  argument unchanged is a continuation, not a retry.
 - When Ask returns `UNKNOWN` or irrelevant evidence, finish the configured
   language retries, then reclassify the **original goal**. Current, latest or
   recent state, what changed, why now, and release or decision history move to
   temporal navigation. A genuinely semantic question ends at `UNKNOWN` after
-  the bounded retries.
+  the bounded retries. That terminal result is not permission to inspect the
+  about/root, widen scope or traverse the graph to bypass Ask.
 - Reclassification is not a workaround for `UNKNOWN`: Ask and temporal
   navigation answer different kinds of questions. Do not silently jump to
   repository files while a relevant KMP page or interval is incomplete. If
