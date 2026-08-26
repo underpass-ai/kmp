@@ -13,7 +13,7 @@
     {
       "registryType": "mcpb",
       "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.2.5/kmp-mcp-v0.2.5.mcpb",
-      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "fileSha256": "3433adb59fdec10c2e724b042377b8fd6a1dc8cfa4b73d65572c224f31b6ff86",
       "environmentVariables": [
         {
           "name": "KMP_MCP_DATA_DIR",
