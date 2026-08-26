@@ -6,14 +6,21 @@ setlocal
 
 set "PLUGIN_ROOT=%~dp0.."
 
-rem An explicit binary wins. The release bundle is built without the sqlite
-rem engine — that is what keeps a default install free of a C toolchain — and
-rem it otherwise takes priority over PATH, so without this an operator who ran
-rem `cargo install kmp-mcp --features sqlite` could not reach the engine
-rem through the plugin. It selects the executable and nothing else.
+rem An explicit binary is an operator override and wins without a version
+rem gate. Every automatically selected binary must match the plugin manifest.
 if not "%KMP_MCP_BIN%"=="" goto :explicitBinary
-set "BINARY=%PLUGIN_ROOT%\bin\kmp-mcp.exe"
-goto :bundledBinary
+set "BUNDLED_BINARY=%PLUGIN_ROOT%\bin\kmp-mcp.exe"
+set "PATH_BINARY="
+for %%I in (kmp-mcp.exe) do set "PATH_BINARY=%%~$PATH:I"
+set "PLUGIN_VERSION="
+for /f "usebackq delims=" %%V in (`powershell.exe -NoProfile -NonInteractive -Command "$m=Get-Content -Raw -LiteralPath '%PLUGIN_ROOT%\.codex-plugin\plugin.json'|ConvertFrom-Json; $m.version"`) do set "PLUGIN_VERSION=%%V"
+if not defined PLUGIN_VERSION (
+  echo KMP plugin: cannot read its version from the plugin manifest. 1>&2
+  exit /b 127
+)
+for /f "tokens=1 delims=+" %%V in ("%PLUGIN_VERSION%") do set "EXPECTED_ENGINE_VERSION=%%V"
+set "BUNDLED_VERSION="
+goto :checkBundled
 
 :explicitBinary
 set "BINARY=%KMP_MCP_BIN%"
@@ -23,18 +30,44 @@ if not exist "%BINARY%" (
 )
 goto :run
 
-:bundledBinary
+:checkBundled
+if not exist "%BUNDLED_BINARY%" goto :checkPath
+set "BINARY=%BUNDLED_BINARY%"
+call :readBinaryVersion "%BINARY%"
+if "%ACTUAL_VERSION%"=="%EXPECTED_ENGINE_VERSION%" goto :run
+set "BUNDLED_VERSION=%ACTUAL_VERSION%"
+if not defined BUNDLED_VERSION set "BUNDLED_VERSION=unknown"
 
-rem The release bundle ships bin\kmp-mcp.exe and keeps priority. A marketplace
-rem install has no bin\ — that path is gitignored — so fall back to an
-rem installed kmp-mcp on PATH rather than failing to start.
-if not exist "%BINARY%" (
-  for %%I in (kmp-mcp.exe) do set "BINARY=%%~$PATH:I"
+:checkPath
+if not defined PATH_BINARY goto :noMatchingBinary
+if not exist "%PATH_BINARY%" goto :noMatchingBinary
+set "BINARY=%PATH_BINARY%"
+call :readBinaryVersion "%BINARY%"
+if not "%ACTUAL_VERSION%"=="%EXPECTED_ENGINE_VERSION%" goto :noMatchingBinary
+if defined BUNDLED_VERSION (
+  echo KMP plugin: cache engine %BUNDLED_VERSION% does not match plugin %PLUGIN_VERSION%; using matching PATH engine. 1>&2
+  echo KMP plugin: run kmp setup to repair the plugin-owned engine. 1>&2
 )
-
-if not defined BINARY goto :nobinary
-if not exist "%BINARY%" goto :nobinary
 goto :run
+
+:noMatchingBinary
+if defined BUNDLED_VERSION (
+  echo KMP plugin: cache engine %BUNDLED_VERSION% does not match plugin %PLUGIN_VERSION%. 1>&2
+  echo KMP plugin: no %EXPECTED_ENGINE_VERSION% engine was found on PATH; run kmp setup. 1>&2
+  exit /b 127
+)
+if defined PATH_BINARY (
+  echo KMP plugin: the PATH engine does not match plugin %PLUGIN_VERSION%. 1>&2
+  echo KMP plugin: run kmp setup to install engine %EXPECTED_ENGINE_VERSION%. 1>&2
+  exit /b 127
+)
+goto :nobinary
+
+
+:readBinaryVersion
+set "ACTUAL_VERSION="
+for /f "tokens=2" %%V in ('"%~1" --version 2^>nul') do if not defined ACTUAL_VERSION set "ACTUAL_VERSION=%%V"
+exit /b 0
 
 :nobinary
 echo KMP plugin: no kmp-mcp executable found. 1>&2
@@ -52,3 +85,4 @@ rem reads a leading argument as a maintenance command (`migrate`, `--version`),
 rem so forwarding whatever a host happened to pass would exit 2 instead of
 rem serving, and only on Windows. The POSIX launcher already drops them.
 "%BINARY%"
+exit /b %ERRORLEVEL%

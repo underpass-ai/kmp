@@ -9,6 +9,18 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-08-26
+
+### Fixed
+
+- Plugin launchers now reject automatically selected engines from another
+  KMP version. A matching PATH engine safely bypasses a stale local cache;
+  otherwise startup fails with the exact setup repair instead of silently
+  mixing plugin and engine releases. Explicit `KMP_MCP_BIN` pins still win.
+- Native Windows startup now resolves the private user store through
+  `LOCALAPPDATA`, with `APPDATA` and `USERPROFILE` fallbacks, when Unix home
+  variables are absent.
+
 ## [0.2.3] - 2026-08-26
 
 ### Fixed

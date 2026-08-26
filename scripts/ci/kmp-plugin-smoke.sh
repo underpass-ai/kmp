@@ -5,6 +5,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PLUGIN_DIR="${ROOT_DIR}/plugins/kmp"
 FIXTURE="${ROOT_DIR}/tests/plugin/kmp-smoke.jsonl"
 
+fail() {
+  echo "KMP plugin smoke: $*" >&2
+  exit 1
+}
+
 # One data directory per run, outside any project or the operator's real
 # data home: a smoke that inherited either would read memory a previous
 # run — or a developer's own agent session — left behind.
@@ -75,6 +80,74 @@ if codex != claude:
 EOF
 
 bash scripts/plugin/build-local-kmp-plugin.sh
+
+# An ignored binary can leak into a local marketplace snapshot, and an updater
+# from the previous release cannot use installer behavior that only exists in
+# the new plugin yet. The launcher must never give such a stale cache binary
+# priority over a PATH engine that matches its own manifest.
+LAUNCHER_PLUGIN="${SMOKE_DATA_DIR}/launcher-plugin"
+LAUNCHER_PATH_BIN="${SMOKE_DATA_DIR}/launcher-path-bin"
+mkdir -p "$LAUNCHER_PLUGIN/scripts" "$LAUNCHER_PLUGIN/bin" "$LAUNCHER_PATH_BIN"
+cp "$PLUGIN_DIR/scripts/run-embedded-mcp.sh" "$LAUNCHER_PLUGIN/scripts/"
+cp -R "$PLUGIN_DIR/.codex-plugin" "$LAUNCHER_PLUGIN/.codex-plugin"
+cp -R "$PLUGIN_DIR/.claude-plugin" "$LAUNCHER_PLUGIN/.claude-plugin"
+PLUGIN_ENGINE_VERSION="$(python3 - "$LAUNCHER_PLUGIN" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+version = json.loads((root / ".codex-plugin/plugin.json").read_text())["version"]
+engine = version.split("+", 1)[0]
+for relative in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json"):
+    path = root / relative
+    body = json.loads(path.read_text())
+    body["version"] = f"{engine}+launcher-smoke"
+    path.write_text(json.dumps(body, indent=2) + "\n")
+print(engine)
+PY
+)"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [ "${1:-}" = "--version" ]; then printf "kmp-mcp 0.0.1 (store format 1)\\n"; else printf "stale-cache-ran\\n"; fi' \
+  > "$LAUNCHER_PLUGIN/bin/kmp-mcp"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [ "${1:-}" = "--version" ]; then printf "kmp-mcp ${KMP_FAKE_VERSION:?} (store format 1)\\n"; else printf "matching-path-ran\\n"; fi' \
+  > "$LAUNCHER_PATH_BIN/kmp-mcp"
+chmod +x "$LAUNCHER_PLUGIN/bin/kmp-mcp" "$LAUNCHER_PATH_BIN/kmp-mcp"
+KMP_FAKE_VERSION="$PLUGIN_ENGINE_VERSION" PATH="$LAUNCHER_PATH_BIN:$PATH" \
+  bash "$LAUNCHER_PLUGIN/scripts/run-embedded-mcp.sh" \
+    > "$SMOKE_DATA_DIR/launcher-selection.txt" \
+    2> "$SMOKE_DATA_DIR/launcher-selection.err"
+grep -qx 'matching-path-ran' "$SMOKE_DATA_DIR/launcher-selection.txt" \
+  || fail "plugin launcher selected a stale cache engine over matching PATH"
+grep -q 'cache engine 0.0.1 does not match plugin' \
+  "$SMOKE_DATA_DIR/launcher-selection.err" \
+  || fail "plugin launcher did not diagnose the stale cache engine"
+
+if KMP_FAKE_VERSION=0.0.2 PATH="$LAUNCHER_PATH_BIN:$PATH" \
+  bash "$LAUNCHER_PLUGIN/scripts/run-embedded-mcp.sh" \
+    > "$SMOKE_DATA_DIR/launcher-mismatch.txt" \
+    2> "$SMOKE_DATA_DIR/launcher-mismatch.err"; then
+  fail "plugin launcher started without any engine matching its manifest"
+fi
+grep -q 'run kmp setup' "$SMOKE_DATA_DIR/launcher-mismatch.err" \
+  || fail "plugin launcher version failure did not name the repair"
+
+KMP_MCP_BIN="$LAUNCHER_PLUGIN/bin/kmp-mcp" \
+  bash "$LAUNCHER_PLUGIN/scripts/run-embedded-mcp.sh" \
+    > "$SMOKE_DATA_DIR/launcher-explicit.txt"
+grep -qx 'stale-cache-ran' "$SMOKE_DATA_DIR/launcher-explicit.txt" \
+  || fail "plugin launcher stopped honoring the explicit KMP_MCP_BIN override"
+
+# Windows executes the sibling cmd launcher. Its runtime smoke happens in the
+# Windows package job; pin the version-selection contract here as well so the
+# two launchers cannot silently drift during a POSIX-only edit.
+for required in EXPECTED_ENGINE_VERSION BUNDLED_VERSION PATH_BINARY noMatchingBinary; do
+  grep -q "$required" "$PLUGIN_DIR/scripts/run-embedded-mcp.cmd" \
+    || fail "Windows plugin launcher lost version-selection field $required"
+done
 
 responses="$("${PLUGIN_DIR}/scripts/run-embedded-mcp.sh" <"${FIXTURE}")"
 

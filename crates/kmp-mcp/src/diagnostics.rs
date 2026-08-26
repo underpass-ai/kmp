@@ -349,8 +349,10 @@ fn section(out: &mut String, title: &str, findings: &[Finding]) {
 fn memories_finding() -> Vec<Finding> {
     let Some(data_home) = kmp_embedded::user_data_home() else {
         return vec![
-            Finding::new(Level::Warn, "cannot tell what memory is here")
-                .with("neither XDG_DATA_HOME nor HOME is set, so there is nowhere to look"),
+            Finding::new(Level::Warn, "cannot tell what memory is here").with(
+                "none of XDG_DATA_HOME, HOME, LOCALAPPDATA, APPDATA, or USERPROFILE is set, \
+                     so there is nowhere to look",
+            ),
         ];
     };
     let index = data_home.join("kmp").join(crate::memories::INDEX_FILE);

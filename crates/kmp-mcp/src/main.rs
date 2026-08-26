@@ -888,18 +888,15 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         }
     }
 
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("."));
+    let data_home =
+        kmp_embedded::user_data_home().unwrap_or_else(|| home.join(".local").join("share"));
     let roots = kmp_mcp::uninstall::Roots {
-        home: std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(".")),
-        data_home: std::env::var_os("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                std::env::var_os("HOME")
-                    .map(PathBuf::from)
-                    .unwrap_or_else(|| PathBuf::from("."))
-                    .join(".local/share")
-            }),
+        home,
+        data_home,
         working_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
         path_entries: std::env::var_os("PATH")
             .map(|value| std::env::split_paths(&value).collect())

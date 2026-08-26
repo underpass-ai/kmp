@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -86,21 +87,28 @@ fn resolve_with_project_marker(
     ResolvedDataDir::UserDefault(user_data_home.join("kmp").join("default"))
 }
 
-/// Where user-scope memory lives: `$XDG_DATA_HOME`, or `~/.local/share`.
+/// Where user-scope memory lives: the Unix data home when available, then
+/// the native Windows local-data directories.
 ///
 /// Exposed because it is also where anything that wants to enumerate the
 /// machine's memories has to look, and a second copy of this rule would be a
 /// second answer to the same question.
 pub fn user_data_home() -> Option<PathBuf> {
-    std::env::var("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .ok()
-        .filter(|path| !path.as_os_str().is_empty())
-        .or_else(|| {
-            std::env::var("HOME")
-                .ok()
-                .map(|home| PathBuf::from(home).join(".local").join("share"))
-        })
+    user_data_home_from(|name| std::env::var_os(name))
+}
+
+fn user_data_home_from(mut read: impl FnMut(&str) -> Option<OsString>) -> Option<PathBuf> {
+    let path = |value: Option<OsString>| {
+        value
+            .map(PathBuf::from)
+            .filter(|candidate| !candidate.as_os_str().is_empty())
+    };
+
+    path(read("XDG_DATA_HOME"))
+        .or_else(|| path(read("HOME")).map(|home| home.join(".local").join("share")))
+        .or_else(|| path(read("LOCALAPPDATA")))
+        .or_else(|| path(read("APPDATA")))
+        .or_else(|| path(read("USERPROFILE")).map(|home| home.join("AppData").join("Local")))
 }
 
 /// The conventional bundle path for the project `data_dir` belongs to.
@@ -142,7 +150,7 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
     let user_data_home = user_data_home().ok_or_else(|| {
         PortError::Unavailable(
             "embedded kernel could not resolve a user data directory \
-             (neither XDG_DATA_HOME nor HOME is set)"
+             (none of XDG_DATA_HOME, HOME, LOCALAPPDATA, APPDATA, or USERPROFILE is set)"
                 .to_string(),
         )
     })?;
@@ -267,6 +275,37 @@ mod tests {
         assert_eq!(
             resolved,
             ResolvedDataDir::UserDefault(PathBuf::from("/home/u/.local/share/kmp/default"))
+        );
+    }
+
+    #[test]
+    fn user_data_home_keeps_unix_precedence_and_supports_native_windows() {
+        let unix = user_data_home_from(|name| match name {
+            "XDG_DATA_HOME" => Some(OsString::from("/xdg")),
+            "HOME" => Some(OsString::from("/home/user")),
+            "LOCALAPPDATA" => Some(OsString::from(r"C:\Users\user\AppData\Local")),
+            _ => None,
+        });
+        assert_eq!(unix, Some(PathBuf::from("/xdg")));
+
+        let windows = user_data_home_from(|name| match name {
+            "LOCALAPPDATA" => Some(OsString::from(r"C:\Users\user\AppData\Local")),
+            "APPDATA" => Some(OsString::from(r"C:\Users\user\AppData\Roaming")),
+            _ => None,
+        });
+        assert_eq!(windows, Some(PathBuf::from(r"C:\Users\user\AppData\Local")));
+
+        let profile = user_data_home_from(|name| match name {
+            "USERPROFILE" => Some(OsString::from(r"C:\Users\user")),
+            _ => None,
+        });
+        assert_eq!(
+            profile,
+            Some(
+                PathBuf::from(r"C:\Users\user")
+                    .join("AppData")
+                    .join("Local")
+            )
         );
     }
 
