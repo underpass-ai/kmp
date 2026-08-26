@@ -42,6 +42,26 @@ async fn kernel_full_journey_covers_projection_query_and_command()
         let mut query_client = fixture.query_client();
         let mut command_client = fixture.command_client();
 
+        // Fixture readiness proves the projection is alive, not that every
+        // seed event is visible. Wait for the complete graph before making
+        // even the first depth-limited structural assertion.
+        let query_request = GetContextRequest {
+            root_node_id: ROOT_NODE_ID.to_string(),
+            role: DEVELOPER_ROLE.to_string(),
+            token_budget: 65536,
+            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
+            depth: 3,
+            max_tier: 0,
+            rehydration_mode: 2,
+        };
+        wait_for_neighbor_count(
+            fixture.query_client(),
+            query_request.clone(),
+            EXPECTED_NEIGHBOR_COUNT,
+            40,
+        )
+        .await?;
+
         let shallow_query_context = query_client
             .get_context(GetContextRequest {
                 root_node_id: ROOT_NODE_ID.to_string(),
@@ -84,29 +104,6 @@ async fn kernel_full_journey_covers_projection_query_and_command()
                 .content
                 .contains(EXPLORER_LEAF_DETAIL)
         );
-
-        // The fixture's readiness probe waits for *any* neighbour to appear,
-        // which is the right gate for "the projection is alive" and the wrong
-        // one for "it has caught up". Asserting an exact count straight after
-        // it raced the projection: 15 of 17, everything else correct, and a
-        // re-run with no change passing. Wait for what this test is about to
-        // assert; the assertion itself stays exact.
-        let query_request = GetContextRequest {
-            root_node_id: ROOT_NODE_ID.to_string(),
-            role: DEVELOPER_ROLE.to_string(),
-            token_budget: 65536,
-            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
-            depth: 3,
-            max_tier: 0,
-            rehydration_mode: 2,
-        };
-        wait_for_neighbor_count(
-            fixture.query_client(),
-            query_request.clone(),
-            EXPECTED_NEIGHBOR_COUNT,
-            40,
-        )
-        .await?;
 
         let query_context = query_client.get_context(query_request).await?.into_inner();
         let query_bundle = query_context.bundle.expect("query bundle should exist");

@@ -16,6 +16,9 @@ Detailed notes from the early release cycle are preserved in the
 - Crate publication restores registry dependencies without saving or cleaning
   transient Cargo package targets, eliminating false failure annotations after
   a successful publish.
+- Full-journey integration tests now wait for the complete asynchronous
+  projection before their first structural assertion, removing a TLS coverage
+  race without weakening the exact graph checks.
 
 ## [0.2.7] - 2026-08-26
 
