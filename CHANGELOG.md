@@ -19,6 +19,8 @@ Detailed notes from the early release cycle are preserved in the
 - Release tagging now verifies that the public Codex marketplace already
   advertises the same KMP version, preventing stale skills and launchers from
   trailing a newly published engine.
+- The plugin README links to the canonical embedded documentation from source,
+  standalone release bundles and the separate Codex marketplace.
 
 ## [0.2.0] - 2026-08-26
 
