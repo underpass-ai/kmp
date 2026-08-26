@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.8] - 2026-08-26
+
 ### Fixed
 
 - GitHub workflows now pin a complete reviewed inventory of external actions,
