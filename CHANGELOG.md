@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.7] - 2026-08-26
+
 ### Fixed
 
 - Agents now treat KMP refs as opaque identifiers and pass returned refs
