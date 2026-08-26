@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-08-27
+
 ### Fixed
 
 - Agent guidance now treats about ids as opaque routing identifiers, preserving
