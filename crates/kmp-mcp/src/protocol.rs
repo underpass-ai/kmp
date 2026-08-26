@@ -312,7 +312,7 @@ fn write_memory_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
-        "required": ["about", "intent", "actor", "observed_at", "scope", "current", "connect_to"],
+        "required": ["about", "intent", "actor", "observed_at", "scope", "current"],
         "properties": {
             "about": string_schema("Memory anchor or root ref this semantic memory event should attach to."),
             "intent": {
@@ -382,7 +382,7 @@ fn write_memory_schema() -> Value {
             },
             "connect_to": {
                 "type": "array",
-                "minItems": 1,
+                "description": "Existing memory refs the new entry connects to. Omit this field or send an empty array only for the first strict write that creates a new about; once the about exists, strict runtime validation requires at least one relation.",
                 "items": {
                     "type": "object",
                     "additionalProperties": false,
@@ -1524,6 +1524,35 @@ mod tests {
                 assert!(explained, "{name}.outputSchema.{field} has a meaning");
             }
         }
+    }
+
+    #[test]
+    fn writer_schema_allows_the_relation_free_root_that_runtime_accepts() {
+        let contract = tools_list_result();
+        let writer = contract["tools"]
+            .as_array()
+            .expect("tools")
+            .iter()
+            .find(|tool| tool["name"] == "kmp_write_memory")
+            .map(|tool| &tool["inputSchema"])
+            .expect("writer schema");
+        let required = writer["required"]
+            .as_array()
+            .expect("writer required fields");
+        assert!(
+            !required.iter().any(|field| field == "connect_to"),
+            "a new about has no existing ref to connect its first memory to"
+        );
+        assert!(
+            writer["properties"]["connect_to"].get("minItems").is_none(),
+            "an explicit empty connect_to must describe the same valid root write"
+        );
+        assert!(
+            writer["properties"]["connect_to"]["description"]
+                .as_str()
+                .is_some_and(|description| description.contains("first strict write")),
+            "tools/list must explain the data-dependent runtime rule"
+        );
     }
 
     #[test]
