@@ -25,7 +25,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use kmp_domain::PortError;
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, config::DbConfig, params};
 
 use super::{
     Engine, Key, KeyShape, ReadTx, Str3Row, StrRow, Table, U64Row, WriteTx, key_shape_mismatch,
@@ -66,8 +66,9 @@ impl SqliteEngine {
     /// Opens (or creates) `store_file`, switches it to WAL, and creates every
     /// table so readers never race table existence.
     pub(crate) fn open_file(store_file: &Path) -> Result<Self, PortError> {
-        let connection = open_connection(store_file)?;
+        let connection = open_validated_connection(store_file)?;
         create_tables(&connection)?;
+        validate_tables(&connection, store_file)?;
         Ok(Self {
             path: store_file.to_path_buf(),
             pool: Mutex::new(vec![connection]),
@@ -77,7 +78,9 @@ impl SqliteEngine {
     /// Rebuilds the file compactly. `VACUUM` needs the whole database to
     /// itself; the caller guarantees no other handle is open.
     pub(crate) fn compact_file(store_file: &Path) -> Result<bool, PortError> {
-        let connection = open_connection(store_file)?;
+        let connection = open_validated_connection(store_file)?;
+        create_tables(&connection)?;
+        validate_tables(&connection, store_file)?;
         connection.execute_batch("VACUUM").map_err(|error| {
             PortError::Unavailable(format!(
                 "embedded store compaction failed for `{}`: {error}",
@@ -128,6 +131,20 @@ impl Engine for SqliteEngine {
     }
 }
 
+fn open_validated_connection(store_file: &Path) -> Result<Connection, PortError> {
+    let connection = open_connection(store_file)?;
+    let integrity: String = connection
+        .query_row("PRAGMA quick_check(1)", [], |row| row.get(0))
+        .map_err(|error| security_error(store_file, "quick_check", &error))?;
+    if integrity != "ok" {
+        return Err(PortError::InvalidState(format!(
+            "embedded SQLite store `{}` failed quick_check: {integrity}",
+            store_file.display()
+        )));
+    }
+    Ok(connection)
+}
+
 fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
     let connection = Connection::open(store_file).map_err(|error| {
         PortError::Unavailable(format!(
@@ -135,6 +152,7 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
             store_file.display()
         ))
     })?;
+    harden_connection(&connection, store_file)?;
     // busy_timeout FIRST. Switching the journal mode takes a brief
     // exclusive lock, so two processes opening at the same instant collide
     // there — before WAL is even in effect. Without the timeout already
@@ -148,6 +166,27 @@ fn open_connection(store_file: &Path) -> Result<Connection, PortError> {
         .pragma_update(None, "synchronous", "FULL")
         .map_err(|error| pragma_error(store_file, "synchronous", &error))?;
     Ok(connection)
+}
+
+fn harden_connection(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
+    for (config, enabled, name) in [
+        (DbConfig::SQLITE_DBCONFIG_DEFENSIVE, true, "defensive mode"),
+        (
+            DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA,
+            false,
+            "trusted schema",
+        ),
+        (DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER, false, "triggers"),
+        (DbConfig::SQLITE_DBCONFIG_ENABLE_VIEW, false, "views"),
+    ] {
+        connection
+            .set_db_config(config, enabled)
+            .map_err(|error| security_error(store_file, name, &error))?;
+    }
+    connection
+        .execute_batch("PRAGMA cell_size_check=ON; PRAGMA mmap_size=0;")
+        .map_err(|error| security_error(store_file, "safe page access", &error))?;
+    Ok(())
 }
 
 /// Switches the store into WAL, waiting out a holder rather than giving up.
@@ -184,30 +223,68 @@ fn is_busy(error: &rusqlite::Error) -> bool {
 fn create_tables(connection: &Connection) -> Result<(), PortError> {
     let mut ddl = String::new();
     for table in ALL_TABLES {
-        let columns = match table.key_shape() {
-            KeyShape::Str => "k TEXT NOT NULL, v BLOB NOT NULL, PRIMARY KEY (k)",
-            KeyShape::Str2 => {
-                "k1 TEXT NOT NULL, k2 TEXT NOT NULL, v BLOB NOT NULL, PRIMARY KEY (k1, k2)"
-            }
-            KeyShape::Str3 => {
-                "k1 TEXT NOT NULL, k2 TEXT NOT NULL, k3 TEXT NOT NULL, v BLOB NOT NULL, \
-                 PRIMARY KEY (k1, k2, k3)"
-            }
-            KeyShape::U64 => "k INTEGER PRIMARY KEY, v BLOB NOT NULL",
-        };
-        // WITHOUT ROWID clusters text-keyed tables by their key. The u64
-        // table keeps the rowid: INTEGER PRIMARY KEY *is* the rowid.
-        let suffix = match table.key_shape() {
-            KeyShape::U64 => "",
-            _ => " WITHOUT ROWID",
-        };
-        ddl.push_str(&format!(
-            "CREATE TABLE IF NOT EXISTS \"{table}\" ({columns}){suffix};\n"
-        ));
+        ddl.push_str(&table_ddl(table, true));
+        ddl.push_str(";\n");
     }
     connection.execute_batch(&ddl).map_err(|error| {
         PortError::Unavailable(format!("embedded store could not create tables: {error}"))
     })
+}
+
+fn table_ddl(table: Table, if_not_exists: bool) -> String {
+    let columns = match table.key_shape() {
+        KeyShape::Str => "k TEXT NOT NULL, v BLOB NOT NULL, PRIMARY KEY (k)",
+        KeyShape::Str2 => {
+            "k1 TEXT NOT NULL, k2 TEXT NOT NULL, v BLOB NOT NULL, PRIMARY KEY (k1, k2)"
+        }
+        KeyShape::Str3 => {
+            "k1 TEXT NOT NULL, k2 TEXT NOT NULL, k3 TEXT NOT NULL, v BLOB NOT NULL, \
+             PRIMARY KEY (k1, k2, k3)"
+        }
+        KeyShape::U64 => "k INTEGER PRIMARY KEY, v BLOB NOT NULL",
+    };
+    // WITHOUT ROWID clusters text-keyed tables by their key. The u64 table
+    // keeps the rowid: INTEGER PRIMARY KEY *is* the rowid.
+    let suffix = match table.key_shape() {
+        KeyShape::U64 => "",
+        _ => " WITHOUT ROWID",
+    };
+    let guard = if if_not_exists { "IF NOT EXISTS " } else { "" };
+    format!("CREATE TABLE {guard}\"{table}\" ({columns}){suffix}")
+}
+
+fn validate_tables(connection: &Connection, store_file: &Path) -> Result<(), PortError> {
+    for table in ALL_TABLES {
+        let mut statement = connection
+            .prepare(
+                "SELECT type, name, sql FROM sqlite_schema \
+                 WHERE tbl_name = ?1 ORDER BY type, name",
+            )
+            .map_err(|error| security_error(store_file, "schema validation", &error))?;
+        let objects = statement
+            .query_map(params![table.to_string()], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            })
+            .map_err(|error| security_error(store_file, "schema validation", &error))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|error| security_error(store_file, "schema validation", &error))?;
+        let expected_name = table.to_string();
+        let expected_ddl = table_ddl(table, false);
+        let valid =
+            objects.as_slice() == [("table".to_string(), expected_name, Some(expected_ddl))];
+        if !valid {
+            return Err(PortError::InvalidState(format!(
+                "embedded SQLite store `{}` has an unexpected schema for `{table}`; refusing \
+                 to execute against a database that may contain injected schema objects",
+                store_file.display()
+            )));
+        }
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------------- pooling --
@@ -560,6 +637,13 @@ fn pragma_error(store_file: &Path, pragma: &str, error: &rusqlite::Error) -> Por
     ))
 }
 
+fn security_error(store_file: &Path, control: &str, error: &rusqlite::Error) -> PortError {
+    PortError::Unavailable(format!(
+        "embedded store could not enforce SQLite {control} on `{}`: {error}",
+        store_file.display()
+    ))
+}
+
 fn read_error(table: Table, error: &rusqlite::Error) -> PortError {
     PortError::Unavailable(format!("embedded store read on `{table}` failed: {error}"))
 }
@@ -571,6 +655,78 @@ fn write_error(table: Table, error: &rusqlite::Error) -> PortError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_connection_treats_the_database_schema_as_untrusted() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store_file = dir.path().join("kernel.sqlite3");
+
+        let connection = open_connection(&store_file).expect("hardened connection opens");
+
+        assert!(
+            connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_DEFENSIVE)
+                .expect("defensive mode reads back")
+        );
+        assert!(
+            !connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_TRUSTED_SCHEMA)
+                .expect("trusted schema reads back")
+        );
+        assert!(
+            !connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_TRIGGER)
+                .expect("trigger policy reads back")
+        );
+        assert!(
+            !connection
+                .db_config(DbConfig::SQLITE_DBCONFIG_ENABLE_VIEW)
+                .expect("view policy reads back")
+        );
+        let cell_size_check: i64 = connection
+            .pragma_query_value(None, "cell_size_check", |row| row.get(0))
+            .expect("cell size policy reads back");
+        let mmap_size: i64 = connection
+            .pragma_query_value(None, "mmap_size", |row| row.get(0))
+            .expect("mmap policy reads back");
+        assert_eq!(cell_size_check, 1);
+        assert_eq!(mmap_size, 0);
+    }
+
+    #[test]
+    fn a_trigger_from_an_existing_database_is_rejected_before_use() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let store_file = dir.path().join("kernel.sqlite3");
+        let fixture = Connection::open(&store_file).expect("fixture opens");
+        create_tables(&fixture).expect("fixture schema");
+        fixture
+            .execute_batch(
+                "CREATE TABLE trigger_probe (value TEXT NOT NULL);\n\
+                 CREATE TRIGGER injected_after_node_insert AFTER INSERT ON nodes\n\
+                 BEGIN\n\
+                   INSERT INTO trigger_probe (value) VALUES ('executed');\n\
+                 END;",
+            )
+            .expect("hostile trigger fixture");
+        drop(fixture);
+
+        let error = SqliteEngine::open_file(&store_file)
+            .expect_err("a store carrying an injected trigger must be rejected");
+        assert!(error.to_string().contains("unexpected schema for `nodes`"));
+
+        let inspection = Connection::open(&store_file).expect("inspection opens");
+        let probe_count: i64 = inspection
+            .query_row("SELECT COUNT(*) FROM trigger_probe", [], |row| row.get(0))
+            .expect("probe count");
+        let node_count: i64 = inspection
+            .query_row("SELECT COUNT(*) FROM nodes", [], |row| row.get(0))
+            .expect("node count");
+        assert_eq!(
+            node_count, 0,
+            "no application write may run before rejection"
+        );
+        assert_eq!(probe_count, 0, "the injected trigger must stay inert");
+    }
 
     /// Losing the race to switch a store into WAL must not end the open.
     ///
