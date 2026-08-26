@@ -9,6 +9,17 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-26
+
+### Fixed
+
+- The Codex updater refreshes its Git marketplace, verifies the plugin version
+  returned by the host and refuses to update only the engine when the
+  marketplace is stale.
+- Release tagging now verifies that the public Codex marketplace already
+  advertises the same KMP version, preventing stale skills and launchers from
+  trailing a newly published engine.
+
 ## [0.2.0] - 2026-08-26
 
 ### Added
@@ -227,7 +238,8 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/underpass-ai/kmp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/underpass-ai/kmp/compare/v0.1.18...v0.2.0
 [0.1.18]: https://github.com/underpass-ai/kmp/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/underpass-ai/kmp/compare/v0.1.16...v0.1.17

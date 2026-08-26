@@ -93,12 +93,9 @@ if c1 == 0 or c2 == 0:
     sys.exit("Chart.yaml: version / appVersion line missing")
 chart.write_text(text)
 
-# The plugin host manifests. The packaging script stamps these when it
-# builds a release bundle, but the marketplace installs straight from this
-# repository, so whatever is committed here is the version every
-# marketplace user sees. Left behind, it pins them at the first release
-# forever: `claude plugin update` reports "already at the latest version"
-# no matter what ships, because the number never moves.
+# The plugin host manifests. Claude reads this repository directly; the Codex
+# marketplace mirrors this directory in underpass-ai/plugins. `release` checks
+# that the public Codex mirror already advertises this version before tagging.
 manifests = [
     pathlib.Path("plugins/kmp/.claude-plugin/plugin.json"),
     pathlib.Path("plugins/kmp/.codex-plugin/plugin.json"),
@@ -197,6 +194,31 @@ cmd_release() {
     # at a different or not-yet-built artifact.
     bash scripts/ci/mcp-registry.sh
 
+    # Codex installs from the separate underpass-ai/plugins snapshot. Publish
+    # that reviewed mirror before the tag makes this release discoverable;
+    # otherwise an existing updater can install the new engine beside stale
+    # skills and launchers. Build metadata is allowed as a cachebuster, but
+    # its SemVer core must be the release being tagged.
+    local marketplace_manifest marketplace_version
+    marketplace_manifest="$(curl --proto '=https' --tlsv1.2 --connect-timeout 5 --max-time 20 \
+        -fsSL "https://raw.githubusercontent.com/underpass-ai/plugins/main/plugins/kmp/.codex-plugin/plugin.json")" || {
+        echo "error: could not verify the public Codex marketplace" >&2
+        exit 1
+    }
+    marketplace_version="$(printf '%s' "${marketplace_manifest}" | python3 -c \
+        'import json,sys; print(json.load(sys.stdin)["version"])')" || {
+        echo "error: public Codex marketplace manifest is invalid" >&2
+        exit 1
+    }
+    case "${marketplace_version}" in
+        "${version}"|"${version}"+*) ;;
+        *)
+            echo "error: kmp@underpass is '${marketplace_version}', not '${version}'" >&2
+            echo "  hint: merge the underpass-ai/plugins mirror PR before tagging" >&2
+            exit 1
+            ;;
+    esac
+
     local tag="v${version}"
     if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
         echo "error: tag ${tag} already exists" >&2
@@ -216,6 +238,7 @@ cmd_release() {
     echo "tagged ${tag} and pushed."
     echo "publish-distribution: image + chart + crates.io chain."
     echo "plugin-package + release: host bundles, binaries and MCPB attached."
+    echo "Codex marketplace: verified kmp@underpass ${marketplace_version}."
     echo "mcp-registry: validates the tag; production publish remains gated."
 }
 

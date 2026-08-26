@@ -333,6 +333,8 @@ CLAUDE_PLUGIN_ROOT="$INSTALLED" \
     --version "$WORKSPACE_VERSION" > "$WORK_DIR/codex-plugin-update-dry-run.txt"
 grep -q 'codex plugin add kmp@underpass' "$WORK_DIR/codex-plugin-update-dry-run.txt" \
   || { cat "$WORK_DIR/codex-plugin-update-dry-run.txt" >&2; fail "Codex plugin update lost plugin ownership"; }
+grep -q 'codex plugin marketplace upgrade underpass --json' "$WORK_DIR/codex-plugin-update-dry-run.txt" \
+  || { cat "$WORK_DIR/codex-plugin-update-dry-run.txt" >&2; fail "Codex plugin update did not refresh its marketplace"; }
 if grep -q 'standalone Codex prompts' "$WORK_DIR/codex-plugin-update-dry-run.txt"; then
   fail "Codex plugin update attempted to refresh standalone assets"
 fi
@@ -353,17 +355,49 @@ printf '%s\n' \
   > "${CACHE_REPLACED_PLUGIN}/scripts/kmp-install-binary.sh"
 printf '%s\n' \
   '#!/usr/bin/env bash' \
+  'if [ "$1 $2" = "plugin marketplace" ]; then exit 0; fi' \
   'rm -rf "${KMP_FAKE_OLD_PLUGIN_ROOT:?}"' \
+  'printf '\''{"version":"%s","installedPath":"%s"}\n'\'' "${KMP_FAKE_PLUGIN_VERSION:?}" "${KMP_FAKE_INSTALLED_PLUGIN_ROOT:?}"' \
   > "${FAKE_HOST_BIN}/codex"
 chmod +x "${FAKE_HOST_BIN}/codex"
 KMP_FAKE_OLD_PLUGIN_ROOT="$CACHE_REPLACED_PLUGIN" \
 KMP_FAKE_ENGINE_MARKER="$ENGINE_MARKER" \
+KMP_FAKE_PLUGIN_VERSION="$WORKSPACE_VERSION" \
+KMP_FAKE_INSTALLED_PLUGIN_ROOT="${WORK_DIR}/new-plugin" \
 PATH="${FAKE_HOST_BIN}:${PATH}" \
   bash "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh" \
     --codex --version "$WORKSPACE_VERSION" \
     > "${WORK_DIR}/cache-replaced-update.txt"
 [ -f "$ENGINE_MARKER" ] \
   || { cat "${WORK_DIR}/cache-replaced-update.txt" >&2; fail "Codex cache replacement lost the staged engine installer"; }
+
+# Never update only the engine when the marketplace snapshot is stale. The
+# host install can succeed while returning an older plugin; that must be a
+# hard failure before the binary installer runs.
+STALE_ENGINE_MARKER="${WORK_DIR}/stale-marketplace-engine-installed"
+mkdir -p "$CACHE_REPLACED_PLUGIN/scripts"
+cp "$INSTALLED/scripts/kmp-update.sh" \
+  "$CACHE_REPLACED_PLUGIN/scripts/kmp-update.sh"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'printf installed > "${KMP_FAKE_ENGINE_MARKER:?}"' \
+  > "$CACHE_REPLACED_PLUGIN/scripts/kmp-install-binary.sh"
+if KMP_FAKE_OLD_PLUGIN_ROOT="$CACHE_REPLACED_PLUGIN" \
+  KMP_FAKE_ENGINE_MARKER="$STALE_ENGINE_MARKER" \
+  KMP_FAKE_PLUGIN_VERSION="$OLDER_VERSION" \
+  KMP_FAKE_INSTALLED_PLUGIN_ROOT="${WORK_DIR}/stale-plugin-result" \
+  PATH="${FAKE_HOST_BIN}:${PATH}" \
+    bash "$CACHE_REPLACED_PLUGIN/scripts/kmp-update.sh" \
+      --codex --version "$WORKSPACE_VERSION" \
+      > "$WORK_DIR/stale-marketplace-update.txt" 2>&1; then
+  cat "$WORK_DIR/stale-marketplace-update.txt" >&2
+  fail "Codex update accepted a stale marketplace plugin"
+fi
+[ ! -e "$STALE_ENGINE_MARKER" ] \
+  || fail "Codex update changed the engine after installing a stale plugin"
+grep -q "installed plugin ${OLDER_VERSION}, but release ${WORKSPACE_VERSION} was requested" \
+  "$WORK_DIR/stale-marketplace-update.txt" \
+  || { cat "$WORK_DIR/stale-marketplace-update.txt" >&2; fail "stale marketplace failure was not actionable"; }
 
 if [ -s "${WORK_DIR}/quiet.txt" ]; then
   cat "${WORK_DIR}/quiet.txt" >&2
