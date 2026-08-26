@@ -37,6 +37,26 @@ async fn kernel_full_journey_supports_tls_across_query_and_command_surfaces()
         let mut query_client = fixture.query_client();
         let mut command_client = fixture.command_client();
 
+        // Fixture readiness proves the projection is alive, not that every
+        // seed event is visible. Wait for the complete graph before making
+        // even the first depth-limited structural assertion.
+        let query_request = GetContextRequest {
+            root_node_id: ROOT_NODE_ID.to_string(),
+            role: DEVELOPER_ROLE.to_string(),
+            token_budget: 65536,
+            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
+            depth: 3,
+            max_tier: 0,
+            rehydration_mode: 2,
+        };
+        wait_for_neighbor_count(
+            fixture.query_client(),
+            query_request.clone(),
+            EXPECTED_NEIGHBOR_COUNT,
+            40,
+        )
+        .await?;
+
         let shallow_query_context = query_client
             .get_context(GetContextRequest {
                 root_node_id: ROOT_NODE_ID.to_string(),
@@ -79,23 +99,6 @@ async fn kernel_full_journey_supports_tls_across_query_and_command_surfaces()
                 .content
                 .contains(EXPLORER_LEAF_DETAIL)
         );
-
-        let query_request = GetContextRequest {
-            root_node_id: ROOT_NODE_ID.to_string(),
-            role: DEVELOPER_ROLE.to_string(),
-            token_budget: 65536,
-            requested_scopes: vec!["graph".to_string(), "decisions".to_string()],
-            depth: 3,
-            max_tier: 0,
-            rehydration_mode: 2,
-        };
-        wait_for_neighbor_count(
-            fixture.query_client(),
-            query_request.clone(),
-            EXPECTED_NEIGHBOR_COUNT,
-            40,
-        )
-        .await?;
 
         let query_context = query_client.get_context(query_request).await?.into_inner();
         let query_bundle = query_context.bundle.expect("query bundle should exist");
