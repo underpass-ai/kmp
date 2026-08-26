@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.6] - 2026-08-26
+
 ### Changed
 
 - The Claude Code plugin now ships its MCP server as `memory` instead of
