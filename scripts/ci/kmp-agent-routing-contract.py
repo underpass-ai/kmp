@@ -104,6 +104,39 @@ for field in ("why", "evidence"):
     if field not in evidence["relation"]:
         fail(f"semantic relation fixture lost {field}")
 
+temporal_moves = {"kmp_goto", "kmp_near", "kmp_rewind", "kmp_forward"}
+cases = {case["original_goal_class"]: case for case in FIXTURE["result_routing_cases"]}
+for goal_class in ("current_state", "release_history"):
+    case = cases[goal_class]
+    if not case["ask_results"] or any(result != "UNKNOWN" for result in case["ask_results"]):
+        fail(f"{goal_class} fixture did not exhaust unanswered semantic retries")
+    if case["next_move"] not in temporal_moves or case["terminal"]:
+        fail(f"{goal_class} UNKNOWN did not reclassify into temporal navigation")
+
+semantic_unknown = cases["pure_semantics"]
+if (
+    any(result != "UNKNOWN" for result in semantic_unknown["ask_results"])
+    or semantic_unknown["next_move"] != "return_UNKNOWN"
+    or not semantic_unknown["terminal"]
+):
+    fail("a genuinely semantic UNKNOWN did not remain a valid terminal result")
+
+if cases["consequential_claim"]["next_move"] != "kmp_inspect":
+    fail("a consequential claim did not route from retrieval to inspection")
+if cases["connection_claim"]["next_move"] != "kmp_trace":
+    fail("a claimed connection did not route from retrieval to trace")
+
+partial = FIXTURE["partial_recall_case"]
+if partial["has_more"] and partial["goal_depends_on_omitted_material"]:
+    continuation = f"kmp_wake:{partial['next_cursor']}"
+    try:
+        continuation_index = partial["tool_trace"].index(continuation)
+        repository_index = partial["tool_trace"].index("repository_read")
+    except ValueError as error:
+        fail(f"partial recall fixture lost its continuation boundary: {error}")
+    if continuation_index >= repository_index:
+        fail("repository evidence was read before the relevant KMP page completed")
+
 instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
     ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
@@ -117,6 +150,9 @@ required = (
     "kmp_goto",
     "deduplicate",
     "UNKNOWN",
+    "reclassify the original goal",
+    "repository evidence",
+    "consequential claim",
 )
 for asset in instruction_assets:
     text = asset.read_text(encoding="utf-8").casefold()
@@ -149,5 +185,6 @@ if "Set it to true only for an explicitly requested preview" not in protocol:
 
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "
-    "bounded semantic fallback, byte-exact evidence, single-call validated writes"
+    "result-driven UNKNOWN routing, audit gates, byte-exact evidence, "
+    "single-call validated writes"
 )

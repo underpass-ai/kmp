@@ -96,5 +96,65 @@
       "kmp_ask:es",
       "kmp_ask:en"
     ]
+  },
+  "result_routing_cases": [
+    {
+      "name": "unknown_current_release_state",
+      "original_goal_class": "current_state",
+      "ask_results": [
+        "UNKNOWN",
+        "UNKNOWN"
+      ],
+      "next_move": "kmp_rewind",
+      "terminal": false
+    },
+    {
+      "name": "unknown_release_history",
+      "original_goal_class": "release_history",
+      "ask_results": [
+        "UNKNOWN",
+        "UNKNOWN"
+      ],
+      "next_move": "kmp_near",
+      "terminal": false
+    },
+    {
+      "name": "unknown_pure_semantics",
+      "original_goal_class": "pure_semantics",
+      "ask_results": [
+        "UNKNOWN",
+        "UNKNOWN"
+      ],
+      "next_move": "return_UNKNOWN",
+      "terminal": true
+    },
+    {
+      "name": "answer_supports_consequential_claim",
+      "original_goal_class": "consequential_claim",
+      "ask_results": [
+        "ANSWER"
+      ],
+      "next_move": "kmp_inspect",
+      "terminal": false
+    },
+    {
+      "name": "answer_claims_connection",
+      "original_goal_class": "connection_claim",
+      "ask_results": [
+        "ANSWER"
+      ],
+      "next_move": "kmp_trace",
+      "terminal": false
+    }
+  ],
+  "partial_recall_case": {
+    "goal_depends_on_omitted_material": true,
+    "has_more": true,
+    "next_cursor": "kmp1:test-routing-cursor",
+    "tool_trace": [
+      "kmp_wake",
+      "kmp_wake:kmp1:test-routing-cursor",
+      "repository_read"
+    ]
   }
 }

@@ -22,9 +22,14 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   that does not answer, retry once per fallback language configured by
   `kmp-mcp config`. Translate only the query, answer in the user's language,
   and preserve stored evidence, refs, relation `why` and source metadata
-  byte-for-byte. `UNKNOWN` remains valid after the bounded retries.
-- **Then audit.** `kmp_trace` proves a path between refs; `kmp_inspect` shows
-  one ref's object, links and evidence.
+  byte-for-byte.
+- **Let the result route the next move.** After bounded Ask retries,
+  reclassify the original goal: current/latest/recent state, what changed,
+  why now and release or decision history use temporal navigation; only a
+  genuinely semantic unresolved question ends at `UNKNOWN`. A relevant
+  recall page or temporal interval must be completed before switching to
+  repository evidence. Before a consequential claim, `kmp_inspect` audits its
+  cited ref; `kmp_trace` proves a claimed connection between refs.
 - **Write decisions, constraints and outcomes — never transcripts.** Memory
   is the durable shape of the work, not a log of the conversation. Prefer
   `kmp_write_memory`, which validates intent and relation quality before

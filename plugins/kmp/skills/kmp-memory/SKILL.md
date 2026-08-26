@@ -11,6 +11,55 @@ construction. Nothing here generates prose. If the memory does not support an
 answer, `kmp_ask` returns `UNKNOWN` — that is a correct result, not a
 failure to work around.
 
+## Use this as a router, not a tool glossary
+
+Choose a lane before the first call, then let every result choose the next
+move. Do not select `kmp_ask` once and keep treating the whole task as semantic
+when the evidence says it is not.
+
+Known work always enters through `kmp_wake`; apply the remaining rows to the
+part of the goal the wake packet did not already answer.
+
+| Signal in the user's goal | First move |
+| --- | --- |
+| Continue known work or recover its state | `kmp_wake` |
+| Yesterday, since, before/after, a date, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_goto`, `kmp_near`, `kmp_rewind` or `kmp_forward` |
+| A genuinely non-temporal question answerable from stored evidence | `kmp_ask` |
+| One cited ref must support a consequential claim | `kmp_inspect` |
+| A connection between two refs is part of the claim | `kmp_trace` |
+| A durable decision, constraint or outcome was reached | `kmp_write_memory` |
+
+`kmp_ask` is direct-evidence retrieval. It is not time traversal and it does
+not synthesize strategy, policy or prose. If a question asks what a campaign,
+handoff or recommendation *should say*, retrieve the underlying stored
+decisions in their own vocabulary and let the agent synthesize only after
+retrieval. Relations may rank eligible evidence; they cannot promote unrelated
+evidence into an answer.
+
+Route again after every response:
+
+- Empty `kmp_wake` means there is no memory for the about. Start the work and
+  write its durable shape when one exists.
+- A wake or Ask projection with `has_more=true` is not exhaustive. If omitted
+  material may affect the goal, follow its opaque cursor before leaving KMP;
+  otherwise state that the recall was partial.
+- When Ask evidence answers the question, use the returned refs. Inspect a ref
+  before relying on its object or evidence for a consequential claim; trace
+  the path when the claim depends on a connection.
+- When Ask returns `UNKNOWN` or irrelevant evidence, finish the configured
+  language retries, then reclassify the **original goal**. Current, latest or
+  recent state, what changed, why now, and release or decision history move to
+  temporal navigation. A genuinely semantic question ends at `UNKNOWN` after
+  the bounded retries.
+- Reclassification is not a workaround for `UNKNOWN`: Ask and temporal
+  navigation answer different kinds of questions. Do not silently jump to
+  repository files while a relevant KMP page or interval is incomplete. If
+  files are consulted after the memory route is complete, identify them as
+  repository evidence rather than stored KMP evidence.
+- A temporal response with `page.has_more=true` must consume
+  `page.next_cursor` until complete or report the exact continuation. Never
+  present the first page as the interval.
+
 ## Start here: recover before you re-derive
 
 When the work continues something earlier, the first move is:
@@ -49,6 +98,18 @@ example `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Enter the
 temporal lane first; do not spend an Ask call and do not present Ask as an
 exhaustive interval query.
 
+Temporal intent does not require an explicit date. “What is current?”, “what
+changed?”, “why now?”, release readiness, and recent decision history ask for
+state across time. A version number alone is not enough to choose the lane:
+asking for a stable contract at that version may be semantic, while asking how
+the project reached it or whether it is the current state is temporal.
+
+When current state or a release is temporal but the user gave no boundary,
+read the real clock and start with `kmp_rewind` from now using
+`limit: { entries: 1 }` to find the frontier. Use that ref or timestamp with
+`kmp_near` / `kmp_rewind`, and continue until the relevant decision window is
+covered. Do not invent a date merely to fit the bounded-interval recipe.
+
 Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
 to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
@@ -72,8 +133,9 @@ If it returns `UNKNOWN`, or retrieved evidence does not actually answer, retry
 once per language in the configured fallback list. Translate only the query;
 never translate or rewrite stored evidence, refs, relation `why`, or source
 metadata. Cite the original evidence byte-for-byte and answer in the user's
-language. Stop after the configured list: `UNKNOWN` remains a valid final
-result.
+language. After the configured list, reclassify the original goal before
+stopping: current/recent state or release/decision history moves to temporal
+navigation; `UNKNOWN` is final only for a genuinely semantic question.
 
 The active list comes from the MCP initialize instructions and is visible with
 `kmp-mcp config`. The default is `en`; setup can change or disable it. Do not
