@@ -267,21 +267,32 @@ if ! KMP_LATEST_VERSION="${WORKSPACE_VERSION}" CLAUDE_PLUGIN_ROOT="${INSTALLED}"
   fail "the version notice exited non-zero with a matching engine"
 fi
 
-# Equality between the plugin and engine is not freshness. Reproduce someone
-# exactly two patch releases behind and prove the in-product hook names both
-# versions and the single command that catches up both halves.
-STALE_VERSION="$(python3 - "$WORKSPACE_VERSION" <<'PY'
+# Equality between the plugin and engine is not freshness. Reproduce an older
+# installation and prove the in-product hook names both versions and the
+# single command that catches up both halves. The fixture must also work on a
+# new minor or major release, where the current patch number is zero.
+OLDER_VERSION="$(python3 - "$WORKSPACE_VERSION" <<'PY'
+import re
 import sys
 
-major, minor, patch = map(int, sys.argv[1].split(".")[:3])
-if patch < 2:
-    raise SystemExit("plugin install smoke needs a patch version >= 2")
-print(f"{major}.{minor}.{patch - 2}")
+match = re.match(r"^(\d+)\.(\d+)\.(\d+)", sys.argv[1])
+if not match:
+    raise SystemExit(f"workspace version is not semver: {sys.argv[1]}")
+major, minor, patch = map(int, match.groups())
+if patch > 0:
+    patch -= 1
+elif minor > 0:
+    minor -= 1
+elif major > 0:
+    major -= 1
+else:
+    raise SystemExit("0.0.0 has no older non-negative semver fixture")
+print(f"{major}.{minor}.{patch}")
 PY
 )"
 STALE_PLUGIN="${WORK_DIR}/stale-plugin"
 cp -R "${INSTALLED}" "$STALE_PLUGIN"
-python3 - "$STALE_PLUGIN" "$STALE_VERSION" <<'PY'
+python3 - "$STALE_PLUGIN" "$OLDER_VERSION" <<'PY'
 import json
 import pathlib
 import sys
@@ -296,17 +307,17 @@ for relative in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
 PY
 STALE_BIN="${WORK_DIR}/stale-kmp-mcp"
 printf '#!/usr/bin/env bash\nprintf "kmp-mcp %s (store format 1)\\n"\n' \
-  "$STALE_VERSION" > "$STALE_BIN"
+  "$OLDER_VERSION" > "$STALE_BIN"
 chmod +x "$STALE_BIN"
 
 KMP_MCP_BIN="$STALE_BIN" KMP_LATEST_VERSION="$WORKSPACE_VERSION" \
 CLAUDE_PLUGIN_ROOT="$STALE_PLUGIN" \
   bash "$STALE_PLUGIN/scripts/kmp-version-notice.sh" > "$WORK_DIR/stale-notice.txt"
-grep -q "${STALE_VERSION} is installed; ${WORKSPACE_VERSION} is out" \
+grep -q "${OLDER_VERSION} is installed; ${WORKSPACE_VERSION} is out" \
   "$WORK_DIR/stale-notice.txt" \
-  || { cat "$WORK_DIR/stale-notice.txt" >&2; fail "two-releases-behind notice lost the version delta"; }
+  || { cat "$WORK_DIR/stale-notice.txt" >&2; fail "older-release notice lost the version delta"; }
 grep -q 'kmp:setup' "$WORK_DIR/stale-notice.txt" \
-  || fail "two-releases-behind notice does not offer the single catch-up command"
+  || fail "older-release notice does not offer the single catch-up command"
 
 # The catch-up script is safe to preview and contains both operations: native
 # plugin update and the matching checksummed engine install.
