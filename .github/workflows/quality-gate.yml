@@ -68,11 +68,13 @@ jobs:
       test: ${{ steps.plan.outputs.test }}
       valkey: ${{ steps.plan.outputs.valkey }}
       neo4j: ${{ steps.plan.outputs.neo4j }}
+      nats: ${{ steps.plan.outputs.nats }}
       embedded_binary: ${{ steps.plan.outputs.embedded_binary }}
       embedded_sqlite: ${{ steps.plan.outputs.embedded_sqlite }}
       conformance: ${{ steps.plan.outputs.conformance }}
       agentic_context: ${{ steps.plan.outputs.agentic_context }}
       agentic_event_context: ${{ steps.plan.outputs.agentic_event_context }}
+      full_journey: ${{ steps.plan.outputs.full_journey }}
       mcp_real: ${{ steps.plan.outputs.mcp_real }}
       container: ${{ steps.plan.outputs.container }}
       helm: ${{ steps.plan.outputs.helm }}
@@ -86,7 +88,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prove the routing matrix
-        run: python3 scripts/ci/quality-gate-plan.py --self-test
+        run: |
+          python3 scripts/ci/quality-gate-plan.py --self-test
+          python3 scripts/ci/merge-coverage.py --self-test
+          python3 scripts/ci/quality-workflow-contract.py
 
       - name: Plan required gates
         id: plan
@@ -216,7 +221,7 @@ jobs:
 
       - name: Install Rust toolchain
         if: needs.impact.outputs.rust == 'true'
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         if: needs.impact.outputs.rust == 'true'
@@ -226,9 +231,19 @@ jobs:
         if: needs.impact.outputs.rust == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
+      - name: Reset coverage counters
+        if: needs.impact.outputs.rust == 'true'
+        run: cargo llvm-cov clean --workspace
+
       - name: Run tests
         if: needs.impact.outputs.rust == 'true'
-        run: cargo test ${{ needs.impact.outputs.cargo_packages }} --locked
+        run: cargo llvm-cov --no-report ${{ needs.impact.outputs.cargo_packages }} --locked
+
+      - name: Publish unit-test coverage
+        if: needs.impact.outputs.rust == 'true'
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: unit
 
       - name: Documentation spine
         if: needs.impact.outputs.docs == 'true'
@@ -246,7 +261,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -257,8 +272,18 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run Valkey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-valkey.sh
+
+      - name: Publish Valkey coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: valkey
 
   integration-neo4j:
     needs: [tree-proof, impact]
@@ -272,7 +297,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -283,8 +308,54 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run Neo4j integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-neo4j.sh
+
+      - name: Publish Neo4j coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: neo4j
+
+  integration-nats:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.nats == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-coverage
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+
+      - name: Verify Docker
+        run: docker version
+
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
+      - name: Run NATS integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-nats.sh
+
+      - name: Publish NATS coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: nats
 
   embedded-binary-gates:
     needs: [tree-proof, impact]
@@ -375,7 +446,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -386,8 +457,18 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run agentic context integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-agentic-context.sh
+
+      - name: Publish agentic-context coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: agentic-context
 
   integration-agentic-event-context:
     needs: [tree-proof, impact]
@@ -401,7 +482,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -412,8 +493,59 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run event-driven agentic integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-agentic-event-context.sh
+
+      - name: Publish agentic-event coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: agentic-event-context
+
+  integration-kernel-full-journey:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.full_journey == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-coverage
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+
+      - name: Verify Docker
+        run: docker version
+
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
+      - name: Run full-journey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-kernel-full-journey.sh
+
+      - name: Run TLS full-journey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-kernel-full-journey-tls.sh
+
+      - name: Publish full-journey coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: full-journey
 
   integration-mcp-real-kernel:
     needs: [tree-proof, impact]
@@ -476,40 +608,44 @@ jobs:
         run: bash scripts/ci/helm-lint.sh
 
   coverage:
-    needs: [tree-proof, impact]
-    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.coverage == 'true'
+    needs:
+      - tree-proof
+      - impact
+      - test
+      - integration-valkey
+      - integration-neo4j
+      - integration-nats
+      - integration-agentic-context
+      - integration-agentic-event-context
+      - integration-kernel-full-journey
+    if: >-
+      always()
+      && needs.tree-proof.outputs.skip != 'true'
+      && needs.impact.result == 'success'
+      && needs.impact.outputs.coverage == 'true'
+      && needs.test.result == 'success'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+      - name: Download test coverage
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          components: llvm-tools-preview
+          pattern: coverage-*
+          path: dist/coverage
+          merge-multiple: true
 
-      - name: Install protoc
-        run: bash scripts/ci/install-protoc.sh
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@fcf5432d9f50d67e37ee6e29bdb7a224ff67b4a7
-        with:
-          tool: cargo-llvm-cov
-
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-
-      - name: Verify Docker
-        run: docker version
-
-      # The script owns the threshold: it ends in `cargo llvm-cov report
-      # --fail-under-lines`, so the gate is self-contained and needs no
-      # external service to decide pass or fail.
-      - name: Run coverage gate
-        run: bash scripts/ci/rust-coverage.sh
+      # Coverage is a reducer, not a second test suite. The upstream jobs each
+      # run their tests once with LLVM instrumentation and upload LCOV. This
+      # job only merges those reports and enforces the repository threshold.
+      - name: Merge coverage and enforce threshold
+        run: bash scripts/ci/rust-coverage.sh dist/coverage
 
   wait-codeql-checks:
     needs: [tree-proof, impact]

@@ -1,0 +1,15 @@
+name: Install coverage toolchain
+description: Install the pinned Rust toolchain and cargo-llvm-cov for a test job
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain with coverage support
+      uses: ./.github/actions/install-rust
+      with:
+        components: llvm-tools-preview
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@fcf5432d9f50d67e37ee6e29bdb7a224ff67b4a7
+      with:
+        tool: cargo-llvm-cov

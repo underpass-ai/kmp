@@ -23,11 +23,13 @@ GATES = (
     "docs",
     "valkey",
     "neo4j",
+    "nats",
     "embedded_binary",
     "embedded_sqlite",
     "conformance",
     "agentic_context",
     "agentic_event_context",
+    "full_journey",
     "mcp_real",
     "container",
     "helm",
@@ -147,6 +149,12 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
     if any(
         path in full_roots
         or path.startswith(".github/actions/install-rust/")
+        or path.startswith(
+            (
+                ".github/actions/install-coverage/",
+                ".github/actions/upload-coverage/",
+            )
+        )
         or path in {"scripts/ci/install-protoc.sh", "scripts/ci/install-rust-toolchain.sh"}
         for path in normalized
     ):
@@ -172,13 +180,20 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
 
         plan["valkey"] = "kmp-adapter-valkey" in affected
         plan["neo4j"] = "kmp-adapter-neo4j" in affected
+        plan["nats"] = "kmp-adapter-nats" in affected
         plan["embedded_binary"] = bool({"kmp-mcp", "kmp-embedded"} & affected)
         plan["embedded_sqlite"] = bool(
             {"kmp-adapter-embedded", "kmp-conformance", "kmp-embedded", "kmp-mcp"}
             & affected
         )
         kernel_integration = "kmp-tests-kernel" in affected
-        for gate in ("conformance", "agentic_context", "agentic_event_context", "mcp_real"):
+        for gate in (
+            "conformance",
+            "agentic_context",
+            "agentic_event_context",
+            "full_journey",
+            "mcp_real",
+        ):
             plan[gate] = kernel_integration
         plan["container"] = bool(
             {"kmp-server", "kmp-mcp-http", "kmp-transport-grpc"} & affected
@@ -242,6 +257,9 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path in {"scripts/ci/integration-neo4j.sh"}:
             known.add(path)
             plan["neo4j"] = True
+        elif path in {"scripts/ci/integration-nats.sh"}:
+            known.add(path)
+            plan["nats"] = True
         elif path in {"scripts/ci/integration-conformance.sh"}:
             known.add(path)
             plan["conformance"] = True
@@ -251,6 +269,12 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path in {"scripts/ci/integration-agentic-event-context.sh"}:
             known.add(path)
             plan["agentic_event_context"] = True
+        elif path in {
+            "scripts/ci/integration-kernel-full-journey.sh",
+            "scripts/ci/integration-kernel-full-journey-tls.sh",
+        }:
+            known.add(path)
+            plan["full_journey"] = True
         elif path in {"scripts/ci/integration-mcp-real-kernel.sh"}:
             known.add(path)
             plan["mcp_real"] = True
@@ -266,13 +290,16 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path in {"scripts/ci/helm-lint.sh", "scripts/ci/install-helm.sh"}:
             known.add(path)
             plan["helm"] = True
-        elif path == "scripts/ci/rust-coverage.sh":
-            known.add(path)
-            plan["coverage"] = True
+        elif path in {
+            "scripts/ci/coverage-test.sh",
+            "scripts/ci/export-coverage-fragment.sh",
+            "scripts/ci/merge-coverage.py",
+            "scripts/ci/quality-workflow-contract.py",
+            "scripts/ci/rust-coverage.sh",
+        }:
+            return full_plan(packages, "coverage collection contract changed")
         elif path == "scripts/ci/testcontainers-runtime.sh":
-            known.add(path)
-            for gate in ("valkey", "neo4j", "conformance", "agentic_context", "agentic_event_context", "mcp_real", "coverage"):
-                plan[gate] = True
+            return full_plan(packages, "shared container-test runtime changed")
         elif path.startswith(("scripts/docs/", "docs/assets/")):
             known.add(path)
             plan["docs"] = True
@@ -338,6 +365,11 @@ def self_test() -> None:
         ("release workflow", [".github/workflows/release.yml"], {"actions": True, "rust": False}),
         ("plugin policy", ["plugins/kmp/skills/kmp-memory/SKILL.md"], {"docs": True, "rust": False}),
         ("valkey crate", ["crates/kmp-adapter-valkey/src/lib.rs"], {"valkey": True, "neo4j": False, "rust": True}),
+        ("nats crate", ["crates/kmp-adapter-nats/src/lib.rs"], {"nats": True, "valkey": False, "rust": True}),
+        ("kernel journey", ["crates/kmp-tests-kernel/tests/kernel_full_journey_integration.rs"], {"full_journey": True, "rust": True}),
+        ("coverage contract", ["scripts/ci/merge-coverage.py"], {"full": True, "coverage": True}),
+        ("coverage action", [".github/actions/install-coverage/action.yml"], {"full": True, "coverage": True}),
+        ("container runtime", ["scripts/ci/testcontainers-runtime.sh"], {"full": True, "coverage": True}),
         ("workspace lock", ["Cargo.lock"], {"full": True, "coverage": True}),
         ("router", ["scripts/ci/quality-gate-plan.py"], {"full": True}),
         ("unknown", ["new-top-level.bin"], {"full": True}),

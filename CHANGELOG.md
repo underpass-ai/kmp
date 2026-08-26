@@ -14,7 +14,8 @@ Detailed notes from the early release cycle are preserved in the
 - Pull-request quality gates now derive changed crates and their reverse
   dependency closure, routing documentation, adapters, containers, Helm and
   publication checks independently instead of retesting the whole workspace
-  for every path.
+  for every path. Rust tests also emit coverage during that single execution;
+  the coverage gate only merges their LCOV artifacts and applies the threshold.
 - Release candidates now contain the complete checksummed asset set and an
   input digest. Version tags promote those exact bytes without rebuilding;
   automatic packaging and distribution no longer run on `main`.

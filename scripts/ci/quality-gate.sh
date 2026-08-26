@@ -8,6 +8,9 @@ cd "${ROOT_DIR}"
 
 bash scripts/ci/contract-gate.sh
 python3 scripts/ci/github-actions-contract.py
+python3 scripts/ci/quality-gate-plan.py --self-test
+python3 scripts/ci/merge-coverage.py --self-test
+python3 scripts/ci/quality-workflow-contract.py
 bash scripts/ci/documentation-spine.sh
 bash scripts/ci/mcp-registry.sh
 cargo fmt --all -- --check
