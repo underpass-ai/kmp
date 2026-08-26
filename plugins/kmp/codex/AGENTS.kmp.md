@@ -23,6 +23,10 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   `kmp-mcp config`. Translate only the query, answer in the user's language,
   and preserve stored evidence, refs, relation `why` and source metadata
   byte-for-byte.
+- **Refs are opaque identifiers.** Pass every returned ref, and any exact
+  stored ref supplied by the user, byte-for-byte. Never prefix or qualify it
+  with an about, translate it, normalize it or reconstruct it. If a ref fails,
+  recover the exact stored ref through KMP instead of guessing.
 - **Let the result route the next move.** After bounded Ask retries,
   reclassify the original goal: current/latest/recent state, what changed,
   why now and release or decision history use temporal navigation; only a

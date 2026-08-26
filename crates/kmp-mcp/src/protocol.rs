@@ -1293,6 +1293,8 @@ mod tests {
         let instructions = result["instructions"].as_str().expect("instructions");
         assert!(instructions.contains("Temporal intent has precedence"));
         assert!(instructions.contains("Preserve evidence text"));
+        assert!(instructions.contains("Refs are opaque identifiers"));
+        assert!(instructions.contains("Never prefix or qualify it with an about"));
     }
 
     #[test]

@@ -145,7 +145,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: publish-crates
 

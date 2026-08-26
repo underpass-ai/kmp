@@ -9,6 +9,13 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Agents now treat KMP refs as opaque identifiers and pass returned refs
+  byte-for-byte instead of prefixing them with an about or reconstructing them.
+- GitHub workflows now pin the Node.js 24 releases of artifact transfer and
+  Rust cache actions, removing the Node.js 20 migration warnings from releases.
+
 ## [0.2.6] - 2026-08-26
 
 ### Changed

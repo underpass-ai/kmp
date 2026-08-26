@@ -49,6 +49,10 @@ a vague `related_to` is a bug rather than a shortcut.
 For language fallback, translate only the query and answer in the user's
 language. Stored evidence, refs, relation `why`, and source metadata stay
 byte-for-byte unchanged. `UNKNOWN` after the configured retries is valid.
+Refs are opaque identifiers: pass every returned ref, and any exact stored ref
+supplied by the user, byte-for-byte. Never prefix or qualify it with an about,
+translate it, normalize it or reconstruct it. If a ref fails, recover the exact
+stored ref through KMP instead of guessing.
 
 <!-- kmp:voice -->
 **Say it in the house voice.** One line per thing, and detail only where

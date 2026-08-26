@@ -48,6 +48,20 @@ jobs:
   # contract: temporarily removed while proto field pruning baseline stabilizes.
   # Restore from git history (commit af4c6a6) once breaking change window closes.
 
+  actions-runtime:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Release actions use reviewed Node.js 24 pins
+        run: python3 scripts/ci/github-actions-node24.py
+
   # Parts of the contract live twice — authored under api/, vendored into
   # the crates that have to be publishable. This keeps them one contract.
   # No toolchain, no protoc: it is a diff, and it runs in seconds.
@@ -125,7 +139,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Run clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
@@ -148,7 +162,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Run tests
         run: cargo test --workspace --locked
@@ -174,7 +188,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -200,7 +214,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -226,7 +240,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Enforce embedded binary gates
         run: bash scripts/ci/embedded-binary-gates.sh
@@ -249,7 +263,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: sqlite-gates
 
@@ -277,7 +291,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -303,7 +317,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -329,7 +343,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -355,7 +369,7 @@ jobs:
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version
@@ -422,7 +436,7 @@ jobs:
           tool: cargo-llvm-cov
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Verify Docker
         run: docker version

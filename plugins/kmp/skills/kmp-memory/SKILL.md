@@ -46,6 +46,10 @@ Route again after every response:
 - When Ask evidence answers the question, use the returned refs. Inspect a ref
   before relying on its object or evidence for a consequential claim; trace
   the path when the claim depends on a connection.
+- Refs are opaque identifiers. Pass every returned ref, and any exact stored
+  ref supplied by the user, byte-for-byte. Never prefix or qualify it with an
+  about, translate it, normalize it or reconstruct it. If a ref fails, recover
+  the exact stored ref through KMP instead of guessing.
 - When Ask returns `UNKNOWN` or irrelevant evidence, finish the configured
   language retries, then reclassify the **original goal**. Current, latest or
   recent state, what changed, why now, and release or decision history move to
