@@ -13,6 +13,10 @@ APPROVED = {
     "actions/upload-artifact": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "Swatinem/rust-cache": "6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+    "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
+    "docker/login-action": "dbcb813823bdd20940b903addbd779551569679f",
+    "docker/metadata-action": "dc802804100637a589fabce1cb79ff13a1411302",
+    "docker/build-push-action": "53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
 }
 USES = re.compile(r"^\s*uses:\s*([^\s@]+)@([^\s#]+)")
 

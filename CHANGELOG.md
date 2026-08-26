@@ -9,6 +9,14 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Distribution workflows now pin current Node.js 24 Docker actions instead of
+  relying on GitHub's deprecated Node.js 20 compatibility shim.
+- Crate publication restores registry dependencies without saving or cleaning
+  transient Cargo package targets, eliminating false failure annotations after
+  a successful publish.
+
 ## [0.2.7] - 2026-08-26
 
 ### Fixed
