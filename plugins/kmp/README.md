@@ -210,5 +210,5 @@ infrastructure. For a shared deployed kernel, point the server at it with
 `KMP_KERNEL_GRPC_ENDPOINT` instead — the tool surface is identical by
 construction, so nothing else changes.
 
-See [Embedded KMP](../../docs/embedded/README.md) for the current local mode,
-storage and maintenance contract.
+See [Embedded KMP](https://github.com/underpass-ai/kmp/blob/main/docs/embedded/README.md)
+for the current local mode, storage and maintenance contract.

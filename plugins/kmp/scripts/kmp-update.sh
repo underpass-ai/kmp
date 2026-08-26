@@ -107,7 +107,42 @@ if [ "$DO_CODEX" -eq 1 ] && [ "$STANDALONE" -eq 0 ]; then
       exit 1
     }
   fi
-  run codex plugin add kmp@underpass
+  if [ "$DRY_RUN" -eq 1 ]; then
+    run codex plugin marketplace upgrade underpass --json
+    run codex plugin add kmp@underpass --json
+  else
+    # `plugin add` installs from the configured snapshot; it does not promise
+    # that a Git-backed marketplace is current. Refresh first when possible.
+    # A local development marketplace is intentionally not upgradeable, so
+    # continue with its current files and let the exact-version check below
+    # decide whether they are usable.
+    if ! codex plugin marketplace upgrade underpass --json >/dev/null 2>&1; then
+      say "Codex marketplace 'underpass' could not be refreshed automatically; checking its configured snapshot"
+    fi
+
+    CODEX_INSTALL="$(codex plugin add kmp@underpass --json)"
+    if ! CODEX_PLUGIN="$(printf '%s' "$CODEX_INSTALL" | python3 -c '
+import json
+import sys
+
+body = json.load(sys.stdin)
+print(body["version"] + "\t" + body["installedPath"])
+')"; then
+      echo "kmp-update: Codex did not return a valid plugin install result" >&2
+      exit 1
+    fi
+    CODEX_PLUGIN_VERSION="${CODEX_PLUGIN%%$'\t'*}"
+    CODEX_PLUGIN_ROOT="${CODEX_PLUGIN#*$'\t'}"
+    case "$CODEX_PLUGIN_VERSION" in
+      "$VERSION"|"$VERSION"+*) ;;
+      *)
+        echo "kmp-update: Codex marketplace installed plugin ${CODEX_PLUGIN_VERSION}, but release ${VERSION} was requested" >&2
+        echo "kmp-update: the engine was not changed; publish or refresh kmp@underpass, then retry" >&2
+        exit 1
+        ;;
+    esac
+    say "Codex plugin ${CODEX_PLUGIN_VERSION} installed at ${CODEX_PLUGIN_ROOT}"
+  fi
 fi
 
 if [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ]; then

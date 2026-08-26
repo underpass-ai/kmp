@@ -32,12 +32,25 @@ bash scripts/ci/quality-gate.sh
 bash scripts/ci/helm-lint.sh
 ```
 
-Merge the reviewed version change, update local `main`, then let the release
-script create and push the tag:
+Merge the reviewed version change and update local `main`. Before tagging,
+mirror `plugins/kmp/` into the `underpass-ai/plugins` repository, excluding the
+gitignored `bin/`, and merge that marketplace PR. Its Codex manifest must carry
+the same SemVer core; build metadata may be used as a cachebuster.
+
+This ordering matters: once GitHub exposes the new KMP release as `latest`, the
+installed updater asks Codex for that version. Publishing the marketplace first
+keeps the plugin, skills and launcher available before the matching engine.
+The updater refreshes Git-backed marketplace snapshots and refuses to change
+the engine if Codex still returns an older plugin.
+
+Then let the release script create and push the tag:
 
 ```bash
 bash scripts/release.sh release X.Y.Z
 ```
+
+The release command checks the public `underpass-ai/plugins` manifest and
+refuses to tag while its version is stale.
 
 ## Published artifacts
 
@@ -48,6 +61,8 @@ bash scripts/release.sh release X.Y.Z
   crates.io dependency chain;
 - `mcp-registry.yml` validates registry metadata and only publishes when the
   repository variable enables it.
+- `underpass-ai/plugins` is the reviewed Codex marketplace mirror and is
+  published before the tag rather than by a tag workflow.
 
 [`scripts/ci/publish-crates.sh`](../../scripts/ci/publish-crates.sh) owns the
 crate publication order and skips versions already present. If a publication
