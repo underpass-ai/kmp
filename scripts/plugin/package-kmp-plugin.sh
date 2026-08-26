@@ -35,6 +35,11 @@ if [[ "${TAG_NAME}" == v* ]]; then
     exit 1
   fi
   PACKAGE_VERSION="${WORKSPACE_VERSION}"
+elif [[ "${KMP_PLUGIN_PACKAGE_RELEASE:-0}" == "1" ]]; then
+  # A reviewed release candidate carries the final version so the tag can
+  # promote these exact bytes. The candidate manifest binds them to the
+  # release-input digest before any tag is allowed to publish them.
+  PACKAGE_VERSION="${WORKSPACE_VERSION}"
 else
   SHORT_SHA="$(git rev-parse --short HEAD)"
   PACKAGE_VERSION="${WORKSPACE_VERSION}+${SHORT_SHA}"

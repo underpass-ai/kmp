@@ -11,8 +11,6 @@ name: publish-distribution
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v*"
   workflow_dispatch:

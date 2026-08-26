@@ -6,8 +6,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 cd "${ROOT_DIR}"
 . "${ROOT_DIR}/scripts/ci/testcontainers-runtime.sh"
+. "${ROOT_DIR}/scripts/ci/coverage-test.sh"
 
-cargo test \
+run_cargo_test \
   -p kmp-tests-kernel \
   --features container-tests \
   --test kernel_full_journey_integration \

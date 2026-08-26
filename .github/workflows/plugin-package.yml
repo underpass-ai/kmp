@@ -1,11 +1,8 @@
-name: plugin-package
+name: plugin-validation
 
-# Builds the Codex / Claude Code plugin bundle on every supported host
-# class, smoke-tests it against the real binary, and attaches the
-# tarballs to the GitHub Release when a `v*` tag is pushed. The version
-# inside the package is stamped from the workspace Cargo.toml by
-# scripts/plugin/package-kmp-plugin.sh — on a tag, tag and workspace
-# version must agree or the job fails.
+# Pull-request validation for the shared Codex / Claude Code contracts and the
+# platform-specific Windows launcher. Release candidates compile and package
+# every supported host; this workflow never publishes or duplicates them.
 
 on:
   pull_request:
@@ -24,12 +21,6 @@ on:
       - ".github/actions/install-rust/**"
       - ".github/workflows/plugin-package.yml"
       - "scripts/ci/install-rust-toolchain.sh"
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
-  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -37,23 +28,11 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  package:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            label: linux-x86_64
-          - os: ubuntu-24.04-arm
-            label: linux-arm64
-          - os: macos-latest
-            label: macos-arm64
-          - os: windows-latest
-            label: windows-x86_64
-    runs-on: ${{ matrix.os }}
+  validate:
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -61,21 +40,52 @@ jobs:
       - name: Install Rust toolchain
         uses: ./.github/actions/install-rust
 
-      - name: Install protoc (Linux)
-        if: runner.os == 'Linux'
+      - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
 
-      - name: Install protoc (macOS)
-        if: runner.os == 'macOS'
-        shell: bash
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSfL -o protoc.zip \
-            https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-osx-universal_binary.zip
-          sudo unzip -o protoc.zip -d /usr/local bin/protoc include/*
-          protoc --version
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: plugin-validation
 
-      - name: Install protoc (Windows)
-        if: runner.os == 'Windows'
+      # Cheap, needs no binary, and catches the drift that is invisible in
+      # review: a command written in a hurry that reads like a different
+      # product. Runs first so a voice failure is the first thing on the log.
+      - name: Check the plugin speaks with one voice
+        run: bash scripts/ci/kmp-plugin-voice.sh
+
+      - name: Check the plugin capability contract
+        run: python3 scripts/ci/kmp-capability-contract.py
+
+      - name: Check agent routing and language fallback
+        run: python3 scripts/ci/kmp-agent-routing-contract.py
+
+      - name: Smoke-test the plugin bundle
+        run: bash scripts/ci/kmp-plugin-smoke.sh
+
+      # The bundle smoke proves what we package. This one proves what a host
+      # gets: no bundled binary, started through .mcp.json, from an unrelated
+      # working directory. Runs before packaging so a broken install fails
+      # the job whether or not the bundle builds.
+      - name: Smoke-test a marketplace-shaped install
+        run: bash scripts/ci/kmp-plugin-install-smoke.sh
+
+      - name: Smoke-test the effective Codex install
+        run: bash scripts/ci/kmp-codex-installed-smoke.sh
+
+  windows-launcher:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
+      - name: Install protoc
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://github.com/protocolbuffers/protobuf/releases/download/v25.3/protoc-25.3-win64.zip" -OutFile protoc.zip
@@ -85,67 +95,18 @@ jobs:
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
-          shared-key: plugin-package
+          shared-key: plugin-validation
 
-      # Cheap, needs no binary, and catches the drift that is invisible in
-      # review: a command written in a hurry that reads like a different
-      # product. Runs first so a voice failure is the first thing on the log.
-      - name: Check the plugin speaks with one voice
-        if: runner.os == 'Linux'
+      - name: Build the launcher engine once
         shell: bash
-        run: bash scripts/ci/kmp-plugin-voice.sh
+        run: cargo build --release --locked -p kmp-mcp --features sqlite
 
-      - name: Check the plugin capability contract
-        if: runner.os == 'Linux'
-        run: python3 scripts/ci/kmp-capability-contract.py
-
-      - name: Check agent routing and language fallback
-        if: runner.os == 'Linux'
-        run: python3 scripts/ci/kmp-agent-routing-contract.py
-
-      - name: Smoke-test the plugin bundle
+      - name: Stage the prebuilt engine for the launcher
         shell: bash
-        run: bash scripts/ci/kmp-plugin-smoke.sh
+        run: |
+          KMP_PLUGIN_PREBUILT_BINARY=target/release/kmp-mcp.exe \
+            bash scripts/plugin/build-local-kmp-plugin.sh
 
       - name: Smoke-test Windows launcher version selection
-        if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/ci/kmp-windows-launcher-smoke.ps1
-
-      # The bundle smoke proves what we package. This one proves what a host
-      # gets: no bundled binary, started through .mcp.json, from an unrelated
-      # working directory. Runs before packaging so a broken install fails
-      # the job whether or not the bundle builds.
-      - name: Smoke-test a marketplace-shaped install
-        if: runner.os == 'Linux'
-        shell: bash
-        run: bash scripts/ci/kmp-plugin-install-smoke.sh
-
-      - name: Smoke-test the effective Codex install
-        if: runner.os == 'Linux'
-        shell: bash
-        run: bash scripts/ci/kmp-codex-installed-smoke.sh
-
-      - name: Package the plugin bundle
-        shell: bash
-        run: bash scripts/plugin/package-kmp-plugin.sh
-
-      - name: Upload package as workflow artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: kmp-plugin-${{ matrix.label }}
-          path: |
-            dist/plugin/*.tar.gz
-            dist/plugin/*.sha256
-          if-no-files-found: error
-
-      - name: Attach package to the GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          gh release create "${TAG}" dist/plugin/*.tar.gz dist/plugin/*.sha256 \
-            --title "${TAG}" --generate-notes --verify-tag \
-            || gh release upload "${TAG}" dist/plugin/*.tar.gz dist/plugin/*.sha256 --clobber

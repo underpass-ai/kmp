@@ -1,0 +1,22 @@
+name: Export coverage fragment
+description: Export and upload LCOV from the test execution in this job
+
+inputs:
+  name:
+    description: Unique lowercase fragment name
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Export LCOV fragment
+      shell: bash
+      run: bash scripts/ci/export-coverage-fragment.sh "${{ inputs.name }}"
+
+    - name: Upload LCOV fragment
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: coverage-${{ inputs.name }}
+        path: target/llvm-cov/fragments/${{ inputs.name }}.info
+        if-no-files-found: error
+        retention-days: 7

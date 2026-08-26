@@ -45,12 +45,73 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash scripts/ci/tree-already-proved.sh quality-gate.yml
+
+  # Pull requests pay only for the parts of the product they can affect. The
+  # planner derives the reverse workspace dependency closure, then routes the
+  # independent documentation, adapter, container, chart and publication
+  # contracts. Unknown paths and changes to this router fail closed to the
+  # full matrix. workflow_dispatch is also deliberately full.
+  impact:
+    needs: tree-proof
+    if: needs.tree-proof.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      actions: ${{ steps.plan.outputs.actions }}
+      vendored: ${{ steps.plan.outputs.vendored }}
+      publish: ${{ steps.plan.outputs.publish }}
+      rustfmt: ${{ steps.plan.outputs.rustfmt }}
+      rust: ${{ steps.plan.outputs.rust }}
+      docs: ${{ steps.plan.outputs.docs }}
+      test: ${{ steps.plan.outputs.test }}
+      valkey: ${{ steps.plan.outputs.valkey }}
+      neo4j: ${{ steps.plan.outputs.neo4j }}
+      nats: ${{ steps.plan.outputs.nats }}
+      embedded_binary: ${{ steps.plan.outputs.embedded_binary }}
+      embedded_sqlite: ${{ steps.plan.outputs.embedded_sqlite }}
+      conformance: ${{ steps.plan.outputs.conformance }}
+      agentic_context: ${{ steps.plan.outputs.agentic_context }}
+      agentic_event_context: ${{ steps.plan.outputs.agentic_event_context }}
+      full_journey: ${{ steps.plan.outputs.full_journey }}
+      mcp_real: ${{ steps.plan.outputs.mcp_real }}
+      container: ${{ steps.plan.outputs.container }}
+      helm: ${{ steps.plan.outputs.helm }}
+      coverage: ${{ steps.plan.outputs.coverage }}
+      codeql: ${{ steps.plan.outputs.codeql }}
+      cargo_packages: ${{ steps.plan.outputs.cargo_packages }}
+    steps:
+      - name: Checkout complete history for the change boundary
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Prove the routing matrix
+        run: |
+          python3 scripts/ci/quality-gate-plan.py --self-test
+          python3 scripts/ci/merge-coverage.py --self-test
+          python3 scripts/ci/quality-workflow-contract.py
+
+      - name: Plan required gates
+        id: plan
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            python3 scripts/ci/quality-gate-plan.py \
+              --base "${{ github.event.pull_request.base.sha }}" \
+              --head "${{ github.event.pull_request.head.sha }}" \
+              --github-output "${GITHUB_OUTPUT}"
+          else
+            python3 scripts/ci/quality-gate-plan.py --full \
+              --github-output "${GITHUB_OUTPUT}"
+          fi
   # contract: temporarily removed while proto field pruning baseline stabilizes.
   # Restore from git history (commit af4c6a6) once breaking change window closes.
 
   actions-runtime:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.actions == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -69,8 +130,8 @@ jobs:
   # the crates that have to be publishable. This keeps them one contract.
   # No toolchain, no protoc: it is a diff, and it runs in seconds.
   vendored-contract:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.vendored == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -87,8 +148,8 @@ jobs:
   # dependencies move — a check on a pull request, rather than a discovery
   # halfway through a publish that cannot be rolled back.
   publish-chain:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -104,8 +165,8 @@ jobs:
         run: bash scripts/ci/check-publish-chain.sh
 
   rustfmt:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.rustfmt == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -123,8 +184,8 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.rust == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -145,11 +206,11 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Run clippy
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+        run: cargo clippy ${{ needs.impact.outputs.cargo_packages }} --all-targets --locked -- -D warnings
 
   test:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.test == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -159,23 +220,38 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        if: needs.impact.outputs.rust == 'true'
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
+        if: needs.impact.outputs.rust == 'true'
         run: bash scripts/ci/install-protoc.sh
 
       - name: Cache Rust build artifacts
+        if: needs.impact.outputs.rust == 'true'
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
+      - name: Reset coverage counters
+        if: needs.impact.outputs.rust == 'true'
+        run: cargo llvm-cov clean --workspace
+
       - name: Run tests
-        run: cargo test --workspace --locked
+        if: needs.impact.outputs.rust == 'true'
+        run: cargo llvm-cov --no-report ${{ needs.impact.outputs.cargo_packages }} --locked
+
+      - name: Publish unit-test coverage
+        if: needs.impact.outputs.rust == 'true'
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: unit
 
       - name: Documentation spine
+        if: needs.impact.outputs.docs == 'true'
         run: bash scripts/ci/documentation-spine.sh
 
   integration-valkey:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.valkey == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -185,7 +261,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -196,12 +272,22 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run Valkey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-valkey.sh
 
+      - name: Publish Valkey coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: valkey
+
   integration-neo4j:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.neo4j == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -211,7 +297,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -222,12 +308,58 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run Neo4j integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-neo4j.sh
 
+      - name: Publish Neo4j coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: neo4j
+
+  integration-nats:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.nats == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-coverage
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+
+      - name: Verify Docker
+        run: docker version
+
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
+      - name: Run NATS integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-nats.sh
+
+      - name: Publish NATS coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: nats
+
   embedded-binary-gates:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.embedded_binary == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -249,8 +381,8 @@ jobs:
         run: bash scripts/ci/embedded-binary-gates.sh
 
   embedded-sqlite-gates:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.embedded_sqlite == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -277,8 +409,8 @@ jobs:
         run: bash scripts/ci/embedded-sqlite-gates.sh
 
   integration-conformance:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.conformance == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -303,8 +435,8 @@ jobs:
         run: bash scripts/ci/integration-conformance.sh
 
   integration-agentic-context:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.agentic_context == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -314,7 +446,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -324,13 +456,23 @@ jobs:
 
       - name: Verify Docker
         run: docker version
+
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
 
       - name: Run agentic context integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-agentic-context.sh
 
+      - name: Publish agentic-context coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: agentic-context
+
   integration-agentic-event-context:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.agentic_event_context == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -340,7 +482,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+        uses: ./.github/actions/install-coverage
 
       - name: Install protoc
         run: bash scripts/ci/install-protoc.sh
@@ -351,12 +493,63 @@ jobs:
       - name: Verify Docker
         run: docker version
 
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
       - name: Run event-driven agentic integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
         run: bash scripts/ci/integration-agentic-event-context.sh
 
+      - name: Publish agentic-event coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: agentic-event-context
+
+  integration-kernel-full-journey:
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.full_journey == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-coverage
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+
+      - name: Verify Docker
+        run: docker version
+
+      - name: Reset coverage counters
+        run: cargo llvm-cov clean --workspace
+
+      - name: Run full-journey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-kernel-full-journey.sh
+
+      - name: Run TLS full-journey integration tests
+        env:
+          KMP_COLLECT_COVERAGE: true
+        run: bash scripts/ci/integration-kernel-full-journey-tls.sh
+
+      - name: Publish full-journey coverage
+        uses: ./.github/actions/upload-coverage
+        with:
+          name: full-journey
+
   integration-mcp-real-kernel:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.mcp_real == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -381,8 +574,8 @@ jobs:
         run: bash scripts/ci/integration-mcp-real-kernel.sh
 
   container-image:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.container == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -398,8 +591,8 @@ jobs:
         run: bash scripts/ci/container-image.sh
 
   helm-chart:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs: [tree-proof, impact]
+    if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.helm == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -415,43 +608,47 @@ jobs:
         run: bash scripts/ci/helm-lint.sh
 
   coverage:
-    needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    needs:
+      - tree-proof
+      - impact
+      - test
+      - integration-valkey
+      - integration-neo4j
+      - integration-nats
+      - integration-agentic-context
+      - integration-agentic-event-context
+      - integration-kernel-full-journey
+    if: >-
+      always()
+      && needs.tree-proof.outputs.skip != 'true'
+      && needs.impact.result == 'success'
+      && needs.impact.outputs.coverage == 'true'
+      && needs.test.result == 'success'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Install Rust toolchain
-        uses: ./.github/actions/install-rust
+      - name: Download test coverage
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          components: llvm-tools-preview
+          pattern: coverage-*
+          path: dist/coverage
+          merge-multiple: true
 
-      - name: Install protoc
-        run: bash scripts/ci/install-protoc.sh
-
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@fcf5432d9f50d67e37ee6e29bdb7a224ff67b4a7
-        with:
-          tool: cargo-llvm-cov
-
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-
-      - name: Verify Docker
-        run: docker version
-
-      # The script owns the threshold: it ends in `cargo llvm-cov report
-      # --fail-under-lines`, so the gate is self-contained and needs no
-      # external service to decide pass or fail.
-      - name: Run coverage gate
-        run: bash scripts/ci/rust-coverage.sh
+      # Coverage is a reducer, not a second test suite. The upstream jobs each
+      # run their tests once with LLVM instrumentation and upload LCOV. This
+      # job only merges those reports and enforces the repository threshold.
+      - name: Merge coverage and enforce threshold
+        run: bash scripts/ci/rust-coverage.sh dist/coverage
 
   wait-codeql-checks:
-    needs: tree-proof
+    needs: [tree-proof, impact]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Code scanning default setup does not run its per-language analyses on
@@ -464,6 +661,7 @@ jobs:
       always() && github.event_name == 'pull_request'
       && github.actor != 'dependabot[bot]'
       && needs.tree-proof.outputs.skip != 'true'
+      && needs.impact.outputs.codeql == 'true'
       && !(github.event.pull_request.head.repo.fork || false)
     permissions:
       checks: read

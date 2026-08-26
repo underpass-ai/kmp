@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep tag-only publication behavior free of misleading cache failures."""
+"""Keep tag-only publication and immutable candidate promotion honest."""
 
 from __future__ import annotations
 
@@ -65,3 +65,40 @@ if missing:
     raise SystemExit("publish-crates cache contract failed:\n" + "\n".join(missing))
 
 print("publish-crates cache contract passed: registry restore only, no post-publish save")
+
+publish_text = WORKFLOW.read_text(encoding="utf-8")
+publish_trigger = publish_text.split("\nenv:", 1)[0]
+if "branches:" in publish_trigger or "- main" in publish_trigger:
+    raise SystemExit("publish-distribution must not run automatically on main")
+if 'tags:\n      - "v*"' not in publish_trigger:
+    raise SystemExit("publish-distribution lost its version-tag trigger")
+
+plugin_text = (ROOT / ".github/workflows/plugin-package.yml").read_text(encoding="utf-8")
+plugin_trigger = plugin_text.split("\nenv:", 1)[0]
+for forbidden in ("\n  push:", "\n  workflow_dispatch:"):
+    if forbidden in plugin_trigger:
+        raise SystemExit("plugin-package must validate pull requests without publishing elsewhere")
+
+release_text = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+release_clauses = (
+    "if: github.event_name == 'workflow_dispatch'",
+    "promote reviewed candidate",
+    "candidate-run:",
+    "run-id: ${{ steps.candidate.outputs.run_id }}",
+    "release-candidate.py verify",
+    "dist/candidate/assets/* --clobber",
+)
+for clause in release_clauses:
+    if clause not in release_text:
+        raise SystemExit(f"release workflow lost immutable promotion clause: {clause}")
+
+release_script = (ROOT / "scripts/release.sh").read_text(encoding="utf-8")
+for clause in (
+    "kmp-release-candidate-${version}",
+    "release-candidate.py verify",
+    "candidate-run: ${candidate_run}",
+):
+    if clause not in release_script:
+        raise SystemExit(f"release helper lost candidate approval clause: {clause}")
+
+print("release trigger contract passed: PR validation, one candidate build, tag-only promotion")

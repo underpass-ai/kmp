@@ -28,7 +28,7 @@ try {
 
     $Built = Join-Path $Plugin "bin/kmp-mcp.exe"
     if (-not (Test-Path $Built)) {
-        Fail "the package smoke did not build plugins/kmp/bin/kmp-mcp.exe"
+        Fail "the workflow did not stage plugins/kmp/bin/kmp-mcp.exe"
     }
     Copy-Item $Built (Join-Path $PathBin "kmp-mcp.exe")
 

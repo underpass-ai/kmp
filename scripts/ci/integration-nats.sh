@@ -9,9 +9,9 @@ cd "${ROOT_DIR}"
 . "${ROOT_DIR}/scripts/ci/coverage-test.sh"
 
 run_cargo_test \
-  -p kmp-adapter-neo4j \
+  -p kmp-adapter-nats \
   --features container-tests \
-  --test neo4j_integration \
+  --test runtime_integration \
   --locked \
   -- \
   --nocapture \
