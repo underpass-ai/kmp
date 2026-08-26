@@ -83,7 +83,7 @@ jobs:
           Add-Content $env:GITHUB_PATH "$env:USERPROFILE\protoc\bin"
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           shared-key: plugin-package
 
@@ -131,7 +131,7 @@ jobs:
         run: bash scripts/plugin/package-kmp-plugin.sh
 
       - name: Upload package as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kmp-plugin-${{ matrix.label }}
           path: |

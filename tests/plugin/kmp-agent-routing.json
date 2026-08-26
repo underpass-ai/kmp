@@ -156,5 +156,16 @@
       "kmp_wake:kmp1:test-routing-cursor",
       "repository_read"
     ]
+  },
+  "opaque_ref_case": {
+    "about": "project:kmp-host-regression-0.2.6",
+    "returned_refs": [
+      "decision:local-first",
+      "observation:embedded-stdio"
+    ],
+    "tool_arguments": {
+      "from_ref": "decision:local-first",
+      "to_ref": "observation:embedded-stdio"
+    }
   }
 }

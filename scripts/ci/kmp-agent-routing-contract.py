@@ -137,6 +137,13 @@ if partial["has_more"] and partial["goal_depends_on_omitted_material"]:
     if continuation_index >= repository_index:
         fail("repository evidence was read before the relevant KMP page completed")
 
+opaque = FIXTURE["opaque_ref_case"]
+passed_refs = [opaque["tool_arguments"]["from_ref"], opaque["tool_arguments"]["to_ref"]]
+if passed_refs != opaque["returned_refs"]:
+    fail("an opaque ref changed between retrieval and the next KMP call")
+if any(ref.startswith(f"{opaque['about']}:") for ref in passed_refs):
+    fail("an opaque ref was prefixed with its about")
+
 instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
     ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
@@ -153,12 +160,29 @@ required = (
     "reclassify the original goal",
     "repository evidence",
     "consequential claim",
+    "refs are opaque identifiers",
+    "never prefix or qualify",
+    "instead of guessing",
 )
 for asset in instruction_assets:
     text = asset.read_text(encoding="utf-8").casefold()
     missing = [phrase for phrase in required if phrase.casefold() not in text]
     if missing:
         fail(f"{asset.relative_to(ROOT)} lacks routing clauses: {missing}")
+
+opaque_ref_instruction_assets = instruction_assets + [
+    ROOT / "plugins/kmp/codex/prompts/kmp-moves.md",
+    ROOT / "plugins/kmp/claude/commands/moves.md",
+]
+for asset in opaque_ref_instruction_assets:
+    text = asset.read_text(encoding="utf-8").casefold()
+    for phrase in (
+        "refs are opaque identifiers",
+        "never prefix or qualify",
+        "instead of guessing",
+    ):
+        if phrase not in text:
+            fail(f"{asset.relative_to(ROOT)} lost opaque-ref rule: {phrase}")
 
 write_instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
@@ -185,6 +209,6 @@ if "Set it to true only for an explicitly requested preview" not in protocol:
 
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "
-    "result-driven UNKNOWN routing, audit gates, byte-exact evidence, "
+    "result-driven UNKNOWN routing, audit gates, opaque refs, byte-exact evidence, "
     "single-call validated writes"
 )

@@ -68,7 +68,7 @@ jobs:
           Add-Content $env:GITHUB_PATH "$env:USERPROFILE\protoc\bin"
 
       - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Build release binary
         shell: bash
@@ -106,7 +106,7 @@ jobs:
           ls -la
 
       - name: Upload binary for MCPB assembly
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kmp-release-${{ matrix.target }}
           path: dist/*
@@ -133,7 +133,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Download the five release binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: kmp-release-*
           path: dist/binaries
@@ -173,7 +173,7 @@ jobs:
           PY
 
       - name: Upload MCPB as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: kmp-mcpb-${{ steps.package.outputs.version }}
           path: |
