@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
 bash scripts/ci/contract-gate.sh
-python3 scripts/ci/github-actions-node24.py
+python3 scripts/ci/github-actions-contract.py
 bash scripts/ci/documentation-spine.sh
 bash scripts/ci/mcp-registry.sh
 cargo fmt --all -- --check
