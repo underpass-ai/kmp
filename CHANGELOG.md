@@ -9,6 +9,14 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-26
+
+### Fixed
+
+- The published `kmp_write_memory` schema now permits the relation-free first
+  write that creates a new about. Strict runtime validation still requires a
+  relation for every later write, and `tools/list` explains that distinction.
+
 ## [0.2.1] - 2026-08-26
 
 ### Fixed
