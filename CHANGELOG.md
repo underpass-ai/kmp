@@ -11,8 +11,9 @@ Detailed notes from the early release cycle are preserved in the
 
 ### Fixed
 
-- Distribution workflows now pin current Node.js 24 Docker actions instead of
-  relying on GitHub's deprecated Node.js 20 compatibility shim.
+- GitHub workflows now pin a complete reviewed inventory of external actions,
+  including current Node.js 24 releases, and reject unknown actions or SHA
+  drift before merge.
 - Crate publication restores registry dependencies without saving or cleaning
   transient Cargo package targets, eliminating false failure annotations after
   a successful publish.
