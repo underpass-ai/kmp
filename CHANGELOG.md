@@ -9,6 +9,19 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-08-26
+
+### Fixed
+
+- The KMP memory skill now routes from both the user's intent and each tool
+  result. Current state, release history and other implicit temporal questions
+  continue through temporal navigation after an unanswered semantic lookup;
+  relevant pages finish before repository fallback, while consequential claims
+  require inspection and claimed connections require a trace.
+- The plugin routing contract now distinguishes a genuinely unanswered
+  semantic question from an `UNKNOWN` that should change retrieval lanes, and
+  exercises pagination, audit gates and cross-language evidence preservation.
+
 ## [0.2.4] - 2026-08-26
 
 ### Fixed
