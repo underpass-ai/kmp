@@ -258,7 +258,7 @@ pub fn mcp_instructions() -> String {
     match load() {
         Ok(policy) => mcp_instructions_for(&policy),
         Err(error) => format!(
-            "KMP agent policy could not be loaded: {error}. Temporal intent still uses the time tools before kmp_ask. Do not perform cross-language Ask fallback until the policy is repaired. Stored evidence must never be translated or rewritten."
+            "KMP agent policy could not be loaded: {error}. Temporal intent still uses the time tools before kmp_ask. Do not perform cross-language Ask fallback until the policy is repaired. If Ask does not answer, reclassify the original goal before choosing the next move. Stored evidence must never be translated or rewritten."
         ),
     }
 }
@@ -270,7 +270,7 @@ fn mcp_instructions_for(policy: &AgentPolicy) -> String {
         policy.ask_fallback_languages.join(", ")
     };
     format!(
-        "Temporal intent has precedence over semantic Ask. For yesterday, today, since, before, after, during, explicit dates/timestamps, or release windows, resolve the user's timezone to an explicit half-open UTC interval [start, end) and use temporal tools before kmp_ask. Because kmp_forward is strictly after its cursor, capture the inclusive start boundary with kmp_goto at start and retain entries whose effective time equals start; then kmp_forward from start for later entries, paginate, merge and deduplicate refs, and exclude entries at or after end. Continue until the interval is complete or report the exact continuation state. Only a genuinely semantic kmp_ask may use cross-language fallback. Ask first in the user's language; if UNKNOWN or the evidence does not answer, translate only the query and retry each configured language at most once. Active Ask fallback languages: {fallbacks}. Answer in the user's language. Preserve evidence text, refs, relation why, and source metadata byte-for-byte. UNKNOWN remains a valid final answer."
+        "Temporal intent has precedence over semantic Ask. For yesterday, today, since, before, after, during, explicit dates/timestamps, current/latest/recent state, what changed, why now, or release and decision windows, resolve the user's timezone to an explicit half-open UTC interval [start, end) and use temporal tools before kmp_ask. Because kmp_forward is strictly after its cursor, capture the inclusive start boundary with kmp_goto at start and retain entries whose effective time equals start; then kmp_forward from start for later entries, paginate, merge and deduplicate refs, and exclude entries at or after end. Continue until the interval is complete or report the exact continuation state. Only a genuinely semantic kmp_ask may use cross-language fallback. Ask first in the user's language; if UNKNOWN or the evidence does not answer, translate only the query and retry each configured language at most once. Active Ask fallback languages: {fallbacks}. After those retries, reclassify the original goal: current or recent state, what changed, why now, and release or decision history require temporal navigation; only a genuinely semantic unresolved question terminates as UNKNOWN. Do not switch to repository evidence while a relevant KMP projection or temporal interval is incomplete. Inspect a cited ref before relying on it for a consequential claim, and trace a claimed connection between refs. Answer in the user's language. Preserve evidence text, refs, relation why, and source metadata byte-for-byte."
     )
 }
 
@@ -353,6 +353,10 @@ mod tests {
         );
         assert!(instructions.contains("half-open UTC interval [start, end)"));
         assert!(instructions.contains("Active Ask fallback languages: en"));
+        assert!(instructions.contains("reclassify the original goal"));
+        assert!(instructions.contains("release or decision history"));
+        assert!(instructions.contains("relevant KMP projection"));
+        assert!(instructions.contains("Inspect a cited ref"));
         assert!(instructions.contains("byte-for-byte"));
     }
 

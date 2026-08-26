@@ -128,11 +128,14 @@ remembering is reached. It carries the operating doctrine:
 
 - **recover before re-deriving** — `kmp_wake {about}` before reading files
   to reconstruct context that may already be stored;
+- **route every result, not only the first request** — an unanswered semantic
+  Ask about current state, a release or decision history moves to temporal
+  navigation, while a genuinely semantic question may end at `UNKNOWN`;
 - **write decisions, constraints and outcomes — never transcripts**;
 - **rich relations carry both `why` and `evidence`**: the first explains the
   semantic connection and the second proves that rationale;
-- `UNKNOWN` from `kmp_ask` is a correct answer, not a failure to route
-  around.
+- **audit what the answer relies on** — inspect a cited ref and trace a claimed
+  connection rather than treating retrieval as proof of either.
 
 The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
