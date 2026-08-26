@@ -9,6 +9,15 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Agent guidance now treats about ids as opaque routing identifiers, preserving
+  user-supplied values byte-for-byte instead of stripping prefixes such as
+  `project:`.
+- Semantic Ask now permits one initial selection per language, distinguishes
+  cursor pagination from retries, and treats bounded `UNKNOWN` as terminal
+  instead of restarting with a larger budget or sweeping the graph.
+
 ## [0.2.8] - 2026-08-26
 
 ### Fixed

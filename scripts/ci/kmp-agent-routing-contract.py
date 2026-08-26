@@ -144,6 +144,46 @@ if passed_refs != opaque["returned_refs"]:
 if any(ref.startswith(f"{opaque['about']}:") for ref in passed_refs):
     fail("an opaque ref was prefixed with its about")
 
+opaque_about = FIXTURE["opaque_about_case"]
+supplied_about = opaque_about["supplied_about"]
+passed_abouts = [call["about"] for call in opaque_about["tool_arguments"]]
+if not passed_abouts or any(about != supplied_about for about in passed_abouts):
+    fail("an opaque about changed between the user input and a KMP call")
+if set(passed_abouts).intersection(opaque_about["forbidden_variants"]):
+    fail("an opaque about was stripped or prefixed")
+
+unknown_guard = FIXTURE["semantic_unknown_guard_case"]
+expected_languages = [unknown_guard["user_language"], *unknown_guard["fallback_languages"]]
+selections = unknown_guard["ask_selections"]
+actual_languages = [selection["language"] for selection in selections]
+if actual_languages != expected_languages or len(actual_languages) != len(set(actual_languages)):
+    fail("semantic Ask made more than one initial selection per language")
+if any(selection["about"] != unknown_guard["about"] for selection in selections):
+    fail("semantic Ask changed the opaque about during language fallback")
+if any(selection["selection"] != "initial" for selection in selections):
+    fail("semantic Ask fixture contains an unbounded same-language restart")
+if unknown_guard["same_language_restarts"]:
+    fail("semantic Ask restarted in a language it had already selected")
+continuation = unknown_guard["page_continuation"]
+if (
+    not continuation["cursor"]
+    or not continuation["bound_arguments_unchanged"]
+    or continuation["counts_as_new_selection"]
+):
+    fail("Ask cursor pagination is not distinguished from a new selection")
+if (
+    not unknown_guard["ask_results"]
+    or any(result != "UNKNOWN" for result in unknown_guard["ask_results"])
+    or unknown_guard["next_move"] != "return_UNKNOWN"
+):
+    fail("bounded semantic UNKNOWN did not terminate")
+if set(unknown_guard["forbidden_next_moves"]).intersection(
+    unknown_guard["post_unknown_tool_trace"]
+):
+    fail("bounded semantic UNKNOWN bypassed Ask through the graph")
+if unknown_guard["post_unknown_tool_trace"] != [unknown_guard["next_move"]]:
+    fail("bounded semantic UNKNOWN made another tool call before terminating")
+
 instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
     ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
@@ -175,7 +215,7 @@ opaque_ref_instruction_assets = instruction_assets + [
     ROOT / "plugins/kmp/claude/commands/moves.md",
 ]
 for asset in opaque_ref_instruction_assets:
-    text = asset.read_text(encoding="utf-8").casefold()
+    text = " ".join(asset.read_text(encoding="utf-8").casefold().split())
     for phrase in (
         "refs are opaque identifiers",
         "never prefix or qualify",
@@ -183,6 +223,20 @@ for asset in opaque_ref_instruction_assets:
     ):
         if phrase not in text:
             fail(f"{asset.relative_to(ROOT)} lost opaque-ref rule: {phrase}")
+
+for asset in opaque_ref_instruction_assets:
+    text = " ".join(asset.read_text(encoding="utf-8").casefold().split())
+    for phrase in (
+        "abouts are opaque routing identifiers",
+        "never strip or add a kind prefix",
+        "byte-for-byte into every",
+        "one initial ask selection per language",
+        "does not authorize another selection",
+        "projection.page.next_cursor",
+        "inspect the about/root",
+    ):
+        if phrase not in text:
+            fail(f"{asset.relative_to(ROOT)} lost bounded-Ask/about rule: {phrase}")
 
 write_instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
@@ -209,6 +263,6 @@ if "Set it to true only for an explicitly requested preview" not in protocol:
 
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "
-    "result-driven UNKNOWN routing, audit gates, opaque refs, byte-exact evidence, "
-    "single-call validated writes"
+    "result-driven UNKNOWN routing, bounded Ask selections, audit gates, opaque "
+    "abouts and refs, byte-exact evidence, single-call validated writes"
 )
