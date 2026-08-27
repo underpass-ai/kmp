@@ -6,7 +6,7 @@ use super::axis_key::TemporalAxisKey;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ResolvedTemporalCursor {
-    pub(super) axis_key: TemporalAxisKey,
+    pub(super) axis_key: Option<TemporalAxisKey>,
     pub(super) coordinate: TemporalCoordinate,
 }
 
@@ -42,6 +42,8 @@ impl Ord for TemporalPosition {
                     .cmp(other.coordinate.dimension())
             })
             .then_with(|| self.coordinate.scope_id().cmp(other.coordinate.scope_id()))
+            .then_with(|| self.coordinate.sequence().cmp(&other.coordinate.sequence()))
+            .then_with(|| self.coordinate.rank().cmp(&other.coordinate.rank()))
             .then_with(|| self.ref_id.cmp(&other.ref_id))
     }
 }

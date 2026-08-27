@@ -232,9 +232,11 @@ impl TemporalMemoryTraversal {
         let available_dimensions = dimensions_from_positions(&positions);
 
         let cursor = resolve_cursor(&positions, request.cursor(), request.axis())?;
-        let has_comparable_positions = positions
-            .iter()
-            .any(|position| position.axis_key.axis() == cursor.axis_key.axis());
+        let has_comparable_positions = cursor.axis_key.as_ref().is_some_and(|axis_key| {
+            positions
+                .iter()
+                .any(|position| position.axis_key.axis() == axis_key.axis())
+        });
         let selection = select_positions(&positions, &cursor, request);
         let selected_ref_ids = ordered_unique_ref_ids(selection.positions);
         let page = TemporalTraversalPage::new(
@@ -511,6 +513,63 @@ mod tests {
     }
 
     #[test]
+    fn ref_cursor_without_requested_clock_returns_an_empty_proven_absence() {
+        let bundle = temporal_bundle(&[("claim:one", "decision", "decision:main", 1)]);
+        let request = TemporalTraversalRequest::new(
+            TemporalDirection::Rewind,
+            TemporalCursor::ref_id("claim:one").expect("ref cursor"),
+        )
+        .with_axis(TemporalAxis::Occurred);
+
+        let result =
+            TemporalMemoryTraversal::traverse(&bundle, &request).expect("ref should resolve");
+
+        assert!(result.entries().is_empty());
+        assert_eq!(result.resolved_cursor().sequence(), Some(1));
+        assert_eq!(result.missing(), &["temporal_positions".to_string()]);
+        assert_eq!(result.page().returned(), 0);
+        assert_eq!(result.page().total(), 0);
+    }
+
+    #[test]
+    fn rewind_preserves_sequence_order_for_timestamp_ties_at_either_boundary() {
+        let bundle = clocked_temporal_bundle(&[
+            ("entry-1", "2026-08-27T10:00:00Z", 1),
+            ("entry-2", "2026-08-27T11:00:00Z", 2),
+            ("entry-z", "2026-08-27T12:00:00Z", 3),
+            ("entry-a", "2026-08-27T12:00:00Z", 4),
+            ("entry-5", "2026-08-27T13:00:00Z", 5),
+            ("entry-6", "2026-08-27T14:00:00Z", 6),
+        ]);
+        let rewind = |cursor: &str| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    TemporalDirection::Rewind,
+                    TemporalCursor::time(cursor).expect("time cursor"),
+                )
+                .with_limit_entries(3)
+                .expect("limit"),
+            )
+            .expect("rewind")
+            .entries()
+            .iter()
+            .map(TemporalEntry::ref_id)
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+        };
+
+        assert_eq!(
+            rewind("2026-08-27T13:00:00Z"),
+            ["entry-2", "entry-z", "entry-a"]
+        );
+        assert_eq!(
+            rewind("2026-08-27T14:00:00Z"),
+            ["entry-z", "entry-a", "entry-5"]
+        );
+    }
+
+    #[test]
     fn sequence_ties_are_broken_by_the_recorded_clock_before_ref() {
         let root = node("question:a", "question", "Question A");
         let scope = node("timeline:main", "memory_dimension", "timeline:main");
@@ -640,6 +699,41 @@ mod tests {
             BundleMetadata::initial("test"),
         )
         .expect("test bundle should be valid")
+    }
+
+    fn clocked_temporal_bundle(entries: &[(&str, &str, u32)]) -> KmpBundle {
+        let mut nodes = vec![node("timeline:main", "memory_dimension", "timeline:main")];
+        nodes.extend(
+            entries
+                .iter()
+                .map(|(ref_id, _, _)| node(ref_id, "claim", ref_id)),
+        );
+        let relationships = entries
+            .iter()
+            .map(|(ref_id, observed_at, sequence)| {
+                BundleRelationship::new(
+                    "timeline:main",
+                    *ref_id,
+                    "contains_entry",
+                    RelationExplanation::new(RelationSemanticClass::Structural)
+                        .with_dimension("timeline")
+                        .with_scope_id("timeline:main")
+                        .with_observed_at(*observed_at)
+                        .with_sequence(*sequence),
+                )
+            })
+            .collect();
+
+        KmpBundle::new(
+            CaseId::new("question:a").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("question:a", "question", "Question A"),
+            nodes,
+            relationships,
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("clocked temporal bundle")
     }
 
     fn node(node_id: &str, kind: &str, title: &str) -> BundleNode {

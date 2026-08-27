@@ -4,7 +4,7 @@ use kmp_application::{
     GetContextPathResult, GetContextResult, GraphRelationshipView, InspectMemoryResult,
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
 };
-use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalDirection};
+use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalAxis, TemporalDirection};
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
     MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef, TemporalCursor,
@@ -446,6 +446,18 @@ pub fn temporal_response_from_result(
                 .to_string(),
         );
     }
+    if !requested_cursor.r#ref.trim().is_empty()
+        && traversal
+            .missing()
+            .iter()
+            .any(|item| item == "temporal_positions")
+        && let Some(clock) = missing_explicit_clock(traversal.axis(), traversal.resolved_cursor())
+    {
+        warnings.push(format!(
+            "temporal cursor ref `{}` exists but carries no `{clock}` clock",
+            requested_cursor.r#ref
+        ));
+    }
 
     let dimensions = temporal_dimension_coverage(
         &entries,
@@ -502,6 +514,24 @@ pub fn temporal_response_from_result(
             next_cursor: page.next_cursor().unwrap_or_default().to_string(),
         }),
         quality: Some(quality),
+    }
+}
+
+fn missing_explicit_clock(
+    axis: TemporalAxis,
+    coordinate: &kmp_domain::TemporalCoordinate,
+) -> Option<&'static str> {
+    match axis {
+        TemporalAxis::Default => None,
+        TemporalAxis::Occurred if coordinate.occurred_at().is_none() => Some("occurred"),
+        TemporalAxis::Observed if coordinate.observed_at().is_none() => Some("observed"),
+        TemporalAxis::Ingested if coordinate.ingested_at().is_none() => Some("ingested"),
+        TemporalAxis::Validity
+            if coordinate.valid_from().is_none() && coordinate.valid_until().is_none() =>
+        {
+            Some("validity")
+        }
+        _ => None,
     }
 }
 
@@ -840,8 +870,9 @@ mod temporal_lifecycle_tests {
     use kmp_application::{TemporalIncludeOptions, TemporalMemoryResult};
     use kmp_domain::{
         BundleMetadata, BundleNode, BundleQualityMetrics, BundleRelationship, CaseId, KmpBundle,
-        RelationExplanation, RelationSemanticClass, Role, TemporalCursor as DomainCursor,
-        TemporalDirection, TemporalMemoryTraversal, TemporalTraversalRequest,
+        RelationExplanation, RelationSemanticClass, Role, TemporalAxis,
+        TemporalCursor as DomainCursor, TemporalDirection, TemporalMemoryTraversal,
+        TemporalTraversalRequest,
     };
     use kmp_proto::v1beta1::TemporalCursor;
 
@@ -928,6 +959,73 @@ mod temporal_lifecycle_tests {
         assert_eq!(proof.superseded.len(), 1);
         assert_eq!(proof.superseded[0].r#ref, "decision:old");
         assert_eq!(proof.superseded[0].superseded_by, "decision:new");
+    }
+
+    #[test]
+    fn temporal_response_explains_when_ref_lacks_the_requested_clock() {
+        let node = |id: &str, kind: &str| {
+            BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("project:kmp", "memory_anchor"),
+            vec![
+                node("timeline:main", "memory_dimension"),
+                node("decision:sequence-only", "decision"),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "decision:sequence-only",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Rewind,
+                DomainCursor::ref_id("decision:sequence-only").expect("cursor"),
+            )
+            .with_axis(TemporalAxis::Occurred),
+        )
+        .expect("existing ref should resolve");
+        let result = TemporalMemoryResult {
+            traversal,
+            source_bundle: bundle,
+            include: TemporalIncludeOptions {
+                evidence: false,
+                relations: false,
+                raw_refs: false,
+            },
+            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+        };
+
+        let response = temporal_response_from_result(
+            TemporalCursor {
+                r#ref: "decision:sequence-only".to_string(),
+                time: None,
+                sequence: None,
+            },
+            TemporalDirection::Rewind,
+            result,
+        );
+
+        assert!(response.entries.is_empty());
+        assert_eq!(
+            response.warnings,
+            ["temporal cursor ref `decision:sequence-only` exists but carries no `occurred` clock"]
+        );
+        assert_eq!(
+            response.proof.expect("proof").missing,
+            ["temporal_positions"]
+        );
     }
 }
 
