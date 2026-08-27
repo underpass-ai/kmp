@@ -963,17 +963,21 @@ async function startReplay(atRef) {
     // Strip positions: entries with a time land where their moment falls;
     // the timeless inherit their predecessor's spot.
     const times = line.entries.map((entry) => KMP_CORE.entryOrderKey(entry).time || null);
-    playback.placed = times.filter(Boolean).length;
     const timed = times.filter(Boolean);
-    const t0 = timed.length ? Date.parse(timed[0]) : 0;
-    const t1 = timed.length ? Date.parse(timed[timed.length - 1]) : 1;
-    const span = Math.max(1, t1 - t0);
-    let lastX = 0;
-    playback.xs = times.map((time, i) => {
-      if (time) lastX = timed.length > 1 ? (Date.parse(time) - t0) / span : 0.5;
-      else if (!i) lastX = 0;
-      return lastX;
-    });
+    playback.placed = timed.length;
+    const denominator = Math.max(1, line.entries.length - 1);
+    if (timed.length < line.entries.length / 2) {
+      // Most entries carry order but no clock: spread by order, and say so.
+      playback.xs = times.map((_, i) => i / denominator);
+    } else {
+      const t0 = Date.parse(timed[0]);
+      const span = Math.max(1, Date.parse(timed[timed.length - 1]) - t0);
+      let lastX = 0;
+      playback.xs = times.map((time) => {
+        if (time) lastX = timed.length > 1 ? (Date.parse(time) - t0) / span : 0.5;
+        return lastX;
+      });
+    }
 
     playback.active = true;
     $("timebar").hidden = false;
