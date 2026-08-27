@@ -44,6 +44,9 @@ const MAX_BATCH_IDS: usize = 64;
 pub(crate) const INDEX_HTML: &str = include_str!("../ui/index.html");
 pub(crate) const VIEWER_CSS: &str = include_str!("../ui/viewer.css");
 pub(crate) const VIEWER_JS: &str = include_str!("../ui/viewer.js");
+/// The viewer's pure algorithmic half — layout, clustering, temporal reveal —
+/// kept free of DOM and renderer so it can be reasoned about alone.
+pub(crate) const GRAPH_CORE_JS: &str = include_str!("../ui/graph-core.js");
 /// Vendored render engine, pinned and hash-verified in `ui/vendor/VENDOR.md`.
 pub(crate) const PIXI_JS: &str = include_str!("../ui/vendor/pixi.min.js");
 /// Pixi's no-eval shader path, required because the viewer's CSP forbids
@@ -79,6 +82,7 @@ where
             "/" | "/index.html" => HttpResponse::html(INDEX_HTML),
             "/assets/viewer.css" => HttpResponse::css(VIEWER_CSS),
             "/assets/viewer.js" => HttpResponse::javascript(VIEWER_JS),
+            "/assets/graph-core.js" => HttpResponse::javascript(GRAPH_CORE_JS),
             "/assets/pixi.min.js" => HttpResponse::javascript(PIXI_JS),
             "/assets/pixi-unsafe-eval.min.js" => HttpResponse::javascript(PIXI_UNSAFE_EVAL_JS),
             "/api/info" => self.info(),

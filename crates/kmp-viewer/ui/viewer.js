@@ -169,17 +169,21 @@ function upsertNode(view) {
   return node;
 }
 
-function placeNear(node, anchor) {
-  const angle = randomUnit() * 2 * Math.PI;
-  const radius = 60 + randomUnit() * 60;
-  node.x = (anchor ? anchor.x : 0) + Math.cos(angle) * radius;
-  node.y = (anchor ? anchor.y : 0) + Math.sin(angle) * radius;
-}
+/* Fresh nodes land on a golden-angle spiral around their anchor — dense,
+   round, and deterministic: the same store draws the same picture on every
+   reload, because the layout is a picture of the memory, not of the dice. */
+let spawnIndex = 0;
 
-function randomUnit() {
-  const sample = new Uint32Array(1);
-  crypto.getRandomValues(sample);
-  return sample[0] / 0x100000000;
+function placeNear(node, anchor) {
+  const at = KMP_CORE.spiralPoint(
+    spawnIndex,
+    node.id,
+    anchor ? anchor.x : 0,
+    anchor ? anchor.y : 0
+  );
+  spawnIndex += 1;
+  node.x = at.x;
+  node.y = at.y;
 }
 
 function addEdges(edges) {
@@ -207,6 +211,7 @@ function recomputeDegrees() {
 
 function resetGraph(view) {
   const previous = graph.nodes;
+  spawnIndex = 0;
   graph.about = view.about;
   graph.rootId = view.root_id;
   graph.nodes = new Map();
@@ -264,73 +269,40 @@ async function expandNode(id) {
     }
   }
   recomputeDegrees();
-  reheat();
+  reheat(KMP_CORE.SIM.REHEAT_EXPAND);
   return inspect;
 }
 
 const centerNode = () => graph.nodes.get(graph.rootId) || graph.nodes.values().next().value;
 
-/* ---------------- force simulation ---------------- */
+/* ---------------- force simulation ----------------
+   The physics lives in graph-core.js (KMP_CORE.simStep): degree-normalized
+   links, Barnes-Hut repulsion, centering, a hard velocity cap. What stays
+   here is the thermostat — alpha, reheat levels, and the one-shot fit that
+   frames the graph when a fresh load settles. */
 
 let alpha = 0;
-const SIM = { repulsion: 2600, spring: 0.055, restLength: 120, gravity: 0.012, damping: 0.6 };
+let settleFitPending = false;
 
-function reheat() {
-  alpha = 1;
+function reheat(level = KMP_CORE.SIM.REHEAT_LOAD) {
+  alpha = Math.max(alpha, level);
   requestDraw();
 }
 
 function simTick() {
-  const nodes = [...graph.nodes.values()];
-  for (let i = 0; i < nodes.length; i += 1) {
-    const a = nodes[i];
-    for (let j = i + 1; j < nodes.length; j += 1) {
-      const b = nodes[j];
-      let dx = a.x - b.x;
-      let dy = a.y - b.y;
-      let d2 = dx * dx + dy * dy;
-      if (d2 < 1) {
-        dx = randomUnit() - 0.5;
-        dy = randomUnit() - 0.5;
-        d2 = 1;
-      }
-      const force = (SIM.repulsion * alpha) / d2;
-      const dist = Math.sqrt(d2);
-      const fx = (dx / dist) * force;
-      const fy = (dy / dist) * force;
-      a.vx += fx;
-      a.vy += fy;
-      b.vx -= fx;
-      b.vy -= fy;
-    }
+  KMP_CORE.simStep(
+    [...graph.nodes.values()],
+    graph.edges,
+    (id) => graph.nodes.get(id),
+    alpha,
+    { pinned: dragNode, radiusOf: nodeRadius }
+  );
+  alpha -= alpha * KMP_CORE.SIM.ALPHA_DECAY;
+  if (settleFitPending && alpha < 0.3) {
+    settleFitPending = false;
+    fitToView();
   }
-  for (const edge of graph.edges) {
-    const s = graph.nodes.get(edge.source);
-    const t = graph.nodes.get(edge.target);
-    if (!s || !t || s === t) continue;
-    const dx = t.x - s.x;
-    const dy = t.y - s.y;
-    const dist = Math.max(1, Math.hypot(dx, dy));
-    const force = SIM.spring * alpha * (dist - SIM.restLength);
-    const fx = (dx / dist) * force;
-    const fy = (dy / dist) * force;
-    s.vx += fx;
-    s.vy += fy;
-    t.vx -= fx;
-    t.vy -= fy;
-  }
-  for (const node of nodes) {
-    node.vx -= node.x * SIM.gravity * alpha;
-    node.vy -= node.y * SIM.gravity * alpha;
-    if (node !== dragNode) {
-      node.x += node.vx;
-      node.y += node.vy;
-    }
-    node.vx *= SIM.damping;
-    node.vy *= SIM.damping;
-  }
-  alpha *= 0.97;
-  if (alpha < 0.01) alpha = 0;
+  if (alpha < KMP_CORE.SIM.ALPHA_MIN) alpha = 0;
 }
 
 /* ---------------- renderer (pixi.js, WebGL) ---------------- */
@@ -383,18 +355,51 @@ async function setupRenderer() {
       simTick();
       dirty = true;
     }
-    if (playback.active) {
-      if (playback.camTarget) {
-        camera.x += (playback.camTarget.x - camera.x) * 0.06;
-        camera.y += (playback.camTarget.y - camera.y) * 0.06;
-      }
-      dirty = true;
-    }
+    if (tickCamera(performance.now())) dirty = true;
+    if (playback.active) dirty = true;
     if (dirty) {
       dirty = false;
       syncScene();
     }
   });
+}
+
+/* ---------------- camera motion ----------------
+   One tween at a time, cubic-out. Any hand on the camera — a pan, a wheel —
+   cancels it: the machine never fights the person for the wheel. */
+
+let camTween = null;
+
+function animateCamera(target, ms = 400) {
+  camTween = {
+    fromX: camera.x,
+    fromY: camera.y,
+    fromK: camera.k,
+    toX: target.x,
+    toY: target.y,
+    toK: target.k === undefined ? camera.k : target.k,
+    start: performance.now(),
+    ms,
+  };
+  requestDraw();
+}
+
+function tickCamera(now) {
+  if (!camTween) return false;
+  const t = Math.min(1, (now - camTween.start) / camTween.ms);
+  const eased = 1 - Math.pow(1 - t, 3);
+  camera.x = camTween.fromX + (camTween.toX - camTween.fromX) * eased;
+  camera.y = camTween.fromY + (camTween.toY - camTween.fromY) * eased;
+  camera.k = camTween.fromK + (camTween.toK - camTween.fromK) * eased;
+  if (t >= 1) camTween = null;
+  return true;
+}
+
+/* Frame everything (or the nodes `include` admits) with breathing room. */
+function fitToView(include) {
+  const bounds = KMP_CORE.computeBounds([...graph.nodes.values()], include);
+  const target = KMP_CORE.fitTransform(bounds, canvas.clientWidth, canvas.clientHeight);
+  if (target) animateCamera(target);
 }
 
 const nodeRadius = (node) =>
@@ -565,7 +570,6 @@ const playback = {
   revealed: [], // step -> Set of revealed ref_ids (cumulative)
   step: 0,
   currentRef: null,
-  camTarget: null,
   timer: null,
 };
 
@@ -666,7 +670,7 @@ function setReplayStep(step) {
   caption.hidden = false;
   caption.textContent = entry.text.length > 200 ? entry.text.slice(0, 199) + "…" : entry.text;
   const node = graph.nodes.get(entry.ref_id);
-  if (node) playback.camTarget = node;
+  if (node) animateCamera({ x: node.x, y: node.y }, 600);
   requestDraw();
 }
 
@@ -687,7 +691,6 @@ function stopReplay() {
   setReplayPlaying(false);
   playback.active = false;
   playback.currentRef = null;
-  playback.camTarget = null;
   $("playbar").hidden = true;
   $("playcaption").hidden = true;
   $("btn-replay").textContent = "▶ Replay";
@@ -782,12 +785,13 @@ canvas.addEventListener("pointermove", (event) => {
     dragNode.y = w.y;
     dragNode.vx = 0;
     dragNode.vy = 0;
-    if (alpha < 0.1) alpha = 0.1;
+    if (alpha < KMP_CORE.SIM.REHEAT_DRAG) alpha = KMP_CORE.SIM.REHEAT_DRAG;
     requestDraw();
     return;
   }
   if (panStart) {
     moved = true;
+    camTween = null;
     camera.x = panStart.camX - (event.offsetX - panStart.x) / camera.k;
     camera.y = panStart.camY - (event.offsetY - panStart.y) / camera.k;
     requestDraw();
@@ -838,9 +842,10 @@ canvas.addEventListener(
   "wheel",
   (event) => {
     event.preventDefault();
+    camTween = null;
     const factor = Math.exp(-event.deltaY * 0.0012);
     const before = toWorld(event.offsetX, event.offsetY);
-    camera.k = Math.min(8, Math.max(0.08, camera.k * factor));
+    camera.k = Math.min(8, Math.max(0.05, camera.k * factor));
     const after = toWorld(event.offsetX, event.offsetY);
     camera.x += before.x - after.x;
     camera.y += before.y - after.y;
@@ -849,13 +854,20 @@ canvas.addEventListener(
   { passive: false }
 );
 
+/* `F` frames the whole graph — the escape hatch from any lost camera. */
+addEventListener("keydown", (event) => {
+  if (event.key !== "f" && event.key !== "F") return;
+  const target = event.target;
+  if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA")) {
+    return;
+  }
+  fitToView();
+});
+
 function centerOn(id) {
   const node = graph.nodes.get(id);
   if (!node) return;
-  camera.x = node.x;
-  camera.y = node.y;
-  if (camera.k < 0.7) camera.k = 0.9;
-  requestDraw();
+  animateCamera({ x: node.x, y: node.y, k: camera.k < 0.7 ? 0.9 : camera.k });
 }
 
 /* ---------------- tooltip ---------------- */
@@ -1138,8 +1150,9 @@ async function loadGraph(about) {
     selectedId = null;
     camera.x = 0;
     camera.y = 0;
-    camera.k = Math.min(1, 26 / Math.max(26, graph.nodes.size));
-    reheat();
+    camera.k = 0.6;
+    settleFitPending = true;
+    reheat(KMP_CORE.SIM.REHEAT_LOAD);
     showError("");
   } catch (error) {
     showError(error.message);
@@ -1316,7 +1329,7 @@ $("tr-apply").addEventListener("click", async () => {
       nodes: new Set(view.nodes.map((n) => n.id)),
       edges: new Set(view.edges.map(edgeKey)),
     };
-    reheat();
+    reheat(KMP_CORE.SIM.REHEAT_EXPAND);
     renderLegend();
     $("tr-status").textContent =
       `${view.nodes.length} nodes, ${view.edges.length} relations · ` +
