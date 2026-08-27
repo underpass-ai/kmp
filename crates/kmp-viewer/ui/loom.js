@@ -1849,21 +1849,17 @@ function renderRail() {
   }
 
   const kinds = new Map();
-  if (model.entries.length) {
+  const projectedKinds = Object.entries((model.projection && model.projection.by_kind) || {});
+  if (projectedKinds.length) {
+    for (const [kind, count] of projectedKinds) kinds.set(kind, Number(count));
+  } else if (model.entries.length) {
     for (const m of model.entries) kinds.set(m.kind, (kinds.get(m.kind) || 0) + 1);
-  } else {
-    // Atlas and Episode deliberately omit entry bodies. Their aggregates
-    // still say which kinds are drawn in every lane, so the key can describe
-    // the visible weave instead of going blank merely because this rung is cheap.
-    const coarseItems = model.clusters.length ? model.clusters : model.bins;
-    for (const item of coarseItems) {
-      for (const [kind, count] of Object.entries(item.by_kind || {})) {
-        kinds.set(kind, (kinds.get(kind) || 0) + Number(count));
-      }
-    }
   }
   const kindList = $("kind-legend");
   kindList.textContent = "";
+  if (!kinds.size && model.currentLod !== "moment") {
+    kindList.append(el("li", "legend-static muted", "kind counts available at Moment"));
+  }
   for (const [kind, count] of [...kinds.entries()].sort((a, b) => b[1] - a[1])) {
     const item = el("li", view.dimmedKinds.has(kind) ? "dimmed" : "");
     const dot = el("span", "legend-dot");

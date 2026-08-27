@@ -239,6 +239,7 @@ pub(crate) fn visual_projection_from_response(response: ProjectVisualResponse) -
             "text": entry.text,
             "coordinates": entry.coordinates.iter().map(temporal_coordinate_json).collect::<Vec<_>>(),
         })).collect::<Vec<_>>(),
+        "by_kind": response.by_kind,
         "relations": response.relations.iter().map(memory_relation_json).collect::<Vec<_>>(),
         "metrics": response.metrics.into_iter().map(|metric| json!({
             "name": metric.name,

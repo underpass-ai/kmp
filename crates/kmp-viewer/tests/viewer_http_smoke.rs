@@ -321,6 +321,60 @@ async fn projection_compares_rfc3339_ranges_with_persisted_sortable_clocks() {
     assert_eq!(projection["page"]["total"], 2);
 }
 
+#[tokio::test(flavor = "multi_thread")]
+async fn coarse_kind_totals_count_entries_once_across_multiple_lanes() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let mut stored = corpus();
+    stored.memory.dimensions.push(MemoryDimensionData {
+        id: "task:work".to_string(),
+        kind: "task".to_string(),
+        title: None,
+        metadata: Default::default(),
+    });
+    for entry in &mut stored.memory.entries {
+        let mut coordinate = entry.coordinates[0].clone();
+        coordinate.dimension = "task".to_string();
+        coordinate.scope_id = "task:work".to_string();
+        entry.coordinates.push(coordinate);
+    }
+    kernel
+        .service()
+        .ingest(stored)
+        .await
+        .expect("memory ingests");
+
+    let viewer = Arc::new(MemoryViewerServer::new(
+        kernel.service(),
+        Some(data_dir.path().display().to_string()),
+    ));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    let (status, episode) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=episode&bins=8&limit=8",
+            urlencode(ABOUT),
+            urlencode("2026-07-01T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+
+    assert_eq!(status, 200, "visual projection failed: {episode}");
+    assert_eq!(episode["page"]["total"], 2);
+    assert_eq!(episode["by_kind"]["decision"], 2);
+    let lane_memberships: u64 = episode["clusters"]
+        .as_array()
+        .expect("clusters")
+        .iter()
+        .map(|cluster| cluster["by_kind"]["decision"].as_u64().unwrap_or(0))
+        .sum();
+    assert_eq!(lane_memberships, 4, "fixture must exercise lane inflation");
+}
+
 #[tokio::test]
 async fn non_local_hosts_are_refused() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
