@@ -14,9 +14,7 @@ use kmp_domain::{
 
 use crate::MemoryViewerServer;
 use crate::http::{HttpRequest, HttpResponse};
-use crate::view_state::{
-    DEFAULT_VIEW_ID, Focus, TimeRange, TraceSelection, ViewPatch, ViewRegistry,
-};
+use crate::view_state::{DEFAULT_VIEW_ID, TimeRange, TraceSelection, ViewPatch, ViewRegistry};
 use crate::views;
 
 /// Unwraps a parameter, or returns its refusal from the enclosing handler.
@@ -78,7 +76,16 @@ where
             request.path.as_str(),
             "/api/view/report" | "/api/view/undo" | "/api/view/open"
         );
-        if request.method == "POST" && view_control {
+        if view_control {
+            // A GET has to be safe. Letting one through here would let any
+            // page you happen to be visiting move this loom with an <img>
+            // tag pointed at loopback.
+            if request.method != "POST" {
+                return HttpResponse::error(
+                    405,
+                    "the view state changes by POST; a GET must be safe to make",
+                );
+            }
             return self.answer(request).await;
         }
         if request.method != "GET" && !head_only {
@@ -168,13 +175,13 @@ where
         let patch = ViewPatch {
             about: request.param("about").map(str::to_string),
             clock: request.param("clock").map(str::to_string),
-            focus: Some(Focus {
-                time_range: Some(TimeRange {
-                    from: request.param("from").map(str::to_string),
-                    to: request.param("to").map(str::to_string),
-                }),
-                refs: Vec::new(),
+            // Only the window: the refs an agent asked to frame are its
+            // intent, and a person panning does not retract it.
+            focus_window: Some(TimeRange {
+                from: request.param("from").map(str::to_string),
+                to: request.param("to").map(str::to_string),
             }),
+            focus: None,
             selection: Some(request.param("selection").map(str::to_string)),
             trace,
             search: Some(request.param("search").map(str::to_string)),

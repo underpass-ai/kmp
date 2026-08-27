@@ -340,6 +340,10 @@ async function setupRenderer() {
    the bottom of the stage (its height is reserved). */
 const AXIS_H = 30;
 const NAV_RESERVED = 96;
+/// How many entry labels the scene keeps baked. Text is the most expensive
+/// thing on the stage, so the pool is bounded — and evicts rather than
+/// simply refusing to grow.
+const LABEL_POOL_MAX = 400;
 
 function visibleLanes() {
   return model.lanes.filter((lane) => !view.hiddenLanes.has(lane.name));
@@ -765,6 +769,16 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
       const key = `mark:${item.ref}`;
       let label = textPools.mark.get(key);
       const text = m.text.length > 34 ? m.text.slice(0, 33) + "…" : m.text;
+      if (!label && textPools.mark.size >= LABEL_POOL_MAX) {
+        // Evict, do not stop labelling: a bare cap meant that once the pool
+        // filled, entries stopped getting names for the rest of the session.
+        for (const [oldKey, oldLabel] of textPools.mark) {
+          if (oldLabel.visible) continue;
+          oldLabel.destroy();
+          textPools.mark.delete(oldKey);
+          break;
+        }
+      }
       if (!label) {
         label = new PIXI.Text({
           text,
@@ -783,7 +797,6 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
       label.visible = true;
       label.anchor.set(0, 0.5);
       label.position.set(item.x + 10, item.y - 12);
-      if (textPools.mark.size > 400) break;
     }
   }
 
@@ -1462,14 +1475,20 @@ async function applyAgentState(state) {
 
     const range = state.focus && state.focus.time_range;
     const refs = (state.focus && state.focus.refs) || [];
+    let framed = false;
     if (range && range.from && range.to) {
       const from = Date.parse(range.from);
       const to = Date.parse(range.to);
-      if (Number.isFinite(from) && Number.isFinite(to)) setWindow(from, to);
+      if (Number.isFinite(from) && Number.isFinite(to)) {
+        setWindow(from, to);
+        framed = true;
+      }
     } else if (refs.length) {
-      frameRefs(refs);
+      framed = frameRefs(refs);
     }
-    if (projection.semantic_zoom) applyZoomRung(projection.semantic_zoom);
+    // A rung is a density to fall back on, not an override: an intent that
+    // named its own window asked for that window.
+    if (projection.semantic_zoom && !framed) applyZoomRung(projection.semantic_zoom);
 
     if (state.search !== undefined) {
       $("search").value = state.search || "";
@@ -1496,11 +1515,12 @@ function frameRefs(refs) {
     .filter(Boolean)
     .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
     .filter((t) => t !== null);
-  if (!stamps.length) return;
+  if (!stamps.length) return false;
   const lo = Math.min(...stamps);
   const hi = Math.max(...stamps);
   const pad = Math.max(60000, (hi - lo) * 0.4);
   setWindow(lo - pad, hi + pad);
+  return true;
 }
 
 /* A rung of the ladder is a density of time per pixel; asking for "moment"

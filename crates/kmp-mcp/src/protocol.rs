@@ -352,7 +352,7 @@ fn view_apply_intent_definition() -> Value {
                     "minimum": 1,
                     "description": "The view_revision this intent was prepared against. Omit only when the move is unconditional; passing it is what stops an agent from yanking the loom out from under a person mid-gesture."
                 },
-                "idempotency_key": string_schema("A retried intent must be the same intent, not a second one."),
+                "idempotency_key": string_schema("A retried intent must be the same intent, not a second one. A replay answers with applied=false and the CURRENT state — success, not a conflict, because that intent already landed; read the state it returns to see whether the person has moved since."),
                 "explanation": string_schema("Why, in the reader's terms. Shown to the human beside the change, because an agent may not rearrange what someone is looking at anonymously."),
                 "actor": string_schema("Who is moving the view, for provenance. Defaults to `agent`."),
                 "target": {

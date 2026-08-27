@@ -135,7 +135,11 @@ impl ViewState {
 pub struct ViewPatch {
     pub about: Option<String>,
     pub clock: Option<String>,
+    /// Replaces the whole focus — what an intent means.
     pub focus: Option<Focus>,
+    /// Moves only the window, leaving the focused refs alone — what a person
+    /// panning means. Ignored when `focus` is present.
+    pub focus_window: Option<TimeRange>,
     pub projection: Option<Projection>,
     /// `Some(None)` clears the selection; `None` leaves it alone.
     pub selection: Option<Option<String>>,
@@ -148,6 +152,7 @@ impl ViewPatch {
         self.about.is_some()
             || self.clock.is_some()
             || self.focus.is_some()
+            || self.focus_window.is_some()
             || self.projection.is_some()
             || self.selection.is_some()
             || self.trace.is_some()
@@ -242,8 +247,13 @@ impl ViewRegistry {
     }
 
     pub fn get(&self, view_id: &str) -> Option<ViewState> {
-        let views = self.views.lock().expect("view registry poisoned");
-        views.get(view_id).map(|entry| entry.state.clone())
+        let mut views = self.views.lock().expect("view registry poisoned");
+        // Reading counts as touching: a view someone is watching does not
+        // expire under them, and one nobody reads eventually goes.
+        prune(&mut views);
+        let entry = views.get_mut(view_id)?;
+        entry.touched = SystemTime::now();
+        Some(entry.state.clone())
     }
 
     /// Applies one intent atomically, under optimistic concurrency and
@@ -330,6 +340,8 @@ impl ViewRegistry {
         }
         if let Some(focus) = patch.focus {
             state.focus = focus;
+        } else if let Some(window) = patch.focus_window {
+            state.focus.time_range = Some(window);
         }
         if let Some(projection) = patch.projection {
             if let Some(overlays) = projection.overlays.as_ref()
@@ -418,11 +430,18 @@ impl ViewRegistry {
     ) -> Option<ViewState> {
         let deadline = tokio::time::Instant::now() + patience;
         loop {
+            // Registered before the state is read, on purpose: a change that
+            // lands between the read and the await would otherwise be missed
+            // and the caller would wait out its whole patience for news that
+            // had already arrived.
+            let waiting = self.bell.notified();
+            tokio::pin!(waiting);
+            waiting.as_mut().enable();
+
             let state = self.get(view_id)?;
             if state.view_revision > since {
                 return Some(state);
             }
-            let waiting = self.bell.notified();
             if tokio::time::timeout_at(deadline, waiting).await.is_err() {
                 return self.get(view_id);
             }
@@ -562,6 +581,85 @@ mod tests {
         let undone = registry.undo("t", "human").expect("undo");
         assert_eq!(undone.clock, "occurred");
         assert!(!undone.can_undo, "one move, one undo");
+    }
+
+    /// A person panning moves the window. It does not retract the refs an
+    /// agent asked to frame — those are its intent, and it must still be
+    /// able to read back what it asked for.
+    #[test]
+    fn a_human_pan_moves_the_window_without_dropping_the_focused_refs() {
+        let registry = registry();
+        registry
+            .apply(
+                "t",
+                None,
+                None,
+                ViewPatch {
+                    focus: Some(Focus {
+                        time_range: None,
+                        refs: vec!["decision:one".into(), "evidence:two".into()],
+                    }),
+                    ..ViewPatch::default()
+                },
+                "agent:test",
+                Some("frame these"),
+            )
+            .expect("agent frames refs");
+        let after = registry
+            .apply(
+                "t",
+                None,
+                None,
+                ViewPatch {
+                    focus_window: Some(TimeRange {
+                        from: Some("2026-08-26T00:00:00Z".into()),
+                        to: Some("2026-08-27T00:00:00Z".into()),
+                    }),
+                    ..ViewPatch::default()
+                },
+                "human",
+                None,
+            )
+            .expect("human pans");
+        assert_eq!(after.state.focus.refs.len(), 2, "the intent survives a pan");
+        assert_eq!(
+            after.state.focus.time_range.expect("window").to.as_deref(),
+            Some("2026-08-27T00:00:00Z")
+        );
+    }
+
+    /// The bell has to be listened for before the state is read, or a change
+    /// landing in between is missed and the caller waits out its patience.
+    #[tokio::test]
+    async fn a_change_between_the_read_and_the_wait_is_not_missed() {
+        let registry = std::sync::Arc::new(ViewRegistry::new());
+        registry.open(Some("t"), Some("about:x".into()));
+        let since = registry.get("t").expect("state").view_revision;
+        let writer = std::sync::Arc::clone(&registry);
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            let _ = writer.apply(
+                "t",
+                None,
+                None,
+                ViewPatch {
+                    clock: Some("ingested".into()),
+                    ..ViewPatch::default()
+                },
+                "agent:test",
+                None,
+            );
+        });
+        let started = tokio::time::Instant::now();
+        let state = registry
+            .changed_since("t", since, Duration::from_secs(5))
+            .await
+            .expect("a state");
+        assert!(state.view_revision > since);
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "the waiter woke on the bell, not on the timeout"
+        );
     }
 
     #[test]

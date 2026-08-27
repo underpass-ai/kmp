@@ -466,6 +466,54 @@ fn content_length(response: &str) -> usize {
         .expect("a Content-Length header")
 }
 
+/// A GET has to be safe. If one could move the view, any page you happened
+/// to be visiting could point an `<img>` at loopback and steer this loom.
+#[tokio::test]
+async fn a_get_cannot_move_the_view() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    let (status, opened) = post(port, "/api/view/open?id=safety&about=about:anything").await;
+    assert_eq!(status, 200, "opening a view is a POST: {opened}");
+    let before = opened["view_revision"].as_u64().expect("a revision");
+
+    let (status, refusal) = get(port, "/api/view/report?id=safety&clock=ingested").await;
+    assert_eq!(status, 405, "a GET must not change the view: {refusal}");
+
+    let (status, after) = get(port, "/api/view?id=safety").await;
+    assert_eq!(status, 200);
+    assert_eq!(
+        after["view_revision"].as_u64().expect("a revision"),
+        before,
+        "the refused GET left the view exactly where it was"
+    );
+    assert_eq!(after["clock"], "occurred", "and did not touch its clock");
+}
+
+async fn post(port: u16, path_and_query: &str) -> (u16, serde_json::Value) {
+    let raw = raw_request(
+        port,
+        &format!(
+            "POST {path_and_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    let status = raw
+        .split_whitespace()
+        .nth(1)
+        .and_then(|code| code.parse().ok())
+        .expect("a status code");
+    let body = raw.split("\r\n\r\n").nth(1).unwrap_or("");
+    (
+        status,
+        serde_json::from_str(body).unwrap_or(serde_json::Value::Null),
+    )
+}
+
 async fn raw_request(port: u16, request: &str) -> String {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))

@@ -103,6 +103,9 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
     if let Some(target) = arguments.get("target")
         && let Some(about) = target.get("about").and_then(Value::as_str)
     {
+        // Checked like every other reference an intent names: kmp_view_open
+        // refuses an absent about, and this is the same door.
+        refs.push(about.to_string());
         patch.about = Some(about.to_string());
     }
     if let Some(focus) = arguments.get("focus") {
@@ -208,6 +211,10 @@ pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
 /// under optimistic concurrency and idempotency.
 pub(crate) fn apply_intent(arguments: &Value, missing_refs: &[String]) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
+    // A replay is answered before the revision is checked: the intent under
+    // that key already landed, so this is success, not a conflict. The state
+    // that comes back is the present one, which is how a caller still sees
+    // that the person has since moved.
     let Some(idempotency_key) = arguments.get("idempotency_key").and_then(Value::as_str) else {
         return Err(ToolError::invalid_argument(
             "kmp_view_apply_intent needs `idempotency_key`: a retried intent must be the same \
