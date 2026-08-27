@@ -2119,11 +2119,17 @@ function applyZoomRung(rung) {
 
 function renderProvenance(state) {
   const chip = $("agent-chip");
+  const undo = $("agent-undo");
   const change = state.last_change;
   if (!change || change.actor === "human") {
-    chip.hidden = true;
+    chip.classList.add("human-owned");
+    $("agent-chip-text").textContent = "human-controlled view";
+    undo.hidden = true;
+    chip.hidden = false;
     return;
   }
+  chip.classList.remove("human-owned");
+  undo.hidden = false;
   const why = change.explanation ? ` · ${change.explanation}` : "";
   $("agent-chip-text").textContent = `${change.actor} moved the loom${why}`;
   chip.hidden = false;
@@ -2134,7 +2140,7 @@ $("agent-undo").addEventListener("click", async () => {
     const state = await api("/api/view/undo", { id: VIEW_ID }, "POST");
     sync.revision = state.view_revision;
     await applyAgentState(state);
-    $("agent-chip").hidden = true;
+    renderProvenance(state);
   } catch (error) {
     showError(error.message);
   }
@@ -2166,7 +2172,7 @@ function reportView() {
     try {
       const state = await api("/api/view/report", Object.fromEntries(params), "POST");
       if (state.view_revision) sync.revision = state.view_revision;
-      $("agent-chip").hidden = true;
+      renderProvenance(state);
     } catch (error) {
       // The loom keeps working even when nobody is listening to it.
     }

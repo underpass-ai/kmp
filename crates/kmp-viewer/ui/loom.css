@@ -185,6 +185,10 @@ body {
 }
 .agent-chip[hidden] { display: none; }
 #agent-chip-text { overflow: hidden; text-overflow: ellipsis; }
+.agent-chip.human-owned {
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
 .agent-undo {
   font: inherit;
   font-size: 11px;

@@ -1,24 +1,18 @@
 # kmp-viewer
 
 [KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
-preserves what happened, when and why. This crate is its local, read-only web
-viewer: the graph, its notes, the timeline and causal traces — rendered for a
-human the way
-`kmp_wake`, `kmp_inspect`, `kmp_near` and `kmp_trace` render them
-for an agent. Same facade, same semantics, no parallel read model.
+preserves what happened, when and why. This crate is **ChronoLoom**, its local,
+read-only visualizer: the same graph-temporal memory an agent reads, woven for
+a human. Same facade, same semantics, no parallel read model.
 
-## What the viewer does
+## Memory you can see
 
-A memory of a thousand entries opens as a map, not a hairball: dimensions
-fold into meta-marks sized by what they hold, and unfold in place on a
-double-click. The layout is deterministic — the same store draws the same
-picture — and stable at real scale: degree-normalized springs, Barnes-Hut
-repulsion, a hard velocity cap, fit-to-view on settle and on `F`.
-
-ChronoLoom places the same memory on stable dimension lanes and offers three
-semantic zoom levels: Atlas bins, Episode clusters and Moment entries. The
+ChronoLoom places memory on stable dimension lanes and offers three semantic
+zoom levels: Atlas bins, Episode clusters and Moment entries. The
 application owns this bounded, paginated projection; the browser never walks a
 whole about or a depth-four graph to manufacture it.
+
+![The same memory woven on occurred time and observed time](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-chronoloom.gif)
 
 Four reading moves sit on top of the loom:
 

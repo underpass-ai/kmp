@@ -102,7 +102,7 @@ flowchart LR
 ```
 
 The plugin installs the skills and declares one local MCP process. The skill
-turns intent into one or more of ten typed tools. `kmp-mcp` validates the
+turns intent into one or more of thirteen typed tools. `kmp-mcp` validates the
 request, and the kernel reads or writes the local graph-temporal store. The
 agent—not KMP—turns returned evidence into conversational prose.
 
@@ -120,11 +120,15 @@ legible without flattening its structure.
 > selects the evidence and can light up the proof path. No query language, no
 > hunting through node IDs: you see the memory it is reasoning from.
 
+![An agent opens ChronoLoom at the relevant memory and lights up its proof path](docs/assets/kmp-agent-loom.gif)
+
 Travel across occurred, observed, ingested and validity time; search and
 filter the graph; compare two instants; or light up an audit path with every
 hop's rationale, evidence and confidence attached. Those moves are semantic,
 not screen coordinates, and optimistic concurrency keeps a stale agent intent
 from moving the screen out from under the person using it.
+
+![The same memory woven on occurred time and observed time](docs/assets/kmp-chronoloom.gif)
 
 ChronoLoom reads the kernel's own bounded projections. It does not maintain a
 second index, invent a parallel interpretation of memory or write to the

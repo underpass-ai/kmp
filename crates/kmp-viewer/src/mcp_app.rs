@@ -52,4 +52,13 @@ mod tests {
         assert!(html.contains("ui/initialize"));
         assert!(html.contains("kmp_view_read_projection"));
     }
+
+    #[test]
+    fn the_shared_loom_always_names_who_controls_the_view() {
+        let html = mcp_app_html();
+        assert!(html.contains("human-controlled view"));
+        assert!(html.contains("moved the loom"));
+        assert!(html.contains("undo.hidden = true"));
+        assert!(html.contains("undo.hidden = false"));
+    }
 }
