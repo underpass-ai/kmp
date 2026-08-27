@@ -27,6 +27,7 @@ pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, EmbeddedKernelStore,
     RedbQualityTelemetryReader, SUPPORTED_FORMAT_VERSION, StorageEngine, StoreMigrationReceipt,
-    format_version_path, merge_bundles, read_stamped_version, store_file_path_for, verify_bundle,
+    format_version_path, merge_bundles, quality_telemetry_path, read_stamped_version,
+    store_file_path_for, verify_bundle,
 };
 pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};

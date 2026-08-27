@@ -134,8 +134,8 @@ pub(super) fn inspect_include_from_arguments(
     };
     let raw = optional_bool_field(include, "raw", "include.raw")?.unwrap_or(false);
     Ok(Some(InspectInclude {
-        incoming: optional_bool_field(include, "incoming", "include.incoming")?.unwrap_or(false),
-        outgoing: optional_bool_field(include, "outgoing", "include.outgoing")?.unwrap_or(false),
+        incoming: optional_bool_field(include, "incoming", "include.incoming")?.unwrap_or(true),
+        outgoing: optional_bool_field(include, "outgoing", "include.outgoing")?.unwrap_or(true),
         details: optional_bool_field(include, "details", "include.details")?.unwrap_or(true),
         raw,
     }))
@@ -189,5 +189,25 @@ mod tests {
             TemporalAxis::Ingested as i32
         );
         assert!(temporal_axis_from_arguments(&json!({"axis": "effective"})).is_err());
+    }
+
+    #[test]
+    fn inspect_include_only_narrows_fields_named_by_the_caller() {
+        assert!(
+            inspect_include_from_arguments(&json!({}))
+                .expect("an absent include is valid")
+                .is_none()
+        );
+
+        let include = inspect_include_from_arguments(&json!({
+            "include": {"details": false}
+        }))
+        .expect("valid inspect include")
+        .expect("include was supplied");
+
+        assert!(include.incoming);
+        assert!(include.outgoing);
+        assert!(!include.details);
+        assert!(!include.raw);
     }
 }

@@ -190,7 +190,11 @@
       return state;
     }
     if (path === "/api/view/open") {
-      const result = await callTool("kmp_view_open", { about: params.about, view_id: params.id || currentViewId });
+      const result = await callTool("kmp_view_open", {
+        about: params.about,
+        view_id: params.id || currentViewId,
+        expected_revision: Number(params.expected_revision) || undefined,
+      });
       return result.state || result;
     }
     if (path === "/api/view/report") {

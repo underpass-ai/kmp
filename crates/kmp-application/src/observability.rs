@@ -17,6 +17,13 @@ pub struct ObservabilityQuery {
 /// Application seam for persisted local observations and remote telemetry
 /// backends. Renderers compose these values; they do not reinterpret them.
 pub trait ObservabilityQueryPort: Send + Sync {
+    /// Exact series names this reader can resolve without inventing aliases.
+    /// Readers backed by a dynamic remote catalog may leave this empty until
+    /// they can expose that capability explicitly.
+    fn available_series(&self) -> Vec<String> {
+        Vec::new()
+    }
+
     fn query<'a>(
         &'a self,
         query: ObservabilityQuery,

@@ -58,6 +58,7 @@ pub struct MemoryViewerServer<G, D, S, E, W> {
     service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
     data_dir: Option<String>,
     observability: Option<Arc<dyn ObservabilityQueryPort>>,
+    observability_unavailable_reason: Option<String>,
 }
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
@@ -79,17 +80,29 @@ where
         service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
         data_dir: Option<String>,
     ) -> Self {
+        ViewRegistry::shared().set_available_overlays(Vec::new());
         Self {
             service,
             data_dir,
             observability: None,
+            observability_unavailable_reason: None,
         }
     }
 
     /// Adds a telemetry read side without coupling the renderer to a local or
     /// remote adapter.
     pub fn with_observability(mut self, observability: Arc<dyn ObservabilityQueryPort>) -> Self {
+        ViewRegistry::shared().set_available_overlays(observability.available_series());
         self.observability = Some(observability);
+        self.observability_unavailable_reason = None;
+        self
+    }
+
+    /// Preserves why the optional pulse could not be mounted. The memory
+    /// viewer itself remains useful, but its API and startup line must not
+    /// misdiagnose a journal lock as missing configuration.
+    pub fn with_observability_unavailable(mut self, reason: impl Into<String>) -> Self {
+        self.observability_unavailable_reason = Some(reason.into());
         self
     }
 

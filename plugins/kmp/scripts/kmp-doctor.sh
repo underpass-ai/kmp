@@ -510,7 +510,7 @@ COUNT="$(printf '%s' "$TOOLS" | wc -w | tr -d ' ')"
 if [ "$COUNT" -gt 0 ]; then
   ok "$COUNT tools answered"
   info "$TOOLS"
-  [ "$COUNT" -lt 10 ] && warn "expected 10 moves; this build exposes $COUNT"
+  [ "$COUNT" -lt 13 ] && warn "expected the 13 declared moves; this build exposes $COUNT"
 else
   fail "the binary did not return a usable tool list"
   info "the probe ran against a scratch store, so this is the binary itself"

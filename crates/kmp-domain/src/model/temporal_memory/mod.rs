@@ -3,6 +3,8 @@ mod extract;
 mod position;
 mod select;
 
+pub use axis_key::compare_temporal_instants;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
@@ -475,6 +477,37 @@ mod tests {
             vec!["claim:two"]
         );
         assert_eq!(observed.axis(), TemporalAxis::Observed);
+        assert_eq!(
+            occurred.resolved_cursor().occurred_at(),
+            Some("2026-04-12T11:30:00Z")
+        );
+        assert_eq!(occurred.resolved_cursor().observed_at(), None);
+        assert_eq!(
+            observed.resolved_cursor().observed_at(),
+            Some("2026-04-12T11:30:00Z")
+        );
+        assert_eq!(observed.resolved_cursor().occurred_at(), None);
+
+        let ingested = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(TemporalDirection::Goto, cursor())
+                .with_axis(TemporalAxis::Ingested),
+        )
+        .expect("ingested axis should still resolve its cursor");
+        assert_eq!(
+            ingested.resolved_cursor().ingested_at(),
+            Some("2026-04-12T11:30:00Z")
+        );
+        let validity = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(TemporalDirection::Goto, cursor())
+                .with_axis(TemporalAxis::Validity),
+        )
+        .expect("validity axis should still resolve its cursor");
+        assert_eq!(
+            validity.resolved_cursor().valid_from(),
+            Some("2026-04-12T11:30:00Z")
+        );
     }
 
     #[test]

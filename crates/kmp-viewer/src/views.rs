@@ -59,6 +59,8 @@ impl NodeView {
 /// `why` and `evidence` instead of inventing a rationale for the link.
 #[derive(Debug, Clone, Serialize)]
 pub struct EdgeView {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hop: Option<usize>,
     pub source: String,
     pub target: String,
     pub rel: String,
@@ -90,6 +92,7 @@ pub struct EdgeView {
 impl EdgeView {
     fn new(source: &str, target: &str, rel: &str, explanation: &RelationExplanation) -> Self {
         Self {
+            hop: None,
             source: source.to_string(),
             target: target.to_string(),
             rel: rel.to_string(),
@@ -488,12 +491,14 @@ pub struct TraceView {
     pub to: String,
     pub nodes: Vec<NodeView>,
     pub edges: Vec<EdgeView>,
+    pub warnings: Vec<String>,
     pub rendered: RenderedView,
     pub quality: QualityView,
 }
 
 pub fn trace_view(from: &str, to: &str, result: &GetContextPathResult) -> TraceView {
     let bundle = &result.path_bundle;
+    let path = result.path_relationships();
     let mut nodes = Vec::with_capacity(1 + bundle.neighbor_nodes().len());
     nodes.push(NodeView::from_bundle_node(bundle.root_node()));
     nodes.extend(
@@ -506,11 +511,22 @@ pub fn trace_view(from: &str, to: &str, result: &GetContextPathResult) -> TraceV
         from: from.to_string(),
         to: to.to_string(),
         nodes,
-        edges: bundle
-            .relationships()
-            .iter()
-            .map(EdgeView::from_bundle_relationship)
+        edges: path
+            .as_ref()
+            .into_iter()
+            .flatten()
+            .enumerate()
+            .map(|(index, relationship)| {
+                let mut edge = EdgeView::from_bundle_relationship(relationship);
+                edge.hop = Some(index + 1);
+                edge
+            })
             .collect(),
+        warnings: path.is_none().then(|| {
+            format!(
+                "no directed trace reaches `{to}` from `{from}`; KMP does not present the explored neighborhood as proof"
+            )
+        }).into_iter().collect(),
         rendered: RenderedView::from_rendered(&result.rendered),
         quality: QualityView::from_metrics(&result.rendered.quality),
     }

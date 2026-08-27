@@ -158,7 +158,28 @@ where
     fn view_open(&self, request: &HttpRequest) -> HttpResponse {
         let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID);
         let about = request.param("about").map(str::to_string);
-        HttpResponse::json(&ViewRegistry::shared().open(Some(id), about))
+        let expected = match request.param("expected_revision") {
+            Some(value) => match value.parse::<u64>() {
+                Ok(revision) => Some(revision),
+                Err(_) => {
+                    return HttpResponse::error(
+                        400,
+                        "parameter `expected_revision` must be an unsigned integer",
+                    );
+                }
+            },
+            None => None,
+        };
+        match ViewRegistry::shared().open_checked(
+            Some(id),
+            about,
+            expected,
+            "human",
+            Some("opened a different about"),
+        ) {
+            Ok(state) => HttpResponse::json(&state),
+            Err(error) => view_error_response(&error),
+        }
     }
 
     /// Where the human is looking now. Reported by the browser so the agent's
@@ -390,7 +411,11 @@ where
 
     async fn observability(&self, request: &HttpRequest) -> HttpResponse {
         let Some(port) = self.observability.as_ref() else {
-            return HttpResponse::error(503, "no observability query adapter is configured");
+            let reason = self
+                .observability_unavailable_reason
+                .as_deref()
+                .unwrap_or("quality telemetry is unavailable in this viewer process");
+            return HttpResponse::error(503, reason);
         };
         let from_millis = param_or_refuse!(numeric_param(request, "from_ms", 0u64));
         let to_millis = param_or_refuse!(numeric_param(request, "to_ms", u64::MAX));

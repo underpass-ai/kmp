@@ -61,6 +61,7 @@ function applyTheme() {
   $("btn-theme").textContent = choice[0].toUpperCase() + choice.slice(1);
   paletteCache = null;
   resetTextPools();
+  renderPulseLegend();
   requestDraw();
 }
 
@@ -116,12 +117,26 @@ function palette() {
 
 const kindColor = (kind) => palette().kind[kind] || palette().overflow;
 const classColor = (cls) => palette().cls[cls] || palette().cls.structural;
+const pulseColors = (p = palette()) => [
+  p.accent,
+  p.cls.causal,
+  p.cls.evidential,
+  p.cls.constraint,
+  p.danger,
+];
 
 /* ---------------- state ---------------- */
 
 let abouts = [];
 const model = {
   about: null,
+  projection: null,
+  currentLod: "atlas",
+  total: 0,
+  bins: [],
+  clusters: [],
+  overviewBins: [],
+  loadGeneration: 0,
   entries: [], // entryModels, ordered
   byRef: new Map(),
   lanes: [], // [{name, index, count, scopes}]
@@ -156,13 +171,16 @@ const view = {
 
 /* ---------------- data ---------------- */
 
-async function fetchProjection(about, axis, from, to, lod = "moment") {
+const EXTENT_FROM = "1900-01-01T00:00:00Z";
+const EXTENT_TO = "2100-01-01T00:00:00Z";
+
+async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128) {
   const params = {
     about,
-    from: from || "1900-01-01T00:00:00Z",
-    to: to || "2100-01-01T00:00:00Z",
+    from: from || EXTENT_FROM,
+    to: to || EXTENT_TO,
     lod,
-    bins: 128,
+    bins,
     limit: 2048,
   };
   if (axis) params.axis = axis;
@@ -173,6 +191,7 @@ async function loadObservability(series = view.overlays) {
   view.overlays = [...new Set(series || [])];
   if (!view.overlays.length || !view.full) {
     model.observability = { series: [], exemplars: [] };
+    renderPulseLegend();
     requestDraw();
     return;
   }
@@ -187,9 +206,15 @@ async function loadObservability(series = view.overlays) {
     if (model.observability.missing && model.observability.missing.length) {
       showError(`telemetry series unavailable: ${model.observability.missing.join(", ")}`);
     }
+    renderPulseLegend();
     requestDraw();
   } catch (error) {
     model.observability = { series: [], exemplars: [] };
+    // Never reserve a permanent blank pulse band. The error remains visible
+    // in the status slot long enough to diagnose; the lanes immediately get
+    // their space back.
+    view.overlays = [];
+    renderPulseLegend();
     showError(error.message);
     requestDraw();
   }
@@ -201,35 +226,136 @@ function scheduleObservability() {
   scheduleObservability.timer = setTimeout(() => loadObservability(), 120);
 }
 
-async function loadAbout(about) {
+function projectionExtent(projection) {
+  const exact = (projection.clusters || [])
+    .flatMap((cluster) => [Date.parse(cluster.from), Date.parse(cluster.to)])
+    .filter(Number.isFinite);
+  const coarse = (projection.bins || [])
+    .flatMap((bin) => [Date.parse(bin.from), Date.parse(bin.to)])
+    .filter(Number.isFinite);
+  const values = exact.length ? exact : coarse;
+  if (!values.length) return null;
+  const t0 = Math.min(...values);
+  const t1 = Math.max(...values);
+  return { t0, t1: t1 > t0 ? t1 : t0 + 1 };
+}
+
+function lanesFromProjection(projection, entries) {
+  if (entries.length) return KMP_LOOM.buildLanes(entries);
+  const counts = new Map();
+  const source = (projection.clusters || []).length
+    ? projection.clusters
+    : projection.bins || [];
+  for (const item of source) {
+    counts.set(item.dimension, (counts.get(item.dimension) || 0) + Number(item.total || 0));
+  }
+  for (const dimension of projection.included_dimensions || []) {
+    if (!counts.has(dimension)) counts.set(dimension, 0);
+  }
+  return [...counts].map(([name, count], index) => ({
+    name,
+    index,
+    count,
+    scopes: new Map(),
+  }));
+}
+
+function applyProjection(projection, lod) {
+  const entries = (projection.entries || [])
+    .map(KMP_LOOM.entryModel)
+    .sort(KMP_LOOM.compareModels);
+  model.projection = projection;
+  model.currentLod = lod;
+  model.total = Number((projection.page && projection.page.total) || 0);
+  model.bins = projection.bins || [];
+  model.clusters = projection.clusters || [];
+  model.entries = entries;
+  model.byRef = new Map(entries.map((entry) => [entry.ref, entry]));
+  model.lanes = lanesFromProjection(projection, entries);
+  model.laneIndex = new Map(model.lanes.map((lane) => [lane.name, lane.index]));
+  model.proofEdges = (projection.relations || []).map((edge) => ({
+    ...edge,
+    source: edge.from,
+    target: edge.to,
+  }));
+  const classified = KMP_LOOM.classifyEdges(model.proofEdges, (ref) => model.byRef.has(ref));
+  model.edges = classified.arcs;
+  model.supersessions = classified.supersessions;
+  model.contradictions = classified.contradictions;
+  model.supersededRefs = new Set(classified.supersessions.map((edge) => edge.target));
+  model.contradictedRefs = new Set(
+    classified.contradictions.flatMap((edge) => [edge.source, edge.target])
+  );
+  const fullSpan = view.full && view.full.t1 - view.full.t0;
+  if (fullSpan && view.t1 - view.t0 >= fullSpan * 0.999) {
+    model.overviewBins = model.bins;
+  }
+  updateAxisLens();
+  renderRail();
+  renderStats();
+  requestDraw();
+  drawNavigator();
+}
+
+async function loadProjection() {
+  if (!model.about || !view.full) return;
+  const generation = ++model.loadGeneration;
+  const width = Math.max(1, canvas.clientWidth || 1);
+  const lod = KMP_LOOM.lodFor((view.t1 - view.t0) / width);
   try {
-    // The renderer deliberately asks for the compatible precedence line and
-    // reprojects its bounded chunk onto the selected clock. Entries missing
-    // that clock therefore remain visible as hollow fallbacks instead of
-    // disappearing and making an empty axis look authoritative.
-    const projection = await fetchProjection(about, null);
-    const entries = (projection.entries || [])
-      .map(KMP_LOOM.entryModel)
-      .sort(KMP_LOOM.compareModels);
-    model.about = about;
-    model.entries = entries;
-    model.byRef = new Map(entries.map((m) => [m.ref, m]));
-    model.lanes = KMP_LOOM.buildLanes(entries);
-    model.laneIndex = new Map(model.lanes.map((lane) => [lane.name, lane.index]));
-    model.proofEdges = (projection.relations || []).map((edge) => ({
-      ...edge,
-      source: edge.from,
-      target: edge.to,
-    }));
-    const classified = KMP_LOOM.classifyEdges(model.proofEdges, (ref) => model.byRef.has(ref));
-    model.edges = classified.arcs;
-    model.supersessions = classified.supersessions;
-    model.contradictions = classified.contradictions;
-    // supersedes: source replaces target — the target is history.
-    model.supersededRefs = new Set(classified.supersessions.map((e) => e.target));
-    model.contradictedRefs = new Set(
-      classified.contradictions.flatMap((e) => [e.source, e.target])
+    const projection = await fetchProjection(
+      model.about,
+      null,
+      new Date(Math.round(view.t0)).toISOString(),
+      new Date(Math.round(view.t1)).toISOString(),
+      lod,
+      Math.max(24, Math.min(512, Math.floor(width / 7)))
     );
+    if (generation !== model.loadGeneration) return;
+    applyProjection(projection, lod);
+    if (projection.truncated) {
+      showError(
+        `projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`
+      );
+    } else {
+      showError("");
+    }
+  } catch (error) {
+    if (generation === model.loadGeneration) showError(error.message);
+  }
+}
+
+function scheduleProjection() {
+  clearTimeout(scheduleProjection.timer);
+  scheduleProjection.timer = setTimeout(() => loadProjection(), 120);
+}
+
+async function loadAbout(about, announce = true) {
+  const previouslyApplying = sync.applying;
+  sync.applying = true;
+  try {
+    const generation = ++model.loadGeneration;
+    // Episode carries exact cluster endpoints without downloading entry
+    // bodies. It is the cheap extent probe; the next request uses that exact
+    // visible range and the rung the screen can actually display.
+    const probe = await fetchProjection(
+      about,
+      null,
+      EXTENT_FROM,
+      EXTENT_TO,
+      "episode",
+      128
+    );
+    if (generation !== model.loadGeneration) return;
+    const extent = projectionExtent(probe);
+    if (!extent) throw new Error("no entry carries any clock — the loom has no axis to weave on");
+    model.about = about;
+    model.overviewBins = probe.bins || [];
+    const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
+    view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
+    view.t0 = view.full.t0;
+    view.t1 = view.full.t1;
+    view.windowStack = [];
     model.observability = { series: [], exemplars: [] };
     view.selectedRef = null;
     view.trace = null;
@@ -243,34 +369,29 @@ async function loadAbout(about) {
     renderDiffPanel();
     $("trace-box").hidden = true;
     renderDetailEmpty();
-    setClock(view.clock, true);
+    setClock(view.clock, true, false);
+    await loadProjection();
     renderAbouts();
-    renderRail();
-    renderStats();
-    if (projection.truncated) {
-      showError(`projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`);
-    }
-    else showError("");
-    if (!sync.applying) viewOpen();
+    sync.applying = previouslyApplying;
+    if (announce && !previouslyApplying) await viewOpen();
   } catch (error) {
     showError(error.message);
+  } finally {
+    sync.applying = previouslyApplying;
   }
 }
 
 /* ---------------- clock & window ---------------- */
 
-function setClock(clock, reset) {
+function setClock(clock, reset, refresh = true) {
   view.clock = clock;
   for (const chip of document.querySelectorAll("#clock-chips .chip")) {
     chip.classList.toggle("active", chip.dataset.clock === clock);
   }
-  view.full = KMP_LOOM.extent(model.entries, clock);
   if (!view.full) {
     showError("no entry carries any clock — the loom has no axis to weave on");
     return;
   }
-  const pad = Math.max(1, (view.full.t1 - view.full.t0) * 0.02);
-  view.full = { t0: view.full.t0 - pad, t1: view.full.t1 + pad };
   if (reset || view.t0 >= view.t1) {
     view.t0 = view.full.t0;
     view.t1 = view.full.t1;
@@ -284,6 +405,7 @@ function setClock(clock, reset) {
   requestDraw();
   drawNavigator();
   reportView();
+  if (refresh) scheduleProjection();
 }
 
 for (const chip of document.querySelectorAll("#clock-chips .chip")) {
@@ -302,6 +424,7 @@ function setWindow(t0, t1, remember = true) {
   requestDraw();
   drawNavigator();
   reportView();
+  scheduleProjection();
   scheduleObservability();
 }
 
@@ -367,6 +490,7 @@ async function setupRenderer() {
   app.renderer.on("resize", () => {
     dirty = true;
     drawNavigator();
+    scheduleProjection();
   });
   app.ticker.add(() => {
     if (dirty) {
@@ -403,14 +527,21 @@ function laneGeometry() {
 let axisLens = KMP_LOOM.temporalLens({ mode: "elapsed", t0: 0, t1: 1 });
 
 function updateAxisLens() {
-  const events = model.entries
+  const entryEvents = model.entries
     .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
+    .filter((time) => time !== null);
+  const clusterEvents = model.clusters
+    .map((cluster) => {
+      const from = Date.parse(cluster.from);
+      const to = Date.parse(cluster.to);
+      return Number.isFinite(from) && Number.isFinite(to) ? (from + to) / 2 : null;
+    })
     .filter((time) => time !== null);
   axisLens = KMP_LOOM.temporalLens({
     mode: view.lensMode,
     t0: view.t0,
     t1: view.t1,
-    events,
+    events: entryEvents.length ? entryEvents : clusterEvents,
     focus: view.focusRange,
   });
 }
@@ -487,11 +618,19 @@ function renderDiffPanel() {
   if (panel.hidden) return;
   const head = el("div", "diff-head");
   const side = (name, projection, className) => {
+    const quantity = (count, singular, plural = `${singular}s`) =>
+      `${count} ${count === 1 ? singular : plural}`;
     const node = el("div", `diff-side ${className || ""}`);
     node.append(
       el("strong", "", name),
       el("div", "mono", projection ? fmtMsFull(projection.instant) : "not pinned"),
-      el("div", "muted", projection ? `${projection.entries.length} entries · ${projection.relations.length} relations` : "")
+      el(
+        "div",
+        "muted",
+        projection
+          ? `${quantity(projection.entries.length, "entry", "entries")} · ${quantity(projection.relations.length, "relation")}`
+          : ""
+      )
     );
     return node;
   };
@@ -499,14 +638,28 @@ function renderDiffPanel() {
   panel.append(head);
   if (!view.diff) return;
   const grid = el("div", "diff-grid mono");
-  grid.append(el("span", "", "dimension"), el("span", "", "only A"), el("span", "", "only B"), el("span", "", "changed"));
+  grid.append(el("span", "", "facet"), el("span", "", "only A"), el("span", "", "only B"), el("span", "", "changed"));
+  const compactSet = (values, label) => {
+    if (!values.length) return el("span", "", "—");
+    const cell = el("span", "diff-set");
+    cell.append(el("strong", "", `${values.length} ${label}`));
+    const sample = values.slice(0, 3).join(", ");
+    cell.append(
+      el(
+        "small",
+        "muted",
+        values.length > 3 ? `${sample} · +${values.length - 3} more` : sample
+      )
+    );
+    return cell;
+  };
   for (const name of ["entries", "relations", "validity", "evidence"]) {
     const item = view.diff[name];
     grid.append(
       el("span", "", name),
-      el("span", "", item.onlyA.length ? item.onlyA.join(", ") : "—"),
-      el("span", "", item.onlyB.length ? item.onlyB.join(", ") : "—"),
-      el("span", "", item.changed.length ? item.changed.join(", ") : "—")
+      compactSet(item.onlyA, "only A"),
+      compactSet(item.onlyB, "only B"),
+      compactSet(item.changed, "changed")
     );
   }
   panel.append(grid);
@@ -626,7 +779,7 @@ function renderLoom() {
   const width = canvas.clientWidth;
   const geometry = laneGeometry();
   const msPerPx = (view.t1 - view.t0) / Math.max(1, width);
-  const lod = KMP_LOOM.lodFor(msPerPx);
+  const lod = model.currentLod;
   $("lod-chip").textContent =
     lod === "atlas" ? "Atlas · density" : lod === "episode" ? "Episode · braids" : "Moment · entries";
 
@@ -659,10 +812,10 @@ function renderLoom() {
   });
 
   // Axis: gridlines through the lanes, labels in the strip above.
-  const axis = KMP_LOOM.axisTicks(view.t0, view.t1, Math.max(3, Math.floor(width / 110)));
+  const axis = KMP_LOOM.screenAxisTicks(axisLens, width, 110);
   let axisIndex = 0;
-  for (const t of axis.ticks) {
-    const x = xOf(t);
+  for (const tick of axis.ticks) {
+    const x = tick.ratio * width;
     laneGfx
       .moveTo(x, AXIS_H)
       .lineTo(x, canvas.clientHeight - NAV_RESERVED)
@@ -677,7 +830,7 @@ function renderLoom() {
       textPools.axis.push(label);
       textLayer.addChild(label);
     }
-    label.text = KMP_LOOM.tickLabel(t, axis.step);
+    label.text = KMP_LOOM.tickLabel(tick.time, tick.step);
     label.style.fill = p.textMuted;
     label.visible = true;
     label.anchor.set(0.5, 0);
@@ -719,7 +872,7 @@ function renderLoom() {
   }
 
   const clocked = model.entries.filter((entry) => KMP_LOOM.strictMs(entry, view.clock) !== null).length;
-  if (model.entries.length && clocked === 0) {
+  if (model.currentLod === "moment" && model.entries.length && clocked === 0) {
     const key = "status:no-selected-clock";
     wanted.add(key);
     const label = laneText(
@@ -735,7 +888,7 @@ function renderLoom() {
 
   // Hide labels not used this frame.
   for (const [key, label] of textPools.lane) {
-    if (!wanted.has(key) && key.startsWith("lane:")) label.visible = false;
+    if (!wanted.has(key)) label.visible = false;
   }
 }
 
@@ -749,7 +902,7 @@ function renderObservability(p, width, pulseHeight) {
   const exemplars = new Map(
     (model.observability.exemplars || []).map((exemplar) => [exemplar.id, exemplar])
   );
-  const colors = [p.accent, p.cls.causal, p.cls.evidential, p.cls.constraint, p.danger];
+  const colors = pulseColors(p);
   const top = AXIS_H + 5;
   const height = pulseHeight - 12;
   aligned.forEach((series, index) => {
@@ -786,45 +939,78 @@ function renderObservability(p, width, pulseHeight) {
     .stroke({ width: 1, color: p.laneLine, alpha: 0.8 });
 }
 
+function renderPulseLegend(atMillis = null) {
+  const legend = $("pulse-legend");
+  const series = model.observability.series || [];
+  legend.textContent = "";
+  if (!view.overlays.length || !series.length) {
+    legend.hidden = true;
+    return;
+  }
+  const colors = pulseColors();
+  series.forEach((item, index) => {
+    const points = (item.points || []).filter((point) =>
+      Number.isFinite(Number(point.at_millis))
+    );
+    const current = points.length
+      ? points.reduce((best, point) => {
+          if (best === null) return point;
+          if (atMillis === null) {
+            return Number(point.at_millis) > Number(best.at_millis) ? point : best;
+          }
+          return Math.abs(Number(point.at_millis) - atMillis) <
+            Math.abs(Number(best.at_millis) - atMillis)
+            ? point
+            : best;
+        }, null)
+      : null;
+    const key = el("span", "pulse-key");
+    const swatch = el("span", "pulse-swatch");
+    swatch.style.background = colors[index % colors.length];
+    key.append(swatch, el("span", "", item.name));
+    const formatted = current
+      ? KMP_LOOM.formatMetricValue(current.value, item.unit)
+      : "—";
+    key.append(
+      el("span", "pulse-value", `${formatted} ${item.unit || ""}`.trim())
+    );
+    legend.append(key);
+  });
+  legend.hidden = false;
+}
+
 /* Atlas: density ribbons per lane — the shape of the memory, no nodes. */
 function renderAtlas(p, geometry, width) {
-  const buckets = Math.max(24, Math.floor(width / 7));
-  const bins = KMP_LOOM.laneBins(
-    model.entries,
-    view.clock,
-    (dim) => model.laneIndex.get(dim),
-    model.lanes.length,
-    view.t0,
-    view.t1,
-    buckets
-  );
-  const barW = width / buckets;
+  const max = Math.max(1, ...model.bins.map((bin) => Number(bin.total || 0)));
   for (const lane of geometry.lanes) {
-    const row = bins.grid[lane.index];
     const base = geometry.tops.get(lane.name) + geometry.laneH - 6;
     const maxH = geometry.laneH - 16;
-    for (let b = 0; b < buckets; b += 1) {
-      const cell = row[b];
-      if (!cell.total) continue;
-      const barH = Math.max(2, (cell.total / bins.max) * maxH);
+    for (const bin of model.bins.filter((item) => item.dimension === lane.name)) {
+      const from = Date.parse(bin.from);
+      const to = Date.parse(bin.to);
+      if (!Number.isFinite(from) || !Number.isFinite(to) || !bin.total) continue;
+      const x0 = xOf(from);
+      const x1 = xOf(to);
+      const barW = Math.max(1, x1 - x0);
+      const barH = Math.max(2, (bin.total / max) * maxH);
       let y = base;
-      const slices = [...cell.byKind.entries()].sort((a, c) => c[1] - a[1]);
+      const slices = Object.entries(bin.by_kind || {}).sort((a, c) => c[1] - a[1]);
       for (const [kind, count] of slices) {
-        const sliceH = (count / cell.total) * barH;
+        const sliceH = (count / bin.total) * barH;
         marksGfx
-          .rect(b * barW + 0.5, y - sliceH, Math.max(1, barW - 1), sliceH)
+          .rect(x0 + 0.5, y - sliceH, Math.max(1, barW - 1), sliceH)
           .fill({ color: kindColor(kind), alpha: 0.8 });
         y -= sliceH;
       }
       hitList.push({
-        x: b * barW + barW / 2,
+        x: x0 + barW / 2,
         y: base - barH / 2,
         r: Math.max(barW, 10),
         kind: "cluster",
         refs: null,
-        count: cell.total,
-        t0: view.t0 + (b / buckets) * (view.t1 - view.t0),
-        t1: view.t0 + ((b + 1) / buckets) * (view.t1 - view.t0),
+        count: bin.total,
+        t0: from,
+        t1: to,
       });
     }
   }
@@ -833,7 +1019,41 @@ function renderAtlas(p, geometry, width) {
 /* Episode & moment: entries (or tight clusters) on their lanes, braided. */
 function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
   const minGap = lod === "episode" ? 18 * msPerPx : 0;
-  const clusters = KMP_LOOM.laneClusters(model.entries, view.clock, view.t0, view.t1, minGap);
+  const clusters = new Map();
+  if (lod === "episode") {
+    for (const cluster of model.clusters) {
+      const from = Date.parse(cluster.from);
+      const to = Date.parse(cluster.to);
+      if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+      if (!clusters.has(cluster.dimension)) clusters.set(cluster.dimension, []);
+      clusters.get(cluster.dimension).push({
+        refs: cluster.refs || [],
+        total: Number(cluster.total || 0),
+        t: (from + to) / 2,
+        from,
+        to,
+        strictCount: Number(cluster.total || 0),
+        byKind: new Map(Object.entries(cluster.by_kind || {})),
+      });
+    }
+  } else {
+    for (const entry of model.entries) {
+      const t = KMP_LOOM.placedMs(entry, view.clock);
+      if (t === null || t < view.t0 || t > view.t1) continue;
+      for (const dimension of new Set(entry.coords.map((coordinate) => coordinate.dimension))) {
+        if (!clusters.has(dimension)) clusters.set(dimension, []);
+        clusters.get(dimension).push({
+          refs: [entry.ref],
+          total: 1,
+          t,
+          from: t,
+          to: t,
+          strictCount: KMP_LOOM.strictMs(entry, view.clock) === null ? 0 : 1,
+          byKind: new Map([[entry.kind, 1]]),
+        });
+      }
+    }
+  }
   const drawnAt = new Map(); // ref -> [{x, y}]
   const wantedMarks = new Set();
   const wantedBubbles = new Set();
@@ -845,7 +1065,7 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
     for (const cluster of laneClusters) {
       const x = xOf(cluster.t);
       if (x < -40 || x > width + 40) continue;
-      if (cluster.refs.length > 1) {
+      if (lod === "episode" || cluster.total > 1) {
         // A bundle of memory too tight to split at this zoom.
         const r = Math.min(18, 7 + 2.5 * Math.log2(cluster.refs.length + 1));
         const slices = [...cluster.byKind.entries()].sort((a, c) => c[1] - a[1]);
@@ -856,7 +1076,7 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
           marksGfx.circle(x, y, r).fill({ color: p.surface, alpha: 0.9 });
         }
         let angle = -Math.PI / 2;
-        const total = cluster.refs.length;
+        const total = cluster.total;
         for (const [kind, count] of slices) {
           const sweep = (count / total) * Math.PI * 2;
           // moveTo first: a bare arc() drags a line in from the pen's last
@@ -891,8 +1111,8 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
           kind: "cluster",
           refs: cluster.refs,
           count: total,
-          t0: cluster.t - Math.max(minGap, 1) * 2,
-          t1: cluster.t + Math.max(minGap, 1) * 2,
+          t0: cluster.from - Math.max(minGap, 1),
+          t1: cluster.to + Math.max(minGap, 1),
         });
       } else {
         const ref = cluster.refs[0];
@@ -1051,7 +1271,7 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
 
 function drawNavigator() {
   const strip = $("nav-canvas");
-  if (!view.full || !model.entries.length) return;
+  if (!view.full) return;
   const width = strip.clientWidth || 1;
   const height = 42;
   const dpr = devicePixelRatio || 1;
@@ -1064,31 +1284,37 @@ function drawNavigator() {
   const span = view.full.t1 - view.full.t0;
   const xAt = (t) => ((t - view.full.t0) / span) * width;
 
-  // Density over the whole line, stacked by kind.
-  const buckets = Math.max(40, Math.floor(width / 6));
-  const counts = Array.from({ length: buckets }, () => new Map());
-  let max = 1;
-  for (const m of model.entries) {
-    const t = KMP_LOOM.placedMs(m, view.clock);
-    if (t === null) continue;
-    const b = Math.max(0, Math.min(buckets - 1, Math.floor(((t - view.full.t0) / span) * buckets)));
-    const cell = counts[b];
-    cell.set(m.kind, (cell.get(m.kind) || 0) + 1);
-    const total = [...cell.values()].reduce((a, c) => a + c, 0);
-    if (total > max) max = total;
+  // The navigator consumes the server's whole-extent atlas; it never bins a
+  // hidden whole-about entry list in the browser.
+  const cells = new Map();
+  for (const bin of model.overviewBins) {
+    const key = `${bin.from}\u0000${bin.to}`;
+    if (!cells.has(key)) cells.set(key, { from: bin.from, to: bin.to, byKind: new Map() });
+    const cell = cells.get(key);
+    for (const [kind, count] of Object.entries(bin.by_kind || {})) {
+      cell.byKind.set(kind, (cell.byKind.get(kind) || 0) + Number(count));
+    }
   }
-  const barW = width / buckets;
-  for (let b = 0; b < buckets; b += 1) {
-    const cell = counts[b];
-    if (!cell.size) continue;
-    const total = [...cell.values()].reduce((a, c) => a + c, 0);
+  const totals = [...cells.values()].map((cell) =>
+    [...cell.byKind.values()].reduce((sum, count) => sum + count, 0)
+  );
+  const max = Math.max(1, ...totals);
+  for (const cell of cells.values()) {
+    const from = Date.parse(cell.from);
+    const to = Date.parse(cell.to);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+    const x0 = xAt(from);
+    const x1 = xAt(to);
+    const barW = Math.max(1, x1 - x0);
+    const total = [...cell.byKind.values()].reduce((sum, count) => sum + count, 0);
+    if (!total) continue;
     const barH = Math.max(2, (total / max) * (height - 8));
     let y = height - 3;
-    for (const [kind, count] of [...cell.entries()].sort((a, c) => c[1] - a[1])) {
+    for (const [kind, count] of [...cell.byKind.entries()].sort((a, c) => c[1] - a[1])) {
       const sliceH = (count / total) * barH;
       pen.fillStyle = kindColor(kind);
       pen.globalAlpha = 0.85;
-      pen.fillRect(b * barW + 0.5, y - sliceH, Math.max(1, barW - 1), sliceH);
+      pen.fillRect(x0 + 0.5, y - sliceH, Math.max(1, barW - 1), sliceH);
       y -= sliceH;
     }
   }
@@ -1204,6 +1430,7 @@ canvas.addEventListener("pointermove", (event) => {
     }
     return;
   }
+  if (view.overlays.length) renderPulseLegend(tOf(event.offsetX));
   const hit = hitAt(event.offsetX, event.offsetY);
   updateTooltip(hit, event.offsetX, event.offsetY);
 });
@@ -1242,6 +1469,7 @@ canvas.addEventListener("pointerup", (event) => {
 
 canvas.addEventListener("pointerleave", () => {
   $("tooltip").hidden = true;
+  renderPulseLegend();
 });
 
 canvas.addEventListener(
@@ -1296,7 +1524,13 @@ function updateTooltip(hit, sx, sy) {
     tooltip.append(el("div", "tt-title", `${hit.count} entries`));
     tooltip.append(el("div", "tt-sub", "click to open this stretch of the weave"));
   } else if (hit.kind === "exemplar") {
-    tooltip.append(el("div", "tt-title", `${hit.series}: ${hit.value} ${hit.unit}`));
+    tooltip.append(
+      el(
+        "div",
+        "tt-title",
+        `${hit.series}: ${KMP_LOOM.formatMetricValue(hit.value, hit.unit)} ${hit.unit}`
+      )
+    );
     tooltip.append(el("div", "tt-sub", `${hit.scope} · ${fmtMsFull(hit.at)}`));
     if (hit.exemplar) {
       const revision = hit.exemplar.revision == null ? "revision unavailable" : `revision ${hit.exemplar.revision}`;
@@ -1526,11 +1760,15 @@ async function runTrace() {
     $("trace-status").textContent = `${trace.edges.length} hop${trace.edges.length === 1 ? "" : "s"} · ${trace.rendered.token_count} tokens rendered`;
     const list = $("trace-hops");
     list.textContent = "";
+    for (const warning of trace.warnings || []) {
+      list.append(el("li", "muted", warning));
+    }
     for (const edge of trace.edges) {
       const item = el("li");
       const head = el("div", "rel-head");
       const dash = el("span", "legend-dash");
       dash.style.borderTopColor = classColor(edge.class);
+      if (edge.hop) head.append(el("span", "mono muted", `#${edge.hop}`));
       head.append(dash, el("span", "rel-type", edge.rel), el("span", "pill pill-muted", edge.class));
       head.append(el("span", "mono muted", `${edge.source} → ${edge.target}`));
       item.append(head);
@@ -1655,13 +1893,14 @@ $("search").addEventListener("keydown", (event) => {
 /* ---------------- status ---------------- */
 
 function renderStats() {
-  $("s-entries").textContent = String(model.entries.length);
+  $("s-entries").textContent = String(model.total);
   $("s-lanes").textContent = String(model.lanes.length);
   $("s-relations").textContent = String(
     model.edges.length + model.supersessions.length + model.contradictions.length
   );
   const clocked = model.entries.filter((m) => KMP_LOOM.strictMs(m, view.clock) !== null).length;
-  $("s-clocked").textContent = `${clocked}/${model.entries.length}`;
+  $("s-clocked").textContent =
+    model.currentLod === "moment" ? `${clocked}/${model.total}` : `—/${model.total}`;
   if (view.full) $("s-window").textContent = `${fmtMs(view.t0)} → ${fmtMs(view.t1)}`;
 }
 
@@ -1680,19 +1919,26 @@ async function viewOpen() {
   try {
     const state = await api(
       "/api/view/open",
-      { id: VIEW_ID, about: model.about || "" },
+      {
+        id: VIEW_ID,
+        about: model.about || "",
+        expected_revision: sync.revision,
+      },
       "POST"
     );
     sync.revision = state.view_revision || 0;
     renderProvenance(state);
-    if (!sync.polling) {
-      sync.polling = true;
-      pollView();
-    }
+    startViewPolling();
   } catch (error) {
     // A viewer that cannot reach its own view still draws the memory.
     showError(`view sync unavailable: ${error.message}`);
   }
+}
+
+function startViewPolling() {
+  if (sync.polling) return;
+  sync.polling = true;
+  pollView();
 }
 
 async function pollView() {
@@ -1869,8 +2115,29 @@ async function init() {
     const aboutsView = await api("/api/abouts");
     abouts = aboutsView.abouts;
     renderAbouts();
-    if (abouts.length) await loadAbout(abouts[0]);
-    else showError("the kernel holds no abouts yet — ingest some memory first");
+    if (!abouts.length) {
+      showError("the kernel holds no abouts yet — ingest some memory first");
+      return;
+    }
+
+    // A browser joining an already prepared loom is a reader first. Opening
+    // the first about before this GET used to erase an agent's focus,
+    // overlays and revision merely because the page was cold.
+    let existing = null;
+    try {
+      existing = await api("/api/view", { id: VIEW_ID });
+    } catch (_) {
+      // No aggregate exists yet; this browser will create the first one.
+    }
+    if (existing && existing.about) {
+      sync.revision = existing.view_revision || 0;
+      await loadAbout(existing.about, false);
+      await applyAgentState(existing);
+      renderProvenance(existing);
+      startViewPolling();
+    } else {
+      await loadAbout(abouts[0]);
+    }
   } catch (error) {
     showError(error.message);
   }

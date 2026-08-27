@@ -211,12 +211,15 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
 /// which is the bound address rather than the requested one: `:0` and an
 /// unspecified host both resolve here, and the caller hands this to a human.
 async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Result<String, String> {
+    let telemetry_unavailable = kernel.quality_telemetry_error().map(str::to_string);
     let mut viewer = kmp_viewer::MemoryViewerServer::new(
         kernel.service(),
         Some(kernel.data_dir().display().to_string()),
     );
     if let Some(reader) = kernel.quality_telemetry_reader() {
         viewer = viewer.with_observability(std::sync::Arc::new(reader));
+    } else if let Some(reason) = telemetry_unavailable.as_deref() {
+        viewer = viewer.with_observability_unavailable(reason);
     }
     let viewer = std::sync::Arc::new(viewer);
     let listener = kmp_viewer::bind_loopback(addr)
@@ -226,7 +229,11 @@ async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Resu
         .local_addr()
         .map_err(|error| format!("viewer listener has no local address: {error}"))?;
     let url = format!("http://{local_addr}/");
-    eprintln!("kmp-mcp: memory viewer at {url}");
+    if let Some(reason) = telemetry_unavailable {
+        eprintln!("kmp-mcp: memory viewer at {url}; observability unavailable: {reason}");
+    } else {
+        eprintln!("kmp-mcp: memory viewer at {url}");
+    }
     tokio::spawn(async move {
         if let Err(error) = viewer.serve(listener).await {
             tracing::error!(%error, "memory viewer stopped");

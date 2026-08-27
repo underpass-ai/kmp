@@ -2,7 +2,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use kmp_application::RenderedContext;
 use kmp_domain::{
-    BundleNodeDetail, KmpBundle, MemoryRelationType, RelationExplanation, TemporalCoordinate,
+    BundleNodeDetail, BundleRelationship, KmpBundle, MemoryRelationType, RelationExplanation,
+    TemporalCoordinate,
 };
 use kmp_proto::v1beta1::{
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation,
@@ -15,22 +16,26 @@ pub(super) fn memory_relations_from_bundle(bundle: &KmpBundle) -> Vec<MemoryRela
     bundle
         .relationships()
         .iter()
-        .map(|relationship| {
-            let explanation = relationship.explanation();
-            MemoryRelation {
-                source_ref: relationship.source_node_id().to_string(),
-                target_ref: relationship.target_node_id().to_string(),
-                rel: relationship.relationship_type().to_string(),
-                semantic_class: proto_semantic_class(explanation.semantic_class()) as i32,
-                why: explanation.rationale().unwrap_or_default().to_string(),
-                evidence: explanation.evidence().unwrap_or_default().to_string(),
-                confidence: proto_confidence(explanation.confidence()) as i32,
-                sequence: explanation.sequence(),
-                explanation: proto_relation_explanation(explanation),
-                evidence_refs: Vec::new(),
-            }
-        })
+        .map(memory_relation_from_bundle_relationship)
         .collect()
+}
+
+pub(super) fn memory_relation_from_bundle_relationship(
+    relationship: &BundleRelationship,
+) -> MemoryRelation {
+    let explanation = relationship.explanation();
+    MemoryRelation {
+        source_ref: relationship.source_node_id().to_string(),
+        target_ref: relationship.target_node_id().to_string(),
+        rel: relationship.relationship_type().to_string(),
+        semantic_class: proto_semantic_class(explanation.semantic_class()) as i32,
+        why: explanation.rationale().unwrap_or_default().to_string(),
+        evidence: explanation.evidence().unwrap_or_default().to_string(),
+        confidence: proto_confidence(explanation.confidence()) as i32,
+        sequence: explanation.sequence(),
+        explanation: proto_relation_explanation(explanation),
+        evidence_refs: Vec::new(),
+    }
 }
 
 pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvidence> {

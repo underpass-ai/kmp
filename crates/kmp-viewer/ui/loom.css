@@ -289,6 +289,30 @@ select, input {
 #loom-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
 #loom-canvas.dragging { cursor: grabbing; }
 
+.pulse-legend {
+  position: absolute;
+  z-index: 4;
+  top: 34px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px 10px;
+  max-width: calc(100% - 16px);
+  padding: 3px 6px;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  font-size: 11px;
+  line-height: 1.25;
+  pointer-events: none;
+}
+.pulse-legend[hidden] { display: none; }
+.pulse-key { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pulse-swatch { width: 12px; height: 2px; flex: none; }
+.pulse-value { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
 #diff-panel {
   position: absolute;
   z-index: 3;
@@ -307,8 +331,10 @@ select, input {
 .diff-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 5px; }
 .diff-side { padding: 4px 7px; border-left: 3px solid var(--accent); background: var(--surface-1); }
 .diff-side.b { border-color: var(--class-evidential); }
-.diff-grid { display: grid; grid-template-columns: 110px 1fr 1fr 1fr; gap: 3px 8px; font-size: 12px; }
+.diff-grid { display: grid; grid-template-columns: 72px minmax(92px, 1fr) minmax(92px, 1fr) minmax(92px, 1fr); gap: 3px 8px; font-size: 12px; }
 .diff-grid > :nth-child(4n + 1) { color: var(--text-muted); }
+.diff-set { min-width: 0; overflow-wrap: anywhere; }
+.diff-set strong, .diff-set small { display: block; }
 
 .tooltip {
   position: absolute;

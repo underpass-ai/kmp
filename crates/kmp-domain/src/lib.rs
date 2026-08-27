@@ -9,6 +9,7 @@ pub use error::DomainError;
 pub use model::{
     BundleNode, BundleNodeDetail, BundleRelationship, KmpBundle, KmpStats, TemporalEntry,
     TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
+    compare_temporal_instants, directed_relationship_path,
 };
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,

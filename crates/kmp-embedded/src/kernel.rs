@@ -175,7 +175,15 @@ fn compose_quality_telemetry(
             Ok(writer) => Arc::new(writer),
             Err(error) => {
                 drop(receiver);
-                return (observer, None, None, Some(error.to_string()));
+                let raw = error.to_string();
+                let reason = if raw.contains("Cannot acquire lock")
+                    || raw.to_ascii_lowercase().contains("already open")
+                {
+                    format!("the store's quality telemetry is held by another process ({raw})")
+                } else {
+                    raw
+                };
+                return (observer, None, None, Some(reason));
             }
         };
     let batch_writer = Arc::clone(&writer);
@@ -245,5 +253,18 @@ mod tests {
             .expect("active telemetry exposes its read side");
 
         assert_eq!(reader.count().expect("shared journal is readable"), 0);
+    }
+
+    #[test]
+    fn a_second_telemetry_composition_names_the_process_lock() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        let first = super::compose_quality_telemetry(data_dir.path());
+        assert!(first.2.is_some(), "the first writer owns the journal");
+        let second = super::compose_quality_telemetry(data_dir.path());
+        let reason = second.3.expect("the second writer is unavailable");
+        assert!(
+            reason.contains("held by another process"),
+            "the reason should describe the real contention: {reason}"
+        );
     }
 }
