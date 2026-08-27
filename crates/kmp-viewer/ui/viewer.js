@@ -144,6 +144,7 @@ const graph = {
 let selectedId = null;
 let hover = null; // {type: "node"|"edge", ref}
 let dimmedKinds = new Set();
+let dimmedScopes = new Set(); // clusterIds whose members step back
 let traceHighlight = null; // {nodes: Set, edges: Set}
 let tracePath = null; // {edges: ordered EdgeViews, hoverIndex}
 let searchHits = new Set();
@@ -234,6 +235,7 @@ function resetGraph(view) {
   traceHighlight = null;
   tracePath = null;
   searchHits = new Set();
+  dimmedScopes = new Set();
   resetLabelPool();
 }
 
@@ -646,9 +648,13 @@ function nodeAlpha(body) {
   }
   if (traceHighlight) return traceHighlight.nodes.has(body.id) ? 1 : 0.14;
   if (!body.meta && dimmedKinds.has(body.kind)) return 0.14;
+  if (dimmedScopes.size) {
+    const clusterId = body.meta ? body.cluster.id : clusterState.of.get(body.id);
+    if (clusterId && dimmedScopes.has(clusterId)) return 0.14;
+  }
   if (searchHits.size) {
     if (body.meta) return 0.25;
-    return searchHits.has(body.id) ? 1 : 0.25;
+    return searchHits.has(body.id) ? 1 : 0.12;
   }
   return 1;
 }
@@ -1429,10 +1435,18 @@ function renderLegend() {
     const dot = el("span", "legend-dot");
     dot.style.background = kind === "?" ? palette().overflow : kindColor(kind);
     item.append(dot, el("span", "", `${kind} `), el("span", "muted", String(count)));
-    item.title = "click to dim/undim this kind";
-    item.addEventListener("click", () => {
-      if (dimmedKinds.has(kind)) dimmedKinds.delete(kind);
-      else dimmedKinds.add(kind);
+    item.title = "click to dim/undim this kind · alt-click to solo";
+    item.addEventListener("click", (event) => {
+      if (event.altKey) {
+        const others = [...kinds.keys()].filter((other) => other !== kind);
+        const alreadySolo =
+          dimmedKinds.size === others.length && others.every((other) => dimmedKinds.has(other));
+        dimmedKinds = alreadySolo ? new Set() : new Set(others);
+      } else if (dimmedKinds.has(kind)) {
+        dimmedKinds.delete(kind);
+      } else {
+        dimmedKinds.add(kind);
+      }
       renderLegend();
       requestDraw();
     });
@@ -1453,23 +1467,41 @@ function renderLegend() {
   }
 }
 
-$("search").addEventListener("input", () => {
+/* Search: plain words, or `kind:` / `dim:` / `id:` to narrow. Enter focuses
+   the camera on the hits and steps everything else back; Esc lets go. */
+
+const SEARCH_LIST_MAX = 50;
+
+function clusterLabelOf(nodeId) {
+  const clusterId = clusterState.of.get(nodeId);
+  const cluster = clusterId && clusterState.clusters.get(clusterId);
+  return cluster ? cluster.label : "";
+}
+
+function runSearch() {
   renderAbouts();
-  const query = $("search").value.trim().toLowerCase();
+  const raw = $("search").value;
   const results = $("search-results");
   results.textContent = "";
   searchHits = new Set();
-  if (query.length >= 2) {
+  const query = KMP_CORE.parseQuery(raw);
+  if (!query.empty && raw.trim().length >= 2) {
     for (const node of graph.nodes.values()) {
-      if (
-        node.title.toLowerCase().includes(query) ||
-        node.summary.toLowerCase().includes(query) ||
-        node.id.toLowerCase().includes(query)
-      ) {
-        searchHits.add(node.id);
-      }
+      const fields = {
+        title: node.title.toLowerCase(),
+        summary: node.summary.toLowerCase(),
+        id: node.id.toLowerCase(),
+        kind: node.kind.toLowerCase(),
+        dim: clusterLabelOf(node.id).toLowerCase(),
+      };
+      if (KMP_CORE.matchesQuery(query, fields)) searchHits.add(node.id);
     }
-    for (const id of [...searchHits].slice(0, 20)) {
+    if (searchHits.size > SEARCH_LIST_MAX) {
+      results.append(
+        el("li", "muted", `${searchHits.size} hits · showing ${SEARCH_LIST_MAX}`)
+      );
+    }
+    for (const id of [...searchHits].slice(0, SEARCH_LIST_MAX)) {
       const node = graph.nodes.get(id);
       const item = el("li", "", node.title);
       item.append(el("span", "sub mono", node.id));
@@ -1481,6 +1513,27 @@ $("search").addEventListener("input", () => {
     }
   }
   requestDraw();
+}
+
+/* Focus: unfold whatever holds a hit, then frame the hits. */
+function focusSearch() {
+  if (!searchHits.size) return;
+  for (const id of searchHits) {
+    const clusterId = clusterState.of.get(id);
+    if (clusterId && clusterState.collapsed.has(clusterId)) expandCluster(clusterId);
+  }
+  fitToView((body) => searchHits.has(body.id));
+}
+
+$("search").addEventListener("input", runSearch);
+$("search").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    focusSearch();
+  } else if (event.key === "Escape") {
+    $("search").value = "";
+    runSearch();
+    $("search").blur();
+  }
 });
 
 /* ---------------- detail panel ---------------- */
@@ -1556,8 +1609,21 @@ function renderDimensions() {
       el("span", "", `${folded ? "▸" : "▾"} ${cluster.label} `),
       el("span", "muted", String(size))
     );
-    item.title = folded ? "folded — click to expand" : "expanded — click to fold";
-    item.addEventListener("click", () => {
+    item.title = folded
+      ? "folded — click to expand · alt-click to solo"
+      : "expanded — click to fold · alt-click to solo";
+    if (dimmedScopes.has(cluster.id)) item.classList.add("dimmed");
+    item.addEventListener("click", (event) => {
+      if (event.altKey) {
+        // Solo: everything but this dimension steps back; again to let go.
+        const others = entries.map((entry) => entry.cluster.id).filter((id) => id !== cluster.id);
+        const alreadySolo =
+          dimmedScopes.size === others.length && others.every((id) => dimmedScopes.has(id));
+        dimmedScopes = alreadySolo ? new Set() : new Set(others);
+        renderDimensions();
+        requestDraw();
+        return;
+      }
       if (folded) expandCluster(cluster.id);
       else collapseCluster(cluster.id);
     });

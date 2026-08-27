@@ -592,6 +592,40 @@ const KMP_CORE = (() => {
     return (channel(0) << 16) | (channel(1) << 8) | channel(2);
   }
 
+  /* ---------------- search ----------------
+     Plain words search title, summary and id; `kind:`, `dim:` and `id:`
+     prefixes narrow by kind, dimension label and id. All terms must hold. */
+
+  function parseQuery(raw) {
+    const query = { text: [], kind: null, dim: null, id: null };
+    for (const token of raw.trim().toLowerCase().split(/\s+/).filter(Boolean)) {
+      if (token.startsWith("kind:")) query.kind = token.slice(5);
+      else if (token.startsWith("dim:")) query.dim = token.slice(4);
+      else if (token.startsWith("id:")) query.id = token.slice(3);
+      else query.text.push(token);
+    }
+    query.empty = !query.text.length && !query.kind && !query.dim && !query.id;
+    return query;
+  }
+
+  /* fields: lowercase {title, summary, id, kind, dim}. */
+  function matchesQuery(query, fields) {
+    if (query.empty) return false;
+    if (query.kind && !fields.kind.includes(query.kind)) return false;
+    if (query.id && !fields.id.includes(query.id)) return false;
+    if (query.dim && !(fields.dim || "").includes(query.dim)) return false;
+    for (const term of query.text) {
+      if (
+        !fields.title.includes(term) &&
+        !fields.summary.includes(term) &&
+        !fields.id.includes(term)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   return {
     SIM,
     fnv1a,
@@ -606,5 +640,7 @@ const KMP_CORE = (() => {
     buildRevealSteps,
     orderPath,
     gradientAt,
+    parseQuery,
+    matchesQuery,
   };
 })();
