@@ -400,6 +400,9 @@ message ProjectVisualResponse {
   PageInfo page = 15;
   bool truncated = 16;
   repeated string missing = 17;
+  // Distinct entries by kind in the selected range. Per-bin and per-cluster
+  // maps count lane memberships and must not be summed into global totals.
+  map<string, uint32> by_kind = 18;
 }
 
 message VisualBin {
