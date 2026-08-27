@@ -494,13 +494,18 @@ const KMP_CORE = (() => {
   /* ---------------- temporal ordering and reveal ---------------- */
 
   /* An entry's place in time: its smallest sequence, then its earliest
-     occurred_at. Entries carrying neither sort to the end, in given order. */
+     clock. A coordinate's clock is occurred_at when the writer knew the
+     moment, else observed_at, else ingested_at — most memory carries at
+     least one, and an axis that ignores the fallbacks reads as orderless
+     when the line is in fact dated. Entries carrying none sort to the end,
+     in given order. */
   function entryOrderKey(entry) {
     let sequence = Number.MAX_SAFE_INTEGER;
     let time = "";
     for (const c of entry.coordinates || []) {
       if (c.sequence !== undefined && c.sequence < sequence) sequence = c.sequence;
-      if (c.occurred_at && (!time || c.occurred_at < time)) time = c.occurred_at;
+      const clock = c.occurred_at || c.observed_at || c.ingested_at;
+      if (clock && (!time || clock < time)) time = clock;
     }
     return { sequence, time };
   }
