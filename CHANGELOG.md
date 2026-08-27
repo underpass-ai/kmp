@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-08-27
+
 ### Changed
 
 - Temporal reads accept an explicit occurred, observed, ingested or validity
@@ -51,6 +53,12 @@ Detailed notes from the early release cycle are preserved in the
 
 ### Fixed
 
+- Bounded temporal pages count whole entries instead of coordinates, and ref
+  continuations preserve every entry tied at the same timestamp without
+  repeats or gaps.
+- Explicit-clock reads prove when a referenced entry lacks that clock rather
+  than falling back to a different axis or presenting an empty result as
+  unexplained absence.
 - The kernel stamps absent ingest clocks and assigns the next free sequence per
   dimension scope. The writer rejects scope ids reused across dimensions before
   sending a malformed canonical ingest.
@@ -63,7 +71,11 @@ Detailed notes from the early release cycle are preserved in the
   non-chaining relation at the end instead of making every caller reconstruct
   the path.
 - ChronoLoom marks fallback-only bundles as hollow and states on-canvas when no
-  entry carries the selected clock.
+  entry carries the selected clock. Its legends now describe the active
+  projection, semantic selections survive view updates, and coarse kind totals
+  count each entry once across multiple lanes.
+- The release MCPB smoke validates the canonical ten memory and three view tool
+  names, so adding an intentional tool cannot fail an obsolete count assertion.
 - The CodeQL waiter follows the concrete `Analyze (*)` jobs and treats a
   skipped aggregate as terminal instead of timing out after successful scans.
 
@@ -401,7 +413,8 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.10...HEAD
+[0.2.10]: https://github.com/underpass-ai/kmp/compare/v0.2.9...v0.2.10
 [0.2.1]: https://github.com/underpass-ai/kmp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/underpass-ai/kmp/compare/v0.1.18...v0.2.0
 [0.1.18]: https://github.com/underpass-ai/kmp/compare/v0.1.17...v0.1.18
