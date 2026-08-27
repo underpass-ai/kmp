@@ -5,11 +5,11 @@ description: Operate KMP agent memory through the kmp MCP server — recover con
 
 # KMP agent memory
 
-KMP is graph-temporal memory for agents, reachable over MCP as ten tools. It
-is a **kernel, not a model**: every answer is derived from stored evidence by
-construction. Nothing here generates prose. If the memory does not support an
-answer, `kmp_ask` returns `UNKNOWN` — that is a correct result, not a
-failure to work around.
+KMP is graph-temporal memory for agents, reachable over MCP as ten memory
+tools plus three semantic view tools. It is a **kernel, not a model**: every
+answer is derived from stored evidence by construction. Nothing here
+generates prose. If the memory does not support an answer, `kmp_ask` returns
+`UNKNOWN` — that is a correct result, not a failure to work around.
 
 ## Use this as a router, not a tool glossary
 
