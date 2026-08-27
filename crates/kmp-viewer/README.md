@@ -12,7 +12,9 @@ zoom levels: Atlas bins, Episode clusters and Moment entries. The
 application owns this bounded, paginated projection; the browser never walks a
 whole about or a depth-four graph to manufacture it.
 
-![The same memory woven on occurred time and observed time](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-chronoloom.gif)
+Ask Codex or Claude to show the memory behind a decision: the agent can focus
+the relevant evidence and light up its proof path in ChronoLoom. The view stays
+shared — you can click, filter, pan, undo or take control yourself at any time.
 
 Four reading moves sit on top of the loom:
 
@@ -50,7 +52,10 @@ can mount it over its own composition unchanged.
 
 The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
 embedded MCP session brings the viewer up over its own kernel at
-`127.0.0.1:7317`, unasked. `KMP_VIEWER_ADDR` moves it; `off` declines it.
+`127.0.0.1:7317`, unasked. The printed link carries a random capability for
+that process only; the first request exchanges it for an HttpOnly, SameSite
+cookie and redirects to the clean URL. A local process with only the port gets
+`401`. `KMP_VIEWER_ADDR` moves it; `off` declines it.
 An MCP host that negotiates the Apps extension can instead open the identical
 self-contained renderer from `ui://kmp/chronoloom.html`; no localhost browser
 is required, and the bulk visual chunks stay in app structured content.

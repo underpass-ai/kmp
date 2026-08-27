@@ -487,7 +487,7 @@ fn view_apply_intent_definition() -> Value {
                     "properties": {
                         "semantic_zoom": {
                             "type": "string",
-                            "enum": ["atlas", "episode", "moment", "evidence"],
+                            "enum": ["atlas", "episode", "moment"],
                             "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
                         },
                         "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
@@ -1085,7 +1085,7 @@ fn write_memory_output_schema() -> Value {
         "diagnostics": described("array", "Planner diagnostics that qualify the write."),
         "next_suggested_reads": string_array("Concrete refs worth reading next to verify or continue the write."),
         "viewer": output_object(json!({
-            "url": described("string", "Loopback, read-only viewer URL for this memory."),
+            "url": described("string", "Loopback, read-only viewer URL carrying this session's capability."),
             "tell_the_user": described("string", "One-time handoff text for the human; it is not another kernel instruction.")
         }))
     }))
@@ -1688,6 +1688,11 @@ mod tests {
         }
         let axis = &properties["focus"]["properties"]["time_range"]["properties"]["axis"]["enum"];
         assert_eq!(axis[0], "occurred", "the clock is chosen, never assumed");
+        assert_eq!(
+            properties["projection"]["properties"]["semantic_zoom"]["enum"],
+            json!(["atlas", "episode", "moment"]),
+            "evidence is opened by selecting an entry, not requested as a zoom rung"
+        );
 
         assert_eq!(view("kmp_view_open")["inputSchema"]["required"][0], "about");
         assert!(

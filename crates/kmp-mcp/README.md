@@ -34,16 +34,21 @@ you configure one.
 `embedded` is the one to start with: no server, no cluster, memory that
 survives the session on your own disk. It also brings its own
 [ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
-`http://127.0.0.1:7317/`
-over that same kernel — your memory as a graph, read-only, loopback only, no
-flag required. `KMP_VIEWER_ADDR` moves it; `off` declines it.
+`http://127.0.0.1:7317/` over that same kernel — your memory as a graph,
+read-only and loopback only, no flag required. The process prints a random
+one-session capability link; the browser exchanges it for an HttpOnly cookie
+and removes the token from its URL. `KMP_VIEWER_ADDR` moves it; `off` declines
+it.
 
 Ask Codex or Claude to **“show me the memory behind this decision.”** The agent
 can open ChronoLoom at the relevant moment, select the evidence and light up
 the proof path. It declares semantic intent through `kmp_view_apply_intent`;
 the browser follows by long-poll, with the move explained and undoable.
 
-![An agent opens ChronoLoom at the relevant memory and lights up its proof path](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-agent-loom.gif)
+![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-agent-loom.gif)
+
+**The view is shared:** the agent can steer ChronoLoom for you; you can click,
+filter, pan, undo or take control yourself at any time.
 
 Current status:
 

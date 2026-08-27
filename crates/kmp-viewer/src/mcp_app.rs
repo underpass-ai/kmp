@@ -61,4 +61,31 @@ mod tests {
         assert!(html.contains("undo.hidden = true"));
         assert!(html.contains("undo.hidden = false"));
     }
+
+    #[test]
+    fn agent_trace_frames_its_path_before_drawing_it() {
+        let html = mcp_app_html();
+        assert!(html.contains("framed = await frameRefs(refs)"));
+        assert!(html.contains("const inspect = await api(\"/api/node\", { id: ref, raw: \"1\" })"));
+        assert!(html.contains("await loadProjection()"));
+        assert!(html.contains("await frameRefs(trace.nodes.map((node) => node.id))"));
+        assert!(
+            html.contains("runTrace({ framePath: !explicitRange, preserveWindow: explicitRange })")
+        );
+    }
+
+    #[test]
+    fn every_projection_query_uses_the_clock_visible_on_the_loom() {
+        let html = mcp_app_html();
+        assert_eq!(
+            html.matches("fetchProjection(\n      model.about,\n      view.clock,")
+                .count(),
+            1
+        );
+        assert_eq!(
+            html.matches("fetchProjection(\n      about,\n      view.clock,")
+                .count(),
+            1
+        );
+    }
 }

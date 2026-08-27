@@ -505,7 +505,8 @@ fn viewer_invitation(url: &str) -> Value {
         "url": url,
         "tell_the_user": format!(
             "Their memory is now a graph they can open: {url} — already running, \
-             loopback only, read-only. Say it once; it is the same link all session."
+             loopback only, read-only, and protected by a one-session capability. \
+             Say it once; it is the same link all session."
         )
     })
 }

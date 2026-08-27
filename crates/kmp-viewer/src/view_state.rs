@@ -43,7 +43,7 @@ const VIEW_TTL: Duration = Duration::from_secs(6 * 60 * 60);
 /// has to say which one it means.
 pub const CLOCKS: [&str; 4] = ["occurred", "observed", "ingested", "validity"];
 /// The rungs of the semantic-zoom ladder an intent may ask for.
-pub const ZOOMS: [&str; 4] = ["atlas", "episode", "moment", "evidence"];
+pub const ZOOMS: [&str; 3] = ["atlas", "episode", "moment"];
 /// The domain's closed relation-class vocabulary, as exposed by the intent
 /// schema. Unlike dimensions and telemetry series, these are not store-local.
 pub const RELATION_CLASSES: [&str; 6] = [
@@ -929,6 +929,26 @@ mod tests {
             ViewPatch {
                 projection: Some(Projection {
                     relation_classes: Some(vec!["telepathic".into()]),
+                    ..Projection::default()
+                }),
+                ..ViewPatch::default()
+            },
+            "agent:test",
+            None,
+        );
+        assert!(matches!(refused, Err(ViewError::Invalid(_))));
+    }
+
+    #[test]
+    fn evidence_is_a_selection_state_not_a_zoom_rung() {
+        let registry = registry();
+        let refused = registry.apply(
+            "t",
+            None,
+            None,
+            ViewPatch {
+                projection: Some(Projection {
+                    semantic_zoom: Some("evidence".into()),
                     ..Projection::default()
                 }),
                 ..ViewPatch::default()

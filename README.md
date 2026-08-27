@@ -120,15 +120,16 @@ legible without flattening its structure.
 > selects the evidence and can light up the proof path. No query language, no
 > hunting through node IDs: you see the memory it is reasoning from.
 
-![An agent opens ChronoLoom at the relevant memory and lights up its proof path](docs/assets/kmp-agent-loom.gif)
+![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](docs/assets/kmp-agent-loom.gif)
+
+**The view is shared:** the agent can steer ChronoLoom for you; you can click,
+filter, pan, undo or take control yourself at any time.
 
 Travel across occurred, observed, ingested and validity time; search and
 filter the graph; compare two instants; or light up an audit path with every
 hop's rationale, evidence and confidence attached. Those moves are semantic,
 not screen coordinates, and optimistic concurrency keeps a stale agent intent
 from moving the screen out from under the person using it.
-
-![The same memory woven on occurred time and observed time](docs/assets/kmp-chronoloom.gif)
 
 ChronoLoom reads the kernel's own bounded projections. It does not maintain a
 second index, invent a parallel interpretation of memory or write to the
@@ -189,7 +190,7 @@ the relation vocabulary.
 |:--|:--|
 | Memory | Stored on your machine, normally in the repository's `.kernel/`. |
 | MCP transport | Local stdio between the agent host and `kmp-mcp`. |
-| Viewer | Read-only loopback HTTP, normally `http://127.0.0.1:7317/`. |
+| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
 | External services | None required. |
 | Underpass | Receives no memory and operates no service in this path. |
 | Updates | Setup may contact GitHub Releases for checksummed packages. |

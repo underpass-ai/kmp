@@ -51,49 +51,41 @@ export KMP_CAPTURE_CHROME="${CAPTURE_CHROME}"
 export KMP_MCP_BIN="${BIN}"
 node scripts/demo/record-chronoloom-gifs.js
 
-encode_three_states() {
-  local first="$1" second="$2" third="$3" output="$4"
+encode_six_states() {
+  local ready="$1" question="$2" selection="$3" followup="$4" trace="$5" nice="$6" output="$7"
   ffmpeg -hide_banner -loglevel error -y \
-    -loop 1 -t 2.8 -i "${first}" \
-    -loop 1 -t 4.6 -i "${second}" \
-    -loop 1 -t 5.8 -i "${third}" \
+    -loop 1 -t 2.5 -i "${ready}" \
+    -loop 1 -t 3.8 -i "${question}" \
+    -loop 1 -t 6.0 -i "${selection}" \
+    -loop 1 -t 3.8 -i "${followup}" \
+    -loop 1 -t 4.8 -i "${trace}" \
+    -loop 1 -t 7.0 -i "${nice}" \
     -filter_complex \
       "[0:v]fps=10,format=rgba,settb=AVTB[a]; \
        [1:v]fps=10,format=rgba,settb=AVTB[b]; \
        [2:v]fps=10,format=rgba,settb=AVTB[c]; \
-       [a][b]xfade=transition=fade:duration=0.3:offset=2.5[ab]; \
-       [ab][c]xfade=transition=fade:duration=0.3:offset=6.8[scene]; \
+       [3:v]fps=10,format=rgba,settb=AVTB[d]; \
+       [4:v]fps=10,format=rgba,settb=AVTB[e]; \
+       [5:v]fps=10,format=rgba,settb=AVTB[f]; \
+       [a][b]xfade=transition=fade:duration=0.30:offset=2.20[ab]; \
+       [ab][c]xfade=transition=fade:duration=0.35:offset=5.65[abc]; \
+       [abc][d]xfade=transition=fade:duration=0.35:offset=11.30[abcd]; \
+       [abcd][e]xfade=transition=fade:duration=0.35:offset=14.75[abcde]; \
+       [abcde][f]xfade=transition=fade:duration=0.40:offset=19.15[scene]; \
        [scene]fps=10,scale=1600:640:flags=lanczos,split[palette_source][pixels]; \
        [palette_source]palettegen=max_colors=112:stats_mode=diff[palette]; \
        [pixels][palette]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle[out]" \
     -map "[out]" -loop 0 "${output}"
 }
 
-encode_two_states() {
-  local first="$1" second="$2" output="$3"
-  ffmpeg -hide_banner -loglevel error -y \
-    -loop 1 -t 5.0 -i "${first}" \
-    -loop 1 -t 5.5 -i "${second}" \
-    -filter_complex \
-      "[0:v]fps=10,format=rgba,settb=AVTB[a]; \
-       [1:v]fps=10,format=rgba,settb=AVTB[b]; \
-       [a][b]xfade=transition=fade:duration=0.35:offset=4.65[scene]; \
-       [scene]fps=10,scale=1600:640:flags=lanczos,split[palette_source][pixels]; \
-       [palette_source]palettegen=max_colors=112:stats_mode=diff[palette]; \
-       [pixels][palette]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle[out]" \
-    -map "[out]" -loop 0 "${output}"
-}
-
-encode_three_states \
-  "${CAPTURE_ROOT}/states/agent-01-idle.png" \
-  "${CAPTURE_ROOT}/states/agent-02-selection.png" \
-  "${CAPTURE_ROOT}/states/agent-03-trace.png" \
+encode_six_states \
+  "${CAPTURE_ROOT}/states/agent-01-ready.png" \
+  "${CAPTURE_ROOT}/states/agent-02-question.png" \
+  "${CAPTURE_ROOT}/states/agent-03-selection.png" \
+  "${CAPTURE_ROOT}/states/agent-04-followup.png" \
+  "${CAPTURE_ROOT}/states/agent-05-trace.png" \
+  "${CAPTURE_ROOT}/states/agent-06-nice.png" \
   "${ROOT}/docs/assets/kmp-agent-loom.gif"
 
-encode_two_states \
-  "${CAPTURE_ROOT}/states/clocks-01-occurred.png" \
-  "${CAPTURE_ROOT}/states/clocks-02-observed.png" \
-  "${ROOT}/docs/assets/kmp-chronoloom.gif"
-
 echo "record-chronoloom-gifs: wrote"
-du -h docs/assets/kmp-agent-loom.gif docs/assets/kmp-chronoloom.gif
+du -h docs/assets/kmp-agent-loom.gif

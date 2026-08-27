@@ -294,6 +294,13 @@ fn omit_unhonored_projection(patch: &mut ViewPatch, unavailable: &UnhonoredProje
     }
 }
 
+fn has_explicit_time_range(arguments: &Value) -> bool {
+    arguments.pointer("/focus/time_range").is_some_and(|range| {
+        range.get("from").and_then(Value::as_str).is_some()
+            && range.get("to").and_then(Value::as_str).is_some()
+    })
+}
+
 /// The refs an intent names, so the caller can check they exist before the
 /// view points at them.
 pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
@@ -329,11 +336,16 @@ pub(crate) fn apply_intent(
     }
     let (mut patch, _) = patch_from(arguments)?;
     omit_unhonored_projection(&mut patch, &unavailable);
-    let unhonored = unavailable
+    let mut unhonored: Vec<String> = unavailable
         .dimensions
         .into_iter()
         .chain(unavailable.overlays)
         .collect();
+    if arguments.get("trace").is_some_and(|trace| !trace.is_null())
+        && has_explicit_time_range(arguments)
+    {
+        unhonored.push("trace framing (explicit focus.time_range has priority)".to_string());
+    }
     let expected = arguments.get("expected_revision").and_then(Value::as_u64);
     let explanation = arguments.get("explanation").and_then(Value::as_str);
     let actor = arguments

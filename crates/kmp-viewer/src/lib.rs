@@ -59,6 +59,49 @@ pub struct MemoryViewerServer<G, D, S, E, W> {
     data_dir: Option<String>,
     observability: Option<Arc<dyn ObservabilityQueryPort>>,
     observability_unavailable_reason: Option<String>,
+    capability: ViewerCapability,
+}
+
+struct ViewerCapability {
+    token: String,
+    cookie_name: String,
+}
+
+impl ViewerCapability {
+    fn generate() -> io::Result<Self> {
+        let mut bytes = [0u8; 32];
+        getrandom::getrandom(&mut bytes).map_err(|error| {
+            io::Error::other(format!(
+                "viewer capability could not be generated from the operating system: {error}"
+            ))
+        })?;
+        const HEX: &[u8; 16] = b"0123456789abcdef";
+        let mut token = String::with_capacity(bytes.len() * 2);
+        for byte in bytes {
+            token.push(HEX[(byte >> 4) as usize] as char);
+            token.push(HEX[(byte & 0x0f) as usize] as char);
+        }
+        let cookie_name = format!("kmp_chronoloom_{}", &token[..16]);
+        Ok(Self { token, cookie_name })
+    }
+
+    fn matches(&self, candidate: &str) -> bool {
+        if candidate.len() != self.token.len() {
+            return false;
+        }
+        candidate
+            .bytes()
+            .zip(self.token.bytes())
+            .fold(0u8, |difference, (left, right)| difference | (left ^ right))
+            == 0
+    }
+
+    fn cookie_header(&self) -> String {
+        format!(
+            "{}={}; HttpOnly; SameSite=Strict; Path=/",
+            self.cookie_name, self.token
+        )
+    }
 }
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
@@ -79,14 +122,23 @@ where
     pub fn new(
         service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
         data_dir: Option<String>,
-    ) -> Self {
+    ) -> io::Result<Self> {
         ViewRegistry::shared().set_available_overlays(Vec::new());
-        Self {
+        Ok(Self {
             service,
             data_dir,
             observability: None,
             observability_unavailable_reason: None,
-        }
+            capability: ViewerCapability::generate()?,
+        })
+    }
+
+    /// Turns the bound loopback URL into the one-session invitation a human
+    /// can open. The first request exchanges this capability for an HttpOnly
+    /// session cookie and redirects to the clean URL.
+    pub fn capability_url(&self, base_url: &str) -> String {
+        let separator = if base_url.contains('?') { '&' } else { '?' };
+        format!("{base_url}{separator}k={}", self.capability.token)
     }
 
     /// Adds a telemetry read side without coupling the renderer to a local or
@@ -124,12 +176,33 @@ where
             Err(_elapsed) => HttpResponse::error(400, "request timed out"),
             Ok(Err(response)) => response,
             Ok(Ok(request)) => {
-                if host_is_local(request.host.as_deref()) {
-                    self.route(&request).await
-                } else {
+                if !host_is_local(request.host.as_deref()) {
                     HttpResponse::error(
                         403,
                         "the viewer answers only to localhost / 127.0.0.1 / [::1]",
+                    )
+                } else if request
+                    .cookie(&self.capability.cookie_name)
+                    .is_some_and(|token| self.capability.matches(token))
+                {
+                    self.route(&request).await
+                } else if matches!(request.method.as_str(), "GET" | "HEAD")
+                    && matches!(request.path.as_str(), "/" | "/index.html")
+                    && request
+                        .param("k")
+                        .is_some_and(|token| self.capability.matches(token))
+                {
+                    let response = HttpResponse::redirect("/")
+                        .with_header("Set-Cookie", self.capability.cookie_header());
+                    if request.method == "HEAD" {
+                        response.without_body()
+                    } else {
+                        response
+                    }
+                } else {
+                    HttpResponse::error(
+                        401,
+                        "this ChronoLoom session needs the capability link printed by kmp-mcp",
                     )
                 }
             }
@@ -158,4 +231,24 @@ pub async fn bind_loopback(addr: &str) -> io::Result<TcpListener> {
         ));
     }
     TcpListener::bind(addr).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ViewerCapability;
+
+    #[test]
+    fn session_capabilities_are_random_wide_and_cookie_isolated() {
+        let first = ViewerCapability::generate().expect("OS randomness");
+        let second = ViewerCapability::generate().expect("OS randomness");
+        assert_eq!(first.token.len(), 64, "256 bits rendered as hex");
+        assert!(first.token.bytes().all(|byte| byte.is_ascii_hexdigit()));
+        assert_ne!(first.token, second.token);
+        assert_ne!(first.cookie_name, second.cookie_name);
+        assert!(
+            first
+                .cookie_header()
+                .contains("HttpOnly; SameSite=Strict; Path=/")
+        );
+    }
 }

@@ -76,6 +76,15 @@ fn unconfigured_embedded_backend_mounts_the_viewer() {
         stderr.contains("memory viewer at http://127.0.0.1:"),
         "the implicit embedded backend must mount its viewer: {stderr}"
     );
+    let token = stderr
+        .split("memory viewer at ")
+        .nth(1)
+        .and_then(|line| line.split_whitespace().next())
+        .and_then(|url| url.trim_end_matches(';').split_once("?k="))
+        .map(|(_, token)| token)
+        .expect("the printed viewer URL carries its capability");
+    assert_eq!(token.len(), 64, "the viewer capability is 256 bits in hex");
+    assert!(token.bytes().all(|byte| byte.is_ascii_hexdigit()));
 }
 
 /// gRPC by name and nothing to talk to is the one backend failure left, and

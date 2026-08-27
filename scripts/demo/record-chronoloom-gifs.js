@@ -233,7 +233,7 @@ class McpSession {
     this.stderr = [];
     const dataDir = path.join(workRoot, "stores", name);
     fs.mkdirSync(dataDir, { recursive: true });
-    this.url = `http://127.0.0.1:${port}/`;
+    this.origin = `http://127.0.0.1:${port}/`;
     this.child = spawn(binary, [], {
       cwd: root,
       env: {
@@ -287,6 +287,21 @@ class McpSession {
     return body;
   }
 
+  async viewerUrl() {
+    const deadline = Date.now() + 20000;
+    while (Date.now() < deadline) {
+      const match = this.stderr
+        .join("")
+        .match(/memory viewer at (http:\/\/127\.0\.0\.1:\d+\/\?k=[0-9a-f]{64})/);
+      if (match) return match[1];
+      if (this.child.exitCode !== null) {
+        throw new Error(`kmp-mcp exited before offering ChronoLoom: ${this.stderr.join("").trim()}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`kmp-mcp did not offer ChronoLoom at ${this.origin}`);
+  }
+
   async stop() {
     if (this.child.exitCode !== null) return;
     this.child.stdin.end();
@@ -304,8 +319,8 @@ async function waitForViewer(url) {
   let last;
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(`${url}api/info`);
-      if (response.ok) return;
+      const response = await fetch(url, { redirect: "manual" });
+      if (response.status === 303 && response.headers.get("location") === "/") return;
       last = new Error(`HTTP ${response.status}`);
     } catch (error) {
       last = error;
@@ -315,26 +330,258 @@ async function waitForViewer(url) {
   throw new Error(`viewer did not start: ${last}`);
 }
 
-async function openLoom(browser, url) {
+async function waitForLoom(loom) {
+  await loom.waitForFunction(() => {
+    const entries = document.getElementById("s-entries");
+    const about = document.querySelector("#about-list .active");
+    return entries && entries.textContent === "7" && about;
+  });
+  await loom.waitForTimeout(700);
+}
+
+function agentComposite() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <style>
+    #capture-root { color-scheme: dark; background: #070910; color: #eef2ff; }
+    #capture-root * { box-sizing: border-box; }
+    body.capture-mode { margin: 0; overflow: hidden; }
+    #capture-root {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 480px minmax(0, 1fr);
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      background: radial-gradient(circle at 15% 10%, #171634 0, #070910 36%);
+    }
+    #capture-terminal {
+      min-width: 0;
+      margin: 14px 0 14px 14px;
+      border: 1px solid #2d3354;
+      border-radius: 16px 0 0 16px;
+      background: linear-gradient(180deg, #10131f, #090b13);
+      box-shadow: 0 20px 60px #0008;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #capture-terminal .terminal-head {
+      height: 58px;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      border-bottom: 1px solid #252b45;
+      color: #f4f5ff;
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: .12em;
+    }
+    #capture-terminal .brand span { color: #9587ff; }
+    #capture-terminal .live { color: #79e5ad; font-size: 11px; }
+    #capture-terminal .live::before {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #79e5ad;
+      box-shadow: 0 0 14px #79e5ad99;
+    }
+    #capture-terminal .terminal-body {
+      flex: 1;
+      padding: 26px 24px;
+      overflow: hidden;
+      font: 16px/1.48 ui-monospace, "SFMono-Regular", Consolas, monospace;
+    }
+    #capture-terminal .phase { display: none; }
+    #capture-root[data-phase="ready"] .phase[data-phase="ready"],
+    #capture-root[data-phase="question"] .phase[data-phase="question"],
+    #capture-root[data-phase="selection"] .phase[data-phase="selection"],
+    #capture-root[data-phase="followup"] .phase[data-phase="followup"],
+    #capture-root[data-phase="trace"] .phase[data-phase="trace"],
+    #capture-root[data-phase="nice"] .phase[data-phase="nice"] { display: block; }
+    #capture-terminal .shell { color: #6f7a9e; margin-bottom: 24px; }
+    #capture-terminal .shell strong { color: #9ca6c7; font-weight: 500; }
+    #capture-terminal .speaker { color: #79e5ad; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    #capture-terminal .prompt { margin: 8px 0 24px; color: #f4f6ff; font-size: 19px; line-height: 1.48; }
+    #capture-terminal .chevron { color: #9587ff; font-weight: 800; }
+    #capture-terminal .tool {
+      margin-top: 18px;
+      padding: 14px;
+      border: 1px solid #363e67;
+      border-radius: 11px;
+      background: #181c2fd1;
+      color: #cbd2e9;
+      font-size: 14px;
+    }
+    #capture-terminal .tool-name { color: #67d8ff; font-weight: 750; }
+    #capture-terminal .args {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 5px 10px;
+      margin-top: 12px;
+      color: #c9d0e7;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    #capture-terminal .key { color: #7d88aa; }
+    #capture-terminal .value { overflow-wrap: anywhere; }
+    #capture-terminal .done { margin-top: 16px; color: #79e5ad; font-size: 14px; font-weight: 700; }
+    #capture-terminal .arrow { color: #aa9fff; font-size: 19px; }
+    #capture-terminal .prior {
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #252b45;
+      color: #8490b2;
+      font-size: 13px;
+    }
+    #capture-terminal .prior strong { color: #bec6df; }
+    #capture-terminal .ready {
+      display: grid;
+      place-items: center;
+      min-height: 450px;
+      text-align: center;
+      color: #dfe3f5;
+      font-size: 19px;
+    }
+    #capture-terminal .ready-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 18px;
+      border: 1px solid #564e92;
+      border-radius: 15px;
+      background: #6a58ff18;
+      color: #aa9fff;
+      font-size: 23px;
+    }
+    #capture-terminal .ready small { display: block; margin-top: 8px; color: #7d88aa; font-size: 13px; }
+    #capture-terminal .terminal-foot {
+      flex: none;
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 22px;
+      border-top: 1px solid #252b45;
+      color: #6f7a9e;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    #capture-terminal .terminal-foot strong { color: #aa9fff; }
+    #capture-browser {
+      min-width: 0;
+      margin: 14px 14px 14px 0;
+      border: 1px solid #2d3354;
+      border-left: 0;
+      border-radius: 0 16px 16px 0;
+      overflow: hidden;
+      background: #0b0d15;
+      box-shadow: 0 20px 60px #0008;
+    }
+    #capture-browser #app { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <aside id="capture-terminal">
+    <header class="terminal-head">
+      <div class="brand">CODEX <span>×</span> KMP</div>
+      <div class="live">LIVE</div>
+    </header>
+    <main class="terminal-body">
+      <section class="phase" data-phase="ready">
+        <div class="shell">~/kmp <strong>on main</strong></div>
+        <div class="ready"><div><div class="ready-mark">⌁</div>ChronoLoom is listening<small>Shared memory, live.</small></div></div>
+      </section>
+      <section class="phase" data-phase="question">
+        <div class="shell">~/kmp <strong>on main</strong></div>
+        <div class="speaker">you</div>
+        <p class="prompt"><span class="chevron">›</span> Show me the memory behind this decision.</p>
+      </section>
+      <section class="phase" data-phase="selection">
+        <div class="speaker">you</div>
+        <p class="prompt"><span class="chevron">›</span> Show me the memory behind this decision.</p>
+        <div class="tool">
+          <span class="tool-name">kmp_view_apply_intent</span>
+          <div class="args">
+            <span class="key">selection</span><span class="value">incident:cfg-change</span>
+            <span class="key">why</span><span class="value">show the memory behind this decision</span>
+          </div>
+        </div>
+        <div class="done">✓ ChronoLoom updated <span class="arrow">→</span></div>
+      </section>
+      <section class="phase" data-phase="followup">
+        <div class="prior">✓ Selected <strong>incident:cfg-change</strong></div>
+        <div class="speaker">you</div>
+        <p class="prompt"><span class="chevron">›</span> Great! Can you light up the proof path?</p>
+      </section>
+      <section class="phase" data-phase="trace">
+        <div class="speaker">you</div>
+        <p class="prompt"><span class="chevron">›</span> Great! Can you light up the proof path?</p>
+        <div class="tool">
+          <span class="tool-name">kmp_view_apply_intent</span>
+          <div class="args">
+            <span class="key">trace</span><span class="value">incident:verified → incident:cfg-change</span>
+            <span class="key">why</span><span class="value">light up the proof path</span>
+          </div>
+        </div>
+      </section>
+      <section class="phase" data-phase="nice">
+        <div class="prior">✓ 4-hop proof path rendered</div>
+        <div class="speaker">you</div>
+        <p class="prompt"><span class="chevron">›</span> Nice!</p>
+      </section>
+    </main>
+    <footer class="terminal-foot"><span>Agent-directed</span><strong>Human-controlled</strong></footer>
+  </aside>
+  <main id="capture-browser"></main>
+</body>
+</html>`;
+}
+
+async function openAgentLoom(browser, url) {
   const context = await browser.newContext({
-    // Capture oversized and downsample once: text stays crisp in the README,
-    // while the complete agent explanation fits in the product's top bar.
     viewport: { width: 2000, height: 800 },
     colorScheme: "dark",
     deviceScaleFactor: 1,
     reducedMotion: "no-preference",
+    bypassCSP: true,
   });
   const page = await context.newPage();
   // ChronoLoom intentionally keeps one long-poll request in flight, so
   // networkidle would mean the product had stopped listening to the agent.
   await page.goto(url, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => {
-    const entries = document.getElementById("s-entries");
-    const about = document.querySelector("#about-list .active");
-    return entries && entries.textContent === "7" && about;
-  });
-  await page.waitForTimeout(700);
-  return { context, page };
+  await waitForLoom(page);
+  await page.evaluate((markup) => {
+    const parsed = new DOMParser().parseFromString(markup, "text/html");
+    const original = [...document.body.childNodes];
+    const root = document.createElement("div");
+    root.id = "capture-root";
+    root.dataset.phase = "ready";
+    const terminal = parsed.getElementById("capture-terminal");
+    const browser = parsed.getElementById("capture-browser");
+    if (!terminal || !browser) throw new Error("capture shell is incomplete");
+    for (const node of original) browser.appendChild(node);
+    root.append(terminal, browser);
+    document.body.appendChild(root);
+    document.body.classList.add("capture-mode");
+    const style = parsed.querySelector("style");
+    if (!style) throw new Error("capture shell has no stylesheet");
+    document.head.appendChild(style);
+  }, agentComposite());
+  await page.waitForTimeout(300);
+  return { context, page, loom: page };
+}
+
+async function setTerminalPhase(page, phase) {
+  await page.locator("#capture-root").evaluate((root, next) => {
+    root.dataset.phase = next;
+  }, phase);
 }
 
 async function screenshot(page, name) {
@@ -358,14 +605,18 @@ async function currentRevision(session) {
 async function captureAgentStory(browser) {
   const session = new McpSession(17317, "agent-story");
   try {
-    await waitForViewer(session.url);
+    const viewerUrl = await session.viewerUrl();
+    await waitForViewer(viewerUrl);
     await session.tool("kmp_ingest", memoryFixture());
-    const { context, page } = await openLoom(browser, session.url);
+    const { context, page, loom } = await openAgentLoom(browser, viewerUrl);
     try {
-      await page.waitForFunction(() =>
+      await loom.waitForFunction(() =>
         document.getElementById("agent-chip-text").textContent === "human-controlled view"
       );
-      await screenshot(page, "agent-01-idle");
+      await screenshot(page, "agent-01-ready");
+
+      await setTerminalPhase(page, "question");
+      await screenshot(page, "agent-02-question");
 
       await session.tool("kmp_view_apply_intent", {
         view_id: "default",
@@ -377,20 +628,24 @@ async function captureAgentStory(browser) {
         projection: { semantic_zoom: "moment" },
         selection: "incident:cfg-change",
       });
-      await page.waitForFunction(() => {
+      await loom.waitForFunction(() => {
         const chip = document.getElementById("agent-chip-text");
         const selected = document.getElementById("d-id");
         return chip && chip.textContent.includes("show the memory behind this decision") &&
           selected && selected.textContent === "incident:cfg-change";
       });
-      await page.waitForFunction(() => {
+      await loom.waitForFunction(() => {
         const prism = [...document.querySelectorAll("#prism .prism-rail")].map((row) => row.textContent);
         return prism.some((text) => text.includes("03:12")) &&
           prism.some((text) => text.includes("09:40")) &&
           prism.some((text) => text.includes("09:41"));
       });
+      await setTerminalPhase(page, "selection");
       await page.waitForTimeout(500);
-      await screenshot(page, "agent-02-selection");
+      await screenshot(page, "agent-03-selection");
+
+      await setTerminalPhase(page, "followup");
+      await screenshot(page, "agent-04-followup");
 
       await session.tool("kmp_view_apply_intent", {
         view_id: "default",
@@ -400,58 +655,36 @@ async function captureAgentStory(browser) {
         explanation: "light up the proof path",
         trace: { from: "incident:verified", to: "incident:cfg-change" },
       });
-      await page.waitForFunction(() => {
-        const chip = document.getElementById("agent-chip-text");
-        const status = document.getElementById("trace-status");
-        return chip && chip.textContent.includes("light up the proof path") &&
-          status && status.textContent.startsWith("4 hops") &&
-          document.querySelectorAll("#trace-hops > li").length === 4;
-      });
-      await page.locator("#trace-box").scrollIntoViewIfNeeded();
+      try {
+        await loom.waitForFunction(() => {
+          const chip = document.getElementById("agent-chip-text");
+          const status = document.getElementById("trace-status");
+          return chip && chip.textContent.includes("light up the proof path") &&
+            status && status.textContent.startsWith("4 hops") &&
+            document.querySelectorAll("#trace-hops > li").length === 4 &&
+            Number(document.getElementById("s-entries")?.textContent) >= 5 &&
+            Number(document.getElementById("s-relations")?.textContent) >= 4;
+        }, undefined, { timeout: 4000 });
+      } catch (error) {
+        const state = await loom.evaluate(() => ({
+          chip: document.getElementById("agent-chip-text")?.textContent,
+          clock: document.querySelector("#clock-chips .chip.active")?.dataset.clock,
+          entries: document.getElementById("s-entries")?.textContent,
+          relations: document.getElementById("s-relations")?.textContent,
+          trace: document.getElementById("trace-status")?.textContent,
+          hops: document.querySelectorAll("#trace-hops > li").length,
+          error: document.getElementById("error-slot")?.textContent,
+        }));
+        throw new Error(`trace did not render: ${JSON.stringify(state)}`, { cause: error });
+      }
+      await setTerminalPhase(page, "trace");
       await page.waitForTimeout(500);
-      await screenshot(page, "agent-03-trace");
-    } finally {
-      await context.close();
-    }
-  } finally {
-    await session.stop();
-  }
-}
+      await screenshot(page, "agent-05-trace");
 
-async function captureClockStory(browser) {
-  const session = new McpSession(17318, "clock-story");
-  try {
-    await waitForViewer(session.url);
-    await session.tool("kmp_ingest", memoryFixture());
-    const { context, page } = await openLoom(browser, session.url);
-    try {
-      await page.waitForFunction(() => {
-        const active = document.querySelector("#clock-chips .chip.active");
-        return active && active.dataset.clock === "occurred" &&
-          document.getElementById("agent-chip-text").textContent === "human-controlled view";
-      });
-      await screenshot(page, "clocks-01-occurred");
-
-      await session.tool("kmp_view_apply_intent", {
-        view_id: "default",
-        expected_revision: await currentRevision(session),
-        idempotency_key: "view:chronoloom-readme-observed-clock",
-        actor: "agent",
-        explanation: "now show when the incident was understood",
-        focus: {
-          time_range: { axis: "observed" },
-        },
-        selection: null,
-        trace: null,
-      });
-      await page.waitForFunction(() => {
-        const active = document.querySelector("#clock-chips .chip.active");
-        const chip = document.getElementById("agent-chip-text");
-        return active && active.dataset.clock === "observed" &&
-          chip && chip.textContent.includes("when the incident was understood");
-      });
-      await page.waitForTimeout(650);
-      await screenshot(page, "clocks-02-observed");
+      await loom.locator("#trace-box").scrollIntoViewIfNeeded();
+      await setTerminalPhase(page, "nice");
+      await page.waitForTimeout(500);
+      await screenshot(page, "agent-06-nice");
     } finally {
       await context.close();
     }
@@ -470,7 +703,6 @@ async function main() {
   });
   try {
     await captureAgentStory(browser);
-    await captureClockStory(browser);
   } finally {
     await browser.close();
   }
