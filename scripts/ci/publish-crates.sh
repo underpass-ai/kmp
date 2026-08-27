@@ -35,9 +35,9 @@ CRATES=(
   kmp-plugin-api
   kmp-domain
   kmp-ports
-  kmp-observability
   kmp-memory-api
   kmp-application
+  kmp-observability
   kmp-adapter-embedded
   kmp-embedded
   kmp-proto
