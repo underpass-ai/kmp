@@ -20,8 +20,18 @@ use crate::style::{self, Style};
 const FRAMES: [&str; 4] = ["●──○──○", "○──●──○", "○──○──●", "○──●──○"];
 const FRAME_EVERY: std::time::Duration = std::time::Duration::from_millis(120);
 
+/// One full crossing of the graph: every frame once. Work that finishes
+/// faster still gets this much screen time — anything shorter reads as a
+/// flicker, not an animation, and a human cannot tell what just blinked.
+/// Only the animated pulse waits; a pipe never pays it.
+const MIN_VISIBLE: std::time::Duration = std::time::Duration::from_millis(480);
+
 pub struct Pulse {
-    running: Option<(Arc<AtomicBool>, std::thread::JoinHandle<()>)>,
+    running: Option<(
+        Arc<AtomicBool>,
+        std::thread::JoinHandle<()>,
+        std::time::Instant,
+    )>,
 }
 
 impl Pulse {
@@ -61,7 +71,7 @@ impl Pulse {
             let _ = stderr.flush();
         });
         Self {
-            running: Some((stop, handle)),
+            running: Some((stop, handle, std::time::Instant::now())),
         }
     }
 
@@ -73,7 +83,10 @@ impl Pulse {
 
     fn halt(&mut self) -> bool {
         match self.running.take() {
-            Some((stop, handle)) => {
+            Some((stop, handle, started)) => {
+                if let Some(remaining) = MIN_VISIBLE.checked_sub(started.elapsed()) {
+                    std::thread::sleep(remaining);
+                }
                 stop.store(true, Ordering::Relaxed);
                 let _ = handle.join();
                 true
@@ -116,6 +129,23 @@ mod tests {
         let pulse = Pulse::animated("testing…".to_string());
         std::thread::sleep(std::time::Duration::from_millis(10));
         pulse.clear();
+    }
+
+    /// Work faster than one crossing still shows a whole crossing:
+    /// anything shorter is a flicker a human cannot read.
+    #[test]
+    fn a_fast_job_still_shows_one_full_crossing() {
+        let started = std::time::Instant::now();
+        Pulse::animated("blink…".to_string()).clear();
+        assert!(started.elapsed() >= MIN_VISIBLE);
+    }
+
+    /// The wait is for the watcher; a pipe must never pay it.
+    #[test]
+    fn an_inert_pulse_never_waits() {
+        let started = std::time::Instant::now();
+        Pulse::inert().clear();
+        assert!(started.elapsed() < MIN_VISIBLE);
     }
 
     #[test]

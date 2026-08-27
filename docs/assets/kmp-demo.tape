@@ -1,9 +1,9 @@
 Output docs/assets/kmp-demo.gif
 
 Set Shell "bash"
-Set FontSize 18
+Set FontSize 20
 Set Width 1280
-Set Height 680
+Set Height 760
 Set Padding 24
 Set Framerate 30
 Set TypingSpeed 35ms
