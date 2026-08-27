@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-08-27
+
 ### Changed
 
 - Temporal reads accept an explicit occurred, observed, ingested or validity
@@ -51,9 +53,13 @@ Detailed notes from the early release cycle are preserved in the
 - The kernel stamps absent ingest clocks and assigns the next free sequence per
   dimension scope. The writer rejects scope ids reused across dimensions before
   sending a malformed canonical ingest.
-- Sequence ties use the recorded clock before a lexical ref, temporal proof
-  carries supersession lifecycle, and a superseding write marks the replaced
-  projection node `SUPERSEDED`.
+- Sequence ties use the recorded clock and scoped sequence before a lexical
+  ref. Bounded temporal pages count complete entries rather than cutting their
+  coordinate sets, and ref continuations preserve every entry tied at the same
+  instant. An existing ref without the explicitly requested clock returns a
+  proven absence instead of masquerading as a missing ref.
+- Temporal proof carries supersession lifecycle, and a superseding write marks
+  the replaced projection node `SUPERSEDED`.
 - Ask indexes stored entry text as well as evidence and distinguishes the two
   with `proof.evidence[].metadata.proof_role`.
 - Trace returns proof hops in walk order from `from`, retaining any additional
@@ -61,6 +67,9 @@ Detailed notes from the early release cycle are preserved in the
   the path.
 - ChronoLoom marks fallback-only bundles as hollow and states on-canvas when no
   entry carries the selected clock.
+- ChronoLoom gives supersession and contradiction their own legend marks,
+  preserves agent selections by revealing coarse entries at Moment, and uses
+  distinct-entry kind totals at every rung instead of summing lane memberships.
 - The CodeQL waiter follows the concrete `Analyze (*)` jobs and treats a
   skipped aggregate as terminal instead of timing out after successful scans.
 
@@ -398,7 +407,8 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.10...HEAD
+[0.2.10]: https://github.com/underpass-ai/kmp/compare/v0.2.9...v0.2.10
 [0.2.1]: https://github.com/underpass-ai/kmp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/underpass-ai/kmp/compare/v0.1.18...v0.2.0
 [0.1.18]: https://github.com/underpass-ai/kmp/compare/v0.1.17...v0.1.18
