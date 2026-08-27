@@ -429,6 +429,61 @@ summary { cursor: pointer; color: var(--text-secondary); }
   margin-top: 3px;
 }
 
+/* ---- the audit sheet ---- */
+
+.trace-sheet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 380px;
+  max-width: 70%;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  padding: var(--space-3);
+  overflow-y: auto;
+  z-index: 4;
+  transform: translateX(0);
+  transition: transform var(--dur-2) var(--ease);
+  box-shadow: 6px 0 18px rgba(0, 0, 0, 0.14);
+}
+.trace-sheet[hidden] { display: none; }
+
+.audit-hint {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 13px;
+  z-index: 6;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.audit-hint[hidden] { display: none; }
+
+.hop-list { list-style: none; margin: 0; padding: 0; }
+.hop-list li {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--surface-1);
+  padding: var(--space-2) 10px;
+  margin: var(--space-2) 0;
+  border-left-width: 3px;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.hop-list li:hover { border-color: var(--accent); }
+.hop-no {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+.hop-dots { letter-spacing: 2px; font-size: 11px; }
+
 /* ---- time travel: the strip ---- */
 
 .timebar {

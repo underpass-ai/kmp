@@ -145,6 +145,7 @@ let selectedId = null;
 let hover = null; // {type: "node"|"edge", ref}
 let dimmedKinds = new Set();
 let traceHighlight = null; // {nodes: Set, edges: Set}
+let tracePath = null; // {edges: ordered EdgeViews, hoverIndex}
 let searchHits = new Set();
 
 /* ---------------- graph data ---------------- */
@@ -231,6 +232,7 @@ function resetGraph(view) {
   }
   addEdges(view.edges);
   traceHighlight = null;
+  tracePath = null;
   searchHits = new Set();
   resetLabelPool();
 }
@@ -522,6 +524,7 @@ let dirty = true;
 let app = null; // PIXI.Application
 let root = null; // camera-transformed container
 let edgesGfx = null; // PIXI.Graphics — all edges, rebuilt when dirty
+let traceGfx = null; // PIXI.Graphics — the audit path, gradient ink
 let nodesGfx = null; // PIXI.Graphics — all node marks, rebuilt when dirty
 let labelLayer = null; // PIXI.Container — pooled PIXI.Text labels
 const labelPool = new Map(); // node id -> PIXI.Text
@@ -553,9 +556,10 @@ async function setupRenderer() {
   });
   root = new PIXI.Container();
   edgesGfx = new PIXI.Graphics();
+  traceGfx = new PIXI.Graphics();
   nodesGfx = new PIXI.Graphics();
   labelLayer = new PIXI.Container();
-  root.addChild(edgesGfx, nodesGfx, labelLayer);
+  root.addChild(edgesGfx, traceGfx, nodesGfx, labelLayer);
   app.stage.addChild(root);
   app.renderer.on("resize", () => (dirty = true));
   app.ticker.add(() => {
@@ -731,6 +735,29 @@ function syncScene() {
     }
     edgesGfx.moveTo(s.x, s.y).lineTo(t.x, t.y).stroke({ width, color, alpha: a });
     if (drawDetail) drawArrowhead(edge, s, t, color, a);
+  }
+
+  // The audit path: each hop inked along the mark's gradient — violet at
+  // the claim, green where it lands — glowing under the nodes.
+  traceGfx.clear();
+  if (tracePath && tracePath.edges.length) {
+    const lastHop = Math.max(1, tracePath.edges.length - 1);
+    for (let i = 0; i < tracePath.edges.length; i += 1) {
+      const hop = tracePath.edges[i];
+      const s = scene.byId.get(hop.source) || proxyOf(hop.source);
+      const t = scene.byId.get(hop.target) || proxyOf(hop.target);
+      if (!s || !t) continue;
+      const ink = KMP_CORE.gradientAt(i / lastHop);
+      const emphasized = tracePath.hoverIndex === i;
+      traceGfx
+        .moveTo(s.x, s.y)
+        .lineTo(t.x, t.y)
+        .stroke({ width: (emphasized ? 12 : 9) / k, color: ink, alpha: 0.25 });
+      traceGfx
+        .moveTo(s.x, s.y)
+        .lineTo(t.x, t.y)
+        .stroke({ width: (emphasized ? 4.5 : 3) / k, color: ink, alpha: 1 });
+    }
   }
 
   nodesGfx.clear();
@@ -1260,9 +1287,21 @@ canvas.addEventListener("pointerup", (event) => {
   panStart = null;
   if (!wasDrag) {
     if (draggedNode) {
+      if (!draggedNode.meta && auditPick && auditPicked(draggedNode.id)) return;
+      if (!draggedNode.meta && event.shiftKey && selectedId && selectedId !== draggedNode.id) {
+        // Shift-click with a selection: audit from there to here, one gesture.
+        $("tr-from").value = selectedId;
+        $("tr-to").value = draggedNode.id;
+        runTrace();
+        return;
+      }
       if (draggedNode.meta) selectMeta(draggedNode);
       else selectNode(draggedNode.id);
     } else {
+      if (auditPick) {
+        auditPick = 0;
+        auditHint("");
+      }
       selectedId = null;
       renderDetailEmpty();
       requestDraw();
@@ -1562,6 +1601,20 @@ function renderDetail(inspect) {
   const labels = $("d-labels");
   labels.textContent = "";
   for (const label of node.labels) labels.append(el("span", "pill pill-muted", label));
+  const auditFrom = el("button", "btn tl-asof", "audit from here");
+  auditFrom.title = "start an audit path at this node";
+  auditFrom.addEventListener("click", () => {
+    $("tr-from").value = node.id;
+    document.querySelector('.tab[data-tab="trace"]').click();
+  });
+  const auditTo = el("button", "btn tl-asof", "audit to here");
+  auditTo.title = "end an audit path at this node";
+  auditTo.addEventListener("click", () => {
+    $("tr-to").value = node.id;
+    document.querySelector('.tab[data-tab="trace"]').click();
+    if ($("tr-from").value.trim()) runTrace();
+  });
+  labels.append(auditFrom, auditTo);
 
   $("d-detail").textContent =
     (inspect.detail && inspect.detail.detail) || graph.details.get(node.id) || "(no detail recorded)";
@@ -1857,6 +1910,46 @@ async function runTimeline(params, context = {}) {
 
 /* ---------------- trace ---------------- */
 
+/* ---------------- the audit: pick, trace, walk the hops ----------------
+   Two clicks on the canvas pick the claim and where it should lead; the
+   kernel's trace answers with the path, and every hop renders with its why,
+   its evidence and its confidence — the graph glowing gradient ink from
+   violet to green while the rest steps back. */
+
+let auditPick = 0; // 0 idle · 1 waiting for `from` · 2 waiting for `to`
+
+function auditHint(text) {
+  const chip = $("audit-hint");
+  chip.textContent = text || "";
+  chip.hidden = !text;
+}
+
+function startAudit() {
+  auditPick = 1;
+  $("tr-from").value = "";
+  $("tr-to").value = "";
+  auditHint("pick the claim");
+}
+
+function auditPicked(id) {
+  if (auditPick === 1) {
+    $("tr-from").value = id;
+    auditPick = 2;
+    auditHint("pick where it should lead");
+    return true;
+  }
+  if (auditPick === 2) {
+    $("tr-to").value = id;
+    auditPick = 0;
+    auditHint("");
+    runTrace();
+    return true;
+  }
+  return false;
+}
+
+$("tr-audit").addEventListener("click", startAudit);
+
 $("tr-use").addEventListener("click", () => {
   if (!selectedId) return;
   if (!$("tr-from").value.trim()) $("tr-from").value = selectedId;
@@ -1865,17 +1958,24 @@ $("tr-use").addEventListener("click", () => {
 
 $("tr-clear").addEventListener("click", () => {
   traceHighlight = null;
+  tracePath = null;
+  auditPick = 0;
+  auditHint("");
   $("tr-path").textContent = "";
   $("tr-status").textContent = "";
   $("tr-rendered").textContent = "";
   requestDraw();
 });
 
-$("tr-apply").addEventListener("click", async () => {
+const CONFIDENCE_DOTS = { high: "●●●", medium: "●●○", low: "●○○" };
+
+$("tr-apply").addEventListener("click", runTrace);
+
+async function runTrace() {
   const from = $("tr-from").value.trim();
   const to = $("tr-to").value.trim();
   if (!from || !to) {
-    showError("trace needs both `from` and `to` node ids");
+    showError("a trace needs two ends. Pick from, then to.");
     return;
   }
   try {
@@ -1895,58 +1995,63 @@ $("tr-apply").addEventListener("click", async () => {
       const clusterId = clusterState.of.get(nodeView.id);
       if (clusterId && clusterState.collapsed.has(clusterId)) expandCluster(clusterId);
     }
+    const ordered = KMP_CORE.orderPath(view.edges, from);
+    tracePath = { edges: ordered, hoverIndex: null };
     reheat(KMP_CORE.SIM.REHEAT_EXPAND);
     renderLegend();
+    const pathIds = new Set(view.nodes.map((n) => n.id));
+    fitToView((body) => pathIds.has(body.id));
+
     $("tr-status").textContent =
-      `${view.nodes.length} nodes, ${view.edges.length} relations · ` +
+      `${ordered.length} hop${ordered.length === 1 ? "" : "s"} · ` +
       `${view.rendered.token_count} tokens rendered`;
     const list = $("tr-path");
     list.textContent = "";
-    for (const edge of orderPath(view, from)) {
+    const lastHop = Math.max(1, ordered.length - 1);
+    ordered.forEach((edge, i) => {
       const item = el("li");
+      const ink = KMP_CORE.gradientAt(i / lastHop);
+      item.style.borderLeftColor = `#${ink.toString(16).padStart(6, "0")}`;
       const head = el("div", "rel-head");
+      head.append(el("span", "hop-no", `Nº ${i + 1}`));
       const source = el("a", "rel-target mono", edge.source);
-      source.addEventListener("click", () => selectNode(edge.source));
+      source.addEventListener("click", () => selectNode(edge.source).then(() => centerOn(edge.source)));
       const target = el("a", "rel-target mono", edge.target);
-      target.addEventListener("click", () => selectNode(edge.target));
-      head.append(
-        source,
-        el("span", "rel-type", ` —${edge.rel}→ `),
-        target,
-        el("span", "pill pill-muted", edge.class)
-      );
+      target.addEventListener("click", () => selectNode(edge.target).then(() => centerOn(edge.target)));
+      head.append(source, el("span", "rel-type", ` —${edge.rel}→ `), target);
+      head.append(el("span", "pill pill-muted", edge.class));
+      if (edge.confidence) {
+        const dots = el("span", "hop-dots", CONFIDENCE_DOTS[edge.confidence] || "○○○");
+        dots.title = `confidence: ${edge.confidence}`;
+        head.append(dots);
+      }
+      if (edge.dimension || edge.occurred_at) {
+        head.append(
+          el(
+            "span",
+            "pill pill-muted mono",
+            `${edge.dimension || ""}${edge.occurred_at ? " " + edge.occurred_at.slice(0, 16).replace("T", " ") : ""}`
+          )
+        );
+      }
       item.append(head);
       if (edge.why) item.append(el("p", "rel-why", edge.why));
+      if (edge.evidence) item.append(el("p", "rel-evidence", `evidence: ${edge.evidence}`));
+      item.addEventListener("mouseenter", () => {
+        tracePath.hoverIndex = i;
+        requestDraw();
+      });
+      item.addEventListener("mouseleave", () => {
+        tracePath.hoverIndex = null;
+        requestDraw();
+      });
       list.append(item);
-    }
+    });
     $("tr-rendered").textContent = view.rendered.content;
     showError("");
   } catch (error) {
     showError(error.message);
   }
-});
-
-/* Order path edges by walking from `from`; edges that do not chain are kept
-   at the end rather than hidden. */
-function orderPath(view, from) {
-  const remaining = [...view.edges];
-  const ordered = [];
-  let cursor = from;
-  let progressing = true;
-  while (progressing) {
-    progressing = false;
-    for (let i = 0; i < remaining.length; i += 1) {
-      const edge = remaining[i];
-      if (edge.source === cursor || edge.target === cursor) {
-        ordered.push(edge);
-        cursor = edge.source === cursor ? edge.target : edge.source;
-        remaining.splice(i, 1);
-        progressing = true;
-        break;
-      }
-    }
-  }
-  return [...ordered, ...remaining];
 }
 
 /* ---------------- init ---------------- */

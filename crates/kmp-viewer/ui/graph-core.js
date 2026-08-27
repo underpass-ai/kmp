@@ -549,6 +549,49 @@ const KMP_CORE = (() => {
     return { steps, stepOf, scaffolding };
   }
 
+  /* Order path edges by walking from `from`; edges that do not chain are
+     kept at the end rather than hidden. */
+  function orderPath(edges, from) {
+    const remaining = [...edges];
+    const ordered = [];
+    let cursor = from;
+    let progressing = true;
+    while (progressing) {
+      progressing = false;
+      for (let i = 0; i < remaining.length; i += 1) {
+        const edge = remaining[i];
+        if (edge.source === cursor || edge.target === cursor) {
+          ordered.push(edge);
+          cursor = edge.source === cursor ? edge.target : edge.source;
+          remaining.splice(i, 1);
+          progressing = true;
+          break;
+        }
+      }
+    }
+    return [...ordered, ...remaining];
+  }
+
+  /* The mark's gradient, sampled at t ∈ [0,1] — the audit path's ink. */
+  const GRADIENT = [
+    [129, 91, 240],
+    [100, 106, 233],
+    [72, 120, 224],
+    [52, 141, 192],
+    [38, 159, 155],
+    [27, 175, 122],
+  ];
+
+  function gradientAt(t) {
+    const clamped = Math.max(0, Math.min(1, t));
+    const scaled = clamped * (GRADIENT.length - 1);
+    const low = Math.floor(scaled);
+    const high = Math.min(GRADIENT.length - 1, low + 1);
+    const mix = scaled - low;
+    const channel = (i) => Math.round(GRADIENT[low][i] + (GRADIENT[high][i] - GRADIENT[low][i]) * mix);
+    return (channel(0) << 16) | (channel(1) << 8) | channel(2);
+  }
+
   return {
     SIM,
     fnv1a,
@@ -561,5 +604,7 @@ const KMP_CORE = (() => {
     entryOrderKey,
     compareEntries,
     buildRevealSteps,
+    orderPath,
+    gradientAt,
   };
 })();

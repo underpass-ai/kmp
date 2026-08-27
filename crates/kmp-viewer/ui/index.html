@@ -84,20 +84,24 @@
       <ol id="tl-entries" class="tl-list"></ol>
     </section>
 
-    <section id="trace-panel" class="stage-panel" hidden>
+    <section id="trace-panel" class="trace-sheet" hidden aria-label="Audit path">
+      <div class="panel-controls">
+        <button id="tr-audit" class="btn btn-primary" title="pick two nodes on the canvas">Audit</button>
+        <button id="tr-use" class="btn" title="fill from the selected node">Use selection</button>
+        <button id="tr-apply" class="btn">Trace</button>
+        <button id="tr-clear" class="btn">Clear</button>
+      </div>
       <div class="panel-controls">
         <label class="ctl wide">from <input id="tr-from" type="text" class="mono" placeholder="node id"></label>
         <label class="ctl wide">to <input id="tr-to" type="text" class="mono" placeholder="node id"></label>
-        <button id="tr-use" class="btn" title="fill from the selected node">Use selection</button>
-        <button id="tr-apply" class="btn btn-primary">Trace</button>
-        <button id="tr-clear" class="btn">Clear</button>
       </div>
       <p id="tr-status" class="muted"></p>
-      <ol id="tr-path" class="tl-list"></ol>
+      <ol id="tr-path" class="hop-list"></ol>
       <details id="tr-rendered-box"><summary>Rendered path context</summary>
         <pre id="tr-rendered" class="rendered mono"></pre>
       </details>
     </section>
+    <div id="audit-hint" class="audit-hint" hidden></div>
 
     <div id="tooltip" class="tooltip" hidden></div>
 
