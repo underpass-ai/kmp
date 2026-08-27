@@ -513,6 +513,64 @@ mod tests {
     }
 
     #[test]
+    fn validity_goto_projects_only_intervals_that_hold_at_the_cursor() {
+        let bundle = validity_bundle(&[
+            (
+                "entry:expired",
+                Some("2026-08-20T09:00:00Z"),
+                Some("2026-08-20T12:00:00Z"),
+            ),
+            (
+                "entry:lease",
+                Some("2026-08-20T10:30:00Z"),
+                Some("2026-08-20T12:00:00Z"),
+            ),
+            ("entry:current", Some("2026-08-20T12:00:00Z"), None),
+            ("entry:open-start", None, Some("2026-08-20T14:00:00Z")),
+            ("entry:future", Some("2027-01-01T00:00:00Z"), None),
+        ]);
+        let as_of = |instant: &str| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    TemporalDirection::Goto,
+                    TemporalCursor::time(instant).expect("time cursor"),
+                )
+                .with_axis(TemporalAxis::Validity),
+            )
+            .expect("validity projection")
+            .entries()
+            .iter()
+            .map(TemporalEntry::ref_id)
+            .map(str::to_string)
+            .collect::<BTreeSet<_>>()
+        };
+
+        assert_eq!(
+            as_of("2026-08-20T11:00:00Z"),
+            ["entry:expired", "entry:lease", "entry:open-start"]
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        );
+        assert_eq!(
+            as_of("2026-08-20T12:00:00Z"),
+            ["entry:current", "entry:open-start"]
+                .into_iter()
+                .map(str::to_string)
+                .collect(),
+            "valid_until is an exclusive interval boundary"
+        );
+        assert_eq!(
+            as_of("2026-08-20T13:00:00Z"),
+            ["entry:current", "entry:open-start"]
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        );
+    }
+
+    #[test]
     fn ref_cursor_without_requested_clock_returns_an_empty_proven_absence() {
         let bundle = temporal_bundle(&[("claim:one", "decision", "decision:main", 1)]);
         let request = TemporalTraversalRequest::new(
@@ -860,6 +918,41 @@ mod tests {
             BundleMetadata::initial("test"),
         )
         .expect("clocked temporal bundle")
+    }
+
+    fn validity_bundle(entries: &[(&str, Option<&str>, Option<&str>)]) -> KmpBundle {
+        let mut nodes = vec![node("validity:main", "memory_dimension", "validity:main")];
+        nodes.extend(
+            entries
+                .iter()
+                .map(|(ref_id, _, _)| node(ref_id, "claim", ref_id)),
+        );
+        let relationships = entries
+            .iter()
+            .map(|(ref_id, valid_from, valid_until)| {
+                BundleRelationship::new(
+                    "validity:main",
+                    *ref_id,
+                    "contains_entry",
+                    RelationExplanation::new(RelationSemanticClass::Structural)
+                        .with_dimension("validity")
+                        .with_scope_id("validity:main")
+                        .with_optional_valid_from(valid_from.map(ToString::to_string))
+                        .with_optional_valid_until(valid_until.map(ToString::to_string)),
+                )
+            })
+            .collect();
+
+        KmpBundle::new(
+            CaseId::new("question:a").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("question:a", "question", "Question A"),
+            nodes,
+            relationships,
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("validity bundle")
     }
 
     fn node(node_id: &str, kind: &str, title: &str) -> BundleNode {

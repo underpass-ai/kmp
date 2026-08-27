@@ -972,6 +972,27 @@
             }
           }
         },
+        "expired": {
+          "description": "Historical entries whose exclusive validity end is at or before the temporal cursor. Separate from supersession because an interval can expire without a replacement.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref",
+              "valid_until"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string",
+                "description": "The historical entry whose validity ended."
+              },
+              "valid_until": {
+                "$ref": "#/$defs/date_time"
+              }
+            }
+          }
+        },
         "matched_terms": {
           "description": "Informative query terms retained by the selected answer evidence and its directly supporting semantic graph context. This explains eligibility without exposing scores or thresholds.",
           "type": "array",

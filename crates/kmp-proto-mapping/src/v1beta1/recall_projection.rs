@@ -4,11 +4,11 @@ use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
 use kmp_proto::v1beta1::{
     AnswerReason, AskRequest, AskResponse, DimensionScopeMode, DimensionSelection,
-    DimensionSelectionMode, MemoryConfidence, MemoryDetailLevel, MemoryEvidence, MemoryRelation,
-    MemorySemanticClass, RecallCursorError as ProtoRecallCursorError, RecallCursorErrorReason,
-    RecallOmitted, RecallProjection, RecallProjectionBudget, RecallProjectionPage,
-    RecallProjectionSection, RecallTruncation, SupersededMemory, TemporalCoordinate,
-    TemporalCursor, WakeClaim, WakeRequest, WakeResponse,
+    DimensionSelectionMode, ExpiredMemory, MemoryConfidence, MemoryDetailLevel, MemoryEvidence,
+    MemoryRelation, MemorySemanticClass, RecallCursorError as ProtoRecallCursorError,
+    RecallCursorErrorReason, RecallOmitted, RecallProjection, RecallProjectionBudget,
+    RecallProjectionPage, RecallProjectionSection, RecallTruncation, SupersededMemory,
+    TemporalCoordinate, TemporalCursor, WakeClaim, WakeRequest, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
@@ -1224,6 +1224,12 @@ fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
         .cloned()
         .unwrap_or_default();
     proof.superseded = select_projected(&proof.superseded, &superseded, superseded_value);
+    let expired = value
+        .get("expired")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    proof.expired = select_projected(&proof.expired, &expired, expired_value);
     proof.conflicts = strings_at(value, "/conflicts");
     proof.missing = strings_at(value, "/missing");
     proof.matched_terms = strings_at(value, "/matched_terms");
@@ -1405,6 +1411,7 @@ fn proof_value(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "evidence": proof.evidence.iter().map(memory_evidence_value).collect::<Vec<_>>(),
         "conflicts": proof.conflicts,
         "superseded": proof.superseded.iter().map(superseded_value).collect::<Vec<_>>(),
+        "expired": proof.expired.iter().map(expired_value).collect::<Vec<_>>(),
         "missing": proof.missing,
         "frontier_size": proof.frontier_size,
         "matched_terms": proof.matched_terms,
@@ -1459,7 +1466,7 @@ fn normalized_proof_relation(
 
 fn empty_proof_value() -> Value {
     json!({
-        "path": [], "evidence": [], "conflicts": [], "superseded": [],
+        "path": [], "evidence": [], "conflicts": [], "superseded": [], "expired": [],
         "missing": ["proof"], "frontier_size": 1, "matched_terms": [],
         "matched_relations": [], "confidence": "unknown"
     })
@@ -1537,6 +1544,13 @@ fn superseded_value(entry: &SupersededMemory) -> Value {
     value.insert("ref".to_string(), json!(entry.r#ref));
     value.insert("superseded_by".to_string(), json!(entry.superseded_by));
     insert_non_empty(&mut value, "why", &entry.why);
+    Value::Object(value)
+}
+
+fn expired_value(entry: &ExpiredMemory) -> Value {
+    let mut value = Map::new();
+    value.insert("ref".to_string(), json!(entry.r#ref));
+    insert_timestamp(&mut value, "valid_until", entry.valid_until);
     Value::Object(value)
 }
 
@@ -2296,6 +2310,7 @@ mod tests {
                 missing: vec!["raw:one".to_string(), "raw:two".to_string()],
                 confidence: MemoryConfidence::High as i32,
                 superseded: Vec::new(),
+                expired: Vec::new(),
                 frontier_size: 2,
                 matched_terms: vec!["storage".to_string(), "current".to_string()],
                 matched_relations: vec!["supports".to_string()],

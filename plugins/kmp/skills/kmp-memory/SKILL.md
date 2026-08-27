@@ -342,6 +342,14 @@ entries disagree and both may still be live — the tension is the information.
 older entry is history rather than advice. Read the older one as what was
 true then, not as what to do now.
 
+Validity expiry is a different lifecycle. A `goto` on the explicit
+`validity` axis returns only intervals that hold at that instant
+(`valid_from <= cursor < valid_until`). Historical moves can deliberately
+return an entry whose interval ended; those entries appear in
+`proof.expired` with their exclusive `valid_until`. Expiry is kept apart from
+`proof.superseded` because a lease or constraint can simply end without
+another entry replacing it.
+
 ## Why the `why` matters
 
 An entry records **what is true**. A relation records **how two entries are

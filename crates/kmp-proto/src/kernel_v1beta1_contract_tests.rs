@@ -135,6 +135,25 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
         ]
     );
     assert_eq!(
+        message_field_names(memory_file, "Proof"),
+        vec![
+            "path",
+            "evidence",
+            "conflicts",
+            "missing",
+            "confidence",
+            "superseded",
+            "frontier_size",
+            "matched_terms",
+            "matched_relations",
+            "expired",
+        ]
+    );
+    assert_eq!(
+        message_field_names(memory_file, "ExpiredMemory"),
+        vec!["ref", "valid_until"]
+    );
+    assert_eq!(
         message_field_names(memory_file, "RecallProjection"),
         vec![
             "contract",

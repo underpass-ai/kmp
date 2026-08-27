@@ -508,6 +508,10 @@ message Proof {
   // Non-structural relation types whose rationale, evidence or endpoints
   // contributed retained query terms to the selected answer.
   repeated string matched_relations = 9;
+  // Selected historical entries whose validity interval had already ended at
+  // the temporal cursor. Kept apart from supersession because an interval can
+  // expire without another entry replacing it.
+  repeated ExpiredMemory expired = 10;
 }
 
 // One entry replaced by another, so a reader can tell history from advice.
@@ -518,6 +522,13 @@ message SupersededMemory {
   string superseded_by = 2;
   // Why, taken from the relation that carries it.
   string why = 3;
+}
+
+// One historical entry whose exclusive validity end is at or before the
+// temporal cursor used for the read.
+message ExpiredMemory {
+  string ref = 1;
+  google.protobuf.Timestamp valid_until = 2;
 }
 
 // Per-response quality/composition summary, promoted from OTel so a client can

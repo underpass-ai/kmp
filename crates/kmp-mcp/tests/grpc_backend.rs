@@ -1007,6 +1007,7 @@ fn proof(source: &str, target: &str) -> Proof {
         evidence: vec![evidence(source)],
         conflicts: Vec::new(),
         superseded: Vec::new(),
+        expired: Vec::new(),
         missing: Vec::new(),
         frontier_size: 0,
         matched_terms: Vec::new(),

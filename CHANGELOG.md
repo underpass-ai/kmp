@@ -15,6 +15,9 @@ Detailed notes from the early release cycle are preserved in the
   axis, and the writer accepts every canonical clock. The application now
   exposes a paginated level-of-detail visual projection for ChronoLoom instead
   of making the browser reconstruct whole temporal lines.
+- Validity `goto` reads now project the interval that actually holds at the
+  cursor, treating `valid_until` as an exclusive end. Historical validity
+  reads mark ended entries in `proof.expired`, independently of supersession.
 - ChronoLoom adds elapsed/event-density focus+context lenses, persistent A/B
   projection diffs and time-aligned observability overlays. Hosts that
   negotiate the stable MCP Apps extension can open the self-contained loom as
