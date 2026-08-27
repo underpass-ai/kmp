@@ -1425,10 +1425,14 @@ async function pollView() {
   for (;;) {
     try {
       const state = await api("/api/view", { id: VIEW_ID, since: sync.revision });
-      if (state.view_revision > sync.revision) {
+      // Any revision that is not ours is news — including a *lower* one,
+      // which means the view server restarted and began counting again.
+      // Waiting only for a higher number left the browser deaf for good.
+      if (state.view_revision !== sync.revision) {
+        const restarted = state.view_revision < sync.revision;
         sync.revision = state.view_revision;
         const actor = state.last_change && state.last_change.actor;
-        if (actor && actor !== "human") await applyAgentState(state);
+        if (restarted || (actor && actor !== "human")) await applyAgentState(state);
         renderProvenance(state);
       }
     } catch (error) {
