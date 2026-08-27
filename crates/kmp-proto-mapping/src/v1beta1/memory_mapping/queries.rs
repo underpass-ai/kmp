@@ -103,8 +103,8 @@ pub fn trace_query_from_proto(request: TraceRequest) -> ProtoMappingResult<Trace
 
 pub fn inspect_query_from_proto(request: InspectRequest) -> ProtoMappingResult<InspectMemoryQuery> {
     let include = request.include.unwrap_or(InspectInclude {
-        incoming: false,
-        outgoing: false,
+        incoming: true,
+        outgoing: true,
         details: true,
         raw: false,
     });
@@ -274,5 +274,19 @@ mod tests {
         .expect("explicit axis should map");
 
         assert_eq!(query.axis, TemporalAxis::Ingested);
+    }
+
+    #[test]
+    fn inspect_returns_direct_links_when_include_is_absent() {
+        let query = inspect_query_from_proto(InspectRequest {
+            r#ref: "decision:one".to_string(),
+            include: None,
+        })
+        .expect("default inspect request should map");
+
+        assert!(query.include_incoming);
+        assert!(query.include_outgoing);
+        assert!(query.include_details);
+        assert!(!query.include_raw);
     }
 }

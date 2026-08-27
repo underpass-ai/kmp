@@ -381,11 +381,24 @@ fn tools_list_core() -> Value {
                             "type": "object",
                             "additionalProperties": false,
                             "properties": {
-                                "incoming": {"type": "boolean"},
-                                "outgoing": {"type": "boolean"},
-                                "details": {"type": "boolean"},
+                                "incoming": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "description": "Return direct typed relations whose target is this ref. Defaults to true; set false to narrow an oversized inspection."
+                                },
+                                "outgoing": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "description": "Return direct typed relations whose source is this ref. Defaults to true; set false to narrow an oversized inspection."
+                                },
+                                "details": {
+                                    "type": "boolean",
+                                    "default": true,
+                                    "description": "Return the inspected object's stored details. Defaults to true."
+                                },
                                 "raw": {
                                     "type": "boolean",
+                                    "default": false,
                                     "description": "Return typed raw audit refs for the inspected object."
                                 }
                             }

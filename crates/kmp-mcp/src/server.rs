@@ -467,7 +467,13 @@ impl KernelMcpServer {
         }
         match self
             .backend
-            .call_tool("kmp_inspect", &serde_json::json!({"ref": reference}))
+            .call_tool(
+                "kmp_inspect",
+                &serde_json::json!({
+                    "ref": reference,
+                    "include": {"incoming": false, "outgoing": false, "details": false}
+                }),
+            )
             .await
         {
             Ok(_) => Ok(true),
@@ -655,7 +661,13 @@ impl KernelMcpServer {
 
         match self
             .backend
-            .call_tool("kmp_inspect", &serde_json::json!({"ref": about}))
+            .call_tool(
+                "kmp_inspect",
+                &serde_json::json!({
+                    "ref": about,
+                    "include": {"incoming": false, "outgoing": false, "details": false}
+                }),
+            )
             .await
         {
             Ok(_) => Ok(false),

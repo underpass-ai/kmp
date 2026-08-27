@@ -776,6 +776,10 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         inspected_entry["object"]["metadata"]["window"],
         "10:00-10:20"
     );
+    assert_eq!(
+        inspected_entry["links"]["outgoing"][0]["to"], "claim:e3-detail",
+        "default inspect must return direct links"
+    );
 
     let inspected_evidence = call(&server, 4, "kmp_inspect", json!({"ref": "evidence:e3"})).await;
     assert_eq!(
@@ -1158,8 +1162,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
         10,
         "kmp_inspect",
         json!({
-            "ref": "decision:two-engine-architecture",
-            "include": {"incoming": true, "outgoing": true}
+            "ref": "decision:two-engine-architecture"
         }),
     )
     .await;
