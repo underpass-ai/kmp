@@ -47,10 +47,11 @@ echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
 strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp
 SIZE="$(stat -c%s target/release/kmp-mcp.gates-stripped)"
-# SQLite in the shipped default and cl100k response accounting are intentional
-# product dependencies. Keep a recorded ceiling above their CI baseline while
-# the pure-Rust fallback and forbidden infrastructure graph stay gated above.
-BUDGET=$((18 * 1024 * 1024))
+# SQLite, cl100k response accounting and the self-contained ChronoLoom MCP App
+# are intentional shipped product dependencies. Keep a recorded ceiling above
+# their CI baseline while the pure-Rust fallback and forbidden infrastructure
+# graph stay gated above.
+BUDGET=$((20 * 1024 * 1024))
 echo "embedded-gates: stripped binary ${SIZE} bytes (budget ${BUDGET})"
 if [ "${SIZE}" -gt "${BUDGET}" ]; then
   echo "embedded-gates: binary exceeds the recorded size budget" >&2
