@@ -609,11 +609,15 @@ function tickCamera(now) {
   return true;
 }
 
-/* Frame everything drawn (or the bodies `include` admits) with breathing room. */
+/* Frame everything drawn (or the bodies `include` admits) with breathing
+   room — and with the time chart's dock accounted for when it is open. */
 function fitToView(include) {
+  const chartH = $("timebar").hidden ? 0 : 110;
   const bounds = KMP_CORE.computeBounds(scene.bodies, include);
-  const target = KMP_CORE.fitTransform(bounds, canvas.clientWidth, canvas.clientHeight);
-  if (target) animateCamera(target);
+  const target = KMP_CORE.fitTransform(bounds, canvas.clientWidth, canvas.clientHeight - chartH);
+  if (!target) return;
+  target.y += chartH / 2 / target.k;
+  animateCamera(target);
 }
 
 const nodeRadius = (node) =>
@@ -1049,12 +1053,14 @@ async function fetchWholeTimeline(about) {
   return { entries: [...byRef.values()].sort(KMP_CORE.compareEntries), total: Math.max(total, byRef.size) };
 }
 
-async function startReplay(atRef) {
+async function startReplay(atRef, quiet) {
   if (!graph.about) return;
   try {
     const line = await fetchWholeTimeline(graph.about);
     if (!line.entries.length) {
-      showError(`nothing to travel: ${graph.about} has no entries carrying a temporal coordinate`);
+      if (!quiet) {
+        showError(`nothing to travel: ${graph.about} has no entries carrying a temporal coordinate`);
+      }
       return;
     }
     playback.entries = line.entries;
@@ -2075,6 +2081,9 @@ async function loadGraph(about) {
     settleFitPending = true;
     reheat(KMP_CORE.SIM.REHEAT_LOAD);
     showError("");
+    // The navigator is part of the instrument, not an extra: it opens with
+    // the graph, neutral — whole line selected, playhead at the present.
+    startReplay(undefined, true);
   } catch (error) {
     showError(error.message);
   }
