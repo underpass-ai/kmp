@@ -113,7 +113,12 @@ pub(super) fn select_positions(
                 .filter(|position| &position.axis_key < cursor_axis_key)
                 .cloned()
                 .collect::<Vec<_>>();
-            let before = take_last(before_candidates.clone(), request.window().before_entries());
+            let before = take_ref_page(
+                before_candidates.clone(),
+                request.window().before_entries(),
+                PageSide::Before,
+            )
+            .0;
             let exact = comparable
                 .iter()
                 .filter(|position| &position.axis_key == cursor_axis_key)
@@ -123,11 +128,12 @@ pub(super) fn select_positions(
                 .into_iter()
                 .filter(|position| &position.axis_key > cursor_axis_key)
                 .collect::<Vec<_>>();
-            let after = after_candidates
-                .iter()
-                .take(request.window().after_entries())
-                .cloned()
-                .collect::<Vec<_>>();
+            let after = take_ref_page(
+                after_candidates.clone(),
+                request.window().after_entries(),
+                PageSide::After,
+            )
+            .0;
             let before_more =
                 unique_ref_count(before.iter()) < unique_ref_count(before_candidates.iter());
             let after_more =
@@ -165,6 +171,7 @@ pub(super) fn select_positions(
     }
 }
 
+#[derive(Clone, Copy)]
 enum PageSide {
     Before,
     After,
@@ -176,11 +183,7 @@ fn select_limited(
     page_side: PageSide,
 ) -> TemporalSelection {
     let total_unique_refs = unique_ref_count(candidates.iter());
-    let positions = match page_side {
-        PageSide::Before => take_last(candidates, limit),
-        PageSide::After => candidates.into_iter().take(limit).collect(),
-    };
-    let returned_refs = ordered_unique_ref_ids(positions.clone());
+    let (positions, returned_refs) = take_ref_page(candidates, limit, page_side);
     let next_cursor = if returned_refs.len() < total_unique_refs {
         match page_side {
             PageSide::Before => returned_refs.first().cloned(),
@@ -194,6 +197,23 @@ fn select_limited(
         total_unique_refs,
         next_cursor,
     }
+}
+
+fn take_ref_page(
+    mut positions: Vec<TemporalPosition>,
+    limit: usize,
+    page_side: PageSide,
+) -> (Vec<TemporalPosition>, Vec<String>) {
+    positions.sort();
+    let ordered_refs = ordered_unique_ref_ids(positions.clone());
+    let keep_from = ordered_refs.len().saturating_sub(limit);
+    let selected_refs = match page_side {
+        PageSide::Before => ordered_refs.into_iter().skip(keep_from).collect::<Vec<_>>(),
+        PageSide::After => ordered_refs.into_iter().take(limit).collect::<Vec<_>>(),
+    };
+    let selected = selected_refs.iter().cloned().collect::<BTreeSet<_>>();
+    positions.retain(|position| selected.contains(&position.ref_id));
+    (positions, selected_refs)
 }
 
 pub(super) fn ordered_unique_ref_ids(mut selected_positions: Vec<TemporalPosition>) -> Vec<String> {
@@ -227,12 +247,6 @@ pub(super) fn coordinates_by_ref(
     }
 
     coordinates
-}
-
-fn take_last(mut positions: Vec<TemporalPosition>, limit: usize) -> Vec<TemporalPosition> {
-    positions.sort();
-    let keep_from = positions.len().saturating_sub(limit);
-    positions.into_iter().skip(keep_from).collect()
 }
 
 fn unique_ref_count<'a>(positions: impl IntoIterator<Item = &'a TemporalPosition>) -> usize {

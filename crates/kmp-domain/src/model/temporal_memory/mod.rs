@@ -570,6 +570,53 @@ mod tests {
     }
 
     #[test]
+    fn bounded_pages_limit_whole_entries_with_multiple_coordinates() {
+        let bundle = clocked_temporal_bundle(&[
+            ("entry-1", "2026-08-27T10:00:00Z", 1),
+            ("entry-2", "2026-08-27T11:00:00Z", 2),
+            ("entry-z", "2026-08-27T12:00:00Z", 3),
+            ("entry-a", "2026-08-27T12:00:00Z", 4),
+            ("entry-5", "2026-08-27T13:00:00Z", 5),
+            ("entry-6", "2026-08-27T14:00:00Z", 6),
+        ]);
+        let traverse = |direction, cursor: &str| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    direction,
+                    TemporalCursor::time(cursor).expect("time cursor"),
+                )
+                .with_axis(TemporalAxis::Observed)
+                .with_limit_entries(3)
+                .expect("limit"),
+            )
+            .expect("traversal")
+        };
+
+        let rewind = traverse(TemporalDirection::Rewind, "2026-08-27T14:00:00Z");
+        let forward = traverse(TemporalDirection::Forward, "2026-08-27T11:00:00Z");
+        for result in [&rewind, &forward] {
+            assert_eq!(result.page().returned(), 3);
+            assert_eq!(
+                result
+                    .entries()
+                    .iter()
+                    .map(TemporalEntry::ref_id)
+                    .collect::<Vec<_>>(),
+                ["entry-z", "entry-a", "entry-5"]
+            );
+            assert!(
+                result
+                    .entries()
+                    .iter()
+                    .all(|entry| entry.coordinates().len() == 2)
+            );
+        }
+        assert_eq!(rewind.page().total(), 5);
+        assert_eq!(forward.page().total(), 4);
+    }
+
+    #[test]
     fn sequence_ties_are_broken_by_the_recorded_clock_before_ref() {
         let root = node("question:a", "question", "Question A");
         let scope = node("timeline:main", "memory_dimension", "timeline:main");
@@ -702,7 +749,11 @@ mod tests {
     }
 
     fn clocked_temporal_bundle(entries: &[(&str, &str, u32)]) -> KmpBundle {
-        let mut nodes = vec![node("timeline:main", "memory_dimension", "timeline:main")];
+        let dimensions = [("process", "process:main"), ("task", "task:main")];
+        let mut nodes = dimensions
+            .iter()
+            .map(|(_, scope_id)| node(scope_id, "memory_dimension", scope_id))
+            .collect::<Vec<_>>();
         nodes.extend(
             entries
                 .iter()
@@ -710,17 +761,19 @@ mod tests {
         );
         let relationships = entries
             .iter()
-            .map(|(ref_id, observed_at, sequence)| {
-                BundleRelationship::new(
-                    "timeline:main",
-                    *ref_id,
-                    "contains_entry",
-                    RelationExplanation::new(RelationSemanticClass::Structural)
-                        .with_dimension("timeline")
-                        .with_scope_id("timeline:main")
-                        .with_observed_at(*observed_at)
-                        .with_sequence(*sequence),
-                )
+            .flat_map(|(ref_id, observed_at, sequence)| {
+                dimensions.iter().map(move |(dimension, scope_id)| {
+                    BundleRelationship::new(
+                        *scope_id,
+                        *ref_id,
+                        "contains_entry",
+                        RelationExplanation::new(RelationSemanticClass::Structural)
+                            .with_dimension(*dimension)
+                            .with_scope_id(*scope_id)
+                            .with_observed_at(*observed_at)
+                            .with_sequence(*sequence),
+                    )
+                })
             })
             .collect();
 
