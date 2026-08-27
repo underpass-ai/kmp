@@ -21,27 +21,35 @@ pub(super) fn resolve_cursor(
     requested_axis: TemporalAxis,
 ) -> Result<ResolvedTemporalCursor, DomainError> {
     match cursor {
-        TemporalCursor::Ref(ref_id) => positions
-            .iter()
-            .filter(|position| position.ref_id == *ref_id)
-            .filter(|position| {
-                requested_axis == TemporalAxis::Default
-                    || position.axis_key.axis() == TemporalKeyKind::Time
+        TemporalCursor::Ref(ref_id) => {
+            let first = positions
+                .iter()
+                .filter(|position| position.ref_id == *ref_id)
+                .min()
+                .ok_or_else(|| {
+                    DomainError::InvalidState(format!("temporal cursor ref not found: {ref_id}"))
+                })?;
+            let selected = if requested_axis == TemporalAxis::Default {
+                Some(first)
+            } else {
+                positions
+                    .iter()
+                    .filter(|position| position.ref_id == *ref_id)
+                    .filter(|position| position.axis_key.axis() == TemporalKeyKind::Time)
+                    .min()
+            };
+
+            Ok(ResolvedTemporalCursor {
+                axis_key: selected.map(|position| position.axis_key.clone()),
+                coordinate: selected.unwrap_or(first).coordinate.clone(),
             })
-            .min()
-            .map(|position| ResolvedTemporalCursor {
-                axis_key: position.axis_key.clone(),
-                coordinate: position.coordinate.clone(),
-            })
-            .ok_or_else(|| {
-                DomainError::InvalidState(format!("temporal cursor ref not found: {ref_id}"))
-            }),
+        }
         TemporalCursor::Time(value) => Ok(ResolvedTemporalCursor {
-            axis_key: TemporalAxisKey::time(value),
+            axis_key: Some(TemporalAxisKey::time(value)),
             coordinate: TemporalCoordinate::cursor_time(value.clone(), requested_axis)?,
         }),
         TemporalCursor::Sequence(value) => Ok(ResolvedTemporalCursor {
-            axis_key: TemporalAxisKey::sequence(*value),
+            axis_key: Some(TemporalAxisKey::sequence(*value)),
             coordinate: TemporalCoordinate::cursor_sequence(*value)?,
         }),
     }
@@ -52,9 +60,16 @@ pub(super) fn select_positions(
     cursor: &ResolvedTemporalCursor,
     request: &TemporalTraversalRequest,
 ) -> TemporalSelection {
+    let Some(cursor_axis_key) = cursor.axis_key.as_ref() else {
+        return TemporalSelection {
+            positions: Vec::new(),
+            total_unique_refs: 0,
+            next_cursor: None,
+        };
+    };
     let comparable = positions
         .iter()
-        .filter(|position| position.axis_key.axis() == cursor.axis_key.axis())
+        .filter(|position| position.axis_key.axis() == cursor_axis_key.axis())
         .cloned()
         .collect::<Vec<_>>();
 
@@ -62,7 +77,7 @@ pub(super) fn select_positions(
         TemporalDirection::Goto => {
             let candidates = comparable
                 .into_iter()
-                .filter(|position| position.axis_key <= cursor.axis_key)
+                .filter(|position| &position.axis_key <= cursor_axis_key)
                 .collect::<Vec<_>>();
             select_limited(
                 candidates,
@@ -73,7 +88,7 @@ pub(super) fn select_positions(
         TemporalDirection::Rewind => {
             let candidates = comparable
                 .into_iter()
-                .filter(|position| position.axis_key < cursor.axis_key)
+                .filter(|position| &position.axis_key < cursor_axis_key)
                 .collect::<Vec<_>>();
             select_limited(
                 candidates,
@@ -84,7 +99,7 @@ pub(super) fn select_positions(
         TemporalDirection::Forward => {
             let candidates = comparable
                 .into_iter()
-                .filter(|position| position.axis_key > cursor.axis_key)
+                .filter(|position| &position.axis_key > cursor_axis_key)
                 .collect::<Vec<_>>();
             select_limited(
                 candidates,
@@ -95,18 +110,18 @@ pub(super) fn select_positions(
         TemporalDirection::Near => {
             let before_candidates = comparable
                 .iter()
-                .filter(|position| position.axis_key < cursor.axis_key)
+                .filter(|position| &position.axis_key < cursor_axis_key)
                 .cloned()
                 .collect::<Vec<_>>();
             let before = take_last(before_candidates.clone(), request.window().before_entries());
             let exact = comparable
                 .iter()
-                .filter(|position| position.axis_key == cursor.axis_key)
+                .filter(|position| &position.axis_key == cursor_axis_key)
                 .cloned()
                 .collect::<Vec<_>>();
             let after_candidates = comparable
                 .into_iter()
-                .filter(|position| position.axis_key > cursor.axis_key)
+                .filter(|position| &position.axis_key > cursor_axis_key)
                 .collect::<Vec<_>>();
             let after = after_candidates
                 .iter()
