@@ -571,6 +571,60 @@ mod tests {
     }
 
     #[test]
+    fn validity_time_moves_exclude_intervals_that_ended_at_the_cursor() {
+        let bundle = validity_bundle(&[
+            (
+                "entry:expired",
+                Some("2026-08-20T09:00:00Z"),
+                Some("2026-08-20T12:00:00Z"),
+            ),
+            (
+                "entry:lease",
+                Some("2026-08-20T10:30:00Z"),
+                Some("2026-08-20T12:00:00Z"),
+            ),
+            ("entry:current", Some("2026-08-20T12:00:00Z"), None),
+            ("entry:future", Some("2027-01-01T00:00:00Z"), None),
+        ]);
+        let move_refs = |direction| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    direction,
+                    TemporalCursor::time("2026-08-20T13:00:00Z").expect("time cursor"),
+                )
+                .with_axis(TemporalAxis::Validity),
+            )
+            .expect("validity move")
+            .entries()
+            .iter()
+            .map(TemporalEntry::ref_id)
+            .map(str::to_string)
+            .collect::<BTreeSet<_>>()
+        };
+        let refs = |values: &[&str]| {
+            values
+                .iter()
+                .map(|value| (*value).to_string())
+                .collect::<BTreeSet<_>>()
+        };
+
+        assert_eq!(move_refs(TemporalDirection::Goto), refs(&["entry:current"]));
+        assert_eq!(
+            move_refs(TemporalDirection::Rewind),
+            refs(&["entry:current"])
+        );
+        assert_eq!(
+            move_refs(TemporalDirection::Near),
+            refs(&["entry:current", "entry:future"])
+        );
+        assert_eq!(
+            move_refs(TemporalDirection::Forward),
+            refs(&["entry:future"])
+        );
+    }
+
+    #[test]
     fn ref_cursor_without_requested_clock_returns_an_empty_proven_absence() {
         let bundle = temporal_bundle(&[("claim:one", "decision", "decision:main", 1)]);
         let request = TemporalTraversalRequest::new(
