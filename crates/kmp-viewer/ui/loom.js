@@ -1563,17 +1563,47 @@ function renderDetailEmpty() {
   $("detail-body").hidden = true;
 }
 
+/* A coarse projection has no entry bodies, so a ref an agent names cannot be
+   resolved from model.byRef yet. Inspecting it gives us its real clocks; move
+   to a Moment-sized window around that clock, then ask the projection for the
+   entry rather than pretending the selection was honoured. */
+async function revealEntryAtMoment(ref) {
+  const inspect = await api("/api/node", { id: ref, raw: "1" });
+  const entry = KMP_LOOM.entryModel({
+    ref_id: inspect.node.id,
+    kind: inspect.node.kind,
+    text: inspect.node.summary || inspect.node.title || "",
+    coordinates: inspect.raw_coordinates || [],
+  });
+  const instant = KMP_LOOM.placedMs(entry, view.clock);
+  if (instant === null) {
+    throw new Error(`cannot reveal ${ref}: it carries no temporal coordinate`);
+  }
+  const momentSpan = Math.max(1000, 8000 * Math.max(1, canvas.clientWidth));
+  setWindow(instant - momentSpan / 2, instant + momentSpan / 2);
+  clearTimeout(scheduleProjection.timer);
+  await loadProjection();
+  if (!model.byRef.has(ref)) {
+    throw new Error(`cannot reveal ${ref}: it is not present in the Moment projection`);
+  }
+  return inspect;
+}
+
 async function selectEntry(ref) {
-  view.selectedRef = ref;
-  requestDraw();
-  reportView();
-  const m = model.byRef.get(ref);
-  renderPrism(m);
   try {
-    const inspect = await api("/api/node", { id: ref, raw: "1" });
+    const revealed = model.byRef.has(ref) ? null : await revealEntryAtMoment(ref);
+    const m = model.byRef.get(ref);
+    if (!m) throw new Error(`cannot select ${ref}: the entry is not in this projection`);
+    const inspect = revealed || (await api("/api/node", { id: ref, raw: "1" }));
+    view.selectedRef = ref;
+    requestDraw();
+    reportView();
+    renderPrism(m);
     renderDetail(inspect, m);
+    return true;
   } catch (error) {
     showError(error.message);
+    return false;
   }
 }
 
@@ -1750,6 +1780,10 @@ $("d-clear-trace").addEventListener("click", () => {
 
 async function runTrace() {
   try {
+    const missingEndpoint = [tracePick.from, tracePick.to].find(
+      (ref) => ref && !model.byRef.has(ref)
+    );
+    if (missingEndpoint) await revealEntryAtMoment(missingEndpoint);
     const trace = await api("/api/trace", { from: tracePick.from, to: tracePick.to });
     view.trace = {
       refs: new Set(trace.nodes.map((n) => n.id)),
@@ -1815,7 +1849,19 @@ function renderRail() {
   }
 
   const kinds = new Map();
-  for (const m of model.entries) kinds.set(m.kind, (kinds.get(m.kind) || 0) + 1);
+  if (model.entries.length) {
+    for (const m of model.entries) kinds.set(m.kind, (kinds.get(m.kind) || 0) + 1);
+  } else {
+    // Atlas and Episode deliberately omit entry bodies. Their aggregates
+    // still say which kinds are drawn in every lane, so the key can describe
+    // the visible weave instead of going blank merely because this rung is cheap.
+    const coarseItems = model.clusters.length ? model.clusters : model.bins;
+    for (const item of coarseItems) {
+      for (const [kind, count] of Object.entries(item.by_kind || {})) {
+        kinds.set(kind, (kinds.get(kind) || 0) + Number(count));
+      }
+    }
+  }
   const kindList = $("kind-legend");
   kindList.textContent = "";
   for (const [kind, count] of [...kinds.entries()].sort((a, b) => b[1] - a[1])) {
@@ -1837,12 +1883,43 @@ function renderRail() {
   for (const edge of model.edges) classes.set(edge.class, (classes.get(edge.class) || 0) + 1);
   const classList = $("class-legend");
   classList.textContent = "";
+  if (model.currentLod !== "moment") {
+    const unavailable = el("li", "legend-static muted", "relations available at Moment");
+    classList.append(unavailable);
+    return;
+  }
   const DASH_CLASS = { evidential: "dashed", motivational: "dotted", constraint: "dashed", procedural: "dashed" };
   for (const [cls, count] of [...classes.entries()].sort((a, b) => b[1] - a[1])) {
     const item = el("li", "");
     const dash = el("span", `legend-dash ${DASH_CLASS[cls] || ""}`);
     dash.style.borderTopColor = classColor(cls);
-    item.append(dash, el("span", "", `${cls} `), el("span", "muted", String(count)));
+    item.append(dash, el("span", "", cls), el("span", "muted legend-count", String(count)));
+    classList.append(item);
+  }
+  const specialRelations = [
+    {
+      count: model.supersessions.length,
+      label: "superseded — history, still true then",
+      swatch: "superseded dotted",
+      color: palette().textMuted,
+    },
+    {
+      count: model.contradictions.length,
+      label: "contradicts — both cannot hold now",
+      swatch: "contradiction dashed",
+      color: palette().danger,
+    },
+  ];
+  for (const relation of specialRelations) {
+    if (!relation.count) continue;
+    const item = el("li", "legend-static");
+    const dash = el("span", `legend-dash ${relation.swatch}`);
+    dash.style.borderTopColor = relation.color;
+    item.append(
+      dash,
+      el("span", "legend-description", relation.label),
+      el("span", "muted legend-count", String(relation.count))
+    );
     classList.append(item);
   }
 }
@@ -1895,9 +1972,10 @@ $("search").addEventListener("keydown", (event) => {
 function renderStats() {
   $("s-entries").textContent = String(model.total);
   $("s-lanes").textContent = String(model.lanes.length);
-  $("s-relations").textContent = String(
-    model.edges.length + model.supersessions.length + model.contradictions.length
-  );
+  $("s-relations").textContent =
+    model.currentLod === "moment"
+      ? String(model.edges.length + model.supersessions.length + model.contradictions.length)
+      : "—";
   const clocked = model.entries.filter((m) => KMP_LOOM.strictMs(m, view.clock) !== null).length;
   $("s-clocked").textContent =
     model.currentLod === "moment" ? `${clocked}/${model.total}` : `—/${model.total}`;
@@ -2009,8 +2087,7 @@ async function applyAgentState(state) {
       await runTrace();
     }
     if (state.selection) {
-      await selectEntry(state.selection);
-      centerOn(state.selection);
+      if (await selectEntry(state.selection)) centerOn(state.selection);
     }
   } finally {
     sync.applying = false;
