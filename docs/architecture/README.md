@@ -28,7 +28,7 @@ flowchart TB
 
 The plugin is not a kernel adapter. It packages discovery and orchestration.
 `kmp-mcp` is the protocol boundary. Both composition roots call the same
-application use cases and expose the same ten MCP tools.
+application use cases and expose the same thirteen MCP tools.
 
 ## Layer ownership
 

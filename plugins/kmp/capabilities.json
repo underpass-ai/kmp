@@ -10,7 +10,10 @@
     "kmp_rewind",
     "kmp_forward",
     "kmp_trace",
-    "kmp_inspect"
+    "kmp_inspect",
+    "kmp_view_open",
+    "kmp_view_apply_intent",
+    "kmp_view_get_state"
   ],
   "agent_workflows": [
     {

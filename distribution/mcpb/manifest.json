@@ -71,6 +71,18 @@
     {
       "name": "kmp_inspect",
       "description": "Inspect one reference and its evidence"
+    },
+    {
+      "name": "kmp_view_open",
+      "description": "Open or rehydrate a ChronoLoom view over an about, so a person and an agent look at the same loom. Read-only with respect to memory."
+    },
+    {
+      "name": "kmp_view_apply_intent",
+      "description": "Move that view by declaring what it should show \u2014 focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Atomic, idempotent, and under optimistic concurrency."
+    },
+    {
+      "name": "kmp_view_get_state",
+      "description": "Read the view's semantic state, revision, selection and filters. Returns state, never pixels."
     }
   ],
   "keywords": [

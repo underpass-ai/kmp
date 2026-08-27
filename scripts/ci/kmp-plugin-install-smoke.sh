@@ -192,6 +192,11 @@ expected_tools = {
     "kmp_forward",
     "kmp_trace",
     "kmp_inspect",
+    # The view half: an agent moves what a person is looking at, and none of
+    # these three can write memory.
+    "kmp_view_open",
+    "kmp_view_apply_intent",
+    "kmp_view_get_state",
 }
 
 responses = {}

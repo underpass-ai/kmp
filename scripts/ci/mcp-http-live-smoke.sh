@@ -36,7 +36,7 @@ curl --fail --silent --show-error \
   --header "Authorization: Bearer ${KMP_MCP_HTTP_TOKEN}" \
   --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
   "${KMP_MCP_HTTP_URL}" >"${SCRATCH_DIR}/tools.json"
-jq -e '.result.tools | length == 10' "${SCRATCH_DIR}/tools.json" >/dev/null
+jq -e '.result.tools | length == 13' "${SCRATCH_DIR}/tools.json" >/dev/null
 
 jq -cn --arg about "${KMP_MCP_SMOKE_ABOUT}" \
   '{jsonrpc:"2.0",id:3,method:"tools/call",params:{name:"kmp_wake",arguments:{about:$about,budget:{detail:"balanced",max_bytes:10000}}}}' \

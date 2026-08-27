@@ -13,6 +13,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / "plugins" / "kmp"
 CONTRACT = json.loads((PLUGIN / "capabilities.json").read_text(encoding="utf-8"))
 
+# Ten moves over memory, and three over the view a person is looking at.
+# The view tools are read-only with respect to memory by construction.
 EXPECTED_TOOLS = {
     "kmp_ingest",
     "kmp_write_memory",
@@ -24,6 +26,9 @@ EXPECTED_TOOLS = {
     "kmp_forward",
     "kmp_trace",
     "kmp_inspect",
+    "kmp_view_open",
+    "kmp_view_apply_intent",
+    "kmp_view_get_state",
 }
 
 
@@ -40,7 +45,7 @@ def names(directory: pathlib.Path, prefix: str = "") -> set[str]:
 
 
 tools = CONTRACT.get("mcp_tools")
-if not isinstance(tools, list) or set(tools) != EXPECTED_TOOLS or len(tools) != 10:
+if not isinstance(tools, list) or set(tools) != EXPECTED_TOOLS or len(tools) != len(EXPECTED_TOOLS):
     fail(f"MCP inventory differs: {tools!r}")
 
 workflows = CONTRACT.get("human_workflows")
@@ -163,4 +168,7 @@ for asset in living:
     if retired.search(asset.read_text(encoding="utf-8")):
         fail(f"living instruction uses a retired tool name: {asset.relative_to(ROOT)}")
 
-print("KMP capability contract passed: 10 MCP tools, 10 workflows, 11 native skills")
+print(
+    f"KMP capability contract passed: {len(tools)} MCP tools, "
+    f"{len(workflows)} workflows, {len(native_skills)} native skills"
+)

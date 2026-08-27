@@ -83,8 +83,15 @@ protocol = (root / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
 tool_names = set(
     re.findall(r'tool_definition(?:_with_output)?\(\s*"(kmp_[a-z0-9_]+)"', protocol)
 )
-if len(tool_names) != 10:
-    sys.exit(f"documentation contract: expected ten tools in protocol.rs, found {sorted(tool_names)}")
+# Ten moves over memory and three over the view. The count is pinned so a
+# tool cannot appear on the surface without the documentation that explains
+# it appearing too.
+EXPECTED_TOOLS = 13
+if len(tool_names) != EXPECTED_TOOLS:
+    sys.exit(
+        f"documentation contract: expected {EXPECTED_TOOLS} tools in protocol.rs, "
+        f"found {len(tool_names)}: {sorted(tool_names)}"
+    )
 
 current_paths = [root / path for path, status in classified.items() if status == "current"]
 current_paths.extend(root / path for path, status in classified.items() if status == "research")
