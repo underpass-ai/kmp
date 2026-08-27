@@ -26,6 +26,7 @@ redb = "4.1.0"
 rusqlite = { version = "0.40.1", features = ["bundled"], optional = true }
 sha2.workspace = true
 kmp-domain.workspace = true
+kmp-application.workspace = true
 kmp-observability.workspace = true
 kmp-ports.workspace = true
 serde.workspace = true

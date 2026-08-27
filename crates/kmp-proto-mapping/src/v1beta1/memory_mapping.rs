@@ -5,6 +5,7 @@ mod ingest;
 mod queries;
 mod responses;
 mod scalars;
+mod visual_projection;
 
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use queries::{
@@ -14,4 +15,7 @@ pub use queries::{
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result,
+};
+pub use visual_projection::{
+    visual_projection_query_from_proto, visual_projection_response_from_result,
 };

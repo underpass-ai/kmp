@@ -11,7 +11,7 @@ use kmp_proto::v1beta1::{
 use super::dimensions::domain_dimension_selection;
 use super::scalars::{
     ProtoMappingResult, answer_policy_from_proto, invalid_argument, max_tier_from_detail,
-    memory_detail_level, non_empty, proto_timestamp_to_sort_string,
+    memory_detail_level, non_empty, proto_timestamp_to_sort_string, temporal_axis_from_proto,
 };
 
 pub fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMemoryQuery> {
@@ -65,6 +65,7 @@ pub fn temporal_query_from_move_proto(
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
         direction,
     })
 }
@@ -80,6 +81,7 @@ pub fn temporal_query_from_near_proto(
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
         direction: TemporalDirection::Near,
     })
 }
@@ -123,6 +125,7 @@ struct TemporalQueryParts {
     limit: Option<TemporalLimit>,
     include: Option<TemporalInclude>,
     budget: Option<kmp_proto::v1beta1::MemoryBudget>,
+    axis: i32,
     direction: TemporalDirection,
 }
 
@@ -143,6 +146,7 @@ fn temporal_query(parts: TemporalQueryParts) -> ProtoMappingResult<TemporalMemor
     Ok(TemporalMemoryQuery {
         about: parts.about,
         direction: parts.direction,
+        axis: temporal_axis_from_proto(parts.axis)?,
         cursor: domain_cursor_from_proto(&cursor)?,
         dimensions: domain_dimension_selection(parts.dimensions)?,
         window: parts
@@ -244,4 +248,31 @@ fn domain_cursor_from_proto(
     }
     TemporalCursor::sequence(value.sequence.unwrap_or_default())
         .map_err(|error| invalid_argument(error.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use kmp_domain::TemporalAxis;
+    use kmp_proto::v1beta1::{TemporalAxis as ProtoTemporalAxis, TemporalCursor};
+
+    use super::*;
+
+    #[test]
+    fn temporal_query_carries_the_selected_clock_into_the_domain() {
+        let query = temporal_query_from_move_proto(
+            TemporalMoveRequest {
+                about: "project:kmp".to_string(),
+                cursor: Some(TemporalCursor {
+                    r#ref: "project:kmp:entry:one".to_string(),
+                    ..Default::default()
+                }),
+                axis: ProtoTemporalAxis::Ingested as i32,
+                ..Default::default()
+            },
+            TemporalDirection::Goto,
+        )
+        .expect("explicit axis should map");
+
+        assert_eq!(query.axis, TemporalAxis::Ingested);
+    }
 }

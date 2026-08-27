@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 use kmp_application::{
     GetContextPathResult, GetContextResult, GetNodeDetailResult, GraphNodeView,
     GraphRelationshipView, InspectMemoryResult, RenderedContext, TemporalMemoryResult,
+    VisualProjectionResult,
 };
 use kmp_domain::{
     BundleNode, BundleQualityMetrics, BundleRelationship, RelationExplanation, TemporalCoordinate,
@@ -225,6 +226,32 @@ pub fn readable_time(value: impl AsRef<str>) -> String {
         Some(seconds) => rfc3339_utc(seconds),
         None => value.to_string(),
     }
+}
+
+/// Convert the application's sortable timestamps at the HTTP boundary. The
+/// projection stays renderer-neutral in the application layer; browsers get
+/// RFC3339 so `Date.parse` never has to understand the store's sort encoding.
+pub fn visual_projection_view(mut result: VisualProjectionResult) -> VisualProjectionResult {
+    result.range.from = readable_time(&result.range.from);
+    result.range.to = readable_time(&result.range.to);
+    for bin in &mut result.bins {
+        bin.from = readable_time(&bin.from);
+        bin.to = readable_time(&bin.to);
+    }
+    for cluster in &mut result.clusters {
+        cluster.from = readable_time(&cluster.from);
+        cluster.to = readable_time(&cluster.to);
+    }
+    for entry in &mut result.entries {
+        for coordinate in &mut entry.coordinates {
+            coordinate.occurred_at = coordinate.occurred_at.as_deref().map(readable_time);
+            coordinate.observed_at = coordinate.observed_at.as_deref().map(readable_time);
+            coordinate.ingested_at = coordinate.ingested_at.as_deref().map(readable_time);
+            coordinate.valid_from = coordinate.valid_from.as_deref().map(readable_time);
+            coordinate.valid_until = coordinate.valid_until.as_deref().map(readable_time);
+        }
+    }
+    result
 }
 
 /// A snapshot hash, or nothing.

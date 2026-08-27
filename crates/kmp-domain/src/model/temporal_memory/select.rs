@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{DomainError, TemporalCoordinate, TemporalCursor, TemporalDirection};
+use crate::{DomainError, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalDirection};
 
 use super::TemporalTraversalRequest;
-use super::axis_key::{TemporalAxisKey, primary_coordinate_key};
+use super::axis_key::{TemporalAxisKey, TemporalKeyKind, primary_coordinate_key};
 use super::position::{ResolvedTemporalCursor, TemporalPosition};
 
 const DEFAULT_GOTO_ENTRIES: usize = 50;
@@ -18,11 +18,16 @@ pub(super) struct TemporalSelection {
 pub(super) fn resolve_cursor(
     positions: &[TemporalPosition],
     cursor: &TemporalCursor,
+    requested_axis: TemporalAxis,
 ) -> Result<ResolvedTemporalCursor, DomainError> {
     match cursor {
         TemporalCursor::Ref(ref_id) => positions
             .iter()
             .filter(|position| position.ref_id == *ref_id)
+            .filter(|position| {
+                requested_axis == TemporalAxis::Default
+                    || position.axis_key.axis() == TemporalKeyKind::Time
+            })
             .min()
             .map(|position| ResolvedTemporalCursor {
                 axis_key: position.axis_key.clone(),

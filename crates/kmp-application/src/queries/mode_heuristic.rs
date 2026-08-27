@@ -8,7 +8,7 @@ use crate::queries::EndpointHint;
 /// When mode is explicit (not Auto), it passes through unchanged.
 /// When Auto, the heuristic considers:
 /// 1. Token pressure (budget / nodes) — tight budgets favor ResumeFocused
-/// 2. Causal density — high explanatory ratio preserves rationale; very low density prunes even at generous budgets
+/// 2. Causal density — a high causal ratio preserves rationale; very low density prunes even at generous budgets
 /// 3. Focus presence — scoped paths tolerate more pruning (threshold 30 → 60)
 /// 4. Endpoint type — sessions need richer context (threshold → 15)
 pub(crate) fn resolve_mode(
@@ -83,25 +83,18 @@ fn auto_detect(
     }
 }
 
-/// Fraction of relationships with explanatory semantic class (causal, motivational, evidential).
+/// Fraction of relationships whose semantic class is exactly causal.
 fn bundle_causal_density(bundle: &KmpBundle) -> f64 {
     let total = bundle.relationships().len();
     if total == 0 {
         return 0.0;
     }
-    let explanatory = bundle
+    let causal = bundle
         .relationships()
         .iter()
-        .filter(|r| {
-            matches!(
-                r.explanation().semantic_class(),
-                RelationSemanticClass::Causal
-                    | RelationSemanticClass::Motivational
-                    | RelationSemanticClass::Evidential
-            )
-        })
+        .filter(|r| r.explanation().semantic_class() == &RelationSemanticClass::Causal)
         .count();
-    explanatory as f64 / total as f64
+    causal as f64 / total as f64
 }
 
 #[cfg(test)]

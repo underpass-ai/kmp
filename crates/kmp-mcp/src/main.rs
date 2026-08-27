@@ -211,10 +211,14 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
 /// which is the bound address rather than the requested one: `:0` and an
 /// unspecified host both resolve here, and the caller hands this to a human.
 async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Result<String, String> {
-    let viewer = std::sync::Arc::new(kmp_viewer::MemoryViewerServer::new(
+    let mut viewer = kmp_viewer::MemoryViewerServer::new(
         kernel.service(),
         Some(kernel.data_dir().display().to_string()),
-    ));
+    );
+    if let Some(reader) = kernel.quality_telemetry_reader() {
+        viewer = viewer.with_observability(std::sync::Arc::new(reader));
+    }
+    let viewer = std::sync::Arc::new(viewer);
     let listener = kmp_viewer::bind_loopback(addr)
         .await
         .map_err(|error| format!("viewer could not bind `{addr}`: {error}"))?;

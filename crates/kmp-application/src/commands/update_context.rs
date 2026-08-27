@@ -629,6 +629,11 @@ mod tests {
                     && relation.target_node_id == "claim:mcp"
                     && relation.relation_type == "supersedes"
         )));
+        assert!(mutations.iter().any(|mutation| matches!(
+            mutation,
+            ProjectionMutation::UpdateNodeStatus { node_id, status }
+                if node_id == "claim:mcp" && status == "SUPERSEDED"
+        )));
     }
 
     #[tokio::test]

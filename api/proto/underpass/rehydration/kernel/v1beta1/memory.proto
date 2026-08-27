@@ -14,6 +14,9 @@ service KernelMemoryService {
   rpc Near(NearRequest) returns (NearResponse);
   rpc Rewind(RewindRequest) returns (RewindResponse);
   rpc Forward(ForwardRequest) returns (ForwardResponse);
+  // Range- and level-of-detail-aware visual read. This result belongs on a
+  // renderer/data channel, not in an agent's model context.
+  rpc ProjectVisual(ProjectVisualRequest) returns (ProjectVisualResponse);
   rpc Trace(TraceRequest) returns (TraceResponse);
   rpc Inspect(InspectRequest) returns (InspectResponse);
 }
@@ -205,6 +208,7 @@ message TemporalMoveRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 message GotoRequest {
@@ -215,6 +219,7 @@ message GotoRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 message RewindRequest {
@@ -225,6 +230,7 @@ message RewindRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 message ForwardRequest {
@@ -235,6 +241,7 @@ message ForwardRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 // Shared temporal neighborhood payload shape used by transport adapters. Public
@@ -247,6 +254,7 @@ message TemporalNearRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 message NearRequest {
@@ -257,6 +265,7 @@ message NearRequest {
   TemporalLimit limit = 5;
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
+  TemporalAxis axis = 8;
 }
 
 // Shared temporal response payload shape used by transport adapters. Public
@@ -325,6 +334,7 @@ message TemporalState {
   TemporalDirection direction = 1;
   TemporalCursor requested = 2;
   TemporalCoordinate resolved = 3;
+  TemporalAxis axis = 4;
 }
 
 message TemporalCoverage {
@@ -358,6 +368,63 @@ message TemporalEntry {
   string text = 3;
   repeated TemporalCoordinate coordinates = 4;
   map<string, string> metadata = 5;
+}
+
+message ProjectVisualRequest {
+  string about = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  TemporalAxis axis = 4;
+  DimensionSelection dimensions = 5;
+  VisualLevelOfDetail level_of_detail = 6;
+  uint32 bin_count = 7;
+  PageRequest page = 8;
+  MemoryBudget budget = 9;
+}
+
+message ProjectVisualResponse {
+  string contract = 1;
+  string about = 2;
+  TemporalAxis axis = 3;
+  VisualLevelOfDetail level_of_detail = 4;
+  google.protobuf.Timestamp from = 5;
+  google.protobuf.Timestamp to = 6;
+  repeated VisualBin bins = 7;
+  repeated VisualCluster clusters = 8;
+  repeated TemporalEntry entries = 9;
+  repeated MemoryRelation relations = 10;
+  repeated VisualMetric metrics = 11;
+  TemporalCoverage coverage = 12;
+  uint64 revision = 13;
+  string content_hash = 14;
+  PageInfo page = 15;
+  bool truncated = 16;
+  repeated string missing = 17;
+}
+
+message VisualBin {
+  string dimension = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  uint32 entries = 4;
+  map<string, uint32> by_kind = 5;
+}
+
+message VisualCluster {
+  string id = 1;
+  string dimension = 2;
+  google.protobuf.Timestamp from = 3;
+  google.protobuf.Timestamp to = 4;
+  uint32 entries = 5;
+  repeated string refs = 6;
+  map<string, uint32> by_kind = 7;
+}
+
+message VisualMetric {
+  string name = 1;
+  double value = 2;
+  string unit = 3;
+  string scope = 4;
 }
 
 message TraceRequest {
@@ -643,6 +710,23 @@ enum TemporalDirection {
   TEMPORAL_DIRECTION_NEAR = 2;
   TEMPORAL_DIRECTION_REWIND = 3;
   TEMPORAL_DIRECTION_FORWARD = 4;
+}
+
+enum TemporalAxis {
+  // Preserves the compatible precedence: occurred, validity start, observed,
+  // then ingested.
+  TEMPORAL_AXIS_UNSPECIFIED = 0;
+  TEMPORAL_AXIS_OCCURRED = 1;
+  TEMPORAL_AXIS_OBSERVED = 2;
+  TEMPORAL_AXIS_INGESTED = 3;
+  TEMPORAL_AXIS_VALIDITY = 4;
+}
+
+enum VisualLevelOfDetail {
+  VISUAL_LEVEL_OF_DETAIL_UNSPECIFIED = 0;
+  VISUAL_LEVEL_OF_DETAIL_ATLAS = 1;
+  VISUAL_LEVEL_OF_DETAIL_EPISODE = 2;
+  VISUAL_LEVEL_OF_DETAIL_MOMENT = 3;
 }
 
 enum MemoryDetailLevel {

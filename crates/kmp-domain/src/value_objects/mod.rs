@@ -30,4 +30,4 @@ pub use resolution_tier::{ResolutionTier, TierBudget};
 pub use role::Role;
 pub use source_kind::SourceKind;
 pub use temporal_coordinate::TemporalCoordinate;
-pub use temporal_cursor::{TemporalCursor, TemporalDirection, TemporalWindow};
+pub use temporal_cursor::{TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow};

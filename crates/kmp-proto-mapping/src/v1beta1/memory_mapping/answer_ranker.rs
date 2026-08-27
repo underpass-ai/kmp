@@ -10,9 +10,10 @@ pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 const MAX_RELATION_FEATURES_PER_CANDIDATE: usize = 16;
 const MAX_RERANK_CANDIDATES: usize = 64;
 
-/// Deterministic, graph-aware reranker for evidence used by `kmp_ask`.
+/// Deterministic, graph-aware reranker for stored entry text and evidence used
+/// by `kmp_ask`.
 ///
-/// Direct evidence establishes eligibility. Graph detail and explanatory
+/// Direct stored text establishes eligibility. Graph detail and explanatory
 /// relationships can then improve an eligible candidate's position, but can
 /// never promote unrelated evidence into an answer.
 #[derive(Default)]

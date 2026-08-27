@@ -15,7 +15,12 @@ double-click. The layout is deterministic — the same store draws the same
 picture — and stable at real scale: degree-normalized springs, Barnes-Hut
 repulsion, a hard velocity cap, fit-to-view on settle and on `F`.
 
-Three stories sit on top of the graph:
+ChronoLoom places the same memory on stable dimension lanes and offers three
+semantic zoom levels: Atlas bins, Episode clusters and Moment entries. The
+application owns this bounded, paginated projection; the browser never walks a
+whole about or a depth-four graph to manufacture it.
+
+Four reading moves sit on top of the loom:
 
 - **Travel** — the whole timeline on a density strip; scrub it and the graph
   shows the memory as of that instant, the future simply not there yet.
@@ -24,6 +29,14 @@ Three stories sit on top of the graph:
   glowing gradient ink from violet to green.
 - **Search** — plain words or `kind:` / `dim:` / `id:`; Enter frames the
   hits and steps everything else back.
+- **Lens and compare** — elapsed time remains proportional; event-density
+  compresses silence with explicit scale breaks. Two pinned instants remain on
+  screen with entry, relation, validity and evidence diffs.
+
+Optional observability series share the same range, cursor and zoom. Every
+series retains its exact unit and scope, and exemplars resolve to the operation
+that emitted them; the viewer does not infer health or causality from temporal
+alignment.
 
 Edges wear their semantic class — causal blue, evidential green, temporal
 violet, structural quiet — and node kinds wear the wire's own names in both
@@ -44,6 +57,9 @@ can mount it over its own composition unchanged.
 The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
 embedded MCP session brings the viewer up over its own kernel at
 `127.0.0.1:7317`, unasked. `KMP_VIEWER_ADDR` moves it; `off` declines it.
+An MCP host that negotiates the Apps extension can instead open the identical
+self-contained renderer from `ui://kmp/chronoloom.html`; no localhost browser
+is required, and the bulk visual chunks stay in app structured content.
 
 ## A deliberately small surface
 

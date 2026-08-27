@@ -14,6 +14,7 @@
 //! framework, no bundler, no CDN, nothing fetched at runtime.
 
 mod http;
+mod mcp_app;
 mod routes;
 pub mod view_state;
 pub mod views;
@@ -23,7 +24,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
-use kmp_application::KernelMemoryApplicationService;
+use kmp_application::{KernelMemoryApplicationService, ObservabilityQueryPort};
 use kmp_domain::{
     ContextEventStore, GraphNeighborhoodReader, MemoryAboutIndexReader, NodeDetailReader,
     NodeRelationshipReader, ProjectionWriter, SnapshotStore,
@@ -35,6 +36,7 @@ pub use crate::view_state::{
     Applied, DEFAULT_VIEW_ID, Focus, Projection, Provenance, TimeRange, TraceSelection, ViewError,
     ViewPatch, ViewRegistry, ViewState,
 };
+pub use mcp_app::mcp_app_html;
 
 /// Environment variable that, when set on an embedded MCP session, mounts the
 /// viewer on that address (e.g. `127.0.0.1:7317`).
@@ -55,6 +57,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 pub struct MemoryViewerServer<G, D, S, E, W> {
     service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
     data_dir: Option<String>,
+    observability: Option<Arc<dyn ObservabilityQueryPort>>,
 }
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
@@ -76,7 +79,18 @@ where
         service: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
         data_dir: Option<String>,
     ) -> Self {
-        Self { service, data_dir }
+        Self {
+            service,
+            data_dir,
+            observability: None,
+        }
+    }
+
+    /// Adds a telemetry read side without coupling the renderer to a local or
+    /// remote adapter.
+    pub fn with_observability(mut self, observability: Arc<dyn ObservabilityQueryPort>) -> Self {
+        self.observability = Some(observability);
+        self
     }
 
     /// Serves until the listener fails or the process ends. Callers spawn

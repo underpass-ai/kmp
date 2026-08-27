@@ -2,9 +2,10 @@ use serde_json::Value;
 
 use crate::args::validate_required_arguments;
 use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
+use crate::grpc::requests::visual_projection_request_from_arguments;
 use crate::ingest::build_ingest_plan;
 use crate::kmp::try_enforce_recall_output_budget;
-use crate::protocol::tool_success_result;
+use crate::protocol::{app_data_success_result, tool_success_result};
 use crate::tool_error::ToolError;
 
 // The fixture backend answers with the reference examples from the contract.
@@ -64,6 +65,22 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         "kmp_forward" => read_fixture_tool_result(arguments, &["about"], FORWARD_RESPONSE_FIXTURE),
         "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
         "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
+        "kmp_view_read_projection" => {
+            visual_projection_request_from_arguments(arguments)
+                .map_err(ToolError::invalid_argument)?;
+            Ok(app_data_success_result(serde_json::json!({
+                "contract": "kmp.visual.projection.v1",
+                "about": arguments["about"],
+                "axis": arguments.get("axis").and_then(Value::as_str).unwrap_or("occurred"),
+                "level_of_detail": arguments.get("lod").and_then(Value::as_str).unwrap_or("atlas"),
+                "range": {"from": arguments["from"], "to": arguments["to"]},
+                "bins": [], "clusters": [], "entries": [], "relations": [], "metrics": [],
+                "included_dimensions": [], "missing_dimensions": [],
+                "revision": 0, "content_hash": "",
+                "page": {"returned": 0, "total": 0, "has_more": false, "next_cursor": null},
+                "truncated": false, "missing": []
+            })))
+        }
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),

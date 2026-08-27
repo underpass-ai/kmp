@@ -2,6 +2,7 @@ pub mod application_error;
 pub mod commands;
 pub mod kmp_application;
 pub mod memory;
+mod observability;
 pub mod projection;
 pub mod queries;
 
@@ -14,12 +15,19 @@ pub use commands::{
 pub use kmp_application::KmpApplication;
 pub use memory::{
     AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, ExistingMemoryRefs, InspectMemoryQuery,
-    InspectMemoryResult, KernelMemoryApplicationService, MAX_TRACE_PAGE_ENTRIES,
-    MemoryAcceptedCounts, MemoryAnswerPolicy, MemoryCoordinateData, MemoryData,
-    MemoryDimensionData, MemoryEntryData, MemoryEvidenceData, MemoryIngestCommand,
-    MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData, TemporalIncludeOptions,
-    TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
+    InspectMemoryResult, KernelMemoryApplicationService, MAX_TRACE_PAGE_ENTRIES, MAX_VISUAL_BINS,
+    MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, MemoryAcceptedCounts, MemoryAnswerPolicy,
+    MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
+    MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData,
+    TemporalAxisView, TemporalCoordinateView, TemporalIncludeOptions, TemporalMemoryQuery,
+    TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, VisualBin, VisualCluster,
+    VisualEntry, VisualLevelOfDetail, VisualMetric, VisualProjectionPage, VisualProjectionQuery,
+    VisualProjectionResult, VisualRange, VisualRelation, WakeMemoryQuery, build_visual_projection,
     translate_memory_ingest,
+};
+pub use observability::{
+    ObservabilityExemplar, ObservabilityMetricPoint, ObservabilityProjection, ObservabilityQuery,
+    ObservabilityQueryPort, ObservabilitySeries,
 };
 pub use projection::{
     GraphNodeMaterializedData, GraphNodeMaterializedEvent, GraphRelationMaterializedData,

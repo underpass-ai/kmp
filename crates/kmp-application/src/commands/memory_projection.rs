@@ -83,7 +83,7 @@ pub(crate) fn memory_projection_mutations(
                 )?);
             }
             "memory_relation" => {
-                mutations.push(memory_relation_mutation(change)?);
+                mutations.extend(memory_relation_mutations(change)?);
             }
             "memory_evidence" => {
                 mutations.extend(memory_evidence_mutations(
@@ -218,7 +218,9 @@ fn memory_entry_mutations(
     Ok(mutations)
 }
 
-fn memory_relation_mutation(change: &UpdateContextChange) -> Result<ProjectionMutation, PortError> {
+fn memory_relation_mutations(
+    change: &UpdateContextChange,
+) -> Result<Vec<ProjectionMutation>, PortError> {
     let payload = payload(change)?;
     let source = required_payload_string(&payload, "from", change)?;
     let target = required_payload_string(&payload, "to", change)?;
@@ -271,14 +273,21 @@ fn memory_relation_mutation(change: &UpdateContextChange) -> Result<ProjectionMu
         .with_optional_sequence(sequence)
         .with_optional_rank(coordinate.and_then(|coordinate| payload_u32(coordinate, "rank")));
 
-    Ok(ProjectionMutation::UpsertNodeRelation(Box::new(
+    let mut mutations = vec![ProjectionMutation::UpsertNodeRelation(Box::new(
         NodeRelationProjection {
             source_node_id: source,
-            target_node_id: target,
+            target_node_id: target.clone(),
             relation_type: relation_type.as_str().to_string(),
             explanation,
         },
-    )))
+    ))];
+    if relation_type.as_str() == "supersedes" {
+        mutations.push(ProjectionMutation::UpdateNodeStatus {
+            node_id: target,
+            status: "SUPERSEDED".to_string(),
+        });
+    }
+    Ok(mutations)
 }
 
 fn memory_evidence_mutations(

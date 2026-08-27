@@ -65,9 +65,7 @@ pub struct Projection {
     pub dimensions: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relation_classes: Option<Vec<String>>,
-    /// Accepted and echoed so an intent is not silently mangled, but nothing
-    /// renders them yet: the Observability Pulse needs a telemetry query port
-    /// KMP does not publish. Reported as unhonored rather than pretended.
+    /// Exact observability series to align over the current time window.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overlays: Option<Vec<String>>,
 }
@@ -330,7 +328,7 @@ impl ViewRegistry {
             entry.history.remove(0);
         }
 
-        let mut unhonored = Vec::new();
+        let unhonored = Vec::new();
         let state = &mut entry.state;
         if let Some(about) = patch.about {
             state.about = Some(about);
@@ -344,15 +342,6 @@ impl ViewRegistry {
             state.focus.time_range = Some(window);
         }
         if let Some(projection) = patch.projection {
-            if let Some(overlays) = projection.overlays.as_ref()
-                && !overlays.is_empty()
-            {
-                unhonored.push(format!(
-                    "overlays {} are recorded but not drawn yet: the Observability Pulse needs \
-                     a telemetry query port KMP does not publish",
-                    overlays.join(", ")
-                ));
-            }
             state.projection = projection;
         }
         if let Some(selection) = patch.selection {
@@ -680,7 +669,7 @@ mod tests {
     }
 
     #[test]
-    fn overlays_are_recorded_but_reported_as_undrawn() {
+    fn overlays_are_honored_view_state() {
         let registry = registry();
         let applied = registry
             .apply(
@@ -698,6 +687,10 @@ mod tests {
                 None,
             )
             .expect("applies");
-        assert_eq!(applied.unhonored.len(), 1, "silence here would be a lie");
+        assert!(applied.unhonored.is_empty());
+        assert_eq!(
+            applied.state.projection.overlays,
+            Some(vec!["projection_lag".into()])
+        );
     }
 }

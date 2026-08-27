@@ -196,6 +196,14 @@ impl ProjectionWriter for InMemoryKernelStore {
             match mutation {
                 ProjectionMutation::EnsureNode(node) => state.ensure_node(node),
                 ProjectionMutation::UpsertNode(node) => state.upsert_node(node),
+                ProjectionMutation::UpdateNodeStatus { node_id, status } => {
+                    let node = state.nodes.get_mut(&node_id).ok_or_else(|| {
+                        PortError::InvalidState(format!(
+                            "cannot update missing in-memory node `{node_id}`"
+                        ))
+                    })?;
+                    node.status = status;
+                }
                 ProjectionMutation::UpsertNodeRelation(relation) => {
                     state.upsert_relation(*relation);
                 }

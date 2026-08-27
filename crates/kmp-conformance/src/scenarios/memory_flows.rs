@@ -13,8 +13,8 @@ use kmp_application::{
     WakeMemoryQuery,
 };
 use kmp_domain::{
-    DimensionSelection, KmpBundle, RelationSemanticClass, TemporalCursor, TemporalDirection,
-    TemporalWindow,
+    DimensionSelection, KmpBundle, RelationSemanticClass, TemporalAxis, TemporalCursor,
+    TemporalDirection, TemporalWindow,
 };
 
 use crate::ConformanceBackendFactory;
@@ -117,6 +117,7 @@ fn temporal_query(
     TemporalMemoryQuery {
         about: ABOUT.to_string(),
         direction,
+        axis: TemporalAxis::Default,
         cursor,
         dimensions: DimensionSelection::all(),
         window,

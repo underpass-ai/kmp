@@ -10,6 +10,8 @@ pub struct QualityTelemetryObservation {
     rpc: String,
     root_node_id: String,
     role: String,
+    #[serde(default)]
+    revision: Option<u64>,
     raw_equivalent_tokens: u32,
     compression_ratio: f64,
     causal_density: f64,
@@ -27,6 +29,7 @@ impl QualityTelemetryObservation {
             rpc: context.rpc.clone(),
             root_node_id: context.root_node_id.clone(),
             role: context.role.clone(),
+            revision: context.revision,
             raw_equivalent_tokens: metrics.raw_equivalent_tokens(),
             compression_ratio: metrics.compression_ratio(),
             causal_density: metrics.causal_density(),
@@ -49,6 +52,10 @@ impl QualityTelemetryObservation {
 
     pub fn role(&self) -> &str {
         &self.role
+    }
+
+    pub fn revision(&self) -> Option<u64> {
+        self.revision
     }
 
     pub fn raw_equivalent_tokens(&self) -> u32 {

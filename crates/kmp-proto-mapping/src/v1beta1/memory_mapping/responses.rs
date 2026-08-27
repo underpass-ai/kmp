@@ -24,12 +24,13 @@ use super::bundle_views::{
     answer_evidence_from_bundle, answer_relations_from_bundle, bundle_memory_metadata,
     memory_evidence_from_bundle, memory_relations_from_bundle, persisted_memory_metadata,
     persisted_memory_source, proof, proto_coordinate_from_domain, proto_relation_explanation,
-    rendered_current_state, rendered_summary, temporal_evidence_from_bundle,
-    temporal_relations_from_bundle,
+    rendered_current_state, rendered_summary, superseded_from_relations,
+    temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::scalars::{
-    proto_confidence, proto_direction, proto_semantic_class, timestamp_from_sort_or_rfc3339,
+    proto_confidence, proto_direction, proto_semantic_class, proto_temporal_axis,
+    timestamp_from_sort_or_rfc3339,
 };
 
 /// The newest coordinate a wake packet covers, for the caller to resume from.
@@ -267,9 +268,9 @@ pub fn ask_response_from_result(
         evidence,
         if unknown {
             vec![if retrieved == 0 {
-                format!("any evidence for: {question}")
+                format!("any stored memory for: {question}")
             } else {
-                format!("evidence that bears on: {question}")
+                format!("stored memory that bears on: {question}")
             }]
         } else {
             withheld
@@ -291,13 +292,13 @@ pub fn ask_response_from_result(
                 format!("Nothing in this memory was retrieved for: {question}")
             } else {
                 format!(
-                    "Retrieved {retrieved} evidence {}, none of which bears on: {question}",
+                    "Retrieved {retrieved} memory {}, none of which bears on: {question}",
                     if retrieved == 1 { "item" } else { "items" }
                 )
             }
         } else {
             format!(
-                "Retrieved {} evidence {} for: {question}",
+                "Retrieved {} memory {} for: {question}",
                 because.len(),
                 if because.len() == 1 { "item" } else { "items" }
             )
@@ -414,8 +415,14 @@ pub fn temporal_response_from_result(
         .iter()
         .map(|entry| entry.r#ref.clone())
         .collect::<BTreeSet<_>>();
+    // Lifecycle is part of temporal truth even when the caller does not ask
+    // for the full relation path. Keep the selected entries' supersession
+    // edges long enough to populate proof.superseded, then honor `include`
+    // for the visible path itself.
+    let selected_relationships =
+        temporal_relations_from_bundle(&result.source_bundle, &selected_refs);
     let relationships = if result.include.relations {
-        temporal_relations_from_bundle(&result.source_bundle, &selected_refs)
+        selected_relationships.clone()
     } else {
         Vec::new()
     };
@@ -452,6 +459,18 @@ pub fn temporal_response_from_result(
         page.has_more(),
     );
 
+    let mut temporal_proof = proof(
+        relationships,
+        evidence,
+        traversal.missing().to_vec(),
+        if count == 0 {
+            MemoryConfidence::Unknown
+        } else {
+            MemoryConfidence::Medium
+        },
+    );
+    temporal_proof.superseded = superseded_from_relations(&selected_relationships);
+
     TemporalMoveResponse {
         summary: format!(
             "Returned {count} temporal {}.",
@@ -459,6 +478,7 @@ pub fn temporal_response_from_result(
         ),
         temporal: Some(TemporalState {
             direction: proto_direction(direction) as i32,
+            axis: proto_temporal_axis(traversal.axis()) as i32,
             requested: Some(requested_cursor),
             resolved: Some(proto_coordinate_from_domain(traversal.resolved_cursor())),
         }),
@@ -471,16 +491,7 @@ pub fn temporal_response_from_result(
             dimensions,
         }),
         entries,
-        proof: Some(proof(
-            relationships,
-            evidence,
-            traversal.missing().to_vec(),
-            if count == 0 {
-                MemoryConfidence::Unknown
-            } else {
-                MemoryConfidence::Medium
-            },
-        )),
+        proof: Some(temporal_proof),
         warnings,
         raw_refs,
         page: Some(PageInfo {
@@ -497,7 +508,10 @@ pub fn trace_response_from_result(
     result: GetContextPathResult,
     page: TracePageRequest,
 ) -> TraceResponse {
-    let trace = memory_relations_from_bundle(&result.path_bundle);
+    let trace = ordered_trace_from(
+        memory_relations_from_bundle(&result.path_bundle),
+        result.path_bundle.root_node_id().as_str(),
+    );
     let total = trace.len();
     let offset = page.offset().min(total);
     let entries = page.entries_or_default();
@@ -540,6 +554,29 @@ pub fn trace_response_from_result(
     }
 }
 
+/// Orders a trace as the walk a caller asked for, without hiding extra edges.
+///
+/// Graph stores are free to return relation sets in storage order. A trace is
+/// different: its useful meaning is the chain beginning at `from`. Consume
+/// that chain first and retain chords or otherwise disconnected relations in
+/// their original order at the end so the response stays complete.
+fn ordered_trace_from(mut trace: Vec<MemoryRelation>, from: &str) -> Vec<MemoryRelation> {
+    let mut ordered = Vec::with_capacity(trace.len());
+    let mut current = from.to_string();
+
+    while let Some(index) = trace
+        .iter()
+        .position(|relationship| relationship.source_ref == current)
+    {
+        let relationship = trace.remove(index);
+        current.clone_from(&relationship.target_ref);
+        ordered.push(relationship);
+    }
+
+    ordered.extend(trace);
+    ordered
+}
+
 fn u32_saturating(value: usize) -> u32 {
     value.min(u32::MAX as usize) as u32
 }
@@ -558,9 +595,7 @@ fn causal_count(relationships: &[kmp_proto::v1beta1::MemoryRelation]) -> u32 {
         .filter(|relation| {
             matches!(
                 kmp_proto::v1beta1::MemorySemanticClass::try_from(relation.semantic_class),
-                Ok(kmp_proto::v1beta1::MemorySemanticClass::Causal
-                    | kmp_proto::v1beta1::MemorySemanticClass::Motivational
-                    | kmp_proto::v1beta1::MemorySemanticClass::Evidential)
+                Ok(kmp_proto::v1beta1::MemorySemanticClass::Causal)
             )
         })
         .count() as u32
@@ -808,6 +843,170 @@ fn memory_relation_from_graph_relationship(relationship: &GraphRelationshipView)
 }
 
 #[cfg(test)]
+mod temporal_lifecycle_tests {
+    use std::collections::BTreeMap;
+
+    use kmp_application::{TemporalIncludeOptions, TemporalMemoryResult};
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleQualityMetrics, BundleRelationship, CaseId, KmpBundle,
+        RelationExplanation, RelationSemanticClass, Role, TemporalCursor as DomainCursor,
+        TemporalDirection, TemporalMemoryTraversal, TemporalTraversalRequest,
+    };
+    use kmp_proto::v1beta1::TemporalCursor;
+
+    use super::temporal_response_from_result;
+
+    #[test]
+    fn temporal_proof_reports_selected_supersession_without_full_relation_path() {
+        let node = |id: &str, kind: &str| {
+            BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let coordinate = |target: &str, observed_at: &str| {
+            BundleRelationship::new(
+                "timeline:main",
+                target,
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_observed_at(observed_at)
+                    .with_sequence(1),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("project:kmp", "memory_anchor"),
+            vec![
+                node("timeline:main", "memory_dimension"),
+                node("decision:old", "decision"),
+                node("decision:new", "decision"),
+            ],
+            vec![
+                coordinate("decision:old", "2026-08-27T16:55:00Z"),
+                coordinate("decision:new", "2026-08-27T16:55:40Z"),
+                BundleRelationship::new(
+                    "decision:new",
+                    "decision:old",
+                    "supersedes",
+                    RelationExplanation::new(RelationSemanticClass::Evidential)
+                        .with_rationale("Format B replaces format A."),
+                ),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Goto,
+                DomainCursor::time("2026-08-27T17:00:00Z").expect("cursor"),
+            ),
+        )
+        .expect("traversal");
+        let result = TemporalMemoryResult {
+            traversal,
+            source_bundle: bundle,
+            include: TemporalIncludeOptions {
+                evidence: false,
+                relations: false,
+                raw_refs: false,
+            },
+            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+        };
+
+        let response = temporal_response_from_result(
+            TemporalCursor {
+                r#ref: String::new(),
+                time: Some(prost_types::Timestamp {
+                    seconds: 0,
+                    nanos: 0,
+                }),
+                sequence: None,
+            },
+            TemporalDirection::Goto,
+            result,
+        );
+        let proof = response.proof.expect("proof");
+
+        assert!(
+            proof.path.is_empty(),
+            "include.relations=false must be honored"
+        );
+        assert_eq!(proof.superseded.len(), 1);
+        assert_eq!(proof.superseded[0].r#ref, "decision:old");
+        assert_eq!(proof.superseded[0].superseded_by, "decision:new");
+    }
+}
+
+#[cfg(test)]
+mod ask_entry_text_tests {
+    use std::collections::BTreeMap;
+
+    use kmp_application::{GetContextResult, MemoryAnswerPolicy, queries::render_graph_bundle};
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleRelationship, CaseId, KmpBundle, RelationExplanation,
+        RelationSemanticClass, Role,
+    };
+
+    use super::{UNANSWERED, ask_response_from_result};
+
+    #[test]
+    fn ask_can_retrieve_a_fact_present_only_in_the_entry_text() {
+        let node = |id: &str, kind: &str, summary: &str| {
+            BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:kmp", "memory_anchor", "KMP memory"),
+            vec![
+                node("timeline:main", "memory_dimension", "Timeline"),
+                node(
+                    "decision:format",
+                    "decision",
+                    "ZORBLATT is the selected durable format.",
+                ),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "decision:format",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        let result = GetContextResult {
+            bundle,
+            rendered,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        };
+
+        let response = ask_response_from_result(
+            "ZORBLATT",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            result,
+        );
+
+        assert_ne!(response.answer, UNANSWERED);
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.evidence.len(), 1);
+        assert_eq!(proof.evidence[0].metadata["proof_role"], "entry_text");
+        assert!(proof.matched_terms.contains(&"zorblatt".to_string()));
+    }
+}
+
+#[cfg(test)]
 mod wake_cap_tests {
     use super::*;
 
@@ -868,7 +1067,7 @@ mod wake_cap_tests {
     }
 
     #[test]
-    fn causal_count_matches_domain_explanatory_relation_classes() {
+    fn causal_count_counts_only_causal_relation_classes() {
         let relation = |semantic_class| MemoryRelation {
             semantic_class: semantic_class as i32,
             ..Default::default()
@@ -881,7 +1080,7 @@ mod wake_cap_tests {
             relation(kmp_proto::v1beta1::MemorySemanticClass::Procedural),
         ];
 
-        assert_eq!(causal_count(&relations), 3);
+        assert_eq!(causal_count(&relations), 1);
     }
 
     #[test]
@@ -928,7 +1127,7 @@ mod wake_cap_tests {
 
 #[cfg(test)]
 mod tests {
-    use super::newest_cursor;
+    use super::{newest_cursor, ordered_trace_from};
     use kmp_proto::v1beta1::{MemoryRelation, MemoryRelationExplanation, TemporalCoordinate};
     use prost_types::Timestamp;
 
@@ -1003,6 +1202,37 @@ mod tests {
         assert!(
             newest_cursor(&[bare]).is_none(),
             "a bookmark that points nowhere is worse than none"
+        );
+    }
+
+    #[test]
+    fn trace_hops_follow_the_walk_and_keep_unconnected_edges_at_the_end() {
+        let hop = |source: &str, target: &str| MemoryRelation {
+            source_ref: source.to_string(),
+            target_ref: target.to_string(),
+            ..Default::default()
+        };
+        let ordered = ordered_trace_from(
+            vec![
+                hop("a", "b"),
+                hop("c", "d"),
+                hop("orphan", "edge"),
+                hop("b", "c"),
+                hop("e", "f"),
+                hop("d", "e"),
+            ],
+            "a",
+        );
+
+        assert_eq!(
+            ordered
+                .iter()
+                .map(|relationship| format!(
+                    "{}->{}",
+                    relationship.source_ref, relationship.target_ref
+                ))
+                .collect::<Vec<_>>(),
+            vec!["a->b", "b->c", "c->d", "d->e", "e->f", "orphan->edge"]
         );
     }
 }

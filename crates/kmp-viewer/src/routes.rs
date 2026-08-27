@@ -3,13 +3,14 @@
 //! viewer observes the memory, the agent operates it.
 
 use kmp_application::{
-    ApplicationError, InspectMemoryQuery, TemporalIncludeOptions, TemporalMemoryQuery,
-    TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
+    ApplicationError, InspectMemoryQuery, MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES,
+    ObservabilityQuery, TemporalIncludeOptions, TemporalMemoryQuery, TraceMemoryQuery,
+    TracePageRequest, VisualLevelOfDetail, VisualProjectionQuery, WakeMemoryQuery,
 };
 use kmp_domain::{
     ContextEventStore, DimensionSelection, DomainError, GraphNeighborhoodReader,
     MemoryAboutIndexReader, NodeDetailReader, NodeRelationshipReader, PortError, ProjectionWriter,
-    ResolutionTier, SnapshotStore, TemporalCursor, TemporalDirection, TemporalWindow,
+    ResolutionTier, SnapshotStore, TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow,
 };
 
 use crate::MemoryViewerServer;
@@ -41,6 +42,8 @@ const MAX_TOKEN_BUDGET: u32 = 262_144;
 const DEFAULT_WINDOW_ENTRIES: usize = 8;
 const MAX_WINDOW_ENTRIES: usize = 256;
 const MAX_BATCH_IDS: usize = 64;
+const DEFAULT_VISUAL_FROM: &str = "1900-01-01T00:00:00Z";
+const DEFAULT_VISUAL_TO: &str = "2100-01-01T00:00:00Z";
 
 pub(crate) const INDEX_HTML: &str = include_str!("../ui/index.html");
 pub(crate) const LOOM_CSS: &str = include_str!("../ui/loom.css");
@@ -116,6 +119,8 @@ where
             "/api/node" => self.node(request).await,
             "/api/nodes" => self.nodes(request).await,
             "/api/timeline" => self.timeline(request).await,
+            "/api/projection" => self.visual_projection(request).await,
+            "/api/observability" => self.observability(request).await,
             "/api/trace" => self.trace(request).await,
             "/api/view" => self.view_get(request).await,
             "/api/view/open" => self.view_open(request),
@@ -304,6 +309,10 @@ where
             Ok(direction) => direction,
             Err(response) => return response,
         };
+        let axis = match axis_param(request) {
+            Ok(axis) => axis,
+            Err(response) => return response,
+        };
         let dimensions = match dimension_selection(request) {
             Ok(dimensions) => dimensions,
             Err(response) => return response,
@@ -311,6 +320,7 @@ where
         let query = TemporalMemoryQuery {
             about: about.to_string(),
             direction,
+            axis,
             cursor,
             dimensions,
             window: TemporalWindow::new(
@@ -329,6 +339,82 @@ where
         match self.service.temporal(query).await {
             Ok(result) => HttpResponse::json(&views::timeline_view(about, &result)),
             Err(error) => application_error_response(&error),
+        }
+    }
+
+    async fn visual_projection(&self, request: &HttpRequest) -> HttpResponse {
+        let Some(about) = request.param("about") else {
+            return HttpResponse::error(400, "missing required parameter `about`");
+        };
+        let axis = match axis_param(request) {
+            Ok(axis) => axis,
+            Err(response) => return response,
+        };
+        let dimensions = match dimension_selection(request) {
+            Ok(dimensions) => dimensions,
+            Err(response) => return response,
+        };
+        let level_of_detail = match request.param("lod") {
+            None | Some("atlas") => VisualLevelOfDetail::Atlas,
+            Some("episode") => VisualLevelOfDetail::Episode,
+            Some("moment") => VisualLevelOfDetail::Moment,
+            Some(value) => {
+                return HttpResponse::error(
+                    400,
+                    &format!("parameter `lod` must be atlas, episode, or moment; got `{value}`"),
+                );
+            }
+        };
+        let query = VisualProjectionQuery {
+            about: about.to_string(),
+            from: request
+                .param("from")
+                .unwrap_or(DEFAULT_VISUAL_FROM)
+                .to_string(),
+            to: request.param("to").unwrap_or(DEFAULT_VISUAL_TO).to_string(),
+            axis,
+            dimensions,
+            level_of_detail,
+            bin_count: param_or_refuse!(numeric_param(request, "bins", 64usize))
+                .clamp(1, MAX_VISUAL_BINS),
+            page_entries: param_or_refuse!(numeric_param(request, "limit", 512usize))
+                .clamp(1, MAX_VISUAL_PAGE_ENTRIES),
+            cursor: request.param("cursor").map(ToString::to_string),
+            depth: param_or_refuse!(depth_param(request)),
+        };
+        match self.service.visual_projection(query).await {
+            Ok(result) => HttpResponse::json(&views::visual_projection_view(result)),
+            Err(error) => application_error_response(&error),
+        }
+    }
+
+    async fn observability(&self, request: &HttpRequest) -> HttpResponse {
+        let Some(port) = self.observability.as_ref() else {
+            return HttpResponse::error(503, "no observability query adapter is configured");
+        };
+        let from_millis = param_or_refuse!(numeric_param(request, "from_ms", 0u64));
+        let to_millis = param_or_refuse!(numeric_param(request, "to_ms", u64::MAX));
+        if to_millis < from_millis {
+            return HttpResponse::error(400, "observability range requires to_ms >= from_ms");
+        }
+        let query = ObservabilityQuery {
+            about: request.param("about").map(ToString::to_string),
+            from_millis,
+            to_millis,
+            series: request
+                .param("series")
+                .unwrap_or("")
+                .split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string)
+                .collect(),
+            max_points: param_or_refuse!(numeric_param(request, "limit", 2048usize))
+                .clamp(1, 16_384),
+        };
+        match port.query(query).await {
+            Ok(result) => HttpResponse::json(&result),
+            Err(error) => HttpResponse::error(503, &format!("observability query failed: {error}")),
         }
     }
 
@@ -473,6 +559,22 @@ fn direction_param(request: &HttpRequest) -> Result<TemporalDirection, HttpRespo
         Some(other) => Err(HttpResponse::error(
             400,
             &format!("unknown direction `{other}`; expected `goto`, `near`, `rewind` or `forward`"),
+        )),
+    }
+}
+
+fn axis_param(request: &HttpRequest) -> Result<TemporalAxis, HttpResponse> {
+    match request.param("axis").or_else(|| request.param("clock")) {
+        None => Ok(TemporalAxis::Default),
+        Some("occurred") => Ok(TemporalAxis::Occurred),
+        Some("observed") => Ok(TemporalAxis::Observed),
+        Some("ingested") => Ok(TemporalAxis::Ingested),
+        Some("validity") => Ok(TemporalAxis::Validity),
+        Some(other) => Err(HttpResponse::error(
+            400,
+            &format!(
+                "unknown temporal axis `{other}`; expected `occurred`, `observed`, `ingested` or `validity`"
+            ),
         )),
     }
 }

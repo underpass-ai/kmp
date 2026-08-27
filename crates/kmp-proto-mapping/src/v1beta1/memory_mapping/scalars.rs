@@ -1,8 +1,9 @@
 use kmp_application::MemoryAnswerPolicy;
-use kmp_domain::{ResolutionTier, TemporalDirection};
+use kmp_domain::{ResolutionTier, TemporalAxis, TemporalDirection};
 use kmp_proto::v1beta1::{
     AnswerPolicy as ProtoAnswerPolicy, MemoryConfidence, MemoryDetailLevel, MemorySemanticClass,
-    MemorySourceKind, TemporalDirection as ProtoTemporalDirection,
+    MemorySourceKind, TemporalAxis as ProtoTemporalAxis,
+    TemporalDirection as ProtoTemporalDirection,
 };
 use prost_types::Timestamp;
 use tonic::Status;
@@ -58,6 +59,30 @@ pub(super) fn proto_direction(value: TemporalDirection) -> ProtoTemporalDirectio
         TemporalDirection::Near => ProtoTemporalDirection::Near,
         TemporalDirection::Rewind => ProtoTemporalDirection::Rewind,
         TemporalDirection::Forward => ProtoTemporalDirection::Forward,
+    }
+}
+
+pub(super) fn temporal_axis_from_proto(value: i32) -> ProtoMappingResult<TemporalAxis> {
+    Ok(
+        match ProtoTemporalAxis::try_from(value)
+            .map_err(|_| invalid_argument("temporal axis is invalid"))?
+        {
+            ProtoTemporalAxis::Unspecified => TemporalAxis::Default,
+            ProtoTemporalAxis::Occurred => TemporalAxis::Occurred,
+            ProtoTemporalAxis::Observed => TemporalAxis::Observed,
+            ProtoTemporalAxis::Ingested => TemporalAxis::Ingested,
+            ProtoTemporalAxis::Validity => TemporalAxis::Validity,
+        },
+    )
+}
+
+pub(super) fn proto_temporal_axis(value: TemporalAxis) -> ProtoTemporalAxis {
+    match value {
+        TemporalAxis::Default => ProtoTemporalAxis::Unspecified,
+        TemporalAxis::Occurred => ProtoTemporalAxis::Occurred,
+        TemporalAxis::Observed => ProtoTemporalAxis::Observed,
+        TemporalAxis::Ingested => ProtoTemporalAxis::Ingested,
+        TemporalAxis::Validity => ProtoTemporalAxis::Validity,
     }
 }
 

@@ -27,7 +27,7 @@ pub use repositories::{
 };
 pub use value_objects::{
     BundleMetadata, BundleQualityMetrics, CaseId, DimensionScopeMode, DimensionSelection,
-    DimensionSelectionMode, MemoryDimensionIdentity, Provenance, Role, SourceKind,
+    DimensionSelectionMode, MemoryDimensionIdentity, Provenance, Role, SourceKind, TemporalAxis,
     TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalWindow,
 };
 pub use value_objects::{KmpMode, ResolutionTier, TierBudget};

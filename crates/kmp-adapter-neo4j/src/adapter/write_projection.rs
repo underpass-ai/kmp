@@ -3,7 +3,8 @@ use neo4rs::Graph;
 
 use super::projection_store::Neo4jProjectionStore;
 use super::queries::{
-    ensure_node_projection_query, upsert_node_projection_query, upsert_relation_projection_query,
+    ensure_node_projection_query, update_node_status_query, upsert_node_projection_query,
+    upsert_relation_projection_query,
 };
 
 impl Neo4jProjectionStore {
@@ -61,6 +62,14 @@ impl ProjectionWriter for Neo4jProjectionStore {
                 }
                 ProjectionMutation::UpsertNode(node) => {
                     self.apply_node_projection(&graph, &node).await?;
+                }
+                ProjectionMutation::UpdateNodeStatus { node_id, status } => {
+                    self.run_query(
+                        &graph,
+                        update_node_status_query(&node_id, &status),
+                        &format!("update status for `{node_id}`"),
+                    )
+                    .await?;
                 }
                 ProjectionMutation::UpsertNodeRelation(relation) => {
                     self.apply_relation_projection(&graph, &relation).await?;

@@ -36,11 +36,13 @@ impl OTelQualityObserver {
                 .build(),
             causal_density: meter
                 .f64_histogram("rehydration.quality.causal_density")
-                .with_description("Fraction of explanatory relationships")
+                .with_description("Fraction of relationships with causal semantic class")
                 .build(),
             noise_ratio: meter
                 .f64_histogram("rehydration.quality.noise_ratio")
-                .with_description("Fraction of noise/distractor nodes")
+                .with_description(
+                    "Fraction of nodes with no summary, detail, or non-structural relation",
+                )
                 .build(),
             detail_coverage: meter
                 .f64_histogram("rehydration.quality.detail_coverage")
@@ -163,6 +165,7 @@ mod tests {
             rpc: "GetContext".to_string(),
             root_node_id: "node:case:123".to_string(),
             role: "developer".to_string(),
+            revision: Some(7),
         }
     }
 

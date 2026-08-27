@@ -162,13 +162,21 @@ const KMP_LOOM = (() => {
         let clusters = perLane.get(coord.dimension);
         if (!clusters) perLane.set(coord.dimension, (clusters = []));
         const last = clusters[clusters.length - 1];
+        const carriesClock = strictMs(model, clock) !== null;
         if (last && t - last.tLast <= minGapMs) {
           last.refs.push(model.ref);
           last.tLast = t;
           last.tSum += t;
+          if (carriesClock) last.strictCount += 1;
           last.byKind.set(model.kind, (last.byKind.get(model.kind) || 0) + 1);
         } else {
-          clusters.push({ refs: [model.ref], tLast: t, tSum: t, byKind: new Map([[model.kind, 1]]) });
+          clusters.push({
+            refs: [model.ref],
+            tLast: t,
+            tSum: t,
+            strictCount: carriesClock ? 1 : 0,
+            byKind: new Map([[model.kind, 1]]),
+          });
         }
       }
     }
@@ -186,6 +194,176 @@ const KMP_LOOM = (() => {
     if (msPerPx > 600e3) return "atlas"; // > 10 min per pixel: weeks on screen
     if (msPerPx > 20e3) return "episode"; // > 20 s per pixel: hours on screen
     return "moment";
+  }
+
+  /* Observability shares the temporal axis but not a value axis. Each series
+     is normalized only for drawing inside its own labelled strip; the exact
+     value, unit and scope remain attached for selection and inspection. */
+  function alignObservabilitySeries(series, t0, t1) {
+    return (series || []).map((item) => {
+      const points = (item.points || [])
+        .filter((point) => point.at_millis >= t0 && point.at_millis <= t1)
+        .sort((a, b) => a.at_millis - b.at_millis);
+      const values = points.map((point) => point.value);
+      const min = values.length ? Math.min(...values) : 0;
+      const max = values.length ? Math.max(...values) : 0;
+      const span = Math.max(Number.EPSILON, max - min);
+      return {
+        name: item.name,
+        unit: item.unit,
+        scope: item.scope,
+        min,
+        max,
+        points: points.map((point) => ({
+          ...point,
+          xRatio: (point.at_millis - t0) / Math.max(1, t1 - t0),
+          yRatio: max === min ? 0.5 : (point.value - min) / span,
+        })),
+      };
+    });
+  }
+
+  /* A monotone, invertible time transform. Elapsed time is proportional.
+     Event density caps long silent gaps and reports every compressed segment
+     as a break so a renderer can never pass narrative spacing off as elapsed
+     duration. A focus interval may reserve 70% of the axis while keeping both
+     contexts visible. */
+  function temporalLens({ mode = "elapsed", t0, t1, events = [], focus = null }) {
+    const start = Math.min(t0, t1);
+    const end = Math.max(t0 + 1, t1);
+    const eventTimes = [...new Set(events.filter((t) => t >= start && t <= end))].sort((a, b) => a - b);
+    let knots = [start, ...eventTimes, end].filter((t, index, all) => index === 0 || t > all[index - 1]);
+    if (knots.length < 2) knots = [start, end];
+    const gaps = knots.slice(1).map((t, index) => t - knots[index]);
+    const positive = gaps.filter((gap) => gap > 0).sort((a, b) => a - b);
+    const median = positive.length ? positive[Math.floor(positive.length / 2)] : end - start;
+    const silenceCap = Math.max(1, median * 3);
+    let compressedGaps = gaps.map((gap) => mode === "event_density" && gap > silenceCap);
+    let weights = gaps.map((gap) => (mode === "event_density" ? Math.min(gap, silenceCap) : gap));
+
+    const focusFrom = focus ? Math.max(start, Math.min(end, focus.from)) : null;
+    const focusTo = focus ? Math.max(start, Math.min(end, focus.to)) : null;
+    const hasFocus = focusFrom !== null && focusTo !== null && focusFrom < focusTo;
+    if (hasFocus) {
+      knots = [...new Set([...knots, focusFrom, focusTo])]
+        .filter((t) => t >= start && t <= end)
+        .sort((a, b) => a - b);
+      const pieces = knots.slice(1).map((to, index) => {
+        const from = knots[index];
+        const mid = (from + to) / 2;
+        const region = mid < focusFrom ? "left" : mid > focusTo ? "right" : "focus";
+        const gap = to - from;
+        return {
+          gap,
+          region,
+          effective: mode === "event_density" ? Math.min(gap, silenceCap) : gap,
+        };
+      });
+      const totals = { left: 0, focus: 0, right: 0 };
+      for (const piece of pieces) totals[piece.region] += piece.effective;
+      const shares = { left: 0.15, focus: 0.7, right: 0.15 };
+      weights = pieces.map(
+        (piece) => (piece.effective / Math.max(1, totals[piece.region])) * shares[piece.region]
+      );
+      compressedGaps = pieces.map(
+        (piece) => mode === "event_density" && piece.gap > silenceCap
+      );
+    }
+
+    const total = Math.max(Number.EPSILON, weights.reduce((sum, weight) => sum + weight, 0));
+    let cursor = 0;
+    const segments = weights.map((weight, index) => {
+      const u0 = cursor / total;
+      cursor += weight;
+      const gap = knots[index + 1] - knots[index];
+      return {
+        t0: knots[index],
+        t1: knots[index + 1],
+        u0,
+        u1: cursor / total,
+        compressed: compressedGaps[index],
+      };
+    });
+    const locateTime = (time) =>
+      segments.find((segment) => time <= segment.t1) || segments[segments.length - 1];
+    const locateRatio = (ratio) =>
+      segments.find((segment) => ratio <= segment.u1) || segments[segments.length - 1];
+    return {
+      mode,
+      segments,
+      breaks: [
+        ...segments
+          .filter((segment) => segment.compressed)
+          .flatMap((segment) => [segment.t0, segment.t1]),
+        ...(hasFocus ? [focusFrom, focusTo] : []),
+      ]
+        .filter((time, index, all) => time > start && time < end && all.indexOf(time) === index),
+      toRatio(time) {
+        const t = Math.max(start, Math.min(end, time));
+        const segment = locateTime(t);
+        return segment.u0 + ((t - segment.t0) / Math.max(1, segment.t1 - segment.t0)) * (segment.u1 - segment.u0);
+      },
+      fromRatio(ratio) {
+        const u = Math.max(0, Math.min(1, ratio));
+        const segment = locateRatio(u);
+        return segment.t0 + ((u - segment.u0) / Math.max(Number.EPSILON, segment.u1 - segment.u0)) * (segment.t1 - segment.t0);
+      },
+    };
+  }
+
+  function projectionAt(models, edges, clock, instant) {
+    const entries = models.filter((model) => {
+      const t = placedMs(model, clock);
+      if (t === null || t > instant) return false;
+      return model.clocks.validUntil === null || model.clocks.validUntil > instant;
+    });
+    const refs = new Set(entries.map((entry) => entry.ref));
+    return {
+      instant,
+      entries,
+      relations: (edges || []).filter(
+        (edge) =>
+          (refs.has(edge.source) && refs.has(edge.target)) ||
+          (edge.rel === "supports" && refs.has(edge.target))
+      ),
+    };
+  }
+
+  /* Stable set/content diff of two projections. Evidence and validity remain
+     named dimensions of the result rather than being folded into a score. */
+  function diffProjections(a, b) {
+    const keyed = (items, key) => new Map((items || []).map((item) => [key(item), item]));
+    const entryKey = (entry) => entry.ref;
+    const relationKey = (edge) => `${edge.source}\u0000${edge.rel}\u0000${edge.target}\u0000${edge.class || ""}`;
+    const diffSet = (left, right, key) => {
+      const l = keyed(left, key);
+      const r = keyed(right, key);
+      const onlyA = [...l.keys()].filter((id) => !r.has(id));
+      const onlyB = [...r.keys()].filter((id) => !l.has(id));
+      const changed = [...l.keys()].filter(
+        (id) => r.has(id) && JSON.stringify(l.get(id)) !== JSON.stringify(r.get(id))
+      );
+      return { onlyA, onlyB, changed };
+    };
+    const entries = diffSet(a.entries, b.entries, entryKey);
+    const relations = diffSet(a.relations, b.relations, relationKey);
+    const isEvidence = (entry) => (entry.kind || "").toLowerCase().includes("evidence");
+    const evidenceItems = (projection) => [
+      ...(projection.entries || []).filter(isEvidence),
+      ...(projection.relations || [])
+        .filter((edge) => edge.rel === "supports" || edge.evidence)
+        .map((edge) => ({
+          ref: `${edge.source}\u0000${edge.rel}\u0000${edge.target}`,
+          text: edge.evidence || edge.why || "",
+        })),
+    ];
+    const evidence = diffSet(evidenceItems(a), evidenceItems(b), entryKey);
+    const validity = diffSet(
+      (a.entries || []).map((entry) => ({ ref: entry.ref, from: entry.clocks.validFrom, until: entry.clocks.validUntil })),
+      (b.entries || []).map((entry) => ({ ref: entry.ref, from: entry.clocks.validFrom, until: entry.clocks.validUntil })),
+      entryKey
+    );
+    return { entries, relations, evidence, validity };
   }
 
   /* ---------------- axis ---------------- */
@@ -320,6 +498,10 @@ const KMP_LOOM = (() => {
     laneBins,
     laneClusters,
     lodFor,
+    alignObservabilitySeries,
+    temporalLens,
+    projectionAt,
+    diffProjections,
     axisTicks,
     tickLabel,
     arcStyle,

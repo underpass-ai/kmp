@@ -8,6 +8,21 @@ pub enum TemporalDirection {
     Forward,
 }
 
+/// Clock used to project a temporal read.
+///
+/// `Default` preserves the original precedence (occurred, validity start,
+/// observed, ingested). Explicit variants never substitute a different clock
+/// when the requested clock is absent.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum TemporalAxis {
+    #[default]
+    Default,
+    Occurred,
+    Observed,
+    Ingested,
+    Validity,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TemporalCursor {
     Ref(String),
@@ -79,7 +94,7 @@ fn normalize_required(value: String, field: &'static str) -> Result<String, Doma
 
 #[cfg(test)]
 mod tests {
-    use crate::{DomainError, TemporalCursor};
+    use crate::{DomainError, TemporalAxis, TemporalCursor};
 
     #[test]
     fn cursor_requires_non_empty_values() {
@@ -89,5 +104,10 @@ mod tests {
         );
         assert!(TemporalCursor::sequence(1).is_ok());
         assert!(TemporalCursor::sequence(0).is_err());
+    }
+
+    #[test]
+    fn temporal_axis_defaults_to_the_compatible_precedence() {
+        assert_eq!(TemporalAxis::default(), TemporalAxis::Default);
     }
 }

@@ -804,7 +804,7 @@ mod tests {
     }
 
     #[test]
-    fn quality_causal_density_counts_explanatory_relations() {
+    fn quality_causal_density_counts_only_causal_relations() {
         let rendered = render_graph_bundle(&quality_bundle());
         // 1 Causal out of 2 total → 0.5
         let diff = (rendered.quality.causal_density() - 0.5).abs();
@@ -816,17 +816,9 @@ mod tests {
     }
 
     #[test]
-    fn quality_noise_ratio_detects_noise_nodes() {
+    fn quality_noise_ratio_ignores_identifier_vocabulary() {
         let rendered = render_graph_bundle(&quality_bundle());
-        // 1 noise node out of 3 total (root + 2 neighbors) → 1/3
-        let expected = 1.0 / 3.0;
-        let diff = (rendered.quality.noise_ratio() - expected).abs();
-        assert!(
-            diff < 0.001,
-            "noise_ratio should be {:.4}, got {:.4}",
-            expected,
-            rendered.quality.noise_ratio()
-        );
+        assert_eq!(rendered.quality.noise_ratio(), 0.0);
     }
 
     #[test]
@@ -900,7 +892,7 @@ mod tests {
     }
 
     #[test]
-    fn quality_all_causal_density_is_one() {
+    fn quality_evidential_relations_do_not_inflate_causal_density() {
         let bundle = KmpBundle::new(
             CaseId::new("root").expect("valid"),
             Role::new("dev").expect("valid"),
@@ -937,8 +929,8 @@ mod tests {
         .expect("valid");
 
         let rendered = render_graph_bundle(&bundle);
-        let diff = (rendered.quality.causal_density() - 1.0).abs();
-        assert!(diff < 0.001, "all-causal density should be 1.0");
+        let diff = (rendered.quality.causal_density() - 0.5).abs();
+        assert!(diff < 0.001, "causal density should count 1 of 2 relations");
     }
 
     #[test]

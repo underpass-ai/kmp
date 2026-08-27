@@ -12,11 +12,23 @@ use crate::fixture::FixtureKernelMcpBackend;
 use crate::grpc::GrpcKernelMcpBackend;
 use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::protocol::{
-    canonical_tool_name, initialize_result, jsonrpc_error, jsonrpc_result,
-    reject_unknown_arguments, tool_error_result, tool_success_result, tools_list_result,
+    canonical_tool_name, initialize_result_with_apps, jsonrpc_error, jsonrpc_result,
+    reject_unknown_arguments, resource_read_result, resources_list_result, tool_error_result,
+    tool_success_result, tools_list_result_with_apps,
 };
 use crate::tool_error::ToolError;
 use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
+
+fn client_supports_apps(request: &Value) -> bool {
+    request
+        .pointer("/params/capabilities/extensions/io.modelcontextprotocol~1ui/mimeTypes")
+        .and_then(Value::as_array)
+        .is_some_and(|types| {
+            types
+                .iter()
+                .any(|value| value.as_str() == Some(crate::protocol::MCP_APP_MIME))
+        })
+}
 
 pub struct KernelMcpServer {
     backend: Arc<dyn KernelMcpToolBackend>,
@@ -30,6 +42,7 @@ pub struct KernelMcpServer {
     /// moment worth saying it at is the first memory the session writes:
     /// before that there is nothing to look at.
     viewer_offered: AtomicBool,
+    apps_negotiated: AtomicBool,
 }
 
 impl Default for KernelMcpServer {
@@ -80,6 +93,7 @@ impl KernelMcpServer {
             embedded_engine: None,
             viewer_url: None,
             viewer_offered: AtomicBool::new(false),
+            apps_negotiated: AtomicBool::new(false),
         }
     }
 
@@ -238,13 +252,40 @@ impl KernelMcpServer {
 
         match method {
             Some("initialize") => id.map(|id| {
+                let apps = client_supports_apps(&request);
+                self.apps_negotiated.store(apps, Ordering::SeqCst);
                 jsonrpc_result(
                     id,
-                    initialize_result(self.backend_name(), self.grpc_tls_mode_name()),
+                    initialize_result_with_apps(
+                        self.backend_name(),
+                        self.grpc_tls_mode_name(),
+                        apps,
+                    ),
                 )
             }),
             Some("notifications/initialized") => None,
-            Some("tools/list") => id.map(|id| jsonrpc_result(id, tools_list_result())),
+            Some("tools/list") => id.map(|id| {
+                jsonrpc_result(
+                    id,
+                    tools_list_result_with_apps(self.apps_negotiated.load(Ordering::SeqCst)),
+                )
+            }),
+            Some("resources/list") if self.apps_negotiated.load(Ordering::SeqCst) => {
+                id.map(|id| jsonrpc_result(id, resources_list_result()))
+            }
+            Some("resources/read") if self.apps_negotiated.load(Ordering::SeqCst) => id.map(|id| {
+                let uri = request
+                    .get("params")
+                    .and_then(|params| params.get("uri"))
+                    .and_then(Value::as_str);
+                match uri {
+                    Some(uri) => match resource_read_result(uri) {
+                        Ok(result) => jsonrpc_result(id, result),
+                        Err(error) => jsonrpc_error(id, -32002, &error.message),
+                    },
+                    None => jsonrpc_error(id, -32602, "resources/read requires params.uri"),
+                }
+            }),
             Some("tools/call") => match id {
                 Some(id) => Some(self.handle_tool_call(id, request.get("params")).await),
                 None => None,
@@ -274,6 +315,17 @@ impl KernelMcpServer {
         let name = canonical_tool_name(requested_name);
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
+
+        if matches!(name, "kmp_view_read_projection" | "kmp_view_undo")
+            && !self.apps_negotiated.load(Ordering::SeqCst)
+        {
+            return jsonrpc_result(
+                id,
+                tool_error_result(&ToolError::unknown_tool(format!(
+                    "{name} is callable only by a negotiated MCP App"
+                ))),
+            );
+        }
 
         // Before anything reads them: the schemas declare
         // `additionalProperties: false`, so an argument the tool does not have
@@ -340,6 +392,7 @@ impl KernelMcpServer {
     ) -> String {
         let outcome = match name {
             "kmp_view_get_state" => crate::view_tools::get_state(arguments),
+            "kmp_view_undo" => crate::view_tools::undo(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
                 match self.memory_ref_exists(about).await {

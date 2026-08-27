@@ -19,8 +19,8 @@ pub use memory_mapping::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
     temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, wake_query_from_proto,
-    wake_response_from_result,
+    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 pub use rendered_mapping::{
     proto_rendered_context_from_result_v1beta1, proto_rendered_context_v1beta1,

@@ -2,6 +2,7 @@ mod buffered_quality_metrics_observer;
 mod embedded_telemetry_guard;
 #[cfg(feature = "otel")]
 pub mod metrics;
+mod otlp_query_adapter;
 #[cfg(feature = "otel")]
 pub mod quality_observers;
 mod quality_telemetry_observation;
@@ -25,6 +26,9 @@ pub use buffered_quality_metrics_observer::BufferedQualityMetricsObserver;
 pub use embedded_telemetry_guard::EmbeddedTelemetryGuard;
 #[cfg(feature = "otel")]
 pub use metrics::KernelMetrics;
+pub use otlp_query_adapter::{
+    OtlpMetricsQueryClient, OtlpObservabilityQueryAdapter, OtlpQueryResponse,
+};
 pub use quality_telemetry_observation::QualityTelemetryObservation;
 
 /// Resources returned by `init_observability` for lifecycle management.

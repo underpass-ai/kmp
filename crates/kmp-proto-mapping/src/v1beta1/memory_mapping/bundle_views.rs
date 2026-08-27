@@ -44,8 +44,7 @@ pub(super) fn memory_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
 pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvidence> {
     let node_kinds = bundle_node_kinds(bundle);
     let support_targets = support_targets_by_source(bundle);
-
-    bundle
+    let mut candidates = bundle
         .node_details()
         .iter()
         .filter(|detail| {
@@ -60,7 +59,38 @@ pub(super) fn answer_evidence_from_bundle(bundle: &KmpBundle) -> Vec<MemoryEvide
                 .unwrap_or_else(|| vec![detail.node_id().to_string()]);
             evidence_from_detail(bundle, detail, supports)
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    // An entry is the claim memory makes; its evidence is why that claim was
+    // recorded. Ask must search both without conflating them. Keep the public
+    // proof shape and mark entry-derived candidates explicitly in metadata.
+    let entry_refs = bundle
+        .relationships()
+        .iter()
+        .filter(|relationship| relationship.relationship_type() == "contains_entry")
+        .map(|relationship| relationship.target_node_id())
+        .collect::<BTreeSet<_>>();
+    for node in std::iter::once(bundle.root_node()).chain(bundle.neighbor_nodes()) {
+        if !entry_refs.contains(node.node_id()) || node.summary().trim().is_empty() {
+            continue;
+        }
+        let properties = node.properties();
+        let mut metadata = persisted_memory_metadata(properties);
+        metadata.insert("proof_role".to_string(), "entry_text".to_string());
+        candidates.push(MemoryEvidence {
+            id: format!("entry:{}", node.node_id()),
+            supports: vec![node.node_id().to_string()],
+            text: node.summary().to_string(),
+            source: persisted_memory_source(properties)
+                .unwrap_or(node.node_id())
+                .to_string(),
+            time: timestamp_from_sort_or_rfc3339(
+                properties.get("payload_time").map(String::as_str),
+            ),
+            metadata,
+        });
+    }
+    candidates
 }
 
 /// Keeps only graph edges that can audit the selected answer evidence.
@@ -143,6 +173,16 @@ fn evidence_from_detail(
     supports: Vec<String>,
 ) -> MemoryEvidence {
     let properties = bundle_node_properties(bundle, detail.node_id());
+    let mut metadata = properties
+        .map(persisted_memory_metadata)
+        .unwrap_or_default();
+    metadata.entry("proof_role".to_string()).or_insert_with(|| {
+        let role = properties
+            .and_then(|properties| properties.get("entry_kind"))
+            .map(|_| "entry_detail")
+            .unwrap_or("stored_evidence");
+        role.to_string()
+    });
     MemoryEvidence {
         id: format!("detail:{}", detail.node_id()),
         supports,
@@ -154,9 +194,7 @@ fn evidence_from_detail(
         time: timestamp_from_sort_or_rfc3339(
             properties.and_then(|properties| properties.get("payload_time").map(String::as_str)),
         ),
-        metadata: properties
-            .map(persisted_memory_metadata)
-            .unwrap_or_default(),
+        metadata,
     }
 }
 
@@ -311,7 +349,7 @@ fn normalize_proof_path(
 /// disagree and both may still be live — the tension is the information.
 /// `supersedes` says one replaced the other: no tension, a lifecycle, and the
 /// older entry is history rather than advice.
-fn superseded_from_relations(path: &[MemoryRelation]) -> Vec<SupersededMemory> {
+pub(super) fn superseded_from_relations(path: &[MemoryRelation]) -> Vec<SupersededMemory> {
     let mut superseded = path
         .iter()
         .filter(|relation| is_supersession(&relation.rel))
@@ -645,6 +683,46 @@ mod tests {
                 .iter()
                 .all(|evidence| evidence.supports == vec!["claim:selected".to_string()])
         );
+    }
+
+    #[test]
+    fn answer_candidates_include_entry_text_and_mark_its_proof_role() {
+        let bundle = KmpBundle::new(
+            CaseId::new("question:a").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("question:a", "memory_anchor"),
+            vec![
+                node("timeline:main", "memory_dimension"),
+                BundleNode::new(
+                    "claim:format-b",
+                    "decision",
+                    "Format B",
+                    "The project uses format B, not A.",
+                    "ACTIVE",
+                    Vec::new(),
+                    BTreeMap::new(),
+                ),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "claim:format-b",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+
+        let candidates = answer_evidence_from_bundle(&bundle);
+
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0].id, "entry:claim:format-b");
+        assert_eq!(candidates[0].text, "The project uses format B, not A.");
+        assert_eq!(candidates[0].metadata["proof_role"], "entry_text");
     }
 
     #[test]

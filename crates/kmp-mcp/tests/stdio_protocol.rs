@@ -104,6 +104,91 @@ async fn unsupported_method_returns_jsonrpc_method_error() {
 }
 
 #[tokio::test]
+async fn negotiated_mcp_app_is_discoverable_and_keeps_chunks_out_of_text_context() {
+    let server = KernelMcpServer::fixture();
+    let invoke = |request: Value| {
+        let server = &server;
+        async move {
+            let response = server
+                .handle_json_line(&request.to_string())
+                .await
+                .expect("request response");
+            serde_json::from_str::<Value>(&response).expect("JSON-RPC response")
+        }
+    };
+    let initialized = invoke(json!({
+        "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": {"capabilities": {"extensions": {
+            "io.modelcontextprotocol/ui": {"mimeTypes": ["text/html;profile=mcp-app"]}
+        }}}
+    }))
+    .await;
+    assert!(initialized["result"]["capabilities"]["resources"].is_object());
+
+    let tools = invoke(json!({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})).await;
+    let definitions = tools["result"]["tools"].as_array().expect("tools");
+    let open = definitions
+        .iter()
+        .find(|tool| tool["name"] == "kmp_view_open")
+        .expect("view opener");
+    assert_eq!(
+        open["_meta"]["ui"]["resourceUri"],
+        "ui://kmp/chronoloom.html"
+    );
+    let projection = definitions
+        .iter()
+        .find(|tool| tool["name"] == "kmp_view_read_projection")
+        .expect("the negotiated host must discover the app-only data tool");
+    assert_eq!(projection["_meta"]["ui"]["visibility"], json!(["app"]));
+    let undo = definitions
+        .iter()
+        .find(|tool| tool["name"] == "kmp_view_undo")
+        .expect("the app must retain the loopback undo semantics");
+    assert_eq!(undo["_meta"]["ui"]["visibility"], json!(["app"]));
+
+    let resources = invoke(json!({"jsonrpc": "2.0", "id": 3, "method": "resources/list"})).await;
+    assert_eq!(
+        resources["result"]["resources"][0]["uri"],
+        "ui://kmp/chronoloom.html"
+    );
+    let resource = invoke(json!({
+        "jsonrpc": "2.0", "id": 4, "method": "resources/read",
+        "params": {"uri": "ui://kmp/chronoloom.html"}
+    }))
+    .await;
+    assert_eq!(
+        resource["result"]["contents"][0]["mimeType"],
+        "text/html;profile=mcp-app"
+    );
+    assert!(
+        resource["result"]["contents"][0]["text"]
+            .as_str()
+            .expect("HTML")
+            .contains("kmp_view_read_projection")
+    );
+
+    let chunk = invoke(json!({
+        "jsonrpc": "2.0", "id": 5, "method": "tools/call",
+        "params": {"name": "kmp_view_read_projection", "arguments": {
+            "about": "project:kmp",
+            "from": "2026-08-01T00:00:00Z",
+            "to": "2026-09-01T00:00:00Z",
+            "lod": "moment"
+        }}
+    }))
+    .await;
+    let receipt = chunk["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text receipt");
+    assert!(
+        receipt.len() < 160,
+        "model-context receipt grew into a data payload"
+    );
+    assert_eq!(chunk["result"]["_meta"]["kmp/modelContext"], "receipt-only");
+    assert!(chunk["result"]["structuredContent"]["entries"].is_array());
+}
+
+#[tokio::test]
 async fn tools_list_exposes_read_only_kmp_tools() {
     let response = handle(json!({
         "jsonrpc": "2.0",

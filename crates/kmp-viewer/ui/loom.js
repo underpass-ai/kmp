@@ -14,7 +14,8 @@
 
 const $ = (id) => document.getElementById(id);
 
-async function api(path, params) {
+async function api(path, params, method = "GET") {
+  if (globalThis.KMP_APP_API) return globalThis.KMP_APP_API(path, params || {}, method);
   const query = params
     ? "?" +
       Object.entries(params)
@@ -22,7 +23,7 @@ async function api(path, params) {
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
         .join("&")
     : "";
-  const response = await fetch(path + query);
+  const response = await fetch(path + query, { method });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || `${path} failed with ${response.status}`);
   return body;
@@ -128,8 +129,10 @@ const model = {
   edges: [], // explanatory arcs (classified)
   supersessions: [],
   contradictions: [],
+  proofEdges: [],
   supersededRefs: new Set(),
   contradictedRefs: new Set(),
+  observability: { series: [], exemplars: [] },
 };
 
 const view = {
@@ -143,60 +146,82 @@ const view = {
   dimmedKinds: new Set(),
   searchHits: new Set(),
   trace: null, // {from, to, refs:Set, hops:[]}
+  overlays: [],
+  lensMode: "elapsed",
+  focusRange: null,
+  pinA: null,
+  pinB: null,
+  diff: null,
 };
 
 /* ---------------- data ---------------- */
 
-const TRAVEL_MAX_ENTRIES = 2048;
-
-async function fetchWholeLine(about) {
-  const byRef = new Map();
-  const absorb = (entries) => {
-    let fresh = 0;
-    for (const entry of entries) {
-      if (!byRef.has(entry.ref_id)) {
-        byRef.set(entry.ref_id, KMP_LOOM.entryModel(entry));
-        fresh += 1;
-      }
-    }
-    return fresh;
-  };
-  const first = await api("/api/timeline", {
+async function fetchProjection(about, axis, from, to, lod = "moment") {
+  const params = {
     about,
-    direction: "near",
-    time: nowIso(),
-    before: 256,
-    after: 256,
-  });
-  absorb(first.entries);
-  let cursor = first.page.next_cursor;
-  for (let guard = 0; cursor && byRef.size < TRAVEL_MAX_ENTRIES && guard < 16; guard += 1) {
-    const page = await api("/api/timeline", { about, direction: "forward", ref: cursor, after: 256 });
-    if (!absorb(page.entries)) break;
-    cursor = page.page.next_cursor;
+    from: from || "1900-01-01T00:00:00Z",
+    to: to || "2100-01-01T00:00:00Z",
+    lod,
+    bins: 128,
+    limit: 2048,
+  };
+  if (axis) params.axis = axis;
+  return api("/api/projection", params);
+}
+
+async function loadObservability(series = view.overlays) {
+  view.overlays = [...new Set(series || [])];
+  if (!view.overlays.length || !view.full) {
+    model.observability = { series: [], exemplars: [] };
+    requestDraw();
+    return;
   }
-  for (let guard = 0; byRef.size < TRAVEL_MAX_ENTRIES && guard < 16; guard += 1) {
-    const sorted = [...byRef.values()].sort(KMP_LOOM.compareModels);
-    const earliest = sorted[0] && sorted[0].ref;
-    if (!earliest) break;
-    const page = await api("/api/timeline", { about, direction: "rewind", ref: earliest, before: 256 });
-    if (!absorb(page.entries)) break;
+  try {
+    model.observability = await api("/api/observability", {
+      about: model.about,
+      from_ms: Math.max(0, Math.floor(view.t0)),
+      to_ms: Math.max(0, Math.ceil(view.t1)),
+      series: view.overlays.join(","),
+      limit: 4096,
+    });
+    if (model.observability.missing && model.observability.missing.length) {
+      showError(`telemetry series unavailable: ${model.observability.missing.join(", ")}`);
+    }
+    requestDraw();
+  } catch (error) {
+    model.observability = { series: [], exemplars: [] };
+    showError(error.message);
+    requestDraw();
   }
-  return [...byRef.values()].sort(KMP_LOOM.compareModels);
+}
+
+function scheduleObservability() {
+  if (!view.overlays.length) return;
+  clearTimeout(scheduleObservability.timer);
+  scheduleObservability.timer = setTimeout(() => loadObservability(), 120);
 }
 
 async function loadAbout(about) {
   try {
-    const [entries, graph] = await Promise.all([
-      fetchWholeLine(about),
-      api("/api/graph", { about, depth: 4 }),
-    ]);
+    // The renderer deliberately asks for the compatible precedence line and
+    // reprojects its bounded chunk onto the selected clock. Entries missing
+    // that clock therefore remain visible as hollow fallbacks instead of
+    // disappearing and making an empty axis look authoritative.
+    const projection = await fetchProjection(about, null);
+    const entries = (projection.entries || [])
+      .map(KMP_LOOM.entryModel)
+      .sort(KMP_LOOM.compareModels);
     model.about = about;
     model.entries = entries;
     model.byRef = new Map(entries.map((m) => [m.ref, m]));
     model.lanes = KMP_LOOM.buildLanes(entries);
     model.laneIndex = new Map(model.lanes.map((lane) => [lane.name, lane.index]));
-    const classified = KMP_LOOM.classifyEdges(graph.edges || [], (ref) => model.byRef.has(ref));
+    model.proofEdges = (projection.relations || []).map((edge) => ({
+      ...edge,
+      source: edge.from,
+      target: edge.to,
+    }));
+    const classified = KMP_LOOM.classifyEdges(model.proofEdges, (ref) => model.byRef.has(ref));
     model.edges = classified.arcs;
     model.supersessions = classified.supersessions;
     model.contradictions = classified.contradictions;
@@ -205,17 +230,27 @@ async function loadAbout(about) {
     model.contradictedRefs = new Set(
       classified.contradictions.flatMap((e) => [e.source, e.target])
     );
+    model.observability = { series: [], exemplars: [] };
     view.selectedRef = null;
     view.trace = null;
     view.searchHits = new Set();
     view.hiddenLanes = new Set();
+    view.pinA = null;
+    view.pinB = null;
+    view.diff = null;
+    view.focusRange = null;
+    syncFocusButton();
+    renderDiffPanel();
     $("trace-box").hidden = true;
     renderDetailEmpty();
     setClock(view.clock, true);
     renderAbouts();
     renderRail();
     renderStats();
-    showError("");
+    if (projection.truncated) {
+      showError(`projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`);
+    }
+    else showError("");
     if (!sync.applying) viewOpen();
   } catch (error) {
     showError(error.message);
@@ -244,6 +279,7 @@ function setClock(clock, reset) {
     view.t0 = Math.max(view.t0, view.full.t0);
     view.t1 = Math.min(view.t1, view.full.t1);
   }
+  updateAxisLens();
   renderStats();
   requestDraw();
   drawNavigator();
@@ -261,10 +297,12 @@ function setWindow(t0, t1, remember = true) {
   if (remember) view.windowStack.push([view.t0, view.t1]);
   view.t0 = clamped0;
   view.t1 = clamped1;
+  updateAxisLens();
   renderStats();
   requestDraw();
   drawNavigator();
   reportView();
+  scheduleObservability();
 }
 
 $("nav-all").addEventListener("click", () => setWindow(view.full.t0, view.full.t1));
@@ -284,6 +322,7 @@ let arcsGfx = null;
 let braidGfx = null;
 let marksGfx = null;
 let selectGfx = null;
+let overlayGfx = null;
 let textLayer = null;
 const textPools = { lane: new Map(), axis: [], mark: new Map(), bubble: new Map() };
 let dirty = true;
@@ -322,8 +361,9 @@ async function setupRenderer() {
   braidGfx = new PIXI.Graphics();
   marksGfx = new PIXI.Graphics();
   selectGfx = new PIXI.Graphics();
+  overlayGfx = new PIXI.Graphics();
   textLayer = new PIXI.Container();
-  app.stage.addChild(laneGfx, validityGfx, arcsGfx, braidGfx, marksGfx, selectGfx, textLayer);
+  app.stage.addChild(laneGfx, overlayGfx, validityGfx, arcsGfx, braidGfx, marksGfx, selectGfx, textLayer);
   app.renderer.on("resize", () => {
     dirty = true;
     drawNavigator();
@@ -339,6 +379,7 @@ async function setupRenderer() {
 /* Layout: an axis strip on top, lanes below it, the navigator floating at
    the bottom of the stage (its height is reserved). */
 const AXIS_H = 30;
+const PULSE_H = 52;
 const NAV_RESERVED = 96;
 /// How many entry labels the scene keeps baked. Text is the most expensive
 /// thing on the stage, so the pool is bounded — and evicts rather than
@@ -351,15 +392,125 @@ function visibleLanes() {
 
 function laneGeometry() {
   const lanes = visibleLanes();
-  const height = canvas.clientHeight - AXIS_H - NAV_RESERVED;
+  const pulse = view.overlays.length ? PULSE_H : 0;
+  const height = canvas.clientHeight - AXIS_H - pulse - NAV_RESERVED;
   const laneH = lanes.length ? Math.max(44, Math.min(150, height / lanes.length)) : height;
   const tops = new Map();
-  lanes.forEach((lane, i) => tops.set(lane.name, AXIS_H + i * laneH));
-  return { lanes, laneH, tops };
+  lanes.forEach((lane, i) => tops.set(lane.name, AXIS_H + pulse + i * laneH));
+  return { lanes, laneH, tops, pulse };
 }
 
-const xOf = (t) => ((t - view.t0) / (view.t1 - view.t0)) * canvas.clientWidth;
-const tOf = (x) => view.t0 + (x / canvas.clientWidth) * (view.t1 - view.t0);
+let axisLens = KMP_LOOM.temporalLens({ mode: "elapsed", t0: 0, t1: 1 });
+
+function updateAxisLens() {
+  const events = model.entries
+    .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
+    .filter((time) => time !== null);
+  axisLens = KMP_LOOM.temporalLens({
+    mode: view.lensMode,
+    t0: view.t0,
+    t1: view.t1,
+    events,
+    focus: view.focusRange,
+  });
+}
+
+const xOf = (t) => axisLens.toRatio(t) * canvas.clientWidth;
+const tOf = (x) => axisLens.fromRatio(x / Math.max(1, canvas.clientWidth));
+
+$("lens-mode").addEventListener("change", (event) => {
+  view.lensMode = event.target.value;
+  updateAxisLens();
+  requestDraw();
+  drawNavigator();
+});
+
+function syncFocusButton() {
+  $("focus-context").textContent = view.focusRange ? "Clear focus" : "Focus + context";
+}
+
+$("focus-context").addEventListener("click", () => {
+  if (view.focusRange) {
+    view.focusRange = null;
+    syncFocusButton();
+    updateAxisLens();
+    requestDraw();
+    drawNavigator();
+    return;
+  }
+  if (!view.full) return;
+  const fullSpan = view.full.t1 - view.full.t0;
+  const windowSpan = view.t1 - view.t0;
+  if (windowSpan >= fullSpan * 0.999) {
+    showError("zoom into the interval to expand before enabling focus + context");
+    return;
+  }
+  view.focusRange = { from: view.t0, to: view.t1 };
+  syncFocusButton();
+  setWindow(view.full.t0, view.full.t1);
+});
+
+function pinnedInstant() {
+  const selected = view.selectedRef && model.byRef.get(view.selectedRef);
+  return (selected && KMP_LOOM.placedMs(selected, view.clock)) ?? (view.t0 + view.t1) / 2;
+}
+
+function pinComparison(side) {
+  const instant = pinnedInstant();
+  const projection = KMP_LOOM.projectionAt(
+    model.entries,
+    model.proofEdges,
+    view.clock,
+    instant
+  );
+  if (side === "A") view.pinA = projection;
+  else view.pinB = projection;
+  view.diff = view.pinA && view.pinB ? KMP_LOOM.diffProjections(view.pinA, view.pinB) : null;
+  renderDiffPanel();
+  requestDraw();
+}
+
+$("pin-a").addEventListener("click", () => pinComparison("A"));
+$("pin-b").addEventListener("click", () => pinComparison("B"));
+$("clear-diff").addEventListener("click", () => {
+  view.pinA = null;
+  view.pinB = null;
+  view.diff = null;
+  renderDiffPanel();
+  requestDraw();
+});
+
+function renderDiffPanel() {
+  const panel = $("diff-panel");
+  panel.textContent = "";
+  panel.hidden = !view.pinA && !view.pinB;
+  if (panel.hidden) return;
+  const head = el("div", "diff-head");
+  const side = (name, projection, className) => {
+    const node = el("div", `diff-side ${className || ""}`);
+    node.append(
+      el("strong", "", name),
+      el("div", "mono", projection ? fmtMsFull(projection.instant) : "not pinned"),
+      el("div", "muted", projection ? `${projection.entries.length} entries · ${projection.relations.length} relations` : "")
+    );
+    return node;
+  };
+  head.append(side("A", view.pinA, ""), side("B", view.pinB, "b"));
+  panel.append(head);
+  if (!view.diff) return;
+  const grid = el("div", "diff-grid mono");
+  grid.append(el("span", "", "dimension"), el("span", "", "only A"), el("span", "", "only B"), el("span", "", "changed"));
+  for (const name of ["entries", "relations", "validity", "evidence"]) {
+    const item = view.diff[name];
+    grid.append(
+      el("span", "", name),
+      el("span", "", item.onlyA.length ? item.onlyA.join(", ") : "—"),
+      el("span", "", item.onlyB.length ? item.onlyB.join(", ") : "—"),
+      el("span", "", item.changed.length ? item.changed.join(", ") : "—")
+    );
+  }
+  panel.append(grid);
+}
 
 function laneText(key, text, size, color, alpha) {
   let label = textPools.lane.get(key);
@@ -485,8 +636,11 @@ function renderLoom() {
   braidGfx.clear();
   marksGfx.clear();
   selectGfx.clear();
+  overlayGfx.clear();
   hitList = [];
   const wanted = new Set();
+
+  renderObservability(p, width, geometry.pulse);
 
   // Lanes: alternating quiet bands + name.
   geometry.lanes.forEach((lane, i) => {
@@ -532,6 +686,27 @@ function renderLoom() {
   }
   for (let i = axisIndex; i < textPools.axis.length; i += 1) textPools.axis[i].visible = false;
 
+  // Event-density is a narrative lens, never elapsed time in disguise. Every
+  // compressed silence gets a visible double-slash scale break.
+  for (const time of axisLens.breaks) {
+    const x = xOf(time);
+    laneGfx
+      .moveTo(x - 5, AXIS_H - 7)
+      .lineTo(x - 1, AXIS_H + 1)
+      .moveTo(x + 1, AXIS_H - 7)
+      .lineTo(x + 5, AXIS_H + 1)
+      .stroke({ width: 1.5, color: p.danger, alpha: 0.9 });
+  }
+
+  for (const [pin, color] of [[view.pinA, p.accent], [view.pinB, p.cls.evidential]]) {
+    if (!pin || pin.instant < view.t0 || pin.instant > view.t1) continue;
+    const x = xOf(pin.instant);
+    selectGfx
+      .moveTo(x, AXIS_H)
+      .lineTo(x, canvas.clientHeight - NAV_RESERVED)
+      .stroke({ width: 2, color, alpha: 0.7 });
+  }
+
   const laneMid = (name) => {
     const top = geometry.tops.get(name);
     return top === undefined ? null : top + geometry.laneH / 2;
@@ -543,10 +718,72 @@ function renderLoom() {
     renderWeave(p, geometry, width, lod, msPerPx, laneMid);
   }
 
+  const clocked = model.entries.filter((entry) => KMP_LOOM.strictMs(entry, view.clock) !== null).length;
+  if (model.entries.length && clocked === 0) {
+    const key = "status:no-selected-clock";
+    wanted.add(key);
+    const label = laneText(
+      key,
+      `No entries carry the ${view.clock} clock · hollow marks use fallback placement`,
+      13,
+      p.danger,
+      1
+    );
+    label.anchor.set(0.5, 0.5);
+    label.position.set(width / 2, Math.max(AXIS_H + 24, (canvas.clientHeight - NAV_RESERVED) / 2));
+  }
+
   // Hide labels not used this frame.
   for (const [key, label] of textPools.lane) {
     if (!wanted.has(key) && key.startsWith("lane:")) label.visible = false;
   }
+}
+
+function renderObservability(p, width, pulseHeight) {
+  if (!pulseHeight) return;
+  const aligned = KMP_LOOM.alignObservabilitySeries(
+    model.observability.series,
+    view.t0,
+    view.t1
+  );
+  const exemplars = new Map(
+    (model.observability.exemplars || []).map((exemplar) => [exemplar.id, exemplar])
+  );
+  const colors = [p.accent, p.cls.causal, p.cls.evidential, p.cls.constraint, p.danger];
+  const top = AXIS_H + 5;
+  const height = pulseHeight - 12;
+  aligned.forEach((series, index) => {
+    const color = colors[index % colors.length];
+    const points = series.points.map((point) => [
+      point.xRatio * width,
+      top + height - point.yRatio * height,
+      point,
+    ]);
+    if (points.length > 1) {
+      overlayGfx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i += 1) overlayGfx.lineTo(points[i][0], points[i][1]);
+      overlayGfx.stroke({ width: 1.5, color, alpha: 0.75 });
+    }
+    for (const [x, y, point] of points) {
+      overlayGfx.circle(x, y, 3).fill({ color, alpha: 0.9 });
+      hitList.push({
+        x,
+        y,
+        r: 6,
+        kind: "exemplar",
+        series: series.name,
+        unit: series.unit,
+        scope: series.scope,
+        value: point.value,
+        at: point.at_millis,
+        exemplar: exemplars.get(point.exemplar_id),
+      });
+    }
+  });
+  overlayGfx
+    .moveTo(0, AXIS_H + pulseHeight)
+    .lineTo(width, AXIS_H + pulseHeight)
+    .stroke({ width: 1, color: p.laneLine, alpha: 0.8 });
 }
 
 /* Atlas: density ribbons per lane — the shape of the memory, no nodes. */
@@ -612,7 +849,12 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
         // A bundle of memory too tight to split at this zoom.
         const r = Math.min(18, 7 + 2.5 * Math.log2(cluster.refs.length + 1));
         const slices = [...cluster.byKind.entries()].sort((a, c) => c[1] - a[1]);
-        marksGfx.circle(x, y, r).fill({ color: p.surface, alpha: 0.9 });
+        const allFallback = cluster.strictCount === 0;
+        if (allFallback) {
+          marksGfx.circle(x, y, r).stroke({ width: 2, color: p.textMuted, alpha: 0.9 });
+        } else {
+          marksGfx.circle(x, y, r).fill({ color: p.surface, alpha: 0.9 });
+        }
         let angle = -Math.PI / 2;
         const total = cluster.refs.length;
         for (const [kind, count] of slices) {
@@ -985,6 +1227,16 @@ canvas.addEventListener("pointerup", (event) => {
     setWindow(hit.t0 - pad, hit.t1 + pad);
     return;
   }
+  if (hit.kind === "exemplar") {
+    const ref = hit.exemplar && hit.exemplar.bundle_ref;
+    if (ref && model.byRef.has(ref)) {
+      selectEntry(ref);
+    } else if (hit.exemplar) {
+      const revision = hit.exemplar.revision == null ? "revision unavailable" : `revision ${hit.exemplar.revision}`;
+      showError(`${hit.exemplar.operation} · ${hit.exemplar.about || "unknown bundle"} · ${revision}; temporal window preserved`);
+    }
+    return;
+  }
   selectEntry(hit.ref);
 });
 
@@ -1043,6 +1295,15 @@ function updateTooltip(hit, sx, sy) {
   if (hit.kind === "cluster") {
     tooltip.append(el("div", "tt-title", `${hit.count} entries`));
     tooltip.append(el("div", "tt-sub", "click to open this stretch of the weave"));
+  } else if (hit.kind === "exemplar") {
+    tooltip.append(el("div", "tt-title", `${hit.series}: ${hit.value} ${hit.unit}`));
+    tooltip.append(el("div", "tt-sub", `${hit.scope} · ${fmtMsFull(hit.at)}`));
+    if (hit.exemplar) {
+      const revision = hit.exemplar.revision == null ? "revision unavailable" : `revision ${hit.exemplar.revision}`;
+      tooltip.append(
+        el("div", "tt-quote", `${hit.exemplar.operation} · ${hit.exemplar.about || "unknown bundle"} · ${revision}`)
+      );
+    }
   } else {
     const m = model.byRef.get(hit.ref);
     tooltip.append(el("div", "tt-title", m.text.length > 90 ? m.text.slice(0, 89) + "…" : m.text));
@@ -1417,11 +1678,11 @@ const sync = { revision: 0, applying: false, reportTimer: null, lastReport: "", 
 
 async function viewOpen() {
   try {
-    const response = await fetch(
-      `/api/view/open?id=${VIEW_ID}&about=${encodeURIComponent(model.about || "")}`,
-      { method: "POST" }
+    const state = await api(
+      "/api/view/open",
+      { id: VIEW_ID, about: model.about || "" },
+      "POST"
     );
-    const state = await response.json();
     sync.revision = state.view_revision || 0;
     renderProvenance(state);
     if (!sync.polling) {
@@ -1465,6 +1726,7 @@ async function applyAgentState(state) {
     if (state.clock && state.clock !== view.clock) setClock(state.clock, false);
 
     const projection = state.projection || {};
+    if (projection.overlays) await loadObservability(projection.overlays);
     if (projection.dimensions) {
       const keep = new Set(projection.dimensions);
       view.hiddenLanes = new Set(
@@ -1480,7 +1742,9 @@ async function applyAgentState(state) {
       const from = Date.parse(range.from);
       const to = Date.parse(range.to);
       if (Number.isFinite(from) && Number.isFinite(to)) {
-        setWindow(from, to);
+        view.focusRange = { from, to };
+        syncFocusButton();
+        setWindow(view.full.t0, view.full.t1);
         framed = true;
       }
     } else if (refs.length) {
@@ -1548,9 +1812,7 @@ function renderProvenance(state) {
 
 $("agent-undo").addEventListener("click", async () => {
   try {
-    const response = await fetch(`/api/view/undo?id=${VIEW_ID}`, { method: "POST" });
-    if (!response.ok) return;
-    const state = await response.json();
+    const state = await api("/api/view/undo", { id: VIEW_ID }, "POST");
     sync.revision = state.view_revision;
     await applyAgentState(state);
     $("agent-chip").hidden = true;
@@ -1583,8 +1845,7 @@ function reportView() {
     if (signature === sync.lastReport) return;
     sync.lastReport = signature;
     try {
-      const response = await fetch(`/api/view/report?${signature}`, { method: "POST" });
-      const state = await response.json();
+      const state = await api("/api/view/report", Object.fromEntries(params), "POST");
       if (state.view_revision) sync.revision = state.view_revision;
       $("agent-chip").hidden = true;
     } catch (error) {

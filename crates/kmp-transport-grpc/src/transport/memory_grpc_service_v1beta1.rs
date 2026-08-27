@@ -11,9 +11,9 @@ use kmp_domain::{
 use kmp_proto::v1beta1::{
     AskRequest, AskResponse, ForwardRequest, ForwardResponse, GotoRequest, GotoResponse,
     IngestRequest, IngestResponse, InspectRequest, InspectResponse, NearRequest, NearResponse,
-    RewindRequest, RewindResponse, TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest,
-    TraceRequest, TraceResponse, WakeRequest, WakeResponse,
-    kernel_memory_service_server::KernelMemoryService,
+    ProjectVisualRequest, ProjectVisualResponse, RewindRequest, RewindResponse,
+    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TraceRequest, TraceResponse,
+    WakeRequest, WakeResponse, kernel_memory_service_server::KernelMemoryService,
 };
 use opentelemetry::KeyValue;
 use prost::Message;
@@ -23,8 +23,8 @@ use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
     temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, wake_query_from_proto,
-    wake_response_from_result,
+    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
 use kmp_proto_mapping::v1beta1::recall_projection::{
@@ -252,6 +252,47 @@ where
         .map(|response| Response::new(forward_response_from_temporal(response)))
     }
 
+    #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.ProjectVisual"))]
+    async fn project_visual(
+        &self,
+        request: Request<ProjectVisualRequest>,
+    ) -> Result<Response<ProjectVisualResponse>, Status> {
+        let start = Instant::now();
+        let query = visual_projection_query_from_proto(request.into_inner()).map_err(|status| {
+            map_proto_error("KernelMemoryService.ProjectVisual", &start, *status)
+        })?;
+        tracing::info!(
+            rpc = "KernelMemoryService.ProjectVisual",
+            about = %query.about,
+            axis = ?query.axis,
+            level_of_detail = ?query.level_of_detail,
+            "kernel visual projection grpc request"
+        );
+        let result = self
+            .application
+            .visual_projection(query)
+            .await
+            .map_err(|error| {
+                map_application_error_with_log("KernelMemoryService.ProjectVisual", &start, error)
+            })?;
+        let response = visual_projection_response_from_result(result);
+        tracing::info!(
+            rpc = "KernelMemoryService.ProjectVisual",
+            entries = response.entries.len(),
+            bins = response.bins.len(),
+            clusters = response.clusters.len(),
+            truncated = response.truncated,
+            "kernel visual projection grpc response"
+        );
+        record_kmp_grpc_rpc(
+            "KernelMemoryService.ProjectVisual",
+            "success",
+            "none",
+            start.elapsed(),
+        );
+        Ok(Response::new(response))
+    }
+
     #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Trace"))]
     async fn trace(
         &self,
@@ -396,6 +437,7 @@ fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest 
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -408,6 +450,7 @@ fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequ
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -420,6 +463,7 @@ fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRe
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -432,6 +476,7 @@ fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest 
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 

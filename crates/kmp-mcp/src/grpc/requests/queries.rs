@@ -8,8 +8,9 @@ use crate::args::{optional_string, required_string, validate_required_arguments}
 use super::common::{answer_policy_from_object, memory_budget_from_arguments, object};
 use super::dimensions::dimension_selection_from_arguments;
 use super::temporal::{
-    inspect_include_from_arguments, page_from_arguments, temporal_cursor_from_arguments,
-    temporal_include_from_arguments, temporal_limit_from_arguments, temporal_window_from_arguments,
+    inspect_include_from_arguments, page_from_arguments, temporal_axis_from_arguments,
+    temporal_cursor_from_arguments, temporal_include_from_arguments, temporal_limit_from_arguments,
+    temporal_window_from_arguments,
 };
 
 pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeRequest, String> {
@@ -60,6 +61,7 @@ pub(crate) fn temporal_move_request_from_arguments(
         limit: temporal_limit_from_arguments(arguments)?,
         include: temporal_include_from_arguments(arguments)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 3)?),
+        axis: temporal_axis_from_arguments(arguments)?,
     })
 }
 
@@ -75,6 +77,7 @@ pub(crate) fn temporal_near_request_from_arguments(
         limit: temporal_limit_from_arguments(arguments)?,
         include: temporal_include_from_arguments(arguments)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 3)?),
+        axis: temporal_axis_from_arguments(arguments)?,
     })
 }
 
@@ -138,5 +141,23 @@ mod tests {
 
         assert!(error.contains("budget.max_bytes"));
         assert!(error.contains("at least 512"));
+    }
+
+    #[test]
+    fn temporal_request_carries_the_explicit_clock_axis() {
+        let request = temporal_move_request_from_arguments(
+            &json!({
+                "about": "project:kmp",
+                "axis": "validity",
+                "at": {"time": "2026-08-27T12:00:00Z"}
+            }),
+            "goto",
+        )
+        .expect("valid temporal request");
+
+        assert_eq!(
+            request.axis,
+            kmp_proto::v1beta1::TemporalAxis::Validity as i32
+        );
     }
 }

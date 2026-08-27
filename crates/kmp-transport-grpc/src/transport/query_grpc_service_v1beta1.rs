@@ -129,6 +129,7 @@ where
                 rpc: "GetContext".to_string(),
                 root_node_id: result.bundle.root_node_id().as_str().to_string(),
                 role: result.bundle.role().as_str().to_string(),
+                revision: Some(result.bundle.metadata().revision),
             },
         );
 
@@ -259,6 +260,7 @@ where
                 rpc: "GetContextPath".to_string(),
                 root_node_id: obs_root,
                 role: obs_role,
+                revision: Some(result.path_bundle.metadata().revision),
             },
         );
 
@@ -396,6 +398,7 @@ where
                     rpc: "RehydrateSession".to_string(),
                     root_node_id: result.root_node_id.clone(),
                     role: bundle.role().as_str().to_string(),
+                    revision: Some(bundle.metadata().revision),
                 },
             );
         }
