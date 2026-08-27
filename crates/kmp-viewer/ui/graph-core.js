@@ -491,6 +491,64 @@ const KMP_CORE = (() => {
     return { of, clusters };
   }
 
+  /* ---------------- temporal ordering and reveal ---------------- */
+
+  /* An entry's place in time: its smallest sequence, then its earliest
+     occurred_at. Entries carrying neither sort to the end, in given order. */
+  function entryOrderKey(entry) {
+    let sequence = Number.MAX_SAFE_INTEGER;
+    let time = "";
+    for (const c of entry.coordinates || []) {
+      if (c.sequence !== undefined && c.sequence < sequence) sequence = c.sequence;
+      if (c.occurred_at && (!time || c.occurred_at < time)) time = c.occurred_at;
+    }
+    return { sequence, time };
+  }
+
+  function compareEntries(a, b) {
+    const ka = entryOrderKey(a);
+    const kb = entryOrderKey(b);
+    if (ka.sequence !== kb.sequence) return ka.sequence - kb.sequence;
+    return ka.time < kb.time ? -1 : ka.time > kb.time ? 1 : 0;
+  }
+
+  /* What each step of a replay adds: the entry itself plus its structural
+     scaffolding — the dimension it sits in, the evidence that supports it —
+     which carries no time of its own and would otherwise stay dark forever.
+     Each id appears at its FIRST step, so the whole build is O(entries +
+     edges) instead of one cumulative Set per step. */
+  function buildRevealSteps(entries, edges, attachRelations) {
+    const attached = new Map();
+    for (const edge of edges) {
+      if (!attachRelations.has(edge.rel)) continue;
+      let a = attached.get(edge.source);
+      if (!a) attached.set(edge.source, (a = []));
+      a.push(edge.target);
+      let b = attached.get(edge.target);
+      if (!b) attached.set(edge.target, (b = []));
+      b.push(edge.source);
+    }
+    const stepOf = new Map(); // id -> first step it appears
+    const scaffolding = new Set(); // ids that arrived as attachment, not entry
+    const steps = [];
+    for (let i = 0; i < entries.length; i += 1) {
+      const added = [];
+      const admit = (id, isScaffolding) => {
+        if (stepOf.has(id)) {
+          if (!isScaffolding) scaffolding.delete(id);
+          return;
+        }
+        stepOf.set(id, i);
+        if (isScaffolding) scaffolding.add(id);
+        added.push(id);
+      };
+      admit(entries[i].ref_id, false);
+      for (const other of attached.get(entries[i].ref_id) || []) admit(other, true);
+      steps.push(added);
+    }
+    return { steps, stepOf, scaffolding };
+  }
+
   return {
     SIM,
     fnv1a,
@@ -500,5 +558,8 @@ const KMP_CORE = (() => {
     computeBounds,
     fitTransform,
     buildClusters,
+    entryOrderKey,
+    compareEntries,
+    buildRevealSteps,
   };
 })();

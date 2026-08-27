@@ -40,7 +40,6 @@ function el(tag, className, text) {
 }
 
 const shortHash = (hash) => (hash && hash.length > 12 ? hash.slice(0, 12) + "…" : hash || "–");
-const REPLAY_WINDOW = 256;
 const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, "Z");
 
 /* ---------------- theme ---------------- */
@@ -629,14 +628,17 @@ function nodeAlpha(body) {
   if (playback.active) {
     if (body.meta) {
       // A folded dimension reveals in proportion to its revealed members.
-      const revealed = playback.revealed[playback.step];
+      const revealed = playback.revealedSet;
       let seen = 0;
       for (const id of body.cluster.members) if (revealed.has(id)) seen += 1;
       if (body.cluster.head && revealed.has(body.cluster.head)) seen += 1;
-      return seen ? 0.25 + 0.65 * (seen / body.mass) : 0.07;
+      return seen ? 0.25 + 0.65 * (seen / body.mass) : 0;
     }
     if (body.id === playback.currentRef) return 1;
-    return playback.revealed[playback.step].has(body.id) ? 0.8 : 0.07;
+    if (!playback.revealedSet.has(body.id)) return 0; // the future is not there yet
+    if (playback.scaffolding.has(body.id)) return 0.4;
+    const born = playback.stepOf.get(body.id);
+    return born !== undefined && playback.step - born <= RECENT_STEPS ? 0.9 : 0.55;
   }
   if (traceHighlight) return traceHighlight.nodes.has(body.id) ? 1 : 0.14;
   if (!body.meta && dimmedKinds.has(body.kind)) return 0.14;
@@ -649,8 +651,8 @@ function nodeAlpha(body) {
 
 function edgeAlpha(edge) {
   if (playback.active && !edge.aggregate) {
-    const revealed = playback.revealed[playback.step];
-    if (!revealed.has(edge.source) || !revealed.has(edge.target)) return 0.04;
+    const revealed = playback.revealedSet;
+    if (!revealed.has(edge.source) || !revealed.has(edge.target)) return 0;
     return edge.source === playback.currentRef || edge.target === playback.currentRef ? 1 : 0.55;
   }
   if (traceHighlight && !edge.aggregate) {
@@ -736,6 +738,7 @@ function syncScene() {
   for (const body of scene.bodies) {
     if (body.x < rect.x0 || body.x > rect.x1 || body.y < rect.y0 || body.y > rect.y1) continue;
     const a = nodeAlpha(body);
+    if (a <= 0.01) continue; // in travel, the future is culled, not greyed
     let r = Math.max(nodeRadius(body), 3 / k);
     const isCurrentStep = playback.active && body.id === playback.currentRef;
     if (isCurrentStep) {
@@ -861,36 +864,16 @@ function drawArrowhead(edge, s, t, color, alphaValue) {
     .fill({ color, alpha: alphaValue });
 }
 
-/* ---------------- temporal replay ----------------
-   Replays the about's timeline over the graph: entries reveal in sequence
-   order, the current one pulses with the camera easing toward it, and its
-   text plays as a caption. The order comes from the kernel's own temporal
-   read, not from a guess over the drawn edges. */
+/* ---------------- time travel ----------------
+   The whole timeline, walked page by page over the kernel's own temporal
+   read, then scrubbed on a density strip: every entry is a tick in its
+   kind's ink, the played region wears the gradient left to right, and the
+   graph shows the memory as of the playhead — the future simply is not
+   there yet. */
 
-const playback = {
-  active: false,
-  entries: [],
-  revealed: [], // step -> Set of revealed ref_ids (cumulative)
-  step: 0,
-  currentRef: null,
-  timer: null,
-};
-
-function entryOrderKey(entry) {
-  let sequence = Number.MAX_SAFE_INTEGER;
-  let time = "";
-  for (const c of entry.coordinates) {
-    if (c.sequence !== undefined && c.sequence < sequence) sequence = c.sequence;
-    if (c.occurred_at && (!time || c.occurred_at < time)) time = c.occurred_at;
-  }
-  return { sequence, time };
-}
-
-/// Nodes that belong to `id` rather than standing beside it in time.
-///
-/// Structural scaffolding: the dimension an entry sits in, and the evidence
-/// that supports it. Both are reached by an edge whose other end is the
-/// entry, and neither carries a coordinate of its own.
+/// Nodes that belong to an entry rather than standing beside it in time:
+/// the dimension it was written into, the evidence that supports it. They
+/// carry no coordinate of their own and reveal with their entry.
 const ATTACHING_RELATIONS = new Set([
   "has_dimension",
   "has_evidence",
@@ -899,81 +882,142 @@ const ATTACHING_RELATIONS = new Set([
   "records",
 ]);
 
-function attachedTo(id) {
-  const attached = [];
-  for (const edge of graph.edges) {
-    if (!ATTACHING_RELATIONS.has(edge.rel)) continue;
-    if (edge.source === id) attached.push(edge.target);
-    else if (edge.target === id) attached.push(edge.source);
+/* Fetch caps: pages of 256 by ref cursor, at most this many entries. */
+const TRAVEL_MAX_ENTRIES = 2048;
+const RECENT_STEPS = 12;
+
+const playback = {
+  active: false,
+  entries: [],
+  steps: [], // step -> ids first revealed at that step
+  stepOf: new Map(), // id -> first step
+  scaffolding: new Set(),
+  revealedSet: new Set(),
+  step: 0,
+  currentRef: null,
+  timer: null,
+  stepMs: 1200,
+  xs: [], // step -> 0..1 position on the strip
+  placed: 0, // entries carrying a time
+  total: 0, // what the kernel says the line holds
+};
+
+/* The whole line: one `near` window around now, then `forward` by cursor
+   for the newer side and `rewind` from the earliest for the older side.
+   Merged on ref, ordered by the entries' own coordinates. */
+async function fetchWholeTimeline(about) {
+  const byRef = new Map();
+  const absorb = (entries) => {
+    let fresh = 0;
+    for (const entry of entries) {
+      if (!byRef.has(entry.ref_id)) {
+        byRef.set(entry.ref_id, entry);
+        fresh += 1;
+      }
+    }
+    return fresh;
+  };
+  const first = await api("/api/timeline", {
+    about,
+    direction: "near",
+    time: nowIso(),
+    before: 256,
+    after: 256,
+  });
+  absorb(first.entries);
+  const total = first.page.total || first.entries.length;
+
+  let cursor = first.page.next_cursor;
+  for (let guard = 0; cursor && byRef.size < TRAVEL_MAX_ENTRIES && guard < 16; guard += 1) {
+    const page = await api("/api/timeline", { about, direction: "forward", ref: cursor, after: 256 });
+    if (!absorb(page.entries)) break;
+    cursor = page.page.next_cursor;
   }
-  return attached;
+  for (let guard = 0; byRef.size < TRAVEL_MAX_ENTRIES && guard < 16; guard += 1) {
+    const sorted = [...byRef.values()].sort(KMP_CORE.compareEntries);
+    const earliest = sorted[0] && sorted[0].ref_id;
+    if (!earliest) break;
+    const page = await api("/api/timeline", { about, direction: "rewind", ref: earliest, before: 256 });
+    if (!absorb(page.entries)) break;
+  }
+  return { entries: [...byRef.values()].sort(KMP_CORE.compareEntries), total: Math.max(total, byRef.size) };
 }
 
-async function startReplay() {
+async function startReplay(atRef) {
   if (!graph.about) return;
   try {
-    // `near` around now, wide in both directions: it is the only cursor that
-    // needs nothing selected and still returns the whole line. `goto` with a
-    // bare sequence resolves no dimension and no scope, so it always came
-    // back empty and this button reported an empty memory that was not.
-    const view = await api("/api/timeline", {
-      about: graph.about,
-      direction: "near",
-      time: nowIso(),
-      before: REPLAY_WINDOW,
-      after: REPLAY_WINDOW,
-    });
-    const entries = [...view.entries].sort((a, b) => {
-      const ka = entryOrderKey(a);
-      const kb = entryOrderKey(b);
-      if (ka.sequence !== kb.sequence) return ka.sequence - kb.sequence;
-      return ka.time < kb.time ? -1 : ka.time > kb.time ? 1 : 0;
-    });
-    if (!entries.length) {
-      showError(
-        `nothing to replay: ${graph.about} has no entries carrying a temporal coordinate`
-      );
+    const line = await fetchWholeTimeline(graph.about);
+    if (!line.entries.length) {
+      showError(`nothing to travel: ${graph.about} has no entries carrying a temporal coordinate`);
       return;
     }
-    playback.entries = entries;
-    playback.revealed = [];
-    const accumulated = new Set();
-    for (const entry of entries) {
-      accumulated.add(entry.ref_id);
-      // What hangs off an entry has no time of its own — a dimension is the
-      // scope the entry was written into, and evidence exists at the moment
-      // the entry it supports does. They can never appear in a timeline
-      // query, so a replay that only revealed entries finished with two
-      // thirds of the graph still dark and looked unfinished.
-      for (const attached of attachedTo(entry.ref_id)) accumulated.add(attached);
-      playback.revealed.push(new Set(accumulated));
-    }
+    playback.entries = line.entries;
+    playback.total = line.total;
+    const built = KMP_CORE.buildRevealSteps(line.entries, graph.edges, ATTACHING_RELATIONS);
+    playback.steps = built.steps;
+    playback.stepOf = built.stepOf;
+    playback.scaffolding = built.scaffolding;
+    playback.revealedSet = new Set();
+    playback.step = -1;
+
+    // Strip positions: entries with a time land where their moment falls;
+    // the timeless inherit their predecessor's spot.
+    const times = line.entries.map((entry) => KMP_CORE.entryOrderKey(entry).time || null);
+    playback.placed = times.filter(Boolean).length;
+    const timed = times.filter(Boolean);
+    const t0 = timed.length ? Date.parse(timed[0]) : 0;
+    const t1 = timed.length ? Date.parse(timed[timed.length - 1]) : 1;
+    const span = Math.max(1, t1 - t0);
+    let lastX = 0;
+    playback.xs = times.map((time, i) => {
+      if (time) lastX = timed.length > 1 ? (Date.parse(time) - t0) / span : 0.5;
+      else if (!i) lastX = 0;
+      return lastX;
+    });
+
     playback.active = true;
-    $("playbar").hidden = false;
-    $("pb-scrub").max = String(entries.length - 1);
+    $("timebar").hidden = false;
     $("btn-replay").textContent = "■ Stop";
-    if (camera.k < 0.8) camera.k = 0.95;
-    setReplayStep(0);
-    setReplayPlaying(true);
+    const startStep = atRef && playback.stepOf.has(atRef) ? playback.stepOf.get(atRef) : 0;
+    setReplayStep(startStep);
+    setReplayPlaying(!atRef);
+    showError("");
   } catch (error) {
     showError(error.message);
   }
 }
 
 function setReplayStep(step) {
-  playback.step = Math.max(0, Math.min(step, playback.entries.length - 1));
-  const entry = playback.entries[playback.step];
+  const clamped = Math.max(0, Math.min(step, playback.entries.length - 1));
+  if (clamped > playback.step) {
+    for (let i = playback.step + 1; i <= clamped; i += 1) {
+      for (const id of playback.steps[i]) playback.revealedSet.add(id);
+    }
+  } else if (clamped < playback.step) {
+    playback.revealedSet = new Set();
+    for (let i = 0; i <= clamped; i += 1) {
+      for (const id of playback.steps[i]) playback.revealedSet.add(id);
+    }
+  }
+  playback.step = clamped;
+  const entry = playback.entries[clamped];
   playback.currentRef = entry.ref_id;
-  $("pb-scrub").value = String(playback.step);
-  const timed = entry.coordinates.find((c) => c.occurred_at);
-  $("pb-label").textContent =
-    `${playback.step + 1}/${playback.entries.length}` +
-    (timed ? ` · ${timed.occurred_at.slice(11, 16)}` : "");
-  const caption = $("playcaption");
-  caption.hidden = false;
-  caption.textContent = entry.text.length > 200 ? entry.text.slice(0, 199) + "…" : entry.text;
-  const node = graph.nodes.get(entry.ref_id);
-  if (node) animateCamera({ x: node.x, y: node.y }, 600);
+
+  const key = KMP_CORE.entryOrderKey(entry);
+  $("tb-label").textContent =
+    `${clamped + 1}/${playback.entries.length}` +
+    (key.time ? ` · ${key.time.slice(0, 16).replace("T", " ")}` : "") +
+    (playback.placed < playback.entries.length
+      ? ` · ${playback.placed} of ${playback.entries.length} placed in time`
+      : "");
+  $("tb-caption").textContent =
+    entry.text.length > 160 ? entry.text.slice(0, 159) + "…" : entry.text;
+
+  if (playback.timer) {
+    const body = proxyOf(entry.ref_id);
+    if (body) animateCamera({ x: body.x, y: body.y }, 600);
+  }
+  drawTimebar();
   requestDraw();
 }
 
@@ -984,9 +1028,9 @@ function setReplayPlaying(playing) {
     playback.timer = setInterval(() => {
       if (playback.step >= playback.entries.length - 1) setReplayPlaying(false);
       else setReplayStep(playback.step + 1);
-    }, 1800);
+    }, playback.stepMs);
   }
-  $("pb-toggle").textContent = playback.timer ? "⏸" : "▶";
+  $("tb-toggle").textContent = playback.timer ? "⏸" : "▶";
 }
 
 function stopReplay() {
@@ -994,29 +1038,110 @@ function stopReplay() {
   setReplayPlaying(false);
   playback.active = false;
   playback.currentRef = null;
-  $("playbar").hidden = true;
-  $("playcaption").hidden = true;
-  $("btn-replay").textContent = "▶ Replay";
+  $("timebar").hidden = true;
+  $("btn-replay").textContent = "◈ Travel";
   requestDraw();
+}
+
+/* The strip itself: kind-colored ticks on a 2d canvas, the played region
+   washed with the mark's gradient, the playhead in accent ink. */
+function drawTimebar() {
+  const strip = $("tb-canvas");
+  const width = strip.clientWidth || 1;
+  const height = 34;
+  const dpr = devicePixelRatio || 1;
+  if (strip.width !== Math.round(width * dpr)) strip.width = Math.round(width * dpr);
+  if (strip.height !== Math.round(height * dpr)) strip.height = Math.round(height * dpr);
+  const pen = strip.getContext("2d");
+  pen.setTransform(dpr, 0, 0, dpr, 0, 0);
+  pen.clearRect(0, 0, width, height);
+  if (!playback.entries.length) return;
+
+  const pad = 6;
+  const span = width - pad * 2;
+  const xAt = (i) => pad + playback.xs[i] * span;
+  const headX = xAt(playback.step);
+
+  const played = pen.createLinearGradient(pad, 0, pad + span, 0);
+  played.addColorStop(0, "rgba(129, 91, 240, 0.30)");
+  played.addColorStop(0.5, "rgba(72, 120, 224, 0.30)");
+  played.addColorStop(1, "rgba(27, 175, 122, 0.30)");
+  pen.fillStyle = played;
+  pen.fillRect(pad, 4, Math.max(0, headX - pad), height - 8);
+
+  for (let i = 0; i < playback.entries.length; i += 1) {
+    pen.globalAlpha = i <= playback.step ? 0.95 : 0.35;
+    pen.fillStyle = kindColor(playback.entries[i].kind);
+    pen.fillRect(xAt(i) - 0.75, 7, 1.5, height - 14);
+  }
+  pen.globalAlpha = 1;
+  pen.fillStyle = palette().accent;
+  pen.fillRect(headX - 1, 2, 2, height - 4);
+}
+
+function scrubTo(offsetX) {
+  const strip = $("tb-canvas");
+  const width = strip.clientWidth || 1;
+  const pad = 6;
+  const x = Math.max(0, Math.min(1, (offsetX - pad) / (width - pad * 2)));
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < playback.xs.length; i += 1) {
+    const dist = Math.abs(playback.xs[i] - x);
+    if (dist < bestDist) {
+      best = i;
+      bestDist = dist;
+    }
+  }
+  setReplayPlaying(false);
+  setReplayStep(best);
 }
 
 $("btn-replay").addEventListener("click", () => {
   if (playback.active) stopReplay();
   else startReplay();
 });
-$("pb-toggle").addEventListener("click", () => setReplayPlaying(!playback.timer));
-$("pb-close").addEventListener("click", stopReplay);
-$("pb-prev").addEventListener("click", () => {
+$("tb-toggle").addEventListener("click", () => setReplayPlaying(!playback.timer));
+$("tb-close").addEventListener("click", stopReplay);
+$("tb-now").addEventListener("click", stopReplay);
+$("tb-prev").addEventListener("click", () => {
   setReplayPlaying(false);
   setReplayStep(playback.step - 1);
 });
-$("pb-next").addEventListener("click", () => {
+$("tb-next").addEventListener("click", () => {
   setReplayPlaying(false);
   setReplayStep(playback.step + 1);
 });
-$("pb-scrub").addEventListener("input", (event) => {
-  setReplayPlaying(false);
-  setReplayStep(parseInt(event.target.value, 10) || 0);
+$("tb-speed").addEventListener("change", (event) => {
+  playback.stepMs = parseInt(event.target.value, 10) || 1200;
+  if (playback.timer) setReplayPlaying(true);
+});
+let scrubbing = false;
+$("tb-canvas").addEventListener("pointerdown", (event) => {
+  scrubbing = true;
+  $("tb-canvas").setPointerCapture(event.pointerId);
+  scrubTo(event.offsetX);
+});
+$("tb-canvas").addEventListener("pointermove", (event) => {
+  if (scrubbing) scrubTo(event.offsetX);
+});
+$("tb-canvas").addEventListener("pointerup", () => (scrubbing = false));
+addEventListener("keydown", (event) => {
+  if (!playback.active) return;
+  const target = event.target;
+  if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA")) {
+    return;
+  }
+  if (event.key === " ") {
+    event.preventDefault();
+    setReplayPlaying(!playback.timer);
+  } else if (event.key === "ArrowLeft") {
+    setReplayPlaying(false);
+    setReplayStep(playback.step - 1);
+  } else if (event.key === "ArrowRight") {
+    setReplayPlaying(false);
+    setReplayStep(playback.step + 1);
+  }
 });
 
 /* ---------------- hit testing ---------------- */
@@ -1694,6 +1819,19 @@ async function runTimeline(params, context = {}) {
         );
       }
       meta.append(el("span", "muted mono", entry.ref_id));
+      const asOf = el("button", "btn tl-asof", "as of here");
+      asOf.title = "open the time strip at this instant";
+      asOf.addEventListener("click", (click) => {
+        click.stopPropagation();
+        document.querySelector('.tab[data-tab="graph"]').click();
+        if (playback.active && playback.stepOf.has(entry.ref_id)) {
+          setReplayPlaying(false);
+          setReplayStep(playback.stepOf.get(entry.ref_id));
+        } else {
+          startReplay(entry.ref_id);
+        }
+      });
+      meta.append(asOf);
       item.append(meta, el("div", "tl-text", entry.text));
       if (entry.ref_id === selectedId) item.classList.add("cursor");
       item.addEventListener("click", () => selectNode(entry.ref_id));

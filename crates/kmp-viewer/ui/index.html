@@ -40,7 +40,7 @@
         </select>
       </label>
       <button id="btn-fit" class="btn" title="frame the whole graph (F)">Fit</button>
-      <button id="btn-replay" class="btn" title="replay the memory in temporal order">▶ Replay</button>
+      <button id="btn-replay" class="btn" title="travel the memory in time">◈ Travel</button>
       <button id="btn-reload" class="btn" title="reload the graph">Reload</button>
       <button id="btn-theme" class="btn" title="theme: auto / light / dark">Auto</button>
     </div>
@@ -101,15 +101,24 @@
 
     <div id="tooltip" class="tooltip" hidden></div>
 
-    <div id="playcaption" class="playcaption" hidden></div>
-    <div id="playbar" class="playbar" hidden>
-      <button id="pb-prev" class="btn" title="previous step">⏮</button>
-      <button id="pb-toggle" class="btn btn-primary" title="play / pause">⏸</button>
-      <button id="pb-next" class="btn" title="next step">⏭</button>
-      <label class="sr-only" for="pb-scrub">Replay position</label>
-      <input id="pb-scrub" type="range" min="0" max="0" value="0">
-      <span id="pb-label" class="muted mono"></span>
-      <button id="pb-close" class="btn" title="exit replay">✕</button>
+    <div id="timebar" class="timebar" hidden>
+      <div class="tb-controls">
+        <button id="tb-prev" class="btn" title="previous step">⏮</button>
+        <button id="tb-toggle" class="btn btn-primary" title="play / pause (Space)">⏸</button>
+        <button id="tb-next" class="btn" title="next step">⏭</button>
+        <label class="sr-only" for="tb-speed">Playback speed</label>
+        <select id="tb-speed" title="playback speed">
+          <option value="2400">0.5×</option>
+          <option value="1200" selected>1×</option>
+          <option value="600">2×</option>
+          <option value="300">4×</option>
+        </select>
+        <span id="tb-label" class="muted mono"></span>
+        <span id="tb-caption" class="tb-caption"></span>
+        <button id="tb-now" class="btn" title="back to the full graph">now</button>
+        <button id="tb-close" class="btn" title="close the time strip">✕</button>
+      </div>
+      <canvas id="tb-canvas" aria-label="Time strip: every entry is a tick; drag to scrub"></canvas>
     </div>
   </main>
 
