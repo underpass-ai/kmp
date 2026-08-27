@@ -514,6 +514,17 @@ summary { cursor: pointer; color: var(--text-secondary); }
   color: var(--text-secondary);
   font-size: 13px;
 }
+/* The transport: present, but a guest — the selector owns this bar. */
+.tb-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.75;
+  transition: opacity var(--dur-1) var(--ease);
+}
+.tb-play:hover { opacity: 1; }
+.tb-play .btn { padding: 2px 7px; font-size: 12px; }
+.tb-play select { padding: 2px 4px; font-size: 12px; }
 #tb-canvas {
   display: block;
   width: 100%;

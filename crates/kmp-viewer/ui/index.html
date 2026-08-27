@@ -107,18 +107,8 @@
 
     <div id="timebar" class="timebar" hidden>
       <div class="tb-controls">
-        <button id="tb-prev" class="btn" title="previous step">⏮</button>
-        <button id="tb-toggle" class="btn btn-primary" title="play / pause (Space)">⏸</button>
-        <button id="tb-next" class="btn" title="next step">⏭</button>
-        <label class="sr-only" for="tb-speed">Playback speed</label>
-        <select id="tb-speed" title="playback speed">
-          <option value="2400">0.5×</option>
-          <option value="1200" selected>1×</option>
-          <option value="600">2×</option>
-          <option value="300">4×</option>
-        </select>
         <label class="sr-only" for="tb-range">Time range</label>
-        <select id="tb-range" title="time range — or drag a span on the strip">
+        <select id="tb-range" title="time range — or drag a span on the chart">
           <option value="all" selected>all time</option>
           <option value="15">last 15 min</option>
           <option value="60">last hour</option>
@@ -130,10 +120,22 @@
         <span id="tb-rangelabel" class="muted mono"></span>
         <button id="tb-out" class="btn" title="widen the window">out</button>
         <button id="tb-back" class="btn" title="previous window">⟲</button>
+        <button id="tb-now" class="btn" title="whole line, playhead at the present">now</button>
         <span id="tb-label" class="muted mono"></span>
         <span id="tb-caption" class="tb-caption"></span>
-        <button id="tb-now" class="btn" title="whole line, playhead at the present">now</button>
-        <button id="tb-close" class="btn" title="close the time strip">✕</button>
+        <span class="tb-play" title="replay the selection">
+          <button id="tb-prev" class="btn" title="previous step">⏮</button>
+          <button id="tb-toggle" class="btn" title="play the selection / pause (Space)">▶</button>
+          <button id="tb-next" class="btn" title="next step">⏭</button>
+          <label class="sr-only" for="tb-speed">Playback speed</label>
+          <select id="tb-speed" title="playback speed">
+            <option value="2400">0.5×</option>
+            <option value="1200" selected>1×</option>
+            <option value="600">2×</option>
+            <option value="300">4×</option>
+          </select>
+        </span>
+        <button id="tb-close" class="btn" title="close the time chart">✕</button>
       </div>
       <canvas id="tb-canvas" aria-label="Activity over time; click to place the playhead, drag to select a window"></canvas>
     </div>
