@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use kmp_embedded::{ResolvedDataDir, StorageEngine};
 
 use crate::banner;
+use crate::style::{self, Style};
 
 /// How bad a finding is. `Fail` is reserved for something that stops the
 /// memory answering, so a run that ends without one is usable.
@@ -27,6 +28,16 @@ impl Level {
             Level::Ok => "ok  ",
             Level::Warn => "warn",
             Level::Fail => "FAIL",
+        }
+    }
+
+    /// The tag's ink. The words already carry the verdict; on a terminal the
+    /// color lets a reader find the one line that matters without reading.
+    fn sgr(self) -> &'static str {
+        match self {
+            Level::Ok => style::OK,
+            Level::Warn => style::WARN,
+            Level::Fail => style::FAIL,
         }
     }
 }
@@ -330,10 +341,15 @@ fn wrap(text: &str, width: usize) -> Vec<String> {
     lines
 }
 
-fn section(out: &mut String, title: &str, findings: &[Finding]) {
-    let _ = writeln!(out, "{}", banner::head(title));
+fn section(out: &mut String, style: Style, title: &str, findings: &[Finding]) {
+    let _ = writeln!(out, "{}", banner::head_styled(style, title));
     for finding in findings {
-        let _ = writeln!(out, "  {}  {}", finding.level.tag(), finding.headline);
+        let _ = writeln!(
+            out,
+            "  {}  {}",
+            style.paint(finding.level.sgr(), finding.level.tag()),
+            finding.headline
+        );
         for line in &finding.detail {
             for wrapped in wrap(line, 62) {
                 let _ = writeln!(out, "        {wrapped}");
@@ -464,25 +480,33 @@ fn agent_policy_finding() -> Finding {
 }
 
 /// `info` — the facts, with no verdict: what this binary is and what memory it
-/// would open here.
+/// would open here. Styled for whatever stdout is: a pipe gets the pinned
+/// plain bytes, a terminal gets ink.
 pub fn info() -> String {
+    info_styled(Style::for_stdout())
+}
+
+fn info_styled(style: Style) -> String {
     let mut out = String::new();
     let _ = writeln!(
         out,
         "{}\n",
-        banner::large_with(&format!(
-            "  {} {}   ·   store formats {}",
-            env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION"),
-            compiled_formats()
-        ))
+        banner::large_with(
+            style,
+            &format!(
+                "  {} {}   ·   store formats {}",
+                env!("CARGO_PKG_NAME"),
+                env!("CARGO_PKG_VERSION"),
+                compiled_formats()
+            )
+        )
     );
 
-    section(&mut out, "Backend", &[backend_finding()]);
+    section(&mut out, style, "Backend", &[backend_finding()]);
     let (data_dir, resolved) = data_dir_finding();
-    section(&mut out, "Memory", &[data_dir]);
+    section(&mut out, style, "Memory", &[data_dir]);
     if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {
-        section(&mut out, "Durability", &[durability]);
+        section(&mut out, style, "Durability", &[durability]);
     }
 
     let names = crate::tool_names();
@@ -491,10 +515,10 @@ pub fn info() -> String {
         format!("{} tools on the MCP surface", names.len()),
     )
     .with(names.join(" "));
-    section(&mut out, "Tools", &[surface]);
-    section(&mut out, "Agent", &[agent_policy_finding()]);
-    section(&mut out, "Viewer", &[viewer_finding()]);
-    section(&mut out, "Memories", &memories_finding());
+    section(&mut out, style, "Tools", &[surface]);
+    section(&mut out, style, "Agent", &[agent_policy_finding()]);
+    section(&mut out, style, "Viewer", &[viewer_finding()]);
+    section(&mut out, style, "Memories", &memories_finding());
 
     if let Some(resolved) = resolved {
         let history = startup_history(resolved.path(), 3);
@@ -503,7 +527,7 @@ pub fn info() -> String {
             for line in history {
                 recent = recent.with(line);
             }
-            section(&mut out, "History", &[recent]);
+            section(&mut out, style, "History", &[recent]);
         }
     }
     out
@@ -513,11 +537,15 @@ pub fn info() -> String {
 ///
 /// Returns the report and the exit code, so a script can gate on it.
 pub fn doctor() -> (String, i32) {
+    doctor_styled(Style::for_stdout())
+}
+
+fn doctor_styled(style: Style) -> (String, i32) {
     let mut out = String::new();
     let _ = writeln!(
         out,
         "{}\n",
-        banner::large_with("  doctor — agent memory, end to end")
+        banner::large_with(style, "  doctor — agent memory, end to end")
     );
 
     let binary = Finding::new(
@@ -525,20 +553,20 @@ pub fn doctor() -> (String, i32) {
         format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")),
     )
     .with(format!("store formats: {}", compiled_formats()));
-    section(&mut out, "Binary", &[binary]);
+    section(&mut out, style, "Binary", &[binary]);
 
     let backend = backend_finding();
-    section(&mut out, "Backend", std::slice::from_ref(&backend));
+    section(&mut out, style, "Backend", std::slice::from_ref(&backend));
 
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.level;
-    section(&mut out, "Memory", &[data_dir]);
+    section(&mut out, style, "Memory", &[data_dir]);
     let durability = resolved.as_ref().and_then(committed_bundle_finding);
     let durability_level = durability
         .as_ref()
         .map_or(Level::Ok, |finding| finding.level);
     if let Some(durability) = durability {
-        section(&mut out, "Durability", &[durability]);
+        section(&mut out, style, "Durability", &[durability]);
     }
 
     let tools = crate::tool_names();
@@ -551,11 +579,11 @@ pub fn doctor() -> (String, i32) {
         )
     };
     let surface_level = surface.level;
-    section(&mut out, "Tools", &[surface]);
+    section(&mut out, style, "Tools", &[surface]);
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.level;
-    section(&mut out, "Agent", &[agent_policy]);
-    section(&mut out, "Viewer", &[viewer_finding()]);
+    section(&mut out, style, "Agent", &[agent_policy]);
+    section(&mut out, style, "Viewer", &[viewer_finding()]);
 
     let mut history_level = Level::Ok;
     if let Some(resolved) = resolved.as_ref() {
@@ -571,7 +599,7 @@ pub fn doctor() -> (String, i32) {
             }
             recent
         };
-        section(&mut out, "History", &[finding]);
+        section(&mut out, style, "History", &[finding]);
     }
 
     let worst = [
@@ -590,17 +618,27 @@ pub fn doctor() -> (String, i32) {
     })
     .unwrap_or(Level::Ok);
 
+    // The verdict wears the worst finding's ink: the one line a reader
+    // scrolls to is the one line that should be findable at a glance.
     match worst {
         Level::Fail => {
-            let _ = writeln!(out, "Not usable. Fix the FAIL above first.");
+            let _ = writeln!(
+                out,
+                "{}",
+                style.paint(Level::Fail.sgr(), "Not usable. Fix the FAIL above first.")
+            );
             (out, 1)
         }
         Level::Warn => {
-            let _ = writeln!(out, "Usable, with a warning above.");
+            let _ = writeln!(
+                out,
+                "{}",
+                style.paint(Level::Warn.sgr(), "Usable, with a warning above.")
+            );
             (out, 0)
         }
         Level::Ok => {
-            let _ = writeln!(out, "Usable.");
+            let _ = writeln!(out, "{}", style.paint(Level::Ok.sgr(), "Usable."));
             (out, 0)
         }
     }
@@ -781,6 +819,20 @@ mod tests {
                 "`{surface}` must say what KMP is"
             );
         }
+    }
+
+    /// A terminal gets ink; a pipe gets the pinned bytes. Both must say the
+    /// same thing, or the human and the plugin host are reading different
+    /// products.
+    #[test]
+    fn styled_reports_say_exactly_what_plain_reports_say() {
+        assert_eq!(
+            crate::style::stripped(&info_styled(Style::Ansi)),
+            info_styled(Style::Plain)
+        );
+        let (styled, _) = doctor_styled(Style::Ansi);
+        let (plain, _) = doctor_styled(Style::Plain);
+        assert_eq!(crate::style::stripped(&styled), plain);
     }
 
     #[test]

@@ -1,53 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="760" height="230" viewBox="0 0 760 230" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" width="712" height="256" viewBox="0 0 712 256" role="img" aria-labelledby="title description">
   <title id="title">KMP</title>
-  <desc id="description">The KMP block wordmark derived from its terminal banner</desc>
-  <style>
-    .main { fill: #6d28d9; }
-    .shadow-near { fill: #111827; }
-    .shadow-far { fill: #c4b5fd; }
-    @media (prefers-color-scheme: dark) {
-      .main { fill: #c4b5fd; }
-      .shadow-near { fill: #080b12; }
-      .shadow-far { fill: #8b5cf6; }
-    }
-  </style>
-  <defs>
-    <g id="kmp-blocks" shape-rendering="crispEdges">
-      <!-- ██   ██ ███    ███ ██████ -->
-      <rect x="68" y="20" width="48" height="36"/>
-      <rect x="188" y="20" width="48" height="36"/>
-      <rect x="260" y="20" width="72" height="36"/>
-      <rect x="428" y="20" width="72" height="36"/>
-      <rect x="524" y="20" width="144" height="36"/>
-      <!-- ██  ██  ████  ████ ██   ██ -->
-      <rect x="68" y="56" width="48" height="36"/>
-      <rect x="164" y="56" width="48" height="36"/>
-      <rect x="260" y="56" width="96" height="36"/>
-      <rect x="404" y="56" width="96" height="36"/>
-      <rect x="524" y="56" width="48" height="36"/>
-      <rect x="644" y="56" width="48" height="36"/>
-      <!-- █████   ██ ████ ██ ██████ -->
-      <rect x="68" y="92" width="120" height="36"/>
-      <rect x="260" y="92" width="48" height="36"/>
-      <rect x="332" y="92" width="96" height="36"/>
-      <rect x="452" y="92" width="48" height="36"/>
-      <rect x="524" y="92" width="144" height="36"/>
-      <!-- ██  ██  ██  ██  ██ ██ -->
-      <rect x="68" y="128" width="48" height="36"/>
-      <rect x="164" y="128" width="48" height="36"/>
-      <rect x="260" y="128" width="48" height="36"/>
-      <rect x="356" y="128" width="48" height="36"/>
-      <rect x="452" y="128" width="48" height="36"/>
-      <rect x="524" y="128" width="48" height="36"/>
-      <!-- ██   ██ ██      ██ ██ -->
-      <rect x="68" y="164" width="48" height="36"/>
-      <rect x="188" y="164" width="48" height="36"/>
-      <rect x="260" y="164" width="48" height="36"/>
-      <rect x="452" y="164" width="48" height="36"/>
-      <rect x="524" y="164" width="48" height="36"/>
-    </g>
-  </defs>
-  <use href="#kmp-blocks" class="shadow-far" transform="translate(10 10)"/>
-  <use href="#kmp-blocks" class="shadow-near" transform="translate(5 5)"/>
-  <use href="#kmp-blocks" class="main"/>
+  <desc id="description">The KMP mark, exactly as `kmp-mcp info` draws it</desc>
+  <g shape-rendering="crispEdges">
+    <path fill="#815bf0" d="M44 20h24v36h-24zM68 20h24v36h-24zM92 34h18v4h-18zM106 34h4v22h-4zM92 42h10v4h-10zM98 42h4v14h-4zM164 20h24v36h-24zM188 20h24v36h-24zM212 34h18v4h-18zM226 34h4v22h-4zM212 42h10v4h-10zM218 42h4v14h-4zM236 20h24v36h-24zM260 20h24v36h-24zM284 20h24v36h-24zM308 34h18v4h-18zM322 34h4v22h-4zM308 42h10v4h-10zM314 42h4v14h-4zM404 20h24v36h-24zM428 20h24v36h-24zM452 20h24v36h-24zM476 34h18v4h-18zM490 34h4v22h-4zM476 42h10v4h-10zM482 42h4v14h-4zM500 20h24v36h-24zM524 20h24v36h-24zM548 20h24v36h-24zM572 20h24v36h-24zM596 20h24v36h-24zM620 20h24v36h-24zM644 34h18v4h-18zM658 34h4v22h-4zM644 42h10v4h-10zM650 42h4v14h-4z"/>
+    <path fill="#646ae9" d="M44 56h24v36h-24zM68 56h24v36h-24zM98 56h4v36h-4zM106 56h4v36h-4zM140 56h24v36h-24zM164 56h24v36h-24zM194 70h18v4h-18zM194 70h4v22h-4zM202 78h10v4h-10zM202 78h4v14h-4zM226 56h4v26h-4zM212 78h18v4h-18zM218 56h4v18h-4zM212 70h10v4h-10zM236 56h24v36h-24zM260 56h24v36h-24zM284 56h24v36h-24zM308 56h24v36h-24zM332 70h18v4h-18zM346 70h4v22h-4zM332 78h10v4h-10zM338 78h4v14h-4zM380 56h24v36h-24zM404 56h24v36h-24zM428 56h24v36h-24zM452 56h24v36h-24zM482 56h4v36h-4zM490 56h4v36h-4zM500 56h24v36h-24zM524 56h24v36h-24zM554 70h18v4h-18zM554 70h4v22h-4zM562 78h10v4h-10zM562 78h4v14h-4zM572 70h24v4h-24zM572 78h24v4h-24zM596 70h24v4h-24zM596 78h24v4h-24zM620 56h24v36h-24zM644 56h24v36h-24zM668 70h18v4h-18zM682 70h4v22h-4zM668 78h10v4h-10zM674 78h4v14h-4z"/>
+    <path fill="#4878e0" d="M44 92h24v36h-24zM68 92h24v36h-24zM92 92h24v36h-24zM116 92h24v36h-24zM140 92h24v36h-24zM170 106h18v4h-18zM170 106h4v22h-4zM178 114h10v4h-10zM178 114h4v14h-4zM202 92h4v26h-4zM188 114h18v4h-18zM194 92h4v18h-4zM188 106h10v4h-10zM236 92h24v36h-24zM260 92h24v36h-24zM290 106h18v4h-18zM290 106h4v22h-4zM298 114h10v4h-10zM298 114h4v14h-4zM308 92h24v36h-24zM332 92h24v36h-24zM356 92h24v36h-24zM380 92h24v36h-24zM410 106h18v4h-18zM410 106h4v22h-4zM418 114h10v4h-10zM418 114h4v14h-4zM428 92h24v36h-24zM452 92h24v36h-24zM482 92h4v36h-4zM490 92h4v36h-4zM500 92h24v36h-24zM524 92h24v36h-24zM548 92h24v36h-24zM572 92h24v36h-24zM596 92h24v36h-24zM620 92h24v36h-24zM650 106h18v4h-18zM650 106h4v22h-4zM658 114h10v4h-10zM658 114h4v14h-4zM682 92h4v26h-4zM668 114h18v4h-18zM674 92h4v18h-4zM668 106h10v4h-10z"/>
+    <path fill="#348dc0" d="M44 128h24v36h-24zM68 128h24v36h-24zM98 142h18v4h-18zM98 142h4v22h-4zM106 150h10v4h-10zM106 150h4v14h-4zM116 142h24v4h-24zM116 150h24v4h-24zM140 128h24v36h-24zM164 128h24v36h-24zM188 142h18v4h-18zM202 142h4v22h-4zM188 150h10v4h-10zM194 150h4v14h-4zM236 128h24v36h-24zM260 128h24v36h-24zM290 128h4v36h-4zM298 128h4v36h-4zM314 128h4v26h-4zM314 150h18v4h-18zM322 128h4v18h-4zM322 142h10v4h-10zM332 128h24v36h-24zM356 128h24v36h-24zM386 142h18v4h-18zM386 142h4v22h-4zM394 150h10v4h-10zM394 150h4v14h-4zM418 128h4v26h-4zM404 150h18v4h-18zM410 128h4v18h-4zM404 142h10v4h-10zM428 128h24v36h-24zM452 128h24v36h-24zM482 128h4v36h-4zM490 128h4v36h-4zM500 128h24v36h-24zM524 128h24v36h-24zM554 142h18v4h-18zM554 142h4v22h-4zM562 150h10v4h-10zM562 150h4v14h-4zM572 142h24v4h-24zM572 150h24v4h-24zM596 142h24v4h-24zM596 150h24v4h-24zM620 142h24v4h-24zM620 150h24v4h-24zM658 128h4v26h-4zM644 150h18v4h-18zM650 128h4v18h-4zM644 142h10v4h-10z"/>
+    <path fill="#269f9b" d="M44 164h24v36h-24zM68 164h24v36h-24zM98 164h4v36h-4zM106 164h4v36h-4zM164 164h24v36h-24zM188 164h24v36h-24zM212 178h18v4h-18zM226 178h4v22h-4zM212 186h10v4h-10zM218 186h4v14h-4zM236 164h24v36h-24zM260 164h24v36h-24zM290 164h4v36h-4zM298 164h4v36h-4zM338 164h4v26h-4zM338 186h18v4h-18zM346 164h4v18h-4zM346 178h10v4h-10zM356 178h24v4h-24zM356 186h24v4h-24zM394 164h4v26h-4zM380 186h18v4h-18zM386 164h4v18h-4zM380 178h10v4h-10zM428 164h24v36h-24zM452 164h24v36h-24zM482 164h4v36h-4zM490 164h4v36h-4zM500 164h24v36h-24zM524 164h24v36h-24zM554 164h4v36h-4zM562 164h4v36h-4z"/>
+    <path fill="#1baf7a" d="M50 200h4v26h-4zM50 222h18v4h-18zM58 200h4v18h-4zM58 214h10v4h-10zM68 214h24v4h-24zM68 222h24v4h-24zM106 200h4v26h-4zM92 222h18v4h-18zM98 200h4v18h-4zM92 214h10v4h-10zM170 200h4v26h-4zM170 222h18v4h-18zM178 200h4v18h-4zM178 214h10v4h-10zM188 214h24v4h-24zM188 222h24v4h-24zM226 200h4v26h-4zM212 222h18v4h-18zM218 200h4v18h-4zM212 214h10v4h-10zM242 200h4v26h-4zM242 222h18v4h-18zM250 200h4v18h-4zM250 214h10v4h-10zM260 214h24v4h-24zM260 222h24v4h-24zM298 200h4v26h-4zM284 222h18v4h-18zM290 200h4v18h-4zM284 214h10v4h-10zM434 200h4v26h-4zM434 222h18v4h-18zM442 200h4v18h-4zM442 214h10v4h-10zM452 214h24v4h-24zM452 222h24v4h-24zM490 200h4v26h-4zM476 222h18v4h-18zM482 200h4v18h-4zM476 214h10v4h-10zM506 200h4v26h-4zM506 222h18v4h-18zM514 200h4v18h-4zM514 214h10v4h-10zM524 214h24v4h-24zM524 222h24v4h-24zM562 200h4v26h-4zM548 222h18v4h-18zM554 200h4v18h-4zM548 214h10v4h-10z"/>
+  </g>
 </svg>

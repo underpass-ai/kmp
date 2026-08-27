@@ -265,17 +265,26 @@ fn store_label(store: &Path) -> String {
 
 /// The report. Same shape as the doctor: one line per piece, the fix attached
 /// to the problem, a verdict in plain words.
-pub fn report(pieces: &[Piece], workspace: &Path, purge: bool, applying: bool) -> String {
+pub fn report(
+    pieces: &[Piece],
+    workspace: &Path,
+    purge: bool,
+    applying: bool,
+    style: crate::style::Style,
+) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
     let _ = writeln!(
         out,
         "{}\n",
-        crate::banner::large_with(if applying {
-            "  uninstall — removing what is listed below"
-        } else {
-            "  uninstall — a dry run; nothing has been removed"
-        })
+        crate::banner::large_with(
+            style,
+            if applying {
+                "  uninstall — removing what is listed below"
+            } else {
+                "  uninstall — a dry run; nothing has been removed"
+            }
+        )
     );
 
     if pieces.is_empty() {
@@ -283,7 +292,7 @@ pub fn report(pieces: &[Piece], workspace: &Path, purge: bool, applying: bool) -
         return out;
     }
 
-    let _ = writeln!(out, "{}", crate::banner::head("Found"));
+    let _ = writeln!(out, "{}", crate::banner::head_styled(style, "Found"));
     for piece in pieces {
         let _ = writeln!(out, "  {:<12} {}", piece.kind.label(), piece.path.display());
         let _ = writeln!(out, "               {}", piece.detail);
@@ -309,7 +318,11 @@ pub fn report(pieces: &[Piece], workspace: &Path, purge: bool, applying: bool) -
     out.push('\n');
 
     if pieces.iter().any(|piece| piece.kind == PieceKind::Store) && !purge {
-        let _ = writeln!(out, "{}", crate::banner::head("Getting it back"));
+        let _ = writeln!(
+            out,
+            "{}",
+            crate::banner::head_styled(style, "Getting it back")
+        );
         let _ = writeln!(
             out,
             "  Each saved file is the whole event log, in order. To bring one back:\n\n    \
@@ -577,12 +590,18 @@ mod tests {
 
         let workspace = base.join("project");
         let pieces = survey(&roots(base));
-        let saving = report(&pieces, &workspace, false, false);
+        let saving = report(
+            &pieces,
+            &workspace,
+            false,
+            false,
+            crate::style::Style::Plain,
+        );
         assert!(saving.contains("saved first to"), "{saving}");
         assert!(saving.contains("kmp-memory-project.jsonl"), "{saving}");
 
         // ...and that --purge is the way to say no copy is wanted.
-        let purged = report(&pieces, &workspace, true, false);
+        let purged = report(&pieces, &workspace, true, false, crate::style::Style::Plain);
         assert!(purged.contains("NOT saved"), "{purged}");
     }
 
@@ -725,7 +744,13 @@ mod tests {
         store_at(&base.join("project/.kernel"), "1");
 
         let pieces = survey(&roots(base));
-        let dry = report(&pieces, &base.join("project"), false, false);
+        let dry = report(
+            &pieces,
+            &base.join("project"),
+            false,
+            false,
+            crate::style::Style::Plain,
+        );
         assert!(dry.contains("nothing has been removed"));
         assert!(base.join("project/.kernel").exists());
     }
@@ -737,7 +762,13 @@ mod tests {
         let base = base.path();
         store_at(&base.join("project/.kernel"), "1");
 
-        let saving = report(&survey(&roots(base)), &base.join("project"), false, true);
+        let saving = report(
+            &survey(&roots(base)),
+            &base.join("project"),
+            false,
+            true,
+            crate::style::Style::Plain,
+        );
         assert!(saving.contains("kmp-mcp import"), "{saving}");
         assert!(
             saving.contains("empty store"),
@@ -748,7 +779,13 @@ mod tests {
     #[test]
     fn an_empty_machine_says_so_rather_than_printing_a_blank_list() {
         let base = tempfile::tempdir().expect("temp");
-        let empty = report(&survey(&roots(base.path())), base.path(), false, false);
+        let empty = report(
+            &survey(&roots(base.path())),
+            base.path(),
+            false,
+            false,
+            crate::style::Style::Plain,
+        );
         assert!(empty.contains("Nothing of KMP's is on this machine."));
     }
 }

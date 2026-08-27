@@ -54,7 +54,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // The mark goes to stderr: stdout is the protocol, and a banner on it
     // would be the first thing a host fails to parse.
-    eprintln!("{}\n", kmp_mcp::banner::LARGE);
+    eprintln!(
+        "{}\n",
+        kmp_mcp::banner::large(kmp_mcp::style::Style::for_stderr())
+    );
     if server.backend_name() == "grpc" {
         eprintln!(
             "kmp-mcp: using live gRPC backend from {GRPC_ENDPOINT_ENV} with {GRPC_TLS_MODE_ENV}={}",
@@ -437,69 +440,81 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     let store = kernel.store();
 
     match command {
-        "export" => match store.export_bundle().await {
-            Ok(bundle) => {
-                // `.kmp/` will not exist on the first save, and failing on
-                // that would make the convention useless exactly once per
-                // repository — at the moment someone tries it.
-                if let Some(parent) = path.parent()
-                    && !parent.as_os_str().is_empty()
-                    && let Err(error) = std::fs::create_dir_all(parent)
-                {
-                    eprintln!("kmp-mcp: could not create `{}`: {error}", parent.display());
-                    return 2;
-                }
-                let header = match kmp_embedded::verify_bundle(&bundle) {
-                    Ok(header) => header,
-                    Err(error) => {
-                        eprintln!("kmp-mcp: generated bundle did not verify: {error}");
+        "export" => {
+            // The pulse holds the line only while the store is actually
+            // read; it is erased before anything else prints.
+            let pulse = kmp_mcp::pulse::Pulse::start("saving your memory…");
+            let exported = store.export_bundle().await;
+            pulse.clear();
+            match exported {
+                Ok(bundle) => {
+                    // `.kmp/` will not exist on the first save, and failing on
+                    // that would make the convention useless exactly once per
+                    // repository — at the moment someone tries it.
+                    if let Some(parent) = path.parent()
+                        && !parent.as_os_str().is_empty()
+                        && let Err(error) = std::fs::create_dir_all(parent)
+                    {
+                        eprintln!("kmp-mcp: could not create `{}`: {error}", parent.display());
                         return 2;
                     }
-                };
-                if let Err(error) = kmp_embedded::write_bundle_atomically(path, &bundle) {
-                    eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
-                    return 2;
-                }
-                if repair_pending
-                    && let Err(error) = kmp_embedded::clear_pending_bundle_exports(resolved.path())
-                {
-                    eprintln!(
-                        "kmp-mcp: bundle was exported, but pending markers could not be \
+                    let header = match kmp_embedded::verify_bundle(&bundle) {
+                        Ok(header) => header,
+                        Err(error) => {
+                            eprintln!("kmp-mcp: generated bundle did not verify: {error}");
+                            return 2;
+                        }
+                    };
+                    if let Err(error) = kmp_embedded::write_bundle_atomically(path, &bundle) {
+                        eprintln!("kmp-mcp: could not write `{}`: {error}", path.display());
+                        return 2;
+                    }
+                    if repair_pending
+                        && let Err(error) =
+                            kmp_embedded::clear_pending_bundle_exports(resolved.path())
+                    {
+                        eprintln!(
+                            "kmp-mcp: bundle was exported, but pending markers could not be \
                          cleared: {error}"
+                        );
+                        return 2;
+                    }
+                    kmp_mcp::pulse::mark_done(&match header.event_count {
+                        0 => "saved — an empty log, ready to grow".to_string(),
+                        count => format!("saved — {}, every one in order", events(count)),
+                    });
+                    println!(
+                        "{}",
+                        serde_json::json!({
+                            "exported_to": path.display().to_string(),
+                            "data_dir": resolved.path().display().to_string(),
+                            "snapshot_id": header.snapshot_id,
+                            "event_count": header.event_count,
+                            "content_digest": header.content_digest,
+                        })
                     );
-                    return 2;
-                }
-                println!(
-                    "{}",
-                    serde_json::json!({
-                        "exported_to": path.display().to_string(),
-                        "data_dir": resolved.path().display().to_string(),
-                        "snapshot_id": header.snapshot_id,
-                        "event_count": header.event_count,
-                        "content_digest": header.content_digest,
-                    })
-                );
-                let pending = if is_project_head {
-                    kmp_embedded::pending_bundle_exports(resolved.path()).len()
-                } else {
-                    0
-                };
-                if pending > 0 {
-                    eprintln!(
-                        "kmp-mcp: {pending} pending write marker(s) remain. Stop other KMP \
+                    let pending = if is_project_head {
+                        kmp_embedded::pending_bundle_exports(resolved.path()).len()
+                    } else {
+                        0
+                    };
+                    if pending > 0 {
+                        eprintln!(
+                            "kmp-mcp: {pending} pending write marker(s) remain. Stop other KMP \
                          sessions, inspect this exported bundle, then run `kmp-mcp export \
                          --repair-pending` to acknowledge recovery safely."
-                    );
-                    1
-                } else {
-                    0
+                        );
+                        1
+                    } else {
+                        0
+                    }
+                }
+                Err(error) => {
+                    eprintln!("kmp-mcp: export failed: {error}");
+                    2
                 }
             }
-            Err(error) => {
-                eprintln!("kmp-mcp: export failed: {error}");
-                2
-            }
-        },
+        }
         _ => {
             let bundle = match std::fs::read_to_string(path) {
                 Ok(bundle) => bundle,
@@ -508,14 +523,20 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                     return 2;
                 }
             };
-            match store
+            let pulse = kmp_mcp::pulse::Pulse::start("bringing your memory back…");
+            let imported = store
                 .import_bundle(
                     &bundle,
                     kmp_application::projection_mutations_for_context_event,
                 )
-                .await
-            {
+                .await;
+            pulse.clear();
+            match imported {
                 Ok(report) => {
+                    kmp_mcp::pulse::mark_done(&match report.events_imported {
+                        0 => "back — nothing to replay yet".to_string(),
+                        count => format!("back — {} replayed", events(count)),
+                    });
                     println!(
                         "{{\"events_imported\":{},\"mutations_applied\":{}}}",
                         report.events_imported, report.rebuild.mutations_applied
@@ -550,7 +571,7 @@ kmp-mcp share-memory [data-dir] Make an existing redb store shareable\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
-        kmp_mcp::banner::LARGE
+        kmp_mcp::banner::large(kmp_mcp::style::Style::for_stdout())
     );
 }
 
@@ -656,7 +677,10 @@ async fn snapshot_create(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]
             return 2;
         }
     };
-    let bundle = match kernel.store().export_named_bundle(name).await {
+    let pulse = kmp_mcp::pulse::Pulse::start("pinning this moment…");
+    let exported = kernel.store().export_named_bundle(name).await;
+    pulse.clear();
+    let bundle = match exported {
         Ok(bundle) => bundle,
         Err(error) => {
             eprintln!("kmp-mcp: snapshot create failed: {error}");
@@ -665,6 +689,7 @@ async fn snapshot_create(resolved: &kmp_embedded::ResolvedDataDir, args: &[&str]
     };
     match write_named_snapshot(&path, &bundle) {
         Ok(header) => {
+            kmp_mcp::pulse::mark_done(&format!("pinned as `{name}`"));
             println!("{}", snapshot_result(&path, &header));
             0
         }
@@ -910,7 +935,13 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         .collect();
     print!(
         "{}",
-        kmp_mcp::uninstall::report(&pieces, &workspace, purge, applying)
+        kmp_mcp::uninstall::report(
+            &pieces,
+            &workspace,
+            purge,
+            applying,
+            kmp_mcp::style::Style::for_stdout()
+        )
     );
 
     if pieces.is_empty() {
@@ -968,6 +999,16 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
 fn remember_this_memory(path: &std::path::Path) {
     if let Some(data_home) = kmp_embedded::user_data_home() {
         kmp_mcp::memories::remember(&data_home, path);
+    }
+}
+
+/// `1 event`, `12 events`. The pulse's closing line quotes a count, and a
+/// count that reads wrong undoes the care that line exists to show.
+fn events(count: u64) -> String {
+    if count == 1 {
+        "1 event".to_string()
+    } else {
+        format!("{count} events")
     }
 }
 
@@ -1301,14 +1342,20 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    match kmp_embedded::migrate_data_dir_to(
+    let pulse = kmp_mcp::pulse::Pulse::start("replaying history onto the new engine…");
+    let migrated = kmp_embedded::migrate_data_dir_to(
         std::path::Path::new(source),
         std::path::Path::new(destination),
         engine,
     )
-    .await
-    {
+    .await;
+    pulse.clear();
+    match migrated {
         Ok(receipt) => {
+            kmp_mcp::pulse::mark_done(&match receipt.events_migrated {
+                0 => "moved — nothing to replay yet".to_string(),
+                count => format!("moved — {} replayed", events(count)),
+            });
             match serde_json::to_string(&receipt) {
                 Ok(json) => println!("{json}"),
                 Err(error) => {
