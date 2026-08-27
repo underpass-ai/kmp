@@ -11,6 +11,19 @@ Detailed notes from the early release cycle are preserved in the
 
 ### Changed
 
+- The memory viewer is redesigned end to end. The force layout survives real
+  memory (degree-normalized springs, Barnes-Hut repulsion, a velocity cap,
+  deterministic placement, fit-to-view) where 544 nodes used to fly off the
+  canvas; big graphs open as a map of folded dimensions that expand in
+  place; the whole timeline plays on a scrubbing strip that shows the graph
+  as of any instant; traces render hop by hop with why, evidence and
+  confidence over a gradient-inked path; search learns `kind:`/`dim:`/`id:`
+  and a focus mode. The UI wears the product's visual identity — the
+  gradient reserved for meaning: edge classes, the audit path, played time —
+  and the pure algorithmic half lives in a new `graph-core.js` asset. The
+  server keeps its exact surface: one new static route, still GET-only,
+  loopback-only, read-only.
+
 - Pull-request quality gates now derive changed crates and their reverse
   dependency closure, routing documentation, adapters, containers, Helm and
   publication checks independently instead of retesting the whole workspace

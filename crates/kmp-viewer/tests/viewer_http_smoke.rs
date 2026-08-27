@@ -220,6 +220,8 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 200);
     let (status, _) = get(port, "/assets/pixi.min.js").await;
     assert_eq!(status, 200);
+    let (status, _) = get(port, "/assets/graph-core.js").await;
+    assert_eq!(status, 200, "the pure-logic asset is served");
     let (status, _) = get(port, "/api/nope").await;
     assert_eq!(status, 404);
     let (status, error) = get(port, "/api/graph?about=about:missing").await;
