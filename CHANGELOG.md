@@ -15,8 +15,9 @@ Detailed notes from the early release cycle are preserved in the
   axis, and the writer accepts every canonical clock. The application now
   exposes a paginated level-of-detail visual projection for ChronoLoom instead
   of making the browser reconstruct whole temporal lines.
-- Validity `goto` reads now project the interval that actually holds at the
-  cursor, treating `valid_until` as an exclusive end. Historical validity
+- Time-based validity reads now exclude intervals that ended at the cursor,
+  treating `valid_until` as an exclusive end in every direction. Validity
+  `goto` projects the interval that actually holds, while ref-cursor historical
   reads mark ended entries in `proof.expired`, independently of supersession.
 - ChronoLoom adds elapsed/event-density focus+context lenses, persistent A/B
   projection diffs and time-aligned observability overlays. Hosts that

@@ -70,21 +70,26 @@ pub(super) fn select_positions(
             next_cursor: None,
         };
     };
-    let comparable = positions
+    let mut comparable = positions
         .iter()
         .filter(|position| position.axis_key.axis() == cursor_axis_key.axis())
         .cloned()
         .collect::<Vec<_>>();
 
-    // A time-based goto on the validity clock is an as-of projection, not a
-    // history of interval starts. `valid_until` is exclusive: an entry that
-    // ended at the cursor no longer holds. Ref and sequence cursors retain
-    // their navigation semantics so page continuations and historical moves
-    // can still walk recorded positions.
-    if request.axis() == TemporalAxis::Validity
-        && request.direction() == TemporalDirection::Goto
-        && matches!(request.cursor(), TemporalCursor::Time(_))
-    {
+    // Every time-based move on the validity clock rejects intervals that had
+    // already ended at the cursor. `valid_until` is exclusive. Ref and
+    // sequence cursors retain their historical navigation semantics so page
+    // continuations can still walk recorded positions.
+    let validity_time_cursor = request.axis() == TemporalAxis::Validity
+        && matches!(request.cursor(), TemporalCursor::Time(_));
+    if validity_time_cursor {
+        comparable.retain(|position| validity_not_ended(&position.coordinate, cursor_axis_key));
+    }
+
+    // Goto is an as-of projection, not a history of interval starts. The
+    // direction branches below still partition rewind, near and forward by
+    // their validity start (or their end when the start is open).
+    if validity_time_cursor && request.direction() == TemporalDirection::Goto {
         let active = comparable
             .into_iter()
             .filter(|position| validity_contains(&position.coordinate, cursor_axis_key))
@@ -178,10 +183,13 @@ fn validity_contains(coordinate: &TemporalCoordinate, cursor_axis_key: &Temporal
     let started = coordinate
         .valid_from()
         .is_none_or(|start| TemporalAxisKey::time(start) <= *cursor_axis_key);
-    let not_ended = coordinate
+    started && validity_not_ended(coordinate, cursor_axis_key)
+}
+
+fn validity_not_ended(coordinate: &TemporalCoordinate, cursor_axis_key: &TemporalAxisKey) -> bool {
+    coordinate
         .valid_until()
-        .is_none_or(|end| TemporalAxisKey::time(end) > *cursor_axis_key);
-    started && not_ended
+        .is_none_or(|end| TemporalAxisKey::time(end) > *cursor_axis_key)
 }
 
 struct TemporalPartitions {

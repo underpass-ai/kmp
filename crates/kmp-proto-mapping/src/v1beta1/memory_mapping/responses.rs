@@ -1024,7 +1024,7 @@ mod temporal_lifecycle_tests {
     }
 
     #[test]
-    fn historical_validity_read_marks_entries_whose_interval_ended() {
+    fn ref_cursor_historical_validity_read_marks_entries_whose_interval_ended() {
         let node = |id: &str, kind: &str| {
             BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
         };
@@ -1065,7 +1065,7 @@ mod temporal_lifecycle_tests {
             &bundle,
             &TemporalTraversalRequest::new(
                 TemporalDirection::Rewind,
-                DomainCursor::time("2026-08-20T13:00:00Z").expect("cursor"),
+                DomainCursor::ref_id("constraint:current").expect("cursor"),
             )
             .with_axis(TemporalAxis::Validity),
         )
@@ -1083,11 +1083,8 @@ mod temporal_lifecycle_tests {
 
         let response = temporal_response_from_result(
             TemporalCursor {
-                r#ref: String::new(),
-                time: Some(prost_types::Timestamp {
-                    seconds: 0,
-                    nanos: 0,
-                }),
+                r#ref: "constraint:current".to_string(),
+                time: None,
                 sequence: None,
             },
             TemporalDirection::Rewind,
