@@ -48,11 +48,16 @@ const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, "Z");
 const THEMES = ["auto", "light", "dark"];
 let themeIndex = 0;
 
+/* The stylesheet holds each theme exactly once, keyed on data-theme; `auto`
+   is resolved here, so the attribute is always stamped and the CSS never
+   needs a duplicated media-query block. */
 function applyTheme() {
-  const theme = THEMES[themeIndex];
-  if (theme === "auto") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = theme;
-  $("btn-theme").textContent = theme[0].toUpperCase() + theme.slice(1);
+  const choice = THEMES[themeIndex];
+  const dark =
+    choice === "dark" ||
+    (choice === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  $("btn-theme").textContent = choice[0].toUpperCase() + choice.slice(1);
   invalidatePalette();
   requestDraw();
 }
@@ -61,10 +66,7 @@ $("btn-theme").addEventListener("click", () => {
   themeIndex = (themeIndex + 1) % THEMES.length;
   applyTheme();
 });
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  invalidatePalette();
-  requestDraw();
-});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
 
 /* ---------------- palette ---------------- */
 
@@ -80,11 +82,29 @@ function palette() {
       textMuted: read("--text-muted"),
       accent: read("--accent"),
       edge: read("--edge"),
-      edgeDim: read("--edge-dim"),
       halo: read("--halo"),
-      trace: read("--series-2"),
-      overflow: read("--series-overflow"),
-      series: Array.from({ length: 8 }, (_, i) => read(`--series-${i + 1}`)),
+      overflow: read("--kind-overflow"),
+      kind: {
+        memory_anchor: read("--kind-anchor"),
+        about: read("--kind-anchor"),
+        decision: read("--kind-decision"),
+        memory_evidence: read("--kind-evidence"),
+        evidence: read("--kind-evidence"),
+        success_path: read("--kind-success"),
+        error_path: read("--kind-error"),
+        constraint: read("--kind-constraint"),
+        observation: read("--kind-observation"),
+        semantic_delta: read("--kind-delta"),
+        preference: read("--kind-preference"),
+        feedback: read("--kind-feedback"),
+        memory_dimension: read("--kind-dimension"),
+        dimension: read("--kind-dimension"),
+      },
+      edgeClass: {
+        causal: read("--edge-causal"),
+        evidential: read("--edge-evidential"),
+        temporal: read("--edge-temporal"),
+      },
     };
   }
   return paletteCache;
@@ -95,38 +115,19 @@ function invalidatePalette() {
   resetLabelPool();
 }
 
-/* Fixed slots for the kinds KMP itself talks about; unknown kinds take the
-   remaining slots in first-seen order and never repaint (color follows the
-   entity). Past eight kinds, overflow wears neutral — the legend and the
-   node's own label still carry identity. */
-const KIND_SLOTS = {
-  about: 0,
-  decision: 1,
-  evidence: 2,
-  question: 3,
-  artifact: 4,
-  session: 5,
-  dimension: 6,
-  incident: 7,
-};
-const kindAssignments = new Map();
-
+/* Kinds wear the wire's own names — memory_anchor, decision, success_path —
+   each with a fixed ink in both themes. A kind the palette has never heard
+   of wears neutral; the legend and the label still carry its identity. */
 function kindColor(kind) {
   const p = palette();
-  if (kind in KIND_SLOTS) return p.series[KIND_SLOTS[kind]];
-  if (!kindAssignments.has(kind)) {
-    const taken = new Set([
-      ...Object.values(KIND_SLOTS).filter((slot) =>
-        [...graph.nodes.values()].some((n) => KIND_SLOTS[n.kind] === slot)
-      ),
-      ...kindAssignments.values(),
-    ]);
-    let slot = 0;
-    while (taken.has(slot) && slot < 8) slot += 1;
-    kindAssignments.set(kind, slot);
-  }
-  const slot = kindAssignments.get(kind);
-  return slot < 8 ? p.series[slot] : p.overflow;
+  return p.kind[kind] || p.overflow;
+}
+
+/* Edges finally encode their class: causal wears the accent blue,
+   evidential the green, temporal the violet — three stops of the mark's
+   gradient — and structural scaffolding stays quiet grey. */
+function edgeInk(edge, p) {
+  return p.edgeClass[edge.class] || p.edge;
 }
 
 /* ---------------- state ---------------- */
@@ -464,8 +465,10 @@ function syncScene() {
       (traceHighlight && traceHighlight.edges.has(edgeKey(edge))) ||
       (playback.active &&
         (edge.source === playback.currentRef || edge.target === playback.currentRef));
-    const color = highlighted ? p.trace : p.edge;
-    const width = (highlighted ? 2.5 : 1.2) / k;
+    const classed = edgeInk(edge, p);
+    const structural = classed === p.edge;
+    const color = highlighted ? p.accent : classed;
+    const width = (highlighted ? 2.5 : structural ? 0.9 : 1.3) / k;
     if (s === t) {
       const r = nodeRadius(s);
       edgesGfx
@@ -491,11 +494,20 @@ function syncScene() {
       .fill({ color: node.kind === "?" ? p.overflow : kindColor(node.kind), alpha: a })
       .stroke({ width: 2 / k, color: p.surface, alpha: a });
     if (node.id === graph.rootId || node.id === selectedId || isCurrentStep) {
+      const emphasized = node.id === selectedId || isCurrentStep;
       nodesGfx.circle(node.x, node.y, r + 3 / k).stroke({
-        width: (node.id === selectedId || isCurrentStep ? 2.5 : 1.5) / k,
-        color: node.id === selectedId || isCurrentStep ? p.accent : p.textMuted,
+        width: (emphasized ? 2.5 : 1.5) / k,
+        color: emphasized ? p.accent : p.textMuted,
         alpha: a,
       });
+      if (emphasized) {
+        // The glow: one wide, faint ring — selection reads from across the room.
+        nodesGfx.circle(node.x, node.y, r + 7 / k).stroke({
+          width: 6 / k,
+          color: p.accent,
+          alpha: a * 0.18,
+        });
+      }
     }
     const showLabel =
       k > 0.55 ||
@@ -889,10 +901,10 @@ function updateTooltip(sx, sy) {
     tooltip.append(el("div", "tt-title", `${edge.rel} (${edge.class})`));
     tooltip.append(el("div", "tt-sub", `${edge.source} → ${edge.target}`));
     if (edge.why) tooltip.append(el("div", "tt-quote", edge.why));
-    if (edge.motivation) tooltip.append(el("div", "tt-quote", `motivación: ${edge.motivation}`));
-    if (edge.method) tooltip.append(el("div", "tt-sub", `método: ${edge.method}`));
-    if (edge.evidence) tooltip.append(el("div", "tt-sub", `evidencia: ${edge.evidence}`));
-    if (edge.confidence) tooltip.append(el("div", "tt-sub", `confianza: ${edge.confidence}`));
+    if (edge.motivation) tooltip.append(el("div", "tt-quote", `motivation: ${edge.motivation}`));
+    if (edge.method) tooltip.append(el("div", "tt-sub", `method: ${edge.method}`));
+    if (edge.evidence) tooltip.append(el("div", "tt-sub", `evidence: ${edge.evidence}`));
+    if (edge.confidence) tooltip.append(el("div", "tt-sub", `confidence: ${edge.confidence}`));
   }
   tooltip.hidden = false;
   positionTooltip(sx, sy);
@@ -943,6 +955,19 @@ function renderLegend() {
       renderLegend();
       requestDraw();
     });
+    list.append(item);
+  }
+  // Relation classes, now that edges wear them: a key, not a filter.
+  const classes = new Map();
+  for (const edge of graph.edges) {
+    classes.set(edge.class, (classes.get(edge.class) || 0) + 1);
+  }
+  for (const [cls, count] of [...classes.entries()].sort((a, b) => b[1] - a[1])) {
+    const item = el("li", "");
+    const dash = el("span", "legend-dash");
+    dash.style.background = palette().edgeClass[cls] || palette().edge;
+    item.append(dash, el("span", "", `${cls} `), el("span", "muted", String(count)));
+    item.title = "relation class";
     list.append(item);
   }
 }
@@ -1087,16 +1112,16 @@ function renderRelationList(list, relations, counterpart) {
     }
     item.append(head);
     if (relation.why) item.append(el("p", "rel-why", relation.why));
-    if (relation.motivation) item.append(el("p", "rel-why", `motivación: ${relation.motivation}`));
-    if (relation.method) item.append(el("p", "rel-evidence", `método: ${relation.method}`));
-    if (relation.evidence) item.append(el("p", "rel-evidence", `evidencia: ${relation.evidence}`));
+    if (relation.motivation) item.append(el("p", "rel-why", `motivation: ${relation.motivation}`));
+    if (relation.method) item.append(el("p", "rel-evidence", `method: ${relation.method}`));
+    if (relation.evidence) item.append(el("p", "rel-evidence", `evidence: ${relation.evidence}`));
     const anchors = el("p", "rel-evidence");
     if (relation.decision_id) {
-      anchors.append(document.createTextNode("decisión: "), nodeLink(relation.decision_id));
+      anchors.append(document.createTextNode("decision: "), nodeLink(relation.decision_id));
     }
     if (relation.caused_by) {
       if (anchors.childNodes.length) anchors.append(document.createTextNode(" · "));
-      anchors.append(document.createTextNode("causado por: "), nodeLink(relation.caused_by));
+      anchors.append(document.createTextNode("caused by: "), nodeLink(relation.caused_by));
     }
     if (anchors.childNodes.length) item.append(anchors);
     list.append(item);
@@ -1159,6 +1184,7 @@ async function loadGraph(about) {
   }
 }
 
+$("btn-fit").addEventListener("click", () => fitToView());
 $("btn-reload").addEventListener("click", () => graph.about && loadGraph(graph.about));
 for (const id of ["ctl-depth", "ctl-budget", "ctl-scope"]) {
   $(id).addEventListener("change", () => graph.about && loadGraph(graph.about));
