@@ -987,7 +987,7 @@ fn string_map_schema() -> Value {
 ///
 /// Inputs were described field by field and the response — the half the agent
 /// actually reasons over — was described nowhere. `proof.confidence`,
-/// `proof.superseded` against `proof.conflicts`, `page.total`,
+/// `proof.superseded` and `proof.expired` against `proof.conflicts`, `page.total`,
 /// `projection.next_action`, `resume_cursor`: every one of them arrived
 /// unexplained, and what did explain them was `SKILL.md`, a Claude Code plugin
 /// file that an agent in any other host never sees.
@@ -1228,6 +1228,11 @@ fn proof_output_schema(confidence_description: &str) -> Value {
             "array",
             "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, \
              not a disagreement: read the older entry as what was true then, not as advice."
+        ),
+        "expired": described(
+            "array",
+            "Historical entries whose exclusive `valid_until` is at or before the temporal \
+             cursor. Expiry needs no replacement, so this is separate from `superseded`."
         ),
         "conflicts": described(
             "array",

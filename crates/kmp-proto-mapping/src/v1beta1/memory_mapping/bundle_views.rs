@@ -280,6 +280,7 @@ pub(super) fn proof(
         evidence,
         conflicts,
         superseded,
+        expired: Vec::new(),
         missing,
         confidence: confidence as i32,
         frontier_size,

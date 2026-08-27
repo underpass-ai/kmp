@@ -75,6 +75,27 @@ pub(super) fn select_positions(
         .filter(|position| position.axis_key.axis() == cursor_axis_key.axis())
         .cloned()
         .collect::<Vec<_>>();
+
+    // A time-based goto on the validity clock is an as-of projection, not a
+    // history of interval starts. `valid_until` is exclusive: an entry that
+    // ended at the cursor no longer holds. Ref and sequence cursors retain
+    // their navigation semantics so page continuations and historical moves
+    // can still walk recorded positions.
+    if request.axis() == TemporalAxis::Validity
+        && request.direction() == TemporalDirection::Goto
+        && matches!(request.cursor(), TemporalCursor::Time(_))
+    {
+        let active = comparable
+            .into_iter()
+            .filter(|position| validity_contains(&position.coordinate, cursor_axis_key))
+            .collect();
+        return select_limited(
+            active,
+            request.limit_entries().unwrap_or(DEFAULT_GOTO_ENTRIES),
+            PageSide::Before,
+        );
+    }
+
     let partitions = partition_positions(comparable, cursor_axis_key, cursor.ref_id.as_deref());
 
     match request.direction() {
@@ -151,6 +172,16 @@ pub(super) fn select_positions(
             }
         }
     }
+}
+
+fn validity_contains(coordinate: &TemporalCoordinate, cursor_axis_key: &TemporalAxisKey) -> bool {
+    let started = coordinate
+        .valid_from()
+        .is_none_or(|start| TemporalAxisKey::time(start) <= *cursor_axis_key);
+    let not_ended = coordinate
+        .valid_until()
+        .is_none_or(|end| TemporalAxisKey::time(end) > *cursor_axis_key);
+    started && not_ended
 }
 
 struct TemporalPartitions {

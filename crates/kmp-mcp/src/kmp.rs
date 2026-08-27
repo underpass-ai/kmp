@@ -1,9 +1,9 @@
 use kmp_proto::v1beta1::{
-    AskResponse, DimensionScopeMode, DimensionSelection, DimensionSelectionMode, IngestResponse,
-    InspectResponse, MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass,
-    ProjectVisualResponse, RawMemoryRef, SupersededMemory, TemporalAxis, TemporalCoordinate,
-    TemporalCursor, TemporalDirection, TemporalEntry, TemporalMoveResponse, TraceResponse,
-    VisualLevelOfDetail, WakeResponse,
+    AskResponse, DimensionScopeMode, DimensionSelection, DimensionSelectionMode, ExpiredMemory,
+    IngestResponse, InspectResponse, MemoryConfidence, MemoryEvidence, MemoryRelation,
+    MemorySemanticClass, ProjectVisualResponse, RawMemoryRef, SupersededMemory, TemporalAxis,
+    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalEntry, TemporalMoveResponse,
+    TraceResponse, VisualLevelOfDetail, WakeResponse,
 };
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
@@ -339,6 +339,13 @@ fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
             .iter()
             .map(superseded_json)
             .collect::<Vec<_>>(),
+        // Expiry is independent of supersession: a lease can simply stop
+        // holding without another memory replacing it.
+        "expired": proof
+            .expired
+            .iter()
+            .map(expired_json)
+            .collect::<Vec<_>>(),
         "missing": proof.missing,
         "frontier_size": proof.frontier_size,
         "matched_terms": proof.matched_terms,
@@ -398,12 +405,20 @@ fn superseded_json(entry: &SupersededMemory) -> Value {
     Value::Object(object)
 }
 
+fn expired_json(entry: &ExpiredMemory) -> Value {
+    let mut object = Map::new();
+    object.insert("ref".to_string(), json!(entry.r#ref));
+    insert_optional_timestamp(&mut object, "valid_until", entry.valid_until);
+    Value::Object(object)
+}
+
 fn empty_proof_json() -> Value {
     json!({
         "path": [],
         "evidence": [],
         "conflicts": [],
         "superseded": [],
+        "expired": [],
         "missing": ["proof"],
         "frontier_size": 1,
         "matched_terms": [],
@@ -902,6 +917,7 @@ mod tests {
                 evidence: vec![evidence()],
                 conflicts: Vec::new(),
                 superseded: Vec::new(),
+                expired: Vec::new(),
                 missing: vec!["generative_answer".to_string()],
                 frontier_size: 1,
                 matched_terms: vec!["deterministic".to_string()],
@@ -984,6 +1000,7 @@ mod tests {
                 evidence: evidence.clone(),
                 conflicts: Vec::new(),
                 superseded: Vec::new(),
+                expired: Vec::new(),
                 missing: Vec::new(),
                 frontier_size: 0,
                 matched_terms: vec!["canonical".to_string()],

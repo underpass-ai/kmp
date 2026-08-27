@@ -1,15 +1,19 @@
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::{
     GetContextPathResult, GetContextResult, GraphRelationshipView, InspectMemoryResult,
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
 };
-use kmp_domain::{BundleNodeDetail, KmpBundle, TemporalAxis, TemporalDirection};
+use kmp_domain::{
+    BundleNodeDetail, KmpBundle, TemporalAxis, TemporalCoordinate, TemporalDirection,
+    compare_temporal_instants,
+};
 use kmp_proto::v1beta1::{
-    AnswerReason, AskResponse, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
-    MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef, TemporalCursor,
-    TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse, TemporalState, TraceResponse,
-    WakeClaim, WakePacket, WakeResponse,
+    AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
+    MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef,
+    TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse, TemporalState,
+    TraceResponse, WakeClaim, WakePacket, WakeResponse,
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
@@ -397,6 +401,11 @@ pub fn temporal_response_from_result(
     result: TemporalMemoryResult,
 ) -> TemporalMoveResponse {
     let traversal = result.traversal;
+    let expired = expired_at_cursor(
+        traversal.entries(),
+        traversal.axis(),
+        traversal.resolved_cursor(),
+    );
     let entries = traversal
         .entries()
         .iter()
@@ -483,6 +492,7 @@ pub fn temporal_response_from_result(
         },
     );
     temporal_proof.superseded = superseded_from_relations(&selected_relationships);
+    temporal_proof.expired = expired;
 
     TemporalMoveResponse {
         summary: format!(
@@ -515,6 +525,58 @@ pub fn temporal_response_from_result(
         }),
         quality: Some(quality),
     }
+}
+
+fn expired_at_cursor(
+    entries: &[kmp_domain::TemporalEntry],
+    axis: TemporalAxis,
+    cursor: &TemporalCoordinate,
+) -> Vec<ExpiredMemory> {
+    if axis != TemporalAxis::Validity {
+        return Vec::new();
+    }
+    let Some(instant) = cursor.valid_from().or(cursor.valid_until()) else {
+        return Vec::new();
+    };
+
+    entries
+        .iter()
+        .filter_map(|entry| {
+            let validity = entry
+                .coordinates()
+                .iter()
+                .filter(|coordinate| {
+                    coordinate.valid_from().is_some() || coordinate.valid_until().is_some()
+                })
+                .collect::<Vec<_>>();
+            let active = validity.iter().any(|coordinate| {
+                coordinate.valid_from().is_none_or(|start| {
+                    compare_temporal_instants(start, instant) != Some(Ordering::Greater)
+                }) && coordinate.valid_until().is_none_or(|end| {
+                    compare_temporal_instants(end, instant) == Some(Ordering::Greater)
+                })
+            });
+            if active {
+                return None;
+            }
+            let ended = validity
+                .iter()
+                .filter_map(|coordinate| coordinate.valid_until())
+                .filter(|end| {
+                    matches!(
+                        compare_temporal_instants(end, instant),
+                        Some(Ordering::Less | Ordering::Equal)
+                    )
+                })
+                .max_by(|left, right| {
+                    compare_temporal_instants(left, right).unwrap_or(Ordering::Equal)
+                })?;
+            Some(ExpiredMemory {
+                r#ref: entry.ref_id().to_string(),
+                valid_until: timestamp_from_sort_or_rfc3339(Some(ended)),
+            })
+        })
+        .collect()
 }
 
 fn missing_explicit_clock(
@@ -959,6 +1021,89 @@ mod temporal_lifecycle_tests {
         assert_eq!(proof.superseded.len(), 1);
         assert_eq!(proof.superseded[0].r#ref, "decision:old");
         assert_eq!(proof.superseded[0].superseded_by, "decision:new");
+    }
+
+    #[test]
+    fn historical_validity_read_marks_entries_whose_interval_ended() {
+        let node = |id: &str, kind: &str| {
+            BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let coordinate = |target: &str, valid_from: &str, valid_until: Option<&str>| {
+            BundleRelationship::new(
+                "validity:main",
+                target,
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("validity")
+                    .with_scope_id("validity:main")
+                    .with_valid_from(valid_from)
+                    .with_optional_valid_until(valid_until.map(ToString::to_string)),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("project:kmp", "memory_anchor"),
+            vec![
+                node("validity:main", "memory_dimension"),
+                node("constraint:expired", "constraint"),
+                node("constraint:current", "constraint"),
+            ],
+            vec![
+                coordinate(
+                    "constraint:expired",
+                    "2026-08-20T09:00:00Z",
+                    Some("2026-08-20T12:00:00Z"),
+                ),
+                coordinate("constraint:current", "2026-08-20T12:00:00Z", None),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Rewind,
+                DomainCursor::time("2026-08-20T13:00:00Z").expect("cursor"),
+            )
+            .with_axis(TemporalAxis::Validity),
+        )
+        .expect("historical traversal");
+        let result = TemporalMemoryResult {
+            traversal,
+            source_bundle: bundle,
+            include: TemporalIncludeOptions {
+                evidence: false,
+                relations: false,
+                raw_refs: false,
+            },
+            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+        };
+
+        let response = temporal_response_from_result(
+            TemporalCursor {
+                r#ref: String::new(),
+                time: Some(prost_types::Timestamp {
+                    seconds: 0,
+                    nanos: 0,
+                }),
+                sequence: None,
+            },
+            TemporalDirection::Rewind,
+            result,
+        );
+        let proof = response.proof.expect("proof");
+
+        assert_eq!(proof.expired.len(), 1);
+        assert_eq!(proof.expired[0].r#ref, "constraint:expired");
+        assert_eq!(
+            proof.expired[0]
+                .valid_until
+                .expect("validity end")
+                .to_string(),
+            "2026-08-20T12:00:00Z"
+        );
     }
 
     #[test]
