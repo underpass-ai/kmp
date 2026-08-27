@@ -41,7 +41,7 @@ sleep 0.9
 printf '%sagent >%s kmp-mcp import checkout-latency.jsonl\n' "${agent}" "${reset}"
 sleep 0.6
 "${BIN}" import "${BUNDLE}" >/dev/null
-sleep 1.2
+sleep 2.6
 printf '\n'
 
 printf '%syou   >%s Why did the rollback not fix checkout latency?\n' "${you}" "${reset}"
@@ -61,7 +61,7 @@ printf '        %s%s%s\n' "${dim}" "${evidence/ measured at the gateway/}" "${re
 sleep 1.2
 printf '%sagent <%s The rollback changed pool size, but retries still amplified\n' "${agent}" "${reset}"
 printf '        each slow request 6.1x. More capacity was consumed just as fast.\n\n'
-sleep 1.4
+sleep 2.8
 
 printf '%syou   >%s Remember: KMP stays local-first by default.\n' "${you}" "${reset}"
 sleep 0.9
@@ -77,7 +77,7 @@ ready="$(jq -r '.ingest_result.memory.read_after_write_ready' <<<"${write_respon
 printf '%skmp   <%s accepted: %s · read_after_write_ready: %s\n' "${kmp}" "${reset}" "${accepted}" "${ready}"
 sleep 0.5
 printf '        %sstore: .kernel/ · engine: sqlite · still on your machine%s\n\n' "${dim}" "${reset}"
-sleep 1
+sleep 2
 
 printf '%s▌KMP▐%s %stime travel over a graph, proofs attached%s %s────────────────────%s\n' "${accent}" "${reset}" "${dim}" "${reset}" "${dim}" "${reset}"
 sleep 4

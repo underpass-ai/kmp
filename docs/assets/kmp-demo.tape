@@ -12,4 +12,4 @@ Set Theme "Dracula"
 Type "bash scripts/docs/kmp-readme-demo.sh"
 Sleep 300ms
 Enter
-Sleep 21s
+Sleep 26s
