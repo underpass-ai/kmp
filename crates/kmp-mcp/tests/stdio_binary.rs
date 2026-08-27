@@ -278,6 +278,13 @@ fn info_and_doctor_report_the_data_dir_without_creating_it() {
             "`{verb}` created {} just by reporting on it",
             kernel.display()
         );
+        if verb == "doctor" {
+            assert!(
+                output.status.success(),
+                "doctor rejected a healthy resolved store: {}",
+                String::from_utf8_lossy(&output.stdout)
+            );
+        }
     }
 }
 

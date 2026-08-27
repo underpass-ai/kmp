@@ -19,12 +19,16 @@
 //! It is ephemeral on purpose: process-scoped, TTL'd, never written to the
 //! store. Persisting it would quietly turn a camera position into memory.
 
-use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::collections::hash_map::Entry;
+use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
+
+use kmp_domain::compare_temporal_instants;
 
 /// The view a host opens when it does not name one — one window, one loom.
 pub const DEFAULT_VIEW_ID: &str = "default";
@@ -40,6 +44,16 @@ const VIEW_TTL: Duration = Duration::from_secs(6 * 60 * 60);
 pub const CLOCKS: [&str; 4] = ["occurred", "observed", "ingested", "validity"];
 /// The rungs of the semantic-zoom ladder an intent may ask for.
 pub const ZOOMS: [&str; 4] = ["atlas", "episode", "moment", "evidence"];
+/// The domain's closed relation-class vocabulary, as exposed by the intent
+/// schema. Unlike dimensions and telemetry series, these are not store-local.
+pub const RELATION_CLASSES: [&str; 6] = [
+    "causal",
+    "evidential",
+    "motivational",
+    "procedural",
+    "constraint",
+    "structural",
+];
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TimeRange {
@@ -88,7 +102,7 @@ pub struct Provenance {
     pub at: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ViewState {
     pub view_id: String,
     pub view_revision: u64,
@@ -191,6 +205,7 @@ struct ViewEntry {
 /// Every open view in this process, and a bell that rings when one changes.
 pub struct ViewRegistry {
     views: Mutex<HashMap<String, ViewEntry>>,
+    available_overlays: Mutex<BTreeSet<String>>,
     bell: Notify,
 }
 
@@ -204,6 +219,7 @@ impl ViewRegistry {
     pub fn new() -> Self {
         Self {
             views: Mutex::new(HashMap::new()),
+            available_overlays: Mutex::new(BTreeSet::new()),
             bell: Notify::new(),
         }
     }
@@ -216,32 +232,97 @@ impl ViewRegistry {
         SHARED.get_or_init(|| Arc::new(ViewRegistry::new()))
     }
 
+    /// Publishes the exact telemetry vocabulary mounted beside this registry.
+    /// The MCP face uses it to distinguish a requested overlay from a name
+    /// the actual viewer reader cannot resolve.
+    pub fn set_available_overlays(&self, names: impl IntoIterator<Item = String>) {
+        *self
+            .available_overlays
+            .lock()
+            .expect("overlay catalog poisoned") = names.into_iter().collect();
+    }
+
+    pub fn overlay_available(&self, name: &str) -> bool {
+        self.available_overlays
+            .lock()
+            .expect("overlay catalog poisoned")
+            .contains(name)
+    }
+
     /// Opens a view, or rehydrates the one already under that id.
     pub fn open(&self, view_id: Option<&str>, about: Option<String>) -> ViewState {
+        self.open_checked(view_id, about, None, "agent", None)
+            .expect("an unconditional view open cannot conflict")
+    }
+
+    /// Opens a view against the revision the caller actually saw. Changing
+    /// the about is a destructive camera reset, so unlike a same-about
+    /// rehydrate it is both concurrency-checked and attributed.
+    pub fn open_checked(
+        &self,
+        view_id: Option<&str>,
+        about: Option<String>,
+        expected_revision: Option<u64>,
+        actor: &str,
+        explanation: Option<&str>,
+    ) -> Result<ViewState, ViewError> {
         let id = view_id.unwrap_or(DEFAULT_VIEW_ID).to_string();
         let mut views = self.views.lock().expect("view registry poisoned");
         prune(&mut views);
-        let entry = views.entry(id.clone()).or_insert_with(|| ViewEntry {
-            state: ViewState::new(&id, about.clone()),
-            history: Vec::new(),
-            applied_keys: Vec::new(),
-            touched: SystemTime::now(),
-        });
+        let entry = match views.entry(id.clone()) {
+            Entry::Vacant(slot) => {
+                if expected_revision.is_some_and(|expected| expected != 0) {
+                    return Err(ViewError::UnknownView(id));
+                }
+                let state = ViewState::new(&id, about);
+                slot.insert(ViewEntry {
+                    state: state.clone(),
+                    history: Vec::new(),
+                    applied_keys: Vec::new(),
+                    touched: SystemTime::now(),
+                });
+                drop(views);
+                self.bell.notify_waiters();
+                return Ok(state);
+            }
+            Entry::Occupied(slot) => slot.into_mut(),
+        };
         entry.touched = SystemTime::now();
+        let mut changed = false;
         // Re-opening on another about is a fresh loom, not a merge.
         if let Some(about) = about
             && entry.state.about.as_deref() != Some(about.as_str())
         {
+            if let Some(expected) = expected_revision
+                && expected != entry.state.view_revision
+            {
+                return Err(ViewError::Conflict {
+                    expected,
+                    actual: entry.state.view_revision,
+                    current: Box::new(entry.state.clone()),
+                });
+            }
             let revision = entry.state.view_revision + 1;
             entry.state = ViewState::new(&id, Some(about));
             entry.state.view_revision = revision;
+            entry.state.last_change = Some(Provenance {
+                actor: actor.to_string(),
+                explanation: explanation
+                    .map(str::to_string)
+                    .or_else(|| Some("opened a different about".to_string())),
+                idempotency_key: None,
+                at: now_iso(),
+            });
             entry.history.clear();
             entry.state.can_undo = false;
+            changed = true;
         }
         let state = entry.state.clone();
         drop(views);
-        self.bell.notify_waiters();
-        state
+        if changed {
+            self.bell.notify_waiters();
+        }
+        Ok(state)
     }
 
     pub fn get(&self, view_id: &str) -> Option<ViewState> {
@@ -265,6 +346,31 @@ impl ViewRegistry {
         actor: &str,
         explanation: Option<&str>,
     ) -> Result<Applied, ViewError> {
+        self.apply_with_unhonored(
+            view_id,
+            expected_revision,
+            idempotency_key,
+            patch,
+            actor,
+            explanation,
+            Vec::new(),
+        )
+    }
+
+    /// Applies a patch whose store-local selectors have already been
+    /// resolved by the MCP boundary. Keeping this resolution explicit lets
+    /// the aggregate report partial intents without learning storage APIs.
+    #[allow(clippy::too_many_arguments)]
+    pub fn apply_with_unhonored(
+        &self,
+        view_id: &str,
+        expected_revision: Option<u64>,
+        idempotency_key: Option<&str>,
+        patch: ViewPatch,
+        actor: &str,
+        explanation: Option<&str>,
+        unhonored: Vec<String>,
+    ) -> Result<Applied, ViewError> {
         if let Some(clock) = patch.clock.as_deref()
             && !CLOCKS.contains(&clock)
         {
@@ -284,6 +390,29 @@ impl ViewRegistry {
                 ZOOMS.join(", ")
             )));
         }
+        if let Some(classes) = patch
+            .projection
+            .as_ref()
+            .and_then(|projection| projection.relation_classes.as_ref())
+            && let Some(invalid) = classes
+                .iter()
+                .find(|class| !RELATION_CLASSES.contains(&class.as_str()))
+        {
+            return Err(ViewError::Invalid(format!(
+                "`{invalid}` is not a relation class; KMP draws {}",
+                RELATION_CLASSES.join(", ")
+            )));
+        }
+        if let Some(focus) = patch.focus.as_ref()
+            && let Some(window) = focus.time_range.as_ref()
+        {
+            validate_window(window)?;
+        }
+        if patch.focus.is_none()
+            && let Some(window) = patch.focus_window.as_ref()
+        {
+            validate_window(window)?;
+        }
 
         let mut views = self.views.lock().expect("view registry poisoned");
         prune(&mut views);
@@ -301,7 +430,7 @@ impl ViewRegistry {
             return Ok(Applied {
                 state,
                 applied: false,
-                unhonored: Vec::new(),
+                unhonored,
             });
         }
 
@@ -316,10 +445,22 @@ impl ViewRegistry {
         }
 
         if !patch.touches_anything() {
+            remember_key(entry, idempotency_key, entry.state.view_revision);
             return Ok(Applied {
                 state: entry.state.clone(),
                 applied: false,
-                unhonored: Vec::new(),
+                unhonored,
+            });
+        }
+
+        let mut next = entry.state.clone();
+        apply_patch(&mut next, patch);
+        if next == entry.state {
+            remember_key(entry, idempotency_key, entry.state.view_revision);
+            return Ok(Applied {
+                state: entry.state.clone(),
+                applied: false,
+                unhonored,
             });
         }
 
@@ -328,31 +469,8 @@ impl ViewRegistry {
             entry.history.remove(0);
         }
 
-        let unhonored = Vec::new();
+        entry.state = next;
         let state = &mut entry.state;
-        if let Some(about) = patch.about {
-            state.about = Some(about);
-        }
-        if let Some(clock) = patch.clock {
-            state.clock = clock;
-        }
-        if let Some(focus) = patch.focus {
-            state.focus = focus;
-        } else if let Some(window) = patch.focus_window {
-            state.focus.time_range = Some(window);
-        }
-        if let Some(projection) = patch.projection {
-            state.projection = projection;
-        }
-        if let Some(selection) = patch.selection {
-            state.selection = selection;
-        }
-        if let Some(trace) = patch.trace {
-            state.trace = trace;
-        }
-        if let Some(search) = patch.search {
-            state.search = search;
-        }
         state.view_revision += 1;
         state.can_undo = true;
         state.last_change = Some(Provenance {
@@ -362,14 +480,7 @@ impl ViewRegistry {
             at: now_iso(),
         });
 
-        if let Some(key) = idempotency_key {
-            entry
-                .applied_keys
-                .push((key.to_string(), entry.state.view_revision));
-            if entry.applied_keys.len() > IDEMPOTENCY_LIMIT {
-                entry.applied_keys.remove(0);
-            }
-        }
+        remember_key(entry, idempotency_key, entry.state.view_revision);
 
         let state = entry.state.clone();
         drop(views);
@@ -435,6 +546,58 @@ impl ViewRegistry {
                 return self.get(view_id);
             }
         }
+    }
+}
+
+fn apply_patch(state: &mut ViewState, patch: ViewPatch) {
+    if let Some(about) = patch.about {
+        state.about = Some(about);
+    }
+    if let Some(clock) = patch.clock {
+        state.clock = clock;
+    }
+    if let Some(focus) = patch.focus {
+        state.focus = focus;
+    } else if let Some(window) = patch.focus_window {
+        state.focus.time_range = Some(window);
+    }
+    if let Some(projection) = patch.projection {
+        state.projection = projection;
+    }
+    if let Some(selection) = patch.selection {
+        state.selection = selection;
+    }
+    if let Some(trace) = patch.trace {
+        state.trace = trace;
+    }
+    if let Some(search) = patch.search {
+        state.search = search;
+    }
+}
+
+fn remember_key(entry: &mut ViewEntry, key: Option<&str>, revision: u64) {
+    let Some(key) = key else {
+        return;
+    };
+    entry.applied_keys.push((key.to_string(), revision));
+    if entry.applied_keys.len() > IDEMPOTENCY_LIMIT {
+        entry.applied_keys.remove(0);
+    }
+}
+
+fn validate_window(window: &TimeRange) -> Result<(), ViewError> {
+    let (Some(from), Some(to)) = (window.from.as_deref(), window.to.as_deref()) else {
+        return Ok(());
+    };
+    match compare_temporal_instants(from, to) {
+        Some(Ordering::Less) => Ok(()),
+        Some(Ordering::Equal | Ordering::Greater) => Err(ViewError::Invalid(
+            "the loom does not frame a window that ends before it begins; `from` must be before `to`"
+                .to_string(),
+        )),
+        None => Err(ViewError::Invalid(
+            "a focus window needs RFC3339 or persisted `unix:` timestamps".to_string(),
+        )),
     }
 }
 
@@ -505,6 +668,94 @@ mod tests {
         assert!(first.applied);
         assert!(!second.applied, "a retry is not a second move");
         assert_eq!(first.state.view_revision, second.state.view_revision);
+    }
+
+    #[test]
+    fn a_fresh_key_that_reasserts_the_present_is_not_a_move() {
+        let registry = registry();
+        let patch = || ViewPatch {
+            selection: Some(Some("entry:1".into())),
+            ..ViewPatch::default()
+        };
+        let first = registry
+            .apply(
+                "t",
+                None,
+                Some("first"),
+                patch(),
+                "agent:test",
+                Some("select"),
+            )
+            .expect("first selection");
+        let second = registry
+            .apply(
+                "t",
+                Some(first.state.view_revision),
+                Some("fresh-key"),
+                patch(),
+                "agent:other",
+                Some("reassert"),
+            )
+            .expect("no-op reassertion");
+
+        assert!(!second.applied);
+        assert_eq!(second.state.view_revision, first.state.view_revision);
+        assert_eq!(second.state.last_change, first.state.last_change);
+        let undone = registry.undo("t", "human").expect("one real move to undo");
+        assert_eq!(undone.selection, None);
+        assert!(!undone.can_undo, "the no-op did not add duplicate history");
+    }
+
+    #[test]
+    fn a_stale_about_switch_cannot_erase_a_prepared_view() {
+        let registry = registry();
+        let prepared = registry
+            .apply(
+                "t",
+                None,
+                Some("pulse"),
+                ViewPatch {
+                    projection: Some(Projection {
+                        overlays: Some(vec!["noise_ratio".into()]),
+                        ..Projection::default()
+                    }),
+                    ..ViewPatch::default()
+                },
+                "agent:test",
+                Some("align the quality pulse"),
+            )
+            .expect("agent prepares the view")
+            .state;
+
+        let stale = registry.open_checked(
+            Some("t"),
+            Some("about:other".into()),
+            Some(prepared.view_revision - 1),
+            "human",
+            None,
+        );
+        assert!(matches!(stale, Err(ViewError::Conflict { .. })));
+        let still_prepared = registry.get("t").expect("view survives");
+        assert_eq!(still_prepared.about.as_deref(), Some("about:x"));
+        assert_eq!(
+            still_prepared.projection.overlays,
+            Some(vec!["noise_ratio".into()])
+        );
+
+        let switched = registry
+            .open_checked(
+                Some("t"),
+                Some("about:other".into()),
+                Some(prepared.view_revision),
+                "human",
+                None,
+            )
+            .expect("a deliberate current switch applies");
+        assert_eq!(switched.about.as_deref(), Some("about:other"));
+        assert_eq!(
+            switched.last_change.expect("reset provenance").actor,
+            "human"
+        );
     }
 
     /// The human moved while the agent was thinking. The agent is told, and
@@ -666,6 +917,58 @@ mod tests {
             None,
         );
         assert!(matches!(refused, Err(ViewError::Invalid(_))));
+    }
+
+    #[test]
+    fn a_relation_class_outside_the_domain_vocabulary_is_refused() {
+        let registry = registry();
+        let refused = registry.apply(
+            "t",
+            None,
+            None,
+            ViewPatch {
+                projection: Some(Projection {
+                    relation_classes: Some(vec!["telepathic".into()]),
+                    ..Projection::default()
+                }),
+                ..ViewPatch::default()
+            },
+            "agent:test",
+            None,
+        );
+        assert!(matches!(refused, Err(ViewError::Invalid(_))));
+    }
+
+    #[test]
+    fn a_backwards_or_zero_width_focus_window_is_refused() {
+        let registry = registry();
+        for (from, to) in [
+            ("2026-08-28T00:00:00Z", "2026-08-27T00:00:00Z"),
+            ("2026-08-27T00:00:00Z", "2026-08-27T00:00:00Z"),
+            ("2026-08-27T02:00:00+02:00", "2026-08-27T00:00:00Z"),
+        ] {
+            let refused = registry.apply(
+                "t",
+                None,
+                None,
+                ViewPatch {
+                    focus: Some(Focus {
+                        time_range: Some(TimeRange {
+                            from: Some(from.into()),
+                            to: Some(to.into()),
+                        }),
+                        refs: Vec::new(),
+                    }),
+                    ..ViewPatch::default()
+                },
+                "agent:test",
+                None,
+            );
+            assert!(
+                matches!(refused, Err(ViewError::Invalid(_))),
+                "{from} -> {to}"
+            );
+        }
     }
 
     #[test]

@@ -115,7 +115,7 @@ Need the real boxes, trust boundaries and write sequences? Enter the
 |:--|:--|:--|
 | Plugin | Installation, host discovery, skills and the single MCP declaration. | Memory semantics or a second tool vocabulary. |
 | Skills | When to recover, ask, navigate, audit, write, diagnose, save or restore. | Persistence. |
-| <code>kmp&#8209;mcp</code> | The schema-checked ten-tool boundary over local stdio. | Choosing a workflow from user prose. |
+| <code>kmp&#8209;mcp</code> | The schema-checked thirteen-tool boundary over local stdio. | Choosing a workflow from user prose. |
 | Kernel | Validation, temporal storage, traversal, deterministic retrieval and proof. | Generating prose or inventing rationale. |
 
 Human workflows such as `kmp-setup`, `kmp-doctor`, `kmp-info`, `kmp-catchup`,

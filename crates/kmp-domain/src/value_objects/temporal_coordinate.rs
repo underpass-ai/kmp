@@ -1,4 +1,4 @@
-use crate::{DomainError, RelationExplanation};
+use crate::{DomainError, RelationExplanation, TemporalAxis};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TemporalCoordinate {
@@ -37,17 +37,23 @@ impl TemporalCoordinate {
         }))
     }
 
-    pub fn cursor_time(value: impl Into<String>) -> Result<Self, DomainError> {
+    pub fn cursor_time(value: impl Into<String>, axis: TemporalAxis) -> Result<Self, DomainError> {
         let value = normalize_required(value.into(), "temporal cursor time")?;
+        let (occurred_at, observed_at, ingested_at, valid_from) = match axis {
+            TemporalAxis::Default | TemporalAxis::Occurred => (Some(value), None, None, None),
+            TemporalAxis::Observed => (None, Some(value), None, None),
+            TemporalAxis::Ingested => (None, None, Some(value), None),
+            TemporalAxis::Validity => (None, None, None, Some(value)),
+        };
         Ok(Self {
             dimension: String::new(),
             scope_id: String::new(),
             sequence: None,
             rank: None,
-            occurred_at: Some(value),
-            observed_at: None,
-            ingested_at: None,
-            valid_from: None,
+            occurred_at,
+            observed_at,
+            ingested_at,
+            valid_from,
             valid_until: None,
         })
     }

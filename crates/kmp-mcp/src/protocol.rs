@@ -64,6 +64,18 @@ pub(crate) fn tools_list_result() -> Value {
     tools_list_result_with_apps(false)
 }
 
+/// Canonical model-facing names declared by this protocol build. Diagnostics
+/// compare the surface they observe against names, never a count that goes
+/// stale as honest tools are added.
+pub(crate) fn declared_tool_names() -> Vec<String> {
+    tools_list_result()["tools"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|tool| tool["name"].as_str().map(str::to_string))
+        .collect()
+}
+
 pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
     let mut result = tools_list_core();
     if let Some(tools) = result["tools"].as_array_mut() {
@@ -397,7 +409,12 @@ fn view_open_definition() -> Value {
             "required": ["about"],
             "properties": {
                 "about": string_schema("Memory anchor the loom should weave. It must exist; a view onto absent memory would render an empty loom that looks like an answer."),
-                "view_id": string_schema("Which view to open. Omit for the one window a local viewer shows.")
+                "view_id": string_schema("Which view to open. Omit for the one window a local viewer shows."),
+                "expected_revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "When changing an existing view to another about, the view_revision this open was prepared against. A stale open conflicts instead of discarding a newer camera state."
+                }
             }
         }),
         view_output_schema(),
@@ -461,7 +478,7 @@ fn view_apply_intent_definition() -> Value {
                             "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
                         },
                         "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
-                        "relation_classes": {"type": "array", "items": string_schema("Relation class to draw: causal, evidential, motivational, procedural, constraint, structural.")},
+                        "relation_classes": {"type": "array", "items": semantic_class_schema()},
                         "overlays": {
                             "type": "array",
                             "items": string_schema("Observability series to align over the loom."),
@@ -1459,7 +1476,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
 
 /// Applies the strictness the schemas already declare.
 ///
-/// Every one of the ten tools says `"additionalProperties": false` and nothing
+/// Every model-facing tool says `"additionalProperties": false` and nothing
 /// enforced it, which made the surface a silent-failure generator: a
 /// misspelled `dimensions`, a `budget` nested one level too deep, a `from`
 /// sent to `kmp_goto` where the cursor is `at` — each accepted, dropped,
@@ -1480,7 +1497,7 @@ pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<
 /// The schemas, built once.
 ///
 /// This runs on every tool call, and `tools_list_result()` builds the whole
-/// ten-tool document — relation vocabulary included — from scratch each time.
+/// full tool document — relation vocabulary included — from scratch each time.
 /// Rebuilding a document that cannot change, per call, to read one field of
 /// it, is a cost with nothing on the other side of it.
 fn tool_input_schema(tool: &str) -> Option<&'static Value> {

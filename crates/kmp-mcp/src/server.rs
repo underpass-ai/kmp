@@ -4,6 +4,8 @@ use std::time::Instant;
 
 use serde_json::Value;
 
+use kmp_viewer::ViewRegistry;
+
 use crate::backend::{
     GRPC_ENDPOINT_ENV, KernelMcpGrpcTlsConfig, KernelMcpToolBackend, KernelMcpToolFuture,
     MCP_BACKEND_ENV,
@@ -415,7 +417,12 @@ impl KernelMcpServer {
                 }
                 match failure {
                     Some(error) => Err(error),
-                    None => crate::view_tools::apply_intent(arguments, &missing),
+                    None => match self.unhonored_projection(arguments).await {
+                        Ok(unhonored) => {
+                            crate::view_tools::apply_intent(arguments, &missing, unhonored)
+                        }
+                        Err(error) => Err(error),
+                    },
                 }
             }
             other => Err(ToolError::unknown_tool(format!(
@@ -473,6 +480,59 @@ impl KernelMcpServer {
                 ),
             )),
         }
+    }
+
+    async fn unhonored_projection(
+        &self,
+        arguments: &Value,
+    ) -> Result<crate::view_tools::UnhonoredProjection, ToolError> {
+        let requested = crate::view_tools::projection_names(arguments);
+        let mut unhonored = crate::view_tools::UnhonoredProjection::default();
+        let about = crate::view_tools::about_for_intent(arguments);
+
+        if !requested.dimensions.is_empty() {
+            let Some(about) = about else {
+                unhonored.dimensions = requested.dimensions;
+                return Ok(unhonored);
+            };
+            let response = self
+                .backend
+                .call_tool(
+                    "kmp_view_read_projection",
+                    &serde_json::json!({
+                        "about": about,
+                        "from": "0001-01-01T00:00:00Z",
+                        "to": "9999-12-31T23:59:59Z",
+                        "lod": "atlas",
+                        "dimensions": {
+                            "mode": "only",
+                            "include": requested.dimensions,
+                            "scope": "current_about"
+                        }
+                    }),
+                )
+                .await
+                .map_err(|error| {
+                    ToolError::new(
+                        error.code,
+                        format!("could not resolve the view's dimensions: {}", error.message),
+                    )
+                })?;
+            unhonored.dimensions = response
+                .pointer("/structuredContent/coverage/missing")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect();
+        }
+        for overlay in requested.overlays {
+            if !ViewRegistry::shared().overlay_available(&overlay) {
+                unhonored.overlays.push(overlay);
+            }
+        }
+        Ok(unhonored)
     }
 
     async fn handle_kmp_write_memory(

@@ -67,7 +67,27 @@ pub(crate) fn open(arguments: &Value, about_exists: bool) -> Result<Value, ToolE
         )));
     }
     let view_id = arguments.get("view_id").and_then(Value::as_str);
-    let state = ViewRegistry::shared().open(view_id, Some(about.to_string()));
+    let expected = arguments.get("expected_revision").and_then(Value::as_u64);
+    let state = match ViewRegistry::shared().open_checked(
+        view_id,
+        Some(about.to_string()),
+        expected,
+        "agent",
+        Some("opened a different about"),
+    ) {
+        Ok(state) => state,
+        Err(ViewError::Conflict {
+            expected, actual, ..
+        }) => {
+            return Err(ToolError::conflict(format!(
+                "the view moved before it could be opened: expected revision {expected}, it is at {actual}"
+            )));
+        }
+        Err(ViewError::UnknownView(id)) => {
+            return Err(ToolError::not_found(format!("no view under `{id}`")));
+        }
+        Err(ViewError::Invalid(message)) => return Err(ToolError::invalid_argument(message)),
+    };
     Ok(state_result(
         &state,
         json!({
@@ -215,6 +235,65 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
     Ok((patch, refs))
 }
 
+#[derive(Debug, Default)]
+pub(crate) struct ProjectionNames {
+    pub(crate) dimensions: Vec<String>,
+    pub(crate) overlays: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct UnhonoredProjection {
+    pub(crate) dimensions: Vec<String>,
+    pub(crate) overlays: Vec<String>,
+}
+
+pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {
+    let values = |key: &str| {
+        arguments
+            .pointer(&format!("/projection/{key}"))
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect()
+    };
+    ProjectionNames {
+        dimensions: values("dimensions"),
+        overlays: values("overlays"),
+    }
+}
+
+pub(crate) fn about_for_intent(arguments: &Value) -> Option<String> {
+    arguments
+        .pointer("/target/about")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| {
+            ViewRegistry::shared()
+                .get(&view_id_of(arguments))
+                .and_then(|state| state.about)
+        })
+}
+
+fn omit_unhonored_projection(patch: &mut ViewPatch, unavailable: &UnhonoredProjection) {
+    let Some(projection) = patch.projection.as_mut() else {
+        return;
+    };
+    if let Some(dimensions) = projection.dimensions.as_mut() {
+        dimensions.retain(|name| !unavailable.dimensions.contains(name));
+        // `Some([])` is a keep-list with no lanes. If every requested name
+        // was a typo, fall back to the unfiltered projection instead of
+        // turning a partial intent into an empty loom.
+        if dimensions.is_empty() && !unavailable.dimensions.is_empty() {
+            projection.dimensions = None;
+        }
+    }
+    if let Some(overlays) = projection.overlays.as_mut() {
+        overlays.retain(|name| !unavailable.overlays.contains(name));
+    }
+}
+
 /// The refs an intent names, so the caller can check they exist before the
 /// view points at them.
 pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
@@ -225,7 +304,11 @@ pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
 
 /// Applies one intent atomically: focus, clock, filters, selection, trace —
 /// under optimistic concurrency and idempotency.
-pub(crate) fn apply_intent(arguments: &Value, missing_refs: &[String]) -> Result<Value, ToolError> {
+pub(crate) fn apply_intent(
+    arguments: &Value,
+    missing_refs: &[String],
+    unavailable: UnhonoredProjection,
+) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
     // A replay is answered before the revision is checked: the intent under
     // that key already landed, so this is success, not a conflict. The state
@@ -244,7 +327,13 @@ pub(crate) fn apply_intent(arguments: &Value, missing_refs: &[String]) -> Result
             missing_refs.join(", ")
         )));
     }
-    let (patch, _) = patch_from(arguments)?;
+    let (mut patch, _) = patch_from(arguments)?;
+    omit_unhonored_projection(&mut patch, &unavailable);
+    let unhonored = unavailable
+        .dimensions
+        .into_iter()
+        .chain(unavailable.overlays)
+        .collect();
     let expected = arguments.get("expected_revision").and_then(Value::as_u64);
     let explanation = arguments.get("explanation").and_then(Value::as_str);
     let actor = arguments
@@ -252,13 +341,14 @@ pub(crate) fn apply_intent(arguments: &Value, missing_refs: &[String]) -> Result
         .and_then(Value::as_str)
         .unwrap_or("agent");
 
-    match ViewRegistry::shared().apply(
+    match ViewRegistry::shared().apply_with_unhonored(
         &view_id,
         expected,
         Some(idempotency_key),
         patch,
         actor,
         explanation,
+        unhonored,
     ) {
         Ok(applied) => Ok(state_result(
             &applied.state,

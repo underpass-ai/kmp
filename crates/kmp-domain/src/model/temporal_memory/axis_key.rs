@@ -117,6 +117,15 @@ fn canonical_time_key(value: &str) -> String {
         .unwrap_or_else(|| value.to_string())
 }
 
+/// Compares two timestamp spellings on KMP's canonical temporal axis.
+///
+/// This is the boundary-safe comparison for callers that validate ranges:
+/// persisted `unix:` clocks and RFC3339 input denote the same instants even
+/// though their raw strings do not share a useful lexical order.
+pub fn compare_temporal_instants(left: &str, right: &str) -> Option<Ordering> {
+    Some(timestamp_nanos(left)?.cmp(&timestamp_nanos(right)?))
+}
+
 fn timestamp_nanos(value: &str) -> Option<i128> {
     if let Some(value) = value.strip_prefix("unix:") {
         let (seconds, nanos) = value.split_once(':')?;
@@ -208,7 +217,9 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use super::TemporalAxisKey;
+    use std::cmp::Ordering;
+
+    use super::{TemporalAxisKey, compare_temporal_instants};
 
     #[test]
     fn rfc3339_and_persisted_sortable_times_share_one_axis() {
@@ -224,5 +235,14 @@ mod tests {
             TemporalAxisKey::time("2026-07-01T10:00:00Z")
                 < TemporalAxisKey::time("2026-07-02T10:00:00Z")
         );
+    }
+
+    #[test]
+    fn public_instant_comparison_accepts_both_boundary_spellings() {
+        assert_eq!(
+            compare_temporal_instants("2026-07-01T12:00:00+02:00", "unix:101782900001:000000000"),
+            Some(Ordering::Less)
+        );
+        assert_eq!(compare_temporal_instants("not-a-clock", "also-not"), None);
     }
 }

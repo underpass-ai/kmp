@@ -38,7 +38,7 @@ pub(super) fn resolve_cursor(
             }),
         TemporalCursor::Time(value) => Ok(ResolvedTemporalCursor {
             axis_key: TemporalAxisKey::time(value),
-            coordinate: TemporalCoordinate::cursor_time(value.clone())?,
+            coordinate: TemporalCoordinate::cursor_time(value.clone(), requested_axis)?,
         }),
         TemporalCursor::Sequence(value) => Ok(ResolvedTemporalCursor {
             axis_key: TemporalAxisKey::sequence(*value),

@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use kmp_domain::{
-    GraphNeighborhoodReader, KmpBundle, NodeDetailReader, SnapshotSaveOptions, SnapshotStore,
+    BundleRelationship, GraphNeighborhoodReader, KmpBundle, NodeDetailReader, SnapshotSaveOptions,
+    SnapshotStore, directed_relationship_path,
 };
 
 use crate::ApplicationError;
@@ -27,6 +28,28 @@ pub struct GetContextPathResult {
     pub rendered: RenderedContext,
     pub served_at: std::time::SystemTime,
     pub timing: Option<QueryTimingBreakdown>,
+    root_node_id: String,
+    target_node_id: String,
+}
+
+impl GetContextPathResult {
+    /// The exact directed proof path, in hop order. `None` means the reader
+    /// explored the graph but never reached the requested target.
+    pub fn path_relationships(&self) -> Option<Vec<&BundleRelationship>> {
+        directed_relationship_path(
+            self.path_bundle.relationships(),
+            &self.root_node_id,
+            &self.target_node_id,
+        )
+    }
+
+    pub fn root_node_id(&self) -> &str {
+        &self.root_node_id
+    }
+
+    pub fn target_node_id(&self) -> &str {
+        &self.target_node_id
+    }
 }
 
 #[derive(Debug)]
@@ -110,6 +133,8 @@ where
             rendered,
             served_at: std::time::SystemTime::now(),
             timing,
+            root_node_id,
+            target_node_id,
         })
     }
 }
@@ -320,6 +345,16 @@ mod tests {
         assert_eq!(result.path_bundle.relationships().len(), 3);
         assert_eq!(
             result
+                .path_relationships()
+                .expect("directed proof path")
+                .iter()
+                .map(|edge| (edge.source_node_id(), edge.target_node_id()))
+                .collect::<Vec<_>>(),
+            vec![("root-node", "mid-node"), ("mid-node", "target-node")],
+            "the target subtree is context, not an extra proof hop"
+        );
+        assert_eq!(
+            result
                 .path_bundle
                 .node_details()
                 .iter()
@@ -354,6 +389,10 @@ mod tests {
             .expect("fallback context should load");
 
         assert_eq!(result.path_bundle.root_node_id().as_str(), "target-node");
+        assert!(
+            result.path_relationships().is_none(),
+            "target fallback context must not masquerade as a path from the root"
+        );
         assert_eq!(
             &*neighborhood_calls.lock().await,
             &[(

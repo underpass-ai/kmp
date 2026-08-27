@@ -1383,6 +1383,115 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
 }
 
 #[tokio::test]
+async fn view_intents_resolve_projection_names_against_the_mounted_store_and_reader() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    kmp_viewer::ViewRegistry::shared().set_available_overlays(vec!["causal_density".to_string()]);
+
+    let opened = call(
+        &server,
+        2,
+        "kmp_view_open",
+        json!({"view_id": "projection-validation", "about": "question:e3"}),
+    )
+    .await;
+    let applied = call(
+        &server,
+        3,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "projection-validation",
+            "expected_revision": opened["state"]["view_revision"],
+            "idempotency_key": "projection-validation-1",
+            "projection": {
+                "dimensions": ["conversation", "no_such_dimension"],
+                "relation_classes": ["causal", "evidential"],
+                "overlays": ["causal_density", "no_such_series"]
+            }
+        }),
+    )
+    .await;
+
+    assert_eq!(
+        applied["unhonored"],
+        json!(["no_such_dimension", "no_such_series"]),
+        "{applied}"
+    );
+    assert_eq!(
+        applied["state"]["projection"]["dimensions"],
+        json!(["conversation"])
+    );
+    assert_eq!(
+        applied["state"]["projection"]["overlays"],
+        json!(["causal_density"])
+    );
+
+    let invalid_class = call(
+        &server,
+        4,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "projection-validation",
+            "idempotency_key": "projection-validation-2",
+            "projection": {"relation_classes": ["telepathic"]}
+        }),
+    )
+    .await;
+    assert_eq!(invalid_class["error"]["code"], "invalid_argument");
+
+    let backwards = call(
+        &server,
+        5,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "projection-validation",
+            "idempotency_key": "projection-validation-3",
+            "focus": {"time_range": {
+                "axis": "observed",
+                "from": "2026-08-28T00:00:00Z",
+                "to": "2026-08-27T00:00:00Z"
+            }}
+        }),
+    )
+    .await;
+    assert_eq!(backwards["error"]["code"], "invalid_argument");
+}
+
+#[tokio::test]
+async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unreachable() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+
+    let forward = call(
+        &server,
+        2,
+        "kmp_trace",
+        json!({"from": "claim:e3", "to": "claim:e3-detail"}),
+    )
+    .await;
+    assert_eq!(forward["trace"].as_array().map(Vec::len), Some(1));
+    assert_eq!(forward["trace"][0]["from"], "claim:e3");
+    assert_eq!(forward["trace"][0]["to"], "claim:e3-detail");
+
+    let reverse = call(
+        &server,
+        3,
+        "kmp_trace",
+        json!({"from": "claim:e3-detail", "to": "claim:e3"}),
+    )
+    .await;
+    assert_eq!(reverse["trace"], json!([]), "{reverse}");
+    assert!(
+        reverse["warnings"]
+            .as_array()
+            .is_some_and(|warnings| !warnings.is_empty()),
+        "an unreachable target must be explicit: {reverse}"
+    );
+}
+
+#[tokio::test]
 async fn embedded_backend_journals_quality_telemetry_for_reads() {
     use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpToolBackend};
 

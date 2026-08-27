@@ -455,6 +455,38 @@ fn viewer_finding() -> Finding {
     }
 }
 
+fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
+    let path = kmp_embedded::quality_telemetry_path(resolved.path());
+    if !path.exists() {
+        return Finding::new(Level::Warn, "no quality telemetry journal yet").with(format!(
+            "expected at {} after the first kernel start",
+            path.display()
+        ));
+    }
+    match kmp_embedded::RedbQualityTelemetryReader::open(resolved.path()) {
+        Ok(reader) => match reader.count() {
+            Ok(count) => Finding::new(
+                Level::Ok,
+                format!("quality pulse readable · {count} observations"),
+            )
+            .with(path.display().to_string()),
+            Err(error) => Finding::new(Level::Warn, "quality telemetry cannot be read")
+                .with(error.to_string()),
+        },
+        Err(error) => {
+            let raw = error.to_string();
+            let headline = if raw.contains("Cannot acquire lock")
+                || raw.to_ascii_lowercase().contains("already open")
+            {
+                "quality telemetry is held by another process"
+            } else {
+                "quality telemetry is unavailable"
+            };
+            Finding::new(Level::Warn, headline).with(raw)
+        }
+    }
+}
+
 fn agent_policy_finding() -> Finding {
     match crate::agent_policy::load() {
         Ok(policy) => {
@@ -518,6 +550,9 @@ fn info_styled(style: Style) -> String {
     section(&mut out, style, "Tools", &[surface]);
     section(&mut out, style, "Agent", &[agent_policy_finding()]);
     section(&mut out, style, "Viewer", &[viewer_finding()]);
+    if let Some(resolved) = resolved.as_ref() {
+        section(&mut out, style, "Telemetry", &[telemetry_finding(resolved)]);
+    }
     section(&mut out, style, "Memories", &memories_finding());
 
     if let Some(resolved) = resolved {
@@ -570,20 +605,20 @@ fn doctor_styled(style: Style) -> (String, i32) {
     }
 
     let tools = crate::tool_names();
-    let surface = if tools.len() == 10 {
-        Finding::new(Level::Ok, format!("{} tools answered", tools.len())).with(tools.join(" "))
-    } else {
-        Finding::new(
-            Level::Fail,
-            format!("{} tools on the surface, expected 10", tools.len()),
-        )
-    };
+    let surface = tool_surface_finding(&tools, &crate::protocol::declared_tool_names());
     let surface_level = surface.level;
     section(&mut out, style, "Tools", &[surface]);
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.level;
     section(&mut out, style, "Agent", &[agent_policy]);
     section(&mut out, style, "Viewer", &[viewer_finding()]);
+    let telemetry = resolved.as_ref().map(telemetry_finding);
+    let telemetry_level = telemetry
+        .as_ref()
+        .map_or(Level::Ok, |finding| finding.level);
+    if let Some(telemetry) = telemetry {
+        section(&mut out, style, "Telemetry", &[telemetry]);
+    }
 
     let mut history_level = Level::Ok;
     if let Some(resolved) = resolved.as_ref() {
@@ -609,6 +644,7 @@ fn doctor_styled(style: Style) -> (String, i32) {
         backend.level,
         history_level,
         agent_policy_level,
+        telemetry_level,
     ]
     .into_iter()
     .max_by_key(|level| match level {
@@ -641,6 +677,44 @@ fn doctor_styled(style: Style) -> (String, i32) {
             let _ = writeln!(out, "{}", style.paint(Level::Ok.sgr(), "Usable."));
             (out, 0)
         }
+    }
+}
+
+fn tool_surface_finding(observed: &[String], declared: &[String]) -> Finding {
+    let observed_names = observed
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let declared_names = declared
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let missing = declared_names
+        .difference(&observed_names)
+        .cloned()
+        .collect::<Vec<_>>();
+    let unexpected = observed_names
+        .difference(&declared_names)
+        .cloned()
+        .collect::<Vec<_>>();
+    if missing.is_empty() && unexpected.is_empty() {
+        Finding::new(
+            Level::Ok,
+            format!("{} declared tools answered", observed.len()),
+        )
+        .with(observed.join(" "))
+    } else {
+        let mut finding = Finding::new(
+            Level::Fail,
+            "the MCP tool surface differs from its protocol",
+        );
+        if !missing.is_empty() {
+            finding = finding.with(format!("missing: {}", missing.join(" ")));
+        }
+        if !unexpected.is_empty() {
+            finding = finding.with(format!("unexpected: {}", unexpected.join(" ")));
+        }
+        finding
     }
 }
 
@@ -856,6 +930,21 @@ mod tests {
             "the last word is a verdict: {verdict:?}"
         );
         assert!(code == 0 || code == 1);
+    }
+
+    #[test]
+    fn the_tool_finding_reports_drift_by_name_not_by_count() {
+        let observed = vec!["kmp_wake".to_string(), "kmp_surprise".to_string()];
+        let declared = vec!["kmp_wake".to_string(), "kmp_ask".to_string()];
+        let finding = tool_surface_finding(&observed, &declared);
+        assert_eq!(finding.level, Level::Fail);
+        assert!(finding.detail.iter().any(|line| line == "missing: kmp_ask"));
+        assert!(
+            finding
+                .detail
+                .iter()
+                .any(|line| line == "unexpected: kmp_surprise")
+        );
     }
 
     #[test]

@@ -22,10 +22,11 @@ use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
 pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
     answer_evidence_from_bundle, answer_relations_from_bundle, bundle_memory_metadata,
-    memory_evidence_from_bundle, memory_relations_from_bundle, persisted_memory_metadata,
-    persisted_memory_source, proof, proto_coordinate_from_domain, proto_relation_explanation,
-    rendered_current_state, rendered_summary, superseded_from_relations,
-    temporal_evidence_from_bundle, temporal_relations_from_bundle,
+    memory_evidence_from_bundle, memory_relation_from_bundle_relationship,
+    memory_relations_from_bundle, persisted_memory_metadata, persisted_memory_source, proof,
+    proto_coordinate_from_domain, proto_relation_explanation, rendered_current_state,
+    rendered_summary, superseded_from_relations, temporal_evidence_from_bundle,
+    temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::scalars::{
@@ -508,16 +509,29 @@ pub fn trace_response_from_result(
     result: GetContextPathResult,
     page: TracePageRequest,
 ) -> TraceResponse {
-    let trace = ordered_trace_from(
-        memory_relations_from_bundle(&result.path_bundle),
-        result.path_bundle.root_node_id().as_str(),
-    );
+    let path = result.path_relationships();
+    let trace = path
+        .as_ref()
+        .map(|relationships| {
+            relationships
+                .iter()
+                .map(|relationship| memory_relation_from_bundle_relationship(relationship))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let total = trace.len();
     let offset = page.offset().min(total);
     let entries = page.entries_or_default();
     let end = offset.saturating_add(entries).min(total);
     let has_more = end < total;
     let mut warnings = Vec::new();
+    if path.is_none() {
+        warnings.push(format!(
+            "no directed trace reaches `{}` from `{}`; KMP does not present the explored neighborhood as proof",
+            result.target_node_id(),
+            result.root_node_id()
+        ));
+    }
     if offset >= total && total > 0 {
         warnings.push(format!(
             "trace page cursor {offset} is at or beyond total trace length {total}"
@@ -552,29 +566,6 @@ pub fn trace_response_from_result(
         }),
         quality: Some(quality),
     }
-}
-
-/// Orders a trace as the walk a caller asked for, without hiding extra edges.
-///
-/// Graph stores are free to return relation sets in storage order. A trace is
-/// different: its useful meaning is the chain beginning at `from`. Consume
-/// that chain first and retain chords or otherwise disconnected relations in
-/// their original order at the end so the response stays complete.
-fn ordered_trace_from(mut trace: Vec<MemoryRelation>, from: &str) -> Vec<MemoryRelation> {
-    let mut ordered = Vec::with_capacity(trace.len());
-    let mut current = from.to_string();
-
-    while let Some(index) = trace
-        .iter()
-        .position(|relationship| relationship.source_ref == current)
-    {
-        let relationship = trace.remove(index);
-        current.clone_from(&relationship.target_ref);
-        ordered.push(relationship);
-    }
-
-    ordered.extend(trace);
-    ordered
 }
 
 fn u32_saturating(value: usize) -> u32 {
@@ -1127,7 +1118,7 @@ mod wake_cap_tests {
 
 #[cfg(test)]
 mod tests {
-    use super::{newest_cursor, ordered_trace_from};
+    use super::newest_cursor;
     use kmp_proto::v1beta1::{MemoryRelation, MemoryRelationExplanation, TemporalCoordinate};
     use prost_types::Timestamp;
 
@@ -1202,37 +1193,6 @@ mod tests {
         assert!(
             newest_cursor(&[bare]).is_none(),
             "a bookmark that points nowhere is worse than none"
-        );
-    }
-
-    #[test]
-    fn trace_hops_follow_the_walk_and_keep_unconnected_edges_at_the_end() {
-        let hop = |source: &str, target: &str| MemoryRelation {
-            source_ref: source.to_string(),
-            target_ref: target.to_string(),
-            ..Default::default()
-        };
-        let ordered = ordered_trace_from(
-            vec![
-                hop("a", "b"),
-                hop("c", "d"),
-                hop("orphan", "edge"),
-                hop("b", "c"),
-                hop("e", "f"),
-                hop("d", "e"),
-            ],
-            "a",
-        );
-
-        assert_eq!(
-            ordered
-                .iter()
-                .map(|relationship| format!(
-                    "{}->{}",
-                    relationship.source_ref, relationship.target_ref
-                ))
-                .collect::<Vec<_>>(),
-            vec!["a->b", "b->c", "c->d", "d->e", "e->f", "orphan->edge"]
         );
     }
 }

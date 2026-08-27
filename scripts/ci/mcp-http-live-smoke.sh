@@ -55,4 +55,4 @@ jq -S '.result' "${SCRATCH_DIR}/wake.http.json" >"${SCRATCH_DIR}/wake.http.norma
 jq -S '.result' "${SCRATCH_DIR}/wake.grpc.json" >"${SCRATCH_DIR}/wake.grpc.normalized.json"
 cmp "${SCRATCH_DIR}/wake.http.normalized.json" "${SCRATCH_DIR}/wake.grpc.normalized.json"
 
-echo "mcp-http live smoke: 10 tools, auth boundary, and live gRPC/HTTP Wake parity passed"
+echo "mcp-http live smoke: 13 tools, auth boundary, and live gRPC/HTTP Wake parity passed"

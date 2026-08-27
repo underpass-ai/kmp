@@ -123,69 +123,6 @@ const KMP_LOOM = (() => {
     return { t0, t1 };
   }
 
-  /* Per-lane density over a window: bins of {total, byKind}. Atlas fabric. */
-  function laneBins(models, clock, laneIndexOf, laneCount, t0, t1, bucketCount) {
-    const grid = Array.from({ length: laneCount }, () =>
-      Array.from({ length: bucketCount }, () => ({ total: 0, byKind: new Map() }))
-    );
-    const span = Math.max(1, t1 - t0);
-    for (const model of models) {
-      const t = placedMs(model, clock);
-      if (t === null || t < t0 || t > t1) continue;
-      const b = Math.min(bucketCount - 1, Math.floor(((t - t0) / span) * bucketCount));
-      for (const coord of model.coords) {
-        const lane = laneIndexOf(coord.dimension);
-        if (lane === undefined) continue;
-        const cell = grid[lane][b];
-        cell.total += 1;
-        cell.byKind.set(model.kind, (cell.byKind.get(model.kind) || 0) + 1);
-      }
-    }
-    let max = 1;
-    for (const row of grid) for (const cell of row) if (cell.total > max) max = cell.total;
-    return { grid, max };
-  }
-
-  /* Episode fabric: entries within the window grouped per lane into clusters
-     no tighter than `minGapMs`. A cluster of one is just the entry. */
-  function laneClusters(models, clock, t0, t1, minGapMs) {
-    const perLane = new Map(); // dimension -> [{t, refs, byKind}]
-    const windowed = models
-      .map((model) => ({ model, t: placedMs(model, clock) }))
-      .filter((x) => x.t !== null && x.t >= t0 && x.t <= t1)
-      .sort((a, b) => a.t - b.t);
-    for (const { model, t } of windowed) {
-      const seen = new Set();
-      for (const coord of model.coords) {
-        if (seen.has(coord.dimension)) continue;
-        seen.add(coord.dimension);
-        let clusters = perLane.get(coord.dimension);
-        if (!clusters) perLane.set(coord.dimension, (clusters = []));
-        const last = clusters[clusters.length - 1];
-        const carriesClock = strictMs(model, clock) !== null;
-        if (last && t - last.tLast <= minGapMs) {
-          last.refs.push(model.ref);
-          last.tLast = t;
-          last.tSum += t;
-          if (carriesClock) last.strictCount += 1;
-          last.byKind.set(model.kind, (last.byKind.get(model.kind) || 0) + 1);
-        } else {
-          clusters.push({
-            refs: [model.ref],
-            tLast: t,
-            tSum: t,
-            strictCount: carriesClock ? 1 : 0,
-            byKind: new Map([[model.kind, 1]]),
-          });
-        }
-      }
-    }
-    for (const clusters of perLane.values()) {
-      for (const cluster of clusters) cluster.t = cluster.tSum / cluster.refs.length;
-    }
-    return perLane;
-  }
-
   /* ---------------- semantic zoom ladder ----------------
      The zoom changes representation, not just size. Thresholds are explicit
      milliseconds-per-pixel; evidence is a selection state, not a zoom. */
@@ -221,6 +158,29 @@ const KMP_LOOM = (() => {
         })),
       };
     });
+  }
+
+  /* Units determine honest display precision. A ratio is not made more
+     certain by a binary float's long tail, while an exact token count should
+     never grow decimals. */
+  function formatMetricValue(value, unit) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return "—";
+    const normalized = String(unit || "").trim().toLowerCase();
+    if (["token", "tokens", "entry", "entries", "event", "events", "count"].includes(normalized)) {
+      return Math.round(number).toLocaleString("en-US");
+    }
+    if (normalized === "ratio") return number.toFixed(2);
+    if (normalized === "%" || normalized === "percent" || normalized === "percentage") {
+      return number.toFixed(1);
+    }
+    if (["ms", "millisecond", "milliseconds"].includes(normalized)) {
+      if (Math.abs(number) >= 100) return number.toFixed(0);
+      if (Math.abs(number) >= 10) return number.toFixed(1);
+      return number.toFixed(2);
+    }
+    if (Number.isInteger(number)) return number.toLocaleString("en-US");
+    return Number(number.toPrecision(4)).toString();
   }
 
   /* A monotone, invertible time transform. Elapsed time is proportional.
@@ -389,6 +349,46 @@ const KMP_LOOM = (() => {
     return { step, ticks };
   }
 
+  /* Axis ticks are a screen-space promise. A temporal lens is deliberately
+     non-linear, so choosing ticks in linear time and transforming them later
+     can collapse a dozen labels into one compressed margin. Sample stable
+     screen positions, invert through the lens, then snap each instant to the
+     nearest useful calendar step for its local screen interval. */
+  function screenAxisTicks(lens, width, spacing = 110) {
+    const count = Math.max(1, Math.floor(Math.max(1, width) / Math.max(40, spacing)));
+    const ratios = Array.from({ length: count + 1 }, (_, index) => index / count);
+    const raw = ratios.map((ratio) => lens.fromRatio(ratio));
+    const nearestStep = (span) => {
+      const target = Math.max(1, span);
+      return AXIS_STEPS.reduce((best, step) =>
+        Math.abs(Math.log(step / target)) < Math.abs(Math.log(best / target)) ? step : best
+      );
+    };
+    const ticks = raw.map((time, index) => {
+      const before = raw[Math.max(0, index - 1)];
+      const after = raw[Math.min(raw.length - 1, index + 1)];
+      const step = nearestStep(Math.max(1, (after - before) / (index > 0 && index < raw.length - 1 ? 2 : 1)));
+      if (index === 0 || index === raw.length - 1) {
+        return { ratio: ratios[index], time, step };
+      }
+      let snapped = Math.round(time / step) * step;
+      let ratio = lens.toRatio(snapped);
+      // A calendar snap is useful only while it still honours the
+      // screen-space placement promise. Otherwise the exact inverted instant
+      // is more honest than moving a label into its neighbour.
+      if (Math.abs(ratio - ratios[index]) > 0.08 / count) {
+        snapped = time;
+        ratio = ratios[index];
+      }
+      return {
+        ratio,
+        time: snapped,
+        step,
+      };
+    });
+    return { ticks };
+  }
+
   function tickLabel(ms, step) {
     const iso = new Date(ms).toISOString();
     if (step >= 86400e3) return iso.slice(5, 10);
@@ -495,14 +495,14 @@ const KMP_LOOM = (() => {
     compareModels,
     buildLanes,
     extent,
-    laneBins,
-    laneClusters,
     lodFor,
     alignObservabilitySeries,
+    formatMetricValue,
     temporalLens,
     projectionAt,
     diffProjections,
     axisTicks,
+    screenAxisTicks,
     tickLabel,
     arcStyle,
     classifyEdges,

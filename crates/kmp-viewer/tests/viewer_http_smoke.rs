@@ -360,6 +360,27 @@ fn loopback_binding_refuses_public_addresses() {
     assert!(error.to_string().contains("loopback"));
 }
 
+#[tokio::test]
+async fn observability_unavailability_reports_its_actual_reason() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).with_observability_unavailable(
+            "the store's quality telemetry is held by another process",
+        ),
+    );
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    let (status, body) = get(port, "/api/observability?about=project:test").await;
+    assert_eq!(status, 503);
+    assert_eq!(
+        body["error"],
+        "the store's quality telemetry is held by another process"
+    );
+}
+
 /// The queries the UI issues have to be queries that answer.
 ///
 /// Replay used to ask for `direction=goto` with a bare sequence, which

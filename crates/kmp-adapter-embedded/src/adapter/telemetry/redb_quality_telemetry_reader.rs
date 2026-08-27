@@ -20,6 +20,13 @@ pub struct RedbQualityTelemetryReader {
 }
 
 impl ObservabilityQueryPort for RedbQualityTelemetryReader {
+    fn available_series(&self) -> Vec<String> {
+        SUPPORTED_SERIES
+            .iter()
+            .map(|(name, _, _)| (*name).to_string())
+            .collect()
+    }
+
     fn query<'a>(
         &'a self,
         query: ObservabilityQuery,
@@ -31,15 +38,8 @@ impl ObservabilityQueryPort for RedbQualityTelemetryReader {
         >,
     > {
         Box::pin(async move {
-            const SUPPORTED: &[(&str, &str, &str)] = &[
-                ("raw_equivalent_tokens", "tokens", "rendered_bundle"),
-                ("compression_ratio", "ratio", "rendered_bundle"),
-                ("causal_density", "ratio", "rendered_bundle"),
-                ("noise_ratio", "ratio", "rendered_bundle"),
-                ("detail_coverage", "ratio", "rendered_bundle"),
-            ];
             let requested = if query.series.is_empty() {
-                SUPPORTED
+                SUPPORTED_SERIES
                     .iter()
                     .map(|(name, _, _)| (*name).to_string())
                     .collect::<Vec<_>>()
@@ -81,7 +81,7 @@ impl ObservabilityQueryPort for RedbQualityTelemetryReader {
             let mut series = Vec::new();
             let mut missing = Vec::new();
             for requested_name in requested {
-                let Some((name, unit, scope)) = SUPPORTED
+                let Some((name, unit, scope)) = SUPPORTED_SERIES
                     .iter()
                     .find(|(name, _, _)| *name == requested_name)
                 else {
@@ -116,6 +116,14 @@ impl ObservabilityQueryPort for RedbQualityTelemetryReader {
         })
     }
 }
+
+const SUPPORTED_SERIES: &[(&str, &str, &str)] = &[
+    ("raw_equivalent_tokens", "tokens", "rendered_bundle"),
+    ("compression_ratio", "ratio", "rendered_bundle"),
+    ("causal_density", "ratio", "rendered_bundle"),
+    ("noise_ratio", "ratio", "rendered_bundle"),
+    ("detail_coverage", "ratio", "rendered_bundle"),
+];
 
 fn quality_metric(observation: &QualityTelemetryObservation, name: &str) -> f64 {
     match name {
