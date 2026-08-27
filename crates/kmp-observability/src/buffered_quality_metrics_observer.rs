@@ -61,6 +61,7 @@ mod tests {
             rpc: "kmp_wake".to_string(),
             root_node_id: "question:t".to_string(),
             role: "resumer".to_string(),
+            revision: Some(3),
         }
     }
 

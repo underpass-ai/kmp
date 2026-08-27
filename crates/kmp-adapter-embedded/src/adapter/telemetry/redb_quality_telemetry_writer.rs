@@ -7,6 +7,7 @@ use kmp_observability::QualityTelemetryObservation;
 use redb::{Database, Durability, ReadableDatabase, ReadableTable, ReadableTableMetadata};
 
 use super::quality_telemetry_retention::QualityTelemetryRetention;
+use super::redb_quality_telemetry_reader::RedbQualityTelemetryReader;
 use super::storage::{OBSERVATIONS, quality_telemetry_path};
 use crate::adapter::engine::redb::{commit_error, range_error, storage_error, table_error};
 use crate::adapter::serdes::encode;
@@ -25,6 +26,13 @@ pub struct RedbQualityTelemetryWriter {
 }
 
 impl RedbQualityTelemetryWriter {
+    /// A live read side over the same database handle. Opening the redb file a
+    /// second time can contend with this writer's lock, so in-process viewers
+    /// must share rather than reopen it.
+    pub fn reader(&self) -> RedbQualityTelemetryReader {
+        RedbQualityTelemetryReader::from_database(Arc::clone(&self.database))
+    }
+
     pub fn open(data_dir: &Path, retention: QualityTelemetryRetention) -> Result<Self, PortError> {
         Self::open_with_durable_interval(data_dir, retention, DEFAULT_DURABLE_EVERY_BATCHES)
     }

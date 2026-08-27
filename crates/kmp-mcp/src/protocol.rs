@@ -6,6 +6,8 @@ use crate::tool_error::{ToolError, ToolErrorCode};
 const PROTOCOL_VERSION: &str = "2024-11-05";
 const SERVER_NAME: &str = "underpass-kmp-mcp";
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub(crate) const CHRONOLOOM_APP_URI: &str = "ui://kmp/chronoloom.html";
+pub(crate) const MCP_APP_MIME: &str = "text/html;profile=mcp-app";
 
 /// Resolves the one-minor compatibility aliases to the names advertised by
 /// `tools/list`.
@@ -30,12 +32,22 @@ pub(crate) fn canonical_tool_name(name: &str) -> &str {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
+    initialize_result_with_apps(backend, grpc_tls, false)
+}
+
+pub(crate) fn initialize_result_with_apps(backend: &str, grpc_tls: &str, apps: bool) -> Value {
+    let mut capabilities = json!({"tools": {}});
+    if apps {
+        capabilities["resources"] = json!({});
+        capabilities["extensions"] = json!({
+            "io.modelcontextprotocol/ui": {"mimeTypes": [MCP_APP_MIME]}
+        });
+    }
     json!({
         "protocolVersion": PROTOCOL_VERSION,
-        "capabilities": {
-            "tools": {}
-        },
+        "capabilities": capabilities,
         "serverInfo": {
             "name": SERVER_NAME,
             "version": SERVER_VERSION
@@ -49,13 +61,68 @@ pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
 }
 
 pub(crate) fn tools_list_result() -> Value {
+    tools_list_result_with_apps(false)
+}
+
+pub(crate) fn tools_list_result_with_apps(apps: bool) -> Value {
     let mut result = tools_list_core();
     if let Some(tools) = result["tools"].as_array_mut() {
-        tools.push(view_open_definition());
+        let mut open = view_open_definition();
+        if apps {
+            open["_meta"] = json!({
+                "ui": {
+                    "resourceUri": CHRONOLOOM_APP_URI,
+                    "visibility": ["model", "app"]
+                }
+            });
+        }
+        tools.push(open);
         tools.push(view_apply_intent_definition());
         tools.push(view_get_state_definition());
+        if apps {
+            tools.push(app_visual_projection_definition());
+            tools.push(app_view_undo_definition());
+        }
     }
     result
+}
+
+pub(crate) fn resources_list_result() -> Value {
+    json!({
+        "resources": [{
+            "uri": CHRONOLOOM_APP_URI,
+            "name": "KMP ChronoLoom",
+            "description": "Interactive polytemporal memory loom with proof-preserving navigation.",
+            "mimeType": MCP_APP_MIME,
+            "_meta": {"ui": {"prefersBorder": true}}
+        }]
+    })
+}
+
+pub(crate) fn resource_read_result(uri: &str) -> Result<Value, ToolError> {
+    if uri != CHRONOLOOM_APP_URI {
+        return Err(ToolError::not_found(format!(
+            "unknown MCP resource `{uri}`"
+        )));
+    }
+    Ok(json!({
+        "contents": [{
+            "uri": CHRONOLOOM_APP_URI,
+            "mimeType": MCP_APP_MIME,
+            "text": kmp_viewer::mcp_app_html(),
+            "_meta": {
+                "ui": {
+                    "csp": {
+                        "connectDomains": [],
+                        "resourceDomains": [],
+                        "frameDomains": [],
+                        "baseUriDomains": []
+                    },
+                    "prefersBorder": true
+                }
+            }
+        }]
+    }))
 }
 
 /// The memory tools. Split from the view tools below so neither `json!`
@@ -230,7 +297,7 @@ fn tools_list_core() -> Value {
             ),
             tool_definition_with_output(
                 "kmp_ask",
-                "Retrieve stored evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — read it, and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching evidence item; it is not a judgement that the evidence answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+                "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -398,7 +465,7 @@ fn view_apply_intent_definition() -> Value {
                         "overlays": {
                             "type": "array",
                             "items": string_schema("Observability series to align over the loom."),
-                            "description": "Recorded and echoed back as unhonored: the Observability Pulse needs a telemetry query port KMP does not publish yet. Asking is not pretending."
+                            "description": "Exact observability series to align above the loom on its current time axis. Missing backend series are reported by the viewer without inventing replacements."
                         }
                     }
                 },
@@ -435,7 +502,7 @@ fn view_get_state_definition() -> Value {
 
 /// What every view tool answers with: the aggregate itself, its own revision,
 /// and — when something was asked for that this build cannot draw — what went
-/// unhonored. Silence there would be a lie.
+/// unhonored. The list remains for future capability negotiation.
 fn view_output_schema() -> Value {
     output_object(json!({
         "view_id": described("string", "The view this answer is about."),
@@ -455,7 +522,7 @@ fn view_output_schema() -> Value {
         "clocks": {"type": "array", "items": {"type": "string"}, "description": "The clocks the axis can read."},
         "semantic_zoom_ladder": {"type": "array", "items": {"type": "string"}, "description": "The rungs, coarse to fine."},
         "reads": described("string", "What this answer is, in the reader's terms."),
-        "not_yet_rendered": {"type": "array", "items": {"type": "string"}, "description": "Named honestly rather than silently dropped."}
+        "observability": described("string", "How requested overlay series are queried and aligned on the view's temporal axis.")
     }))
 }
 
@@ -479,6 +546,14 @@ fn write_memory_schema() -> Value {
             },
             "actor": string_schema("Human, agent, or component producing the write."),
             "observed_at": string_schema("RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused \u{2014} read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error."),
+            "occurred_at": string_schema("Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute."),
+            "valid_from": string_schema("Optional RFC3339 start of the interval in which the recorded state is valid."),
+            "valid_until": string_schema("Optional RFC3339 exclusive end of the interval in which the recorded state is valid."),
+            "rank": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Optional positive rank within each emitted coordinate."
+            },
             "source_kind": {
                 "type": "string",
                 "enum": ["human", "agent", "projection", "derived"]
@@ -573,7 +648,8 @@ fn write_memory_schema() -> Value {
                     },
                     "sequence": {
                         "type": "integer",
-                        "minimum": 1
+                        "minimum": 1,
+                        "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate."
                     }
                 }
             }
@@ -661,6 +737,11 @@ fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> 
         "required": ["about", cursor_key],
         "properties": {
             "about": string_schema("Memory anchor or root ref to traverse from."),
+            "axis": {
+                "type": "string",
+                "enum": ["occurred", "observed", "ingested", "validity"],
+                "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock."
+            },
             "window": {
                 "type": "object",
                 "additionalProperties": false,
@@ -713,6 +794,78 @@ fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> 
         input_schema,
         temporal_output_schema(cursor_key),
     )
+}
+
+fn app_visual_projection_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["about", "from", "to"],
+        "properties": {
+            "about": string_schema("Memory anchor to project."),
+            "from": string_schema("Inclusive RFC3339 range start."),
+            "to": string_schema("Exclusive RFC3339 range end."),
+            "axis": {
+                "type": "string",
+                "enum": ["occurred", "observed", "ingested", "validity"]
+            },
+            "lod": {
+                "type": "string",
+                "enum": ["atlas", "episode", "moment"]
+            },
+            "bins": {"type": "integer", "minimum": 1, "maximum": 512},
+            "limit": {"type": "integer", "minimum": 1, "maximum": 2048},
+            "cursor": string_schema("Opaque continuation cursor returned by the prior chunk."),
+            "depth": {"type": "integer", "minimum": 1, "maximum": 6},
+            "dimensions": dimensions_schema()
+        }
+    })
+}
+
+fn app_visual_projection_definition() -> Value {
+    json!({
+        "name": "kmp_view_read_projection",
+        "description": "Read one bounded, paginated ChronoLoom data chunk. This tool is available to the sandboxed MCP App only; its structured payload is not a model prompt.",
+        "inputSchema": app_visual_projection_schema(),
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false,
+            "idempotentHint": true,
+            "openWorldHint": false
+        },
+        "_meta": {
+            "ui": {
+                "resourceUri": CHRONOLOOM_APP_URI,
+                "visibility": ["app"]
+            }
+        }
+    })
+}
+
+fn app_view_undo_definition() -> Value {
+    json!({
+        "name": "kmp_view_undo",
+        "description": "Undo the latest semantic view move. This is an app-only transport adapter over the same reversible view aggregate used by the loopback renderer.",
+        "inputSchema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "view_id": string_schema("The app view to undo. Omit for the default view.")
+            }
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false,
+            "idempotentHint": false,
+            "openWorldHint": false
+        },
+        "_meta": {
+            "ui": {
+                "resourceUri": CHRONOLOOM_APP_URI,
+                "visibility": ["app"]
+            }
+        }
+    })
 }
 
 fn page_schema() -> Value {
@@ -964,7 +1117,7 @@ fn ask_output_schema() -> Value {
 fn temporal_output_schema(cursor_key: &str) -> Value {
     output_object(json!({
         "summary": described("string", "Concise description of the temporal selection."),
-        "temporal": nullable_described("object", "Resolved direction, requested cursor, and resolved coordinate."),
+        "temporal": nullable_described("object", "Resolved direction, selected clock axis, requested cursor, and resolved coordinate."),
         "coverage": output_object(json!({
             "requested": nullable_described("object", "Dimension selection requested by the caller."),
             "included": string_array("Dimension scope ids included in the result."),
@@ -1033,8 +1186,8 @@ fn proof_output_schema(confidence_description: &str) -> Value {
         "confidence": described("string", confidence_description),
         "evidence": described(
             "array",
-            "The stored evidence, verbatim. `text` is the canonical body — this is where the \
-             answer actually is."
+            "Stored entry text or evidence, verbatim. `text` is the canonical body and \
+             `metadata.proof_role` distinguishes the claim from its evidence."
         ),
         "missing": described(
             "array",
@@ -1284,6 +1437,26 @@ pub(crate) fn tool_success_result(structured_content: Value) -> Value {
     })
 }
 
+/// UI data remains in `structuredContent`, which MCP Apps delivers to the
+/// sandbox without copying it into model context. The text fallback stays a
+/// constant-size receipt for hosts that expose tool logs to a model.
+pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
+    let returned = structured_content["page"]["returned"]
+        .as_u64()
+        .unwrap_or_default();
+    json!({
+        "content": [{
+            "type": "text",
+            "text": format!("ChronoLoom visual data chunk ready ({returned} detailed entries).")
+        }],
+        "structuredContent": structured_content,
+        "_meta": {
+            "ui": {"resourceUri": "ui://kmp/chronoloom.html"},
+            "kmp/modelContext": "receipt-only"
+        }
+    })
+}
+
 /// Applies the strictness the schemas already declare.
 ///
 /// Every one of the ten tools says `"additionalProperties": false` and nothing
@@ -1311,6 +1484,16 @@ pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<
 /// Rebuilding a document that cannot change, per call, to read one field of
 /// it, is a cost with nothing on the other side of it.
 fn tool_input_schema(tool: &str) -> Option<&'static Value> {
+    if tool == "kmp_view_read_projection" {
+        static APP_VISUAL_SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+        return Some(APP_VISUAL_SCHEMA.get_or_init(app_visual_projection_schema));
+    }
+    if tool == "kmp_view_undo" {
+        static APP_UNDO_SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+        return Some(
+            APP_UNDO_SCHEMA.get_or_init(|| app_view_undo_definition()["inputSchema"].clone()),
+        );
+    }
     static SCHEMAS: std::sync::OnceLock<std::collections::BTreeMap<String, Value>> =
         std::sync::OnceLock::new();
     SCHEMAS
@@ -1626,6 +1809,7 @@ mod tests {
                 keys(schema(name)),
                 expected(&[
                     "about",
+                    "axis",
                     "budget",
                     "depth",
                     "dimensions",
@@ -1685,12 +1869,16 @@ mod tests {
                 "current",
                 "idempotency_key",
                 "intent",
+                "occurred_at",
                 "observed_at",
                 "options",
+                "rank",
                 "read_context",
                 "scope",
                 "semantic_delta",
                 "source_kind",
+                "valid_from",
+                "valid_until",
             ])
         );
     }

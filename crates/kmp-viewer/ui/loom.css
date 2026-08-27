@@ -207,6 +207,7 @@ body {
 }
 
 .top-controls { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+.compact-control { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 12px; }
 .btn {
   font: inherit;
   color: var(--text-primary);
@@ -287,6 +288,27 @@ select, input {
 }
 #loom-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
 #loom-canvas.dragging { cursor: grabbing; }
+
+#diff-panel {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  width: min(520px, calc(100% - 16px));
+  max-height: 38%;
+  overflow: auto;
+  background: color-mix(in srgb, var(--surface-2) 94%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  padding: 8px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+#diff-panel[hidden] { display: none; }
+.diff-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 5px; }
+.diff-side { padding: 4px 7px; border-left: 3px solid var(--accent); background: var(--surface-1); }
+.diff-side.b { border-color: var(--class-evidential); }
+.diff-grid { display: grid; grid-template-columns: 110px 1fr 1fr 1fr; gap: 3px 8px; font-size: 12px; }
+.diff-grid > :nth-child(4n + 1) { color: var(--text-muted); }
 
 .tooltip {
   position: absolute;

@@ -1,6 +1,24 @@
 use kmp_proto::v1beta1::{
-    InspectInclude, PageRequest, TemporalCursor, TemporalInclude, TemporalLimit, TemporalWindow,
+    InspectInclude, PageRequest, TemporalAxis, TemporalCursor, TemporalInclude, TemporalLimit,
+    TemporalWindow,
 };
+
+pub(super) fn temporal_axis_from_arguments(arguments: &Value) -> Result<i32, String> {
+    let arguments = object(arguments, "tool arguments")?;
+    let axis = optional_string_field(arguments, "axis", "axis")?;
+    Ok(match axis.as_deref() {
+        None => TemporalAxis::Unspecified,
+        Some("occurred") => TemporalAxis::Occurred,
+        Some("observed") => TemporalAxis::Observed,
+        Some("ingested") => TemporalAxis::Ingested,
+        Some("validity") => TemporalAxis::Validity,
+        Some(value) => {
+            return Err(format!(
+                "temporal axis must be one of `occurred`, `observed`, `ingested`, or `validity`; got `{value}`"
+            ));
+        }
+    } as i32)
+}
 use serde_json::Value;
 
 use super::common::{
@@ -162,5 +180,14 @@ mod tests {
             error,
             "temporal window seconds are not supported by KernelMemoryService in this cut"
         );
+    }
+
+    #[test]
+    fn temporal_axis_is_explicit_and_closed() {
+        assert_eq!(
+            temporal_axis_from_arguments(&json!({"axis": "ingested"})).expect("known axis"),
+            TemporalAxis::Ingested as i32
+        );
+        assert!(temporal_axis_from_arguments(&json!({"axis": "effective"})).is_err());
     }
 }

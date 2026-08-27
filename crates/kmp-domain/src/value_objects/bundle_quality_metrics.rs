@@ -87,7 +87,7 @@ impl BundleQualityMetrics {
         };
 
         let causal_density = compute_causal_density(bundle);
-        let noise_ratio = compute_noise_ratio(bundle);
+        let noise_ratio = compute_noise_ratio(bundle, &detail_by_node_id);
         let detail_coverage = compute_detail_coverage(bundle, &detail_by_node_id);
 
         Self {
@@ -112,14 +112,14 @@ impl BundleQualityMetrics {
         self.compression_ratio
     }
 
-    /// Fraction of relationships with causal/motivational/evidential
-    /// semantic class (vs structural/procedural). Higher = richer signal.
+    /// Fraction of relationships whose semantic class is exactly causal.
     pub fn causal_density(&self) -> f64 {
         self.causal_density
     }
 
-    /// Fraction of nodes that come from noise/distractor branches.
-    /// 0.0 for clean graphs, >0 when structural noise is present.
+    /// Fraction of nodes with no summary, no detail and no incident
+    /// non-structural relation. This measures structurally present nodes that
+    /// carry no semantic content; identifiers and vocabulary never affect it.
     pub fn noise_ratio(&self) -> f64 {
         self.noise_ratio
     }
@@ -209,29 +209,30 @@ fn compute_causal_density(bundle: &KmpBundle) -> f64 {
     let causal = bundle
         .relationships()
         .iter()
-        .filter(|r| {
-            matches!(
-                r.explanation().semantic_class(),
-                RelationSemanticClass::Causal
-                    | RelationSemanticClass::Motivational
-                    | RelationSemanticClass::Evidential
-            )
-        })
+        .filter(|r| r.explanation().semantic_class() == &RelationSemanticClass::Causal)
         .count();
     causal as f64 / total as f64
 }
 
-fn compute_noise_ratio(bundle: &KmpBundle) -> f64 {
+fn compute_noise_ratio(
+    bundle: &KmpBundle,
+    detail_by_node_id: &BTreeMap<&str, &BundleNodeDetail>,
+) -> f64 {
     let total = 1 + bundle.neighbor_nodes().len(); // root + neighbors
     if total == 0 {
         return 0.0;
     }
-    let noise = bundle
-        .neighbor_nodes()
-        .iter()
-        .filter(|n| {
-            let id = n.node_id();
-            id.contains("noise") || id.contains("distractor")
+    let noise = std::iter::once(bundle.root_node())
+        .chain(bundle.neighbor_nodes())
+        .filter(|node| {
+            node.summary().trim().is_empty()
+                && !detail_by_node_id.contains_key(node.node_id())
+                && !bundle.relationships().iter().any(|relationship| {
+                    (relationship.source_node_id() == node.node_id()
+                        || relationship.target_node_id() == node.node_id())
+                        && relationship.explanation().semantic_class()
+                            != &RelationSemanticClass::Structural
+                })
         })
         .count();
     noise as f64 / total as f64
@@ -412,17 +413,55 @@ mod tests {
     }
 
     #[test]
-    fn compute_causal_density_counts_explanatory_relations() {
+    fn compute_causal_density_counts_only_causal_relations() {
         let m = BundleQualityMetrics::compute(&quality_bundle(), 100, &WordCountEstimator);
         // 1 Causal out of 2 total → 0.5
         assert!((m.causal_density() - 0.5).abs() < 0.001);
     }
 
     #[test]
-    fn compute_noise_ratio_detects_noise_nodes() {
+    fn compute_noise_ratio_does_not_classify_nodes_by_their_ids() {
         let m = BundleQualityMetrics::compute(&quality_bundle(), 100, &WordCountEstimator);
-        // 1 noise node out of 3 total → 1/3
-        assert!((m.noise_ratio() - 1.0 / 3.0).abs() < 0.001);
+        assert_eq!(m.noise_ratio(), 0.0);
+    }
+
+    #[test]
+    fn compute_noise_ratio_counts_only_nodes_without_semantic_content() {
+        let bundle = KmpBundle::new(
+            CaseId::new("root").expect("valid"),
+            Role::new("dev").expect("valid"),
+            BundleNode::new(
+                "root",
+                "incident",
+                "Root",
+                "Root summary",
+                "ACTIVE",
+                vec![],
+                BTreeMap::new(),
+            ),
+            vec![BundleNode::new(
+                "ordinary-node",
+                "task",
+                "Placeholder",
+                "",
+                "ACTIVE",
+                vec![],
+                BTreeMap::new(),
+            )],
+            vec![BundleRelationship::new(
+                "root",
+                "ordinary-node",
+                "contains",
+                RelationExplanation::new(RelationSemanticClass::Structural),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("0.1.0"),
+        )
+        .expect("bundle");
+
+        let metrics = BundleQualityMetrics::compute(&bundle, 100, &WordCountEstimator);
+
+        assert_eq!(metrics.noise_ratio(), 0.5);
     }
 
     #[test]
@@ -484,7 +523,7 @@ mod tests {
     }
 
     #[test]
-    fn compute_all_causal_density_is_one() {
+    fn evidential_relations_do_not_inflate_causal_density() {
         let bundle = KmpBundle::new(
             CaseId::new("root").expect("valid"),
             Role::new("dev").expect("valid"),
@@ -521,7 +560,7 @@ mod tests {
         .expect("valid");
 
         let m = BundleQualityMetrics::compute(&bundle, 100, &WordCountEstimator);
-        assert!((m.causal_density() - 1.0).abs() < 0.001);
+        assert!((m.causal_density() - 0.5).abs() < 0.001);
     }
 
     #[test]

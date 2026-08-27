@@ -203,6 +203,35 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         "known-at-time read reaches the later decision, got {timeline}"
     );
 
+    let (status, projection) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=moment&bins=8&limit=8",
+            urlencode(ABOUT),
+            urlencode("2026-07-01T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "visual projection failed: {projection}");
+    assert_eq!(projection["contract"], "kmp.visual.projection.v1");
+    assert_eq!(projection["entries"].as_array().map(Vec::len), Some(2));
+    assert!(
+        projection["bins"]
+            .as_array()
+            .is_some_and(|bins| !bins.is_empty())
+    );
+
+    let (status, unavailable) = get(
+        port,
+        "/api/observability?from_ms=0&to_ms=1&series=causal_density",
+    )
+    .await;
+    assert_eq!(
+        status, 503,
+        "missing adapter must be explicit: {unavailable}"
+    );
+
     let (status, trace) = get(
         port,
         &format!(

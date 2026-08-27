@@ -50,7 +50,8 @@ Current status:
   `proof.evidence`, joined from `because[].ref` and
   `proof.path[].evidence_refs`; successful asks expose retained recall terms
   and contributing semantic relation types in `proof` without exposing scoring
-  internals;
+  internals; entry claims and stored evidence are both searchable and remain
+  distinguishable through `proof.evidence[].metadata.proof_role`;
 - `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
   proof returns `projection.page.next_cursor`, while `budget.tokens` remains an
@@ -61,7 +62,11 @@ Current status:
   when `include.raw=true`, including dimension coordinates when the inspected
   object is contained by memory dimensions;
 - temporal `include.raw_refs=true` returns typed raw audit refs for the selected
-  entries.
+  entries, and an optional `axis` selects occurred, observed, ingested or
+  validity time without fallback;
+- clients that negotiate `io.modelcontextprotocol/ui` receive ChronoLoom as a
+  self-contained `ui://kmp/chronoloom.html` MCP App. Its visual projection data
+  tool is app-only and returns only a bounded receipt in model-visible text.
 
 Run locally:
 
@@ -136,6 +141,7 @@ Live backend mapping:
 | `kmp_forward` | `KernelMemoryService.Forward` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
+| ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
 
 ## License
 

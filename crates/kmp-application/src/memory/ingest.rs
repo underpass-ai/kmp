@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use kmp_domain::{MemoryDimensionIdentity, MemoryRelationType, RelationSemanticClass, SourceKind};
 
@@ -13,6 +14,9 @@ use crate::memory::{
 pub struct ExistingMemoryRefs {
     pub refs: BTreeSet<String>,
     pub dimensions: BTreeSet<String>,
+    /// Highest committed sequence for each `(dimension, scope_id)` coordinate.
+    /// An absent writer sequence is assigned from this frontier at ingest.
+    pub max_sequences: BTreeMap<(String, String), u32>,
 }
 
 pub fn translate_memory_ingest(
@@ -20,7 +24,8 @@ pub fn translate_memory_ingest(
     existing: &ExistingMemoryRefs,
 ) -> Result<(UpdateContextCommand, MemoryIngestOutcome), ApplicationError> {
     validate_command(command)?;
-    let memory = namespaced_memory(&command.about, &command.memory, existing)?;
+    let ingested_at = kernel_ingested_at();
+    let memory = namespaced_memory(&command.about, &command.memory, existing, &ingested_at)?;
 
     let changes = memory_changes(&memory)?;
     let outcome = MemoryIngestOutcome {
@@ -74,6 +79,7 @@ fn namespaced_memory(
     about: &str,
     memory: &MemoryData,
     existing: &ExistingMemoryRefs,
+    ingested_at: &str,
 ) -> Result<MemoryData, ApplicationError> {
     if memory.dimensions.is_empty() && existing.dimensions.is_empty() {
         return Err(ApplicationError::Validation(
@@ -101,6 +107,7 @@ fn namespaced_memory(
     let mut dimension_aliases = existing_dimension_aliases(about, existing);
     let mut declared_dimension_kinds = BTreeMap::new();
     let mut declared_dimension_refs = BTreeSet::new();
+    let mut max_sequences = existing.max_sequences.clone();
     let mut dimensions = Vec::new();
     for dimension in &memory.dimensions {
         require_non_empty(&dimension.id, "memory.dimensions[].id")?;
@@ -164,14 +171,31 @@ fn namespaced_memory(
 
         let mut coordinates = Vec::new();
         for coordinate in &entry.coordinates {
-            coordinates.push(normalize_coordinate(
+            let mut coordinate = normalize_coordinate(
                 coordinate,
                 "memory.entries[].coordinates[]",
                 "memory entry",
                 &dimension_aliases,
                 &dimension_ids,
                 &declared_dimension_kinds,
-            )?);
+            )?;
+            coordinate
+                .ingested_at
+                .get_or_insert_with(|| ingested_at.to_string());
+            let sequence_key = (coordinate.dimension.clone(), coordinate.scope_id.clone());
+            let frontier = max_sequences.entry(sequence_key).or_default();
+            match coordinate.sequence {
+                Some(sequence) => *frontier = (*frontier).max(sequence),
+                None => {
+                    *frontier = frontier.checked_add(1).ok_or_else(|| {
+                        ApplicationError::Validation(
+                            "memory coordinate sequence space is exhausted".to_string(),
+                        )
+                    })?;
+                    coordinate.sequence = Some(*frontier);
+                }
+            }
+            coordinates.push(coordinate);
         }
         let mut entry = entry.clone();
         entry.coordinates = coordinates;
@@ -232,7 +256,13 @@ fn namespaced_memory(
                     &declared_dimension_kinds,
                 )
             })
-            .transpose()?;
+            .transpose()?
+            .map(|mut coordinate| {
+                coordinate
+                    .ingested_at
+                    .get_or_insert_with(|| ingested_at.to_string());
+                coordinate
+            });
         let mut relation = relation.clone();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
@@ -271,6 +301,21 @@ fn namespaced_memory(
         relations,
         evidence: evidence_items,
     })
+}
+
+/// The commit clock in the same lexicographically sortable representation
+/// already used by the kernel's temporal projection. Callers may restate an
+/// earlier `ingested_at` during migration or replay; this value only fills an
+/// absent clock.
+fn kernel_ingested_at() -> String {
+    let since_epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    format!(
+        "unix:{:012}:{:09}",
+        since_epoch.as_secs() + 100_000_000_000,
+        since_epoch.subsec_nanos()
+    )
 }
 
 fn existing_dimension_aliases(
@@ -479,7 +524,7 @@ fn memory_id_from_idempotency_key(idempotency_key: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
     use crate::ApplicationError;
     use crate::memory::{
@@ -533,6 +578,29 @@ mod tests {
         assert_eq!(
             entry_payload["coordinates"][0]["scope_id"],
             "about:question:830ce83f:dimension:conversation:rachel-2026-04-12"
+        );
+        assert!(
+            entry_payload["coordinates"][0]["ingested_at"]
+                .as_str()
+                .is_some_and(|value| value.starts_with("unix:")),
+            "the kernel must stamp when it learned every coordinate: {entry_payload}"
+        );
+    }
+
+    #[test]
+    fn translate_memory_ingest_preserves_a_replayed_ingest_clock() {
+        let mut command = sample_command();
+        command.memory.entries[0].coordinates[0].ingested_at =
+            Some("2026-04-12T15:01:00Z".to_string());
+
+        let (update, _) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect("caller-supplied ingest clock should survive replay");
+        let entry_payload: serde_json::Value =
+            serde_json::from_str(&update.changes[1].payload_json).expect("entry payload json");
+
+        assert_eq!(
+            entry_payload["coordinates"][0]["ingested_at"],
+            "2026-04-12T15:01:00Z"
         );
     }
 
@@ -656,6 +724,7 @@ mod tests {
             .into_iter()
             .collect(),
             dimensions: ["conversation:existing".to_string()].into_iter().collect(),
+            ..ExistingMemoryRefs::default()
         };
 
         let (update, outcome) =
@@ -673,6 +742,7 @@ mod tests {
         let existing = ExistingMemoryRefs {
             refs: [dimension_ref.clone()].into_iter().collect(),
             dimensions: [dimension_ref.clone()].into_iter().collect(),
+            ..ExistingMemoryRefs::default()
         };
 
         let (update, outcome) = translate_memory_ingest(&command, &existing)
@@ -707,6 +777,7 @@ mod tests {
         let existing = ExistingMemoryRefs {
             refs: BTreeSet::new(),
             dimensions: [dimension_ref].into_iter().collect(),
+            ..ExistingMemoryRefs::default()
         };
 
         translate_memory_ingest(&command, &existing)
@@ -722,6 +793,29 @@ mod tests {
             .expect_err("zero coordinate sequence should fail");
 
         assert_validation_contains(error, "sequence must be greater than zero");
+    }
+
+    #[test]
+    fn translate_memory_ingest_assigns_next_sequence_when_writer_omits_it() {
+        let mut command = sample_command();
+        command.memory.entries[0].coordinates[0].sequence = None;
+        let scope = "about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string();
+        let existing = ExistingMemoryRefs {
+            max_sequences: BTreeMap::from([(("conversation".to_string(), scope), 7)]),
+            ..ExistingMemoryRefs::default()
+        };
+
+        let (update, _) = translate_memory_ingest(&command, &existing)
+            .expect("kernel should assign the next coordinate sequence");
+        let entry = update
+            .changes
+            .iter()
+            .find(|change| change.entity_kind == "memory_entry")
+            .expect("entry change");
+        let payload: serde_json::Value =
+            serde_json::from_str(&entry.payload_json).expect("entry payload");
+
+        assert_eq!(payload["coordinates"][0]["sequence"], 8);
     }
 
     fn sample_command() -> MemoryIngestCommand {

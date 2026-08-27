@@ -29,6 +29,13 @@ impl Ord for TemporalPosition {
     fn cmp(&self, other: &Self) -> Ordering {
         self.axis_key
             .cmp(&other.axis_key)
+            // Sequence and rank are scoped coordinates, and legacy writers
+            // may leave many entries tied. Their recorded clock is the
+            // temporal tiebreak; lexical refs are only the final stable key.
+            .then_with(|| {
+                super::axis_key::primary_coordinate_key(&self.coordinate)
+                    .cmp(&super::axis_key::primary_coordinate_key(&other.coordinate))
+            })
             .then_with(|| {
                 self.coordinate
                     .dimension()

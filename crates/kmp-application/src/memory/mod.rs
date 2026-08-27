@@ -1,6 +1,7 @@
 mod ingest;
 mod service;
 mod types;
+mod visual_projection;
 
 pub use ingest::{ExistingMemoryRefs, translate_memory_ingest};
 pub use service::KernelMemoryApplicationService;
@@ -10,4 +11,10 @@ pub use types::{
     MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData, MemoryIngestCommand,
     MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData, TemporalIncludeOptions,
     TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
+};
+pub use visual_projection::{
+    MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, TemporalAxisView,
+    TemporalCoordinateView, VisualBin, VisualCluster, VisualEntry, VisualLevelOfDetail,
+    VisualMetric, VisualProjectionPage, VisualProjectionQuery, VisualProjectionResult, VisualRange,
+    VisualRelation, build_visual_projection,
 };

@@ -27,6 +27,17 @@
       <button id="agent-undo" class="agent-undo" title="put the loom back where it was">undo</button>
     </span>
     <div class="top-controls">
+      <label class="compact-control" title="elapsed time stays proportional; event density compresses silence and marks every scale break">
+        Lens
+        <select id="lens-mode">
+          <option value="elapsed">Elapsed time</option>
+          <option value="event_density">Event density</option>
+        </select>
+      </label>
+      <button id="focus-context" class="btn" title="expand the current interval while keeping compressed context on both sides">Focus + context</button>
+      <button id="pin-a" class="btn" title="pin the selected instant as comparison A">Pin A</button>
+      <button id="pin-b" class="btn" title="pin the selected instant as comparison B">Pin B</button>
+      <button id="clear-diff" class="btn" title="clear the persistent A/B comparison">Clear A/B</button>
       <button id="btn-fit" class="btn" title="frame the whole line (F)">Fit</button>
       <button id="btn-theme" class="btn" title="theme: auto / light / dark">Auto</button>
     </div>
@@ -51,6 +62,7 @@
       Memory over time. Use the panels to inspect entries.
     </canvas>
     <div id="tooltip" class="tooltip" hidden></div>
+    <section id="diff-panel" aria-label="Persistent comparison between pinned instants A and B" hidden></section>
     <div id="navigator">
       <div class="nav-row">
         <span id="nav-range" class="muted mono">—</span>

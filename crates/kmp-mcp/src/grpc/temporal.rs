@@ -21,6 +21,7 @@ pub(super) fn goto_request_from_temporal(request: TemporalMoveRequest) -> GotoRe
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -33,6 +34,7 @@ pub(super) fn rewind_request_from_temporal(request: TemporalMoveRequest) -> Rewi
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -45,6 +47,7 @@ pub(super) fn forward_request_from_temporal(request: TemporalMoveRequest) -> For
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -57,6 +60,7 @@ pub(super) fn near_request_from_temporal(request: TemporalNearRequest) -> NearRe
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 

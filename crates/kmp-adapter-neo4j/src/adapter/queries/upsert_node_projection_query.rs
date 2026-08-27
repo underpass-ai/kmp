@@ -84,3 +84,14 @@ ON CREATE SET node.node_kind = $node_kind,
 
     Ok(q)
 }
+
+pub(crate) fn update_node_status_query(node_id: &str, status: &str) -> Query {
+    query(
+        "
+MATCH (node:ProjectionNode {node_id: $node_id})
+SET node.status = $status
+        ",
+    )
+    .param("node_id", node_id)
+    .param("status", status)
+}

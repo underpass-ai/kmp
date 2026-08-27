@@ -61,6 +61,11 @@ impl ProjectionWriter for ValkeyNodeDetailStore {
                         node.node_id
                     )));
                 }
+                ProjectionMutation::UpdateNodeStatus { node_id, .. } => {
+                    return Err(PortError::InvalidState(format!(
+                        "valkey detail store does not persist graph node `{node_id}`"
+                    )));
+                }
                 ProjectionMutation::UpsertNodeRelation(relation) => {
                     return Err(PortError::InvalidState(format!(
                         "valkey detail store does not persist graph relation `{} -> {}`",

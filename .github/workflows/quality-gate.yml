@@ -674,12 +674,10 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ref = context.payload.pull_request.head.sha;
-            const requiredChecks = new Map([
-              ["CodeQL", "success"],
-            ]);
             const isCodeQlAnalysis = (name) => name.startsWith("Analyze (");
 
             const deadline = Date.now() + (10 * 60 * 1000);
+            const discoveryDeadline = Date.now() + (60 * 1000);
             const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
             while (Date.now() < deadline) {
@@ -704,6 +702,7 @@ jobs:
 
               const pending = [];
               const failures = [];
+              let analysisRuns = 0;
 
               const describe = (name, run) =>
                 (states.get(name) ?? []).length > 1
@@ -722,6 +721,7 @@ jobs:
                 }
 
                 for (const run of runsForName) {
+                  analysisRuns += 1;
                   if (run.status !== "completed") {
                     pending.push(analysisName);
                   } else if (run.conclusion !== "success") {
@@ -730,26 +730,28 @@ jobs:
                 }
               }
 
-              for (const [name, expectedConclusion] of requiredChecks.entries()) {
-                const runsForName = states.get(name) ?? [];
-                if (runsForName.length === 0) {
-                  pending.push(name);
-                  continue;
-                }
-
-                for (const run of runsForName) {
-                  if (run.status !== "completed") {
-                    pending.push(name);
-                    continue;
+              // The aggregate is orchestration, not analysis. Default setup
+              // can leave it completed/skipped forever even after every
+              // Analyze (*) run is green. Once analyses exist they alone are
+              // authoritative. Before they appear, a terminal aggregate with
+              // success/neutral/skipped means there is nothing left to wait
+              // for (for example a configuration-only or skipped scan).
+              if (analysisRuns === 0) {
+                const aggregate = states.get("CodeQL") ?? [];
+                if (aggregate.length === 0 || aggregate.some((run) => run.status !== "completed")) {
+                  pending.push("Analyze (*) discovery");
+                } else {
+                  const terminal = new Set(["success", "neutral", "skipped"]);
+                  for (const run of aggregate) {
+                    if (!terminal.has(run.conclusion)) {
+                      failures.push(describe("CodeQL", run));
+                    }
                   }
-
-                  if (name === "CodeQL" && run.conclusion === "neutral") {
-                    pending.push(name);
-                    continue;
-                  }
-
-                  if (run.conclusion !== expectedConclusion) {
-                    failures.push(describe(name, run));
+                  // The waiter and default setup start independently. Give
+                  // per-language runs one minute to register before accepting
+                  // a terminal aggregate as the only check for this ref.
+                  if (failures.length === 0 && Date.now() < discoveryDeadline) {
+                    pending.push("Analyze (*) discovery grace");
                   }
                 }
               }

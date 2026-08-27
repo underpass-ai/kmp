@@ -11,6 +11,19 @@ Detailed notes from the early release cycle are preserved in the
 
 ### Changed
 
+- Temporal reads accept an explicit occurred, observed, ingested or validity
+  axis, and the writer accepts every canonical clock. The application now
+  exposes a paginated level-of-detail visual projection for ChronoLoom instead
+  of making the browser reconstruct whole temporal lines.
+- ChronoLoom adds elapsed/event-density focus+context lenses, persistent A/B
+  projection diffs and time-aligned observability overlays. Hosts that
+  negotiate the stable MCP Apps extension can open the self-contained loom as
+  a `ui://` resource; its bulk projection stays in structured app data and out
+  of model text context.
+- Quality metrics now say what they measure: causal density counts only causal
+  relations, while noise ratio counts nodes with no summary, detail or
+  non-structural relation and never classifies identifiers by vocabulary.
+
 - The memory viewer is redesigned end to end. The force layout survives real
   memory (degree-normalized springs, Barnes-Hut repulsion, a velocity cap,
   deterministic placement, fit-to-view) where 544 nodes used to fly off the
@@ -20,9 +33,9 @@ Detailed notes from the early release cycle are preserved in the
   confidence over a gradient-inked path; search learns `kind:`/`dim:`/`id:`
   and a focus mode. The UI wears the product's visual identity — the
   gradient reserved for meaning: edge classes, the audit path, played time —
-  and the pure algorithmic half lives in a new `graph-core.js` asset. The
-  server keeps its exact surface: one new static route, still GET-only,
-  loopback-only, read-only.
+  and the pure algorithmic half lives in code-native UI assets. The loopback
+  server remains GET-only and read-only; the same renderer can also be served
+  as a negotiated MCP App.
 
 - Pull-request quality gates now derive changed crates and their reverse
   dependency closure, routing documentation, adapters, containers, Helm and
@@ -32,6 +45,24 @@ Detailed notes from the early release cycle are preserved in the
 - Release candidates now contain the complete checksummed asset set and an
   input digest. Version tags promote those exact bytes without rebuilding;
   automatic packaging and distribution no longer run on `main`.
+
+### Fixed
+
+- The kernel stamps absent ingest clocks and assigns the next free sequence per
+  dimension scope. The writer rejects scope ids reused across dimensions before
+  sending a malformed canonical ingest.
+- Sequence ties use the recorded clock before a lexical ref, temporal proof
+  carries supersession lifecycle, and a superseding write marks the replaced
+  projection node `SUPERSEDED`.
+- Ask indexes stored entry text as well as evidence and distinguishes the two
+  with `proof.evidence[].metadata.proof_role`.
+- Trace returns proof hops in walk order from `from`, retaining any additional
+  non-chaining relation at the end instead of making every caller reconstruct
+  the path.
+- ChronoLoom marks fallback-only bundles as hollow and states on-canvas when no
+  entry carries the selected clock.
+- The CodeQL waiter follows the concrete `Analyze (*)` jobs and treats a
+  skipped aggregate as terminal instead of timing out after successful scans.
 
 ## [0.2.9] - 2026-08-27
 

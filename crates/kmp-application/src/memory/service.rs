@@ -14,7 +14,8 @@ use crate::commands::CommandApplicationService;
 use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult,
     MemoryIngestCommand, MemoryIngestOutcome, TemporalMemoryQuery, TemporalMemoryResult,
-    TraceMemoryQuery, WakeMemoryQuery, translate_memory_ingest,
+    TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery,
+    build_visual_projection, translate_memory_ingest,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
@@ -141,6 +142,7 @@ where
         let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
 
         let request = TemporalTraversalRequest::new(query.direction, query.cursor)
+            .with_axis(query.axis)
             .with_dimensions(dimensions.clone())
             .with_requested_dimensions(query.dimensions.clone())
             .with_window(query.window);
@@ -158,6 +160,21 @@ where
             include: query.include,
             quality,
         })
+    }
+
+    /// A range- and level-of-detail-aware read model for renderers.
+    ///
+    /// This stays on the application facade: storage never gains a viewer
+    /// query and renderers never reach into an engine. The temporal move
+    /// narrows by the selected clock first; bins, clusters and moment entries
+    /// are then projected on a channel whose result is not a model prompt.
+    pub async fn visual_projection(
+        &self,
+        query: VisualProjectionQuery,
+    ) -> Result<VisualProjectionResult, ApplicationError> {
+        let temporal_query = query.temporal_query()?;
+        let temporal = self.temporal(temporal_query).await?;
+        build_visual_projection(&query, temporal)
     }
 
     pub async fn trace(
@@ -566,6 +583,7 @@ fn is_memory_evidence_kind(kind: &str) -> bool {
 fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
     let mut refs = BTreeSet::from([bundle.root_node().node_id().to_string()]);
     let mut dimensions = BTreeSet::new();
+    let mut max_sequences = BTreeMap::new();
 
     for node in bundle.neighbor_nodes() {
         refs.insert(node.node_id().to_string());
@@ -580,9 +598,24 @@ fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
         .filter(|relationship| relationship.relationship_type() == "contains_entry")
     {
         dimensions.insert(relationship.source_node_id().to_string());
+        let explanation = relationship.explanation();
+        if let (Some(dimension), Some(scope_id), Some(sequence)) = (
+            explanation.dimension(),
+            explanation.scope_id(),
+            explanation.sequence(),
+        ) {
+            max_sequences
+                .entry((dimension.to_string(), scope_id.to_string()))
+                .and_modify(|current: &mut u32| *current = (*current).max(sequence))
+                .or_insert(sequence);
+        }
     }
 
-    ExistingMemoryRefs { refs, dimensions }
+    ExistingMemoryRefs {
+        refs,
+        dimensions,
+        max_sequences,
+    }
 }
 
 fn merge_context_results(

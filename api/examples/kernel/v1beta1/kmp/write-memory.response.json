@@ -111,19 +111,16 @@
             {
               "dimension": "task",
               "scope_id": "incident:mobile-login",
-              "sequence": 1,
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_process",
               "scope_id": "incident:mobile-login:resolution",
-              "sequence": 1,
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_episode",
               "scope_id": "incident:mobile-login:episode:backend",
-              "sequence": 1,
               "observed_at": "2026-05-06T10:00:00Z"
             }
           ],
@@ -140,19 +137,16 @@
             {
               "dimension": "task",
               "scope_id": "incident:mobile-login",
-              "sequence": 2,
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_process",
               "scope_id": "incident:mobile-login:resolution",
-              "sequence": 2,
               "observed_at": "2026-05-06T10:00:00Z"
             },
             {
               "dimension": "agentic_episode",
               "scope_id": "incident:mobile-login:episode:backend",
-              "sequence": 2,
               "observed_at": "2026-05-06T10:00:00Z"
             }
           ],

@@ -169,11 +169,23 @@ pub(crate) fn build_write_plan_with_root(
     let actor = required_string(arguments, "actor")?;
     let observed_at = required_string(arguments, "observed_at")?;
     reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
+    let clocks = WriterCoordinate {
+        occurred_at: optional_string(arguments.get("occurred_at")),
+        observed_at: &observed_at,
+        valid_from: optional_string(arguments.get("valid_from")),
+        valid_until: optional_string(arguments.get("valid_until")),
+        rank: arguments
+            .get("rank")
+            .and_then(Value::as_u64)
+            .and_then(|value| u32::try_from(value).ok())
+            .filter(|value| *value > 0),
+    };
     let scope = required_object(arguments, "scope")?;
     let read_context = ReadContext::from_arguments(arguments)?;
     let process_scope = required_map_string(scope, "process", "scope.process")?;
     let task_scope = optional_map_string(scope, "task");
     let episode_scope = optional_map_string(scope, "episode");
+    validate_distinct_scope_ids(process_scope, task_scope, episode_scope)?;
     let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
@@ -192,8 +204,8 @@ pub(crate) fn build_write_plan_with_root(
         .and_then(|options| options.get("sequence"))
         .and_then(Value::as_u64)
         .and_then(|value| u32::try_from(value).ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(1);
+        .filter(|value| *value > 0);
+    let relation_sequence = sequence.unwrap_or(1);
 
     let current = required_object(arguments, "current")?;
     let current_kind = required_map_string(current, "kind", "current.kind")?;
@@ -213,7 +225,7 @@ pub(crate) fn build_write_plan_with_root(
     let mut coordinates = Vec::new();
     if let Some(task_scope) = task_scope {
         dimensions.push(dimension(task_scope, "task", "Kernel write task"));
-        coordinates.push(coordinate("task", task_scope, sequence, &observed_at));
+        coordinates.push(coordinate("task", task_scope, sequence, clocks));
     }
     dimensions.push(dimension(
         process_scope,
@@ -224,7 +236,7 @@ pub(crate) fn build_write_plan_with_root(
         "agentic_process",
         process_scope,
         sequence,
-        &observed_at,
+        clocks,
     ));
     if let Some(episode_scope) = episode_scope {
         dimensions.push(dimension(
@@ -236,7 +248,7 @@ pub(crate) fn build_write_plan_with_root(
             "agentic_episode",
             episode_scope,
             sequence,
-            &observed_at,
+            clocks,
         ));
     }
 
@@ -308,7 +320,7 @@ pub(crate) fn build_write_plan_with_root(
             confidence,
             why,
             relation_evidence,
-            sequence,
+            relation_sequence,
         ));
         relation_names.push(rel.to_string());
         relation_quality.push(quality);
@@ -368,7 +380,7 @@ pub(crate) fn build_write_plan_with_root(
             DEFAULT_CONFIDENCE,
             delta_why,
             delta_evidence,
-            sequence + 1,
+            relation_sequence.saturating_add(1),
         ));
         relation_names.push("updates_state".to_string());
         relation_quality.push(updates_state_quality);
@@ -394,7 +406,7 @@ pub(crate) fn build_write_plan_with_root(
                 DEFAULT_CONFIDENCE,
                 delta_why,
                 delta_evidence,
-                sequence + 1,
+                relation_sequence.saturating_add(1),
             ));
             relation_names.push("semantic_delta_from".to_string());
             relation_quality.push(semantic_delta_quality);
@@ -529,13 +541,71 @@ fn dimension(id: &str, kind: &str, title: &str) -> Value {
     })
 }
 
-fn coordinate(dimension: &str, scope_id: &str, sequence: u32, observed_at: &str) -> Value {
-    json!({
+#[derive(Clone, Copy, Debug)]
+struct WriterCoordinate<'a> {
+    occurred_at: Option<&'a str>,
+    observed_at: &'a str,
+    valid_from: Option<&'a str>,
+    valid_until: Option<&'a str>,
+    rank: Option<u32>,
+}
+
+fn coordinate(
+    dimension: &str,
+    scope_id: &str,
+    sequence: Option<u32>,
+    clocks: WriterCoordinate<'_>,
+) -> Value {
+    let mut coordinate = json!({
         "dimension": dimension,
         "scope_id": scope_id,
-        "sequence": sequence,
-        "observed_at": observed_at
-    })
+        "observed_at": clocks.observed_at
+    });
+    let fields = coordinate
+        .as_object_mut()
+        .expect("coordinate literal is a JSON object");
+    if let Some(occurred_at) = clocks.occurred_at {
+        fields.insert("occurred_at".to_string(), json!(occurred_at));
+    }
+    if let Some(valid_from) = clocks.valid_from {
+        fields.insert("valid_from".to_string(), json!(valid_from));
+    }
+    if let Some(valid_until) = clocks.valid_until {
+        fields.insert("valid_until".to_string(), json!(valid_until));
+    }
+    if let Some(rank) = clocks.rank {
+        fields.insert("rank".to_string(), json!(rank));
+    }
+    if let Some(sequence) = sequence {
+        fields.insert("sequence".to_string(), json!(sequence));
+    }
+    coordinate
+}
+
+fn validate_distinct_scope_ids(
+    process: &str,
+    task: Option<&str>,
+    episode: Option<&str>,
+) -> Result<(), String> {
+    let scopes = [
+        ("process", Some(process)),
+        ("task", task),
+        ("episode", episode),
+    ];
+    for left in 0..scopes.len() {
+        let Some(left_id) = scopes[left].1 else {
+            continue;
+        };
+        for right in (left + 1)..scopes.len() {
+            if scopes[right].1 == Some(left_id) {
+                return Err(format!(
+                    "scope.{} and scope.{} reuse `{left_id}`; every scope dimension must use a distinct id",
+                    scopes[left].0, scopes[right].0
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn shifted_coordinates(coordinates: &Value, offset: u32) -> Value {
@@ -1149,6 +1219,35 @@ mod tests {
     }
 
     #[test]
+    fn writer_carries_every_known_clock_into_canonical_coordinates() {
+        let mut request = sample_write_request();
+        request["occurred_at"] = json!("2026-05-06T09:58:00Z");
+        request["valid_from"] = json!("2026-05-06T10:00:00Z");
+        request["valid_until"] = json!("2026-05-07T10:00:00Z");
+        request["rank"] = json!(7);
+
+        let plan = build_write_plan(&request).expect("polytemporal write should plan");
+        let coordinates = plan.ingest_arguments["memory"]["entries"][0]["coordinates"]
+            .as_array()
+            .expect("entry coordinates");
+
+        assert!(!coordinates.is_empty());
+        for coordinate in coordinates {
+            assert_eq!(coordinate["occurred_at"], "2026-05-06T09:58:00Z");
+            assert_eq!(coordinate["observed_at"], "2026-05-06T10:00:00Z");
+            assert_eq!(coordinate["valid_from"], "2026-05-06T10:00:00Z");
+            assert_eq!(coordinate["valid_until"], "2026-05-07T10:00:00Z");
+            assert_eq!(coordinate["rank"], 7);
+        }
+
+        let shifted = plan.ingest_arguments["memory"]["entries"][1]["coordinates"]
+            .as_array()
+            .expect("semantic delta coordinates");
+        assert_eq!(shifted[0]["occurred_at"], "2026-05-06T09:58:00Z");
+        assert_eq!(shifted[0]["rank"], 7);
+    }
+
+    #[test]
     fn structural_links_compile_without_an_empty_rationale() {
         // The first memory in a store is often a plain `scoped_to` into its
         // own about, with no rationale to give — structural links are exempt
@@ -1223,6 +1322,35 @@ mod tests {
         let error = build_write_plan(&request).expect_err("process scope is required");
 
         assert_eq!(error, "missing required argument `scope.process`");
+    }
+
+    #[test]
+    fn rejects_scope_ids_reused_across_dimensions_before_ingest() {
+        let mut request = sample_write_request();
+        request["scope"]["task"] = json!("incident:mobile-login:resolution");
+
+        let error = build_write_plan(&request).expect_err("scope ids must be distinct");
+
+        assert_eq!(
+            error,
+            "scope.process and scope.task reuse `incident:mobile-login:resolution`; every scope dimension must use a distinct id"
+        );
+    }
+
+    #[test]
+    fn omitted_writer_sequence_stays_absent_for_kernel_assignment() {
+        let plan = build_write_plan(&sample_write_request()).expect("write should plan");
+        let entries = plan.ingest_arguments["memory"]["entries"]
+            .as_array()
+            .expect("entries");
+
+        assert!(entries.iter().all(|entry| {
+            entry["coordinates"]
+                .as_array()
+                .expect("coordinates")
+                .iter()
+                .all(|coordinate| coordinate.get("sequence").is_none())
+        }));
     }
 
     #[test]

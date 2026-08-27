@@ -1676,6 +1676,7 @@ dependencies = [
 name = "kmp-observability"
 version = "0.2.9"
 dependencies = [
+ "kmp-application",
  "kmp-domain",
  "opentelemetry",
  "opentelemetry-otlp",

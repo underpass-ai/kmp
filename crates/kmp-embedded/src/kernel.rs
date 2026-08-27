@@ -3,7 +3,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use kmp_adapter_embedded::{
-    EmbeddedKernelStore, QualityTelemetryRetention, RedbQualityTelemetryWriter, StorageEngine,
+    EmbeddedKernelStore, QualityTelemetryRetention, RedbQualityTelemetryReader,
+    RedbQualityTelemetryWriter, StorageEngine,
 };
 use kmp_application::{
     CommandApplicationService, KernelMemoryApplicationService, QueryApplicationService,
@@ -151,6 +152,12 @@ impl EmbeddedKernel {
     pub fn quality_telemetry_active(&self) -> bool {
         self.telemetry_guard.is_some()
     }
+
+    /// Live query side for the same local journal used by the quality
+    /// observer. Sharing its redb handle avoids a second-open lock conflict.
+    pub fn quality_telemetry_reader(&self) -> Option<RedbQualityTelemetryReader> {
+        self.telemetry_writer.as_ref().map(|writer| writer.reader())
+    }
 }
 
 fn compose_quality_telemetry(
@@ -222,9 +229,21 @@ mod tests {
                 rpc: "kmp_wake".to_string(),
                 root_node_id: "question:fail-open".to_string(),
                 role: "resumer".to_string(),
+                revision: Some(1),
             },
         );
         assert_eq!(kernel.quality_telemetry_dropped_observations(), 1);
         assert_eq!(kernel.quality_telemetry_write_failures(), 0);
+    }
+
+    #[test]
+    fn live_quality_reader_shares_the_kernel_journal() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel");
+        let reader = kernel
+            .quality_telemetry_reader()
+            .expect("active telemetry exposes its read side");
+
+        assert_eq!(reader.count().expect("shared journal is readable"), 0);
     }
 }

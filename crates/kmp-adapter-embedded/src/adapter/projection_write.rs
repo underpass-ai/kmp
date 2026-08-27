@@ -5,7 +5,7 @@ use kmp_domain::{
 };
 
 use super::engine::{Key, Table, WriteTx};
-use super::serdes::{DetailRecord, NodeRecord, encode, encode_explanation};
+use super::serdes::{DetailRecord, NodeRecord, decode, encode, encode_explanation};
 use super::store::EmbeddedKernelStore;
 
 pub(crate) const MEMORY_ANCHOR_KIND: &str = "memory_anchor";
@@ -54,6 +54,19 @@ fn ensure_node(tx: &mut dyn WriteTx, node: NodeProjection) -> Result<(), PortErr
     write_node(tx, node)
 }
 
+fn update_node_status(
+    tx: &mut dyn WriteTx,
+    node_id: &str,
+    status: String,
+) -> Result<(), PortError> {
+    let bytes = tx.get(Table::Nodes, Key::Str(node_id))?.ok_or_else(|| {
+        PortError::InvalidState(format!("cannot update missing node `{node_id}`"))
+    })?;
+    let mut node = decode::<NodeRecord>("graph node", &bytes)?.into_projection()?;
+    node.status = status;
+    write_node(tx, node)
+}
+
 /// Applies a mutation batch inside one transaction. Shared by the live write
 /// path and the replay tool so both apply byte-identical projections.
 pub(crate) fn apply_mutations_in_transaction(
@@ -68,6 +81,9 @@ pub(crate) fn apply_mutations_in_transaction(
             }
             ProjectionMutation::UpsertNode(node) => {
                 write_node(tx, node)?;
+            }
+            ProjectionMutation::UpdateNodeStatus { node_id, status } => {
+                update_node_status(tx, &node_id, status)?;
             }
             ProjectionMutation::UpsertNodeRelation(relation) => {
                 let NodeRelationProjection {

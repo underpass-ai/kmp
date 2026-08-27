@@ -9,6 +9,9 @@ pub struct QualityObservationContext {
     pub root_node_id: String,
     /// Role for which the bundle was rendered.
     pub role: String,
+    /// Memory revision that produced the rendered bundle, when the caller has
+    /// one. Exemplars use it to resolve a point without guessing from time.
+    pub revision: Option<u64>,
 }
 
 /// Port for observing quality metrics produced by the rendering pipeline.

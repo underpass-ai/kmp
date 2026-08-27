@@ -7,10 +7,10 @@ use kmp_proto::v1beta1::{
     ForwardResponse, GotoRequest, GotoResponse, IngestRequest, IngestResponse, IngestedMemory,
     InspectRequest, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
     MemoryEvidence, MemoryRelation, MemorySemanticClass, MemorySourceKind, NearRequest,
-    NearResponse, Proof, RawMemoryRef, RewindRequest, RewindResponse, TemporalCoordinate,
-    TemporalCursor, TemporalDirection, TemporalEntry, TemporalMoveRequest, TemporalMoveResponse,
-    TemporalNearRequest, TemporalState, TraceRequest, TraceResponse, WakeClaim, WakePacket,
-    WakeRequest, WakeResponse,
+    NearResponse, ProjectVisualRequest, ProjectVisualResponse, Proof, RawMemoryRef, RewindRequest,
+    RewindResponse, TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalEntry,
+    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TemporalState, TraceRequest,
+    TraceResponse, WakeClaim, WakePacket, WakeRequest, WakeResponse,
     kernel_memory_service_server::{KernelMemoryService, KernelMemoryServiceServer},
 };
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
@@ -787,6 +787,15 @@ impl KernelMemoryService for FakeMemoryService {
         Ok(Response::new(forward_response_from_temporal(response)))
     }
 
+    async fn project_visual(
+        &self,
+        _request: Request<ProjectVisualRequest>,
+    ) -> Result<Response<ProjectVisualResponse>, Status> {
+        Err(Status::unimplemented(
+            "not used by this backend contract test",
+        ))
+    }
+
     async fn trace(
         &self,
         request: Request<TraceRequest>,
@@ -860,6 +869,7 @@ fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest 
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -872,6 +882,7 @@ fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequ
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -884,6 +895,7 @@ fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRe
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -896,6 +908,7 @@ fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest 
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -963,6 +976,7 @@ fn temporal_response(
         summary: "Returned typed temporal entries.".to_string(),
         temporal: Some(TemporalState {
             direction: direction as i32,
+            axis: kmp_proto::v1beta1::TemporalAxis::Unspecified as i32,
             requested,
             resolved: Some(coordinate(2)),
         }),

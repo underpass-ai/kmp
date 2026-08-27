@@ -27,7 +27,7 @@ pub(crate) const VIEW_TOOLS: [&str; 3] = [
 ];
 
 pub(crate) fn is_view_tool(name: &str) -> bool {
-    VIEW_TOOLS.contains(&name)
+    VIEW_TOOLS.contains(&name) || name == "kmp_view_undo"
 }
 
 fn view_id_of(arguments: &Value) -> String {
@@ -90,9 +90,25 @@ pub(crate) fn get_state(arguments: &Value) -> Result<Value, ToolError> {
         &state,
         json!({
             "reads": "the semantic state of the view, not its pixels",
-            "not_yet_rendered": ["overlays (the Observability Pulse has no query port yet)"],
+            "observability": "projection.overlays are queried for the current range and drawn on the shared temporal axis",
         }),
     ))
+}
+
+/// MCP App transport for the aggregate's existing reversible operation. It
+/// is never advertised to the model-facing tool surface.
+pub(crate) fn undo(arguments: &Value) -> Result<Value, ToolError> {
+    let view_id = view_id_of(arguments);
+    match ViewRegistry::shared().undo(&view_id, "human") {
+        Ok(state) => Ok(state_result(&state, json!({"undone": true}))),
+        Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
+            "no view under `{id}` — open one with kmp_view_open first"
+        ))),
+        Err(ViewError::Invalid(message)) => Err(ToolError::invalid_argument(message)),
+        Err(ViewError::Conflict { .. }) => Err(ToolError::conflict(
+            "the view moved before undo could be applied".to_string(),
+        )),
+    }
 }
 
 /// Builds the patch an intent describes, refusing shapes it does not mean.

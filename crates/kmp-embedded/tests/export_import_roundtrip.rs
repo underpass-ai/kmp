@@ -194,6 +194,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
             .temporal(TemporalMemoryQuery {
                 about: ABOUT.to_string(),
                 direction: TemporalDirection::Goto,
+                axis: kmp_domain::TemporalAxis::Default,
                 cursor: TemporalCursor::time("2026-07-01T12:00:00Z").expect("cursor"),
                 dimensions: DimensionSelection::all(),
                 window: TemporalWindow::new(0, 0),

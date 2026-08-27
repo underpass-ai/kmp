@@ -7,8 +7,11 @@ use kmp_adapter_embedded::{
     QualityTelemetryRetention, RedbQualityTelemetryReader, RedbQualityTelemetryWriter,
     quality_telemetry_path,
 };
+use kmp_application::{ObservabilityQuery, ObservabilityQueryPort};
 use kmp_domain::{BundleQualityMetrics, QualityMetricsObserver, QualityObservationContext};
-use kmp_observability::{BufferedQualityMetricsObserver, EmbeddedTelemetryGuard};
+use kmp_observability::{
+    BufferedQualityMetricsObserver, EmbeddedTelemetryGuard, QualityTelemetryObservation,
+};
 
 fn observe_n(observer: &BufferedQualityMetricsObserver, rpc: &str, count: usize) {
     let metrics = BundleQualityMetrics::new(100, 2.0, 0.5, 0.1, 0.9).expect("metrics");
@@ -19,6 +22,7 @@ fn observe_n(observer: &BufferedQualityMetricsObserver, rpc: &str, count: usize)
                 rpc: rpc.to_string(),
                 root_node_id: format!("question:{index}"),
                 role: "resumer".to_string(),
+                revision: Some(index as u64),
             },
         );
     }
@@ -70,9 +74,55 @@ fn observations_persist_survive_reopen_and_respect_retention() {
     assert_eq!(reader.count().expect("count"), 10);
     assert_eq!(all.len(), 10, "retention must cap the journal");
     assert_eq!(asks.len(), 3, "newest observations must survive retention");
+    assert_eq!(
+        asks.last().and_then(|observation| observation.revision()),
+        Some(2)
+    );
     assert!(wakes.len() >= 7, "older kind keeps the remainder");
     assert!(
         all.iter()
             .all(|observation| observation.observed_at_millis() > 0)
     );
+}
+
+#[tokio::test]
+async fn observability_projection_filters_the_about_and_keeps_revision_exemplars() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let writer = RedbQualityTelemetryWriter::open(
+        data_dir.path(),
+        QualityTelemetryRetention::new(10).expect("retention"),
+    )
+    .expect("writer");
+    let metrics = BundleQualityMetrics::new(100, 2.0, 0.5, 0.1, 0.9).expect("metrics");
+    let observation = |about: &str, revision| {
+        QualityTelemetryObservation::capture(
+            &metrics,
+            &QualityObservationContext {
+                rpc: "kmp_wake".to_string(),
+                root_node_id: about.to_string(),
+                role: "resumer".to_string(),
+                revision: Some(revision),
+            },
+        )
+    };
+    writer
+        .write_batch(&[observation("project:a", 7), observation("project:b", 8)])
+        .expect("observations persist");
+
+    let projection = writer
+        .reader()
+        .query(ObservabilityQuery {
+            about: Some("project:a".to_string()),
+            from_millis: 0,
+            to_millis: u64::MAX,
+            series: vec!["causal_density".to_string()],
+            max_points: 10,
+        })
+        .await
+        .expect("projection");
+
+    assert_eq!(projection.exemplars.len(), 1);
+    assert_eq!(projection.exemplars[0].about.as_deref(), Some("project:a"));
+    assert_eq!(projection.exemplars[0].revision, Some(7));
+    assert_eq!(projection.series[0].points.len(), 1);
 }

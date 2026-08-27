@@ -80,6 +80,7 @@ impl EmbeddedKernel {
                 rpc: rpc.to_owned(),
                 root_node_id: result.bundle.root_node_id().as_str().to_owned(),
                 role: result.bundle.role().as_str().to_owned(),
+                revision: Some(result.bundle.metadata().revision),
             },
         );
     }

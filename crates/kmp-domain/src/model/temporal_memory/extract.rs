@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{BundleNode, DomainError, KmpBundle, TemporalCoordinate};
+use crate::{BundleNode, DomainError, KmpBundle, TemporalAxis, TemporalCoordinate};
 
 use super::axis_key::TemporalAxisKey;
 use super::position::TemporalPosition;
@@ -8,6 +8,7 @@ use super::position::TemporalPosition;
 pub(super) fn temporal_positions(
     bundle: &KmpBundle,
     nodes: &BTreeMap<String, (String, String)>,
+    axis: TemporalAxis,
 ) -> Result<Vec<TemporalPosition>, DomainError> {
     let mut positions = Vec::new();
 
@@ -27,7 +28,7 @@ pub(super) fn temporal_positions(
             .cloned()
             .unwrap_or_else(|| ("entry".to_string(), ref_id.clone()));
 
-        for axis_key in TemporalAxisKey::from_coordinate(&ref_id, &coordinate) {
+        for axis_key in TemporalAxisKey::from_coordinate(&ref_id, &coordinate, axis) {
             positions.push(TemporalPosition {
                 ref_id: ref_id.clone(),
                 kind: kind.clone(),

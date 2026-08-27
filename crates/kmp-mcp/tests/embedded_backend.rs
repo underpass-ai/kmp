@@ -705,12 +705,12 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
     .await;
     assert_eq!(goto["page"]["returned"], 2);
     assert_eq!(goto["page"]["has_more"], false);
-    assert!(
+    assert_eq!(
         goto["quality"]["causal_density"]
             .as_f64()
-            .expect("goto quality has causal density")
-            > 0.0,
-        "evidential and motivational relations count as explanatory"
+            .expect("goto quality has causal density"),
+        0.0,
+        "evidential relations must not inflate causal density"
     );
     let entry = goto["entries"]
         .as_array()

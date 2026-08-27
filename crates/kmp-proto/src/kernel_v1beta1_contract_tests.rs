@@ -43,7 +43,16 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
     assert_eq!(
         service_method_names(memory_file, "KernelMemoryService"),
         vec![
-            "Ingest", "Wake", "Ask", "Goto", "Near", "Rewind", "Forward", "Trace", "Inspect"
+            "Ingest",
+            "Wake",
+            "Ask",
+            "Goto",
+            "Near",
+            "Rewind",
+            "Forward",
+            "ProjectVisual",
+            "Trace",
+            "Inspect"
         ]
     );
     assert_eq!(
@@ -56,6 +65,11 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             ("Near", "NearRequest", "NearResponse"),
             ("Rewind", "RewindRequest", "RewindResponse"),
             ("Forward", "ForwardRequest", "ForwardResponse"),
+            (
+                "ProjectVisual",
+                "ProjectVisualRequest",
+                "ProjectVisualResponse",
+            ),
             ("Trace", "TraceRequest", "TraceResponse"),
             ("Inspect", "InspectRequest", "InspectResponse"),
         ])
@@ -190,6 +204,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     assert_eq!(
@@ -202,6 +217,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     assert_eq!(
@@ -214,6 +230,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     assert_eq!(
@@ -226,6 +243,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     assert_eq!(
@@ -238,6 +256,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     assert_eq!(
@@ -250,6 +269,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "limit",
             "include",
             "budget",
+            "axis",
         ]
     );
     // The four temporal-move responses share one field set (including the

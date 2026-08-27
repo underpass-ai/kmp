@@ -9,8 +9,8 @@ use kmp_proto_mapping::v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
     temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, wake_query_from_proto,
-    wake_response_from_result,
+    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use serde_json::Value;
 
@@ -18,15 +18,17 @@ use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::grpc::requests::{
     ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
-    trace_request_from_arguments, wake_request_from_arguments,
+    trace_request_from_arguments, visual_projection_request_from_arguments,
+    wake_request_from_arguments,
 };
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
-    temporal_from_response, trace_from_response, wake_from_response,
+    temporal_from_response, trace_from_response, visual_projection_from_response,
+    wake_from_response,
 };
-use crate::protocol::tool_success_result;
+use crate::protocol::{app_data_success_result, tool_success_result};
 use crate::tool_error::{ToolError, ToolErrorCode};
 
 /// In-process kernel backend: the same JSON argument builders and response
@@ -331,6 +333,7 @@ fn observe_quality(
     rpc: &str,
     root_node_id: &str,
     role: &str,
+    revision: u64,
     quality: &kmp_domain::BundleQualityMetrics,
 ) {
     observer.observe(
@@ -339,6 +342,7 @@ fn observe_quality(
             rpc: rpc.to_string(),
             root_node_id: root_node_id.to_string(),
             role: role.to_string(),
+            revision: Some(revision),
         },
     );
 }
@@ -388,10 +392,29 @@ async fn embedded_tool_result(
         }
         "kmp_trace" => embedded_trace(service, observer, arguments).await,
         "kmp_inspect" => embedded_inspect(service, arguments).await,
+        "kmp_view_read_projection" => embedded_visual_projection(service, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
         ))),
     }
+}
+
+async fn embedded_visual_projection(
+    service: &EmbeddedMemoryService,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let request =
+        visual_projection_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    let about = request.about.clone();
+    let query =
+        visual_projection_query_from_proto(request).map_err(|status| mapping_error(&status))?;
+    let result = service
+        .visual_projection(query)
+        .await
+        .map_err(kernel_error("project_visual", &about))?;
+    Ok(app_data_success_result(visual_projection_from_response(
+        visual_projection_response_from_result(result),
+    )))
 }
 
 async fn embedded_ingest(
@@ -433,6 +456,7 @@ async fn embedded_wake(
         "kmp_wake",
         result.bundle.root_node_id().as_str(),
         result.bundle.role().as_str(),
+        result.bundle.metadata().revision,
         &result.rendered.quality,
     );
     let response = project_wake_response(
@@ -463,6 +487,7 @@ async fn embedded_ask(
         "kmp_ask",
         result.bundle.root_node_id().as_str(),
         result.bundle.role().as_str(),
+        result.bundle.metadata().revision,
         &result.rendered.quality,
     );
     let response = project_ask_response(
@@ -495,6 +520,7 @@ async fn embedded_temporal(
         &format!("kmp_{direction_name}"),
         result.source_bundle.root_node_id().as_str(),
         result.source_bundle.role().as_str(),
+        result.source_bundle.metadata().revision,
         &result.quality,
     );
     Ok(tool_success_result(enforce_temporal_output_budget(
@@ -526,6 +552,7 @@ async fn embedded_near(
         "kmp_near",
         result.source_bundle.root_node_id().as_str(),
         result.source_bundle.role().as_str(),
+        result.source_bundle.metadata().revision,
         &result.quality,
     );
     Ok(tool_success_result(enforce_temporal_output_budget(
@@ -556,6 +583,7 @@ async fn embedded_trace(
         "kmp_trace",
         result.path_bundle.root_node_id().as_str(),
         result.path_bundle.role().as_str(),
+        result.path_bundle.metadata().revision,
         &result.rendered.quality,
     );
     Ok(tool_success_result(trace_from_response(

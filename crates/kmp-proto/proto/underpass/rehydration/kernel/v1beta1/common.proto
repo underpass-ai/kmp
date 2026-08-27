@@ -139,9 +139,9 @@ message BundleQualityMetrics {
   uint32 raw_equivalent_tokens = 1;
   // raw_equivalent_tokens / rendered_token_count. >1.0 means compression.
   double compression_ratio = 2;
-  // Fraction of relationships with causal/motivational/evidential class.
+  // Fraction of relationships with exactly the causal semantic class.
   double causal_density = 3;
-  // Fraction of nodes from noise/distractor branches.
+  // Fraction of nodes with no summary, detail, or incident non-structural relation.
   double noise_ratio = 4;
   // Fraction of nodes with extended detail attached.
   double detail_coverage = 5;

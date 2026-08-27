@@ -1365,7 +1365,7 @@ async fn memory_service_wake_and_ask_read_live_context() {
 }
 
 #[tokio::test]
-async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
+async fn memory_service_ask_indexes_entry_text_and_explicit_evidence_not_anchor_detail() {
     let service = memory_service(SeededGraphNeighborhoodReader, SeededNodeDetailReader);
 
     let ask = service
@@ -1394,16 +1394,44 @@ async fn memory_service_ask_uses_explicit_memory_evidence_not_anchor_detail() {
 
     assert_eq!(
         ask.answer,
-        "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:answer [detail:evidence:answer]"
+        "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- claim:answer [detail:evidence:answer]\n- claim:answer [entry:claim:answer]"
     );
-    assert_eq!(ask.because.len(), 1);
-    assert_eq!(ask.because[0].r#ref, "detail:evidence:answer");
-    assert_eq!(ask.because[0].claim, "claim:answer");
-    assert!(ask.because[0].evidence.is_empty());
+    assert_eq!(ask.because.len(), 2);
+    assert!(
+        ask.because
+            .iter()
+            .all(|reason| { reason.claim == "claim:answer" && reason.evidence.is_empty() })
+    );
     let proof = ask.proof.expect("ask proof should be present");
-    assert_eq!(proof.evidence.len(), 1);
-    assert_eq!(proof.evidence[0].supports, vec!["claim:answer".to_string()]);
-    assert!(proof.evidence[0].text.contains("deterministic Ask answer"));
+    assert_eq!(proof.evidence.len(), 2);
+    assert!(
+        proof
+            .evidence
+            .iter()
+            .all(|evidence| { evidence.supports == ["claim:answer".to_string()] })
+    );
+    let stored = proof
+        .evidence
+        .iter()
+        .find(|evidence| {
+            evidence
+                .metadata
+                .get("proof_role")
+                .is_some_and(|role| role == "stored_evidence")
+        })
+        .expect("stored evidence stays distinguishable");
+    assert!(stored.text.contains("deterministic Ask answer"));
+    let entry = proof
+        .evidence
+        .iter()
+        .find(|evidence| {
+            evidence
+                .metadata
+                .get("proof_role")
+                .is_some_and(|role| role == "entry_text")
+        })
+        .expect("entry text stays distinguishable");
+    assert_eq!(entry.text, "Answer claim");
     assert!(proof.conflicts.is_empty());
     assert!(proof.path.iter().all(|relation| {
         !relation.source_ref.starts_with("claim:unrelated")
@@ -1604,10 +1632,13 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
         .expect("ask should apply answer policy")
         .into_inner();
 
-    assert_eq!(ask.answer, "UNKNOWN");
+    assert_eq!(
+        ask.answer,
+        "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:rachel-austin [entry:claim:rachel-austin]"
+    );
     assert_eq!(
         ask.proof.expect("ask proof should be present").confidence,
-        MemoryConfidence::Unknown as i32
+        MemoryConfidence::High as i32
     );
 }
 
@@ -2263,6 +2294,7 @@ fn temporal_move_request(
             depth: 3,
             ..Default::default()
         }),
+        axis: kmp_proto::v1beta1::TemporalAxis::Unspecified as i32,
     }
 }
 
@@ -2279,6 +2311,7 @@ fn goto_request(
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -2295,6 +2328,7 @@ fn rewind_request(
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
@@ -2314,6 +2348,7 @@ fn forward_request_from_temporal(request: TemporalMoveRequest) -> ForwardRequest
         limit: request.limit,
         include: request.include,
         budget: request.budget,
+        axis: request.axis,
     }
 }
 
