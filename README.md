@@ -124,7 +124,9 @@ not extra memory verbs. The machine-checked ownership map is
 [`plugins/kmp/capabilities.json`](plugins/kmp/capabilities.json).
 
 <details>
-<summary><strong>The ten MCP moves</strong></summary>
+<summary><strong>The thirteen MCP moves</strong></summary>
+
+Ten over memory, three over the view a person is looking at.
 
 | Tool | Purpose |
 |:--|:--|
@@ -138,6 +140,14 @@ not extra memory verbs. The machine-checked ownership map is
 | `kmp_inspect` | Inspect one object, its links and its evidence. |
 | `kmp_write_memory` | Validate and record a decision, constraint or outcome. |
 | `kmp_ingest` | Ingest an exact canonical memory graph. |
+| `kmp_view_open` | Open or rehydrate a ChronoLoom view over an about. |
+| `kmp_view_apply_intent` | Move that view by declaring meaning — focus, clock, zoom, filters, selection — under optimistic concurrency. |
+| `kmp_view_get_state` | Read the view's semantic state, never its pixels. |
+
+The view tools never write memory: they carry a closed, semantic vocabulary
+with no coordinates in it, and a person at the loom has right of way — an
+intent prepared against a stale revision conflicts rather than yanking the
+view away.
 
 `tools/list` from the running server is authoritative for schemas, outputs and
 the relation vocabulary.

@@ -295,6 +295,12 @@ impl KernelMcpServer {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }
 
+        // The view tools never reach the backend's write path — they hold a
+        // view registry and a read-only existence check, and nothing else.
+        if crate::view_tools::is_view_tool(name) {
+            return self.handle_view_tool(id, name, arguments, start).await;
+        }
+
         match self.backend.call_tool(name, arguments).await {
             Ok(result) => {
                 record_tool_success(
@@ -319,6 +325,100 @@ impl KernelMcpServer {
                 );
                 jsonrpc_result(id, tool_error_result(&error))
             }
+        }
+    }
+
+    /// Moves a view, after checking that every ref the intent names is
+    /// really in this store. A view that points at memory which is not there
+    /// would draw an empty loom that looks like an answer.
+    async fn handle_view_tool(
+        &self,
+        id: Value,
+        name: &str,
+        arguments: &Value,
+        start: Instant,
+    ) -> String {
+        let outcome = match name {
+            "kmp_view_get_state" => crate::view_tools::get_state(arguments),
+            "kmp_view_open" => {
+                let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
+                match self.memory_ref_exists(about).await {
+                    Ok(exists) => crate::view_tools::open(arguments, exists),
+                    Err(error) => Err(error),
+                }
+            }
+            "kmp_view_apply_intent" => {
+                let mut missing = Vec::new();
+                let mut failure = None;
+                for reference in crate::view_tools::refs_named(arguments) {
+                    match self.memory_ref_exists(&reference).await {
+                        Ok(true) => {}
+                        Ok(false) => missing.push(reference),
+                        Err(error) => {
+                            failure = Some(error);
+                            break;
+                        }
+                    }
+                }
+                match failure {
+                    Some(error) => Err(error),
+                    None => crate::view_tools::apply_intent(arguments, &missing),
+                }
+            }
+            other => Err(ToolError::unknown_tool(format!(
+                "unknown view tool `{other}`"
+            ))),
+        };
+
+        match outcome {
+            Ok(result) => {
+                let payload = tool_success_result(result);
+                record_tool_success(
+                    self.backend_name(),
+                    self.grpc_tls_mode_name(),
+                    name,
+                    arguments,
+                    &payload,
+                    start.elapsed(),
+                );
+                jsonrpc_result(id, payload)
+            }
+            Err(error) => {
+                record_tool_error(
+                    self.backend_name(),
+                    self.grpc_tls_mode_name(),
+                    name,
+                    arguments,
+                    ToolErrorKind::Validation,
+                    &error.message,
+                    start.elapsed(),
+                );
+                jsonrpc_result(id, tool_error_result(&error))
+            }
+        }
+    }
+
+    /// Whether one ref is in this store, asked through the same read the
+    /// agent would use. Never a write.
+    async fn memory_ref_exists(&self, reference: &str) -> Result<bool, ToolError> {
+        let reference = reference.trim();
+        if reference.is_empty() {
+            return Ok(false);
+        }
+        match self
+            .backend
+            .call_tool("kmp_inspect", &serde_json::json!({"ref": reference}))
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(error) if error.code == crate::tool_error::ToolErrorCode::NotFound => Ok(false),
+            Err(error) => Err(ToolError::new(
+                error.code,
+                format!(
+                    "could not check whether `{reference}` is in this store: {}",
+                    error.message
+                ),
+            )),
         }
     }
 

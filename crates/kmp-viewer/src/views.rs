@@ -257,7 +257,7 @@ fn parse_sortable_seconds(value: &str) -> Option<i64> {
 /// Howard Hinnant's civil-from-days, which is exact for every day this store
 /// can hold. The crate ships no dependency the embedded edition does not
 /// already carry, and a viewer is not the place to start.
-fn rfc3339_utc(seconds: i64) -> String {
+pub(crate) fn rfc3339_utc(seconds: i64) -> String {
     let days = seconds.div_euclid(86_400);
     let time_of_day = seconds.rem_euclid(86_400);
     let (hour, minute, second) = (

@@ -15,6 +15,7 @@
 
 mod http;
 mod routes;
+pub mod view_state;
 pub mod views;
 
 use std::io;
@@ -30,6 +31,10 @@ use kmp_domain::{
 use tokio::net::{TcpListener, TcpStream};
 
 use crate::http::{HttpResponse, host_is_local, read_request, write_response};
+pub use crate::view_state::{
+    Applied, DEFAULT_VIEW_ID, Focus, Projection, Provenance, TimeRange, TraceSelection, ViewError,
+    ViewPatch, ViewRegistry, ViewState,
+};
 
 /// Environment variable that, when set on an embedded MCP session, mounts the
 /// viewer on that address (e.g. `127.0.0.1:7317`).
