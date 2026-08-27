@@ -393,6 +393,104 @@ const KMP_CORE = (() => {
     };
   }
 
+  /* ---------------- clustering ----------------
+     The grouping the memory already carries: entries hang off their
+     `memory_dimension` node via has_dimension / contains_entry edges. A node
+     with no dimension falls back to a kind group; the root and the dimension
+     heads are never grouped under anyone else. Pure data in, pure data out —
+     the collapse/expand state lives in the caller. */
+
+  const CLUSTER_RELATIONS = new Set(["has_dimension", "contains_entry"]);
+
+  function buildClusters(nodes, edges, rootId) {
+    const dimIds = new Set();
+    for (const node of nodes) {
+      if (node.kind === "memory_dimension" || node.kind === "dimension") dimIds.add(node.id);
+    }
+    // Votes: which dimension claims each node, and how often.
+    const votes = new Map();
+    for (const edge of edges) {
+      if (!CLUSTER_RELATIONS.has(edge.rel)) continue;
+      let dim = null;
+      let member = null;
+      if (dimIds.has(edge.source)) {
+        dim = edge.source;
+        member = edge.target;
+      } else if (dimIds.has(edge.target)) {
+        dim = edge.target;
+        member = edge.source;
+      }
+      if (!dim || member === rootId || dimIds.has(member)) continue;
+      let ballot = votes.get(member);
+      if (!ballot) votes.set(member, (ballot = new Map()));
+      ballot.set(dim, (ballot.get(dim) || 0) + 1);
+    }
+
+    const of = new Map(); // nodeId -> clusterId
+    for (const [member, ballot] of votes) {
+      let best = null;
+      let bestVotes = -1;
+      for (const [dim, count] of ballot) {
+        // Deterministic tie-break: more votes wins, then the smaller id.
+        if (count > bestVotes || (count === bestVotes && dim < best)) {
+          best = dim;
+          bestVotes = count;
+        }
+      }
+      of.set(member, best);
+    }
+    // Evidence carries no dimension of its own — it hangs off the entry it
+    // supports. Two passes so a short chain still finds its home.
+    const SECONDARY = new Set(["supports", "has_evidence"]);
+    for (let pass = 0; pass < 2; pass += 1) {
+      for (const edge of edges) {
+        if (!SECONDARY.has(edge.rel)) continue;
+        const a = edge.source;
+        const b = edge.target;
+        if (of.has(a) && !of.has(b) && b !== rootId && !dimIds.has(b)) {
+          of.set(b, of.get(a));
+        } else if (of.has(b) && !of.has(a) && a !== rootId && !dimIds.has(a)) {
+          of.set(a, of.get(b));
+        }
+      }
+    }
+    for (const node of nodes) {
+      if (node.id === rootId || dimIds.has(node.id) || of.has(node.id)) continue;
+      of.set(node.id, `kind:${node.kind}`);
+    }
+    for (const dim of dimIds) of.set(dim, dim);
+
+    const clusters = new Map(); // clusterId -> {id, head, label, members, kindCounts}
+    const titles = new Map(nodes.map((n) => [n.id, n.title || n.id]));
+    for (const [nodeId, clusterId] of of) {
+      let cluster = clusters.get(clusterId);
+      if (!cluster) {
+        const head = dimIds.has(clusterId) ? clusterId : null;
+        clusters.set(
+          clusterId,
+          (cluster = {
+            id: clusterId,
+            head,
+            label: head ? titles.get(head) : clusterId.slice("kind:".length),
+            members: [],
+            kindCounts: new Map(),
+          })
+        );
+      }
+      if (nodeId === cluster.head) continue;
+      cluster.members.push(nodeId);
+    }
+    const kindOf = new Map(nodes.map((n) => [n.id, n.kind]));
+    for (const cluster of clusters.values()) {
+      cluster.members.sort();
+      for (const member of cluster.members) {
+        const kind = kindOf.get(member) || "?";
+        cluster.kindCounts.set(kind, (cluster.kindCounts.get(kind) || 0) + 1);
+      }
+    }
+    return { of, clusters };
+  }
+
   return {
     SIM,
     fnv1a,
@@ -401,5 +499,6 @@ const KMP_CORE = (() => {
     simStep,
     computeBounds,
     fitTransform,
+    buildClusters,
   };
 })();

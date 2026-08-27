@@ -270,11 +270,219 @@ async function expandNode(id) {
     }
   }
   recomputeDegrees();
+  rebuildClusters(false);
   reheat(KMP_CORE.SIM.REHEAT_EXPAND);
   return inspect;
 }
 
 const centerNode = () => graph.nodes.get(graph.rootId) || graph.nodes.values().next().value;
+
+/* ---------------- view model: clusters and folding ----------------
+   The drawn graph is a view over the data: every node resolves to a proxy —
+   itself, or the meta-mark of its folded dimension. Physics, drawing and hit
+   testing all run on `view`, so folding is one rebuild, not a special case
+   in every loop. The grouping itself (buildClusters) is pure and lives in
+   graph-core.js. */
+
+const clusterState = {
+  of: new Map(), // nodeId -> clusterId
+  clusters: new Map(), // clusterId -> {id, head, label, members, kindCounts}
+  collapsed: new Set(),
+  metas: new Map(), // clusterId -> meta body
+};
+
+const scene = { bodies: [], byId: new Map(), edges: [] };
+
+/* Graphs at or under this many nodes start fully expanded; bigger ones fold
+   their dimensions so the first sight is a map, not a hairball. Any cluster
+   actually holding something folds — a dimension with one entry is still one
+   mark instead of three. */
+const FOLD_THRESHOLD = 120;
+const FOLD_MIN_SIZE = 2;
+
+function rebuildClusters(fresh) {
+  const built = KMP_CORE.buildClusters(
+    [...graph.nodes.values()],
+    graph.edges,
+    graph.rootId
+  );
+  clusterState.of = built.of;
+  clusterState.clusters = built.clusters;
+  for (const id of [...clusterState.collapsed]) {
+    if (!built.clusters.has(id)) clusterState.collapsed.delete(id);
+  }
+  for (const id of [...clusterState.metas.keys()]) {
+    if (!built.clusters.has(id)) clusterState.metas.delete(id);
+  }
+  if (fresh) {
+    clusterState.collapsed.clear();
+    clusterState.metas.clear();
+    if (graph.nodes.size > FOLD_THRESHOLD) {
+      for (const cluster of built.clusters.values()) {
+        const size = cluster.members.length + (cluster.head ? 1 : 0);
+        if (size >= FOLD_MIN_SIZE) clusterState.collapsed.add(cluster.id);
+      }
+    }
+  }
+  rebuildView();
+  renderDimensions();
+}
+
+function metaFor(clusterId) {
+  let meta = clusterState.metas.get(clusterId);
+  const cluster = clusterState.clusters.get(clusterId);
+  if (!meta) {
+    // Seed where the fold happens: the head node, or the members' centroid.
+    let x = 0;
+    let y = 0;
+    let n = 0;
+    const head = cluster.head && graph.nodes.get(cluster.head);
+    if (head) {
+      x = head.x;
+      y = head.y;
+      n = 1;
+    } else {
+      for (const id of cluster.members) {
+        const node = graph.nodes.get(id);
+        if (!node) continue;
+        x += node.x;
+        y += node.y;
+        n += 1;
+      }
+    }
+    meta = {
+      id: `meta:${clusterId}`,
+      meta: true,
+      kind: "memory_dimension",
+      title: cluster.label,
+      x: n ? x / n : 0,
+      y: n ? y / n : 0,
+      vx: 0,
+      vy: 0,
+      degree: 0,
+      mass: 1,
+    };
+    clusterState.metas.set(clusterId, meta);
+  }
+  meta.cluster = cluster;
+  meta.title = cluster.label;
+  meta.mass = cluster.members.length + (cluster.head ? 1 : 0);
+  return meta;
+}
+
+function proxyOf(nodeId) {
+  const clusterId = clusterState.of.get(nodeId);
+  if (clusterId && clusterState.collapsed.has(clusterId)) return metaFor(clusterId);
+  return graph.nodes.get(nodeId) || null;
+}
+
+function rebuildView() {
+  scene.bodies = [];
+  scene.byId = new Map();
+  for (const node of graph.nodes.values()) {
+    const clusterId = clusterState.of.get(node.id);
+    if (clusterId && clusterState.collapsed.has(clusterId)) continue;
+    scene.bodies.push(node);
+    scene.byId.set(node.id, node);
+  }
+  for (const clusterId of clusterState.collapsed) {
+    const meta = metaFor(clusterId);
+    scene.bodies.push(meta);
+    scene.byId.set(meta.id, meta);
+  }
+
+  // Edges land on proxies; whatever folds together aggregates.
+  const aggregated = new Map();
+  for (const edge of graph.edges) {
+    const s = proxyOf(edge.source);
+    const t = proxyOf(edge.target);
+    if (!s || !t || s === t) continue;
+    const key = `${s.id} ${t.id}`;
+    let entry = aggregated.get(key);
+    if (!entry) {
+      aggregated.set(
+        key,
+        (entry = { source: s.id, target: t.id, weight: 0, classCounts: new Map(), one: edge })
+      );
+    }
+    entry.weight += 1;
+    entry.classCounts.set(edge.class, (entry.classCounts.get(edge.class) || 0) + 1);
+  }
+  scene.edges = [];
+  for (const entry of aggregated.values()) {
+    const sMeta = scene.byId.get(entry.source);
+    const tMeta = scene.byId.get(entry.target);
+    if (entry.weight === 1 && sMeta && !sMeta.meta && tMeta && !tMeta.meta) {
+      // A single edge between two real nodes keeps its true payload, so the
+      // tooltip and the trace can still speak for it.
+      scene.edges.push(entry.one);
+      continue;
+    }
+    let major = null;
+    let majorCount = -1;
+    for (const [cls, count] of entry.classCounts) {
+      if (count > majorCount) {
+        major = cls;
+        majorCount = count;
+      }
+    }
+    scene.edges.push({
+      source: entry.source,
+      target: entry.target,
+      rel: `${entry.weight} relations`,
+      class: major,
+      aggregate: true,
+      weight: entry.weight,
+    });
+  }
+
+  for (const body of scene.bodies) body.degree = 0;
+  for (const edge of scene.edges) {
+    const s = scene.byId.get(edge.source);
+    const t = scene.byId.get(edge.target);
+    if (s) s.degree += 1;
+    if (t) t.degree += 1;
+  }
+  requestDraw();
+}
+
+function expandCluster(clusterId) {
+  if (!clusterState.collapsed.has(clusterId)) return;
+  const cluster = clusterState.clusters.get(clusterId);
+  const meta = clusterState.metas.get(clusterId);
+  clusterState.collapsed.delete(clusterId);
+  const at = meta || centerNode() || { x: 0, y: 0 };
+  const ids = cluster.head ? [cluster.head, ...cluster.members] : cluster.members;
+  let i = 0;
+  for (const id of ids) {
+    const node = graph.nodes.get(id);
+    if (!node) continue;
+    const p = KMP_CORE.spiralPoint(i, id, at.x, at.y);
+    i += 1;
+    node.x = p.x;
+    node.y = p.y;
+    node.vx = 0;
+    node.vy = 0;
+  }
+  if (selectedId === `meta:${clusterId}`) selectedId = null;
+  rebuildView();
+  renderDimensions();
+  reheat(KMP_CORE.SIM.REHEAT_EXPAND);
+}
+
+function collapseCluster(clusterId) {
+  const cluster = clusterState.clusters.get(clusterId);
+  if (!cluster || clusterState.collapsed.has(clusterId)) return;
+  clusterState.metas.delete(clusterId); // reseed at the current centroid
+  clusterState.collapsed.add(clusterId);
+  if (selectedId && clusterState.of.get(selectedId) === clusterId) {
+    selectedId = null;
+    renderDetailEmpty();
+  }
+  rebuildView();
+  renderDimensions();
+  reheat(KMP_CORE.SIM.REHEAT_DRAG);
+}
 
 /* ---------------- force simulation ----------------
    The physics lives in graph-core.js (KMP_CORE.simStep): degree-normalized
@@ -292,9 +500,9 @@ function reheat(level = KMP_CORE.SIM.REHEAT_LOAD) {
 
 function simTick() {
   KMP_CORE.simStep(
-    [...graph.nodes.values()],
-    graph.edges,
-    (id) => graph.nodes.get(id),
+    scene.bodies,
+    scene.edges,
+    (id) => scene.byId.get(id),
     alpha,
     { pinned: dragNode, radiusOf: nodeRadius }
   );
@@ -396,15 +604,17 @@ function tickCamera(now) {
   return true;
 }
 
-/* Frame everything (or the nodes `include` admits) with breathing room. */
+/* Frame everything drawn (or the bodies `include` admits) with breathing room. */
 function fitToView(include) {
-  const bounds = KMP_CORE.computeBounds([...graph.nodes.values()], include);
+  const bounds = KMP_CORE.computeBounds(scene.bodies, include);
   const target = KMP_CORE.fitTransform(bounds, canvas.clientWidth, canvas.clientHeight);
   if (target) animateCamera(target);
 }
 
 const nodeRadius = (node) =>
-  7 + Math.min(9, Math.sqrt(node.degree) * 2) + (node.id === graph.rootId ? 3 : 0);
+  node.meta
+    ? 10 + 4 * Math.log2(node.mass + 1)
+    : 7 + Math.min(9, Math.sqrt(node.degree) * 2) + (node.id === graph.rootId ? 3 : 0);
 
 const toScreen = (x, y) => ({
   x: (x - camera.x) * camera.k + canvas.clientWidth / 2,
@@ -415,31 +625,59 @@ const toWorld = (sx, sy) => ({
   y: (sy - canvas.clientHeight / 2) / camera.k + camera.y,
 });
 
-function nodeAlpha(node) {
+function nodeAlpha(body) {
   if (playback.active) {
-    if (node.id === playback.currentRef) return 1;
-    return playback.revealed[playback.step].has(node.id) ? 0.8 : 0.07;
+    if (body.meta) {
+      // A folded dimension reveals in proportion to its revealed members.
+      const revealed = playback.revealed[playback.step];
+      let seen = 0;
+      for (const id of body.cluster.members) if (revealed.has(id)) seen += 1;
+      if (body.cluster.head && revealed.has(body.cluster.head)) seen += 1;
+      return seen ? 0.25 + 0.65 * (seen / body.mass) : 0.07;
+    }
+    if (body.id === playback.currentRef) return 1;
+    return playback.revealed[playback.step].has(body.id) ? 0.8 : 0.07;
   }
-  if (traceHighlight) return traceHighlight.nodes.has(node.id) ? 1 : 0.14;
-  if (dimmedKinds.has(node.kind)) return 0.14;
-  if (searchHits.size) return searchHits.has(node.id) ? 1 : 0.25;
+  if (traceHighlight) return traceHighlight.nodes.has(body.id) ? 1 : 0.14;
+  if (!body.meta && dimmedKinds.has(body.kind)) return 0.14;
+  if (searchHits.size) {
+    if (body.meta) return 0.25;
+    return searchHits.has(body.id) ? 1 : 0.25;
+  }
   return 1;
 }
 
 function edgeAlpha(edge) {
-  if (playback.active) {
+  if (playback.active && !edge.aggregate) {
     const revealed = playback.revealed[playback.step];
     if (!revealed.has(edge.source) || !revealed.has(edge.target)) return 0.04;
     return edge.source === playback.currentRef || edge.target === playback.currentRef ? 1 : 0.55;
   }
-  if (traceHighlight) return traceHighlight.edges.has(edgeKey(edge)) ? 1 : 0.08;
-  const s = graph.nodes.get(edge.source);
-  const t = graph.nodes.get(edge.target);
+  if (traceHighlight && !edge.aggregate) {
+    return traceHighlight.edges.has(edgeKey(edge)) ? 1 : 0.08;
+  }
+  const s = scene.byId.get(edge.source);
+  const t = scene.byId.get(edge.target);
   return Math.min(s ? nodeAlpha(s) : 1, t ? nodeAlpha(t) : 1);
 }
 
+/* The world-space rectangle the camera can see, padded so things entering
+   the frame are already drawn. Everything outside is culled. */
+function viewportRect(pad) {
+  const halfW = (canvas.clientWidth / 2 + pad) / camera.k;
+  const halfH = (canvas.clientHeight / 2 + pad) / camera.k;
+  return {
+    x0: camera.x - halfW,
+    x1: camera.x + halfW,
+    y0: camera.y - halfH,
+    y1: camera.y + halfH,
+  };
+}
+
 /* Rebuilds the scene in world coordinates; the root container carries the
-   camera, and screen-constant sizes are divided by the zoom factor. */
+   camera, and screen-constant sizes are divided by the zoom factor.
+   Levels of detail: far out, arrowheads and self-loops go and member labels
+   yield to meta labels; close in, everything speaks. */
 function syncScene() {
   if (!app) return;
   const p = palette();
@@ -452,13 +690,24 @@ function syncScene() {
 
   const hoveredEdge = hover && hover.type === "edge" ? hover.ref : null;
   const hoveredNode = hover && hover.type === "node" ? hover.ref : null;
+  const rect = viewportRect(100);
+  const drawDetail = k >= 0.3; // arrowheads, self-loops
+  const farDim = k < 0.12 ? 0.6 : 1;
 
   edgesGfx.clear();
-  for (const edge of graph.edges) {
-    const s = graph.nodes.get(edge.source);
-    const t = graph.nodes.get(edge.target);
+  for (const edge of scene.edges) {
+    const s = scene.byId.get(edge.source);
+    const t = scene.byId.get(edge.target);
     if (!s || !t) continue;
-    const a = edgeAlpha(edge);
+    if (
+      Math.max(s.x, t.x) < rect.x0 ||
+      Math.min(s.x, t.x) > rect.x1 ||
+      Math.max(s.y, t.y) < rect.y0 ||
+      Math.min(s.y, t.y) > rect.y1
+    ) {
+      continue;
+    }
+    const a = edgeAlpha(edge) * farDim;
     if (a <= 0.02) continue;
     const highlighted =
       edge === hoveredEdge ||
@@ -468,8 +717,10 @@ function syncScene() {
     const classed = edgeInk(edge, p);
     const structural = classed === p.edge;
     const color = highlighted ? p.accent : classed;
-    const width = (highlighted ? 2.5 : structural ? 0.9 : 1.3) / k;
+    const base = edge.aggregate ? 1 + Math.log2(edge.weight) : structural ? 0.9 : 1.3;
+    const width = (highlighted ? Math.max(2.5, base) : base) / k;
     if (s === t) {
+      if (!drawDetail) continue;
       const r = nodeRadius(s);
       edgesGfx
         .circle(s.x + r, s.y - r, r * 0.8)
@@ -477,48 +728,55 @@ function syncScene() {
       continue;
     }
     edgesGfx.moveTo(s.x, s.y).lineTo(t.x, t.y).stroke({ width, color, alpha: a });
-    drawArrowhead(edge, s, t, color, a);
+    if (drawDetail) drawArrowhead(edge, s, t, color, a);
   }
 
   nodesGfx.clear();
   const wantedLabels = new Set();
-  for (const node of graph.nodes.values()) {
-    const a = nodeAlpha(node);
-    let r = Math.max(nodeRadius(node), 3 / k);
-    const isCurrentStep = playback.active && node.id === playback.currentRef;
+  for (const body of scene.bodies) {
+    if (body.x < rect.x0 || body.x > rect.x1 || body.y < rect.y0 || body.y > rect.y1) continue;
+    const a = nodeAlpha(body);
+    let r = Math.max(nodeRadius(body), 3 / k);
+    const isCurrentStep = playback.active && body.id === playback.currentRef;
     if (isCurrentStep) {
       r += (1.8 + 1.6 * Math.sin(performance.now() / 160)) / k;
     }
-    nodesGfx
-      .circle(node.x, node.y, r)
-      .fill({ color: node.kind === "?" ? p.overflow : kindColor(node.kind), alpha: a })
-      .stroke({ width: 2 / k, color: p.surface, alpha: a });
-    if (node.id === graph.rootId || node.id === selectedId || isCurrentStep) {
-      const emphasized = node.id === selectedId || isCurrentStep;
-      nodesGfx.circle(node.x, node.y, r + 3 / k).stroke({
+    if (body.meta) {
+      drawMeta(body, r, a, p, k);
+    } else {
+      nodesGfx
+        .circle(body.x, body.y, r)
+        .fill({ color: body.kind === "?" ? p.overflow : kindColor(body.kind), alpha: a })
+        .stroke({ width: 2 / k, color: p.surface, alpha: a });
+    }
+    if (body.id === graph.rootId || body.id === selectedId || isCurrentStep) {
+      const emphasized = body.id === selectedId || isCurrentStep;
+      nodesGfx.circle(body.x, body.y, r + 3 / k).stroke({
         width: (emphasized ? 2.5 : 1.5) / k,
         color: emphasized ? p.accent : p.textMuted,
         alpha: a,
       });
       if (emphasized) {
         // The glow: one wide, faint ring — selection reads from across the room.
-        nodesGfx.circle(node.x, node.y, r + 7 / k).stroke({
+        nodesGfx.circle(body.x, body.y, r + 7 / k).stroke({
           width: 6 / k,
           color: p.accent,
           alpha: a * 0.18,
         });
       }
     }
-    const showLabel =
-      k > 0.55 ||
-      node === hoveredNode ||
-      node.id === selectedId ||
-      node.id === graph.rootId ||
+    const emphasizedLabel =
+      body === hoveredNode ||
+      body.id === selectedId ||
+      body.id === graph.rootId ||
       isCurrentStep ||
-      searchHits.has(node.id);
+      searchHits.has(body.id);
+    // A meta speaks when its mark is big enough on screen to own the words;
+    // small folds wait for the zoom. Members wait for k > 0.55 as ever.
+    const showLabel = body.meta ? r * k > 8 || emphasizedLabel : k > 0.55 || emphasizedLabel;
     if (showLabel && a > 0.2) {
-      wantedLabels.add(node.id);
-      syncLabel(node, r, a, p, k);
+      wantedLabels.add(body.id);
+      syncLabel(body, r, a, p, k);
     }
   }
   for (const [id, label] of labelPool) {
@@ -526,9 +784,42 @@ function syncScene() {
   }
 }
 
+/* A folded dimension: a quiet disc wearing a donut of its members' kinds,
+   sized by how much memory it holds. */
+function drawMeta(body, r, a, p, k) {
+  nodesGfx
+    .circle(body.x, body.y, r)
+    .fill({ color: p.surface, alpha: a })
+    .stroke({ width: 1.5 / k, color: kindColor("memory_dimension"), alpha: a * 0.8 });
+  const total = body.mass || 1;
+  let angle = -Math.PI / 2;
+  for (const [kind, count] of body.cluster.kindCounts) {
+    const sweep = (count / total) * Math.PI * 2;
+    nodesGfx
+      .arc(body.x, body.y, r - 2.5 / k, angle, angle + sweep)
+      .stroke({ width: 4 / k, color: kindColor(kind), alpha: a });
+    angle += sweep;
+  }
+}
+
+/* The label pool holds at most this many PIXI.Text objects; past it, the
+   oldest unwanted label is destroyed. Text is the most expensive thing on
+   the stage — a 962-entry memory must not become 962 baked textures. */
+const LABEL_POOL_MAX = 400;
+
 function syncLabel(node, radius, alphaValue, p, k) {
   let label = labelPool.get(node.id);
-  const text = node.title.length > 34 ? node.title.slice(0, 33) + "…" : node.title;
+  const raw = node.meta ? `${node.title} · ${node.mass}` : node.title;
+  const text = raw.length > 34 ? raw.slice(0, 33) + "…" : raw;
+  if (!label && labelPool.size >= LABEL_POOL_MAX) {
+    for (const [oldId, oldLabel] of labelPool) {
+      if (!oldLabel.visible) {
+        oldLabel.destroy();
+        labelPool.delete(oldId);
+        break;
+      }
+    }
+  }
   if (!label) {
     label = new PIXI.Text({
       text,
@@ -732,13 +1023,16 @@ $("pb-scrub").addEventListener("input", (event) => {
 
 function nodeAt(sx, sy) {
   const w = toWorld(sx, sy);
+  // Generous early-out: wider than the biggest meta plus the hit slack.
+  const reach = 64 + 8 / camera.k;
   let best = null;
   let bestDist = Infinity;
-  for (const node of graph.nodes.values()) {
-    const dist = Math.hypot(node.x - w.x, node.y - w.y);
-    const hitRadius = nodeRadius(node) + 5 / camera.k;
+  for (const body of scene.bodies) {
+    if (Math.abs(body.x - w.x) > reach || Math.abs(body.y - w.y) > reach) continue;
+    const dist = Math.hypot(body.x - w.x, body.y - w.y);
+    const hitRadius = nodeRadius(body) + 5 / camera.k;
     if (dist < hitRadius && dist < bestDist) {
-      best = node;
+      best = body;
       bestDist = dist;
     }
   }
@@ -750,10 +1044,18 @@ function edgeAt(sx, sy) {
   const threshold = 6 / camera.k;
   let best = null;
   let bestDist = Infinity;
-  for (const edge of graph.edges) {
-    const s = graph.nodes.get(edge.source);
-    const t = graph.nodes.get(edge.target);
+  for (const edge of scene.edges) {
+    const s = scene.byId.get(edge.source);
+    const t = scene.byId.get(edge.target);
     if (!s || !t || s === t) continue;
+    if (
+      w.x < Math.min(s.x, t.x) - threshold ||
+      w.x > Math.max(s.x, t.x) + threshold ||
+      w.y < Math.min(s.y, t.y) - threshold ||
+      w.y > Math.max(s.y, t.y) + threshold
+    ) {
+      continue;
+    }
     const dist = pointToSegment(w.x, w.y, s.x, s.y, t.x, t.y);
     if (dist < threshold && dist < bestDist) {
       best = edge;
@@ -828,8 +1130,10 @@ canvas.addEventListener("pointerup", (event) => {
   dragNode = null;
   panStart = null;
   if (!wasDrag) {
-    if (draggedNode) selectNode(draggedNode.id);
-    else {
+    if (draggedNode) {
+      if (draggedNode.meta) selectMeta(draggedNode);
+      else selectNode(draggedNode.id);
+    } else {
       selectedId = null;
       renderDetailEmpty();
       requestDraw();
@@ -838,10 +1142,10 @@ canvas.addEventListener("pointerup", (event) => {
 });
 
 canvas.addEventListener("dblclick", (event) => {
-  const node = nodeAt(event.offsetX, event.offsetY);
-  if (node) {
-    expandNode(node.id).catch((error) => showError(error.message));
-  }
+  const body = nodeAt(event.offsetX, event.offsetY);
+  if (!body) return;
+  if (body.meta) expandCluster(body.cluster.id);
+  else expandNode(body.id).catch((error) => showError(error.message));
 });
 
 canvas.addEventListener("pointerleave", () => {
@@ -877,9 +1181,9 @@ addEventListener("keydown", (event) => {
 });
 
 function centerOn(id) {
-  const node = graph.nodes.get(id);
-  if (!node) return;
-  animateCamera({ x: node.x, y: node.y, k: camera.k < 0.7 ? 0.9 : camera.k });
+  const body = scene.byId.get(id) || proxyOf(id);
+  if (!body) return;
+  animateCamera({ x: body.x, y: body.y, k: camera.k < 0.7 ? 0.9 : camera.k });
 }
 
 /* ---------------- tooltip ---------------- */
@@ -893,6 +1197,15 @@ function updateTooltip(sx, sy) {
   }
   if (hover.type === "node") {
     const node = hover.ref;
+    if (node.meta) {
+      tooltip.append(el("div", "tt-title", node.title));
+      tooltip.append(
+        el("div", "tt-sub", `folded dimension · ${node.mass} inside — double-click to expand`)
+      );
+      tooltip.hidden = false;
+      positionTooltip(sx, sy);
+      return;
+    }
     tooltip.append(el("div", "tt-title", node.title));
     tooltip.append(el("div", "tt-sub", `${node.kind}${node.status ? " · " + node.status : ""}`));
     if (node.summary) tooltip.append(el("div", "tt-quote", node.summary));
@@ -1010,7 +1323,85 @@ function renderDetailEmpty() {
   $("context-body").hidden = true;
 }
 
+/* ---------------- folded dimensions: card and sidebar ---------------- */
+
+function selectMeta(meta) {
+  selectedId = meta.id;
+  renderClusterCard(meta);
+  requestDraw();
+}
+
+function renderClusterCard(meta) {
+  const cluster = meta.cluster;
+  $("detail-empty").hidden = true;
+  $("context-body").hidden = true;
+  $("detail-body").hidden = false;
+
+  const kindPill = $("d-kind");
+  kindPill.textContent = "";
+  const dot = el("span", "legend-dot");
+  dot.style.background = kindColor("memory_dimension");
+  kindPill.append(dot, document.createTextNode("folded dimension"));
+  $("d-status").textContent = `${meta.mass} inside`;
+  $("d-title").textContent = cluster.label;
+  $("d-id").textContent = cluster.head || cluster.id;
+  $("d-summary").textContent = "One mark holding a whole dimension. Expand it to walk inside.";
+
+  const labels = $("d-labels");
+  labels.textContent = "";
+  for (const [kind, count] of [...cluster.kindCounts.entries()].sort((a, b) => b[1] - a[1])) {
+    const pill = el("span", "pill pill-muted");
+    const kindDot = el("span", "legend-dot");
+    kindDot.style.background = kindColor(kind);
+    pill.append(kindDot, document.createTextNode(`${kind} ${count}`));
+    labels.append(pill);
+  }
+  const expand = el("button", "btn btn-primary", "Expand");
+  expand.addEventListener("click", () => expandCluster(cluster.id));
+  labels.append(expand);
+
+  $("d-detail").textContent =
+    cluster.members.slice(0, 30).join("\n") +
+    (cluster.members.length > 30 ? `\n… ${cluster.members.length - 30} more` : "");
+  $("d-props-body").textContent = "";
+  $("d-coords").textContent = "";
+  renderRelationList($("d-incoming"), [], "source");
+  renderRelationList($("d-outgoing"), [], "target");
+}
+
+function renderDimensions() {
+  const list = $("dim-list");
+  if (!list) return;
+  list.textContent = "";
+  const entries = [...clusterState.clusters.values()]
+    .map((cluster) => ({ cluster, size: cluster.members.length + (cluster.head ? 1 : 0) }))
+    .filter((entry) => entry.size > 0)
+    .sort((a, b) => b.size - a.size);
+  for (const { cluster, size } of entries) {
+    const folded = clusterState.collapsed.has(cluster.id);
+    const item = el("li", "");
+    const dot = el("span", "legend-dot");
+    dot.style.background = kindColor("memory_dimension");
+    dot.style.opacity = folded ? "1" : "0.35";
+    item.append(
+      dot,
+      el("span", "", `${folded ? "▸" : "▾"} ${cluster.label} `),
+      el("span", "muted", String(size))
+    );
+    item.title = folded ? "folded — click to expand" : "expanded — click to fold";
+    item.addEventListener("click", () => {
+      if (folded) expandCluster(cluster.id);
+      else collapseCluster(cluster.id);
+    });
+    list.append(item);
+  }
+}
+
 async function selectNode(id) {
+  // Selecting a folded member unfolds its dimension first — a click from the
+  // timeline or the search must always land on something visible.
+  const clusterId = clusterState.of.get(id);
+  if (clusterId && clusterState.collapsed.has(clusterId)) expandCluster(clusterId);
   selectedId = id;
   requestDraw();
   try {
@@ -1168,6 +1559,7 @@ async function loadGraph(about) {
       scope: $("ctl-scope").value,
     });
     resetGraph(view);
+    rebuildClusters(true);
     renderAbouts();
     renderLegend();
     renderStats(view);
@@ -1355,6 +1747,12 @@ $("tr-apply").addEventListener("click", async () => {
       nodes: new Set(view.nodes.map((n) => n.id)),
       edges: new Set(view.edges.map(edgeKey)),
     };
+    rebuildClusters(false);
+    // The path must be visible: unfold any dimension holding one of its nodes.
+    for (const nodeView of view.nodes) {
+      const clusterId = clusterState.of.get(nodeView.id);
+      if (clusterId && clusterState.collapsed.has(clusterId)) expandCluster(clusterId);
+    }
     reheat(KMP_CORE.SIM.REHEAT_EXPAND);
     renderLegend();
     $("tr-status").textContent =
