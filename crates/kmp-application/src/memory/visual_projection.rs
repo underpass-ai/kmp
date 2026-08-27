@@ -159,6 +159,9 @@ pub struct VisualProjectionResult {
     pub bins: Vec<VisualBin>,
     pub clusters: Vec<VisualCluster>,
     pub entries: Vec<VisualEntry>,
+    /// Distinct entries by kind across the selected range. Unlike bin and
+    /// cluster aggregates, these totals never count one entry once per lane.
+    pub by_kind: BTreeMap<String, usize>,
     pub relations: Vec<VisualRelation>,
     pub metrics: Vec<VisualMetric>,
     pub included_dimensions: Vec<String>,
@@ -266,6 +269,12 @@ pub fn build_visual_projection(
             .then_with(|| left.entry.ref_id.cmp(&right.entry.ref_id))
     });
 
+    let by_kind = positioned
+        .iter()
+        .fold(BTreeMap::new(), |mut counts, entry| {
+            *counts.entry(entry.entry.kind.clone()).or_default() += 1;
+            counts
+        });
     let bins = visual_bins(&positioned, from, to, bin_count);
     let clusters = if query.level_of_detail == VisualLevelOfDetail::Episode {
         visual_clusters(&positioned, from, to, bin_count)
@@ -325,6 +334,7 @@ pub fn build_visual_projection(
         bins,
         clusters,
         entries,
+        by_kind,
         relations,
         metrics: vec![
             VisualMetric {

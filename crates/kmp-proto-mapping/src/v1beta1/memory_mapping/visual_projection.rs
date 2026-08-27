@@ -121,6 +121,7 @@ pub fn visual_projection_response_from_result(
                 metadata: HashMap::new(),
             })
             .collect(),
+        by_kind: u32_map(result.by_kind),
         relations: result.relations.into_iter().map(proto_relation).collect(),
         metrics: result
             .metrics
