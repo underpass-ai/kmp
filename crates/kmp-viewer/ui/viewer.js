@@ -964,9 +964,9 @@ function playbackEngaged() {
   );
 }
 
-function computeWindow() {
-  const lo = playback.range ? playback.range.lo : 0;
-  const hi = playback.range ? playback.range.hi : playback.entries.length - 1;
+/* Strip fractions for entries lo..hi: by clock when the stretch carries
+   enough of one, by order otherwise. */
+function fractionsFor(lo, hi) {
   const times = [];
   for (let i = lo; i <= hi; i += 1) times.push(playback.effMs[i]);
   const timed = times.filter((t) => t !== null);
@@ -985,7 +985,40 @@ function computeWindow() {
       xs.push(lastX);
     }
   }
-  playback.win = { lo, hi, xs };
+  return xs;
+}
+
+function computeWindow() {
+  const lo = playback.range ? playback.range.lo : 0;
+  const hi = playback.range ? playback.range.hi : playback.entries.length - 1;
+  playback.win = { lo, hi, xs: fractionsFor(lo, hi) };
+}
+
+/* Nearest entry index to a fraction of the WHOLE line. */
+function fullIndexAt(fraction) {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < playback.fullXs.length; i += 1) {
+    const dist = Math.abs(playback.fullXs[i] - fraction);
+    if (dist < bestDist) {
+      best = i;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
+/* Slide the window whole, clamped at the line's ends. */
+function shiftWindow(deltaEntries, remember = true) {
+  if (!playback.range) return;
+  const { lo, hi } = playback.win;
+  const size = hi - lo + 1;
+  const last = playback.entries.length - 1;
+  const newLo = Math.max(0, Math.min(last - size + 1, lo + deltaEntries));
+  if (newLo === lo) return;
+  setReplayPlaying(false);
+  applyRange({ lo: newLo, hi: newLo + size - 1 }, remember);
+  $("tb-range").value = "all";
 }
 
 function windowLabel() {
@@ -1076,6 +1109,7 @@ async function startReplay(atRef, quiet) {
     playback.range = null;
     playback.rangeStack = [];
     playback.brush = null;
+    playback.fullXs = fractionsFor(0, line.entries.length - 1);
     computeWindow();
     $("tb-range").value = "all";
     $("tb-rangelabel").textContent = windowLabel();
@@ -1167,11 +1201,19 @@ function resetToNow() {
 /* The chart: activity per bucket stacked by kind over a real axis — the
    shape of the memory's history, Grafana-style. The played region wears the
    gradient wash, the playhead stands in accent ink, and a dragged selection
-   paints the windowpane about to become the window. */
-const CHART_H = 70;
+   paints the windowpane about to become the window.
+
+   Under the axis lives the overview: the whole line in miniature, always,
+   with the current window as a pane you can grab — drag its middle to slide
+   the selection through time, drag its edges to resize it, drag outside it
+   to cut a fresh window. */
+const CHART_H = 88;
 const BARS_TOP = 4;
-const BARS_BOTTOM = 48;
-const AXIS_Y = 60;
+const BARS_BOTTOM = 44;
+const AXIS_Y = 56;
+const OV_TOP = 64;
+const OV_BOTTOM = 84;
+const OV_HANDLE = 5; // px of grab slack on each pane edge
 
 function drawTimebar() {
   const strip = $("tb-canvas");
@@ -1265,15 +1307,45 @@ function drawTimebar() {
   pen.fillStyle = p.accent;
   pen.fillRect(headX - 1, 0, 2, BARS_BOTTOM + 4);
 
+  // The overview: the whole line in miniature, the window as a grabbable pane.
+  const ovH = OV_BOTTOM - OV_TOP;
+  pen.fillStyle = p.surface;
+  pen.globalAlpha = 0.5;
+  pen.fillRect(pad, OV_TOP, span, ovH);
+  pen.globalAlpha = 1;
+  const fullX = (i) => pad + playback.fullXs[i] * span;
+  for (let i = 0; i < playback.entries.length; i += 1) {
+    pen.globalAlpha = 0.55;
+    pen.fillStyle = kindColor(playback.entries[i].kind);
+    pen.fillRect(fullX(i) - 0.5, OV_TOP + 3, 1, ovH - 6);
+  }
+  pen.globalAlpha = 1;
+  const paneA = fullX(lo);
+  const paneB = fullX(hi);
+  pen.fillStyle = "rgba(72, 120, 224, 0.16)";
+  pen.fillRect(paneA, OV_TOP, Math.max(2, paneB - paneA), ovH);
+  pen.fillStyle = p.accent;
+  pen.fillRect(paneA - 1, OV_TOP, 2, ovH);
+  pen.fillRect(paneB - 1, OV_TOP, 2, ovH);
+  // Edge handles, so the pane reads as grabbable.
+  pen.fillRect(paneA - 1, OV_TOP + ovH / 2 - 4, 3, 8);
+  pen.fillRect(paneB - 2, OV_TOP + ovH / 2 - 4, 3, 8);
+  // The playhead's echo on the full line.
+  pen.globalAlpha = 0.9;
+  pen.fillRect(fullX(playback.step) - 0.5, OV_TOP, 1, ovH);
+  pen.globalAlpha = 1;
+
   // The selection being dragged: a windowpane about to become the window.
   if (playback.brush) {
     const a = Math.min(playback.brush.x0, playback.brush.x1);
     const b = Math.max(playback.brush.x0, playback.brush.x1);
+    const top = playback.brush.overview ? OV_TOP : 0;
+    const bottom = playback.brush.overview ? OV_BOTTOM : BARS_BOTTOM + 4;
     pen.fillStyle = "rgba(72, 120, 224, 0.18)";
-    pen.fillRect(a, 0, b - a, BARS_BOTTOM + 4);
+    pen.fillRect(a, top, b - a, bottom - top);
     pen.fillStyle = p.accent;
-    pen.fillRect(a, 0, 1, BARS_BOTTOM + 4);
-    pen.fillRect(b - 1, 0, 1, BARS_BOTTOM + 4);
+    pen.fillRect(a, top, 1, bottom - top);
+    pen.fillRect(b - 1, top, 1, bottom - top);
   }
 }
 
@@ -1353,30 +1425,126 @@ $("tb-speed").addEventListener("change", (event) => {
   playback.stepMs = parseInt(event.target.value, 10) || 1200;
   if (playback.timer) setReplayPlaying(true);
 });
-/* One gesture, two meanings: a click (or a tiny drag) scrubs the playhead;
-   a real drag paints a selection that becomes the new window on release. */
+/* The pointer on the chart, by zone.
+
+   Main chart: a click scrubs the playhead; a drag paints a selection that
+   becomes the new window on release — zooming in.
+
+   Overview: the pane IS the selection. Drag its middle to slide the window
+   through time, drag an edge handle to resize it, drag outside it to cut a
+   fresh window; a click outside centers the window there. */
 let stripDrag = null;
+
+function paneEdges() {
+  const strip = $("tb-canvas");
+  const width = strip.clientWidth || 1;
+  const pad = 6;
+  const span = width - pad * 2;
+  return {
+    a: pad + playback.fullXs[playback.win.lo] * span,
+    b: pad + playback.fullXs[playback.win.hi] * span,
+  };
+}
+
 $("tb-canvas").addEventListener("pointerdown", (event) => {
-  stripDrag = { x0: event.offsetX, moved: false };
   $("tb-canvas").setPointerCapture(event.pointerId);
-});
-$("tb-canvas").addEventListener("pointermove", (event) => {
-  if (!stripDrag) return;
-  if (stripDrag.moved || Math.abs(event.offsetX - stripDrag.x0) > 4) {
-    stripDrag.moved = true;
-    playback.brush = { x0: stripDrag.x0, x1: event.offsetX };
-    drawTimebar();
+  const x = event.offsetX;
+  if (event.offsetY >= OV_TOP - 2) {
+    const { a, b } = paneEdges();
+    const hasRange = playback.range !== null;
+    let mode = "select";
+    if (hasRange && Math.abs(x - a) <= OV_HANDLE) mode = "resize-l";
+    else if (hasRange && Math.abs(x - b) <= OV_HANDLE) mode = "resize-r";
+    else if (hasRange && x > a && x < b) mode = "pan";
+    stripDrag = {
+      zone: "overview",
+      mode,
+      x0: x,
+      moved: false,
+      startLo: playback.win.lo,
+      startHi: playback.win.hi,
+      remembered: false,
+    };
+  } else {
+    stripDrag = { zone: "main", mode: "brush", x0: x, moved: false };
   }
 });
+
+$("tb-canvas").addEventListener("pointermove", (event) => {
+  if (!stripDrag) return;
+  const x = event.offsetX;
+  if (!stripDrag.moved && Math.abs(x - stripDrag.x0) <= 4) return;
+  stripDrag.moved = true;
+
+  if (stripDrag.zone === "main" || stripDrag.mode === "select") {
+    playback.brush = { x0: stripDrag.x0, x1: x, overview: stripDrag.zone === "overview" };
+    drawTimebar();
+    return;
+  }
+
+  // Pan and resize act live — the graph travels while you drag.
+  if (!stripDrag.remembered) {
+    playback.rangeStack.push(playback.range);
+    stripDrag.remembered = true;
+    setReplayPlaying(false);
+  }
+  const last = playback.entries.length - 1;
+  if (stripDrag.mode === "pan") {
+    const size = stripDrag.startHi - stripDrag.startLo + 1;
+    const startFrac = playback.fullXs[stripDrag.startLo];
+    const targetLo = fullIndexAt(startFrac + (x - stripDrag.x0) / paneSpan());
+    const newLo = Math.max(0, Math.min(last - size + 1, targetLo));
+    applyRange({ lo: newLo, hi: newLo + size - 1 }, false);
+  } else {
+    const at = fullIndexAt(stripFraction(x));
+    if (stripDrag.mode === "resize-l") {
+      applyRange({ lo: Math.min(at, stripDrag.startHi - 1), hi: stripDrag.startHi }, false);
+    } else {
+      applyRange({ lo: stripDrag.startLo, hi: Math.max(at, stripDrag.startLo + 1) }, false);
+    }
+  }
+  $("tb-range").value = "all";
+});
+
+function paneSpan() {
+  const strip = $("tb-canvas");
+  return (strip.clientWidth || 1) - 12;
+}
+
 $("tb-canvas").addEventListener("pointerup", (event) => {
   if (!stripDrag) return;
   const drag = stripDrag;
   stripDrag = null;
   playback.brush = null;
-  if (drag.moved) commitBrush(drag.x0, event.offsetX);
-  else scrubTo(drag.x0);
+  if (drag.zone === "main") {
+    if (drag.moved) commitBrush(drag.x0, event.offsetX);
+    else scrubTo(drag.x0);
+  } else if (drag.mode === "select") {
+    if (drag.moved) {
+      commitOverviewSelect(drag.x0, event.offsetX);
+    } else if (playback.range) {
+      // A click on the open line: carry the window there, centered.
+      const size = playback.win.hi - playback.win.lo + 1;
+      const center = fullIndexAt(stripFraction(drag.x0));
+      const last = playback.entries.length - 1;
+      const newLo = Math.max(0, Math.min(last - size + 1, center - Math.floor(size / 2)));
+      setReplayPlaying(false);
+      applyRange({ lo: newLo, hi: newLo + size - 1 });
+      $("tb-range").value = "all";
+    }
+  }
   drawTimebar();
 });
+
+function commitOverviewSelect(x0, x1) {
+  const first = fullIndexAt(stripFraction(Math.min(x0, x1)));
+  const last = fullIndexAt(stripFraction(Math.max(x0, x1)));
+  if (last - first < 1) return;
+  setReplayPlaying(false);
+  applyRange({ lo: first, hi: last });
+  $("tb-range").value = "all";
+}
+
 $("tb-canvas").addEventListener("pointercancel", () => {
   stripDrag = null;
   playback.brush = null;
@@ -1425,6 +1593,12 @@ $("tb-back").addEventListener("click", () => {
   applyRange(playback.rangeStack.pop(), false);
   $("tb-range").value = "all";
 });
+$("tb-shift-back").addEventListener("click", () => {
+  shiftWindow(-Math.max(1, Math.ceil((playback.win.hi - playback.win.lo + 1) / 2)));
+});
+$("tb-shift-fwd").addEventListener("click", () => {
+  shiftWindow(Math.max(1, Math.ceil((playback.win.hi - playback.win.lo + 1) / 2)));
+});
 addEventListener("keydown", (event) => {
   if (!playback.active) return;
   const target = event.target;
@@ -1435,9 +1609,17 @@ addEventListener("keydown", (event) => {
     event.preventDefault();
     setReplayPlaying(!playback.timer);
   } else if (event.key === "ArrowLeft") {
+    if (event.shiftKey) {
+      shiftWindow(-Math.max(1, Math.ceil((playback.win.hi - playback.win.lo + 1) / 2)));
+      return;
+    }
     setReplayPlaying(false);
     setReplayStep(playback.step - 1);
   } else if (event.key === "ArrowRight") {
+    if (event.shiftKey) {
+      shiftWindow(Math.max(1, Math.ceil((playback.win.hi - playback.win.lo + 1) / 2)));
+      return;
+    }
     setReplayPlaying(false);
     setReplayStep(playback.step + 1);
   }
