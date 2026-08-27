@@ -106,6 +106,31 @@ turns intent into one or more of ten typed tools. `kmp-mcp` validates the
 request, and the kernel reads or writes the local graph-temporal store. The
 agent—not KMP—turns returned evidence into conversational prose.
 
+## ChronoLoom — memory you can see
+
+ChronoLoom is KMP's local, read-only visualizer: a human view of the same
+graph-temporal memory an agent reads. It lays memories across stable dimension
+lanes and changes granularity as you zoom — from an Atlas overview, through
+Episode clusters, down to individual Moments — so a long history stays
+legible without flattening its structure.
+
+> **“Show me the memory behind this decision.”**
+>
+> Ask Codex or Claude. The agent opens ChronoLoom at the relevant moment,
+> selects the evidence and can light up the proof path. No query language, no
+> hunting through node IDs: you see the memory it is reasoning from.
+
+Travel across occurred, observed, ingested and validity time; search and
+filter the graph; compare two instants; or light up an audit path with every
+hop's rationale, evidence and confidence attached. Those moves are semantic,
+not screen coordinates, and optimistic concurrency keeps a stale agent intent
+from moving the screen out from under the person using it.
+
+ChronoLoom reads the kernel's own bounded projections. It does not maintain a
+second index, invent a parallel interpretation of memory or write to the
+store. The default embedded session serves it locally alongside the MCP
+process.
+
 Need the real boxes, trust boundaries and write sequences? Enter the
 [technical architecture](docs/architecture/README.md).
 
