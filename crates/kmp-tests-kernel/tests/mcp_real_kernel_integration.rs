@@ -397,15 +397,15 @@ fn parity_seed_arguments() -> Value {
             "dimensions":[{"id":"timeline:parity-live","kind":"timeline"}],
             "entries":[
                 {"id":"observation:parity-before","kind":"observation","text":"Parity had one transport.",
-                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:00:00Z","sequence":1}]},
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:00:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":1}]},
                 {"id":"observation:parity-after","kind":"observation","text":"Parity now covers direct gRPC, stdio MCP, and HTTP MCP.",
-                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:01:00Z","sequence":2}]},
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:01:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":2}]},
                 {"id":"observation:parity-proof-1","kind":"observation","text":"Compact projection remained bounded.",
-                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:02:00Z","sequence":3}]},
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:02:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":3}]},
                 {"id":"observation:parity-proof-2","kind":"observation","text":"Balanced projection retained evidence.",
-                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:03:00Z","sequence":4}]},
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:03:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":4}]},
                 {"id":"observation:parity-proof-3","kind":"observation","text":"Full projection retained relation why.",
-                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:04:00Z","sequence":5}]}
+                 "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:04:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":5}]}
             ],
             "relations":[
                 {"from":"observation:parity-after","to":"observation:parity-before","rel":"supersedes","class":"evidential","why":"The later observation records the expanded transport matrix.","evidence":"The same test invokes all three paths.","confidence":"high"},
@@ -679,7 +679,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_eq!(
             ingested_ask_content.pointer("/answer"),
             Some(&Value::String(
-                "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers: claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]"
+                "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]\n- claim:mcp-ingest-after [entry:claim:mcp-ingest-after]"
                     .to_string()
             ))
         );
