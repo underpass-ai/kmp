@@ -342,7 +342,7 @@ fn missing_dimensions(requested: &DimensionSelection, included: &[String]) -> Ve
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
+    use std::collections::{BTreeMap, BTreeSet};
 
     use crate::{
         BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation,
@@ -614,6 +614,79 @@ mod tests {
         }
         assert_eq!(rewind.page().total(), 5);
         assert_eq!(forward.page().total(), 4);
+    }
+
+    #[test]
+    fn ref_cursors_and_page_continuations_preserve_timestamp_ties() {
+        let bundle = clocked_temporal_bundle(&[
+            ("entry-1", "2026-08-27T10:00:00Z", 1),
+            ("entry-2", "2026-08-27T11:00:00Z", 2),
+            ("entry-z", "2026-08-27T12:00:00Z", 3),
+            ("entry-a", "2026-08-27T12:00:00Z", 4),
+            ("entry-5", "2026-08-27T13:00:00Z", 5),
+            ("entry-6", "2026-08-27T14:00:00Z", 6),
+        ]);
+        let traverse = |direction, cursor, limit| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(direction, cursor)
+                    .with_axis(TemporalAxis::Observed)
+                    .with_limit_entries(limit)
+                    .expect("limit"),
+            )
+            .expect("traversal")
+        };
+
+        let rewind = traverse(
+            TemporalDirection::Rewind,
+            TemporalCursor::ref_id("entry-a").expect("ref cursor"),
+            10,
+        );
+        assert_eq!(
+            rewind
+                .entries()
+                .iter()
+                .map(TemporalEntry::ref_id)
+                .collect::<Vec<_>>(),
+            ["entry-1", "entry-2", "entry-z"]
+        );
+        let forward = traverse(
+            TemporalDirection::Forward,
+            TemporalCursor::ref_id("entry-z").expect("ref cursor"),
+            10,
+        );
+        assert_eq!(
+            forward
+                .entries()
+                .iter()
+                .map(TemporalEntry::ref_id)
+                .collect::<Vec<_>>(),
+            ["entry-a", "entry-5", "entry-6"]
+        );
+
+        let mut cursor = TemporalCursor::time("2026-08-27T14:00:00Z").expect("time cursor");
+        let mut seen = BTreeSet::new();
+        loop {
+            let page = traverse(TemporalDirection::Rewind, cursor, 2);
+            for entry in page.entries() {
+                assert!(
+                    seen.insert(entry.ref_id().to_string()),
+                    "pagination repeated {}",
+                    entry.ref_id()
+                );
+            }
+            let Some(next) = page.page().next_cursor() else {
+                break;
+            };
+            cursor = TemporalCursor::ref_id(next).expect("page ref cursor");
+        }
+        assert_eq!(
+            seen,
+            ["entry-1", "entry-2", "entry-z", "entry-a", "entry-5"]
+                .into_iter()
+                .map(str::to_string)
+                .collect()
+        );
     }
 
     #[test]

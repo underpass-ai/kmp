@@ -7,6 +7,7 @@ use super::axis_key::TemporalAxisKey;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ResolvedTemporalCursor {
     pub(super) axis_key: Option<TemporalAxisKey>,
+    pub(super) ref_id: Option<String>,
     pub(super) coordinate: TemporalCoordinate,
 }
 

@@ -41,15 +41,18 @@ pub(super) fn resolve_cursor(
 
             Ok(ResolvedTemporalCursor {
                 axis_key: selected.map(|position| position.axis_key.clone()),
+                ref_id: Some(ref_id.clone()),
                 coordinate: selected.unwrap_or(first).coordinate.clone(),
             })
         }
         TemporalCursor::Time(value) => Ok(ResolvedTemporalCursor {
             axis_key: Some(TemporalAxisKey::time(value)),
+            ref_id: None,
             coordinate: TemporalCoordinate::cursor_time(value.clone(), requested_axis)?,
         }),
         TemporalCursor::Sequence(value) => Ok(ResolvedTemporalCursor {
             axis_key: Some(TemporalAxisKey::sequence(*value)),
+            ref_id: None,
             coordinate: TemporalCoordinate::cursor_sequence(*value)?,
         }),
     }
@@ -72,62 +75,41 @@ pub(super) fn select_positions(
         .filter(|position| position.axis_key.axis() == cursor_axis_key.axis())
         .cloned()
         .collect::<Vec<_>>();
+    let partitions = partition_positions(comparable, cursor_axis_key, cursor.ref_id.as_deref());
 
     match request.direction() {
         TemporalDirection::Goto => {
-            let candidates = comparable
+            let candidates = partitions
+                .before
                 .into_iter()
-                .filter(|position| &position.axis_key <= cursor_axis_key)
-                .collect::<Vec<_>>();
+                .chain(partitions.exact)
+                .collect();
             select_limited(
                 candidates,
                 request.limit_entries().unwrap_or(DEFAULT_GOTO_ENTRIES),
                 PageSide::Before,
             )
         }
-        TemporalDirection::Rewind => {
-            let candidates = comparable
-                .into_iter()
-                .filter(|position| &position.axis_key < cursor_axis_key)
-                .collect::<Vec<_>>();
-            select_limited(
-                candidates,
-                request.limit_entries().unwrap_or(5),
-                PageSide::Before,
-            )
-        }
-        TemporalDirection::Forward => {
-            let candidates = comparable
-                .into_iter()
-                .filter(|position| &position.axis_key > cursor_axis_key)
-                .collect::<Vec<_>>();
-            select_limited(
-                candidates,
-                request.limit_entries().unwrap_or(5),
-                PageSide::After,
-            )
-        }
+        TemporalDirection::Rewind => select_limited(
+            partitions.before,
+            request.limit_entries().unwrap_or(5),
+            PageSide::Before,
+        ),
+        TemporalDirection::Forward => select_limited(
+            partitions.after,
+            request.limit_entries().unwrap_or(5),
+            PageSide::After,
+        ),
         TemporalDirection::Near => {
-            let before_candidates = comparable
-                .iter()
-                .filter(|position| &position.axis_key < cursor_axis_key)
-                .cloned()
-                .collect::<Vec<_>>();
+            let before_candidates = partitions.before;
             let before = take_ref_page(
                 before_candidates.clone(),
                 request.window().before_entries(),
                 PageSide::Before,
             )
             .0;
-            let exact = comparable
-                .iter()
-                .filter(|position| &position.axis_key == cursor_axis_key)
-                .cloned()
-                .collect::<Vec<_>>();
-            let after_candidates = comparable
-                .into_iter()
-                .filter(|position| &position.axis_key > cursor_axis_key)
-                .collect::<Vec<_>>();
+            let exact = partitions.exact;
+            let after_candidates = partitions.after;
             let after = take_ref_page(
                 after_candidates.clone(),
                 request.window().after_entries(),
@@ -169,6 +151,60 @@ pub(super) fn select_positions(
             }
         }
     }
+}
+
+struct TemporalPartitions {
+    before: Vec<TemporalPosition>,
+    exact: Vec<TemporalPosition>,
+    after: Vec<TemporalPosition>,
+}
+
+fn partition_positions(
+    comparable: Vec<TemporalPosition>,
+    cursor_axis_key: &TemporalAxisKey,
+    cursor_ref: Option<&str>,
+) -> TemporalPartitions {
+    let Some(cursor_ref) = cursor_ref else {
+        return TemporalPartitions {
+            before: comparable
+                .iter()
+                .filter(|position| &position.axis_key < cursor_axis_key)
+                .cloned()
+                .collect(),
+            exact: comparable
+                .iter()
+                .filter(|position| &position.axis_key == cursor_axis_key)
+                .cloned()
+                .collect(),
+            after: comparable
+                .into_iter()
+                .filter(|position| &position.axis_key > cursor_axis_key)
+                .collect(),
+        };
+    };
+
+    let ordered_refs = ordered_unique_ref_ids(comparable.clone());
+    let Some(anchor) = ordered_refs.iter().position(|ref_id| ref_id == cursor_ref) else {
+        return TemporalPartitions {
+            before: Vec::new(),
+            exact: Vec::new(),
+            after: Vec::new(),
+        };
+    };
+    TemporalPartitions {
+        before: positions_for_refs(&comparable, &ordered_refs[..anchor]),
+        exact: positions_for_refs(&comparable, &ordered_refs[anchor..=anchor]),
+        after: positions_for_refs(&comparable, &ordered_refs[anchor + 1..]),
+    }
+}
+
+fn positions_for_refs(positions: &[TemporalPosition], refs: &[String]) -> Vec<TemporalPosition> {
+    let refs = refs.iter().map(String::as_str).collect::<BTreeSet<_>>();
+    positions
+        .iter()
+        .filter(|position| refs.contains(position.ref_id.as_str()))
+        .cloned()
+        .collect()
 }
 
 #[derive(Clone, Copy)]
