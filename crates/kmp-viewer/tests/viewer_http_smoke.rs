@@ -265,6 +265,62 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 404, "unknown about maps to 404: {error}");
 }
 
+/// The transport boundary persists protobuf timestamps in a lexicographically
+/// sortable `unix:` representation, while browsers send RFC3339 ranges. Both
+/// spellings describe the same clock and therefore have to compare on one
+/// temporal axis. A raw string comparison made every persisted entry sort
+/// after an RFC3339 `to`, so `/api/projection` answered 0/0 for real stores.
+#[tokio::test(flavor = "multi_thread")]
+async fn projection_compares_rfc3339_ranges_with_persisted_sortable_clocks() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let mut stored = corpus();
+    stored.memory.entries[0].coordinates[0].occurred_at =
+        Some("unix:101782900000:000000000".to_string());
+    stored.memory.entries[1].coordinates[0].occurred_at =
+        Some("unix:101782986400:000000000".to_string());
+    kernel
+        .service()
+        .ingest(stored)
+        .await
+        .expect("memory ingests");
+
+    let viewer = Arc::new(MemoryViewerServer::new(
+        kernel.service(),
+        Some(data_dir.path().display().to_string()),
+    ));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    tokio::spawn(viewer.serve(listener));
+
+    let (status, atlas) = get(port, &format!("/api/projection?about={}", urlencode(ABOUT))).await;
+    assert_eq!(status, 200, "default visual projection failed: {atlas}");
+    assert!(
+        atlas["bins"]
+            .as_array()
+            .is_some_and(|bins| !bins.is_empty()),
+        "the default atlas must contain the persisted clock: {atlas}"
+    );
+    assert_eq!(atlas["included_dimensions"][0], "timeline");
+    assert_eq!(atlas["page"]["total"], 2);
+
+    let (status, projection) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=moment&bins=8&limit=8",
+            urlencode(ABOUT),
+            urlencode("2026-07-01T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+
+    assert_eq!(status, 200, "visual projection failed: {projection}");
+    assert_eq!(projection["entries"].as_array().map(Vec::len), Some(2));
+    assert_eq!(projection["included_dimensions"][0], "timeline");
+    assert_eq!(projection["page"]["total"], 2);
+}
+
 #[tokio::test]
 async fn non_local_hosts_are_refused() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};

@@ -20,7 +20,7 @@ impl TemporalAxisKey {
     pub(super) fn time(value: &str) -> Self {
         Self {
             axis: TemporalKeyKind::Time,
-            value: value.to_string(),
+            value: canonical_time_key(value),
         }
     }
 
@@ -102,4 +102,127 @@ pub(super) fn primary_coordinate_key(coordinate: &TemporalCoordinate) -> Tempora
         .into_iter()
         .next()
         .expect("coordinate key should always exist")
+}
+
+/// Normalize the two timestamp spellings that cross the kernel boundary.
+///
+/// Protobuf timestamps are persisted as `unix:<offset seconds>:<nanos>` so
+/// byte order is chronological. HTTP and MCP callers commonly use RFC3339.
+/// Keeping either spelling verbatim splits one clock into two lexical axes:
+/// every `unix:` value sorts after every RFC3339 year. Unknown legacy values
+/// remain orderable by their original bytes instead of being discarded.
+fn canonical_time_key(value: &str) -> String {
+    timestamp_nanos(value)
+        .map(nanos_timestamp)
+        .unwrap_or_else(|| value.to_string())
+}
+
+fn timestamp_nanos(value: &str) -> Option<i128> {
+    if let Some(value) = value.strip_prefix("unix:") {
+        let (seconds, nanos) = value.split_once(':')?;
+        let seconds = seconds.parse::<i128>().ok()? - 100_000_000_000i128;
+        let nanos = nanos.parse::<i128>().ok()?;
+        if !(0..1_000_000_000).contains(&nanos) {
+            return None;
+        }
+        return Some(seconds * 1_000_000_000 + nanos);
+    }
+    basic_rfc3339_nanos(value)
+}
+
+fn nanos_timestamp(value: i128) -> String {
+    let seconds = value.div_euclid(1_000_000_000);
+    let nanos = value.rem_euclid(1_000_000_000);
+    format!("unix:{:012}:{:09}", seconds + 100_000_000_000i128, nanos)
+}
+
+fn basic_rfc3339_nanos(value: &str) -> Option<i128> {
+    let value = value.trim();
+    if value.len() < 20 {
+        return None;
+    }
+    let number = |from: usize, to: usize| -> Option<i64> { value.get(from..to)?.parse().ok() };
+    let year = number(0, 4)?;
+    let month = number(5, 7)?;
+    let day = number(8, 10)?;
+    let hour = number(11, 13)?;
+    let minute = number(14, 16)?;
+    let second = number(17, 19)?;
+    if value.get(4..5)? != "-"
+        || value.get(7..8)? != "-"
+        || value.get(10..11)? != "T"
+        || value.get(13..14)? != ":"
+        || value.get(16..17)? != ":"
+        || !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || hour > 23
+        || minute > 59
+        || second > 60
+    {
+        return None;
+    }
+    let tail = value.get(19..)?;
+    let timezone_start = tail
+        .char_indices()
+        .find_map(|(index, character)| matches!(character, 'Z' | '+' | '-').then_some(index))?;
+    let fraction = tail.get(..timezone_start)?;
+    let timezone = tail.get(timezone_start..)?;
+    let nanos = match fraction.strip_prefix('.') {
+        Some(digits) if !digits.is_empty() && digits.len() <= 9 => {
+            let padded = format!("{digits:0<9}");
+            padded.parse::<i128>().ok()?
+        }
+        None if fraction.is_empty() => 0,
+        _ => return None,
+    };
+    let offset_seconds = match timezone {
+        "Z" => 0,
+        offset if offset.len() == 6 && offset.get(3..4) == Some(":") => {
+            let sign = match offset.get(..1)? {
+                "+" => 1,
+                "-" => -1,
+                _ => return None,
+            };
+            let hours = offset.get(1..3)?.parse::<i64>().ok()?;
+            let minutes = offset.get(4..6)?.parse::<i64>().ok()?;
+            if hours > 23 || minutes > 59 {
+                return None;
+            }
+            sign * (hours * 3_600 + minutes * 60)
+        }
+        _ => return None,
+    };
+    let seconds = days_from_civil(year, month, day) * 86_400 + hour * 3_600 + minute * 60 + second
+        - offset_seconds;
+    Some(seconds as i128 * 1_000_000_000 + nanos)
+}
+
+fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let day_of_year = (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    era * 146_097 + day_of_era - 719_468
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TemporalAxisKey;
+
+    #[test]
+    fn rfc3339_and_persisted_sortable_times_share_one_axis() {
+        assert_eq!(
+            TemporalAxisKey::time("2026-07-01T10:00:00Z"),
+            TemporalAxisKey::time("unix:101782900000:000000000")
+        );
+        assert_eq!(
+            TemporalAxisKey::time("2026-07-01T12:00:00+02:00"),
+            TemporalAxisKey::time("unix:101782900000:000000000")
+        );
+        assert!(
+            TemporalAxisKey::time("2026-07-01T10:00:00Z")
+                < TemporalAxisKey::time("2026-07-02T10:00:00Z")
+        );
+    }
 }
