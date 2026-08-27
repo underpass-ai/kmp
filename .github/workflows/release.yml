@@ -190,9 +190,29 @@ jobs:
           import json, sys
           responses = {message.get("id"): message for message in map(json.loads, open(sys.argv[1]))}
           tools = responses.get(2, {}).get("result", {}).get("tools", [])
-          if len(tools) != 10:
-              raise SystemExit(f"MCPB smoke expected ten tools, found {len(tools)}")
-          print("MCPB launcher started ten tools")
+          expected = {
+              "kmp_ingest",
+              "kmp_write_memory",
+              "kmp_wake",
+              "kmp_ask",
+              "kmp_goto",
+              "kmp_near",
+              "kmp_rewind",
+              "kmp_forward",
+              "kmp_trace",
+              "kmp_inspect",
+              "kmp_view_open",
+              "kmp_view_apply_intent",
+              "kmp_view_get_state",
+          }
+          found = {tool.get("name") for tool in tools}
+          if found != expected:
+              missing = sorted(expected - found)
+              unexpected = sorted(found - expected, key=str)
+              raise SystemExit(
+                  f"MCPB smoke tool mismatch: missing={missing}, unexpected={unexpected}"
+              )
+          print("MCPB launcher started all ten memory and three view tools")
           PY
 
       - name: Download the four candidate plugin packages
