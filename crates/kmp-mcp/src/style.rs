@@ -22,6 +22,10 @@ pub const DIM: &str = "2";
 /// time, so the caller decides where the stream is known and threads the
 /// answer through. `NO_COLOR` (<https://no-color.org>) and `TERM=dumb` both
 /// mean plain even on a terminal: both are the user saying no.
+/// `CLICOLOR_FORCE` (<https://bixense.com/clicolors/>) means ink even on a
+/// pipe — for `less -R`, a CI log, a host that renders ANSI — and only an
+/// explicit `NO_COLOR` outranks it: when the user says both, refusal is the
+/// safer word to honor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Style {
     Plain,
@@ -38,9 +42,26 @@ impl Style {
     }
 
     fn for_terminal(is_terminal: bool) -> Self {
-        let refused = std::env::var_os("NO_COLOR").is_some_and(|value| !value.is_empty())
-            || std::env::var_os("TERM").is_some_and(|term| term == "dumb");
-        if is_terminal && !refused {
+        Self::resolve(
+            is_terminal,
+            std::env::var_os("NO_COLOR").is_some_and(|value| !value.is_empty()),
+            std::env::var_os("CLICOLOR_FORCE")
+                .is_some_and(|value| !value.is_empty() && value != "0"),
+            std::env::var_os("TERM").is_some_and(|term| term == "dumb"),
+        )
+    }
+
+    /// The decision itself, separated from the environment so tests can hit
+    /// every branch without mutating process-global state under a parallel
+    /// test runner.
+    fn resolve(is_terminal: bool, refused: bool, forced: bool, dumb: bool) -> Self {
+        if refused {
+            return Style::Plain;
+        }
+        if forced {
+            return Style::Ansi;
+        }
+        if is_terminal && !dumb {
             Style::Ansi
         } else {
             Style::Plain
@@ -106,7 +127,23 @@ mod tests {
 
     #[test]
     fn a_pipe_never_wears_color() {
-        assert_eq!(Style::for_terminal(false), Style::Plain);
+        assert_eq!(Style::resolve(false, false, false, false), Style::Plain);
+    }
+
+    #[test]
+    fn forcing_inks_a_pipe_and_even_a_dumb_terminal() {
+        assert_eq!(Style::resolve(false, false, true, false), Style::Ansi);
+        assert_eq!(Style::resolve(true, false, true, true), Style::Ansi);
+    }
+
+    #[test]
+    fn refusal_outranks_forcing() {
+        assert_eq!(Style::resolve(true, true, true, false), Style::Plain);
+    }
+
+    #[test]
+    fn a_dumb_terminal_stays_plain_unless_forced() {
+        assert_eq!(Style::resolve(true, false, false, true), Style::Plain);
     }
 
     #[test]
