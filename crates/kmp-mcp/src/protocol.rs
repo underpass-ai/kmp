@@ -49,6 +49,18 @@ pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
 }
 
 pub(crate) fn tools_list_result() -> Value {
+    let mut result = tools_list_core();
+    if let Some(tools) = result["tools"].as_array_mut() {
+        tools.push(view_open_definition());
+        tools.push(view_apply_intent_definition());
+        tools.push(view_get_state_definition());
+    }
+    result
+}
+
+/// The memory tools. Split from the view tools below so neither `json!`
+/// expansion has to hold the whole surface at once.
+fn tools_list_core() -> Value {
     json!({
         // The codes an agent may branch on, with what to do about each. They
         // were enumerated only in the source, while the skill told agents to
@@ -306,6 +318,145 @@ pub(crate) fn tools_list_result() -> Value {
             )
         ]
     })
+}
+
+fn view_open_definition() -> Value {
+    tool_definition_with_output(
+        "kmp_view_open",
+        "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Read-only with respect to memory: a view is a camera position, not a record.",
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["about"],
+            "properties": {
+                "about": string_schema("Memory anchor the loom should weave. It must exist; a view onto absent memory would render an empty loom that looks like an answer."),
+                "view_id": string_schema("Which view to open. Omit for the one window a local viewer shows.")
+            }
+        }),
+        view_output_schema(),
+    )
+}
+
+fn view_apply_intent_definition() -> Value {
+    tool_definition_with_output(
+        "kmp_view_apply_intent",
+        "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["idempotency_key"],
+            "properties": {
+                "view_id": string_schema("Which view to move. Omit for the default one."),
+                "expected_revision": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "The view_revision this intent was prepared against. Omit only when the move is unconditional; passing it is what stops an agent from yanking the loom out from under a person mid-gesture."
+                },
+                "idempotency_key": string_schema("A retried intent must be the same intent, not a second one."),
+                "explanation": string_schema("Why, in the reader's terms. Shown to the human beside the change, because an agent may not rearrange what someone is looking at anonymously."),
+                "actor": string_schema("Who is moving the view, for provenance. Defaults to `agent`."),
+                "target": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {"about": string_schema("Weave a different about.")}
+                },
+                "focus": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "time_range": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "axis": {
+                                    "type": "string",
+                                    "enum": ["occurred", "observed", "ingested", "validity"],
+                                    "description": "Which clock the loom's axis reads. KMP keeps several; say which one you mean."
+                                },
+                                "from": string_schema("ISO-8601 start of the window."),
+                                "to": string_schema("ISO-8601 end of the window.")
+                            }
+                        },
+                        "refs": {
+                            "type": "array",
+                            "items": string_schema("Memory ref to bring into focus."),
+                            "description": "Refs the view should frame. Each must exist; the loom does not draw placeholders that look like data."
+                        }
+                    }
+                },
+                "projection": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "semantic_zoom": {
+                            "type": "string",
+                            "enum": ["atlas", "episode", "moment", "evidence"],
+                            "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
+                        },
+                        "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
+                        "relation_classes": {"type": "array", "items": string_schema("Relation class to draw: causal, evidential, motivational, procedural, constraint, structural.")},
+                        "overlays": {
+                            "type": "array",
+                            "items": string_schema("Observability series to align over the loom."),
+                            "description": "Recorded and echoed back as unhonored: the Observability Pulse needs a telemetry query port KMP does not publish yet. Asking is not pretending."
+                        }
+                    }
+                },
+                "selection": {"type": ["string", "null"], "description": "Ref to select, or null to clear."},
+                "trace": {
+                    "type": ["object", "null"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "from": string_schema("Where the claim starts."),
+                        "to": string_schema("Where it should lead.")
+                    }
+                },
+                "search": {"type": ["string", "null"], "description": "Query to highlight, or null to clear."}
+            }
+        }),
+        view_output_schema(),
+    )
+}
+
+fn view_get_state_definition() -> Value {
+    tool_definition_with_output(
+        "kmp_view_get_state",
+        "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns state, never pixels.",
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "view_id": string_schema("Which view to read. Omit for the default one.")
+            }
+        }),
+        view_output_schema(),
+    )
+}
+
+/// What every view tool answers with: the aggregate itself, its own revision,
+/// and — when something was asked for that this build cannot draw — what went
+/// unhonored. Silence there would be a lie.
+fn view_output_schema() -> Value {
+    output_object(json!({
+        "view_id": described("string", "The view this answer is about."),
+        "view_revision": described("integer", "The view's own revision, which is not the memory's."),
+        "state": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change."
+        },
+        "applied": described("boolean", "Whether this call is the one that moved the view. A replayed idempotency key answers false."),
+        "opened": described("boolean", "Whether a view was opened or rehydrated."),
+        "unhonored": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Parts of the intent this build recorded but cannot render yet."
+        },
+        "clocks": {"type": "array", "items": {"type": "string"}, "description": "The clocks the axis can read."},
+        "semantic_zoom_ladder": {"type": "array", "items": {"type": "string"}, "description": "The rungs, coarse to fine."},
+        "reads": described("string", "What this answer is, in the reader's terms."),
+        "not_yet_rendered": {"type": "array", "items": {"type": "string"}, "description": "Named honestly rather than silently dropped."}
+    }))
 }
 
 fn write_memory_schema() -> Value {
@@ -1278,8 +1429,55 @@ mod tests {
             .map(|tool| tool["name"].as_str().expect("tool name"))
             .collect::<Vec<_>>();
 
-        assert_eq!(former.map(canonical_tool_name).as_slice(), current);
+        // Every former name still resolves to something this surface
+        // advertises. It is not an equality: the view tools were born with
+        // their kmp_ names and never had a kernel_ one to rename.
+        for name in former.map(canonical_tool_name) {
+            assert!(
+                current.contains(&name),
+                "former name resolves to `{name}`, which the surface no longer advertises"
+            );
+        }
         assert!(current.iter().all(|name| name.starts_with("kmp_")));
+    }
+
+    /// The view half is small on purpose, and every one of its moves is
+    /// under concurrency control: an agent that cannot be told "the human
+    /// moved first" would eventually yank the loom out from under someone.
+    #[test]
+    fn the_view_tools_are_declarative_idempotent_and_conflict_aware() {
+        let result = tools_list_result();
+        let tools = result["tools"].as_array().expect("tools");
+        let view = |name: &str| {
+            tools
+                .iter()
+                .find(|tool| tool["name"] == name)
+                .unwrap_or_else(|| panic!("`{name}` is not advertised"))
+                .clone()
+        };
+
+        let intent = view("kmp_view_apply_intent");
+        assert_eq!(intent["inputSchema"]["required"][0], "idempotency_key");
+        let properties = &intent["inputSchema"]["properties"];
+        assert!(properties.get("expected_revision").is_some());
+        assert!(properties.get("explanation").is_some());
+        // Semantic vocabulary only — no coordinates, no pixels, no code.
+        for forbidden in ["x", "y", "zoom_level", "camera", "html", "script"] {
+            assert!(
+                properties.get(forbidden).is_none(),
+                "`{forbidden}` would make the agent drive pixels instead of meaning"
+            );
+        }
+        let axis = &properties["focus"]["properties"]["time_range"]["properties"]["axis"]["enum"];
+        assert_eq!(axis[0], "occurred", "the clock is chosen, never assumed");
+
+        assert_eq!(view("kmp_view_open")["inputSchema"]["required"][0], "about");
+        assert!(
+            view("kmp_view_get_state")["description"]
+                .as_str()
+                .expect("description")
+                .contains("never pixels")
+        );
     }
 
     #[test]
@@ -1304,7 +1502,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 10);
+        assert_eq!(tools.len(), 13, "ten memory tools and three view tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");

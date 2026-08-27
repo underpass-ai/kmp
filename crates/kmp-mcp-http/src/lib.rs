@@ -415,7 +415,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn lists_the_same_ten_tools_over_legacy_http() {
+    async fn lists_the_same_surface_over_legacy_http() {
         let calls = Arc::new(AtomicUsize::new(0));
         let response = app_with(Ok(identity(&[])), calls)
             .oneshot(request(
@@ -426,7 +426,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = response_json(response).await;
         assert_eq!(body["result"], kmp_mcp::kmp_mcp_tools_list_result());
-        assert_eq!(body["result"]["tools"].as_array().expect("tools").len(), 10);
+        assert_eq!(body["result"]["tools"].as_array().expect("tools").len(), 13);
     }
 
     #[tokio::test]

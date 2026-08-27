@@ -226,6 +226,12 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 200, "the loom app is served");
     let (status, _) = get(port, "/api/nope").await;
     assert_eq!(status, 404);
+
+    // The view aggregate: a camera position an agent and a person share.
+    // It answers before anyone opens it only with a refusal, never with a
+    // made-up view.
+    let (status, _) = get(port, "/api/view?id=nobody-opened-this").await;
+    assert_eq!(status, 404, "a view nobody opened is not invented");
     let (status, error) = get(port, "/api/graph?about=about:missing").await;
     assert_eq!(status, 404, "unknown about maps to 404: {error}");
 }

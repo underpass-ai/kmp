@@ -132,9 +132,35 @@ async fn tools_list_exposes_read_only_kmp_tools() {
             "kmp_rewind",
             "kmp_forward",
             "kmp_trace",
-            "kmp_inspect"
+            "kmp_inspect",
+            // The view half: an agent moves what a person is looking at by
+            // declaring intent, and none of these three can write memory.
+            "kmp_view_open",
+            "kmp_view_apply_intent",
+            "kmp_view_get_state"
         ]
     );
+
+    let writers = ["kmp_ingest", "kmp_write_memory"];
+    for tool in response["result"]["tools"].as_array().expect("tools") {
+        let name = tool["name"].as_str().expect("name");
+        if !name.starts_with("kmp_view_") {
+            continue;
+        }
+        let schema = tool["inputSchema"]["properties"]
+            .as_object()
+            .expect("view tools take an object");
+        for writer in writers {
+            assert!(
+                !schema.contains_key(writer),
+                "`{name}` must not reach {writer}: a visual action never writes memory"
+            );
+        }
+        assert!(
+            tool["description"].as_str().expect("description").len() > 40,
+            "`{name}` has to say what it does to the view"
+        );
+    }
 }
 
 #[tokio::test]

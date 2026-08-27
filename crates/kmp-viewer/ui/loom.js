@@ -216,6 +216,7 @@ async function loadAbout(about) {
     renderRail();
     renderStats();
     showError("");
+    if (!sync.applying) viewOpen();
   } catch (error) {
     showError(error.message);
   }
@@ -246,6 +247,7 @@ function setClock(clock, reset) {
   renderStats();
   requestDraw();
   drawNavigator();
+  reportView();
 }
 
 for (const chip of document.querySelectorAll("#clock-chips .chip")) {
@@ -262,6 +264,7 @@ function setWindow(t0, t1, remember = true) {
   renderStats();
   requestDraw();
   drawNavigator();
+  reportView();
 }
 
 $("nav-all").addEventListener("click", () => setWindow(view.full.t0, view.full.t1));
@@ -1055,6 +1058,7 @@ function renderDetailEmpty() {
 async function selectEntry(ref) {
   view.selectedRef = ref;
   requestDraw();
+  reportView();
   const m = model.byRef.get(ref);
   renderPrism(m);
   try {
@@ -1260,6 +1264,7 @@ async function runTrace() {
       list.append(item);
     }
     requestDraw();
+    reportView();
     showError("");
   } catch (error) {
     showError(error.message);
@@ -1361,6 +1366,7 @@ $("search").addEventListener("input", () => {
     }
   }
   requestDraw();
+  reportView();
 });
 $("search").addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -1383,6 +1389,184 @@ function renderStats() {
   const clocked = model.entries.filter((m) => KMP_LOOM.strictMs(m, view.clock) !== null).length;
   $("s-clocked").textContent = `${clocked}/${model.entries.length}`;
   if (view.full) $("s-window").textContent = `${fmtMs(view.t0)} → ${fmtMs(view.t1)}`;
+}
+
+
+/* ---------------- the agent's hand on the loom ----------------
+   The view is a shared aggregate with its own revision. An agent moves it by
+   declaring intent through kmp_view_apply_intent; the browser follows by long
+   poll, and reports back where the human is looking so the agent can see it
+   and rebase rather than yanking the loom away mid-gesture. Every agent move
+   arrives named, explained and undoable. */
+
+const VIEW_ID = "default";
+const sync = { revision: 0, applying: false, reportTimer: null, lastReport: "", polling: false };
+
+async function viewOpen() {
+  try {
+    const response = await fetch(
+      `/api/view/open?id=${VIEW_ID}&about=${encodeURIComponent(model.about || "")}`,
+      { method: "POST" }
+    );
+    const state = await response.json();
+    sync.revision = state.view_revision || 0;
+    renderProvenance(state);
+    if (!sync.polling) {
+      sync.polling = true;
+      pollView();
+    }
+  } catch (error) {
+    // A viewer that cannot reach its own view still draws the memory.
+    showError(`view sync unavailable: ${error.message}`);
+  }
+}
+
+async function pollView() {
+  for (;;) {
+    try {
+      const state = await api("/api/view", { id: VIEW_ID, since: sync.revision });
+      if (state.view_revision > sync.revision) {
+        sync.revision = state.view_revision;
+        const actor = state.last_change && state.last_change.actor;
+        if (actor && actor !== "human") await applyAgentState(state);
+        renderProvenance(state);
+      }
+    } catch (error) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+}
+
+/* An intent is meaning, not geometry: this is where meaning becomes a
+   window, a clock, a set of lanes. */
+async function applyAgentState(state) {
+  sync.applying = true;
+  try {
+    if (state.about && state.about !== model.about) {
+      await loadAbout(state.about);
+    }
+    if (state.clock && state.clock !== view.clock) setClock(state.clock, false);
+
+    const projection = state.projection || {};
+    if (projection.dimensions) {
+      const keep = new Set(projection.dimensions);
+      view.hiddenLanes = new Set(
+        model.lanes.map((lane) => lane.name).filter((name) => !keep.has(name))
+      );
+      renderRail();
+    }
+
+    const range = state.focus && state.focus.time_range;
+    const refs = (state.focus && state.focus.refs) || [];
+    if (range && range.from && range.to) {
+      const from = Date.parse(range.from);
+      const to = Date.parse(range.to);
+      if (Number.isFinite(from) && Number.isFinite(to)) setWindow(from, to);
+    } else if (refs.length) {
+      frameRefs(refs);
+    }
+    if (projection.semantic_zoom) applyZoomRung(projection.semantic_zoom);
+
+    if (state.search !== undefined) {
+      $("search").value = state.search || "";
+      $("search").dispatchEvent(new Event("input"));
+    }
+    if (state.trace) {
+      tracePick = { from: state.trace.from, to: state.trace.to };
+      await runTrace();
+    }
+    if (state.selection) {
+      await selectEntry(state.selection);
+      centerOn(state.selection);
+    }
+  } finally {
+    sync.applying = false;
+  }
+}
+
+/* "Frame these refs" — the canonical intent. The window becomes the span
+   they occupy on the current clock, with room to breathe. */
+function frameRefs(refs) {
+  const stamps = refs
+    .map((ref) => model.byRef.get(ref))
+    .filter(Boolean)
+    .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
+    .filter((t) => t !== null);
+  if (!stamps.length) return;
+  const lo = Math.min(...stamps);
+  const hi = Math.max(...stamps);
+  const pad = Math.max(60000, (hi - lo) * 0.4);
+  setWindow(lo - pad, hi + pad);
+}
+
+/* A rung of the ladder is a density of time per pixel; asking for "moment"
+   asks for a window fine enough to show entries. */
+function applyZoomRung(rung) {
+  const width = Math.max(1, canvas.clientWidth);
+  const target = { atlas: 1.2e6, episode: 120e3, moment: 8e3, evidence: 2e3 }[rung];
+  if (!target) return;
+  const span = Math.max(1000, target * width);
+  const centre = (view.t0 + view.t1) / 2;
+  setWindow(centre - span / 2, centre + span / 2);
+}
+
+function renderProvenance(state) {
+  const chip = $("agent-chip");
+  const change = state.last_change;
+  if (!change || change.actor === "human") {
+    chip.hidden = true;
+    return;
+  }
+  const why = change.explanation ? ` · ${change.explanation}` : "";
+  $("agent-chip-text").textContent = `${change.actor} moved the loom${why}`;
+  chip.hidden = false;
+}
+
+$("agent-undo").addEventListener("click", async () => {
+  try {
+    const response = await fetch(`/api/view/undo?id=${VIEW_ID}`, { method: "POST" });
+    if (!response.ok) return;
+    const state = await response.json();
+    sync.revision = state.view_revision;
+    await applyAgentState(state);
+    $("agent-chip").hidden = true;
+  } catch (error) {
+    showError(error.message);
+  }
+});
+
+/* Where the human is looking, reported so the agent's read of the view is
+   the truth rather than whatever it last asked for. Debounced, and silent
+   while the loom is busy obeying an intent — otherwise the two would echo. */
+function reportView() {
+  if (sync.applying || !model.about) return;
+  clearTimeout(sync.reportTimer);
+  sync.reportTimer = setTimeout(async () => {
+    const params = new URLSearchParams({
+      id: VIEW_ID,
+      about: model.about,
+      clock: view.clock,
+      from: new Date(Math.round(view.t0)).toISOString(),
+      to: new Date(Math.round(view.t1)).toISOString(),
+    });
+    if (view.selectedRef) params.set("selection", view.selectedRef);
+    if ($("search").value.trim()) params.set("search", $("search").value.trim());
+    if (tracePick.from && tracePick.to) {
+      params.set("trace_from", tracePick.from);
+      params.set("trace_to", tracePick.to);
+    }
+    const signature = params.toString();
+    if (signature === sync.lastReport) return;
+    sync.lastReport = signature;
+    try {
+      const response = await fetch(`/api/view/report?${signature}`, { method: "POST" });
+      const state = await response.json();
+      if (state.view_revision) sync.revision = state.view_revision;
+      $("agent-chip").hidden = true;
+    } catch (error) {
+      // The loom keeps working even when nobody is listening to it.
+    }
+  }, 400);
 }
 
 /* ---------------- init ---------------- */

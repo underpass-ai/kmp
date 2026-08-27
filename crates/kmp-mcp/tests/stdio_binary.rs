@@ -44,7 +44,8 @@ fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
             .as_array()
             .expect("a tool list")
             .len(),
-        10
+        13,
+        "ten memory tools and three view tools"
     );
 }
 

@@ -14,6 +14,9 @@ use kmp_domain::{
 
 use crate::MemoryViewerServer;
 use crate::http::{HttpRequest, HttpResponse};
+use crate::view_state::{
+    DEFAULT_VIEW_ID, Focus, TimeRange, TraceSelection, ViewPatch, ViewRegistry,
+};
 use crate::views;
 
 /// Unwraps a parameter, or returns its refusal from the enclosing handler.
@@ -66,8 +69,23 @@ where
         // serves GET has to serve it, and a health check or link checker
         // pointed here reported the viewer as down.
         let head_only = request.method == "HEAD";
+        // Memory is read-only here and stays that way. The one exception is
+        // the view aggregate — where the human is looking — which the browser
+        // reports back so an agent can see it and rebase instead of yanking
+        // the loom out from under them. A camera position is not memory, and
+        // POST is the honest method for changing one.
+        let view_control = matches!(
+            request.path.as_str(),
+            "/api/view/report" | "/api/view/undo" | "/api/view/open"
+        );
+        if request.method == "POST" && view_control {
+            return self.answer(request).await;
+        }
         if request.method != "GET" && !head_only {
-            return HttpResponse::error(405, "the viewer is read-only; only GET is served");
+            return HttpResponse::error(
+                405,
+                "the viewer never writes memory; only GET is served (POST reaches the view state alone)",
+            );
         }
         let response = self.answer(request).await;
         if head_only {
@@ -92,6 +110,10 @@ where
             "/api/nodes" => self.nodes(request).await,
             "/api/timeline" => self.timeline(request).await,
             "/api/trace" => self.trace(request).await,
+            "/api/view" => self.view_get(request).await,
+            "/api/view/open" => self.view_open(request),
+            "/api/view/report" => self.view_report(request),
+            "/api/view/undo" => self.view_undo(request),
             _ => HttpResponse::error(404, "unknown path"),
         }
     }
@@ -101,6 +123,75 @@ where
             kernel_version: env!("CARGO_PKG_VERSION").to_string(),
             data_dir: self.data_dir.clone(),
         })
+    }
+
+    /// The view state, or — with `since` — the next one: a long poll, so an
+    /// agent's intent reaches the screen without the browser spinning.
+    async fn view_get(&self, request: &HttpRequest) -> HttpResponse {
+        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID).to_string();
+        let registry = ViewRegistry::shared();
+        let state = match request
+            .param("since")
+            .and_then(|since| since.parse::<u64>().ok())
+        {
+            Some(since) => registry.changed_since(&id, since, VIEW_POLL_PATIENCE).await,
+            None => registry.get(&id),
+        };
+        match state {
+            Some(state) => HttpResponse::json(&state),
+            None => HttpResponse::error(404, "no view under that id — open one first"),
+        }
+    }
+
+    fn view_open(&self, request: &HttpRequest) -> HttpResponse {
+        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID);
+        let about = request.param("about").map(str::to_string);
+        HttpResponse::json(&ViewRegistry::shared().open(Some(id), about))
+    }
+
+    /// Where the human is looking now. Reported by the browser so the agent's
+    /// `kmp_view_get_state` answers with the truth rather than with whatever
+    /// it last asked for.
+    fn view_report(&self, request: &HttpRequest) -> HttpResponse {
+        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID).to_string();
+        let registry = ViewRegistry::shared();
+        if registry.get(&id).is_none() {
+            registry.open(Some(&id), request.param("about").map(str::to_string));
+        }
+        let trace = match (request.param("trace_from"), request.param("trace_to")) {
+            (Some(from), Some(to)) => Some(Some(TraceSelection {
+                from: from.to_string(),
+                to: to.to_string(),
+            })),
+            _ => Some(None),
+        };
+        let patch = ViewPatch {
+            about: request.param("about").map(str::to_string),
+            clock: request.param("clock").map(str::to_string),
+            focus: Some(Focus {
+                time_range: Some(TimeRange {
+                    from: request.param("from").map(str::to_string),
+                    to: request.param("to").map(str::to_string),
+                }),
+                refs: Vec::new(),
+            }),
+            selection: Some(request.param("selection").map(str::to_string)),
+            trace,
+            search: Some(request.param("search").map(str::to_string)),
+            projection: None,
+        };
+        match registry.apply(&id, None, None, patch, "human", None) {
+            Ok(applied) => HttpResponse::json(&applied.state),
+            Err(error) => view_error_response(&error),
+        }
+    }
+
+    fn view_undo(&self, request: &HttpRequest) -> HttpResponse {
+        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID);
+        match ViewRegistry::shared().undo(id, "human") {
+            Ok(state) => HttpResponse::json(&state),
+            Err(error) => view_error_response(&error),
+        }
     }
 
     async fn abouts(&self) -> HttpResponse {
@@ -393,4 +484,23 @@ fn application_error_response(error: &ApplicationError) -> HttpResponse {
         ApplicationError::Ports(PortError::InvalidState(_)) => 500,
     };
     HttpResponse::error(status, &message)
+}
+
+/// How long a browser's long poll waits before answering with the state it
+/// already had. Comfortably inside the request timeout, so a poll never looks
+/// like a stuck client.
+const VIEW_POLL_PATIENCE: std::time::Duration = std::time::Duration::from_secs(20);
+
+fn view_error_response(error: &crate::view_state::ViewError) -> HttpResponse {
+    use crate::view_state::ViewError;
+    match error {
+        ViewError::UnknownView(id) => HttpResponse::error(404, &format!("no view under `{id}`")),
+        ViewError::Conflict {
+            expected, actual, ..
+        } => HttpResponse::error(
+            409,
+            &format!("the view moved on: expected revision {expected}, it is at {actual}"),
+        ),
+        ViewError::Invalid(message) => HttpResponse::error(400, message),
+    }
 }
