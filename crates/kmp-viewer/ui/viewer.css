@@ -517,8 +517,8 @@ summary { cursor: pointer; color: var(--text-secondary); }
 #tb-canvas {
   display: block;
   width: 100%;
-  height: 34px;
-  cursor: pointer;
+  height: 70px;
+  cursor: crosshair;
   border-radius: var(--radius-1);
 }
 .tl-asof { font-size: 12px; padding: 1px 8px; }

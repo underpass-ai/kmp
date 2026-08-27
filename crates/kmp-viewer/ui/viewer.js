@@ -570,7 +570,7 @@ async function setupRenderer() {
       dirty = true;
     }
     if (tickCamera(performance.now())) dirty = true;
-    if (playback.active) dirty = true;
+    if (playbackEngaged()) dirty = true;
     if (dirty) {
       dirty = false;
       syncScene();
@@ -631,7 +631,7 @@ const toWorld = (sx, sy) => ({
 });
 
 function nodeAlpha(body) {
-  if (playback.active) {
+  if (playbackEngaged()) {
     if (body.meta) {
       // A folded dimension reveals in proportion to its revealed members.
       const revealed = playback.revealedSet;
@@ -661,7 +661,7 @@ function nodeAlpha(body) {
 }
 
 function edgeAlpha(edge) {
-  if (playback.active && !edge.aggregate) {
+  if (playbackEngaged() && !edge.aggregate) {
     const revealed = playback.revealedSet;
     if (!revealed.has(edge.source) || !revealed.has(edge.target)) return 0;
     return edge.source === playback.currentRef || edge.target === playback.currentRef ? 1 : 0.55;
@@ -725,7 +725,7 @@ function syncScene() {
     const highlighted =
       edge === hoveredEdge ||
       (traceHighlight && traceHighlight.edges.has(edgeKey(edge))) ||
-      (playback.active &&
+      (playbackEngaged() &&
         (edge.source === playback.currentRef || edge.target === playback.currentRef));
     const classed = edgeInk(edge, p);
     const structural = classed === p.edge;
@@ -774,7 +774,7 @@ function syncScene() {
     const a = nodeAlpha(body);
     if (a <= 0.01) continue; // in travel, the future is culled, not greyed
     let r = Math.max(nodeRadius(body), 3 / k);
-    const isCurrentStep = playback.active && body.id === playback.currentRef;
+    const isCurrentStep = playbackEngaged() && body.id === playback.currentRef;
     if (isCurrentStep) {
       r += (1.8 + 1.6 * Math.sin(performance.now() / 160)) / k;
     }
@@ -942,10 +942,23 @@ const playback = {
 
 /* ---------------- the time window ----------------
    Grafana's grammar: pick a preset (all time, last hour, last 7 days…) or
-   drag a range on the strip, and that range becomes the window — the strip
+   drag a range on the chart, and that range becomes the window — the chart
    rescales to it, the playhead lives inside it, ⟲ goes back, out widens.
    Ranges are entry-index spans, so a mostly-clockless line navigates the
-   same way a fully timed one does. */
+   same way a fully timed one does.
+
+   The navigator is a SELECTOR first: open, with everything selected and the
+   playhead at the present, it changes nothing on the canvas. Only an actual
+   investigation — a narrowed window, a moved playhead, a running playback —
+   engages the as-of view. Playing is just one more thing you can do to a
+   selection. */
+
+function playbackEngaged() {
+  return (
+    playback.active &&
+    (playback.range !== null || playback.timer !== null || playback.step < playback.win.hi)
+  );
+}
 
 function computeWindow() {
   const lo = playback.range ? playback.range.lo : 0;
@@ -1063,10 +1076,13 @@ async function startReplay(atRef) {
 
     playback.active = true;
     $("timebar").hidden = false;
-    $("btn-replay").textContent = "■ Stop";
-    const startStep = atRef && playback.stepOf.has(atRef) ? playback.stepOf.get(atRef) : 0;
+    $("btn-replay").textContent = "■ Close";
+    // A selector, not a player: open at the present with everything in
+    // frame. Only jumping to a ref starts somewhere else — still paused.
+    const startStep =
+      atRef && playback.stepOf.has(atRef) ? playback.stepOf.get(atRef) : playback.win.hi;
     setReplayStep(startStep);
-    setReplayPlaying(!atRef);
+    setReplayPlaying(false);
     showError("");
   } catch (error) {
     showError(error.message);
@@ -1126,55 +1142,132 @@ function stopReplay() {
   playback.active = false;
   playback.currentRef = null;
   $("timebar").hidden = true;
-  $("btn-replay").textContent = "◈ Travel";
+  $("btn-replay").textContent = "◈ Time";
   requestDraw();
 }
 
-/* The strip itself: kind-colored ticks on a 2d canvas, the played region
-   washed with the mark's gradient, the playhead in accent ink. */
+/* Back to the present without losing the navigator: the whole line
+   selected, the playhead at now, the canvas back to plain ink. */
+function resetToNow() {
+  setReplayPlaying(false);
+  playback.rangeStack = [];
+  playback.range = null;
+  computeWindow();
+  $("tb-range").value = "all";
+  $("tb-rangelabel").textContent = windowLabel();
+  setReplayStep(playback.win.hi);
+}
+
+/* The chart: activity per bucket stacked by kind over a real axis — the
+   shape of the memory's history, Grafana-style. The played region wears the
+   gradient wash, the playhead stands in accent ink, and a dragged selection
+   paints the windowpane about to become the window. */
+const CHART_H = 70;
+const BARS_TOP = 4;
+const BARS_BOTTOM = 48;
+const AXIS_Y = 60;
+
 function drawTimebar() {
   const strip = $("tb-canvas");
   const width = strip.clientWidth || 1;
-  const height = 34;
   const dpr = devicePixelRatio || 1;
   if (strip.width !== Math.round(width * dpr)) strip.width = Math.round(width * dpr);
-  if (strip.height !== Math.round(height * dpr)) strip.height = Math.round(height * dpr);
+  if (strip.height !== Math.round(CHART_H * dpr)) strip.height = Math.round(CHART_H * dpr);
   const pen = strip.getContext("2d");
   pen.setTransform(dpr, 0, 0, dpr, 0, 0);
-  pen.clearRect(0, 0, width, height);
+  pen.clearRect(0, 0, width, CHART_H);
   if (!playback.entries.length) return;
 
+  const p = palette();
   const pad = 6;
   const span = width - pad * 2;
   const { lo, hi, xs } = playback.win;
   const xAt = (i) => pad + xs[Math.max(0, Math.min(xs.length - 1, i - lo))] * span;
   const headX = xAt(playback.step);
+  const barArea = BARS_BOTTOM - BARS_TOP;
 
+  // Played wash, behind everything.
   const played = pen.createLinearGradient(pad, 0, pad + span, 0);
-  played.addColorStop(0, "rgba(129, 91, 240, 0.30)");
-  played.addColorStop(0.5, "rgba(72, 120, 224, 0.30)");
-  played.addColorStop(1, "rgba(27, 175, 122, 0.30)");
+  played.addColorStop(0, "rgba(129, 91, 240, 0.22)");
+  played.addColorStop(0.5, "rgba(72, 120, 224, 0.22)");
+  played.addColorStop(1, "rgba(27, 175, 122, 0.22)");
   pen.fillStyle = played;
-  pen.fillRect(pad, 4, Math.max(0, headX - pad), height - 8);
+  pen.fillRect(pad, BARS_TOP, Math.max(0, headX - pad), barArea);
 
-  for (let i = lo; i <= hi; i += 1) {
-    pen.globalAlpha = i <= playback.step ? 0.95 : 0.35;
-    pen.fillStyle = kindColor(playback.entries[i].kind);
-    pen.fillRect(xAt(i) - 0.75, 7, 1.5, height - 14);
+  // The histogram: stacked kind segments per bucket.
+  const bucketCount = Math.max(24, Math.floor(span / 9));
+  const hist = KMP_CORE.histogram(playback.entries, playback.effMs, lo, hi, bucketCount);
+  const barW = span / bucketCount;
+  for (let b = 0; b < bucketCount; b += 1) {
+    const bucket = hist.buckets[b];
+    if (!bucket.total) continue;
+    const x = pad + b * barW;
+    const barH = Math.max(2, (bucket.total / hist.maxTotal) * barArea);
+    let y = BARS_BOTTOM;
+    const slices = [...bucket.byKind.entries()].sort((a, c) => c[1] - a[1]);
+    for (const [kind, count] of slices) {
+      const sliceH = (count / bucket.total) * barH;
+      pen.fillStyle = kindColor(kind);
+      pen.globalAlpha = x + barW <= headX ? 0.95 : 0.45;
+      pen.fillRect(x + 0.5, y - sliceH, Math.max(1, barW - 1), sliceH);
+      y -= sliceH;
+    }
   }
   pen.globalAlpha = 1;
-  pen.fillStyle = palette().accent;
-  pen.fillRect(headX - 1, 2, 2, height - 4);
+
+  // Axis: gridlines up through the bars, labels underneath.
+  pen.strokeStyle = p.textMuted;
+  pen.fillStyle = p.textMuted;
+  pen.font = "10px ui-monospace, monospace";
+  pen.textAlign = "center";
+  const maxTicks = Math.max(3, Math.floor(width / 90));
+  if (hist.timeMode) {
+    const axis = KMP_CORE.timeAxisTicks(hist.t0, hist.t1, maxTicks);
+    const tSpan = Math.max(1, hist.t1 - hist.t0);
+    for (const t of axis.ticks) {
+      const x = pad + ((t - hist.t0) / tSpan) * span;
+      pen.globalAlpha = 0.18;
+      pen.beginPath();
+      pen.moveTo(x, BARS_TOP);
+      pen.lineTo(x, BARS_BOTTOM + 4);
+      pen.stroke();
+      pen.globalAlpha = 0.9;
+      const iso = new Date(t).toISOString();
+      pen.fillText(axis.step >= 86400e3 ? iso.slice(5, 10) : iso.slice(11, 16), x, AXIS_Y);
+    }
+  } else {
+    const axis = KMP_CORE.orderAxisTicks(lo, hi, maxTicks);
+    for (const i of axis.ticks) {
+      const x = xAt(i);
+      pen.globalAlpha = 0.18;
+      pen.beginPath();
+      pen.moveTo(x, BARS_TOP);
+      pen.lineTo(x, BARS_BOTTOM + 4);
+      pen.stroke();
+      pen.globalAlpha = 0.9;
+      pen.fillText(`#${i + 1}`, x, AXIS_Y);
+    }
+  }
+  pen.globalAlpha = 0.35;
+  pen.beginPath();
+  pen.moveTo(pad, BARS_BOTTOM + 0.5);
+  pen.lineTo(pad + span, BARS_BOTTOM + 0.5);
+  pen.stroke();
+  pen.globalAlpha = 1;
+
+  // The playhead.
+  pen.fillStyle = p.accent;
+  pen.fillRect(headX - 1, 0, 2, BARS_BOTTOM + 4);
 
   // The selection being dragged: a windowpane about to become the window.
   if (playback.brush) {
     const a = Math.min(playback.brush.x0, playback.brush.x1);
     const b = Math.max(playback.brush.x0, playback.brush.x1);
     pen.fillStyle = "rgba(72, 120, 224, 0.18)";
-    pen.fillRect(a, 0, b - a, height);
-    pen.fillStyle = palette().accent;
-    pen.fillRect(a, 0, 1, height);
-    pen.fillRect(b - 1, 0, 1, height);
+    pen.fillRect(a, 0, b - a, BARS_BOTTOM + 4);
+    pen.fillStyle = p.accent;
+    pen.fillRect(a, 0, 1, BARS_BOTTOM + 4);
+    pen.fillRect(b - 1, 0, 1, BARS_BOTTOM + 4);
   }
 }
 
@@ -1231,9 +1324,17 @@ $("btn-replay").addEventListener("click", () => {
   if (playback.active) stopReplay();
   else startReplay();
 });
-$("tb-toggle").addEventListener("click", () => setReplayPlaying(!playback.timer));
+$("tb-toggle").addEventListener("click", () => {
+  if (playback.timer) {
+    setReplayPlaying(false);
+    return;
+  }
+  // Play the selection: from its start when the playhead sits at its end.
+  if (playback.step >= playback.win.hi) setReplayStep(playback.win.lo);
+  setReplayPlaying(true);
+});
 $("tb-close").addEventListener("click", stopReplay);
-$("tb-now").addEventListener("click", stopReplay);
+$("tb-now").addEventListener("click", resetToNow);
 $("tb-prev").addEventListener("click", () => {
   setReplayPlaying(false);
   setReplayStep(playback.step - 1);

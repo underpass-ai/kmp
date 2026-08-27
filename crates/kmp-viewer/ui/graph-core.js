@@ -626,6 +626,74 @@ const KMP_CORE = (() => {
     });
   }
 
+  /* ---------------- the time chart ----------------
+     Grafana's reading of a line: activity per bucket, stacked by kind, over
+     a real axis. Falls back to entry-order buckets when the line is mostly
+     clockless — the shape of the activity still reads. */
+
+  function histogram(entries, effMs, lo, hi, bucketCount) {
+    const count = hi - lo + 1;
+    const times = [];
+    for (let i = lo; i <= hi; i += 1) times.push(effMs[i]);
+    const timed = times.filter((t) => t !== null);
+    const timeMode = timed.length >= count / 2 && timed[0] !== timed[timed.length - 1];
+    const buckets = Array.from({ length: bucketCount }, () => ({ total: 0, byKind: new Map() }));
+    let t0 = 0;
+    let t1 = 1;
+    const drop = (bucketIndex, kind) => {
+      const bucket = buckets[Math.max(0, Math.min(bucketCount - 1, bucketIndex))];
+      bucket.total += 1;
+      bucket.byKind.set(kind, (bucket.byKind.get(kind) || 0) + 1);
+    };
+    if (timeMode) {
+      t0 = timed[0];
+      t1 = timed[timed.length - 1];
+      const span = Math.max(1, t1 - t0);
+      for (let i = lo; i <= hi; i += 1) {
+        if (effMs[i] === null) continue;
+        drop(Math.floor(((effMs[i] - t0) / span) * bucketCount), entries[i].kind);
+      }
+    } else {
+      for (let i = lo; i <= hi; i += 1) {
+        drop(Math.floor(((i - lo) / Math.max(1, count)) * bucketCount), entries[i].kind);
+      }
+    }
+    let maxTotal = 1;
+    for (const bucket of buckets) if (bucket.total > maxTotal) maxTotal = bucket.total;
+    return { timeMode, buckets, t0, t1, maxTotal };
+  }
+
+  /* Nice axis ticks: the smallest calendar step that keeps the count sane. */
+  const AXIS_STEPS = [
+    60e3, 5 * 60e3, 15 * 60e3, 30 * 60e3,
+    3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3,
+    86400e3, 2 * 86400e3, 7 * 86400e3, 14 * 86400e3, 30 * 86400e3, 90 * 86400e3,
+  ];
+
+  function timeAxisTicks(t0, t1, maxTicks) {
+    const span = Math.max(1, t1 - t0);
+    let step = AXIS_STEPS[AXIS_STEPS.length - 1];
+    for (const candidate of AXIS_STEPS) {
+      if (span / candidate <= maxTicks) {
+        step = candidate;
+        break;
+      }
+    }
+    const ticks = [];
+    for (let t = Math.ceil(t0 / step) * step; t <= t1; t += step) ticks.push(t);
+    return { step, ticks };
+  }
+
+  function orderAxisTicks(lo, hi, maxTicks) {
+    const count = hi - lo + 1;
+    const raw = Math.max(1, count / maxTicks);
+    const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 5, 10].map((m) => m * magnitude).find((s) => count / s <= maxTicks) || 10 * magnitude;
+    const ticks = [];
+    for (let i = Math.ceil(lo / step) * step; i <= hi; i += step) ticks.push(i);
+    return { step, ticks };
+  }
+
   /* fields: lowercase {title, summary, id, kind, dim}. */
   function matchesQuery(query, fields) {
     if (query.empty) return false;
@@ -662,5 +730,8 @@ const KMP_CORE = (() => {
     matchesQuery,
     entryTimeMs,
     effectiveTimesMs,
+    histogram,
+    timeAxisTicks,
+    orderAxisTicks,
   };
 })();
