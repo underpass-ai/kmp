@@ -117,6 +117,19 @@
           <option value="600">2×</option>
           <option value="300">4×</option>
         </select>
+        <label class="sr-only" for="tb-range">Time range</label>
+        <select id="tb-range" title="time range — or drag a span on the strip">
+          <option value="all" selected>all time</option>
+          <option value="15">last 15 min</option>
+          <option value="60">last hour</option>
+          <option value="360">last 6 h</option>
+          <option value="1440">last 24 h</option>
+          <option value="10080">last 7 days</option>
+          <option value="43200">last 30 days</option>
+        </select>
+        <span id="tb-rangelabel" class="muted mono"></span>
+        <button id="tb-out" class="btn" title="widen the window">out</button>
+        <button id="tb-back" class="btn" title="previous window">⟲</button>
         <span id="tb-label" class="muted mono"></span>
         <span id="tb-caption" class="tb-caption"></span>
         <button id="tb-now" class="btn" title="back to the full graph">now</button>

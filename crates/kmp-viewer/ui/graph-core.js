@@ -608,6 +608,24 @@ const KMP_CORE = (() => {
     return query;
   }
 
+  /* An entry's clock reading in ms, or null when it carries none. */
+  function entryTimeMs(entry) {
+    const key = entryOrderKey(entry);
+    return key.time ? Date.parse(key.time) : null;
+  }
+
+  /* Carry-forward clock: each entry wears its own time or its predecessor's,
+     so a timeless entry still has a place on a time axis. Leading entries
+     before any clock stay null. */
+  function effectiveTimesMs(entries) {
+    let last = null;
+    return entries.map((entry) => {
+      const t = entryTimeMs(entry);
+      if (t !== null) last = t;
+      return last;
+    });
+  }
+
   /* fields: lowercase {title, summary, id, kind, dim}. */
   function matchesQuery(query, fields) {
     if (query.empty) return false;
@@ -642,5 +660,7 @@ const KMP_CORE = (() => {
     gradientAt,
     parseQuery,
     matchesQuery,
+    entryTimeMs,
+    effectiveTimesMs,
   };
 })();

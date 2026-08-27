@@ -644,6 +644,7 @@ function nodeAlpha(body) {
     if (!playback.revealedSet.has(body.id)) return 0; // the future is not there yet
     if (playback.scaffolding.has(body.id)) return 0.4;
     const born = playback.stepOf.get(body.id);
+    if (born !== undefined && born < playback.win.lo) return 0.25; // before the window: context
     return born !== undefined && playback.step - born <= RECENT_STEPS ? 0.9 : 0.55;
   }
   if (traceHighlight) return traceHighlight.nodes.has(body.id) ? 1 : 0.14;
@@ -930,10 +931,69 @@ const playback = {
   currentRef: null,
   timer: null,
   stepMs: 1200,
-  xs: [], // step -> 0..1 position on the strip
-  placed: 0, // entries carrying a time
+  effMs: [], // carry-forward clock per entry, ms or null
+  placed: 0, // entries carrying a time of their own
   total: 0, // what the kernel says the line holds
+  range: null, // {lo, hi} inclusive entry indices, null = the whole line
+  rangeStack: [], // where ⟲ goes back to
+  win: { lo: 0, hi: 0, xs: [] }, // the visible window and its strip positions
+  brush: null, // {x0, x1} in px while a selection is being dragged
 };
+
+/* ---------------- the time window ----------------
+   Grafana's grammar: pick a preset (all time, last hour, last 7 days…) or
+   drag a range on the strip, and that range becomes the window — the strip
+   rescales to it, the playhead lives inside it, ⟲ goes back, out widens.
+   Ranges are entry-index spans, so a mostly-clockless line navigates the
+   same way a fully timed one does. */
+
+function computeWindow() {
+  const lo = playback.range ? playback.range.lo : 0;
+  const hi = playback.range ? playback.range.hi : playback.entries.length - 1;
+  const times = [];
+  for (let i = lo; i <= hi; i += 1) times.push(playback.effMs[i]);
+  const timed = times.filter((t) => t !== null);
+  const xs = [];
+  const count = hi - lo + 1;
+  if (timed.length < count / 2 || timed[0] === timed[timed.length - 1]) {
+    // Order spread: too few clocks (or one instant) to make a time axis.
+    const denominator = Math.max(1, count - 1);
+    for (let j = 0; j < count; j += 1) xs.push(j / denominator);
+  } else {
+    const t0 = timed[0];
+    const span = Math.max(1, timed[timed.length - 1] - t0);
+    let lastX = 0;
+    for (const t of times) {
+      if (t !== null) lastX = (t - t0) / span;
+      xs.push(lastX);
+    }
+  }
+  playback.win = { lo, hi, xs };
+}
+
+function windowLabel() {
+  const { lo, hi } = playback.win;
+  if (!playback.range) return "all time";
+  const fmt = (ms) =>
+    ms === null ? null : new Date(ms).toISOString().slice(5, 16).replace("T", " ");
+  const from = fmt(playback.effMs[lo]);
+  const to = fmt(playback.effMs[hi]);
+  return from && to ? `${from} → ${to}` : `entries ${lo + 1}–${hi + 1}`;
+}
+
+function applyRange(range, remember = true) {
+  if (remember) playback.rangeStack.push(playback.range);
+  playback.range = range;
+  computeWindow();
+  $("tb-rangelabel").textContent = windowLabel();
+  const { lo, hi } = playback.win;
+  if (playback.step < lo || playback.step > hi) {
+    // Land at the window's end: the memory as of when the window closes.
+    setReplayStep(hi);
+  } else {
+    setReplayStep(playback.step);
+  }
+}
 
 /* The whole line: one `near` window around now, then `forward` by cursor
    for the newer side and `rewind` from the earliest for the older side.
@@ -992,25 +1052,14 @@ async function startReplay(atRef) {
     playback.scaffolding = built.scaffolding;
     playback.revealedSet = new Set();
     playback.step = -1;
-
-    // Strip positions: entries with a time land where their moment falls;
-    // the timeless inherit their predecessor's spot.
-    const times = line.entries.map((entry) => KMP_CORE.entryOrderKey(entry).time || null);
-    const timed = times.filter(Boolean);
-    playback.placed = timed.length;
-    const denominator = Math.max(1, line.entries.length - 1);
-    if (timed.length < line.entries.length / 2) {
-      // Most entries carry order but no clock: spread by order, and say so.
-      playback.xs = times.map((_, i) => i / denominator);
-    } else {
-      const t0 = Date.parse(timed[0]);
-      const span = Math.max(1, Date.parse(timed[timed.length - 1]) - t0);
-      let lastX = 0;
-      playback.xs = times.map((time) => {
-        if (time) lastX = timed.length > 1 ? (Date.parse(time) - t0) / span : 0.5;
-        return lastX;
-      });
-    }
+    playback.effMs = KMP_CORE.effectiveTimesMs(line.entries);
+    playback.placed = line.entries.filter((e) => KMP_CORE.entryTimeMs(e) !== null).length;
+    playback.range = null;
+    playback.rangeStack = [];
+    playback.brush = null;
+    computeWindow();
+    $("tb-range").value = "all";
+    $("tb-rangelabel").textContent = windowLabel();
 
     playback.active = true;
     $("timebar").hidden = false;
@@ -1025,7 +1074,7 @@ async function startReplay(atRef) {
 }
 
 function setReplayStep(step) {
-  const clamped = Math.max(0, Math.min(step, playback.entries.length - 1));
+  const clamped = Math.max(playback.win.lo, Math.min(step, playback.win.hi));
   if (clamped > playback.step) {
     for (let i = playback.step + 1; i <= clamped; i += 1) {
       for (const id of playback.steps[i]) playback.revealedSet.add(id);
@@ -1040,9 +1089,10 @@ function setReplayStep(step) {
   const entry = playback.entries[clamped];
   playback.currentRef = entry.ref_id;
 
+  const { lo, hi } = playback.win;
   const key = KMP_CORE.entryOrderKey(entry);
   $("tb-label").textContent =
-    `${clamped + 1}/${playback.entries.length}` +
+    `${clamped - lo + 1}/${hi - lo + 1}` +
     (key.time ? ` · ${key.time.slice(0, 16).replace("T", " ")}` : "") +
     (playback.placed < playback.entries.length
       ? ` · ${playback.placed} of ${playback.entries.length} placed in time`
@@ -1063,7 +1113,7 @@ function setReplayPlaying(playing) {
   playback.timer = null;
   if (playing && playback.active) {
     playback.timer = setInterval(() => {
-      if (playback.step >= playback.entries.length - 1) setReplayPlaying(false);
+      if (playback.step >= playback.win.hi) setReplayPlaying(false);
       else setReplayStep(playback.step + 1);
     }, playback.stepMs);
   }
@@ -1096,7 +1146,8 @@ function drawTimebar() {
 
   const pad = 6;
   const span = width - pad * 2;
-  const xAt = (i) => pad + playback.xs[i] * span;
+  const { lo, hi, xs } = playback.win;
+  const xAt = (i) => pad + xs[Math.max(0, Math.min(xs.length - 1, i - lo))] * span;
   const headX = xAt(playback.step);
 
   const played = pen.createLinearGradient(pad, 0, pad + span, 0);
@@ -1106,7 +1157,7 @@ function drawTimebar() {
   pen.fillStyle = played;
   pen.fillRect(pad, 4, Math.max(0, headX - pad), height - 8);
 
-  for (let i = 0; i < playback.entries.length; i += 1) {
+  for (let i = lo; i <= hi; i += 1) {
     pen.globalAlpha = i <= playback.step ? 0.95 : 0.35;
     pen.fillStyle = kindColor(playback.entries[i].kind);
     pen.fillRect(xAt(i) - 0.75, 7, 1.5, height - 14);
@@ -1114,24 +1165,66 @@ function drawTimebar() {
   pen.globalAlpha = 1;
   pen.fillStyle = palette().accent;
   pen.fillRect(headX - 1, 2, 2, height - 4);
+
+  // The selection being dragged: a windowpane about to become the window.
+  if (playback.brush) {
+    const a = Math.min(playback.brush.x0, playback.brush.x1);
+    const b = Math.max(playback.brush.x0, playback.brush.x1);
+    pen.fillStyle = "rgba(72, 120, 224, 0.18)";
+    pen.fillRect(a, 0, b - a, height);
+    pen.fillStyle = palette().accent;
+    pen.fillRect(a, 0, 1, height);
+    pen.fillRect(b - 1, 0, 1, height);
+  }
 }
 
-function scrubTo(offsetX) {
+function stripFraction(offsetX) {
   const strip = $("tb-canvas");
   const width = strip.clientWidth || 1;
   const pad = 6;
-  const x = Math.max(0, Math.min(1, (offsetX - pad) / (width - pad * 2)));
-  let best = 0;
+  return Math.max(0, Math.min(1, (offsetX - pad) / (width - pad * 2)));
+}
+
+function nearestStep(fraction) {
+  const { lo, xs } = playback.win;
+  let best = lo;
   let bestDist = Infinity;
-  for (let i = 0; i < playback.xs.length; i += 1) {
-    const dist = Math.abs(playback.xs[i] - x);
+  for (let j = 0; j < xs.length; j += 1) {
+    const dist = Math.abs(xs[j] - fraction);
     if (dist < bestDist) {
-      best = i;
+      best = lo + j;
       bestDist = dist;
     }
   }
+  return best;
+}
+
+function scrubTo(offsetX) {
   setReplayPlaying(false);
-  setReplayStep(best);
+  setReplayStep(nearestStep(stripFraction(offsetX)));
+}
+
+/* A dragged selection becomes the new window, Grafana-style. */
+function commitBrush(x0, x1) {
+  const fa = stripFraction(Math.min(x0, x1));
+  const fb = stripFraction(Math.max(x0, x1));
+  const { lo, hi, xs } = playback.win;
+  let first = null;
+  let last = null;
+  for (let j = 0; j < xs.length; j += 1) {
+    if (xs[j] >= fa && xs[j] <= fb) {
+      if (first === null) first = lo + j;
+      last = lo + j;
+    }
+  }
+  if (first === null || first === last) {
+    // Nothing (or one tick) inside: too thin to be a window.
+    if (first !== null) scrubTo((x0 + x1) / 2);
+    return;
+  }
+  if (first === lo && last === hi) return; // the same window again
+  setReplayPlaying(false);
+  applyRange({ lo: first, hi: last });
 }
 
 $("btn-replay").addEventListener("click", () => {
@@ -1153,16 +1246,78 @@ $("tb-speed").addEventListener("change", (event) => {
   playback.stepMs = parseInt(event.target.value, 10) || 1200;
   if (playback.timer) setReplayPlaying(true);
 });
-let scrubbing = false;
+/* One gesture, two meanings: a click (or a tiny drag) scrubs the playhead;
+   a real drag paints a selection that becomes the new window on release. */
+let stripDrag = null;
 $("tb-canvas").addEventListener("pointerdown", (event) => {
-  scrubbing = true;
+  stripDrag = { x0: event.offsetX, moved: false };
   $("tb-canvas").setPointerCapture(event.pointerId);
-  scrubTo(event.offsetX);
 });
 $("tb-canvas").addEventListener("pointermove", (event) => {
-  if (scrubbing) scrubTo(event.offsetX);
+  if (!stripDrag) return;
+  if (stripDrag.moved || Math.abs(event.offsetX - stripDrag.x0) > 4) {
+    stripDrag.moved = true;
+    playback.brush = { x0: stripDrag.x0, x1: event.offsetX };
+    drawTimebar();
+  }
 });
-$("tb-canvas").addEventListener("pointerup", () => (scrubbing = false));
+$("tb-canvas").addEventListener("pointerup", (event) => {
+  if (!stripDrag) return;
+  const drag = stripDrag;
+  stripDrag = null;
+  playback.brush = null;
+  if (drag.moved) commitBrush(drag.x0, event.offsetX);
+  else scrubTo(drag.x0);
+  drawTimebar();
+});
+$("tb-canvas").addEventListener("pointercancel", () => {
+  stripDrag = null;
+  playback.brush = null;
+  drawTimebar();
+});
+
+/* Presets, Grafana's other half: all time, or the last so-much. */
+$("tb-range").addEventListener("change", (event) => {
+  const value = event.target.value;
+  if (value === "all") {
+    applyRange(null);
+    return;
+  }
+  const cutoff = Date.now() - parseInt(value, 10) * 60000;
+  let first = null;
+  for (let i = 0; i < playback.effMs.length; i += 1) {
+    if (playback.effMs[i] !== null && playback.effMs[i] >= cutoff) {
+      first = i;
+      break;
+    }
+  }
+  if (first === null) {
+    showError("nothing that recent — the line stays whole");
+    event.target.value = "all";
+    applyRange(null);
+    return;
+  }
+  setReplayPlaying(false);
+  applyRange({ lo: first, hi: playback.entries.length - 1 });
+});
+
+/* Out doubles the window around its center; ⟲ walks the range history. */
+$("tb-out").addEventListener("click", () => {
+  if (!playback.range) return;
+  const { lo, hi } = playback.win;
+  const size = hi - lo + 1;
+  const center = (lo + hi) / 2;
+  const newLo = Math.max(0, Math.round(center - size));
+  const newHi = Math.min(playback.entries.length - 1, Math.round(center + size));
+  if (newLo === 0 && newHi === playback.entries.length - 1) applyRange(null);
+  else applyRange({ lo: newLo, hi: newHi });
+  $("tb-range").value = "all";
+});
+$("tb-back").addEventListener("click", () => {
+  if (!playback.rangeStack.length) return;
+  applyRange(playback.rangeStack.pop(), false);
+  $("tb-range").value = "all";
+});
 addEventListener("keydown", (event) => {
   if (!playback.active) return;
   const target = event.target;
