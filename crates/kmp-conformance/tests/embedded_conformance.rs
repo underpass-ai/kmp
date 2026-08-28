@@ -29,8 +29,7 @@ impl ConformanceBackendFactory for EmbeddedFactory {
 
     async fn fresh(&self) -> FactoryBackend<Self> {
         let data_dir = tempfile::tempdir().expect("temp data dir");
-        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n")
-            .expect("legacy format stamp");
+        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n").expect("legacy format stamp");
         let store = EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
             .expect("legacy embedded store opens");
         self.data_dirs

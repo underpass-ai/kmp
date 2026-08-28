@@ -37,7 +37,8 @@ impl EmbeddedKernelStore {
     /// store is never reinterpreted as another engine's. redb is accepted
     /// only when a format-1 stamp already exists.
     pub fn open_with_engine(data_dir: &Path, engine: StorageEngine) -> Result<Self, PortError> {
-        if engine == StorageEngine::Redb && !format_version::format_version_path(data_dir).exists() {
+        if engine == StorageEngine::Redb && !format_version::format_version_path(data_dir).exists()
+        {
             return Err(PortError::InvalidState(
                 "the redb engine is legacy-only and cannot create a new store; use SQLite"
                     .to_string(),

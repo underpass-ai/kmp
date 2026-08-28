@@ -285,7 +285,10 @@ fn open_legacy_with_retry(path: &Path) -> Result<Database, PortError> {
             Ok(database) => return Ok(database),
             Err(error)
                 if (error.to_string().contains("Cannot acquire lock")
-                    || error.to_string().to_ascii_lowercase().contains("already open"))
+                    || error
+                        .to_string()
+                        .to_ascii_lowercase()
+                        .contains("already open"))
                     && std::time::Instant::now() < deadline =>
             {
                 std::thread::sleep(backoff);
