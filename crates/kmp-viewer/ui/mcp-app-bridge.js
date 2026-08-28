@@ -129,7 +129,9 @@
       };
     }
     if (path === "/api/node") {
+      const activeAbout = params.about || await about();
       const inspect = await callTool("kmp_inspect", {
+        about: activeAbout,
         ref: params.id,
         include: { incoming: true, outgoing: true, details: true, raw: true },
         budget: { max_bytes: 65536 },
@@ -158,13 +160,14 @@
       const nodes = [];
       const missing = [];
       for (const id of ids) {
-        try { nodes.push((await appApi("/api/node", { id })).node); }
+        try { nodes.push((await appApi("/api/node", { about: params.about, id })).node); }
         catch (_) { missing.push(id); }
       }
       return { nodes, missing };
     }
     if (path === "/api/trace") {
-      const trace = await callTool("kmp_trace", { from: params.from, to: params.to });
+      const activeAbout = params.about || await about();
+      const trace = await callTool("kmp_trace", { about: activeAbout, from: params.from, to: params.to });
       return {
         from: params.from,
         to: params.to,

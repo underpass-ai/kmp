@@ -114,11 +114,11 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         ),
         (
             "kmp_trace",
-            json!({"from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before"}),
+            json!({"about":"project:parity-live","from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before"}),
         ),
         (
             "kmp_inspect",
-            json!({"ref":"project:parity-live:observation:parity-after","include":{"details":true}}),
+            json!({"about":"project:parity-live","ref":"project:parity-live:observation:parity-after","include":{"details":true}}),
         ),
     ];
 
@@ -258,7 +258,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         &http,
         &embedded,
         "kmp_inspect",
-        json!({"ref":"missing:parity-ref"}),
+        json!({"about":"project:parity-live","ref":"project:parity-live:missing:parity-ref"}),
         "not_found",
     )
     .await;
@@ -749,6 +749,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             6,
             "kmp_trace",
             json!({
+                "about": ROOT_NODE_ID,
                 "from": ROOT_NODE_ID,
                 "to": TASK_ID,
                 "role": DEVELOPER_ROLE,
@@ -774,6 +775,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             7,
             "kmp_inspect",
             json!({
+                "about": ROOT_NODE_ID,
                 "ref": DECISION_ID,
                 "include": {
                     "details": true

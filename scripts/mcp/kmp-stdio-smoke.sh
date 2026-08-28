@@ -9,8 +9,9 @@ cd "${ROOT_DIR}"
 MCP_BIN="${KMP_MCP_BIN:-kmp-mcp}"
 
 if [[ -n "${KMP_KERNEL_GRPC_ENDPOINT:-}" ]]; then
+  ABOUT="${KMP_MCP_SMOKE_ABOUT:-project:kmp}"
   REF="${KMP_MCP_SMOKE_REF:-node:mission:engine-core-failure}"
-  REQUEST=$(printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_inspect","arguments":{"ref":"%s"}}}' "${REF}")
+  REQUEST=$(printf '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_inspect","arguments":{"about":"%s","ref":"%s"}}}' "${ABOUT}" "${REF}")
   EXPECTED='"isError":false'
 else
   if [[ "${KMP_MCP_BACKEND:-}" != "fixture" ]]; then

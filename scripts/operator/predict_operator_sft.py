@@ -541,13 +541,13 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
     if tool == "kmp_trace":
         key_error = exact_keys(
             arguments,
-            {"from", "to", "budget"},
+            {"about", "from", "to", "budget"},
             {"goal", "role", "page"},
             "action.arguments",
         )
         if key_error is not None:
             return key_error
-        for field in ("from", "to"):
+        for field in ("about", "from", "to"):
             error = require_non_empty_string(arguments, field, "action.arguments")
             if error is not None:
                 return error
@@ -563,12 +563,15 @@ def validate_tool_arguments(tool: str, arguments: dict[str, Any]) -> str | None:
         return None
 
     if tool == "kmp_inspect":
-        key_error = exact_keys(arguments, {"ref", "include"}, set(), "action.arguments")
+        key_error = exact_keys(
+            arguments, {"about", "ref", "include"}, set(), "action.arguments"
+        )
         if key_error is not None:
             return key_error
-        error = require_non_empty_string(arguments, "ref", "action.arguments")
-        if error is not None:
-            return error
+        for field in ("about", "ref"):
+            error = require_non_empty_string(arguments, field, "action.arguments")
+            if error is not None:
+                return error
         return validate_inspect_include(
             arguments.get("include"), "action.arguments.include"
         )
@@ -1241,7 +1244,8 @@ def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
         )
     if tool == "kmp_trace":
         return (
-            path_string(arguments, ("from",)) is not None
+            path_non_empty_string(arguments, ("about",))
+            and path_string(arguments, ("from",)) is not None
             and path_string(arguments, ("to",)) is not None
             and positive_limit(arguments, ("budget", "tokens"), 16_000)
             and optional_limit(arguments, ("budget", "depth"), 8)
@@ -1249,7 +1253,8 @@ def is_bounded_tool_call(tool: str, arguments: dict[str, Any]) -> bool:
         )
     if tool == "kmp_inspect":
         return (
-            path_string(arguments, ("ref",)) is not None
+            path_non_empty_string(arguments, ("about",))
+            and path_string(arguments, ("ref",)) is not None
             and arguments.get("include", {}).get("raw") is False
         )
     if tool in {"kmp_goto", "kmp_rewind", "kmp_forward"}:

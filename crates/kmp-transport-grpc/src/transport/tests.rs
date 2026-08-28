@@ -374,62 +374,60 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
         target_node_id: &str,
         _subtree_depth: u32,
     ) -> Result<Option<ContextPathNeighborhood>, PortError> {
-        Ok(
-            (root_node_id == "node-123" && target_node_id == "node-789").then_some(
-                ContextPathNeighborhood {
-                    root: sample_node_neighborhood("node-123", "ACTIVE").root,
-                    neighbors: vec![
-                        NodeProjection {
-                            node_id: "node-456".to_string(),
-                            node_kind: "task".to_string(),
-                            title: "Node node-456".to_string(),
-                            summary: "Summary for node-456".to_string(),
-                            status: "OPEN".to_string(),
-                            labels: vec!["Task".to_string()],
-                            properties: [("owner".to_string(), "ops".to_string())]
-                                .into_iter()
-                                .collect(),
-                            provenance: None,
-                        },
-                        NodeProjection {
-                            node_id: "node-789".to_string(),
-                            node_kind: "task".to_string(),
-                            title: "Node node-789".to_string(),
-                            summary: "Summary for node-789".to_string(),
-                            status: "READY".to_string(),
-                            labels: vec!["Task".to_string()],
-                            properties: [("owner".to_string(), "ops".to_string())]
-                                .into_iter()
-                                .collect(),
-                            provenance: None,
-                        },
-                    ],
-                    relations: vec![
-                        NodeRelationProjection {
-                            source_node_id: "node-123".to_string(),
-                            target_node_id: "node-456".to_string(),
-                            relation_type: "TRIGGERS".to_string(),
-                            explanation: RelationExplanation::new(RelationSemanticClass::Causal)
-                                .with_rationale("recovery triggered")
-                                .with_sequence(1),
-                        },
-                        NodeRelationProjection {
-                            source_node_id: "node-456".to_string(),
-                            target_node_id: "node-789".to_string(),
-                            relation_type: "PRODUCES".to_string(),
-                            explanation: RelationExplanation::new(RelationSemanticClass::Causal)
-                                .with_rationale("task produces artifact")
-                                .with_sequence(2),
-                        },
-                    ],
-                    path_node_ids: vec![
-                        "node-123".to_string(),
-                        "node-456".to_string(),
-                        "node-789".to_string(),
-                    ],
+        Ok((root_node_id == "node-123"
+            && matches!(target_node_id, "node-789" | "node-123:node-789"))
+        .then_some(ContextPathNeighborhood {
+            root: sample_node_neighborhood("node-123", "ACTIVE").root,
+            neighbors: vec![
+                NodeProjection {
+                    node_id: "node-456".to_string(),
+                    node_kind: "task".to_string(),
+                    title: "Node node-456".to_string(),
+                    summary: "Summary for node-456".to_string(),
+                    status: "OPEN".to_string(),
+                    labels: vec!["Task".to_string()],
+                    properties: [("owner".to_string(), "ops".to_string())]
+                        .into_iter()
+                        .collect(),
+                    provenance: None,
                 },
-            ),
-        )
+                NodeProjection {
+                    node_id: target_node_id.to_string(),
+                    node_kind: "task".to_string(),
+                    title: format!("Node {target_node_id}"),
+                    summary: format!("Summary for {target_node_id}"),
+                    status: "READY".to_string(),
+                    labels: vec!["Task".to_string()],
+                    properties: [("owner".to_string(), "ops".to_string())]
+                        .into_iter()
+                        .collect(),
+                    provenance: None,
+                },
+            ],
+            relations: vec![
+                NodeRelationProjection {
+                    source_node_id: "node-123".to_string(),
+                    target_node_id: "node-456".to_string(),
+                    relation_type: "TRIGGERS".to_string(),
+                    explanation: RelationExplanation::new(RelationSemanticClass::Causal)
+                        .with_rationale("recovery triggered")
+                        .with_sequence(1),
+                },
+                NodeRelationProjection {
+                    source_node_id: "node-456".to_string(),
+                    target_node_id: target_node_id.to_string(),
+                    relation_type: "PRODUCES".to_string(),
+                    explanation: RelationExplanation::new(RelationSemanticClass::Causal)
+                        .with_rationale("task produces artifact")
+                        .with_sequence(2),
+                },
+            ],
+            path_node_ids: vec![
+                "node-123".to_string(),
+                "node-456".to_string(),
+                target_node_id.to_string(),
+            ],
+        }))
     }
 }
 
@@ -2000,8 +1998,9 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let trace = service
         .trace(Request::new(TraceRequest {
+            about: "node-123".to_string(),
             from: "node-123".to_string(),
-            to: "node-789".to_string(),
+            to: "node-123:node-789".to_string(),
             goal: "prove path".to_string(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
@@ -2019,8 +2018,9 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let paged_trace = service
         .trace(Request::new(TraceRequest {
+            about: "node-123".to_string(),
             from: "node-123".to_string(),
-            to: "node-789".to_string(),
+            to: "node-123:node-789".to_string(),
             goal: "prove path".to_string(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
@@ -2046,8 +2046,9 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let invalid_cursor = service
         .trace(Request::new(TraceRequest {
+            about: "node-123".to_string(),
             from: "node-123".to_string(),
-            to: "node-789".to_string(),
+            to: "node-123:node-789".to_string(),
             goal: "prove path".to_string(),
             budget: None,
             page: Some(PageRequest {
@@ -2061,8 +2062,9 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let oversized_page = service
         .trace(Request::new(TraceRequest {
+            about: "node-123".to_string(),
             from: "node-123".to_string(),
-            to: "node-789".to_string(),
+            to: "node-123:node-789".to_string(),
             goal: "prove path".to_string(),
             budget: None,
             page: Some(PageRequest {
@@ -2076,6 +2078,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let inspect = service
         .inspect(Request::new(InspectRequest {
+            about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {
                 incoming: true,
@@ -2112,6 +2115,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let summary_only = service
         .inspect(Request::new(InspectRequest {
+            about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {
                 incoming: false,
@@ -2132,6 +2136,7 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
 
     let raw = service
         .inspect(Request::new(InspectRequest {
+            about: "node-123".to_string(),
             r#ref: "node-123".to_string(),
             include: Some(InspectInclude {
                 incoming: false,

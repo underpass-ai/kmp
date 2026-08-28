@@ -3976,12 +3976,30 @@ fn item(
     about: &str,
     step_id: &str,
     goal: &str,
-    visible_state: Value,
+    mut visible_state: Value,
     allowed_tools: Vec<String>,
-    target_action: Value,
+    mut target_action: Value,
     observed_outcome: Value,
     quality: Value,
 ) -> TrajectoryItem {
+    for request_key in ["requested_trace", "inspection_request"] {
+        if let Some(request) = visible_state
+            .get_mut(request_key)
+            .and_then(Value::as_object_mut)
+        {
+            request.insert("about".to_string(), json!(about));
+        }
+    }
+    if target_action
+        .get("tool")
+        .and_then(Value::as_str)
+        .is_some_and(|tool| matches!(tool, "kmp_trace" | "kmp_inspect"))
+        && let Some(arguments) = target_action
+            .get_mut("arguments")
+            .and_then(Value::as_object_mut)
+    {
+        arguments.insert("about".to_string(), json!(about));
+    }
     TrajectoryItem {
         schema_version: SCHEMA_VERSION,
         run_id: run_id.to_string(),

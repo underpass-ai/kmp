@@ -15,12 +15,13 @@ use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
     MemoryIngestCommand, MemoryIngestOutcome, TemporalMemoryQuery, TemporalMemoryResult,
     TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery,
-    build_visual_projection, translate_memory_ingest,
+    build_visual_projection, translate_memory_ingest, validate_ref_token,
+    validate_supplied_member_ref,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
-    GetContextResult, GetNodeDetailQuery, GetNodeRelationshipsQuery, QueryApplicationService,
-    render_graph_bundle_with_options,
+    GetContextResult, GetNodeDetailQuery, GetNodeRelationshipsQuery,
+    MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH, QueryApplicationService, render_graph_bundle_with_options,
 };
 
 const MEMORY_EXISTING_REFS_LOOKUP_DEPTH: u32 = 1;
@@ -181,6 +182,11 @@ where
         &self,
         query: TraceMemoryQuery,
     ) -> Result<GetContextPathResult, ApplicationError> {
+        self.validate_read_members(
+            &query.about,
+            &[("from", query.from.as_str()), ("to", query.to.as_str())],
+        )
+        .await?;
         self.query_application
             .get_context_path(GetContextPathQuery {
                 root_node_id: query.from,
@@ -202,6 +208,8 @@ where
         &self,
         query: InspectMemoryQuery,
     ) -> Result<InspectMemoryResult, ApplicationError> {
+        self.validate_read_members(&query.about, &[("ref", query.ref_id.as_str())])
+            .await?;
         let include_incoming = query.include_incoming;
         let include_outgoing = query.include_outgoing;
         let include_details = query.include_details;
@@ -300,6 +308,47 @@ where
         }
     }
 
+    async fn validate_read_members(
+        &self,
+        about: &str,
+        members: &[(&str, &str)],
+    ) -> Result<(), ApplicationError> {
+        let mut graph_members = Vec::new();
+        for (path, member_ref) in members {
+            validate_ref_token(path, member_ref).map_err(ApplicationError::Validation)?;
+            if validate_supplied_member_ref(about, path, member_ref).is_err() {
+                graph_members.push((*path, *member_ref));
+            }
+        }
+        if graph_members.is_empty() {
+            return Ok(());
+        }
+
+        let visible = match self
+            .query_application
+            .get_context(GetContextQuery {
+                root_node_id: about.to_string(),
+                role: "memory-boundary".to_string(),
+                depth: MAX_NATIVE_GRAPH_TRAVERSAL_DEPTH,
+                requested_scopes: Vec::new(),
+                render_options: ContextRenderOptions::default(),
+            })
+            .await
+        {
+            Ok(result) => bundle_node_ids(&result.bundle),
+            Err(ApplicationError::NotFound(_)) => BTreeSet::new(),
+            Err(error) => return Err(error),
+        };
+        for (path, member_ref) in graph_members {
+            if !visible.contains(member_ref) {
+                return Err(ApplicationError::Validation(format!(
+                    "`{path}` `{member_ref}` does not belong to about `{about}`"
+                )));
+            }
+        }
+        Ok(())
+    }
+
     async fn memory_context(
         &self,
         about: &str,
@@ -354,6 +403,13 @@ where
         }
         Ok(roots)
     }
+}
+
+fn bundle_node_ids(bundle: &KmpBundle) -> BTreeSet<String> {
+    std::iter::once(bundle.root_node().node_id())
+        .chain(bundle.neighbor_nodes().iter().map(BundleNode::node_id))
+        .map(ToString::to_string)
+        .collect()
 }
 
 fn projected_evidence_supports(

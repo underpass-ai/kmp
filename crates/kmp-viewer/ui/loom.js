@@ -1585,7 +1585,7 @@ function renderDetailEmpty() {
    to a Moment-sized window around that clock, then ask the projection for the
    entry rather than pretending the selection was honoured. */
 async function revealEntryAtMoment(ref) {
-  const inspect = await api("/api/node", { id: ref, raw: "1" });
+  const inspect = await api("/api/node", { about: model.about, id: ref, raw: "1" });
   const entry = KMP_LOOM.entryModel({
     ref_id: inspect.node.id,
     kind: inspect.node.kind,
@@ -1611,7 +1611,7 @@ async function selectEntry(ref) {
     const revealed = model.byRef.has(ref) ? null : await revealEntryAtMoment(ref);
     const m = model.byRef.get(ref);
     if (!m) throw new Error(`cannot select ${ref}: the entry is not in this projection`);
-    const inspect = revealed || (await api("/api/node", { id: ref, raw: "1" }));
+    const inspect = revealed || (await api("/api/node", { about: model.about, id: ref, raw: "1" }));
     view.selectedRef = ref;
     requestDraw();
     reportView();
@@ -1797,7 +1797,7 @@ $("d-clear-trace").addEventListener("click", () => {
 
 async function runTrace({ framePath = false, preserveWindow = false } = {}) {
   try {
-    const trace = await api("/api/trace", { from: tracePick.from, to: tracePick.to });
+    const trace = await api("/api/trace", { about: model.about, from: tracePick.from, to: tracePick.to });
     if (framePath) {
       await frameRefs(trace.nodes.map((node) => node.id));
     } else if (!preserveWindow) {
@@ -2119,7 +2119,7 @@ async function frameRefs(refs) {
   for (const ref of refs) {
     let entry = model.byRef.get(ref);
     if (!entry) {
-      const inspect = await api("/api/node", { id: ref, raw: "1" });
+      const inspect = await api("/api/node", { about: model.about, id: ref, raw: "1" });
       entry = KMP_LOOM.entryModel({
         ref_id: inspect.node.id,
         kind: inspect.node.kind,

@@ -146,8 +146,8 @@ Ten over memory, three over the view a person is looking at.
 | `kmp_near` | Inspect the temporal neighborhood around a cursor. |
 | `kmp_rewind` | Move backward through memory. |
 | `kmp_forward` | Move forward through memory. |
-| `kmp_trace` | Prove the path between two refs in one memory graph. |
-| `kmp_inspect` | Inspect one object, its links and its evidence. |
+| `kmp_trace` | Prove the path between two refs owned by an explicit `about`. |
+| `kmp_inspect` | Inspect one object inside an explicit `about`, with its links and evidence. |
 | `kmp_write_memory` | Validate and record a decision, constraint or outcome. |
 | `kmp_ingest` | Ingest an exact canonical memory graph. |
 | `kmp_view_open` | Open or rehydrate a ChronoLoom view over an about. |

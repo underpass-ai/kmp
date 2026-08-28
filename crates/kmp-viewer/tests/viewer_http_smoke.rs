@@ -217,7 +217,8 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     let (status, node) = get(
         port,
         &format!(
-            "/api/node?id={}&raw=1",
+            "/api/node?about={}&id={}&raw=1",
+            urlencode(ABOUT),
             urlencode("project:viewer-smoke:decision:first")
         ),
     )
@@ -232,16 +233,17 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     let (status, batch) = get(
         port,
         &format!(
-            "/api/nodes?ids={}",
+            "/api/nodes?about={}&ids={}",
+            urlencode(ABOUT),
             urlencode(
-                "project:viewer-smoke:decision:first,project:viewer-smoke:decision:second,node:unknown"
+                "project:viewer-smoke:decision:first,project:viewer-smoke:decision:second,project:viewer-smoke:node:unknown"
             )
         ),
     )
     .await;
     assert_eq!(status, 200, "nodes failed: {batch}");
     assert_eq!(batch["nodes"].as_array().expect("batch nodes").len(), 2);
-    assert_eq!(batch["missing"][0], "node:unknown");
+    assert_eq!(batch["missing"][0], "project:viewer-smoke:node:unknown");
 
     let (status, timeline) = get(
         port,
@@ -293,7 +295,8 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     let (status, trace) = get(
         port,
         &format!(
-            "/api/trace?from={}&to={}",
+            "/api/trace?about={}&from={}&to={}",
+            urlencode(ABOUT),
             urlencode("project:viewer-smoke:decision:second"),
             urlencode("project:viewer-smoke:decision:first")
         ),

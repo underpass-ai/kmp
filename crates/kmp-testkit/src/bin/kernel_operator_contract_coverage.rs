@@ -516,6 +516,7 @@ fn bounded_trace_page(id: &str) -> bool {
         _ => return false,
     };
     let arguments = serde_json::json!({
+        "about": "about:1",
         "from": "node:1",
         "to": "node:2",
         "budget": { "depth": 2, "tokens": 2400 },
@@ -528,6 +529,7 @@ fn bounded_inspect_raw_false() -> bool {
     kernel_operator_is_bounded_tool_call(
         "kmp_inspect",
         &serde_json::json!({
+            "about": "about:1",
             "ref": "node:1",
             "include": { "details": true, "incoming": true, "outgoing": true, "raw": false }
         }),

@@ -316,7 +316,7 @@ fn undrained_stderr_never_blocks_stdio_tool_calls() {
                 "method": "tools/call",
                 "params": {
                     "name": "kmp_inspect",
-                    "arguments": {"ref": "incident:pipe"}
+                    "arguments": {"about": "incident:pipe", "ref": "incident:pipe"}
                 }
             })
         )

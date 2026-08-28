@@ -66,7 +66,9 @@ mod tests {
     fn agent_trace_frames_its_path_before_drawing_it() {
         let html = mcp_app_html();
         assert!(html.contains("framed = await frameRefs(refs)"));
-        assert!(html.contains("const inspect = await api(\"/api/node\", { id: ref, raw: \"1\" })"));
+        assert!(html.contains(
+            "const inspect = await api(\"/api/node\", { about: model.about, id: ref, raw: \"1\" })"
+        ));
         assert!(html.contains("await loadProjection()"));
         assert!(html.contains("await frameRefs(trace.nodes.map((node) => node.id))"));
         assert!(

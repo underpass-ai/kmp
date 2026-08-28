@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .endpoint
             .as_deref()
             .ok_or("--inspect requires --endpoint")?;
-        Some(inspect_refs(endpoint, &projected_refs, &args).await?)
+        Some(inspect_refs(endpoint, &projected_refs, &inventory.about_refs, &args).await?)
     } else {
         None
     };
@@ -382,6 +382,7 @@ fn extract_run_id(reference: &str) -> Option<String> {
 async fn inspect_refs(
     endpoint: &str,
     refs: &BTreeSet<String>,
+    about_refs: &BTreeSet<String>,
     args: &Args,
 ) -> Result<InspectSummary, Box<dyn Error + Send + Sync>> {
     let server = KernelMcpServer::grpc_with_tls(
@@ -403,7 +404,12 @@ async fn inspect_refs(
 
     for (index, reference) in selected_refs.iter().enumerate() {
         let processed = index + 1;
-        let outcome = inspect_one_ref(&server, id, reference).await?;
+        let about = about_refs
+            .iter()
+            .filter(|about| reference.starts_with(about.as_str()))
+            .max_by_key(|about| about.len())
+            .ok_or_else(|| format!("no about boundary found for ref `{reference}`"))?;
+        let outcome = inspect_one_ref(&server, id, about, reference).await?;
         id = id.checked_add(1).ok_or("request id overflow")?;
         match outcome {
             InspectRefOutcome::Found => found += 1,
@@ -467,6 +473,7 @@ enum InspectRefOutcome {
 async fn inspect_one_ref(
     server: &KernelMcpServer,
     id: u64,
+    about: &str,
     reference: &str,
 ) -> Result<InspectRefOutcome, Box<dyn Error + Send + Sync>> {
     let request = json!({
@@ -476,6 +483,7 @@ async fn inspect_one_ref(
         "params": {
             "name": "kmp_inspect",
             "arguments": {
+                "about": about,
                 "ref": reference,
                 "include": {
                     "incoming": false,

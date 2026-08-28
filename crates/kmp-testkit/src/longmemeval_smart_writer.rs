@@ -236,6 +236,7 @@ impl LongMemEvalSmartWriter {
             let commit_content = commit_call.content.clone();
 
             let verify_arguments = json!({
+                "about": input.about,
                 "ref": input.entry_ref,
                 "include": {
                     "incoming": true,
@@ -333,6 +334,7 @@ impl LongMemEvalSmartWriter {
             request_id,
             "kmp_inspect",
             &json!({
+                "about": input.about,
                 "ref": input.target_ref,
                 "include": {
                     "incoming": true,

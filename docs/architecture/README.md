@@ -60,7 +60,7 @@ sequenceDiagram
     participant B as .kmp/memory.jsonl
 
     U->>A: Remember a decision and its why
-    A->>M: kmp_inspect(existing ref)
+    A->>M: kmp_inspect(about, existing ref)
     M->>K: typed inspect query
     K->>S: read object, relations and evidence
     S-->>A: auditable prior context
