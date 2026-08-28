@@ -163,7 +163,7 @@ pub(crate) fn check_or_stamp_as(
                 return Err(PortError::InvalidState(format!(
                     "embedded store at `{}` is a {stamped} store (format version {}), not {wanted}; \
                      a store is never reopened with another engine — to change engines, migrate it: \
-                     `kmp-mcp migrate <this-dir> <new-dir> --engine {wanted}`, or unset the engine \
+                     `kmp-mcp migrate <this-dir> <new-dir>`, or unset the engine \
                      to open it as it is",
                     data_dir.display(),
                     stamped.format_version()
@@ -298,6 +298,16 @@ mod tests {
             .expect_err("redb store must not open as sqlite");
         assert!(error.to_string().contains("is a redb store"));
         assert!(error.to_string().contains("not sqlite"));
+        assert!(
+            error
+                .to_string()
+                .contains("kmp-mcp migrate <this-dir> <new-dir>"),
+            "the repair must name the current SQLite-only migration command: {error}"
+        );
+        assert!(
+            !error.to_string().contains("--engine"),
+            "the repair must not advertise the retired --engine option: {error}"
+        );
     }
 
     #[test]
