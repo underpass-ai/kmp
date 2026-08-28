@@ -1868,6 +1868,124 @@ async fn embedded_backend_returns_structured_not_found_errors() {
     );
 }
 
+#[tokio::test]
+async fn inspect_negotiates_an_oversized_result_and_only_errors_below_the_object_floor() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let evidence = (0..18)
+        .map(|index| {
+            json!({
+                "id": format!("evidence:project:inspect-budget:item:{index:02}"),
+                "supports": ["project:inspect-budget:decision:hub"],
+                "text": format!("Evidence {index:02}: {}", "proof ".repeat(70)),
+                "source": format!("inspect budget fixture {index:02}")
+            })
+        })
+        .collect::<Vec<_>>();
+    let seeded = call(
+        &server,
+        1,
+        "kmp_ingest",
+        json!({
+            "about": "project:inspect-budget",
+            "idempotency_key": "inspect-budget:seed",
+            "memory": {
+                "dimensions": [{"id": "inspect-budget:process", "kind": "agentic_process"}],
+                "entries": [{
+                    "id": "project:inspect-budget:decision:hub",
+                    "kind": "decision",
+                    "text": format!("Stable inspected object. {}", "core ".repeat(180)),
+                    "coordinates": [{
+                        "dimension": "agentic_process",
+                        "scope_id": "inspect-budget:process",
+                        "sequence": 1
+                    }]
+                }],
+                "relations": [],
+                "evidence": evidence
+            }
+        }),
+    )
+    .await;
+    assert_eq!(seeded["memory"]["accepted"]["entries"], 1, "{seeded}");
+
+    let mut arguments = json!({
+        "about": "project:inspect-budget",
+        "ref": "project:inspect-budget:decision:hub",
+        "include": {"details": true, "incoming": false, "outgoing": false, "raw": false},
+        "budget": {"max_bytes": 3_000}
+    });
+    let mut returned_evidence = Vec::new();
+    let mut required_bytes = None;
+    let mut pages = 0;
+    loop {
+        pages += 1;
+        let response = server
+            .handle_json_line(&tool_call(10 + pages, "kmp_inspect", arguments.clone()))
+            .await
+            .expect("inspect response");
+        let response: Value = serde_json::from_str(&response).expect("inspect JSON");
+        assert_eq!(response["result"]["isError"], false, "{response}");
+        let page = &response["result"]["structuredContent"];
+        assert_eq!(page["object"]["ref"], "project:inspect-budget:decision:hub");
+        assert!(
+            serde_json::to_string(page).expect("page serializes").len() <= 3_000,
+            "{page}"
+        );
+        let this_required = page["page"]["required_bytes"]
+            .as_u64()
+            .expect("required bytes");
+        assert_eq!(*required_bytes.get_or_insert(this_required), this_required);
+        returned_evidence.extend(
+            page["evidence"]
+                .as_array()
+                .expect("evidence page")
+                .iter()
+                .map(|item| item["id"].as_str().expect("evidence id").to_string()),
+        );
+        if !page["page"]["has_more"].as_bool().expect("has_more") {
+            break;
+        }
+        arguments["page"] = json!({
+            "cursor": page["page"]["next_cursor"].as_str().expect("next cursor")
+        });
+        assert!(pages < 20, "inspect continuation must make progress");
+    }
+    assert!(pages > 1, "fixture must exercise continuation");
+    assert_eq!(
+        returned_evidence,
+        (0..18)
+            .map(|index| format!("evidence:project:inspect-budget:item:{index:02}"))
+            .collect::<Vec<_>>()
+    );
+
+    let floor = server
+        .handle_json_line(&tool_call(
+            99,
+            "kmp_inspect",
+            json!({
+                "about": "project:inspect-budget",
+                "ref": "project:inspect-budget:decision:hub",
+                "include": {"details": true, "incoming": false, "outgoing": false, "raw": false},
+                "budget": {"max_bytes": 512}
+            }),
+        ))
+        .await
+        .expect("floor response");
+    let floor: Value = serde_json::from_str(&floor).expect("floor JSON");
+    assert_eq!(floor["result"]["isError"], true, "{floor}");
+    assert_eq!(
+        floor["result"]["structuredContent"]["error"]["code"],
+        "invalid_argument"
+    );
+    assert!(
+        floor["result"]["structuredContent"]["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("object floor")),
+        "{floor}"
+    );
+}
+
 async fn call(server: &KernelMcpServer, id: u64, name: &str, arguments: Value) -> Value {
     let response = server
         .handle_json_line(&tool_call(id, name, arguments))
