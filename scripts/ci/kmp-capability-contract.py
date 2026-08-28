@@ -72,6 +72,13 @@ if native_skills != codex_skills | {"kmp-memory"}:
         f"contract={sorted(codex_skills | {'kmp-memory'})}, files={sorted(native_skills)}"
     )
 
+memory_skill = (PLUGIN / "skills" / "kmp-memory" / "SKILL.md").read_text(
+    encoding="utf-8"
+)
+for tool in sorted(name for name in EXPECTED_TOOLS if name.startswith("kmp_view_")):
+    if tool not in memory_skill:
+        fail(f"kmp-memory does not route advertised view tool {tool}")
+
 for entry in workflows:
     if entry["claude_command"] != entry["id"]:
         fail(f"{entry['id']} has a mismatched Claude exposure")
