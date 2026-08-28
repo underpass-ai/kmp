@@ -4,7 +4,7 @@ use kmp_mcp::{
     MCP_BACKEND_ENV,
 };
 use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -207,7 +207,8 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
             }
         }
     };
-    let server = KernelMcpServer::with_embedded_backend(backend);
+    let server = KernelMcpServer::with_embedded_backend(backend)
+        .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
     Ok(match url {
         Some(url) => server.serving_viewer_at(url),
         None => server,
@@ -354,6 +355,10 @@ fn user_state_home() -> std::path::PathBuf {
 /// `viewer [addr]` serves the local web viewer over the store; stdout carries
 /// the command result only.
 async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
+    if is_cli_subcommand(command) && help_requested(args) {
+        print_subcommand_help(command);
+        return 0;
+    }
     let first_argument = args.first().copied();
     match command {
         "export" | "import" => {}
@@ -366,7 +371,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             eprintln!("kmp-mcp: share-memory was retired; stores already use SQLite.");
             return 2;
         }
-        "viewer" => return run_viewer_command(first_argument).await,
+        "viewer" => return run_viewer_command(args).await,
         "--help" | "-h" | "help" => {
             print_help();
             return 0;
@@ -405,27 +410,66 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         }
     }
 
-    let (path, repair_pending) = if command == "export" {
+    let (path, repair_pending, abouts) = if command == "export" {
         let mut path = None;
         let mut repair_pending = false;
-        for argument in args {
-            if *argument == "--repair-pending" {
-                repair_pending = true;
-            } else if path.replace(*argument).is_some() {
-                eprintln!(
-                    "kmp-mcp: export takes at most one file path and optional --repair-pending"
-                );
-                return 2;
+        let mut abouts = Vec::new();
+        let mut arguments = args.iter();
+        while let Some(argument) = arguments.next() {
+            match *argument {
+                "--repair-pending" => repair_pending = true,
+                "--about" => match arguments.next() {
+                    Some(about) if !about.is_empty() => abouts.push((*about).to_string()),
+                    Some(_) => {
+                        eprintln!("kmp-mcp: export --about needs a non-empty about");
+                        return 2;
+                    }
+                    None => {
+                        eprintln!("kmp-mcp: export --about needs an about");
+                        return 2;
+                    }
+                },
+                other if looks_like_option(other) => {
+                    return unknown_option("export", other);
+                }
+                other => {
+                    if path.replace(other).is_some() {
+                        eprintln!(
+                            "kmp-mcp: export takes at most one file path, repeatable --about, and \
+                             optional --repair-pending"
+                        );
+                        return 2;
+                    }
+                }
             }
         }
-        (path, repair_pending)
+        (path, repair_pending, abouts)
     } else {
         if args.len() > 1 {
             eprintln!("kmp-mcp: import takes at most one file path");
             return 2;
         }
-        (first_argument, false)
+        if let Some(argument) = first_argument
+            && looks_like_option(argument)
+        {
+            return unknown_option("import", argument);
+        }
+        (first_argument, false, Vec::new())
     };
+
+    if command == "export"
+        && path
+            .map(Path::new)
+            .and_then(Path::file_name)
+            .is_some_and(|name| name.to_string_lossy().starts_with('-'))
+    {
+        let path = path.expect("checked export path is present");
+        eprintln!(
+            "kmp-mcp: export refuses destination `{path}` because its basename begins with `-`; \
+             choose an unambiguous file name"
+        );
+        return 2;
+    }
 
     let resolved = match kmp_embedded::resolve_data_dir_from_env() {
         Ok(resolved) => resolved,
@@ -457,6 +501,13 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     };
     let path = path.as_path();
     let is_project_head = kmp_embedded::project_bundle_path(&resolved).as_deref() == Some(path);
+    if repair_pending && !abouts.is_empty() {
+        eprintln!(
+            "kmp-mcp: --repair-pending requires a full-store export; it cannot be combined \
+             with --about"
+        );
+        return 2;
+    }
     if repair_pending && !is_project_head {
         eprintln!(
             "kmp-mcp: --repair-pending applies only to the project head \
@@ -485,7 +536,11 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             // The pulse holds the line only while the store is actually
             // read; it is erased before anything else prints.
             let pulse = kmp_mcp::pulse::Pulse::start("saving your memory…");
-            let exported = store.export_bundle().await;
+            let exported = if abouts.is_empty() {
+                store.export_bundle().await
+            } else {
+                store.export_bundle_for_abouts(&abouts).await
+            };
             pulse.clear();
             match exported {
                 Ok(bundle) => {
@@ -531,6 +586,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                             "data_dir": resolved.path().display().to_string(),
                             "snapshot_id": header.snapshot_id,
                             "event_count": header.event_count,
+                            "abouts": header.abouts,
                             "content_digest": header.content_digest,
                         })
                     );
@@ -593,6 +649,70 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     }
 }
 
+fn is_cli_subcommand(command: &str) -> bool {
+    matches!(
+        command,
+        "info"
+            | "doctor"
+            | "config"
+            | "document"
+            | "snapshot"
+            | "uninstall"
+            | "export"
+            | "import"
+            | "migrate"
+            | "viewer"
+    )
+}
+
+fn help_requested(args: &[&str]) -> bool {
+    for argument in args {
+        if *argument == "--" {
+            break;
+        }
+        if matches!(*argument, "--help" | "-h") {
+            return true;
+        }
+    }
+    false
+}
+
+fn looks_like_option(argument: &str) -> bool {
+    argument.starts_with('-') && argument != "-"
+}
+
+fn unknown_option(command: &str, option: &str) -> i32 {
+    eprintln!("kmp-mcp {command}: unknown option `{option}`");
+    eprintln!("usage: {}", subcommand_usage(command));
+    2
+}
+
+fn subcommand_usage(command: &str) -> &'static str {
+    match command {
+        "info" => "kmp-mcp info",
+        "doctor" => "kmp-mcp doctor",
+        "config" => "kmp-mcp config [ask-fallback-languages <tags|none>]",
+        "document" => "kmp-mcp document <about> [--out FILE]",
+        "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
+        "uninstall" => "kmp-mcp uninstall [--apply] [--purge] [--keep-memory]",
+        "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
+        "import" => "kmp-mcp import [file]",
+        "migrate" => "kmp-mcp migrate <source-dir> <destination-dir>",
+        "viewer" => "kmp-mcp viewer [addr]",
+        _ => "kmp-mcp --help",
+    }
+}
+
+fn print_subcommand_help(command: &str) {
+    println!("Usage: {}", subcommand_usage(command));
+    if command == "export" {
+        println!(
+            "\n--about matches an opaque about exactly and may be repeated. Filtered bundles \
+             preserve aggregate revisions and use bundle-local event positions starting at 1."
+        );
+    }
+}
+
 fn print_help() {
     println!(
         "{}\n\n\
@@ -604,7 +724,7 @@ kmp-mcp config ask-fallback-languages <tags|none>\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\n  \
-kmp-mcp export [file]           Export the append-only event log\n  \
+kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
 kmp-mcp migrate <src> <dst>     Apply a supported store-format migration\n  \
@@ -1074,16 +1194,21 @@ async fn save_store(store: &std::path::Path, destination: &std::path::Path) -> R
 async fn run_document_command(args: &[&str]) -> i32 {
     let mut about = None;
     let mut out = None;
+    let mut positional_only = false;
     let mut rest = args.iter();
     while let Some(argument) = rest.next() {
         match *argument {
-            "--out" | "-o" => match rest.next() {
+            "--" if !positional_only => positional_only = true,
+            "--out" | "-o" if !positional_only => match rest.next() {
                 Some(path) => out = Some(PathBuf::from(path)),
                 None => {
                     eprintln!("kmp-mcp: --out needs a file path");
                     return 2;
                 }
             },
+            other if !positional_only && looks_like_option(other) => {
+                return unknown_option("document", other);
+            }
             other if about.is_none() => about = Some(other.to_string()),
             other => {
                 eprintln!("kmp-mcp: document takes one about, and `{other}` is a second one");
@@ -1160,6 +1285,9 @@ async fn run_document_command(args: &[&str]) -> i32 {
 }
 
 async fn run_migrate_command(args: &[&str]) -> i32 {
+    if let Some(option) = args.iter().find(|argument| looks_like_option(argument)) {
+        return unknown_option("migrate", option);
+    }
     let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
         eprintln!("kmp-mcp: migrate requires <source-dir> <destination-dir>");
         return 2;
@@ -1206,9 +1334,18 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
 /// Standalone viewer over the env-resolved data dir (same resolution as
 /// `export`/`import`). SQLite can be shared, but setting `KMP_VIEWER_ADDR` on
 /// the agent session remains the direct path to its already-open kernel.
-async fn run_viewer_command(addr: Option<&str>) -> i32 {
+async fn run_viewer_command(args: &[&str]) -> i32 {
+    if args.len() > 1 {
+        eprintln!("kmp-mcp: viewer takes at most one address");
+        return 2;
+    }
+    if let Some(option) = args.first().filter(|argument| looks_like_option(argument)) {
+        return unknown_option("viewer", option);
+    }
     // `viewer` with no argument honours the same env the MCP mode uses.
-    let addr = addr
+    let addr = args
+        .first()
+        .copied()
         .map(ToString::to_string)
         .or_else(|| std::env::var(kmp_viewer::VIEWER_ADDR_ENV).ok())
         .unwrap_or_else(|| kmp_viewer::DEFAULT_VIEWER_ADDR.to_string());

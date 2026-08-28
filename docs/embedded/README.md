@@ -114,7 +114,7 @@ Run `kmp-mcp --help` for the live command contract.
 | Command | Purpose |
 |:--|:--|
 | `info`, `doctor`, `config` | Identify the installation, diagnose it and configure Ask fallback languages. |
-| `export`, `import` | Checkpoint or restore an event bundle. |
+| `export [file] [--about <about>]...`, `import` | Checkpoint all events or exact opaque abouts, then restore a bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
 | `migrate <src> <dst>` | Reserved for supported format migrations; retired format 1 fails with recovery instructions. |
@@ -122,6 +122,13 @@ Run `kmp-mcp --help` for the live command contract.
 | `uninstall [--apply]` | Preview removal, then apply only when explicitly requested. |
 
 The ten MCP memory tools are a separate surface advertised by `tools/list`.
+
+`--about` is repeatable and matches `root_node_id` byte-for-byte. A requested
+about with no events fails before the destination is created. Filtered bundles
+are complete format-2 bundles: their header names only the included abouts and
+its count, digest and range cover only the filtered payload. `event_range` is
+bundle-local, so filtered payload positions are renumbered from one; aggregate
+revisions and refs are preserved.
 
 ## Limits
 

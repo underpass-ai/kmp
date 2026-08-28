@@ -2,6 +2,7 @@ use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use kmp_adapter_embedded::validate_store_layout;
 use kmp_domain::PortError;
 
 /// Explicit data directory override (ADR-012 rule 1).
@@ -32,12 +33,31 @@ pub enum ResolvedDataDir {
     Project(PathBuf),
     /// Per-user fallback under the platform data dir.
     UserDefault(PathBuf),
+    /// A project store was present but could not be opened, so the live
+    /// session selected the user store and must surface that the repository
+    /// bundle beside the rejected store is no longer maintained.
+    UserFallback {
+        path: PathBuf,
+        orphaned_bundle: OrphanedProjectBundle,
+    },
+}
+
+/// The durability contract lost when an unopenable project store falls back
+/// to the shared user store. Selection owns this fact because it is the only
+/// layer that knows both paths and the rejected layout reason.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrphanedProjectBundle {
+    pub bundle_path: PathBuf,
+    pub project_store_path: PathBuf,
+    pub selected_store_path: PathBuf,
+    pub reason: String,
 }
 
 impl ResolvedDataDir {
     pub fn path(&self) -> &Path {
         match self {
             Self::Explicit(path) | Self::Project(path) | Self::UserDefault(path) => path,
+            Self::UserFallback { path, .. } => path,
         }
     }
 
@@ -46,6 +66,16 @@ impl ResolvedDataDir {
             Self::Explicit(_) => "env",
             Self::Project(_) => "project",
             Self::UserDefault(_) => "user",
+            Self::UserFallback { .. } => "user fallback",
+        }
+    }
+
+    pub fn orphaned_bundle(&self) -> Option<&OrphanedProjectBundle> {
+        match self {
+            Self::UserFallback {
+                orphaned_bundle, ..
+            } => Some(orphaned_bundle),
+            Self::Explicit(_) | Self::Project(_) | Self::UserDefault(_) => None,
         }
     }
 }
@@ -126,7 +156,9 @@ pub fn project_bundle_path(resolved: &ResolvedDataDir) -> Option<PathBuf> {
         ResolvedDataDir::Project(path) => path
             .parent()
             .map(|project_root| project_root.join(PROJECT_BUNDLE_PATH)),
-        ResolvedDataDir::Explicit(_) | ResolvedDataDir::UserDefault(_) => None,
+        ResolvedDataDir::Explicit(_)
+        | ResolvedDataDir::UserDefault(_)
+        | ResolvedDataDir::UserFallback { .. } => None,
     }
 }
 
@@ -161,11 +193,37 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
     })?;
     reject_unexpanded_home_override(env_override.as_deref())?;
 
-    Ok(resolve_data_dir(
-        env_override.as_deref(),
-        &working_dir,
-        &user_data_home,
-    ))
+    let resolved = resolve_data_dir(env_override.as_deref(), &working_dir, &user_data_home);
+    Ok(fallback_from_unopenable_project(resolved, &user_data_home))
+}
+
+fn fallback_from_unopenable_project(
+    resolved: ResolvedDataDir,
+    user_data_home: &Path,
+) -> ResolvedDataDir {
+    let ResolvedDataDir::Project(project_store_path) = resolved else {
+        return resolved;
+    };
+    let Some(project_root) = project_store_path.parent() else {
+        return ResolvedDataDir::Project(project_store_path);
+    };
+    let bundle_path = project_root.join(PROJECT_BUNDLE_PATH);
+    if !bundle_path.is_file() {
+        return ResolvedDataDir::Project(project_store_path);
+    }
+    let Err(error) = validate_store_layout(&project_store_path) else {
+        return ResolvedDataDir::Project(project_store_path);
+    };
+    let selected_store_path = user_data_home.join("kmp").join("default");
+    ResolvedDataDir::UserFallback {
+        path: selected_store_path.clone(),
+        orphaned_bundle: OrphanedProjectBundle {
+            bundle_path,
+            project_store_path,
+            selected_store_path,
+            reason: error.to_string(),
+        },
+    }
 }
 
 fn reject_unexpanded_home_override(env_override: Option<&str>) -> Result<(), PortError> {
@@ -329,6 +387,48 @@ mod tests {
             resolved,
             ResolvedDataDir::UserDefault(PathBuf::from("/home/u/.local/share/kmp/default"))
         );
+    }
+
+    #[test]
+    fn an_unopenable_project_store_with_a_bundle_selects_user_memory_and_keeps_the_loss() {
+        let project = tempfile::tempdir().expect("project");
+        let project_store = project.path().join(".kernel");
+        std::fs::create_dir_all(project_store.join("store")).expect("legacy store dir");
+        std::fs::write(project_store.join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
+        std::fs::write(project_store.join("store/kernel.redb"), b"legacy").expect("legacy store");
+        let bundle = project.path().join(PROJECT_BUNDLE_PATH);
+        std::fs::create_dir_all(bundle.parent().expect("bundle parent")).expect("bundle dir");
+        std::fs::write(&bundle, "maintained memory\n").expect("bundle");
+
+        let selected = fallback_from_unopenable_project(
+            ResolvedDataDir::Project(project_store.clone()),
+            Path::new("/user-data"),
+        );
+
+        assert_eq!(selected.path(), Path::new("/user-data/kmp/default"));
+        assert_eq!(selected.rule_name(), "user fallback");
+        let orphaned = selected.orphaned_bundle().expect("orphaned bundle outcome");
+        assert_eq!(orphaned.bundle_path, bundle);
+        assert_eq!(orphaned.project_store_path, project_store);
+        assert_eq!(orphaned.selected_store_path, selected.path());
+        assert!(orphaned.reason.contains("format 1"), "{}", orphaned.reason);
+        assert_eq!(project_bundle_path(&selected), None);
+    }
+
+    #[test]
+    fn an_unopenable_project_without_a_bundle_still_fails_closed_in_place() {
+        let project = tempfile::tempdir().expect("project");
+        let project_store = project.path().join(".kernel");
+        std::fs::create_dir_all(&project_store).expect("legacy store dir");
+        std::fs::write(project_store.join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
+
+        let selected = fallback_from_unopenable_project(
+            ResolvedDataDir::Project(project_store.clone()),
+            Path::new("/user-data"),
+        );
+
+        assert_eq!(selected, ResolvedDataDir::Project(project_store));
+        assert!(selected.orphaned_bundle().is_none());
     }
 
     #[test]

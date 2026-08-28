@@ -27,6 +27,17 @@ kmp-mcp export
 git diff -- .kmp/memory.jsonl
 ```
 
+If `doctor` says the project bundle is orphaned because writes are reaching a
+shared fallback store, export only the public project's exact about and inspect
+the result before committing it:
+
+```bash
+KMP_MCP_DATA_DIR=/exact/shared/store kmp-mcp export .kmp/memory.jsonl --about project:name
+git diff -- .kmp/memory.jsonl
+```
+
+Never export the whole shared store into a repository bundle.
+
 If doctor reports a pending export after an interrupted commit, first stop all
 writers, run the normal export and inspect its diff. Only then acknowledge the
 recovery:

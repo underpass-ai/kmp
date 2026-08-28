@@ -8,7 +8,7 @@ use std::fmt::Write as _;
 use std::path::Path;
 use std::path::PathBuf;
 
-use kmp_embedded::{ResolvedDataDir, StorageEngine};
+use kmp_embedded::{OrphanedProjectBundle, ResolvedDataDir, StorageEngine};
 
 use crate::banner;
 use crate::style::{self, Style};
@@ -145,6 +145,9 @@ fn data_dir_finding() -> (Finding, Option<ResolvedDataDir>) {
 /// file modification times catch stores written by older binaries that did
 /// not create one.
 fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Finding> {
+    if let Some(orphaned) = resolved.orphaned_bundle() {
+        return Some(orphaned_bundle_finding(orphaned));
+    }
     let bundle = kmp_embedded::project_bundle_path(resolved)?;
     let store = store_file_on_disk(resolved.path());
     let pending = kmp_embedded::pending_bundle_exports(resolved.path());
@@ -246,6 +249,60 @@ fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Finding> {
         .with(format!("digest: {}", header.content_digest))
         .with(format!("abouts: {}", header.abouts.join(" "))),
     )
+}
+
+fn orphaned_bundle_finding(orphaned: &OrphanedProjectBundle) -> Finding {
+    let mut finding = Finding::new(
+        Level::Fail,
+        "this project's committed memory is no longer being maintained",
+    );
+    let bundle_detail = match std::fs::read_to_string(&orphaned.bundle_path) {
+        Ok(bundle) => match kmp_embedded::verify_bundle(&bundle) {
+            Ok(header) => format!(
+                "bundle: {} (last event {}, snapshot time {} ms)",
+                orphaned.bundle_path.display(),
+                header.event_count,
+                header.created_at_unix_ms
+            ),
+            Err(error) => format!(
+                "bundle: {} (cannot verify: {error})",
+                orphaned.bundle_path.display()
+            ),
+        },
+        Err(error) => format!(
+            "bundle: {} (cannot read: {error})",
+            orphaned.bundle_path.display()
+        ),
+    };
+    finding = finding
+        .with(bundle_detail)
+        .with(format!(
+            "project store: {} — not selected: {}",
+            orphaned.project_store_path.display(),
+            orphaned.reason
+        ))
+        .with(format!(
+            "writes are going to: {}",
+            orphaned.selected_store_path.display()
+        ));
+
+    let abouts = std::fs::read_to_string(&orphaned.bundle_path)
+        .ok()
+        .and_then(|bundle| kmp_embedded::verify_bundle(&bundle).ok())
+        .map(|header| header.abouts)
+        .unwrap_or_default();
+    if let [about] = abouts.as_slice() {
+        finding.with(format!(
+            "automatic maintenance resumes only when the project store opens again; until then, \
+             refresh this bundle explicitly with `kmp-mcp export {} --about {about}`",
+            orphaned.bundle_path.display()
+        ))
+    } else {
+        finding.with(
+            "automatic maintenance resumes only when the project store opens again; a filtered \
+             explicit export can refresh known abouts safely",
+        )
+    }
 }
 
 fn newer_than(left: &Path, right: &Path) -> bool {
@@ -932,6 +989,50 @@ mod tests {
         let finding = committed_bundle_finding(&resolved).expect("project finding");
         assert_eq!(finding.level, Level::Warn);
         assert!(finding.headline.contains("legacy"));
+    }
+
+    #[test]
+    fn an_orphaned_project_bundle_is_compared_with_the_store_that_receives_writes() {
+        let project = tempfile::tempdir().expect("project");
+        let bundle = project.path().join(".kmp/memory.jsonl");
+        std::fs::create_dir_all(bundle.parent().expect("bundle parent")).expect("bundle dir");
+        std::fs::write(
+            &bundle,
+            r#"{"bundle_format":1,"store_format":1,"event_count":0,"kernel_version":"0.2.4"}"#,
+        )
+        .expect("legacy bundle");
+        let project_store = project.path().join(".kernel");
+        let selected_store = project.path().join("user-store");
+        let resolved = ResolvedDataDir::UserFallback {
+            path: selected_store.clone(),
+            orphaned_bundle: OrphanedProjectBundle {
+                bundle_path: bundle.clone(),
+                project_store_path: project_store.clone(),
+                selected_store_path: selected_store.clone(),
+                reason: "store format 1 is retired".to_string(),
+            },
+        };
+
+        let finding = committed_bundle_finding(&resolved).expect("orphan finding");
+        assert_eq!(finding.level, Level::Fail);
+        assert!(finding.headline.contains("no longer being maintained"));
+        assert!(
+            finding
+                .detail
+                .iter()
+                .any(|line| line.contains(&bundle.display().to_string()))
+        );
+        assert!(
+            finding
+                .detail
+                .iter()
+                .any(|line| line.contains(&project_store.display().to_string())
+                    && line.contains("not selected"))
+        );
+        assert!(finding.detail.iter().any(|line| {
+            line.contains("writes are going to")
+                && line.contains(&selected_store.display().to_string())
+        }));
     }
 
     /// The mark reaches a user through `/kmp:info` and `/kmp:doctor` and
