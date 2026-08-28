@@ -111,6 +111,10 @@ kmp-mcp config ask-fallback-languages en,fr
 kmp-mcp config ask-fallback-languages none
 ```
 
+Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
+Ask supports word segmentation for those scripts. Storage remains byte-exact;
+word-based semantic retrieval in those languages is not supported yet.
+
 The fallback translates only the query. The answer follows the user's
 language; evidence text, refs, relation `why`, and source metadata remain
 byte-for-byte as stored. Temporal requests such as “yesterday” or a release

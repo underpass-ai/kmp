@@ -545,6 +545,8 @@ message ResponseQuality {
 }
 
 message MemoryBudget {
+  // Compatibility planning hint reported back to callers. Projection is
+  // bounded normatively by max_bytes; this field does not filter expansion.
   uint32 tokens = 1;
   MemoryDetailLevel detail = 2;
   uint32 depth = 3;
@@ -576,6 +578,7 @@ message RecallProjection {
 message RecallProjectionBudget {
   uint64 max_bytes = 1;
   uint64 used_bytes = 2;
+  // Echo of the compatibility planning hint; not a structured-content cap.
   uint32 tokens_advisory = 3;
 }
 
@@ -597,6 +600,7 @@ message RecallProjectionSection {
 
 message RecallTruncation {
   bool truncated = 1;
+  // Echo of the compatibility planning hint; retained on the v1 wire shape.
   uint32 token_limit = 2;
   uint64 byte_limit = 3;
   RecallOmitted omitted = 4;

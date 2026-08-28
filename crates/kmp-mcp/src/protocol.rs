@@ -612,7 +612,7 @@ fn write_memory_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["kind", "summary"],
                 "properties": {
-                    "ref": string_schema("Optional stable memory entry ref. Omit to let the writer planner generate one deterministically."),
+                    "ref": string_schema("Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix."),
                     "kind": {
                         "type": "string",
                         "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
@@ -638,7 +638,7 @@ fn write_memory_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["from", "to", "why", "evidence"],
                 "properties": {
-                    "ref": string_schema("Optional stable semantic delta entry ref."),
+                    "ref": string_schema("Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key."),
                     "from": string_schema("Previous known state."),
                     "to": string_schema("New state."),
                     "why": string_schema("Why this state change is valid."),
@@ -1085,7 +1085,7 @@ fn write_memory_output_schema() -> Value {
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
-        "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted."),
+        "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
         "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
         "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),
@@ -1274,7 +1274,7 @@ fn projection_output_schema() -> Value {
     );
     output_object(json!({
         "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
-        "budget": described("object", "The ceilings that applied, and the bytes actually used."),
+        "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
         "detail": described("string", "compact | balanced | full — the detail tier that was served."),
         "excluded_by_detail": described(
             "integer",
@@ -1295,7 +1295,7 @@ fn projection_output_schema() -> Value {
 fn truncation_output_schema() -> Value {
     output_object(json!({
         "truncated": described("boolean", "Always true when this optional object is present."),
-        "token_limit": described("integer", "Advisory token ceiling applied."),
+        "token_limit": described("integer", "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent."),
         "byte_limit": described("integer", "Normative serialized-byte ceiling applied."),
         "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
     }))
@@ -1394,7 +1394,7 @@ fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
                 "type": "integer",
                 "minimum": 1,
                 "default": default_tokens,
-                "description": format!("Advisory cl100k planning ceiling retained for compatibility; defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
+                "description": format!("Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
             },
             "max_bytes": {
                 "type": "integer",
@@ -1445,7 +1445,7 @@ fn recall_page_schema() -> Value {
             "entries": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Optional maximum expansion items on this page; byte and advisory-token ceilings still apply."
+                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
             },
             "cursor": {
                 "type": "string",

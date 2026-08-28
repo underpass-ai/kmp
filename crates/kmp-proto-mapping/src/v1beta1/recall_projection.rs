@@ -124,7 +124,7 @@ fn project_recall_output_typed(
     value: Value,
     arguments: &Value,
     default_tokens: u32,
-    estimator: &dyn TokenEstimator,
+    _estimator: &dyn TokenEstimator,
 ) -> Result<ProjectionOutcome, RecallProjectionError> {
     let budget = ProjectionBudget::from_arguments(arguments, default_tokens)
         .map_err(RecallProjectionError::InvalidRequest)?;
@@ -180,7 +180,6 @@ fn project_recall_output_typed(
         true,
     );
     let mut planned_bytes = serialized_bytes(&planning);
-    let mut planned_tokens = serialized_tokens(&planning, estimator);
     let mut lengths = plan.core_lengths.clone();
 
     for item in eligible
@@ -193,14 +192,17 @@ fn project_recall_output_typed(
             serde_json::to_string(&item.value).expect("projection item should serialize");
         let comma_bytes = usize::from(lengths.get(&item.section).copied().unwrap_or(0) > 0);
         let item_bytes = item_json.len() + comma_bytes;
-        let item_tokens = estimator.estimate_tokens(&item_json).saturating_add(2);
-        if planned_bytes.saturating_add(item_bytes) > budget.byte_limit
-            || planned_tokens.saturating_add(item_tokens) > budget.token_limit
-        {
+        // `tokens` predates the transport-neutral byte contract and remains in
+        // the API as a planning hint. Treating it as a second hard cap made a
+        // typical stable core consume the entire default before any expansion
+        // item was considered: compact, balanced and full then returned the
+        // same payload while claiming different detail exclusions. The byte
+        // ceiling is the normative host-safety boundary; detail and paging
+        // choose the expansion inside it.
+        if planned_bytes.saturating_add(item_bytes) > budget.byte_limit {
             break;
         }
         planned_bytes += item_bytes;
-        planned_tokens = planned_tokens.saturating_add(item_tokens);
         *lengths.entry(item.section).or_default() += 1;
         selected.push(item.clone());
     }
@@ -982,11 +984,6 @@ fn serialized_bytes(value: &Value) -> usize {
         .len()
 }
 
-fn serialized_tokens(value: &Value, estimator: &dyn TokenEstimator) -> u32 {
-    estimator
-        .estimate_tokens(&serde_json::to_string(value).expect("recall projection should serialize"))
-}
-
 fn wake_arguments(request: &WakeRequest) -> Value {
     let mut arguments = Map::new();
     arguments.insert("about".to_string(), json!(request.about));
@@ -1729,8 +1726,6 @@ fn u32_at(value: &Value, pointer: &str) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::atomic::{AtomicUsize, Ordering};
-
     use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 
     use super::*;
@@ -1885,6 +1880,73 @@ mod tests {
         assert!(relation_set(&compact).contains("depends_on"));
         assert!(relation_set(&balanced).contains("supports"));
         assert!(relation_set(&full).contains("contains_entry"));
+    }
+
+    #[test]
+    fn detail_levels_change_expansion_when_bytes_are_available() {
+        let packet = large_fixture(80);
+        let args = |detail: &str| {
+            json!({
+                "about": "project:kmp",
+                "question": "What is current?",
+                // Deliberately omit `tokens`: its default is a compatibility
+                // hint, not a hidden cap on otherwise available bytes.
+                "budget": {"max_bytes": 60_000, "detail": detail}
+            })
+        };
+        let compact = projected(packet.clone(), args("compact"));
+        let balanced = projected(packet.clone(), args("balanced"));
+        let full = projected(packet, args("full"));
+
+        let returned = |value: &Value| {
+            value["projection"]["page"]["returned"]
+                .as_u64()
+                .expect("returned expansion count")
+        };
+        assert!(returned(&compact) < returned(&balanced));
+        assert!(returned(&balanced) < returned(&full));
+        let compact_relations = relation_set(&compact);
+        let balanced_relations = relation_set(&balanced);
+        let full_relations = relation_set(&full);
+        assert!(compact_relations.is_subset(&balanced_relations));
+        assert!(compact_relations.len() < balanced_relations.len());
+        assert!(balanced_relations.is_subset(&full_relations));
+        assert!(balanced_relations.len() < full_relations.len());
+        assert!(
+            compact["projection"]["excluded_by_detail"].as_u64()
+                > balanced["projection"]["excluded_by_detail"].as_u64()
+        );
+        assert!(
+            balanced["projection"]["excluded_by_detail"].as_u64()
+                > full["projection"]["excluded_by_detail"].as_u64()
+        );
+        assert_eq!(full["projection"]["excluded_by_detail"], 0);
+    }
+
+    #[test]
+    fn advisory_token_hint_does_not_filter_structured_content() {
+        let packet = large_fixture(80);
+        let args = |tokens: u32| {
+            json!({
+                "about": "project:kmp",
+                "question": "What is current?",
+                "budget": {"tokens": tokens, "max_bytes": 60_000, "detail": "full"}
+            })
+        };
+        let tiny_hint = projected(packet.clone(), args(1));
+        let large_hint = projected(packet, args(30_000));
+
+        assert_eq!(tiny_hint["wake"], large_hint["wake"]);
+        assert_eq!(tiny_hint["proof"], large_hint["proof"]);
+        assert_eq!(
+            tiny_hint["projection"]["page"]["returned"],
+            large_hint["projection"]["page"]["returned"]
+        );
+        assert_eq!(tiny_hint["projection"]["budget"]["tokens_advisory"], 1);
+        assert_eq!(
+            large_hint["projection"]["budget"]["tokens_advisory"],
+            30_000
+        );
     }
 
     #[test]
@@ -2124,47 +2186,6 @@ mod tests {
             .expect("second page accounting");
         assert_eq!(second_page.offset, 4);
         assert!(second_page.returned > 0);
-    }
-
-    #[test]
-    fn projection_does_not_tokenize_the_full_packet_once_per_omitted_item() {
-        let estimator = CountingEstimator::default();
-        let packet = large_fixture(480);
-        let output = project_recall_output(
-            packet,
-            &json!({
-                "about": "project:kmp",
-                "question": "Which storage engine is current?",
-                "budget": {"tokens": 1200, "max_bytes": 5_000, "detail": "full"}
-            }),
-            2_400,
-            &estimator,
-        )
-        .expect("projection")
-        .projected();
-
-        assert_eq!(output["truncation"]["truncated"], true);
-        assert!(
-            estimator.calls.load(Ordering::Relaxed) < 80,
-            "the projection should tokenize a bounded prefix, not all 480 omitted hops"
-        );
-    }
-
-    #[derive(Default)]
-    struct CountingEstimator {
-        calls: AtomicUsize,
-        inner: Cl100kEstimator,
-    }
-
-    impl TokenEstimator for CountingEstimator {
-        fn estimate_tokens(&self, text: &str) -> u32 {
-            self.calls.fetch_add(1, Ordering::Relaxed);
-            self.inner.estimate_tokens(text)
-        }
-
-        fn name(&self) -> &str {
-            self.inner.name()
-        }
     }
 
     impl ProjectionOutcome {

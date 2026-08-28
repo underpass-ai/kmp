@@ -70,8 +70,9 @@ Current status:
   distinguishable through `proof.evidence[].metadata.proof_role`;
 - `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
-  proof returns `projection.page.next_cursor`, while `budget.tokens` remains an
-  advisory cl100k planning hint rather than a cross-model hard ceiling;
+  proof returns `projection.page.next_cursor`, while `budget.tokens` remains a
+  reported compatibility hint and never filters canonical structured content;
+  `budget.max_bytes` is the cross-host hard ceiling;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index;
 - `kmp_inspect` supports typed detail/link lookup and typed raw audit refs

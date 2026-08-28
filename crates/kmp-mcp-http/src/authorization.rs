@@ -64,6 +64,7 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
     }
 
     match name {
+        "kmp_ingest" => authorize_ingest_refs(identity, arguments)?,
         "kmp_trace" => {
             authorize_ref(
                 identity,
@@ -229,6 +230,40 @@ fn authorize_write_connections(
             authorize_ref(identity, Some(reference), about)?;
         }
     }
+    Ok(())
+}
+
+fn authorize_ingest_refs(identity: &Identity, arguments: &Value) -> Result<(), AuthorizationError> {
+    let about = arguments.get("about").and_then(Value::as_str);
+    let Some(memory) = arguments.get("memory") else {
+        return Ok(());
+    };
+
+    if let Some(entries) = memory.get("entries").and_then(Value::as_array) {
+        for entry in entries {
+            authorize_ref(identity, entry.get("id").and_then(Value::as_str), about)?;
+        }
+    }
+
+    if let Some(relations) = memory.get("relations").and_then(Value::as_array) {
+        for relation in relations {
+            for field in ["from", "to", "decision_id", "caused_by_node_id"] {
+                authorize_ref(identity, relation.get(field).and_then(Value::as_str), about)?;
+            }
+        }
+    }
+
+    if let Some(evidence) = memory.get("evidence").and_then(Value::as_array) {
+        for item in evidence {
+            authorize_ref(identity, item.get("id").and_then(Value::as_str), about)?;
+            if let Some(supports) = item.get("supports").and_then(Value::as_array) {
+                for reference in supports.iter().filter_map(Value::as_str) {
+                    authorize_ref(identity, Some(reference), about)?;
+                }
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -402,5 +437,79 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn ingest_authorizes_every_caller_chosen_ref() {
+        let actor = identity(&[WRITE_SCOPE]);
+        let local = json!({
+            "about":"project:kmp",
+            "memory":{
+                "dimensions":[{"id":"timeline:kmp"}],
+                "entries":[{"id":"project:kmp:entry:1"}],
+                "relations":[{
+                    "from":"project:kmp:entry:1",
+                    "to":"project:kmp:entry:2",
+                    "decision_id":"project:kmp:decision:1",
+                    "caused_by_node_id":"project:kmp:finding:1"
+                }],
+                "evidence":[{
+                    "id":"project:kmp:evidence:1",
+                    "supports":["project:kmp:entry:1"]
+                }]
+            }
+        });
+        assert!(authorize(&actor, &call("kmp_ingest", local)).is_ok());
+
+        let foreign_payloads = [
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}],
+                    "entries":[{"id":"project:other:entry:1"}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "relations":[{"from":"project:other:entry:1", "to":"project:kmp:entry:1"}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "relations":[{"from":"project:kmp:entry:1", "to":"project:other:entry:1"}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "evidence":[{"id":"project:other:evidence:1", "supports":[]}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "evidence":[{"id":"project:kmp:evidence:1",
+                        "supports":["project:other:entry:1"]}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "relations":[{"from":"project:kmp:entry:1", "to":"project:kmp:entry:2",
+                        "decision_id":"project:other:decision:1"}]}
+            }),
+            json!({
+                "about":"project:kmp",
+                "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                    "relations":[{"from":"project:kmp:entry:1", "to":"project:kmp:entry:2",
+                        "caused_by_node_id":"project:other:finding:1"}]}
+            }),
+        ];
+
+        for payload in foreign_payloads {
+            let error = authorize(&actor, &call("kmp_ingest", payload))
+                .expect_err("foreign ingest ref must be denied");
+            assert!(
+                error.reason.contains("project:other:"),
+                "unexpected denial: {}",
+                error.reason
+            );
+        }
     }
 }

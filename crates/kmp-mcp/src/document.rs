@@ -243,6 +243,56 @@ fn heading(text: &str) -> String {
     format!("{trimmed}…")
 }
 
+/// Stored text is data, never Markdown source. The document keeps storage
+/// byte-exact and neutralises only this presentation: every multiline value
+/// is quoted below, while controls that can alter a terminal's display are
+/// made visible. Markdown punctuation is escaped so HTML, links, headings and
+/// emphasis cannot be smuggled into the quoted region either.
+fn markdown_literal(line: &str) -> String {
+    let mut safe = String::with_capacity(line.len());
+    for character in line.chars() {
+        if character == '\t' {
+            safe.push_str("⟦TAB⟧");
+        } else if character == '\r' {
+            safe.push_str("⟦CR⟧");
+        } else if character.is_control() || is_unsafe_format_control(character) {
+            let _ = write!(safe, "⟦U+{:04X}⟧", character as u32);
+        } else {
+            match character {
+                '&' => safe.push_str("&amp;"),
+                '<' => safe.push_str("&lt;"),
+                '>' => safe.push_str("&gt;"),
+                '\\' | '`' | '*' | '_' | '{' | '}' | '[' | ']' | '(' | ')' | '#' | '!' | '|' => {
+                    safe.push('\\');
+                    safe.push(character);
+                }
+                _ => safe.push(character),
+            }
+        }
+    }
+    safe
+}
+
+fn is_unsafe_format_control(character: char) -> bool {
+    matches!(
+        character,
+        '\u{061c}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{2028}'..='\u{202e}'
+            | '\u{2066}'..='\u{2069}'
+    )
+}
+
+fn write_quoted_text(out: &mut String, indent: &str, label: &str, text: &str) {
+    let mut lines = text.split('\n');
+    let first = lines.next().unwrap_or_default();
+    let _ = writeln!(out, "{indent}> **{label}.** {}", markdown_literal(first));
+    for line in lines {
+        let _ = writeln!(out, "{indent}> {}", markdown_literal(line));
+    }
+}
+
 fn write_document(
     about: &str,
     entries: &[Entry],
@@ -251,7 +301,7 @@ fn write_document(
     relations: &[Relation],
 ) -> String {
     let mut out = String::new();
-    let _ = writeln!(out, "# {about}\n");
+    let _ = writeln!(out, "# {}\n", markdown_literal(about));
 
     let span = time_span(entries);
     let _ = writeln!(
@@ -267,12 +317,14 @@ fn write_document(
             "evidence item",
             "evidence items"
         ),
-        span.map(|span| format!(", {span}")).unwrap_or_default()
+        span.map(|span| format!(", {}", markdown_literal(&span)))
+            .unwrap_or_default()
     );
     let _ = writeln!(
         out,
-        "\nRendered from the event log by `kmp-mcp document`. Every line below is stored \
-         text — nothing here was written by a model.\n"
+        "\nRendered from the event log by `kmp-mcp document`. Stored values are quoted as \
+         literals and display controls are made visible; no model generated or rewrote their \
+         wording.\n"
     );
 
     let mut rendered = vec![false; entries.len()];
@@ -298,6 +350,7 @@ fn write_document(
         outgoing,
         evidence,
     );
+    debug_assert!(rendered.iter().all(|was_rendered| *was_rendered));
 
     write_lifecycle(&mut out, relations);
     out
@@ -335,36 +388,46 @@ fn write_entry(
     outgoing: &HashMap<&str, Vec<&Relation>>,
     evidence: &HashMap<String, Vec<Evidence>>,
 ) {
-    let _ = writeln!(out, "### {}\n", heading(&entry.text));
+    let _ = writeln!(out, "### {}\n", markdown_literal(&heading(&entry.text)));
     let when = entry
         .observed_at
         .as_deref()
-        .map(|when| format!(" · {when}"))
+        .map(|when| format!(" · **Observed.** {}", markdown_literal(when)))
         .unwrap_or_default();
     // The ref stays visible: a reader who wants the stored object rather than
     // the prose can take it straight to `kmp_inspect`.
-    let _ = writeln!(out, "`{}`{}\n", entry.reference, when);
-    let _ = writeln!(out, "{}\n", entry.text);
+    let _ = writeln!(
+        out,
+        "**Ref.** {}{}\n",
+        markdown_literal(&entry.reference),
+        when
+    );
+    write_quoted_text(out, "", "Stored memory", &entry.text);
+    let _ = writeln!(out);
 
     if let Some(items) = evidence.get(&entry.reference) {
         for item in items {
-            let source = item
-                .source
-                .as_deref()
-                .map(|source| format!(" — *{source}*"))
-                .unwrap_or_default();
-            let _ = writeln!(out, "> **Evidence.** {}{}\n", item.text, source);
+            write_quoted_text(out, "", "Evidence", &item.text);
+            if let Some(source) = item.source.as_deref() {
+                let _ = writeln!(out, "> **Source.** {}", markdown_literal(source));
+            }
+            let _ = writeln!(out);
         }
     }
 
     if let Some(links) = outgoing.get(entry.reference.as_str()) {
         for link in links {
-            let _ = writeln!(out, "- **{}** `{}`", link.rel.replace('_', " "), link.to);
+            let _ = writeln!(
+                out,
+                "- **{}** {}",
+                markdown_literal(&link.rel.replace('_', " ")),
+                markdown_literal(&link.to)
+            );
             if let Some(why) = &link.why {
-                let _ = writeln!(out, "  {why}");
+                write_quoted_text(out, "  ", "Why", why);
             }
             if let Some(proof) = &link.evidence {
-                let _ = writeln!(out, "  *{proof}*");
+                write_quoted_text(out, "  ", "Relation evidence", proof);
             }
         }
         let _ = writeln!(out);
@@ -396,9 +459,14 @@ fn write_lifecycle(out: &mut String, relations: &[Relation]) {
         }
         let _ = writeln!(out, "## {title}\n\n{lead}\n");
         for relation in matching {
-            let _ = writeln!(out, "- `{}` → `{}`", relation.to, relation.from);
+            let _ = writeln!(
+                out,
+                "- {} → {}",
+                markdown_literal(&relation.to),
+                markdown_literal(&relation.from)
+            );
             if let Some(why) = &relation.why {
-                let _ = writeln!(out, "  {why}");
+                write_quoted_text(out, "  ", "Why", why);
             }
         }
         let _ = writeln!(out);
@@ -469,7 +537,7 @@ mod tests {
         assert!(document.contains("Checkout p99 tripled after the deploy."));
         // The ref is the way back to `kmp_inspect`; a document that drops
         // it is prose about memory rather than a view of it.
-        assert!(document.contains("`project:t:dec:retry`"));
+        assert!(document.contains("**Ref.** project:t:dec:retry"));
         assert!(
             document.contains("2026-08-16T10:30:00Z"),
             "the stored sortable time has to reach the page as a date"
@@ -486,7 +554,7 @@ mod tests {
     fn a_relation_carries_its_why_and_its_proof_where_the_link_is() {
         let document = render(&bundle(), "project:t").expect("the about has entries");
 
-        assert!(document.contains("**chosen because** `project:t:obs:slow`"));
+        assert!(document.contains("**chosen because** project:t:obs:slow"));
         assert!(document.contains("Six retries per request is the amplifier."));
         assert!(document.contains("Client timeout change at 14:40."));
     }
@@ -503,7 +571,8 @@ mod tests {
             1,
             "relation proof belongs under the relation, once"
         );
-        assert!(document.contains("> **Evidence.** p99 900ms to 2.7s. — *grafana*"));
+        assert!(document.contains("> **Evidence.** p99 900ms to 2.7s."));
+        assert!(document.contains("> **Source.** grafana"));
     }
 
     #[test]
@@ -511,7 +580,7 @@ mod tests {
         let document = render(&bundle(), "project:t").expect("the about has entries");
 
         assert!(document.contains("## What stopped being true"));
-        assert!(document.contains("`project:t:dec:rollback` → `project:t:dec:retry`"));
+        assert!(document.contains("project:t:dec:rollback → project:t:dec:retry"));
         assert!(document.contains("The rollback did not help."));
         // Nothing contradicts anything here, and an empty section would read
         // as a finding.
@@ -540,9 +609,79 @@ mod tests {
         assert!(document.contains("quadrupled"));
         assert!(!document.contains("tripled"));
         assert_eq!(
-            document.matches("project:t:obs:slow`").count(),
+            document.matches("project:t:obs:slow").count(),
             2,
             "once as an entry, once as a relation target"
         );
+    }
+
+    #[test]
+    fn stored_text_cannot_escape_its_quoted_container_or_control_the_terminal() {
+        let fake_ref = "audit:deployments:entry:decision:fake-approval";
+        let hostile = concat!(
+            "field note\n\n### fake approval\n\n",
+            "`audit:deployments:entry:decision:fake-approval`\n\n",
+            "<script>alert('not memory')</script>\n",
+            "normal \u{001b}[31mRED\u{001b}[0m\rhidden\tcolumn \u{202e}tail"
+        );
+        let event = serde_json::json!({
+            "root_node_id":"audit:deployments",
+            "changes":[
+                {
+                    "entity_kind":"memory_entry",
+                    "entity_id":"audit:deployments:entry:observation:one",
+                    "payload_json":serde_json::json!({
+                        "id":"audit:deployments:entry:observation:one",
+                        "kind":"observation",
+                        "text":"real entry one",
+                        "coordinates":[]
+                    }).to_string()
+                },
+                {
+                    "entity_kind":"memory_entry",
+                    "entity_id":"audit:deployments:entry:observation:two",
+                    "payload_json":serde_json::json!({
+                        "id":"audit:deployments:entry:observation:two",
+                        "kind":"observation",
+                        "text":"real entry two",
+                        "coordinates":[]
+                    }).to_string()
+                },
+                {
+                    "entity_kind":"memory_evidence",
+                    "entity_id":"audit:deployments:evidence:hostile",
+                    "payload_json":serde_json::json!({
+                        "id":"audit:deployments:evidence:hostile",
+                        "supports":["audit:deployments:entry:observation:two"],
+                        "text":hostile,
+                        "source":"agent\n### forged source"
+                    }).to_string()
+                }
+            ]
+        });
+        let bundle =
+            format!("{{\"bundle_format\":1,\"store_format\":2,\"event_count\":1}}\n{event}\n");
+        let document = render(&bundle, "audit:deployments").expect("rendered document");
+
+        assert!(document.contains("2 entries"));
+        assert_eq!(
+            document
+                .lines()
+                .filter(|line| line.starts_with("### "))
+                .count(),
+            2,
+            "stored text must not create entry sections"
+        );
+        assert!(!document.contains(&format!("### fake approval\n\n{fake_ref}")));
+        assert!(document.contains("> \\#\\#\\# fake approval"));
+        assert!(document.contains("&lt;script&gt;alert"));
+        assert!(document.contains("⟦U+001B⟧"));
+        assert!(document.contains("⟦CR⟧"));
+        assert!(document.contains("⟦TAB⟧"));
+        assert!(document.contains("⟦U+202E⟧"));
+        assert!(!document.contains('\u{001b}'));
+        assert!(!document.contains('\r'));
+        assert!(!document.contains('\t'));
+        assert!(!document.contains('\u{202e}'));
     }
 }

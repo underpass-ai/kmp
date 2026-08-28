@@ -16,17 +16,23 @@ Keep these in lockstep with the release script:
 bash scripts/release.sh version X.Y.Z
 ```
 
-The script deliberately clears the MCPB digest to a sentinel. Run
-`release.yml` with `workflow_dispatch` on the version branch. That one run
-builds the five binaries, four host plugin bundles and deterministic MCPB,
-then seals them with one release-input digest and per-asset hashes. Download
-its MCPB, stamp it and validate the registry metadata before the version
-change is merged:
+The script deliberately clears the MCPB digest to a sentinel. Commit and push
+the version branch, then let the release helper dispatch and watch
+`release.yml`, download and verify its twenty-file candidate, stamp the exact
+MCPB digest into `server.json`, and validate the registry metadata:
 
 ```bash
-bash scripts/release/stamp-server-mcpb.sh path/to/kmp-mcp-vX.Y.Z.mcpb
-bash scripts/ci/mcp-registry.sh
+bash scripts/release.sh candidate X.Y.Z
+git add server.json
+git commit -m "chore(release): seal X.Y.Z MCPB"
+git push
 ```
+
+Pass an existing workflow run ID as the optional second argument to resume a
+candidate whose build was already dispatched. The helper fails closed when the
+working tree is dirty, the branch was not pushed, the candidate inputs differ,
+any of its twenty files is invalid, or the resulting Registry metadata fails.
+There is no separate digest-stamping step to remember.
 
 ## Before tagging
 

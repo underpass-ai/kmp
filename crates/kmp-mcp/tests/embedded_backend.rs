@@ -631,6 +631,67 @@ fn language_fallback_seed_arguments() -> Value {
     })
 }
 
+fn diacritic_recall_seed_arguments() -> Value {
+    let records = [
+        (
+            "es",
+            "La válvula falló por sedimentación.",
+            "2026-08-24T11:00:00Z",
+        ),
+        (
+            "pt",
+            "A refrigeração parou por calcificação.",
+            "2026-08-24T11:00:01Z",
+        ),
+        ("fr", "L'arrêt venait du dépôt.", "2026-08-24T11:00:02Z"),
+        (
+            "de",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+            "2026-08-24T11:00:03Z",
+        ),
+    ];
+    let entries = records
+        .iter()
+        .enumerate()
+        .map(|(index, (language, text, occurred_at))| {
+            json!({
+                "id": format!("incident:diacritic:{language}"),
+                "kind": "incident",
+                "text": text,
+                "metadata": {"language": language},
+                "coordinates": [{
+                    "dimension": "work",
+                    "scope_id": "work:diacritic-recall",
+                    "occurred_at": occurred_at,
+                    "sequence": index + 1
+                }]
+            })
+        })
+        .collect::<Vec<_>>();
+    let evidence = records
+        .iter()
+        .map(|(language, text, _)| {
+            json!({
+                "id": format!("evidence:diacritic:{language}"),
+                "supports": [format!("incident:diacritic:{language}")],
+                "text": text,
+                "source": format!("{language} incident fixture"),
+                "metadata": {"language": language}
+            })
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "about": "project:diacritic-recall",
+        "idempotency_key": "ingest:diacritic-recall-regression",
+        "memory": {
+            "dimensions": [{"id": "work:diacritic-recall", "kind": "work"}],
+            "entries": entries,
+            "relations": [],
+            "evidence": evidence
+        }
+    })
+}
+
 #[tokio::test]
 async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it() {
     const TEXT: &str = "We chose redb because one writer matched one agent per project.";
@@ -684,6 +745,52 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
             .any(|relation| relation["why"] == WHY),
         "{english}"
     );
+}
+
+#[tokio::test]
+async fn ask_folds_diacritics_without_rewriting_multilingual_evidence() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", diacritic_recall_seed_arguments()).await;
+
+    for (index, (query, stored)) in [
+        ("valvula", "La válvula falló por sedimentación."),
+        ("refrigeracao", "A refrigeração parou por calcificação."),
+        ("arret", "L'arrêt venait du dépôt."),
+        (
+            "strasse",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+        ),
+        (
+            "kuhlventil",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let answer = call(
+            &server,
+            index as u64 + 2,
+            "kmp_ask",
+            json!({
+                "about": "project:diacritic-recall",
+                "question": query,
+                "answer_policy": "evidence_or_unknown",
+                "budget": {"detail": "full", "max_bytes": 20_000}
+            }),
+        )
+        .await;
+        assert_ne!(answer["answer"], "UNKNOWN", "{query}: {answer}");
+        assert!(
+            answer["proof"]["evidence"]
+                .as_array()
+                .expect("answer evidence")
+                .iter()
+                .any(|evidence| evidence["text"] == stored),
+            "{query} did not return byte-exact evidence: {answer}"
+        );
+    }
 }
 
 #[tokio::test]
@@ -1212,7 +1319,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
             "observed_at": "2026-08-18T09:05:00Z",
             "scope": {"process": "work:relation-why"},
             "current": {
-                "ref": "decision:sqlite-wal-shared-store",
+                "ref": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
                 "kind": "decision",
                 "summary": "Use SQLite WAL instead of redb for shared embedded storage.",
                 "evidence": "The architecture comparison selected SQLite WAL over redb after exercising two independent processes."
@@ -1275,9 +1382,12 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     .await;
     assert_ne!(ask["answer"], "UNKNOWN", "{ask}");
     assert!(
-        ask["because"].as_array().is_some_and(|reasons| reasons
-            .iter()
-            .any(|reason| { reason["claim"] == "decision:sqlite-wal-shared-store" })),
+        ask["because"]
+            .as_array()
+            .is_some_and(|reasons| reasons.iter().any(|reason| {
+                reason["claim"]
+                    == "project:relation-why-conformance:decision:sqlite-wal-shared-store"
+            })),
         "paraphrased recall must retain the decision citation: {ask}"
     );
     assert!(
@@ -1292,7 +1402,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         7,
         "kmp_trace",
         json!({
-            "from": "decision:sqlite-wal-shared-store",
+            "from": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
             "to": "constraint:share-embedded-store"
         }),
     )
@@ -1304,12 +1414,191 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         &server,
         8,
         "kmp_inspect",
-        json!({"ref": "evidence:decision:sqlite-wal-shared-store:relation:1"}),
+        json!({"ref": "evidence:project:relation-why-conformance:decision:sqlite-wal-shared-store:relation:1"}),
     )
     .await;
     assert!(
         relation_proof.to_string().contains(RELATION_EVIDENCE),
         "{relation_proof}"
+    );
+}
+
+#[tokio::test]
+async fn generated_writer_refs_keep_repeated_and_long_prefix_memories_distinct() {
+    const ROUTINE_SUMMARY: &str = "la presion del circuito es normal";
+    const MORNING_EVIDENCE: &str = "manometro a las 09:00 marca 4.1 bar";
+    const AFTERNOON_EVIDENCE: &str = "manometro a las 17:00 marca 4.0 bar";
+    const SUCCESS_SUMMARY: &str = "el despliegue de la version 2.4.1 en el entorno de preproduccion ha terminado con exito y sin incidencias";
+    const FAILURE_SUMMARY: &str = "el despliegue de la version 2.4.1 en el entorno de preproduccion ha terminado con errores graves de arranque";
+    const SUCCESS_EVIDENCE: &str = "CI job 4001: exit 0";
+    const FAILURE_EVIDENCE: &str = "CI job 4002: exit 1, panic en el arranque";
+
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let record = |summary: &str, evidence: &str, occurred_at: &str| {
+        json!({
+            "about": "incident:writer-ref-collision",
+            "intent": "record_observation",
+            "actor": "agent:patrol",
+            "observed_at": "2026-08-18T18:00:00Z",
+            "occurred_at": occurred_at,
+            "scope": {"process": "incident:writer-ref-collision:patrol"},
+            "current": {
+                "kind": "observation",
+                "summary": summary,
+                "evidence": evidence
+            },
+            "options": {"strict": false}
+        })
+    };
+
+    let writes = [
+        (ROUTINE_SUMMARY, MORNING_EVIDENCE, "2026-08-18T09:00:00Z"),
+        (ROUTINE_SUMMARY, AFTERNOON_EVIDENCE, "2026-08-18T17:00:00Z"),
+        (SUCCESS_SUMMARY, SUCCESS_EVIDENCE, "2026-08-18T17:10:00Z"),
+        (FAILURE_SUMMARY, FAILURE_EVIDENCE, "2026-08-18T17:20:00Z"),
+    ];
+    let mut generated = Vec::new();
+    for (index, (summary, evidence, occurred_at)) in writes.iter().enumerate() {
+        let response = call(
+            &server,
+            (index + 1) as u64,
+            "kmp_write_memory",
+            record(summary, evidence, occurred_at),
+        )
+        .await;
+        assert_eq!(response["accepted"], true, "{response}");
+        generated.push(
+            response["generated_refs"][0]
+                .as_str()
+                .expect("generated current ref")
+                .to_string(),
+        );
+    }
+
+    assert_ne!(
+        generated[0], generated[1],
+        "repeated readings are two facts"
+    );
+    assert_ne!(
+        generated[2], generated[3],
+        "opposite statements after a shared long prefix are two facts"
+    );
+
+    for (index, ((summary, evidence, _), generated_ref)) in
+        writes.iter().zip(&generated).enumerate()
+    {
+        let inspected = call(
+            &server,
+            10 + index as u64,
+            "kmp_inspect",
+            json!({"ref": generated_ref}),
+        )
+        .await;
+        assert_eq!(inspected["object"]["text"], *summary, "{inspected}");
+        assert!(
+            inspected.to_string().contains(evidence),
+            "each generated ref must retain its own evidence: {inspected}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let record = |about: &str, summary: &str, evidence: &str| {
+        json!({
+            "about": about,
+            "intent": "record_observation",
+            "actor": "agent:boundary-test",
+            "observed_at": "2026-08-18T18:00:00Z",
+            "scope": {"process": format!("{about}:patrol")},
+            "current": {
+                "kind": "observation",
+                "summary": summary,
+                "evidence": evidence
+            },
+            "options": {"strict": false}
+        })
+    };
+
+    let alpha = call(
+        &server,
+        1,
+        "kmp_write_memory",
+        record(
+            "incident:alpha",
+            "la bomba hidraulica perdio presion en el muelle norte",
+            "manometro del muelle norte",
+        ),
+    )
+    .await;
+    let beta = call(
+        &server,
+        2,
+        "kmp_write_memory",
+        record(
+            "incident:beta",
+            "el firmware del ascensor caduco durante el invierno",
+            "informe del controlador del ascensor",
+        ),
+    )
+    .await;
+    assert_eq!(alpha["accepted"], true, "{alpha}");
+    assert_eq!(beta["accepted"], true, "{beta}");
+    let beta_ref = beta["generated_refs"][0]
+        .as_str()
+        .expect("beta generated ref");
+
+    let forbidden_refs = [
+        beta_ref,
+        "incident:beta",
+        "about:incident:beta:dimension:patrol",
+        "../../incident:beta:entry:x",
+        "incident:alpha:entry:x\nincident:beta:entry:y",
+    ];
+    let mut request_id = 10;
+    for field in ["current", "semantic_delta"] {
+        for forbidden_ref in forbidden_refs {
+            let mut attack = record(
+                "incident:alpha",
+                "texto plantado desde alpha que no deberia vivir en beta",
+                "escritura hecha desde el about alpha",
+            );
+            if field == "semantic_delta" {
+                attack["intent"] = json!("record_delta");
+                attack["semantic_delta"] = json!({
+                    "ref": forbidden_ref,
+                    "from": "estado anterior del muelle",
+                    "to": "estado plantado desde alpha",
+                    "why": "vector de regresion del limite entre abouts",
+                    "evidence": "la llamada declara incident:alpha"
+                });
+            } else {
+                attack["current"]["ref"] = json!(forbidden_ref);
+            }
+            let refused = call(&server, request_id, "kmp_write_memory", attack).await;
+            request_id += 1;
+            assert_eq!(refused["error"]["code"], "invalid_argument", "{refused}");
+            assert!(
+                refused["error"]["message"]
+                    .as_str()
+                    .is_some_and(|message| message.contains(&format!("{field}.ref"))),
+                "the refusal must name the supplied field: {refused}"
+            );
+        }
+    }
+
+    let beta_entry = call(&server, 30, "kmp_inspect", json!({"ref": beta_ref})).await;
+    assert_eq!(
+        beta_entry["object"]["text"], "el firmware del ascensor caduco durante el invierno",
+        "the rejected alpha writes must leave beta byte-for-byte addressable: {beta_entry}"
+    );
+    let beta_anchor = call(&server, 31, "kmp_inspect", json!({"ref": "incident:beta"})).await;
+    assert_eq!(
+        beta_anchor["object"]["kind"], "memory_anchor",
+        "{beta_anchor}"
     );
 }
 

@@ -9,6 +9,40 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-28
+
+### Fixed
+
+- Uninstall rescue files now include a stable full-path identity, so memories
+  in stores with the same directory name cannot overwrite one another before
+  both stores are removed.
+- Concurrent memory writes now return a structured, retryable conflict that
+  tells agents to rebase and replay the same logical write with the same
+  idempotency key, while keeping reused-key content mismatches non-retryable.
+- ChronoLoom chooses semantic zoom from actual marks per lane as well as time
+  per pixel, opening dense memories in Atlas while keeping sparse long windows
+  at a useful level of detail.
+- Recall detail tiers now change the observable expansion whenever the byte
+  budget permits; the legacy token hint no longer silently suppresses every
+  tier behind the stable core.
+- Ask fallback configuration now rejects Chinese, Japanese, and Thai language
+  tags instead of accepting retries that word-based retrieval cannot serve.
+- Ask now folds diacritics for matching in German, French, Spanish, and
+  Portuguese, including German `ß` → `ss`, while returning stored evidence
+  byte-for-byte.
+- Generated writer refs now combine a readable summary slug with the logical
+  write identity, so repeated observations and long summaries with a shared
+  prefix remain distinct instead of silently overwriting one another.
+- Caller-supplied current and semantic-delta refs are now confined to safe
+  descendants of the write's own about, preventing either entry path from
+  replacing another about's entry, internal node, or root anchor.
+- HTTP ingest authorization now checks every caller-chosen entry, relation and
+  evidence ref, so an about-scoped token cannot write into another tenant's
+  graph through the low-level batch surface.
+- Markdown documents now render stored fields as quoted literals and expose
+  terminal and bidirectional controls visibly, preventing evidence text from
+  inventing entry sections or changing what the terminal appears to show.
+
 ## [0.3.0] - 2026-08-28
 
 ### Added
@@ -450,7 +484,9 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.10...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/underpass-ai/kmp/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/underpass-ai/kmp/compare/v0.2.10...v0.3.0
 [0.2.10]: https://github.com/underpass-ai/kmp/compare/v0.2.9...v0.2.10
 [0.2.1]: https://github.com/underpass-ai/kmp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/underpass-ai/kmp/compare/v0.1.18...v0.2.0

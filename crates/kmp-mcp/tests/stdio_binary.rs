@@ -381,6 +381,22 @@ fn config_persists_and_initialize_reports_the_agent_policy() {
         "ask_fallback_languages = [\"en\", \"fr\"]\n"
     );
 
+    let unsupported = Command::new(bin)
+        .args(["config", "ask-fallback-languages", "zh-Hant"])
+        .env("XDG_CONFIG_HOME", config_home.path())
+        .output()
+        .expect("unsupported config is rejected");
+    assert_eq!(unsupported.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&unsupported.stderr)
+            .contains("not a supported Ask fallback language yet")
+    );
+    assert_eq!(
+        std::fs::read_to_string(config_home.path().join("kmp/config.toml"))
+            .expect("valid config survives a rejected update"),
+        "ask_fallback_languages = [\"en\", \"fr\"]\n"
+    );
+
     let data_dir = tempfile::tempdir().expect("data dir");
     let output = run_binary(
         &[

@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 
 const KEY: &str = "ask_fallback_languages";
 const DEFAULT_FALLBACK_LANGUAGE: &str = "en";
+const UNSEGMENTED_FALLBACK_LANGUAGES: [&str; 3] = ["zh", "ja", "th"];
 const OPAQUE_REF_RULE: &str = concat!(
     "Refs are opaque identifiers. Pass every returned ref, and any exact stored ref supplied ",
     "by the user, byte-for-byte. Never prefix or qualify it with an about, translate it, ",
@@ -184,6 +185,14 @@ fn normalize_tag(value: &str) -> Result<String, String> {
     {
         return Err(format!("{value:?} is not a language tag"));
     }
+    let primary = tag.split('-').next().unwrap_or_default();
+    if UNSEGMENTED_FALLBACK_LANGUAGES.contains(&primary) {
+        return Err(format!(
+            "{value:?} is not a supported Ask fallback language yet: Ask cannot retrieve by \
+             word in Chinese, Japanese, or Thai text without segmentation; stored memory \
+             remains byte-exact"
+        ));
+    }
     Ok(tag)
 }
 
@@ -357,6 +366,24 @@ mod tests {
                 "ask_fallback_languages = [\"en\"]\nask_fallback_languages = [\"fr\"]\n"
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn rejects_unsegmented_ask_fallback_languages_and_their_variants() {
+        for tag in ["zh", "ZH-Hans", "ja-JP", "th-TH"] {
+            let error = parse_cli_languages(tag).expect_err("unsupported fallback must fail");
+            assert!(error.contains("not a supported Ask fallback language yet"));
+            assert!(error.contains("without segmentation"));
+        }
+        assert!(
+            parse_languages("ask_fallback_languages = [\"en\", \"zh-Hant\"]\n")
+                .expect_err("an unsupported configured fallback must fail")
+                .contains("without segmentation")
+        );
+        assert_eq!(
+            parse_cli_languages("es,fr,ar").expect("space-delimited scripts remain supported"),
+            ["es", "fr", "ar"]
         );
     }
 
