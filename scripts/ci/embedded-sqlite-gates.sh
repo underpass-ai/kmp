@@ -95,8 +95,8 @@ start_hosts env
 for host in a b; do
   tools="$(count_tools "${WORK_DIR}/out-${host}.json")"
   echo "  bundled host ${host}: ${tools} tools"
-  if [[ "${tools}" -lt 10 ]]; then
-    echo "sqlite-gates: host ${host} got ${tools} tools, expected the ten moves" >&2
+  if [[ "${tools}" -ne 13 ]]; then
+    echo "sqlite-gates: host ${host} got ${tools} tools, expected the thirteen-tool surface" >&2
     sed 's/^/    /' "${WORK_DIR}/err-${host}.log" | head -5 >&2
     exit 1
   fi

@@ -310,30 +310,12 @@ cmd_release() {
     # at a different or not-yet-built artifact.
     bash scripts/ci/mcp-registry.sh
 
-    # Codex installs from the separate underpass-ai/plugins snapshot. Publish
-    # that reviewed mirror before the tag makes this release discoverable;
-    # otherwise an existing updater can install the new engine beside stale
-    # skills and launchers. Build metadata is allowed as a cachebuster, but
-    # its SemVer core must be the release being tagged.
-    local marketplace_manifest marketplace_version
-    marketplace_manifest="$(curl --proto '=https' --tlsv1.2 --connect-timeout 5 --max-time 20 \
-        -fsSL "https://raw.githubusercontent.com/underpass-ai/plugins/main/plugins/kmp/.codex-plugin/plugin.json")" || {
-        echo "error: could not verify the public Codex marketplace" >&2
-        exit 1
-    }
-    marketplace_version="$(printf '%s' "${marketplace_manifest}" | python3 -c \
-        'import json,sys; print(json.load(sys.stdin)["version"])')" || {
-        echo "error: public Codex marketplace manifest is invalid" >&2
-        exit 1
-    }
-    case "${marketplace_version}" in
-        "${version}"|"${version}"+*) ;;
-        *)
-            echo "error: kmp@underpass is '${marketplace_version}', not '${version}'" >&2
-            echo "  hint: merge the underpass-ai/plugins mirror PR before tagging" >&2
-            exit 1
-            ;;
-    esac
+    # Both hosts install from the separate underpass-ai/plugins snapshot.
+    # Publish that reviewed mirror before the tag makes this release
+    # discoverable; otherwise an updater can install the new engine beside
+    # stale skills and launchers. The tag workflow repeats this same gate so a
+    # manually pushed tag cannot bypass it.
+    python3 scripts/release/verify-marketplace.py "${version}"
 
     # Building once means the tag must name one already-reviewed candidate,
     # rather than quietly falling back to another five-platform compile. The
@@ -394,7 +376,7 @@ cmd_release() {
     echo "tagged ${tag} and pushed; candidate run ${candidate_run} approved."
     echo "publish-distribution: image + chart + crates.io chain."
     echo "release: promotes the candidate binaries, host bundles and MCPB without rebuilding."
-    echo "Codex marketplace: verified kmp@underpass ${marketplace_version}."
+    echo "Plugin marketplace: verified kmp@underpass ${version} for Codex and Claude."
     echo "mcp-registry: validates the tag; production publish remains gated."
 }
 

@@ -160,7 +160,7 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:setup` | Installs and wires whatever is missing, then re-checks |
 | `/kmp:doctor` | Diagnoses the setup end to end and names the one thing to fix |
 | `/kmp:info` | What this install is and which memory this project opens — and why that one |
-| `/kmp:moves` | The ten moves and when to use each, read from the live surface when reachable |
+| `/kmp:moves` | The memory and ChronoLoom moves, read from the live surface when reachable |
 | `/kmp:demo` | Loads an example memory — a real incident with a wrong turn in it |
 | `/kmp:catchup` | What changed since you last looked, from the event log |
 | `/kmp:save` | Commits this project's memory to the repository, and shows the diff |
@@ -171,8 +171,9 @@ field-by-field model, safe fallbacks and worked examples.
 Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
 Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
 commands. [`capabilities.json`](capabilities.json) is the machine-checked
-inventory that maps each workflow to its owner and exposure; MCP tools remain
-a separate ten-verb contract. [VOICE.md](VOICE.md) remains the source of truth
+inventory that maps each workflow to its owner and exposure; the ten memory
+tools sit inside the separate thirteen-tool MCP contract. [VOICE.md](VOICE.md)
+remains the source of truth
 for how the host workflows talk.
 
 ## The doctor

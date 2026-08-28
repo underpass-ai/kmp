@@ -282,6 +282,9 @@ jobs:
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "run_id=${RUN_ID}" >> "${GITHUB_OUTPUT}"
 
+      - name: Verify public plugin marketplace parity
+        run: python3 scripts/release/verify-marketplace.py "${{ steps.candidate.outputs.version }}"
+
       - name: Download the approved candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:

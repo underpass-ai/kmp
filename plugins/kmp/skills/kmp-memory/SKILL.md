@@ -155,7 +155,7 @@ The active list comes from the MCP initialize instructions and is visible with
 `kmp-mcp config`. The default is `en`; setup can change or disable it. Do not
 apply this fallback to a temporal interval.
 
-## The ten moves
+## The ten memory moves
 
 **Entry**
 
