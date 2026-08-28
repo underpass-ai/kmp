@@ -2,8 +2,8 @@ apiVersion: v2
 name: kmp
 description: Local-first agent memory that preserves what happened, when and why
 type: application
-version: 0.2.10
-appVersion: "0.2.10"
+version: 0.3.0
+appVersion: "0.3.0"
 home: https://github.com/underpass-ai/kmp
 sources:
   - https://github.com/underpass-ai/kmp

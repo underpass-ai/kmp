@@ -9,14 +9,41 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-28
+
+### Added
+
+- ChronoLoom is now a shared, agent-directed view of memory. Codex and Claude
+  can open it, select a decision and frame its complete proof path through
+  three typed view tools; every move is named, explained and undoable, while
+  the person can click, filter, pan or take control at any time.
+- The README ships one reproducible 26-second capture of a real agent request
+  driving the live browser, with pinned Playwright and FFmpeg source.
+
 ### Changed
 
-- Embedded memory and its bounded quality telemetry now use shareable SQLite.
+- Fresh embedded memory and its bounded quality telemetry now use shareable
+  SQLite unconditionally. `KMP_MCP_ENGINE=redb`, redb migration destinations
+  and `share-memory` are retired; format-1 memory remains readable and
+  migratable through an isolated compatibility path for the 0.3 upgrade.
   The quality journal moves to `telemetry/quality.sqlite3`, preserves retention
   and imports an existing `quality.redb` exactly once while leaving that source
-  file intact. New redb stores, `KMP_MCP_ENGINE=redb`, migration destinations
-  on redb and `share-memory` are retired. Format-1 memory remains readable and
-  migratable through an isolated compatibility path for the 0.3 upgrade.
+  file intact.
+
+### Fixed
+
+- ChronoLoom protects every route with a process-lifetime capability, hands the
+  usable link back through `kmp_view_open` and `kmp_view_get_state`, frames
+  trace-only intents, and keeps semantic zoom to Atlas, Episode and Moment.
+  Both doctors now tell the user to ask the agent to open the loom instead of
+  advertising a bare URL that returns `401`.
+- `kmp_inspect` returns the typed evidence entities that support the inspected
+  ref, including their text, source, metadata and complete `supports` set.
+- Zero-configuration embedded sessions write their diagnostic journal; startup
+  rejects an unexpanded `~` data directory instead of creating it literally;
+  and Doctor probes the plugin launcher that the host actually runs.
+- Legacy-store diagnostics use the current SQLite-only migration command and
+  never recommend the retired `--engine` option.
 
 ## [0.2.10] - 2026-08-28
 
