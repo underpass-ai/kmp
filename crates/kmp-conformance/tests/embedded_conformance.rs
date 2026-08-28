@@ -1,10 +1,10 @@
-//! Conformance arm (c): the suite against the embedded (redb) adapters —
-//! the E2 exit criterion. Every scenario opens a fresh data directory, so
-//! this arm also exercises store initialization and format stamping.
+//! Compatibility conformance arm: the suite against a format-1 redb store.
+//! New stores use SQLite; this arm pins the promise that older memory remains
+//! readable and behaviorally intact during its migration window.
 
 use std::sync::Mutex;
 
-use kmp_adapter_embedded::EmbeddedKernelStore;
+use kmp_adapter_embedded::{EmbeddedKernelStore, StorageEngine};
 use kmp_conformance::{ConformanceBackend, ConformanceBackendFactory, FactoryBackend, scenarios};
 
 struct EmbeddedFactory {
@@ -29,7 +29,8 @@ impl ConformanceBackendFactory for EmbeddedFactory {
 
     async fn fresh(&self) -> FactoryBackend<Self> {
         let data_dir = tempfile::tempdir().expect("temp data dir");
-        let store = EmbeddedKernelStore::open(data_dir.path()).expect("embedded store opens");
+        let store = EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
+            .expect("legacy embedded store opens");
         self.data_dirs
             .lock()
             .expect("data dir registry")

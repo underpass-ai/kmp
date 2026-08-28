@@ -4,14 +4,14 @@ use std::path::{Path, PathBuf};
 
 use kmp_domain::PortError;
 
-/// The layout this binary creates for a fresh data directory, and the one it
-/// has always created: redb ([ADR-009](../../../../archive/docs/adr/ADR-009-embedded-storage-engine.md)).
+/// The layout this binary creates for a fresh data directory: shareable
+/// SQLite ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 ///
 /// `FORMAT_VERSION` in a data directory names the *layout* — which engine
 /// wrote `store/`, and how. Bumping it is what makes a binary that predates
 /// a layout refuse the directory instead of opening an empty store beside
 /// it, so a new engine is a new number ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
-pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Redb.format_version();
+pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Sqlite.format_version();
 
 /// The logical shape of the event log — what a bundle carries and what a
 /// migration translates. Independent of the engine: a redb store and a
@@ -24,11 +24,11 @@ const FORMAT_VERSION_FILE: &str = "FORMAT_VERSION";
 /// directory is created; recorded as its `FORMAT_VERSION`; never guessed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StorageEngine {
-    /// Pure Rust, one file, single process. The default.
+    /// Legacy format-1 redb store. New stores never select it; the variant is
+    /// retained only so older memory can be opened and migrated.
     Redb,
-    /// WAL-mode SQLite: several processes may open the same store. Opt-in
-    /// through the `sqlite` cargo feature; a binary built without it still
-    /// recognises the layout, and refuses it by name.
+    /// WAL-mode SQLite: several processes may open the same store. This is
+    /// the only engine used for new memory.
     Sqlite,
 }
 
@@ -53,12 +53,9 @@ impl StorageEngine {
         }
     }
 
-    /// Whether this build can open the engine, as opposed to merely name it.
+    /// Both known formats remain readable during the compatibility window.
     pub const fn is_compiled(self) -> bool {
-        match self {
-            StorageEngine::Redb => true,
-            StorageEngine::Sqlite => cfg!(feature = "sqlite"),
-        }
+        true
     }
 
     pub const fn name(self) -> &'static str {
@@ -182,7 +179,7 @@ pub(crate) fn check_or_stamp_as(
                     data_dir.display()
                 )));
             }
-            let engine = wanted.unwrap_or(StorageEngine::Redb);
+            let engine = wanted.unwrap_or(StorageEngine::Sqlite);
             require_compiled(data_dir, engine)?;
             fs::write(&version_path, format!("{}\n", engine.format_version())).map_err(
                 |error| {
@@ -248,7 +245,7 @@ mod tests {
 
         let engine = check_or_stamp(dir.path()).expect("fresh directory should stamp");
 
-        assert_eq!(engine, StorageEngine::Redb);
+        assert_eq!(engine, StorageEngine::Sqlite);
         let stamped = fs::read_to_string(format_version_path(dir.path())).expect("read stamp");
         assert_eq!(stamped.trim(), SUPPORTED_FORMAT_VERSION.to_string());
         check_or_stamp(dir.path()).expect("stamped directory should reopen");
@@ -295,7 +292,7 @@ mod tests {
     #[test]
     fn a_store_is_never_reopened_as_another_engine() {
         let dir = tempfile::tempdir().expect("tempdir");
-        check_or_stamp(dir.path()).expect("stamps redb");
+        check_or_stamp_as(dir.path(), Some(StorageEngine::Redb)).expect("stamps legacy redb");
 
         let error = check_or_stamp_as(dir.path(), Some(StorageEngine::Sqlite))
             .expect_err("redb store must not open as sqlite");
@@ -304,17 +301,13 @@ mod tests {
     }
 
     #[test]
-    fn sqlite_layout_is_named_even_when_not_compiled() {
+    fn sqlite_layout_is_always_available() {
         let dir = tempfile::tempdir().expect("tempdir");
         fs::write(format_version_path(dir.path()), "2\n").expect("write");
 
-        let result = check_or_stamp(dir.path());
-        if cfg!(feature = "sqlite") {
-            assert_eq!(result.expect("sqlite compiled in"), StorageEngine::Sqlite);
-        } else {
-            let error = result.expect_err("sqlite not compiled in");
-            assert!(error.to_string().contains("sqlite engine"));
-            assert!(error.to_string().contains("--features sqlite"));
-        }
+        assert_eq!(
+            check_or_stamp(dir.path()).expect("sqlite is always compiled in"),
+            StorageEngine::Sqlite
+        );
     }
 }

@@ -4,7 +4,7 @@
 //! — the one *this shell* would open under one of the three rules — and every
 //! other store was invisible to every command that ships. On one machine that
 //! was one of five, and two of the five were reachable by no rule at all:
-//! a pre-migration redb backup and whatever `share-memory` left behind, 1.4 MB
+//! a pre-migration redb backup and retired migration work directories, 1.4 MB
 //! of memory that nothing would ever mention again.
 //!
 //! The per-store startup log cannot serve as a registry, because the record of
@@ -280,7 +280,7 @@ mod tests {
             .filter(|memory| memory.reach == Reach::Unreachable)
             .collect();
         // The two nothing would ever mention again: a pre-migration backup and
-        // whatever share-memory left behind.
+        // whatever a retired migration workflow left behind.
         assert_eq!(unreachable.len(), 2, "{unreachable:?}");
         assert!(memories.iter().any(
             |memory| memory.reach == Reach::User && memory.engine.as_deref() == Some("sqlite")

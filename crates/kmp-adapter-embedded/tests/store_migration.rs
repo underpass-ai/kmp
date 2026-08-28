@@ -9,7 +9,7 @@
 use std::fs;
 use std::path::Path;
 
-use kmp_adapter_embedded::{EmbeddedKernelStore, format_version_path};
+use kmp_adapter_embedded::{EmbeddedKernelStore, StorageEngine, format_version_path};
 use kmp_application::projection_mutations_for_context_event;
 use kmp_domain::{ContextEventStore, NodeDetailReader};
 
@@ -19,6 +19,10 @@ const SEEDED_EVENTS: u64 = 25;
 /// so no handle is left open on it.
 fn seeded_source(events: u64) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("temp source dir");
+    drop(
+        EmbeddedKernelStore::open_with_engine(dir.path(), StorageEngine::Redb)
+            .expect("legacy fixture store opens"),
+    );
     let status = std::process::Command::new(env!("CARGO_BIN_EXE_embedded_crash_writer"))
         .arg(dir.path())
         .arg(events.to_string())
@@ -62,7 +66,7 @@ async fn migration_moves_history_and_rebuilds_what_it_derives() {
 
     assert_eq!(receipt.events_migrated, SEEDED_EVENTS);
     assert_eq!(receipt.source_format, 1);
-    assert_eq!(receipt.destination_format, 1);
+    assert_eq!(receipt.destination_format, 2);
     assert!(
         receipt.mutations_applied > 0,
         "projections must be rebuilt, not copied"
@@ -130,7 +134,7 @@ async fn a_store_this_binary_refuses_to_open_can_still_be_migrated() {
     let receipt = migrate(source.path(), &destination_path).await;
 
     assert_eq!(receipt.source_format, 0);
-    assert_eq!(receipt.destination_format, 1);
+    assert_eq!(receipt.destination_format, 2);
     let store = EmbeddedKernelStore::open(&destination_path).expect("migrated store opens");
     assert_eq!(
         store
@@ -277,7 +281,6 @@ async fn a_store_nobody_migrated_has_no_receipt() {
 #[cfg(feature = "sqlite")]
 #[tokio::test]
 async fn migration_converts_a_redb_store_into_a_sqlite_store() {
-    use kmp_adapter_embedded::StorageEngine;
     use kmp_domain::GraphNeighborhoodReader;
 
     let source = seeded_source(SEEDED_EVENTS);

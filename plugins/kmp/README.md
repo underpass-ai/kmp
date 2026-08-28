@@ -192,7 +192,7 @@ declaring the setup healthy.
 
 Two failures it names rather than leaving you to guess: another session
 holding a legacy redb store, which is the single-writer contract (ADR-011) doing its
-job — the doctor says which engine the store is on and names `share-memory`,
+job — the doctor says which engine the store is on and gives the SQLite migration,
 which snapshots, migrates and verifies it with the SQLite engine already
 carried by current bundles — and a session that
 started before the registration changed and is still carrying the old

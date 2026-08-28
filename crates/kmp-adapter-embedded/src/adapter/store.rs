@@ -13,8 +13,9 @@ use super::format_version::{self, StorageEngine};
 /// The engine behind it is chosen when the data directory is created and
 /// hidden behind the storage seam
 /// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
-/// redb by default, SQLite when asked for and compiled in. Cloning is cheap
-/// (shared engine handle). Commits are fsync-durable on both engines, so
+/// SQLite for every fresh store, with redb retained only to open and migrate
+/// stamped format-1 stores. Cloning is cheap (shared engine handle). Commits
+/// are fsync-durable on both engines, so
 /// each successful port write survives `kill -9`; a crash mid-transaction
 /// loses only the in-flight transaction.
 #[derive(Debug, Clone)]
@@ -75,19 +76,8 @@ impl EmbeddedKernelStore {
     ) -> Result<Self, PortError> {
         let engine: Arc<dyn Engine> = match engine {
             StorageEngine::Redb => Arc::new(RedbEngine::open_file(store_file)?),
-            #[cfg(feature = "sqlite")]
             StorageEngine::Sqlite => {
                 Arc::new(super::engine::sqlite::SqliteEngine::open_file(store_file)?)
-            }
-            #[cfg(not(feature = "sqlite"))]
-            StorageEngine::Sqlite => {
-                // The format gate names this case with the feature to enable;
-                // reaching here means a caller bypassed it.
-                return Err(PortError::Unavailable(format!(
-                    "embedded store `{}` needs the sqlite engine, which this binary was built \
-                     without",
-                    store_file.display()
-                )));
             }
         };
         Ok(Self { engine })
@@ -137,10 +127,7 @@ impl EmbeddedKernelStore {
         let store_file = format_version::store_file_path_for(data_dir, engine);
         match engine {
             StorageEngine::Redb => RedbEngine::compact_file(&store_file),
-            #[cfg(feature = "sqlite")]
             StorageEngine::Sqlite => super::engine::sqlite::SqliteEngine::compact_file(&store_file),
-            #[cfg(not(feature = "sqlite"))]
-            StorageEngine::Sqlite => unreachable!("the format gate refuses uncompiled engines"),
         }
     }
 }

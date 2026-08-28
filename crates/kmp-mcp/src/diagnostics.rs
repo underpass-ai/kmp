@@ -66,14 +66,11 @@ impl Finding {
 
 /// The engines this build carries, as `--version` reports them.
 pub fn compiled_formats() -> String {
-    let mut formats = vec![format!("{}", StorageEngine::Redb.format_version())];
-    if StorageEngine::Sqlite.is_compiled() {
-        formats.push(format!(
-            "{} (sqlite)",
-            StorageEngine::Sqlite.format_version()
-        ));
-    }
-    formats.join(", ")
+    format!(
+        "{} (legacy read), {} (sqlite)",
+        StorageEngine::Redb.format_version(),
+        StorageEngine::Sqlite.format_version()
+    )
 }
 
 /// Which engine's store file is on disk, without opening either.
@@ -454,12 +451,18 @@ fn viewer_finding() -> Finding {
 fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
     let path = kmp_embedded::quality_telemetry_path(resolved.path());
     if !path.exists() {
+        let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
+        if legacy.exists() {
+            return Finding::new(Level::Warn, "legacy quality telemetry awaits import")
+                .with(format!("source kept at {}", legacy.display()))
+                .with("the next kernel start imports it once into shareable SQLite");
+        }
         return Finding::new(Level::Warn, "no quality telemetry journal yet").with(format!(
             "expected at {} after the first kernel start",
             path.display()
         ));
     }
-    match kmp_embedded::RedbQualityTelemetryReader::open(resolved.path()) {
+    match kmp_embedded::SqliteQualityTelemetryReader::open(resolved.path()) {
         Ok(reader) => match reader.count() {
             Ok(count) => Finding::new(
                 Level::Ok,
@@ -743,15 +746,8 @@ mod tests {
     #[test]
     fn the_compiled_formats_name_the_engines_this_build_carries() {
         let formats = compiled_formats();
-        assert!(
-            formats.starts_with('1'),
-            "redb is always compiled: {formats}"
-        );
-        assert_eq!(
-            formats.contains("sqlite"),
-            StorageEngine::Sqlite.is_compiled(),
-            "the string must follow the build, not a guess"
-        );
+        assert!(formats.contains("1 (legacy read)"), "{formats}");
+        assert!(formats.contains("2 (sqlite)"), "{formats}");
     }
 
     #[test]

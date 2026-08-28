@@ -1,7 +1,6 @@
 //! Conformance arm (d): the suite against the embedded adapters on the
-//! SQLite engine (ADR-018). Same sixteen scenarios as the redb arm, and the
-//! acceptance criterion for the engine: an engine that does not pass every
-//! one of them is not a valid backend, whatever else it can do.
+//! active SQLite engine (ADR-018). Same sixteen scenarios as the legacy arm,
+//! and the acceptance criterion for the product store.
 //!
 //! Every scenario opens a fresh data directory stamped for SQLite, so this
 //! arm also exercises the engine's table creation and the format gate's
