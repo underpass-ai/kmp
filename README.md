@@ -18,7 +18,8 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-and exposes them through ten memory tools plus a shared ChronoLoom view.
+on embedded SQLite, and exposes them through ten memory tools plus three
+semantic view tools over a shared ChronoLoom view.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
