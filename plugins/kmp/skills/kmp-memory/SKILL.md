@@ -438,9 +438,10 @@ something observed.
 
 Before committing a rich relation:
 
-- omit `current.ref` for a new memory. Supply it only to update an existing
-  entry inside the same `about`; it must begin with that exact about plus `:`,
-  so never reuse a foreign ref surfaced by a cross-about read;
+- omit `current.ref` and `semantic_delta.ref` for new memory. Supply either
+  only to update an existing entry inside the same `about`; it must begin with
+  that exact about plus `:`, so never reuse a foreign ref surfaced by a
+  cross-about read;
 - inspect or traverse every existing target and name it in `read_context`;
 - choose the most specific relation supported by what you read;
 - make `why` mention the actual relationship between the two endpoints;

@@ -638,7 +638,7 @@ fn write_memory_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["from", "to", "why", "evidence"],
                 "properties": {
-                    "ref": string_schema("Optional stable semantic delta entry ref."),
+                    "ref": string_schema("Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key."),
                     "from": string_schema("Previous known state."),
                     "to": string_schema("New state."),
                     "why": string_schema("Why this state change is valid."),

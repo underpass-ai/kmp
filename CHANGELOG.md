@@ -33,9 +33,9 @@ Detailed notes from the early release cycle are preserved in the
 - Generated writer refs now combine a readable summary slug with the logical
   write identity, so repeated observations and long summaries with a shared
   prefix remain distinct instead of silently overwriting one another.
-- Caller-supplied writer refs are now confined to safe descendants of the
-  write's own about, preventing a write from replacing another about's entry,
-  internal node, or root anchor.
+- Caller-supplied current and semantic-delta refs are now confined to safe
+  descendants of the write's own about, preventing either entry path from
+  replacing another about's entry, internal node, or root anchor.
 - HTTP ingest authorization now checks every caller-chosen entry, relation and
   evidence ref, so an about-scoped token cannot write into another tenant's
   graph through the low-level batch surface.

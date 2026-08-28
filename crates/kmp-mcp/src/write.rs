@@ -227,7 +227,7 @@ pub(crate) fn build_write_plan_with_root(
     }
 
     let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
-        validate_supplied_entry_ref(&about, current_ref)?;
+        validate_supplied_entry_ref(&about, "current.ref", current_ref)?;
         current_ref.to_string()
     } else {
         generated_entry_ref(
@@ -362,17 +362,18 @@ pub(crate) fn build_write_plan_with_root(
         let delta_to = required_map_string(delta, "to", "semantic_delta.to")?;
         let delta_why = required_map_string(delta, "why", "semantic_delta.why")?;
         let delta_evidence = required_map_string(delta, "evidence", "semantic_delta.evidence")?;
-        let delta_ref = optional_map_string(delta, "ref")
-            .map(ToString::to_string)
-            .unwrap_or_else(|| {
-                generated_entry_ref(
-                    &about,
-                    "semantic_delta",
-                    delta_to,
-                    &idempotency_key,
-                    "semantic_delta",
-                )
-            });
+        let delta_ref = if let Some(delta_ref) = optional_map_string(delta, "ref") {
+            validate_supplied_entry_ref(&about, "semantic_delta.ref", delta_ref)?;
+            delta_ref.to_string()
+        } else {
+            generated_entry_ref(
+                &about,
+                "semantic_delta",
+                delta_to,
+                &idempotency_key,
+                "semantic_delta",
+            )
+        };
         reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
         local_refs.insert(delta_ref.clone());
         entries.push(json!({
@@ -1052,12 +1053,12 @@ fn validate_confidence(value: &str) -> Result<(), String> {
     }
 }
 
-fn validate_supplied_entry_ref(about: &str, entry_ref: &str) -> Result<(), String> {
-    validate_ref_token("current.ref", entry_ref)?;
+fn validate_supplied_entry_ref(about: &str, path: &str, entry_ref: &str) -> Result<(), String> {
+    validate_ref_token(path, entry_ref)?;
     let owned_prefix = format!("{about}:");
     if !entry_ref.starts_with(&owned_prefix) {
         return Err(format!(
-            "`current.ref` `{entry_ref}` does not belong to about `{about}`; it must start with `{owned_prefix}` and cannot replace the about anchor or a node from another about. Omit current.ref to generate a safe ref for a new memory"
+            "`{path}` `{entry_ref}` does not belong to about `{about}`; it must start with `{owned_prefix}` and cannot replace the about anchor or a node from another about. Omit {path} to generate a safe ref for a new memory"
         ));
     }
     Ok(())
@@ -1705,23 +1706,39 @@ mod tests {
             "incident:mobile-login:entry:x\nincident:other:entry:y",
         ];
 
-        for unsafe_ref in unsafe_refs {
-            let mut request = sample_write_request();
-            request["current"]["ref"] = json!(unsafe_ref);
-            let error = build_write_plan(&request).expect_err("unsafe ref must be refused");
-            assert!(
-                error.contains("does not belong to about")
-                    || error.contains("invalid `current.ref`"),
-                "the refusal must name the violated boundary for `{unsafe_ref}`: {error}"
-            );
+        for (object, path) in [
+            ("current", "current.ref"),
+            ("semantic_delta", "semantic_delta.ref"),
+        ] {
+            for unsafe_ref in unsafe_refs {
+                let mut request = sample_write_request();
+                request[object]["ref"] = json!(unsafe_ref);
+                let error = build_write_plan(&request).expect_err("unsafe ref must be refused");
+                assert!(
+                    error.contains("does not belong to about")
+                        || error.contains(&format!("invalid `{path}`")),
+                    "the refusal must name `{path}` and its violated boundary for `{unsafe_ref}`: {error}"
+                );
+                assert!(error.contains(path), "wrong supplied-ref path: {error}");
+            }
         }
 
-        let mut local = sample_write_request();
-        local["current"]["ref"] = json!("incident:mobile-login:decision:explicit-safe-update");
-        let plan = build_write_plan(&local).expect("an about-local entry ref is valid");
+        let mut local_current = sample_write_request();
+        local_current["current"]["ref"] =
+            json!("incident:mobile-login:decision:explicit-safe-update");
+        let plan = build_write_plan(&local_current).expect("an about-local current ref is valid");
         assert_eq!(
             plan.generated_refs[0],
             "incident:mobile-login:decision:explicit-safe-update"
+        );
+
+        let mut local_delta = sample_write_request();
+        local_delta["semantic_delta"]["ref"] =
+            json!("incident:mobile-login:semantic-delta:explicit-safe-update");
+        let plan = build_write_plan(&local_delta).expect("an about-local delta ref is valid");
+        assert_eq!(
+            plan.generated_refs[1],
+            "incident:mobile-login:semantic-delta:explicit-safe-update"
         );
     }
 

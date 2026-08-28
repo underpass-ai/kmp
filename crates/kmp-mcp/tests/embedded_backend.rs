@@ -1504,7 +1504,7 @@ async fn generated_writer_refs_keep_repeated_and_long_prefix_memories_distinct()
 }
 
 #[tokio::test]
-async fn writer_ref_cannot_escape_its_about_or_replace_another_root() {
+async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
     let record = |about: &str, summary: &str, evidence: &str| {
@@ -1551,32 +1551,51 @@ async fn writer_ref_cannot_escape_its_about_or_replace_another_root() {
         .as_str()
         .expect("beta generated ref");
 
-    for (index, forbidden_ref) in [
+    let forbidden_refs = [
         beta_ref,
         "incident:beta",
         "about:incident:beta:dimension:patrol",
         "../../incident:beta:entry:x",
         "incident:alpha:entry:x\nincident:beta:entry:y",
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let mut attack = record(
-            "incident:alpha",
-            "texto plantado desde alpha que no deberia vivir en beta",
-            "escritura hecha desde el about alpha",
-        );
-        attack["current"]["ref"] = json!(forbidden_ref);
-        let refused = call(&server, 10 + index as u64, "kmp_write_memory", attack).await;
-        assert_eq!(refused["error"]["code"], "invalid_argument", "{refused}");
+    ];
+    let mut request_id = 10;
+    for field in ["current", "semantic_delta"] {
+        for forbidden_ref in forbidden_refs {
+            let mut attack = record(
+                "incident:alpha",
+                "texto plantado desde alpha que no deberia vivir en beta",
+                "escritura hecha desde el about alpha",
+            );
+            if field == "semantic_delta" {
+                attack["intent"] = json!("record_delta");
+                attack["semantic_delta"] = json!({
+                    "ref": forbidden_ref,
+                    "from": "estado anterior del muelle",
+                    "to": "estado plantado desde alpha",
+                    "why": "vector de regresion del limite entre abouts",
+                    "evidence": "la llamada declara incident:alpha"
+                });
+            } else {
+                attack["current"]["ref"] = json!(forbidden_ref);
+            }
+            let refused = call(&server, request_id, "kmp_write_memory", attack).await;
+            request_id += 1;
+            assert_eq!(refused["error"]["code"], "invalid_argument", "{refused}");
+            assert!(
+                refused["error"]["message"]
+                    .as_str()
+                    .is_some_and(|message| message.contains(&format!("{field}.ref"))),
+                "the refusal must name the supplied field: {refused}"
+            );
+        }
     }
 
-    let beta_entry = call(&server, 20, "kmp_inspect", json!({"ref": beta_ref})).await;
+    let beta_entry = call(&server, 30, "kmp_inspect", json!({"ref": beta_ref})).await;
     assert_eq!(
         beta_entry["object"]["text"], "el firmware del ascensor caduco durante el invierno",
         "the rejected alpha writes must leave beta byte-for-byte addressable: {beta_entry}"
     );
-    let beta_anchor = call(&server, 21, "kmp_inspect", json!({"ref": "incident:beta"})).await;
+    let beta_anchor = call(&server, 31, "kmp_inspect", json!({"ref": "incident:beta"})).await;
     assert_eq!(
         beta_anchor["object"]["kind"], "memory_anchor",
         "{beta_anchor}"
