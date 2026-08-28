@@ -22,6 +22,9 @@ Detailed notes from the early release cycle are preserved in the
 - ChronoLoom chooses semantic zoom from actual marks per lane as well as time
   per pixel, opening dense memories in Atlas while keeping sparse long windows
   at a useful level of detail.
+- Recall detail tiers now change the observable expansion whenever the byte
+  budget permits; the legacy token hint no longer silently suppresses every
+  tier behind the stable core.
 
 ## [0.3.0] - 2026-08-28
 

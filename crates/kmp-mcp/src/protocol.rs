@@ -1274,7 +1274,7 @@ fn projection_output_schema() -> Value {
     );
     output_object(json!({
         "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
-        "budget": described("object", "The ceilings that applied, and the bytes actually used."),
+        "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
         "detail": described("string", "compact | balanced | full — the detail tier that was served."),
         "excluded_by_detail": described(
             "integer",
@@ -1295,7 +1295,7 @@ fn projection_output_schema() -> Value {
 fn truncation_output_schema() -> Value {
     output_object(json!({
         "truncated": described("boolean", "Always true when this optional object is present."),
-        "token_limit": described("integer", "Advisory token ceiling applied."),
+        "token_limit": described("integer", "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent."),
         "byte_limit": described("integer", "Normative serialized-byte ceiling applied."),
         "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
     }))
@@ -1394,7 +1394,7 @@ fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
                 "type": "integer",
                 "minimum": 1,
                 "default": default_tokens,
-                "description": format!("Advisory cl100k planning ceiling retained for compatibility; defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
+                "description": format!("Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
             },
             "max_bytes": {
                 "type": "integer",
@@ -1445,7 +1445,7 @@ fn recall_page_schema() -> Value {
             "entries": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Optional maximum expansion items on this page; byte and advisory-token ceilings still apply."
+                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
             },
             "cursor": {
                 "type": "string",

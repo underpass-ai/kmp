@@ -126,12 +126,6 @@ fn try_enforce_recall_output_budget_with_estimator(
 }
 
 #[cfg(test)]
-fn serialized_tokens(value: &Value, estimator: &dyn TokenEstimator) -> u32 {
-    estimator
-        .estimate_tokens(&serde_json::to_string(value).expect("KMP response JSON should serialize"))
-}
-
-#[cfg(test)]
 fn array_len(value: &Value, path: &[&str]) -> usize {
     let mut current = value;
     for key in path {
@@ -1261,7 +1255,7 @@ mod tests {
     }
 
     #[test]
-    fn compact_output_filters_structure_and_honours_the_serialized_token_limit() {
+    fn compact_output_filters_structure_and_honours_the_serialized_byte_limit() {
         let path = (0..40)
             .map(|index| {
                 json!({
@@ -1296,11 +1290,15 @@ mod tests {
             },
             "warnings": []
         });
-        let arguments = json!({"budget": {"tokens": 400, "detail": "compact"}});
+        let arguments = json!({"budget": {"tokens": 1, "max_bytes": 2_000, "detail": "compact"}});
 
         let bounded = enforce_recall_output_budget(value, &arguments, 1600);
-        let estimator = Cl100kEstimator::new();
-        assert!(serialized_tokens(&bounded, &estimator) <= 400);
+        assert!(
+            serde_json::to_vec(&bounded)
+                .expect("bounded projection")
+                .len()
+                <= 2_000
+        );
         assert!(
             bounded["proof"]["path"]
                 .as_array()
@@ -1391,18 +1389,24 @@ mod tests {
             .as_array_mut()
             .expect("proof path")
             .retain(|relation| relation["class"] != "structural");
-        let estimator = Cl100kEstimator::new();
-        let token_limit = serialized_tokens(&compact_source, &estimator);
+        let byte_limit = serde_json::to_vec(&compact_source)
+            .expect("compact source should serialize")
+            .len();
 
         // This is the exact cliff from #94. The projection envelope is now
         // reserved before filling the fixed expansion prefix.
         let bounded = enforce_recall_output_budget(
             value,
-            &json!({"budget": {"tokens": token_limit, "detail": "compact"}}),
+            &json!({"budget": {"tokens": 1, "max_bytes": byte_limit, "detail": "compact"}}),
             2_400,
         );
 
-        assert!(serialized_tokens(&bounded, &estimator) <= token_limit);
+        assert!(
+            serde_json::to_vec(&bounded)
+                .expect("bounded projection")
+                .len()
+                <= byte_limit
+        );
         assert_eq!(bounded["because"].as_array().expect("reasons").len(), 3);
         assert_eq!(bounded["truncation"]["truncated"], true);
         assert_eq!(
@@ -1415,23 +1419,21 @@ mod tests {
     #[test]
     fn ask_budget_sweep_preserves_the_ceiling_and_monotone_cited_core() {
         let value = recall_budget_fixture();
-        let estimator = Cl100kEstimator::new();
-
         for detail in ["compact", "balanced", "full"] {
             let mut previous_reasons = 0;
             let mut previous_evidence = 0;
-            for token_limit in (800..=6_000).step_by(25) {
-                let bounded = enforce_recall_output_budget_with_estimator(
+            for byte_limit in (4_000..=10_000).step_by(100) {
+                let bounded = enforce_recall_output_budget(
                     value.clone(),
                     &json!({
                         "budget": {
-                            "tokens": token_limit,
+                            "tokens": 1,
+                            "max_bytes": byte_limit,
                             "detail": detail,
                             "max_entries": 12
                         }
                     }),
                     2_400,
-                    &estimator,
                 );
                 let reasons = array_len(&bounded, &["because"]);
                 let evidence = array_len(&bounded, &["proof", "evidence"]);
@@ -1440,16 +1442,16 @@ mod tests {
                     serde_json::to_vec(&bounded)
                         .expect("projection should serialize")
                         .len()
-                        <= 10_000,
-                    "{detail} exceeded the normative byte ceiling at advisory budget {token_limit}"
+                        <= byte_limit,
+                    "{detail} exceeded the normative byte ceiling {byte_limit}"
                 );
                 assert!(
                     reasons >= previous_reasons,
-                    "{detail} lost cited reasons when the budget grew to {token_limit}"
+                    "{detail} lost cited reasons when the byte budget grew to {byte_limit}"
                 );
                 assert!(
                     evidence >= previous_evidence,
-                    "{detail} lost proof evidence when the budget grew to {token_limit}"
+                    "{detail} lost proof evidence when the byte budget grew to {byte_limit}"
                 );
                 if bounded
                     .pointer("/truncation/truncated")
@@ -1471,15 +1473,13 @@ mod tests {
     #[test]
     fn wake_budget_sweep_preserves_the_ceiling_and_monotone_state() {
         let value = wake_budget_fixture();
-        let estimator = Cl100kEstimator::new();
         let mut previous_state = 0;
 
-        for token_limit in (800..=6_000).step_by(25) {
-            let bounded = enforce_recall_output_budget_with_estimator(
+        for byte_limit in (4_000..=10_000).step_by(100) {
+            let bounded = enforce_recall_output_budget(
                 value.clone(),
-                &json!({"budget": {"tokens": token_limit, "detail": "balanced"}}),
+                &json!({"budget": {"tokens": 1, "max_bytes": byte_limit, "detail": "balanced"}}),
                 2_400,
-                &estimator,
             );
             let retained_state = [
                 "current_state",
@@ -1496,11 +1496,11 @@ mod tests {
                 serde_json::to_vec(&bounded)
                     .expect("projection should serialize")
                     .len()
-                    <= 10_000
+                    <= byte_limit
             );
             assert!(
                 retained_state >= previous_state,
-                "wake lost state when the budget grew to {token_limit}"
+                "wake lost state when the byte budget grew to {byte_limit}"
             );
             if bounded
                 .pointer("/truncation/truncated")
@@ -1622,9 +1622,7 @@ mod tests {
         });
 
         let bounded = enforce_recall_output_budget(value, &json!({}), 1_600);
-        let estimator = Cl100kEstimator::new();
-
-        assert!(serialized_tokens(&bounded, &estimator) <= 1_600);
+        assert!(serde_json::to_vec(&bounded).expect("bounded wake").len() <= 10_000);
         assert!(bounded["wake"].is_object());
         assert!(bounded["proof"].is_object());
         assert_eq!(bounded["resume_cursor"]["ref"], "decision:latest");
