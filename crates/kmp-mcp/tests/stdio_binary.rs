@@ -144,6 +144,49 @@ fn unconfigured_embedded_backend_mounts_the_viewer() {
     assert!(token.bytes().all(|byte| byte.is_ascii_hexdigit()));
 }
 
+#[test]
+fn a_busy_default_viewer_port_falls_forward_to_a_session_port() {
+    let occupied = match std::net::TcpListener::bind(kmp_viewer::DEFAULT_VIEWER_ADDR) {
+        Ok(listener) => Some(listener),
+        Err(error) if error.kind() == std::io::ErrorKind::AddrInUse => None,
+        Err(error) => panic!("the default viewer port could not be occupied: {error}"),
+    };
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    command
+        .env_remove("KMP_VIEWER_ADDR")
+        .env("KMP_MCP_DATA_DIR", data_dir.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = command.spawn().expect("stdio MCP binary should spawn");
+    child
+        .stdin
+        .as_mut()
+        .expect("stdin")
+        .write_all(b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}\n")
+        .expect("request should be written");
+    drop(child.stdin.take());
+    let output = child.wait_with_output().expect("stdio MCP binary exits");
+    drop(occupied);
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
+    assert!(
+        stderr.contains("choosing a free per-session loopback port instead"),
+        "the collision must be explicit: {stderr}"
+    );
+    assert!(
+        stderr.contains("memory viewer at http://127.0.0.1:")
+            && !stderr.contains("memory viewer at http://127.0.0.1:7317/"),
+        "the second session must advertise its own viewer: {stderr}"
+    );
+}
+
 /// gRPC by name and nothing to talk to is the one backend failure left, and
 /// the way out it offers must be the mode the product actually is.
 #[test]

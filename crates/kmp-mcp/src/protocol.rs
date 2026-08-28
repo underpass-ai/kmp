@@ -537,6 +537,7 @@ fn view_output_schema() -> Value {
     output_object(json!({
         "view_id": described("string", "The view this answer is about."),
         "view_revision": described("integer", "The view's own revision, which is not the memory's."),
+        "viewer_available": described("boolean", "Whether this MCP process mounted a ChronoLoom browser for the semantic view."),
         "state": {
             "type": "object",
             "additionalProperties": true,

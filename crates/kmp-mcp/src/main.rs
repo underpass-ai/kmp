@@ -179,9 +179,9 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
     remember_this_memory(resolved.path());
     let url = match spawn_viewer(backend.kernel(), addr).await {
         Ok(url) => Some(url),
-        // The commonest cause is another project's session already holding
-        // the port. That session's viewer still works; this one goes without
-        // rather than taking the memory down with it.
+        // An explicit address is a contract. The default is only a preference:
+        // if another session owns it, this process falls forward to a free
+        // loopback port below and advertises its own capability URL.
         Err(message) if viewer.was_asked_for() => {
             // You asked for this address, so you get told why it did not
             // happen and what to type next — not a shrug.
@@ -193,11 +193,18 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
             )));
         }
         Err(message) => {
-            eprintln!(
-                "kmp-mcp: {message}; continuing without it. Set {}=off to stop offering it.",
-                kmp_viewer::VIEWER_ADDR_ENV
-            );
-            None
+            eprintln!("kmp-mcp: {message}; choosing a free per-session loopback port instead");
+            match spawn_viewer(backend.kernel(), "127.0.0.1:0").await {
+                Ok(url) => Some(url),
+                Err(fallback) => {
+                    eprintln!(
+                        "kmp-mcp: viewer fallback also failed: {fallback}; continuing without it. \
+                         Set {}=off to stop offering it.",
+                        kmp_viewer::VIEWER_ADDR_ENV
+                    );
+                    None
+                }
+            }
         }
     };
     let server = KernelMcpServer::with_embedded_backend(backend);

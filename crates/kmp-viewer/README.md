@@ -52,12 +52,14 @@ can mount it over its own composition unchanged.
 
 The usual way in is [`kmp-mcp`](https://crates.io/crates/kmp-mcp): every
 embedded MCP session brings the viewer up over its own kernel at
-`127.0.0.1:7317`, unasked. The session's printed link carries a random
-capability for that process only; `kmp_view_open` and `kmp_view_get_state`
+`127.0.0.1:7317`, unasked. When another session already owns that default,
+the new process takes a free loopback port instead. The session's printed
+link carries a random capability for that process only; `kmp_view_open` and `kmp_view_get_state`
 return the same link when the host hides server output. The first browser
 request exchanges it for an HttpOnly, SameSite cookie and redirects to the
 clean URL. A local process with only the port gets `401`. `KMP_VIEWER_ADDR`
-moves it; `off` declines it.
+moves it to an explicit address (and refuses if that address is busy); `off`
+declines it.
 An MCP host that negotiates the Apps extension can instead open the identical
 self-contained renderer from `ui://kmp/chronoloom.html`; no localhost browser
 is required, and the bulk visual chunks stay in app structured content.
