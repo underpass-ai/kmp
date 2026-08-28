@@ -636,6 +636,10 @@ fn view_error_response(error: &crate::view_state::ViewError) -> HttpResponse {
             409,
             &format!("the view moved on: expected revision {expected}, it is at {actual}"),
         ),
+        ViewError::IdempotencyConflict { key } => HttpResponse::error(
+            409,
+            &format!("idempotency key '{key}' was already accepted with different content"),
+        ),
         ViewError::Invalid(message) => HttpResponse::error(400, message),
     }
 }
