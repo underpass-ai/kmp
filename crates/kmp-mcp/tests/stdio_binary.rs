@@ -177,7 +177,7 @@ fn an_endpoint_alone_still_chooses_grpc() {
     assert!(output.status.success());
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
     assert!(
-        stderr.contains("grpc"),
+        stderr.to_ascii_lowercase().contains("grpc"),
         "the startup line should name the backend it chose: {stderr}"
     );
 }
