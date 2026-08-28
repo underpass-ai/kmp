@@ -116,7 +116,10 @@ impl RetryingEmbeddedKernelMcpBackend {
                 Err(error) => {
                     let transient_lock = error.contains("Cannot acquire lock");
                     last_error = error;
-                    if !transient_lock || attempt == 2 {
+                    if !transient_lock {
+                        return Err(format!("embedded store cannot be opened: {last_error}"));
+                    }
+                    if attempt == 2 {
                         break;
                     }
                     std::thread::sleep(Duration::from_millis(100 * (attempt + 1) as u64));
@@ -677,6 +680,28 @@ mod retry_tests {
         assert!(
             !recovered.message.contains("temporarily unavailable"),
             "{recovered}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_permanent_layout_error_never_promises_that_retry_will_fix_it() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        let store =
+            kmp_embedded::store_file_path_for(data_dir.path(), kmp_embedded::StorageEngine::Sqlite);
+        std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
+        std::fs::write(store, b"memory remains on disk").expect("store marker");
+        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "3\n").expect("newer format stamp");
+        let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
+
+        let error = backend
+            .call_tool("kmp_inspect", &json!({"ref": "incident:format"}))
+            .await
+            .expect_err("a newer layout cannot open");
+        assert!(error.message.contains("upgrade the binary"), "{error}");
+        assert!(!error.message.contains("temporarily"), "{error}");
+        assert!(
+            !error.message.contains("next tool call will retry"),
+            "{error}"
         );
     }
 }

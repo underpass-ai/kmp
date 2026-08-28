@@ -15,7 +15,7 @@ mod telemetry;
 
 pub use format_version::{
     EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,
-    read_stamped_version, store_file_path_for,
+    read_stamped_version, store_file_path_for, validate_store_layout,
 };
 pub use migration::StoreMigrationReceipt;
 pub use portability::{

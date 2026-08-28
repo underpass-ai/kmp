@@ -240,7 +240,7 @@ write_doctor_store_file() {
   dd if=/dev/zero of="$path" bs=4096 count="$blocks" 2>/dev/null
 }
 
-doctor_memory_line() {
+run_doctor_for_store() {
   local data_dir="$1"
   HOME="${SMOKE_DATA_DIR}/doctor-home" \
   NO_COLOR=1 \
@@ -251,7 +251,11 @@ doctor_memory_line() {
   KMP_DOCTOR_CLAUDE_MCP_LIST='plugin:kmp:kmp: bundled launcher - connected' \
   KMP_DOCTOR_CODEX_PLUGIN_LIST='kmp@underpass  installed, enabled  0.1.15  /plugin/kmp' \
   KMP_DOCTOR_CODEX_MCP_LIST='kmp  kmp-mcp  enabled' \
-    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh" | grep -F '[✓] Memory     '
+    bash "${PLUGIN_DIR}/scripts/kmp-doctor.sh"
+}
+
+doctor_memory_line() {
+  run_doctor_for_store "$1" | grep -F '[✓] Memory     '
 }
 
 assert_doctor_memory() {
@@ -297,6 +301,46 @@ write_doctor_store_file "$NO_WAL_STORE/store/kernel.sqlite3" 2
 touch -t 202608260503 "$NO_WAL_STORE/store/kernel.sqlite3"
 NO_WAL_SIZE="$(du -ch "$NO_WAL_STORE/store/kernel.sqlite3" | tail -1 | cut -f1)"
 assert_doctor_memory "$NO_WAL_STORE" "$NO_WAL_SIZE" '2026-08-26 05:03'
+
+# A layout stamp is a gate, not an inventory. The physical SQLite file must
+# remain visible — and the Memory area must fail — when that gate is newer,
+# corrupt or absent. This is the exact shape that used to say "empty" over a
+# non-empty store and invite the user to discard recoverable memory.
+assert_doctor_rejects_layout() {
+  local label="$1" stamp="$2" expected="$3"
+  local data_dir="${SMOKE_DATA_DIR}/doctor-store-${label}"
+  create_doctor_sqlite_store "$data_dir"
+  write_doctor_store_file "$data_dir/store/kernel.sqlite3" 3
+  if [ "$stamp" = "<missing>" ]; then
+    rm "$data_dir/FORMAT_VERSION"
+  else
+    printf '%s\n' "$stamp" > "$data_dir/FORMAT_VERSION"
+  fi
+
+  set +e
+  local output
+  output="$(run_doctor_for_store "$data_dir" 2>&1)"
+  local status=$?
+  set -e
+  [ "$status" -eq 1 ] \
+    || { printf '%s\n' "$output" >&2; fail "doctor accepted the $label layout"; }
+  grep -Fq '[✗] Memory' <<<"$output" \
+    || { printf '%s\n' "$output" >&2; fail "doctor did not fail Memory for $label"; }
+  grep -Fq "$expected" <<<"$output" \
+    || { printf '%s\n' "$output" >&2; fail "doctor omitted $label diagnosis"; }
+  grep -Fq 'store size:' <<<"$output" \
+    || { printf '%s\n' "$output" >&2; fail "doctor hid physical memory for $label"; }
+  if grep -Fq 'empty, created on first write' <<<"$output"; then
+    printf '%s\n' "$output" >&2
+    fail "doctor called the $label store empty"
+  fi
+  [ -f "$data_dir/store/kernel.sqlite3" ] \
+    || fail "doctor changed the $label memory while diagnosing it"
+}
+
+assert_doctor_rejects_layout newer 3 'store format 3 is not supported'
+assert_doctor_rejects_layout corrupt banana 'FORMAT_VERSION is corrupt'
+assert_doctor_rejects_layout missing '<missing>' 'a store file exists but FORMAT_VERSION is missing'
 
 doctor_output="$(
   HOME="${SMOKE_DATA_DIR}/doctor-home" \
