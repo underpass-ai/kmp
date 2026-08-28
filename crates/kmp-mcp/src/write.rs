@@ -164,6 +164,7 @@ pub(crate) fn build_write_plan_with_root(
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
     let about = required_string(arguments, "about")?;
+    validate_ref_token("about", &about)?;
     let intent = required_string(arguments, "intent")?;
     validate_intent(&intent)?;
     let actor = required_string(arguments, "actor")?;
@@ -206,6 +207,15 @@ pub(crate) fn build_write_plan_with_root(
         .and_then(|value| u32::try_from(value).ok())
         .filter(|value| *value > 0);
     let relation_sequence = sequence.unwrap_or(1);
+    // The logical write identity is also the uniqueness component of every
+    // generated entry ref. A readable summary slug is useful to humans, but
+    // it cannot be an identity: repeated observations legitimately have the
+    // same wording, and long summaries routinely share their first line. An
+    // exact retry keeps this key (and therefore its refs); a different write
+    // gets different refs before it reaches the projection's UPSERT path.
+    let idempotency_key = optional_string(arguments.get("idempotency_key"))
+        .map(ToString::to_string)
+        .unwrap_or_else(|| stable_idempotency_key(arguments));
 
     let current = required_object(arguments, "current")?;
     let current_kind = required_map_string(current, "kind", "current.kind")?;
@@ -216,9 +226,18 @@ pub(crate) fn build_write_plan_with_root(
         return Err("strict kmp_write_memory requires current.evidence".to_string());
     }
 
-    let current_ref = optional_map_string(current, "ref")
-        .map(ToString::to_string)
-        .unwrap_or_else(|| generated_entry_ref(&about, current_kind, current_summary));
+    let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
+        validate_supplied_entry_ref(&about, current_ref)?;
+        current_ref.to_string()
+    } else {
+        generated_entry_ref(
+            &about,
+            current_kind,
+            current_summary,
+            &idempotency_key,
+            "current",
+        )
+    };
     let mut generated_refs = vec![current_ref.clone()];
     let mut local_refs = BTreeSet::from([current_ref.clone()]);
     let mut dimensions = Vec::new();
@@ -345,7 +364,15 @@ pub(crate) fn build_write_plan_with_root(
         let delta_evidence = required_map_string(delta, "evidence", "semantic_delta.evidence")?;
         let delta_ref = optional_map_string(delta, "ref")
             .map(ToString::to_string)
-            .unwrap_or_else(|| generated_entry_ref(&about, "semantic_delta", delta_to));
+            .unwrap_or_else(|| {
+                generated_entry_ref(
+                    &about,
+                    "semantic_delta",
+                    delta_to,
+                    &idempotency_key,
+                    "semantic_delta",
+                )
+            });
         reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
         local_refs.insert(delta_ref.clone());
         entries.push(json!({
@@ -420,9 +447,6 @@ pub(crate) fn build_write_plan_with_root(
         }));
     }
 
-    let idempotency_key = optional_string(arguments.get("idempotency_key"))
-        .map(ToString::to_string)
-        .unwrap_or_else(|| stable_idempotency_key(arguments));
     let ingest_arguments = json!({
         "about": about.clone(),
         "idempotency_key": idempotency_key.clone(),
@@ -1028,12 +1052,49 @@ fn validate_confidence(value: &str) -> Result<(), String> {
     }
 }
 
-fn generated_entry_ref(about: &str, kind: &str, summary: &str) -> String {
+fn validate_supplied_entry_ref(about: &str, entry_ref: &str) -> Result<(), String> {
+    validate_ref_token("current.ref", entry_ref)?;
+    let owned_prefix = format!("{about}:");
+    if !entry_ref.starts_with(&owned_prefix) {
+        return Err(format!(
+            "`current.ref` `{entry_ref}` does not belong to about `{about}`; it must start with `{owned_prefix}` and cannot replace the about anchor or a node from another about. Omit current.ref to generate a safe ref for a new memory"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_ref_token(path: &str, value: &str) -> Result<(), String> {
+    let unsafe_character = value
+        .chars()
+        .any(|ch| ch.is_control() || ch.is_whitespace() || matches!(ch, '/' | '\\'));
+    let unsafe_segment = value
+        .split(':')
+        .any(|segment| segment.is_empty() || matches!(segment, "." | ".."));
+    if unsafe_character || unsafe_segment {
+        return Err(format!(
+            "invalid `{path}` `{value}`; memory refs cannot contain whitespace, control characters, path separators, or empty/dot path segments"
+        ));
+    }
+    Ok(())
+}
+
+const GENERATED_REF_SEGMENT_MAX: usize = 80;
+const GENERATED_REF_HASH_LEN: usize = 16;
+const GENERATED_REF_SLUG_MAX: usize = GENERATED_REF_SEGMENT_MAX - GENERATED_REF_HASH_LEN - 1;
+
+fn generated_entry_ref(
+    about: &str,
+    kind: &str,
+    summary: &str,
+    write_identity: &str,
+    role: &str,
+) -> String {
     let slug = sanitize_ref_segment(summary);
+    let identity = short_hash(&format!("{write_identity}\0{role}"));
     let suffix = if slug.is_empty() {
-        short_hash(summary)
+        identity
     } else {
-        slug
+        format!("{slug}-{identity}")
     };
     format!("{about}:entry:{kind}:{suffix}")
 }
@@ -1052,7 +1113,7 @@ fn short_hash(value: &str) -> String {
 }
 
 fn sanitize_ref_segment(input: &str) -> String {
-    let mut output = String::with_capacity(input.len());
+    let mut output = String::with_capacity(input.len().min(GENERATED_REF_SLUG_MAX));
     let mut previous_was_separator = false;
     for ch in input.trim().chars() {
         let normalized = if ch.is_ascii_alphanumeric() {
@@ -1070,7 +1131,7 @@ fn sanitize_ref_segment(input: &str) -> String {
             output.push(normalized);
             previous_was_separator = false;
         }
-        if output.len() >= 80 {
+        if output.len() >= GENERATED_REF_SLUG_MAX {
             break;
         }
     }
@@ -1310,6 +1371,130 @@ mod tests {
             dry_plan.ingest_arguments["dry_run"],
             commit_plan.ingest_arguments["dry_run"]
         );
+        assert_eq!(
+            dry_plan.generated_refs, commit_plan.generated_refs,
+            "previewing and committing the same logical write must name the same entries"
+        );
+    }
+
+    #[test]
+    fn generated_refs_distinguish_repeated_observations_with_the_same_summary() {
+        let mut morning = sample_write_request();
+        morning
+            .as_object_mut()
+            .expect("request")
+            .remove("semantic_delta");
+        morning["current"]["kind"] = json!("observation");
+        morning["current"]["summary"] = json!("la presion del circuito es normal");
+        morning["current"]["evidence"] = json!("manometro a las 09:00 marca 4.1 bar");
+        morning["occurred_at"] = json!("2026-05-06T09:00:00Z");
+
+        let mut afternoon = morning.clone();
+        afternoon["current"]["evidence"] = json!("manometro a las 17:00 marca 4.0 bar");
+        afternoon["occurred_at"] = json!("2026-05-06T17:00:00Z");
+
+        let morning_ref = build_write_plan(&morning)
+            .expect("morning observation")
+            .generated_refs[0]
+            .clone();
+        let afternoon_ref = build_write_plan(&afternoon)
+            .expect("afternoon observation")
+            .generated_refs[0]
+            .clone();
+
+        assert_ne!(morning_ref, afternoon_ref);
+        for generated_ref in [morning_ref, afternoon_ref] {
+            let suffix = generated_ref.rsplit(':').next().expect("ref suffix");
+            assert!(
+                suffix.starts_with("la-presion-del-circuito-es-normal-"),
+                "keep the ref readable: {generated_ref}"
+            );
+            assert!(
+                suffix.len() <= GENERATED_REF_SEGMENT_MAX,
+                "the identity hash must fit inside the existing segment bound: {generated_ref}"
+            );
+        }
+    }
+
+    #[test]
+    fn generated_refs_distinguish_opposite_long_summaries_after_the_shared_prefix() {
+        let prefix =
+            "el despliegue de la version 2.4.1 en el entorno de preproduccion ha terminado con ";
+        let mut success = sample_write_request();
+        success
+            .as_object_mut()
+            .expect("request")
+            .remove("semantic_delta");
+        success["current"]["kind"] = json!("observation");
+        success["current"]["summary"] = json!(format!("{prefix}exito y sin incidencias"));
+        success["current"]["evidence"] = json!("CI job 4001: exit 0");
+
+        let mut failure = success.clone();
+        failure["current"]["summary"] = json!(format!("{prefix}errores graves de arranque"));
+        failure["current"]["evidence"] = json!("CI job 4002: exit 1, panic en el arranque");
+
+        let success_ref = build_write_plan(&success)
+            .expect("successful deployment observation")
+            .generated_refs[0]
+            .clone();
+        let failure_ref = build_write_plan(&failure)
+            .expect("failed deployment observation")
+            .generated_refs[0]
+            .clone();
+
+        assert_ne!(success_ref, failure_ref);
+        let success_suffix = success_ref.rsplit(':').next().expect("success suffix");
+        let failure_suffix = failure_ref.rsplit(':').next().expect("failure suffix");
+        let success_slug = success_suffix.rsplit_once('-').expect("slug and hash").0;
+        let failure_slug = failure_suffix.rsplit_once('-').expect("slug and hash").0;
+        assert_eq!(
+            success_slug, failure_slug,
+            "this regression must prove the hash, not the readable prefix, separates the writes"
+        );
+        assert!(success_suffix.len() <= GENERATED_REF_SEGMENT_MAX);
+        assert!(failure_suffix.len() <= GENERATED_REF_SEGMENT_MAX);
+    }
+
+    #[test]
+    fn generated_refs_keep_non_ascii_summaries_retry_stable_and_write_unique() {
+        let mut first = sample_write_request();
+        first
+            .as_object_mut()
+            .expect("request")
+            .remove("semantic_delta");
+        first["current"]["kind"] = json!("observation");
+        first["current"]["summary"] = json!("配管の圧力は正常");
+        first["current"]["evidence"] = json!("圧力計は4.1 bar");
+        first["occurred_at"] = json!("2026-05-06T09:00:00Z");
+
+        let retry_ref = build_write_plan(&first)
+            .expect("first non-ASCII observation")
+            .generated_refs[0]
+            .clone();
+        assert_eq!(
+            retry_ref,
+            build_write_plan(&first)
+                .expect("exact retry")
+                .generated_refs[0]
+        );
+
+        let mut second = first.clone();
+        second["current"]["evidence"] = json!("圧力計は4.0 bar");
+        second["occurred_at"] = json!("2026-05-06T17:00:00Z");
+        let second_ref = build_write_plan(&second)
+            .expect("second non-ASCII observation")
+            .generated_refs[0]
+            .clone();
+
+        assert_ne!(retry_ref, second_ref);
+        assert_eq!(
+            retry_ref.rsplit(':').next().expect("hash suffix").len(),
+            GENERATED_REF_HASH_LEN
+        );
+        assert_eq!(
+            second_ref.rsplit(':').next().expect("hash suffix").len(),
+            GENERATED_REF_HASH_LEN
+        );
     }
 
     #[test]
@@ -1507,6 +1692,51 @@ mod tests {
             error,
             "generated duplicate memory ref `incident:mobile-login:entry:decision:duplicate`"
         );
+    }
+
+    #[test]
+    fn supplied_entry_ref_must_be_a_safe_descendant_of_its_about() {
+        let unsafe_refs = [
+            "incident:other:entry:observation:foreign",
+            "incident:other",
+            "evidence:incident:other:entry:observation:foreign:current",
+            "about:incident:other:dimension:shared",
+            "../../incident:other:entry:observation:foreign",
+            "incident:mobile-login:entry:x\nincident:other:entry:y",
+        ];
+
+        for unsafe_ref in unsafe_refs {
+            let mut request = sample_write_request();
+            request["current"]["ref"] = json!(unsafe_ref);
+            let error = build_write_plan(&request).expect_err("unsafe ref must be refused");
+            assert!(
+                error.contains("does not belong to about")
+                    || error.contains("invalid `current.ref`"),
+                "the refusal must name the violated boundary for `{unsafe_ref}`: {error}"
+            );
+        }
+
+        let mut local = sample_write_request();
+        local["current"]["ref"] = json!("incident:mobile-login:decision:explicit-safe-update");
+        let plan = build_write_plan(&local).expect("an about-local entry ref is valid");
+        assert_eq!(
+            plan.generated_refs[0],
+            "incident:mobile-login:decision:explicit-safe-update"
+        );
+    }
+
+    #[test]
+    fn unsafe_about_ref_is_rejected_before_it_can_namespace_generated_nodes() {
+        for unsafe_about in [
+            "../../incident:mobile-login",
+            "incident:mobile-login\nincident:other",
+            "incident::mobile-login",
+        ] {
+            let mut request = sample_write_request();
+            request["about"] = json!(unsafe_about);
+            let error = build_write_plan(&request).expect_err("unsafe about must be refused");
+            assert!(error.contains("invalid `about`"), "{error}");
+        }
     }
 
     fn sample_write_request() -> Value {

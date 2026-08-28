@@ -30,6 +30,12 @@ Detailed notes from the early release cycle are preserved in the
 - Ask now folds diacritics for matching in German, French, Spanish, and
   Portuguese, including German `ß` → `ss`, while returning stored evidence
   byte-for-byte.
+- Generated writer refs now combine a readable summary slug with the logical
+  write identity, so repeated observations and long summaries with a shared
+  prefix remain distinct instead of silently overwriting one another.
+- Caller-supplied writer refs are now confined to safe descendants of the
+  write's own about, preventing a write from replacing another about's entry,
+  internal node, or root anchor.
 
 ## [0.3.0] - 2026-08-28
 

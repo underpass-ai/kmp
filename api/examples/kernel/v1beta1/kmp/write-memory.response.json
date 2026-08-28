@@ -3,8 +3,8 @@
   "dry_run": true,
   "summary": "Prepared 2 entries, 3 relations, and 3 evidence items for incident:mobile-login.",
   "generated_refs": [
-    "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
-    "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race"
+    "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+    "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c"
   ],
   "relations": [
     "chosen_because",
@@ -13,7 +13,7 @@
   ],
   "relation_quality": [
     {
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
       "to": "incident:mobile-login:observation:401-refresh-race",
       "rel": "chosen_because",
       "class": "causal",
@@ -30,8 +30,8 @@
       "target_present": true
     },
     {
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
-      "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+      "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
       "rel": "updates_state",
       "class": "causal",
       "confidence": "high",
@@ -47,7 +47,7 @@
       "target_present": true
     },
     {
-      "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
+      "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
       "to": "incident:mobile-login:observation:401-refresh-race",
       "rel": "semantic_delta_from",
       "class": "causal",
@@ -104,7 +104,7 @@
       ],
       "entries": [
         {
-          "id": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
+          "id": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
           "kind": "decision",
           "text": "Use token refresh retry instead of widening timeout.",
           "coordinates": [
@@ -130,7 +130,7 @@
           }
         },
         {
-          "id": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
+          "id": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
           "kind": "semantic_delta",
           "text": "From: The team suspected network timeout.\nTo: The evidence points to token refresh race.\nWhy: The failing requests return 401 immediately after refresh.",
           "coordinates": [
@@ -160,7 +160,7 @@
       ],
       "relations": [
         {
-          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
+          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
           "to": "incident:mobile-login:observation:401-refresh-race",
           "rel": "chosen_because",
           "class": "causal",
@@ -170,8 +170,8 @@
           "sequence": 1
         },
         {
-          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
-          "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
+          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+          "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
           "rel": "updates_state",
           "class": "causal",
           "confidence": "high",
@@ -180,7 +180,7 @@
           "sequence": 2
         },
         {
-          "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
+          "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
           "to": "incident:mobile-login:observation:401-refresh-race",
           "rel": "semantic_delta_from",
           "class": "causal",
@@ -192,18 +192,18 @@
       ],
       "evidence": [
         {
-          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout:current",
+          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:current",
           "supports": [
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout"
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9"
           ],
           "text": "Logs show 401 immediately after token refresh.",
           "source": "kmp_write_memory:agent:backend",
           "time": "2026-05-06T10:00:00Z"
         },
         {
-          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout:relation:1",
+          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:relation:1",
           "supports": [
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
             "incident:mobile-login:observation:401-refresh-race"
           ],
           "text": "The chosen retry targets the refresh race seen in auth logs.",
@@ -211,10 +211,10 @@
           "time": "2026-05-06T10:00:00Z"
         },
         {
-          "id": "evidence:incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race:semantic_delta",
+          "id": "evidence:incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c:semantic_delta",
           "supports": [
-            "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race",
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout"
+            "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9"
           ],
           "text": "Auth logs show refresh success followed by 401 on the next request.",
           "source": "kmp_write_memory:agent:backend:semantic_delta",
@@ -234,7 +234,7 @@
   "next_suggested_reads": [
     {
       "tool": "kmp_trace",
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout",
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
       "to": "incident:mobile-login:observation:401-refresh-race"
     }
   ]

@@ -612,7 +612,7 @@ fn write_memory_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["kind", "summary"],
                 "properties": {
-                    "ref": string_schema("Optional stable memory entry ref. Omit to let the writer planner generate one deterministically."),
+                    "ref": string_schema("Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix."),
                     "kind": {
                         "type": "string",
                         "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
@@ -1085,7 +1085,7 @@ fn write_memory_output_schema() -> Value {
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
-        "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted."),
+        "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
         "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
         "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),
