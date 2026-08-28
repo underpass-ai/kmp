@@ -307,6 +307,20 @@ impl KernelMcpServer {
         }
     }
 
+    /// Handles one newline-delimited JSON-RPC message without trusting the
+    /// host to supply UTF-8. A broken line receives the standard parse error;
+    /// it does not terminate the stdio session or discard later requests.
+    pub async fn handle_json_bytes(&self, line: &[u8]) -> Option<String> {
+        match std::str::from_utf8(line) {
+            Ok(line) => self.handle_json_line(line).await,
+            Err(error) => Some(jsonrpc_error(
+                Value::Null,
+                -32700,
+                &format!("invalid JSON-RPC message: input is not valid UTF-8: {error}"),
+            )),
+        }
+    }
+
     async fn handle_tool_call(&self, id: Value, params: Option<&Value>) -> String {
         let Some(params) = params.and_then(Value::as_object) else {
             return jsonrpc_error(id, -32602, "tools/call requires object params");

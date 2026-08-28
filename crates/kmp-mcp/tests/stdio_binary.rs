@@ -1,5 +1,7 @@
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::time::Duration;
 
 use serde_json::Value;
 
@@ -211,6 +213,104 @@ fn stdio_binary_serves_explicit_fixture_jsonrpc_until_stdin_eof() {
 }
 
 #[test]
+fn invalid_utf8_costs_one_line_not_the_stdio_session() {
+    let mut input =
+        b"{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n".to_vec();
+    input.extend_from_slice(&[0xff, b'\n']);
+    input.extend_from_slice(
+        b"{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}\n",
+    );
+
+    let output = run_binary_bytes(&[("KMP_MCP_BACKEND", "fixture")], &input);
+    assert!(
+        output.status.success(),
+        "one malformed line must not kill the process: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let responses = String::from_utf8(output.stdout)
+        .expect("stdout should be UTF-8")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("stdout line should be JSON"))
+        .collect::<Vec<_>>();
+    assert_eq!(responses.len(), 3);
+    assert_eq!(responses[0]["id"], 1);
+    assert_eq!(responses[1]["error"]["code"], -32700);
+    assert_eq!(responses[1]["id"], Value::Null);
+    assert_eq!(responses[2]["id"], 2);
+    assert!(responses[2]["result"]["tools"].is_array());
+}
+
+#[test]
+fn undrained_stderr_never_blocks_stdio_tool_calls() {
+    const CALLS: u64 = 200;
+    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    command
+        .env("KMP_MCP_BACKEND", "fixture")
+        .env("KMP_VIEWER_ADDR", "off")
+        .env("RUST_LOG", "kmp_mcp=info")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = command.spawn().expect("stdio MCP binary should spawn");
+    let stdout = child.stdout.take().expect("stdout should be piped");
+    let (responses, received) = mpsc::channel();
+    std::thread::spawn(move || {
+        for line in BufReader::new(stdout).lines() {
+            if responses.send(line).is_err() {
+                break;
+            }
+        }
+    });
+
+    let stdin = child.stdin.as_mut().expect("stdin should be piped");
+    for id in 1..=CALLS {
+        writeln!(
+            stdin,
+            "{}",
+            serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": id,
+                "method": "tools/call",
+                "params": {
+                    "name": "kmp_inspect",
+                    "arguments": {"ref": "incident:pipe"}
+                }
+            })
+        )
+        .expect("request should be written");
+        stdin.flush().expect("request should be flushed");
+
+        let line = match received.recv_timeout(Duration::from_secs(5)) {
+            Ok(Ok(line)) => line,
+            other => {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("stdio stopped at tool call {id}: {other:?}");
+            }
+        };
+        let response = serde_json::from_str::<Value>(&line).expect("response should be JSON");
+        assert_eq!(response["id"], id, "response {id} should make progress");
+    }
+
+    // Do not drain stderr even during shutdown. A host owns that pipe, and
+    // the server must not make progress or clean EOF depend on it being read.
+    drop(child.stdin.take());
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        if let Some(status) = child.try_wait().expect("process state should be readable") {
+            assert!(status.success(), "clean stdin EOF should stop the server");
+            break;
+        }
+        if std::time::Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("stdio process could not exit while stderr remained undrained");
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[test]
 fn stdio_binary_reports_live_grpc_backend_without_tls() {
     let output = run_binary(&[("KMP_KERNEL_GRPC_ENDPOINT", "http://127.0.0.1:1")], "");
 
@@ -237,6 +337,33 @@ fn stdio_binary_reports_live_grpc_backend_with_tls_envs() {
 
 fn run_binary(envs: &[(&str, &str)], stdin: &str) -> std::process::Output {
     run_binary_from(None, envs, stdin)
+}
+
+fn run_binary_bytes(envs: &[(&str, &str)], stdin: &[u8]) -> std::process::Output {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"));
+    command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    for name in TLS_ENV_VARS {
+        command.env_remove(name);
+    }
+    command.env_remove("KMP_MCP_DATA_DIR");
+    for (name, value) in envs {
+        command.env(name, value);
+    }
+
+    let mut child = command.spawn().expect("stdio MCP binary should spawn");
+    child
+        .stdin
+        .as_mut()
+        .expect("stdin should be piped")
+        .write_all(stdin)
+        .expect("stdin should be written");
+    drop(child.stdin.take());
+    child
+        .wait_with_output()
+        .expect("stdio MCP binary should exit after stdin EOF")
 }
 
 fn run_binary_from(

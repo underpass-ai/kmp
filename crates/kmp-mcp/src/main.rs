@@ -5,6 +5,7 @@ use kmp_mcp::{
 };
 use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{EnvFilter, Layer};
@@ -89,13 +90,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "startup succeeded"
     );
 
-    for line in stdin.lock().lines() {
-        let line = line?;
-        if line.trim().is_empty() {
+    let mut stdin = stdin.lock();
+    let mut line = Vec::new();
+    loop {
+        line.clear();
+        if stdin.read_until(b'\n', &mut line)? == 0 {
+            break;
+        }
+        if line.iter().all(u8::is_ascii_whitespace) {
             continue;
         }
 
-        if let Some(response) = server.handle_json_line(&line).await {
+        if let Some(response) = server.handle_json_bytes(&line).await {
             writeln!(stdout, "{response}")?;
             stdout.flush()?;
         }
@@ -239,16 +245,30 @@ async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Resu
     Ok(url)
 }
 
-/// Logs go to stderr always (stdout belongs to MCP JSON-RPC). In embedded
-/// mode they are additionally journaled to `<data-dir>/logs/` with daily
-/// rotation (ADR-012 layout) so a session can be investigated after the
-/// host discards stderr. The returned guard must live for the process.
+/// Logs go to stderr through a bounded, lossy queue (stdout belongs to MCP
+/// JSON-RPC). A host is allowed to capture stderr without draining it, so the
+/// protocol loop must never wait for that pipe. In embedded mode logs are
+/// additionally journaled to `<data-dir>/logs/` with daily rotation (ADR-012
+/// layout) so a session can be investigated after the host discards stderr.
+/// The returned file guard must live for the process.
 fn init_tracing() -> Option<tracing_appender::non_blocking::WorkerGuard> {
     let filter =
         || EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("kmp_mcp=info"));
+    let (stderr_writer, stderr_guard) =
+        tracing_appender::non_blocking::NonBlockingBuilder::default()
+            .buffered_lines_limit(256)
+            .lossy(true)
+            .thread_name("kmp-stderr-log")
+            .finish(io::stderr());
+    // Static values are not dropped at process exit. That matters here:
+    // WorkerGuard joins its writer thread, but that thread may legitimately
+    // be stuck behind a host-owned, undrained stderr pipe. Keeping the worker
+    // process-scoped lets EOF end the MCP process without joining that pipe.
+    static STDERR_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
+    STDERR_GUARD.get_or_init(|| stderr_guard);
     let stderr_layer = tracing_subscriber::fmt::layer()
         .json()
-        .with_writer(io::stderr)
+        .with_writer(stderr_writer)
         .with_filter(filter());
 
     let file_layer = embedded_log_dir().map(|log_dir| {
