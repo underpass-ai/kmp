@@ -271,8 +271,11 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     crate = fixture / "crate.md"
     begin = "<!-- kmp:public-overview:begin -->"
     end = "<!-- kmp:public-overview:end -->"
+    overview = """KMP gives Codex and Claude Code local-first memory. It stores
+decisions and evidence on embedded SQLite, not transcripts, through ten memory
+tools plus three semantic view tools over a shared ChronoLoom view."""
     source.write_text(
-        f"marketplace header\n{begin}\nCurrent overview.\n{end}\nmarketplace tail\n",
+        f"marketplace header\n{begin}\n{overview}\n{end}\nmarketplace tail\n",
         encoding="utf-8",
     )
     github.write_text(
@@ -280,7 +283,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         encoding="utf-8",
     )
     crate.write_text(
-        f"crate header\n{begin}\nCurrent overview.\n{end}\ncrate tail\n",
+        f"crate header\n{begin}\n{overview}\n{end}\ncrate tail\n",
         encoding="utf-8",
     )
     readme_args = [
@@ -320,6 +323,19 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         crate.read_text(encoding="utf-8"),
     ):
         raise SystemExit("public README synchronization is not idempotent")
+
+    source.write_text(
+        source.read_text(encoding="utf-8").replace("embedded SQLite", "a store"),
+        encoding="utf-8",
+    )
+    rejected = subprocess.run(
+        [sys.executable, readme_helper, "check", *readme_args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if rejected.returncode == 0 or "embedded SQLite engine" not in rejected.stderr:
+        raise SystemExit("public README contract accepted an incomplete product story")
 
 print("release trigger contract passed: PR validation, one candidate build, tag-only promotion")
 
