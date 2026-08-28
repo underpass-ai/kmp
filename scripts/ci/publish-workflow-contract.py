@@ -105,3 +105,16 @@ for clause in (
         raise SystemExit(f"release helper lost candidate approval clause: {clause}")
 
 print("release trigger contract passed: PR validation, one candidate build, tag-only promotion")
+
+mcp_registry_text = (ROOT / ".github/workflows/mcp-registry.yml").read_text(encoding="utf-8")
+for clause in (
+    "github.event_name == 'workflow_dispatch'",
+    "VERSION=\"$(jq -r '.version' server.json)\"",
+    "TAG=\"v${VERSION}\"",
+    "-A 'kmp-mcp-release-check/0.1 (+https://github.com/underpass-ai/kmp)'",
+    'gh release view "${TAG}"',
+):
+    if clause not in mcp_registry_text:
+        raise SystemExit(f"MCP Registry recovery contract lost clause: {clause}")
+
+print("MCP Registry recovery contract passed: tag and manual OIDC publication")

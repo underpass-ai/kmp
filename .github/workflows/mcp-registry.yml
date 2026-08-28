@@ -51,7 +51,7 @@ jobs:
 
   publish:
     needs: validate
-    if: startsWith(github.ref, 'refs/tags/v') && vars.MCP_REGISTRY_PUBLISH == 'true'
+    if: vars.MCP_REGISTRY_PUBLISH == 'true' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     environment: mcp-registry-production
@@ -67,16 +67,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="$(jq -r '.version' server.json)"
+          TAG="v${VERSION}"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "${TAG}" ]]; then
+            echo "tag ${GITHUB_REF_NAME} does not match server.json ${VERSION}" >&2
+            exit 1
+          fi
           for attempt in $(seq 1 360); do
             cargo_ready=0
             mcpb_ready=0
-            curl --proto '=https' --tlsv1.2 -fsSL \
+            curl --proto '=https' --tlsv1.2 -A 'kmp-mcp-release-check/0.1 (+https://github.com/underpass-ai/kmp)' -fsSL \
               "https://crates.io/api/v1/crates/kmp-mcp/${VERSION}" >/dev/null \
               && cargo_ready=1 || true
-            gh release view "${GITHUB_REF_NAME}" --json assets \
+            gh release view "${TAG}" --json assets \
               --jq ".assets[].name" 2>/dev/null \
-              | grep -qx "kmp-mcp-${GITHUB_REF_NAME}.mcpb" \
+              | grep -qx "kmp-mcp-${TAG}.mcpb" \
               && mcpb_ready=1 || true
             if [[ "${cargo_ready}" == 1 && "${mcpb_ready}" == 1 ]]; then
               exit 0
@@ -92,12 +97,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          version="$(jq -r '.version' server.json)"
+          tag="v${version}"
           mkdir -p "${RUNNER_TEMP}/mcpb"
-          gh release download "${GITHUB_REF_NAME}" \
-            --pattern "kmp-mcp-${GITHUB_REF_NAME}.mcpb" \
+          gh release download "${tag}" \
+            --pattern "kmp-mcp-${tag}.mcpb" \
             --dir "${RUNNER_TEMP}/mcpb"
           expected="$(python3 -c 'import json; print(next(p["fileSha256"] for p in json.load(open("server.json"))["packages"] if p["registryType"] == "mcpb"))')"
-          actual="$(sha256sum "${RUNNER_TEMP}/mcpb/kmp-mcp-${GITHUB_REF_NAME}.mcpb" | awk '{print $1}')"
+          actual="$(sha256sum "${RUNNER_TEMP}/mcpb/kmp-mcp-${tag}.mcpb" | awk '{print $1}')"
           [[ "${actual}" == "${expected}" ]] || {
             echo "released MCPB ${actual} does not match server.json ${expected}" >&2
             exit 1
