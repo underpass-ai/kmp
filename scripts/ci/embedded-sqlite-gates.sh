@@ -3,7 +3,7 @@
 #
 # SQLite is the product engine: it survives kill -9 and two processes can
 # write the same store without losing an event. The feature name remains as
-# a downstream compatibility alias, but no build selects redb for new data.
+# a downstream compatibility alias. No build links or selects redb.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -16,8 +16,14 @@ cargo clippy -p kmp-adapter-embedded -p kmp-conformance -p kmp-embedded -p kmp-m
 echo "sqlite-gates: the sixteen conformance scenarios on the sqlite engine"
 cargo test -p kmp-conformance --features sqlite --locked --test embedded_sqlite_conformance
 
-echo "sqlite-gates: adapter suite including legacy format-1 compatibility"
+echo "sqlite-gates: adapter suite including fail-closed format-1 detection"
 cargo test -p kmp-adapter-embedded --features sqlite --locked
+
+echo "sqlite-gates: redb is absent from the dependency graph"
+if cargo tree -p kmp-mcp --locked | grep -Eq '(^| )redb v[0-9]'; then
+  echo "sqlite-gates: redb leaked back into the product dependency graph" >&2
+  exit 1
+fi
 
 echo "sqlite-gates: kmp-embedded and kmp-mcp still build and pass with the engine in"
 cargo test -p kmp-embedded -p kmp-mcp --features sqlite --locked
@@ -96,9 +102,9 @@ for host in a b; do
   fi
 done
 
-# No public path may create a fresh redb store. The compatibility reader is
-# exercised by the Rust migration suite above; the CLI only migrates toward
-# SQLite, and the old shortcut explains its retirement.
+# No public path may create a fresh redb store. The format gate only recognizes
+# legacy files so it can reject them untouched, and the old shortcut explains
+# its retirement.
 echo "sqlite-gates: redb selection and share-memory are retired"
 RETIRED_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${RETIRED_DIR}"' EXIT

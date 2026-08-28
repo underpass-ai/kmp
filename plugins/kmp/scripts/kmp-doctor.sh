@@ -252,7 +252,7 @@ else
       ok "data-dir self-ignore guard is present"
     else
       fail "$DATA_DIR/.gitignore is missing the '*' safety guard"
-      info "run a current KMP startup or migration command to restore the skeleton"
+      info "run a current KMP startup to restore the skeleton"
     fi
     if [ -d "$DATA_DIR/logs" ]; then
       ok "startup log directory is present"
@@ -289,13 +289,20 @@ else
     if [ -e "$DATA_DIR/FORMAT_VERSION" ]; then
       if FORMAT="$(tr -d '[:space:]' < "$DATA_DIR/FORMAT_VERSION" 2>/dev/null)"; then
         case "$FORMAT" in
-          1) EXPECTED_ENGINE="redb"; EXPECTED_STORE="$REDB_STORE" ;;
+          1)
+            EXPECTED_ENGINE="redb"; EXPECTED_STORE="$REDB_STORE"
+            fail "store format 1 uses retired redb; this binary contains no reader"
+            SESSION_USABLE=0
+            SESSION_REASON="store format 1 requires the KMP 0.3.2 export bridge"
+            info "the source was left untouched"
+            info "export it with KMP 0.3.2, then import .kmp/memory.jsonl with current KMP"
+            ;;
           2) EXPECTED_ENGINE="sqlite"; EXPECTED_STORE="$SQLITE_STORE" ;;
           0)
             fail "store format 0 is older than this binary supports"
             SESSION_USABLE=0
-            SESSION_REASON="store format 0 needs migration"
-            info "migrate it with: kmp-mcp migrate <this-dir> <new-dir>"
+            SESSION_REASON="store format 0 needs a compatible export binary"
+            info "use a KMP binary that supports format 0 to export a portable bundle"
             ;;
           ''|*[!0-9]*)
             fail "FORMAT_VERSION is corrupt (`${FORMAT:-empty}`); the store cannot open"
@@ -361,36 +368,22 @@ else
         STORE_WHEN="$(date -r "$STORE_FILE" '+%Y-%m-%d %H:%M' 2>/dev/null)"
       fi
       info "store size: ${STORE_SIZE:-?}"
-      HOLDER=""
-      if command -v fuser >/dev/null 2>&1; then
-        HOLDER="$(fuser "$STORE_FILE" 2>/dev/null | tr -s ' ')"
-      elif command -v lsof >/dev/null 2>&1; then
-        HOLDER="$(lsof -t "$STORE_FILE" 2>/dev/null | tr '\n' ' ')"
-      fi
-      if [ -n "$(printf '%s' "$HOLDER" | tr -d ' ')" ]; then
-        if [ "$ENGINE" = "sqlite" ]; then
+      if [ "$ENGINE" = "redb" ]; then
+        info "legacy redb bytes are inventory only; Doctor did not open or probe them"
+      else
+        HOLDER=""
+        if command -v fuser >/dev/null 2>&1; then
+          HOLDER="$(fuser "$STORE_FILE" 2>/dev/null | tr -s ' ')"
+        elif command -v lsof >/dev/null 2>&1; then
+          HOLDER="$(lsof -t "$STORE_FILE" 2>/dev/null | tr '\n' ' ')"
+        fi
+        if [ -n "$(printf '%s' "$HOLDER" | tr -d ' ')" ]; then
           # WAL-mode sqlite is shared by design: another holder is a
           # second host at work, not a conflict.
           ok "another process has this store open (pid$HOLDER) — sqlite shares it"
         else
-          # Single-writer contract (ADR-011). Checked by looking, never by
-          # opening: acquiring the lock to test it would be the very
-          # conflict this is meant to report.
-          warn "another process holds this store (pid$HOLDER)"
-          SESSION_USABLE=0
-          SESSION_REASON="redb store held by pid$HOLDER"
-          info "the redb engine is single-writer (ADR-011): a second host"
-          info "session on the same data dir gets no tools at all. Close that"
-          info "session, point this one at a different KMP_MCP_DATA_DIR, or"
-          info "move the store to SQLite. Close every host first, then run:"
-          info ""
-          info "  kmp-mcp migrate \"$DATA_DIR\" \"$DATA_DIR-sqlite\""
-          info ""
-          info "the source is left untouched and the destination carries a"
-          info "verified migration receipt. Point both hosts at the new path."
+          ok "store is free — no other process holds it"
         fi
-      else
-        ok "store is free — no other process holds it"
       fi
       if [ "$AREA_STATUS" = "ok" ]; then
         brief "${STORE_SIZE:-?} · ${ENGINE} · last written ${STORE_WHEN:-unknown}"

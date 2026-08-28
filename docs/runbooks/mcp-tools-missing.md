@@ -30,7 +30,7 @@ The fallback cannot inspect plugin/global ownership inside every host.
 | Thirteen tools in a standalone smoke, none in the current session | The host cached its startup inventory | Restart the host once. |
 | Fixture backend | Responses are canned and nothing is stored | Unset `KMP_MCP_BACKEND=fixture`. |
 | gRPC without endpoint | Remote backend was requested with no kernel | Set a verified endpoint or return to embedded mode. |
-| Legacy redb lock | Another process owns the old single-process store | Stop the other process or migrate it with the embedded recovery runbook. |
+| Format-1 redb store | The current binary deliberately contains no legacy reader | Follow the export/import bridge in the embedded recovery runbook. |
 
 ## 3. Verify the repair
 

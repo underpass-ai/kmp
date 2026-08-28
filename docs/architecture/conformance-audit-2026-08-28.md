@@ -73,8 +73,8 @@ shape after production code establishes it.
   (`crates/kmp-application/src/memory/service.rs:28-51`). The embedded
   composition root supplies its concrete store only at wiring time
   (`crates/kmp-embedded/src/kernel.rs:79-95`).
-- Infrastructure points inward: the embedded adapter owns active SQLite plus
-  the redb reader retained only for stamped format-1 memory
+- Infrastructure points inward: the embedded adapter owns SQLite alone and
+  only detects stamped format-1 paths so it can reject them untouched
   (`crates/kmp-adapter-embedded/Cargo.toml:23-33`;
   `crates/kmp-adapter-embedded/src/adapter/store.rs:11-47`), then depends on
   domain, application and ports. No adapter type appears in

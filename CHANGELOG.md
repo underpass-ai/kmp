@@ -9,6 +9,19 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Changed
+
+- Embedded KMP now contains SQLite alone: the redb dependency, canonical
+  engine, conformance target and legacy quality-journal importer are removed.
+  Format-1 stores are detected and rejected without opening or changing their
+  bytes; KMP 0.3.2 remains the export bridge into a portable bundle.
+
+### Fixed
+
+- `kmp-mcp migrate` can no longer panic on a truncated format-1 file or report
+  success for an empty one. Both cases fail before a destination or scratch
+  file is created and leave the source untouched.
+
 ## [0.3.2] - 2026-08-28
 
 ### Fixed

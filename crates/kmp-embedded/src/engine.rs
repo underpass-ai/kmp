@@ -3,18 +3,15 @@
 //!
 //! The choice is made once, when a directory is created, and recorded in its
 //! `FORMAT_VERSION`. `KMP_MCP_ENGINE` says what a *fresh* directory should
-//! be; an existing directory opens with the engine it was created with, and
-//! asking for a different one is refused rather than quietly ignored — a
-//! store that opens as the wrong engine behind a user's back is exactly the
-//! silent divergence that ends in "why can't my second host open it".
+//! be; an existing supported directory opens from its stamp. Retired layouts
+//! are rejected rather than reinterpreted.
 
 use std::path::Path;
 
 use kmp_adapter_embedded::StorageEngine;
 use kmp_domain::PortError;
 
-/// Compatibility environment variable. SQLite is the only accepted value;
-/// existing format-1 stores still open from their stamp for migration.
+/// Compatibility environment variable. SQLite is the only accepted value.
 pub const ENGINE_ENV: &str = "KMP_MCP_ENGINE";
 
 /// Parses an engine name the way the environment variable and the CLI spell
@@ -45,8 +42,6 @@ pub fn resolve_engine_from_env() -> Result<Option<StorageEngine>, PortError> {
 ///
 /// An explicit environment choice is always authoritative. With no choice,
 /// an existing store is opened as stamped; a fresh store uses SQLite.
-/// This is intentionally data-dir-aware: returning SQLite blindly would make
-/// an upgraded binary refuse every existing redb store.
 pub fn resolve_engine_for_data_dir_from_env(
     data_dir: &Path,
 ) -> Result<Option<StorageEngine>, PortError> {
@@ -57,8 +52,7 @@ pub fn resolve_engine_for_data_dir_from_env(
 }
 
 /// Implicit engine choice for a data directory when no operator override is
-/// present. Existing stores defer to their stamp; fresh stores prefer the
-/// shareable engine when this build carries it.
+/// present. Existing stores defer to their stamp; fresh stores use SQLite.
 pub fn default_engine_for_data_dir(data_dir: &Path) -> Option<StorageEngine> {
     if data_dir.join("FORMAT_VERSION").exists() {
         return None;

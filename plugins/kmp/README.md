@@ -194,14 +194,12 @@ enabled plugin and a global `mcp_servers.kmp` table both claim the server, the
 doctor names both owners and the global store-affecting environment instead of
 declaring the setup healthy.
 
-Two failures it names rather than leaving you to guess: another session
-holding a legacy redb store, which is the single-writer contract (ADR-011) doing its
-job — the doctor says which engine the store is on and gives the SQLite migration,
-which snapshots, migrates and verifies it with the SQLite engine already
-carried by current bundles — and a session that
+Two failures it names rather than leaving you to guess: a format-1 redb store,
+which current KMP detects but deliberately does not open — Doctor points to the
+KMP 0.3.2 export bridge and leaves the bytes untouched — and a session that
 started before the registration changed and is still carrying the old
-inventory. The second one cannot be fixed from inside the session — you have
-to restart it.
+inventory. The second one cannot be fixed from inside the session; you have to
+restart it.
 
 Run it directly, without a host:
 

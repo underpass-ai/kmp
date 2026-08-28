@@ -639,6 +639,46 @@ fn config_persists_and_initialize_reports_the_agent_policy() {
 }
 
 #[test]
+fn migrate_rejects_corrupt_format_one_without_touching_source_or_destination() {
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    for (name, bytes) in [
+        ("truncated", b"short redb header".as_slice()),
+        ("empty", b"".as_slice()),
+    ] {
+        let source = tempfile::tempdir().expect("source");
+        std::fs::write(source.path().join("FORMAT_VERSION"), "1\n").expect("stamp");
+        let store = source.path().join("store/kernel.redb");
+        std::fs::create_dir_all(store.parent().expect("store parent")).expect("store dir");
+        std::fs::write(&store, bytes).expect("legacy bytes");
+        let destination_parent = tempfile::tempdir().expect("destination parent");
+        let destination = destination_parent.path().join(name);
+
+        let result = Command::new(bin)
+            .args([
+                "migrate",
+                &source.path().display().to_string(),
+                &destination.display().to_string(),
+            ])
+            .output()
+            .expect("migrate runs");
+
+        assert_eq!(result.status.code(), Some(2), "{name}");
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(
+            stderr.contains("contains no redb reader"),
+            "{name}: {stderr}"
+        );
+        assert_eq!(
+            std::fs::read(&store).expect("source after"),
+            bytes,
+            "{name}"
+        );
+        assert!(!destination.exists(), "{name}: no destination on refusal");
+    }
+}
+
+#[test]
 fn cli_surface_version_export_import_and_errors() {
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
 
@@ -648,7 +688,7 @@ fn cli_surface_version_export_import_and_errors() {
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
         assert!(
-            stdout.contains("Migrate a legacy store to SQLite"),
+            stdout.contains("supported store-format migration"),
             "{flag}: {stdout}"
         );
         assert!(!stdout.contains("share-memory"), "{flag}: {stdout}");

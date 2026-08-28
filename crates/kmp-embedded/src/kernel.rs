@@ -42,9 +42,8 @@ pub struct EmbeddedKernel {
 impl EmbeddedKernel {
     /// Opens the store at `data_dir` (fail-fast per ADR-012) and composes the
     /// kernel. An existing directory opens with the engine it was created
-    /// with; a fresh one gets the caller's resolved default. On redb a second
-    /// session on the same data dir fails here with an explicit single-writer
-    /// error (ADR-011; the engine holds the lock); on SQLite it does not.
+    /// with; a fresh one gets the caller's resolved default. SQLite permits
+    /// several sessions to share the same data directory.
     pub fn open(data_dir: &Path) -> Result<Self, PortError> {
         Self::open_with_engine(data_dir, None)
     }
@@ -62,19 +61,7 @@ impl EmbeddedKernel {
             Some(engine) => EmbeddedKernelStore::open_with_engine(data_dir, engine),
             None => EmbeddedKernelStore::open(data_dir),
         };
-        let store = opened.map_err(|error| match error {
-            // redb's own words for "another process has it". Only redb says
-            // this: SQLite waits for the commit lock instead of refusing.
-            PortError::Unavailable(message) if message.contains("Cannot acquire lock") => {
-                PortError::Unavailable(format!(
-                    "{message}; if another agent session is using this data dir, close it first \
-                     (the redb engine is single-writer per ADR-011 — to share one store between \
-                     hosts, migrate it to the sqlite engine: `kmp-mcp migrate <this-dir> \
-                     <new-dir>`)"
-                ))
-            }
-            other => other,
-        })?;
+        let store = opened?;
 
         let graph = Arc::new(store.clone());
         let detail = Arc::new(store.clone());

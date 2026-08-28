@@ -7,7 +7,7 @@
 //! and never sees an engine type.
 //!
 //! The seam is deliberately narrow. Every method here corresponds to an
-//! operation the port code already performed against redb, and no more:
+//! operation the port code performs against SQLite, and no more:
 //! point get, insert, remove, a full ordered scan, a scan of one first key
 //! component, the last row of a `u64`-keyed table, a row count, and a table
 //! clear. Rows come back in ascending key order, compared component by
@@ -22,7 +22,6 @@ use std::fmt;
 
 use kmp_domain::PortError;
 
-pub(crate) mod redb;
 pub(crate) mod sqlite;
 
 /// The tables a kernel store consists of. Every engine materializes all of

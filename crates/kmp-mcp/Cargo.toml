@@ -13,7 +13,7 @@ publish = true
 
 [features]
 # Compatibility feature name retained for downstream manifests. SQLite is
-# always present; format-1 redb stores remain readable only for migration.
+# always present.
 default = ["sqlite"]
 sqlite = ["kmp-embedded/sqlite"]
 

@@ -1,45 +1,20 @@
-//! Store migration (ADR-012): move a data directory this binary refuses to
-//! open into one it does.
+//! Migration receipt compatibility and fail-safe handling for retired store
+//! layouts.
 //!
-//! The fail-fast rule says a `FORMAT_VERSION` older than the binary supports
-//! must be rejected rather than opened as empty memory. This module is the
-//! way out of that rejection, and it is deliberately built on the event log
-//! rather than on the store file: projections are derived state, so a
-//! migration replays history into a fresh store and rebuilds them, instead
-//! of copying materialized tables whose shape is exactly what a format bump
-//! is likely to change.
-//!
-//! Guarantees, in the order they matter:
-//!
-//!   * The source is never opened for writing. It is hashed, copied, and the
-//!     *copy* is what gets opened — so even redb's own recovery after an
-//!     unclean shutdown cannot touch the operator's evidence. The hash is
-//!     checked again at the end.
-//!   * The destination cannot already hold a store. A migration that could
-//!     overwrite memory would be a worse failure than the one it fixes.
-//!   * The result carries a receipt, persisted in the destination: what was
-//!     migrated, from which format, from which bytes.
-//!
-//! What this module does **not** claim: that any particular older format is
-//! translatable. Today one format exists (`1`), so migration is a faithful
-//! replay. When a format bump lands, the translation step belongs here, in
-//! `translate_event`, and the compatibility matrix in
-//! `docs/embedded/README.md` moves in the same pull request.
+//! Current binaries contain only SQLite. They can still read receipts left by
+//! older successful migrations, but they never open format-1 redb bytes. A
+//! migration request against that layout fails before creating a destination
+//! and tells the operator to export with the last compatible KMP release.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use kmp_domain::{ContextUpdatedEvent, PortError, ProjectionMutation};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 use super::engine::{Key, Table};
-use super::format_version::{self, StorageEngine};
+use super::format_version::{self, LEGACY_REDB_FORMAT_VERSION, StorageEngine};
 use super::store::EmbeddedKernelStore;
-
-/// The scratch copy the migration reads. Lives inside the destination so a
-/// half-finished migration leaves nothing behind in the source directory.
-const SOURCE_COPY_FILE: &str = "migration-source.redb";
 
 /// What a migration did, kept in the store it produced.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -61,9 +36,8 @@ impl EmbeddedKernelStore {
     /// Migrates `source_dir` into `destination_dir` and opens the result.
     /// The destination is created with the default engine.
     ///
-    /// `derive` is the projection derivation the composition root owns
-    /// (`kmp_application::projection_mutations_for_context_event`), kept
-    /// injected so this adapter stays free of the application layer.
+    /// `derive` is retained in the API for source compatibility. It will be
+    /// used again when a migration between supported SQLite layouts exists.
     pub async fn migrate_data_dir<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -76,17 +50,14 @@ impl EmbeddedKernelStore {
     }
 
     /// [`migrate_data_dir`](Self::migrate_data_dir) with the destination
-    /// engine chosen. This is how a store changes engines
-    /// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
-    /// the event log is the source of truth and projections are derived, so
-    /// a redb store becomes a SQLite store by replaying its history into a
-    /// fresh SQLite directory — the same operation a format bump has always
-    /// been. The source is not modified; the receipt records both formats.
+    /// engine chosen. There is currently no supported source layout that
+    /// needs migration: format 2 opens directly, while format 1 requires an
+    /// export made with KMP 0.3.2 because this crate has no redb dependency.
     pub async fn migrate_data_dir_to<F>(
         source_dir: &Path,
         destination_dir: &Path,
         destination_engine: StorageEngine,
-        derive: F,
+        _derive: F,
     ) -> Result<(Self, StoreMigrationReceipt), PortError>
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
@@ -105,84 +76,27 @@ impl EmbeddedKernelStore {
                 StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
             )));
         }
-        // Every layout before 1 was a redb file; reading those is what this
-        // migration exists for, so an unknown-but-older number is redb.
-        let source_engine =
-            StorageEngine::from_format_version(source_format).unwrap_or(StorageEngine::Redb);
-        // A SQLite store in WAL mode keeps committed data in a sidecar until
-        // checkpointed, so "copy the store file and read the copy" would
-        // silently drop the newest events. Reading it safely needs a
-        // consistent snapshot (`VACUUM INTO`), which is its own piece of
-        // work; until it lands, say so rather than migrate incompletely.
-        if source_engine != StorageEngine::Redb {
-            return Err(PortError::Unavailable(format!(
-                "migration from a {source_engine} store is not supported yet; the source at `{}` \
-                 is left untouched",
+        if source_format == LEGACY_REDB_FORMAT_VERSION {
+            return Err(PortError::InvalidState(format!(
+                "migration source `{}` uses retired format 1 (redb); this binary contains no \
+                 redb reader and left the source untouched. Use KMP 0.3.2 to export \
+                 `.kmp/memory.jsonl`, then import that bundle with the current KMP",
                 source_dir.display()
             )));
         }
-        let source_store_file = format_version::store_file_path_for(source_dir, source_engine);
-        if !source_store_file.exists() {
-            return Err(PortError::InvalidState(format!(
-                "migration source `{}` holds no store file at `{}`",
-                source_dir.display(),
-                source_store_file.display()
+        if source_format == StorageEngine::Sqlite.format_version() {
+            return Err(PortError::Unavailable(format!(
+                "migration from a SQLite format-2 store is unnecessary and unsupported; the \
+                 source at `{}` is left untouched",
+                source_dir.display()
             )));
         }
-        let source_sha256 = sha256_of(&source_store_file)?;
-
-        if format_version::existing_store_file(destination_dir).is_some() {
-            // Re-running a migration is a normal operator reflex, and
-            // "already holds a store" is a frightening thing to read when
-            // the truth is that the work is already done. Say which it is.
-            let already = match Self::open(destination_dir) {
-                Ok(store) => store.migration_receipt().await.ok().flatten(),
-                Err(_) => None,
-            };
-            if let Some(receipt) = already
-                && receipt.source_sha256 == source_sha256
-            {
-                return Err(PortError::Conflict(format!(
-                    "migration destination `{}` was already migrated from this exact \
-                     source ({} events, source sha256 {}); nothing to do",
-                    destination_dir.display(),
-                    receipt.events_migrated,
-                    receipt.source_sha256
-                )));
-            }
-            return Err(PortError::Conflict(format!(
-                "migration destination `{}` already holds a store; migrate into a new \
-                 directory rather than over existing memory",
-                destination_dir.display()
-            )));
-        }
-        let events = read_source_events(&source_store_file, source_engine, destination_dir)?;
-
-        let destination = Self::open_with_engine(destination_dir, destination_engine)?;
-        let events_migrated = destination.replay_event_stream(events).await?;
-        let rebuild = destination.rebuild_projections(derive).await?;
-
-        // The source must be exactly what it was. Anything else means the
-        // read-only path leaked, and the operator deserves to hear it from
-        // the migration rather than from a later diff.
-        let source_sha256_after = sha256_of(&source_store_file)?;
-        if source_sha256_after != source_sha256 {
-            return Err(PortError::InvalidState(format!(
-                "migration modified its source `{}`; refusing to report success",
-                source_store_file.display()
-            )));
-        }
-
-        let receipt = StoreMigrationReceipt {
-            source_format,
-            source_sha256,
-            destination_format: destination_engine.format_version(),
-            events_migrated,
-            mutations_applied: rebuild.mutations_applied,
-            kernel_version: env!("CARGO_PKG_VERSION").to_string(),
-        };
-        destination.write_migration_receipt(&receipt).await?;
-        Ok((destination, receipt))
+        let _ = destination_engine;
+        Err(PortError::InvalidState(format!(
+            "migration source `{}` uses unsupported format version {source_format}; this \
+             binary left it untouched",
+            source_dir.display()
+        )))
     }
 
     /// Migrate once, reopen afterwards: safe to call on every start.
@@ -251,72 +165,6 @@ impl EmbeddedKernelStore {
         })
         .await
     }
-
-    async fn write_migration_receipt(
-        &self,
-        receipt: &StoreMigrationReceipt,
-    ) -> Result<(), PortError> {
-        let encoded = serde_json::to_vec(receipt).map_err(|error| {
-            PortError::InvalidState(format!("migration receipt is not encodable: {error}"))
-        })?;
-        self.run(move |store| {
-            let mut tx = store.begin_write()?;
-            tx.insert(
-                Table::Migrations,
-                Key::Str(StoreMigrationReceipt::MIGRATION_ID),
-                &encoded,
-            )?;
-            tx.commit()
-        })
-        .await
-    }
-}
-
-/// Reads the source event log without ever opening the source for writing.
-///
-/// redb may need to recover a file left by an unclean shutdown, and recovery
-/// writes. So the file is copied first and the copy is what gets opened; the
-/// copy is removed before the destination store is created.
-fn read_source_events(
-    source_store_file: &Path,
-    source_engine: StorageEngine,
-    destination_dir: &Path,
-) -> Result<Vec<ContextUpdatedEvent>, PortError> {
-    fs::create_dir_all(destination_dir).map_err(|error| {
-        PortError::Unavailable(format!(
-            "migration could not create destination `{}`: {error}",
-            destination_dir.display()
-        ))
-    })?;
-    let copy_path: PathBuf = destination_dir.join(SOURCE_COPY_FILE);
-    fs::copy(source_store_file, &copy_path).map_err(|error| {
-        PortError::Unavailable(format!(
-            "migration could not copy the source store to `{}`: {error}",
-            copy_path.display()
-        ))
-    })?;
-
-    let events = {
-        let source = EmbeddedKernelStore::open_store_file(&copy_path, source_engine)?;
-        source.read_event_log_blocking()
-    };
-
-    // Best effort: a leftover copy is inert, but leaving it would make the
-    // destination directory lie about what it contains.
-    let _ = fs::remove_file(&copy_path);
-    events
-}
-
-fn sha256_of(path: &Path) -> Result<String, PortError> {
-    let bytes = fs::read(path).map_err(|error| {
-        PortError::Unavailable(format!(
-            "migration could not read `{}`: {error}",
-            path.display()
-        ))
-    })?;
-    let mut hasher = Sha256::new();
-    hasher.update(&bytes);
-    Ok(format!("{:x}", hasher.finalize()))
 }
 
 fn same_file(left: &Path, right: &Path) -> bool {
