@@ -182,12 +182,7 @@ fn project_recall_output_typed(
     let mut planned_bytes = serialized_bytes(&planning);
     let mut lengths = plan.core_lengths.clone();
 
-    for item in eligible
-        .iter()
-        .skip(offset)
-        .take(budget.page_entries)
-        .take_while(|_| !core_text_shortened)
-    {
+    for item in eligible.iter().skip(offset).take(budget.page_entries) {
         let item_json =
             serde_json::to_string(&item.value).expect("projection item should serialize");
         let comma_bytes = usize::from(lengths.get(&item.section).copied().unwrap_or(0) > 0);
@@ -205,6 +200,13 @@ fn project_recall_output_typed(
         planned_bytes += item_bytes;
         *lengths.entry(item.section).or_default() += 1;
         selected.push(item.clone());
+    }
+
+    if selected.is_empty() && offset < eligible.len() {
+        // Never manufacture a continuation that cannot advance. `fit_core`
+        // reserves one item, so reaching this branch means the hard byte
+        // ceiling cannot carry both the stable core and any expansion.
+        return Ok(ProjectionOutcome::CoreTooLarge);
     }
 
     // Item costs are deliberately conservative, so this normally runs once.
@@ -537,10 +539,23 @@ fn fit_core(
     selection_hash: &str,
     budget: &ProjectionBudget,
 ) -> Option<(Value, bool)> {
+    // A continuation is only useful if it can advance. Reserve enough room
+    // for the largest expansion item in the selection while fitting the
+    // stable core; otherwise a shortened core can consume the whole budget
+    // and produce returned=0, has_more=true, and the same cursor forever.
+    // Choosing from the complete canonical plan keeps this core identical
+    // across detail levels and page offsets.
+    let reserved_item = eligible.iter().max_by_key(|item| {
+        item.stable_key.len()
+            + usize::from(plan.core_lengths.get(&item.section).copied().unwrap_or(0) > 0)
+    });
     let build = |max_chars: Option<usize>| {
         let mut candidate = plan.core.clone();
         if let Some(max_chars) = max_chars {
             truncate_json_text(&mut candidate, max_chars);
+        }
+        if let Some(item) = reserved_item {
+            push_array(&mut candidate, item.section.path(), item.value.clone());
         }
         attach_metadata(
             &mut candidate,
@@ -1842,19 +1857,89 @@ mod tests {
         }
         assert_eq!(compact["proof"]["evidence"], balanced["proof"]["evidence"]);
         assert_eq!(balanced["proof"]["evidence"], full["proof"]["evidence"]);
-        assert!(
-            compact["proof"]["path"]
-                .as_array()
-                .expect("path")
-                .is_empty()
-        );
-        assert!(
-            balanced["proof"]["path"]
-                .as_array()
-                .expect("path")
-                .is_empty()
-        );
-        assert!(full["proof"]["path"].as_array().expect("path").is_empty());
+        assert_eq!(compact["proof"]["path"], balanced["proof"]["path"]);
+        assert_eq!(balanced["proof"]["path"], full["proof"]["path"]);
+        for output in [&compact, &balanced, &full] {
+            assert!(
+                output["projection"]["page"]["returned"].as_u64() > Some(0),
+                "a shortened core must still leave room for paging progress"
+            );
+        }
+    }
+
+    #[test]
+    fn all_abouts_wake_with_a_shortened_core_advances_every_page() {
+        let mut packet = large_fixture(30);
+        packet
+            .as_object_mut()
+            .expect("wake packet")
+            .remove("answer");
+        packet
+            .as_object_mut()
+            .expect("wake packet")
+            .remove("because");
+        packet["wake"] = json!({
+            "objective": "Sweep every memory anchor.",
+            "current_state": [
+                format!("Cross-project state: {}", "stable core detail ".repeat(240)),
+                "Second project state",
+                "Third project state"
+            ],
+            "causal_spine": [{
+                "claim": "claim:0",
+                "because": "The first evidence item anchors the sweep.",
+                "evidence_ref": "evidence:0"
+            }],
+            "open_loops": ["Inspect every remaining anchor"],
+            "next_actions": ["Continue with the returned cursor"],
+            "guardrails": ["Never report a partial sweep as complete"]
+        });
+        let base_arguments = json!({
+            "about": "project:kmp",
+            "dimensions": {"scope": "all_abouts"},
+            "budget": {"max_bytes": 4_000, "detail": "full"},
+            "page": {"entries": 4}
+        });
+
+        let mut cursor = None;
+        let mut expected_offset = 0_u64;
+        let mut seen_cursors = BTreeSet::new();
+        loop {
+            let mut arguments = base_arguments.clone();
+            if let Some(cursor) = &cursor {
+                arguments["page"]["cursor"] = json!(cursor);
+            }
+            let output = projected(packet.clone(), arguments);
+            let page = &output["projection"]["page"];
+            let returned = page["returned"].as_u64().expect("returned");
+            assert_eq!(page["offset"], expected_offset);
+            assert!(
+                returned > 0,
+                "every continuation must make progress: {output}"
+            );
+            assert_eq!(output["projection"]["core_text_shortened"], true);
+            assert!(
+                serde_json::to_vec(&output).expect("projection bytes").len() <= 4_000,
+                "the progress guarantee must preserve the byte ceiling"
+            );
+            expected_offset += returned;
+
+            if page["has_more"] == false {
+                assert!(page["next_cursor"].is_null());
+                assert_eq!(page["total"], expected_offset);
+                break;
+            }
+            let next = page["next_cursor"]
+                .as_str()
+                .expect("continuation cursor")
+                .to_string();
+            assert!(
+                seen_cursors.insert(next.clone()),
+                "a continuation cursor must never repeat"
+            );
+            cursor = Some(next);
+            assert!(seen_cursors.len() < 100, "the fixture must terminate");
+        }
     }
 
     #[test]
