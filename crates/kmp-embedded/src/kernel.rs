@@ -70,7 +70,7 @@ impl EmbeddedKernel {
                     "{message}; if another agent session is using this data dir, close it first \
                      (the redb engine is single-writer per ADR-011 — to share one store between \
                      hosts, migrate it to the sqlite engine: `kmp-mcp migrate <this-dir> \
-                     <new-dir> --engine sqlite`)"
+                     <new-dir>`)"
                 ))
             }
             other => other,
