@@ -19,3 +19,4 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked
 cargo test --workspace --locked
 cargo build -p kmp-mcp --locked
+KMP_MCP_BIN=target/debug/kmp-mcp bash scripts/demo/embedded_two_sessions.sh
