@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-28
+
 ### Changed
 
 - Embedded KMP now contains SQLite alone: the redb dependency, canonical
@@ -511,7 +513,9 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/underpass-ai/kmp/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/underpass-ai/kmp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/underpass-ai/kmp/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/underpass-ai/kmp/compare/v0.2.10...v0.3.0
 [0.2.10]: https://github.com/underpass-ai/kmp/compare/v0.2.9...v0.2.10
