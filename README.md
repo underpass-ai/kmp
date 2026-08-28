@@ -26,11 +26,6 @@ evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
 You can click, filter, pan, undo or take control of the same view at any time.
 <!-- kmp:public-overview:end -->
 
-![KMP retrieving evidence and writing a local decision](docs/assets/kmp-demo.gif)
-
-<sub>Real KMP calls against the isolated checkout-latency demo. No project
-memory was harmed. [Replay it yourself](docs/assets/kmp-demo.tape).</sub>
-
 ## Why KMP?
 
 Agents are good at doing the work in front of them. Tomorrow is harder. A

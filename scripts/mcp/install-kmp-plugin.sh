@@ -181,19 +181,36 @@ else
   say "   updater at $UPDATE"
 fi
 
-# Shared demo. The script resolves its own plugin root from its location, so
-# installing it beside the doctor with the bundle one directory over is all it
-# needs — no plugin-root variable, which Codex does not have.
-DEMO_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/kmp"
-DEMO="$DEMO_HOME/bin/kmp-demo.sh"
+# Shared versioned guides. Standalone Codex has no plugin-root variable, so
+# keep the sync launcher beside the other helpers and preserve the plugin
+# layout under the same data directory.
+GUIDE_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/kmp"
+GUIDE="$GUIDE_HOME/bin/kmp-guide-sync.sh"
 if [ "$DRY_RUN" -eq 1 ]; then
-  act "install the demo at $DEMO"
+  act "install the deterministic guides at $GUIDE"
 else
-  mkdir -p "$DEMO_HOME/bin" "$DEMO_HOME/demo"
-  fetch_asset "scripts/kmp-demo.sh" "$DEMO"
-  chmod +x "$DEMO"
-  fetch_asset "demo/checkout-latency.jsonl" "$DEMO_HOME/demo/checkout-latency.jsonl"
-  say "   demo installed at $DEMO"
+  mkdir -p "$GUIDE_HOME/bin" "$GUIDE_HOME/guide"
+  fetch_asset "scripts/kmp-guide-sync.sh" "$GUIDE"
+  chmod +x "$GUIDE"
+  fetch_asset "capabilities.json" "$GUIDE_HOME/capabilities.json"
+  for asset in build-guide.py editorial.json guide.requests.json memory.jsonl; do
+    fetch_asset "guide/$asset" "$GUIDE_HOME/guide/$asset"
+  done
+  chmod +x "$GUIDE_HOME/guide/build-guide.py"
+  say "   versioned guides installed at $GUIDE"
+fi
+
+# These exact paths were owned by KMP's former standalone demo installer.
+# Retiring the capability must also retire the installed command on update;
+# otherwise an existing standalone Codex setup keeps advertising a workflow
+# that the current plugin no longer ships.
+if [ "$DRY_RUN" -eq 1 ]; then
+  act "remove the retired standalone kmp-demo assets"
+else
+  rm -f \
+    "$GUIDE_HOME/bin/kmp-demo.sh" \
+    "$GUIDE_HOME/demo/checkout-latency.jsonl"
+  rmdir "$GUIDE_HOME/demo" 2>/dev/null || true
 fi
 
 # ----------------------------------------------------------------- codex ----
@@ -291,18 +308,19 @@ EOF
       [ -f "$CODEX_CONFIG.kmp-backup" ] && say "   previous config saved as $CODEX_CONFIG.kmp-backup"
     fi
 
-    CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
+    CODEX_PROMPTS="kmp-setup kmp-doctor kmp-info kmp-moves kmp-guide kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall"
     if [ "$DRY_RUN" -eq 1 ]; then
       act "install $(printf '/%s ' $CODEX_PROMPTS)into $CODEX_HOME/prompts"
     else
       mkdir -p "$CODEX_HOME/prompts"
       for p in $CODEX_PROMPTS; do
         fetch_asset "codex/prompts/$p.md" "$CODEX_HOME/prompts/$p.md"
-        sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@DEMO@@#$DEMO#g" \
+        sed -i.bak -e "s#@@DOCTOR@@#$DOCTOR#g" -e "s#@@GUIDE@@#$GUIDE#g" \
           -e "s#@@SETUP@@#$SETUP#g" -e "s#@@UPDATE@@#$UPDATE#g" \
           "$CODEX_HOME/prompts/$p.md"
         rm -f "$CODEX_HOME/prompts/$p.md.bak"
       done
+      rm -f "$CODEX_HOME/prompts/kmp-demo.md"
       say "   prompts — $(printf '/%s ' $CODEX_PROMPTS)installed"
     fi
 
@@ -378,6 +396,13 @@ else
   if ! "$BIN" config; then
     say "   this kmp-mcp predates configurable Ask fallback; update the engine and re-run setup"
   fi
+fi
+
+step "Guides"
+if [ "$DRY_RUN" -eq 1 ]; then
+  act "sync guide:kmp-agent and guide:kmp without duplicating events"
+else
+  KMP_GUIDE_PLUGIN_ROOT="$GUIDE_HOME" bash "$GUIDE" sync --binary "$BIN"
 fi
 
 step "Check"

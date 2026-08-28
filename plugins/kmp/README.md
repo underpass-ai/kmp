@@ -130,6 +130,11 @@ the half-open UTC interval and consumes every page. It captures the inclusive
 start with `kmp_goto` before the strictly-after `kmp_forward`, merges refs and
 excludes the end. Setup and upgrades preserve the configured list.
 
+Setup and update also sync two versioned guide memories from one manifest.
+`guide:kmp-agent` explains every live verb to the agent; `guide:kmp` is the
+short human path opened visually with `/kmp:guide`. The sync is deterministic:
+an exact rerun adds no events and an update does not touch project memory.
+
 ## What you get
 
 ### For the agent — the `kmp-memory` skill
@@ -152,6 +157,12 @@ The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
 with the kernel. The skill teaches the shape; the schema carries the truth.
 
+Setup also synchronizes `guide:kmp-agent`, a versioned operating guide inside
+KMP itself. Its explicit verb cards say when to use a move, when not to, the
+minimum input, the expected result and the normal next move. The separate
+`guide:kmp` is for people and opens visually in ChronoLoom; it is not a shorter
+set of agent instructions.
+
 The payoff appears on the read path: `kmp_wake` reconstructs the causal
 spine, `kmp_ask` can keep the right citation when the question is
 paraphrased, and `kmp_trace` / `kmp_inspect` expose the original
@@ -168,7 +179,7 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:doctor` | Diagnoses the setup end to end and names the one thing to fix |
 | `/kmp:info` | What this install is and which memory this project opens — and why that one |
 | `/kmp:moves` | The memory and ChronoLoom moves, read from the live surface when reachable |
-| `/kmp:demo` | Loads an example memory — a real incident with a wrong turn in it |
+| `/kmp:guide` | Syncs the agent guide, then runs `open:guide` on the separate human path in ChronoLoom |
 | `/kmp:catchup` | What changed since you last looked, from the event log |
 | `/kmp:save` | Commits this project's memory to the repository, and shows the diff |
 | `/kmp:restore` | Loads the memory committed in the repository back into the store |

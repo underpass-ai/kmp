@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "guide_version": "1",
+  "observed_at": "2026-08-28T00:00:00Z",
+  "abouts": [
+    {
+      "about": "guide:kmp-agent",
+      "audience": "agent",
+      "anchor": "overview",
+      "entries": [
+        {
+          "id": "overview",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "KMP agent guide. Treat KMP as evidence-backed graph-temporal memory, not a model and not a transcript store. Choose a verb from the user's intent, copy abouts and refs byte-for-byte, and let each result select the next verb.",
+          "evidence": "This is the agent-only operating contract shipped with the KMP plugin."
+        },
+        {
+          "id": "verb:wake",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB wake. Use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up.",
+          "evidence": "The live kmp_wake contract returns an about-scoped continuation packet and resume cursor."
+        },
+        {
+          "id": "verb:ask",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and natural-language question. Expect: cited stored text or UNKNOWN. Next: inspect a relied-on ref, trace a relied-on connection, or stop honestly at UNKNOWN after the bounded language policy.",
+          "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer."
+        },
+        {
+          "id": "verb:time",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Temporal intent beats Ask. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete.",
+          "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately."
+        },
+        {
+          "id": "verb:audit",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte.",
+          "evidence": "The live inspect and trace contracts enforce an explicit about boundary and preserve proof."
+        },
+        {
+          "id": "verb:write",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters.",
+          "evidence": "The live writer contract validates intent and relation quality before compiling to canonical ingest."
+        },
+        {
+          "id": "verb:view",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state.",
+          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory."
+        },
+        {
+          "id": "verb:guide-sync",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB guide sync. Use the shipped kmp-guide-sync.sh when setup, update or an explicit guide request must converge the installed guide. It is lifecycle work, not an MCP memory verb. Do not improvise guide entries. Minimum input: the matching installed engine and guide assets. Expect: the fixed guide abouts applied idempotently. Next: wake guide:kmp-agent for agent guidance or run open:guide for the human view.",
+          "evidence": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence."
+        },
+        {
+          "id": "advanced:scope",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep. Abouts are opaque identifiers and are never joined by relations.",
+          "evidence": "The live read schemas expose current_about, abouts and all_abouts as distinct cost and isolation choices."
+        },
+        {
+          "id": "advanced:relations",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema.",
+          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality."
+        },
+        {
+          "id": "advanced:idempotency",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry.",
+          "evidence": "KMP binds idempotency keys to logical digests and preserves replay outcomes across export/import."
+        },
+        {
+          "id": "advanced:pagination",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly.",
+          "evidence": "Every bounded live read reports its own page unit, continuation and byte-budget guidance."
+        },
+        {
+          "id": "advanced:lifecycle",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement.",
+          "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles."
+        }
+      ],
+      "relations": [
+        {
+          "from": "verb:wake",
+          "to": "overview",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "Wake is the entry verb because known work must be recovered before any narrower route is chosen.",
+          "evidence": "The agent guide overview requires recovery before re-derivation."
+        },
+        {
+          "from": "verb:ask",
+          "to": "verb:wake",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Semantic Ask is chosen only after wake establishes the exact about and leaves a genuinely semantic gap.",
+          "evidence": "Wake returns current state; Ask retrieves evidence for the remaining non-temporal question."
+        },
+        {
+          "from": "verb:time",
+          "to": "verb:ask",
+          "rel": "corrects",
+          "class": "procedural",
+          "why": "Temporal navigation corrects the route when the original request concerns change or a time boundary rather than semantic relevance.",
+          "evidence": "The live router contract gives temporal intent precedence over Ask."
+        },
+        {
+          "from": "verb:audit",
+          "to": "verb:ask",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Inspection or tracing audits the exact refs retained by semantic retrieval.",
+          "evidence": "Ask returns refs; inspect and trace preserve their stored proof."
+        },
+        {
+          "from": "verb:write",
+          "to": "verb:audit",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "A related durable write should be grounded in refs the agent actually read rather than reconstructed context.",
+          "evidence": "Strict writer validation accepts read_context as the audit of prior reads."
+        },
+        {
+          "from": "verb:view",
+          "to": "verb:audit",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The visual lane frames retrieved proof only after the memory lane has selected it.",
+          "evidence": "ChronoLoom state is a camera position and is not itself proof."
+        },
+        {
+          "from": "verb:guide-sync",
+          "to": "overview",
+          "rel": "updates_state",
+          "class": "procedural",
+          "why": "Guide sync converges the shipped operating contract before either audience reads it.",
+          "evidence": "The guide requests use stable refs and content-derived idempotency keys."
+        },
+        {
+          "from": "advanced:scope",
+          "to": "verb:wake",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "About scope constrains which memories any wake or later read is allowed to cross.",
+          "evidence": "Read schemas default to current_about and require explicit broader scope."
+        },
+        {
+          "from": "advanced:relations",
+          "to": "verb:write",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "Relation quality determines whether a write preserves an auditable why or only adjacency.",
+          "evidence": "The writer reports rich versus anemic relation quality."
+        },
+        {
+          "from": "advanced:idempotency",
+          "to": "verb:write",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "Idempotency constrains retry behavior for every logical write.",
+          "evidence": "A key conflict means content changed, while an exact replay is already applied."
+        },
+        {
+          "from": "advanced:pagination",
+          "to": "verb:time",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "Temporal and bounded reads are truthful only when their continuation is consumed or disclosed.",
+          "evidence": "The live read responses expose has_more and an opaque next_cursor."
+        },
+        {
+          "from": "advanced:lifecycle",
+          "to": "verb:ask",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "An answer must preserve whether older evidence was replaced, remains conflicting or merely expired.",
+          "evidence": "Ask proof exposes superseded, conflicts and expired separately."
+        }
+      ]
+    },
+    {
+      "about": "guide:kmp",
+      "audience": "person",
+      "anchor": "welcome",
+      "entries": [
+        {
+          "id": "welcome",
+          "kind": "guide",
+          "depth": "basic",
+          "text": "KMP remembers why. This is the human guide: five short ideas first, then the deeper mechanics when you want them. Ask your agent to run open:guide whenever you want this view back.",
+          "evidence": "This is the person-facing guide shipped with the KMP plugin."
+        },
+        {
+          "id": "basic:memory",
+          "kind": "concept",
+          "depth": "basic",
+          "text": "KMP stores durable decisions and evidence, not transcripts. The useful unit is what changed, why it changed and what proves it.",
+          "evidence": "The public product contract defines memory as decisions and evidence rather than conversation logs."
+        },
+        {
+          "id": "basic:local",
+          "kind": "concept",
+          "depth": "basic",
+          "text": "Embedded KMP runs on your machine. Codex and Claude Code can use the same local SQLite store; no KMP account or hosted memory service is required.",
+          "evidence": "The embedded engine selects SQLite in WAL mode and the viewer binds to loopback."
+        },
+        {
+          "id": "basic:inherit",
+          "kind": "concept",
+          "depth": "basic",
+          "text": "A repository can publish selected project memory in .kmp/memory.jsonl. A clone inherits that reviewed bundle; private abouts in a shared user store stay out unless explicitly exported.",
+          "evidence": "Format-2 filtered export names exact abouts and import replays only the committed event stream."
+        },
+        {
+          "id": "basic:open",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "Say: show me the memory behind this decision. The agent retrieves the evidence, opens ChronoLoom and moves the shared view to the relevant entry or proof path. You can click, filter, pan, undo or take control.",
+          "evidence": "The three semantic view tools share one revisioned ChronoLoom state between agent and person."
+        },
+        {
+          "id": "advanced:clocks",
+          "kind": "concept",
+          "depth": "advanced",
+          "text": "The difference between occurred and observed time is the event boundary versus the knowledge boundary. KMP keeps four clocks because they answer different questions. Occurred time is when the event happened. Observed time is when a source or agent learned it. Ingested time is when the kernel committed it. Validity is the interval in which a state applies.",
+          "evidence": "The memory coordinate contract stores occurred_at, observed_at, ingested_at, valid_from and exclusive valid_until separately."
+        },
+        {
+          "id": "advanced:supersession",
+          "kind": "concept",
+          "depth": "advanced",
+          "text": "Supersession is not contradiction. A superseding memory replaces an older state and keeps the old reasoning as history. A contradiction leaves two live claims in tension until something resolves them.",
+          "evidence": "KMP proof reports superseded entries and live conflicts in separate fields."
+        },
+        {
+          "id": "advanced:snapshots",
+          "kind": "concept",
+          "depth": "advanced",
+          "text": "Named snapshots are deliberate recovery points. Content-addressed exports are deterministic heads. Bundle merge only fast-forwards identical history or an exact prefix; KMP refuses to invent order for divergent branches.",
+          "evidence": "The format-2 bundle contract binds content digest, about coverage and event range before import or merge."
+        },
+        {
+          "id": "advanced:shared-store",
+          "kind": "concept",
+          "depth": "advanced",
+          "text": "Two hosts can share one embedded store. SQLite WAL allows independent Codex and Claude processes to read and write while optimistic revisions and idempotency protect semantic updates.",
+          "evidence": "The embedded concurrency gates run two processes against one SQLite store and require both writers to enter without losing events."
+        },
+        {
+          "id": "advanced:publish",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "Committing a bundle publishes the selected abouts to everyone who can read the repository. Export exact abouts deliberately; a full export from a shared user store can contain unrelated or private memory.",
+          "evidence": "Filtered export accepts repeatable exact abouts and refuses missing selections before writing the destination."
+        },
+        {
+          "id": "advanced:viewer",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "ChronoLoom is local and capability-protected. The process binds to loopback, exchanges a random one-session URL capability for an HttpOnly cookie, and removes the token from the address. Moving the view never writes memory.",
+          "evidence": "The viewer and MCP App contracts separate read-only view state from memory writes and do not advertise a bare unauthorised URL."
+        },
+        {
+          "id": "advanced:plain-file",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "Use a plain file when the information is canonical prose, a large artifact or something people should edit directly. Use KMP when time, evidence, typed relations, supersession or cross-session recovery are part of the meaning.",
+          "evidence": "KMP is graph-temporal operational memory; it is not a replacement for source files or documentation."
+        }
+      ],
+      "relations": [
+        {
+          "from": "basic:memory",
+          "to": "welcome",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The first idea defines what KMP keeps before the guide explains where it lives.",
+          "evidence": "The human guide is ordered from product meaning to operation."
+        },
+        {
+          "from": "basic:local",
+          "to": "basic:memory",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "After defining the memory, the next question is where it runs and who can share it.",
+          "evidence": "Embedded SQLite is the default user path."
+        },
+        {
+          "from": "basic:inherit",
+          "to": "basic:local",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "Repository bundles explain how selected local memory crosses a clone boundary.",
+          "evidence": "The portable event bundle is distinct from the live local SQLite store."
+        },
+        {
+          "from": "basic:open",
+          "to": "basic:inherit",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The basic path ends by showing how a person asks the agent to make stored memory visible.",
+          "evidence": "open:guide and ordinary show-memory requests use the shared ChronoLoom view."
+        },
+        {
+          "from": "advanced:clocks",
+          "to": "basic:memory",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The four clocks add temporal precision to the basic definition of durable memory.",
+          "evidence": "Memory entries carry distinct occurrence, observation, ingestion and validity coordinates."
+        },
+        {
+          "from": "advanced:supersession",
+          "to": "advanced:clocks",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Lifecycle interpretation depends on knowing which clock and validity window are being read.",
+          "evidence": "Superseded, conflicting and expired states are selected against temporal coordinates."
+        },
+        {
+          "from": "advanced:snapshots",
+          "to": "basic:inherit",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Snapshot and merge rules deepen the basic repository inheritance story.",
+          "evidence": "Bundles are verified portable event histories rather than database copies."
+        },
+        {
+          "from": "advanced:shared-store",
+          "to": "basic:local",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "Multi-host concurrency is the advanced form of the basic local SQLite claim.",
+          "evidence": "The same WAL store is safe for independent local agent processes."
+        },
+        {
+          "from": "advanced:publish",
+          "to": "basic:inherit",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "Publication scope constrains what a committed repository bundle may reveal.",
+          "evidence": "Exact-about export exists so a shared store is not published wholesale."
+        },
+        {
+          "from": "advanced:viewer",
+          "to": "basic:open",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "The capability model explains the security boundary behind the simple open gesture.",
+          "evidence": "ChronoLoom uses a loopback one-session capability and read-only semantic state."
+        },
+        {
+          "from": "advanced:plain-file",
+          "to": "basic:memory",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "A good memory system must say what should remain ordinary documentation.",
+          "evidence": "Canonical prose and large directly edited artifacts do not need graph-temporal semantics."
+        }
+      ]
+    }
+  ]
+}

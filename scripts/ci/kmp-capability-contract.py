@@ -97,6 +97,15 @@ for skill in sorted((PLUGIN / "skills").glob("*/SKILL.md")):
 native_workflow_clauses = {
     "kmp-setup": ("scripts/kmp-doctor.sh", "scripts/kmp-update.sh --codex"),
     "kmp-doctor": ("scripts/kmp-doctor.sh", "host wiring and ownership"),
+    "kmp-guide": (
+        "scripts/kmp-guide-sync.sh",
+        "guide:kmp-agent",
+        "guide:kmp",
+        "open:guide",
+        "kmp_view_open",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+    ),
 }
 for skill_name, clauses in native_workflow_clauses.items():
     text = (PLUGIN / "skills" / skill_name / "SKILL.md").read_text(encoding="utf-8")

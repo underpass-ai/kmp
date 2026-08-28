@@ -253,7 +253,17 @@ printf '%s\n' "${RESPONSES}" | python3 "${CHECKER}" "${WORKSPACE_VERSION}"
 # The offer has to survive the marketplace shape too: a plugin that ships the
 # notice but not the installer would tell a user to run a command that is not
 # there. Both are tracked files, so both must land in the copy a host gets.
-for required in scripts/kmp-install-binary.sh scripts/kmp-update.sh scripts/kmp-version-notice.sh hooks/hooks.json; do
+for required in \
+  scripts/kmp-install-binary.sh \
+  scripts/kmp-update.sh \
+  scripts/kmp-version-notice.sh \
+  scripts/kmp-guide-sync.sh \
+  guide/build-guide.py \
+  guide/editorial.json \
+  guide/guide.requests.json \
+  guide/memory.jsonl \
+  hooks/hooks.json
+do
   [ -f "${INSTALLED}/$required" ] \
     || fail "$required is missing from the marketplace copy"
 done
@@ -336,6 +346,8 @@ grep -q 'claude plugin update' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the plugin"; }
 grep -q 'kmp-install-binary.sh' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the engine"; }
+grep -q 'converge guide:kmp-agent and guide:kmp' "$WORK_DIR/update-dry-run.txt" \
+  || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the guides"; }
 
 # With both hosts installed, a plain-shell invocation must update both plugin
 # caches. A persistent Codex config used to suppress the PATH fallback that
@@ -460,6 +472,9 @@ KMP_FAKE_ENGINE_MARKER="$ENGINE_MARKER" \
 KMP_FAKE_PLUGIN_VERSION="$WORKSPACE_VERSION" \
 KMP_FAKE_INSTALLED_PLUGIN_ROOT="$NEW_PLUGIN_ROOT" \
 KMP_INSTALL_DIR="$FAKE_CLI_BIN" \
+KMP_UPDATE_GUIDE_SOURCE_DIR="$INSTALLED" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_MCP_DATA_DIR="${WORK_DIR}/cache-replaced-guide-store" \
 PATH="${FAKE_HOST_BIN}:${PATH}" \
   bash "${CACHE_REPLACED_PLUGIN}/scripts/kmp-update.sh" \
     --codex --version "$WORKSPACE_VERSION" \
@@ -490,6 +505,9 @@ KMP_FAKE_ENGINE_MARKER="$NEXT_ENGINE_MARKER" \
 KMP_FAKE_PLUGIN_VERSION="$WORKSPACE_VERSION" \
 KMP_FAKE_INSTALLED_PLUGIN_ROOT="$NEXT_PLUGIN_ROOT" \
 KMP_INSTALL_DIR="$NEXT_CLI_BIN" \
+KMP_UPDATE_GUIDE_SOURCE_DIR="$INSTALLED" \
+KMP_MCP_BIN="${ROOT_DIR}/target/debug/kmp-mcp" \
+KMP_MCP_DATA_DIR="${WORK_DIR}/next-guide-store" \
 PATH="${FAKE_HOST_BIN}:${PATH}" \
   bash "$OLD_PLUGIN_ROOT/scripts/kmp-update.sh" \
     --codex --version "$WORKSPACE_VERSION" \
@@ -520,6 +538,7 @@ if KMP_FAKE_OLD_PLUGIN_ROOT="$CACHE_REPLACED_PLUGIN" \
   KMP_FAKE_ENGINE_MARKER="$STALE_ENGINE_MARKER" \
   KMP_FAKE_PLUGIN_VERSION="$OLDER_VERSION" \
   KMP_FAKE_INSTALLED_PLUGIN_ROOT="${WORK_DIR}/stale-plugin-result" \
+  KMP_UPDATE_GUIDE_SOURCE_DIR="$INSTALLED" \
   PATH="${FAKE_HOST_BIN}:${PATH}" \
     bash "$CACHE_REPLACED_PLUGIN/scripts/kmp-update.sh" \
       --codex --version "$WORKSPACE_VERSION" \
@@ -542,7 +561,14 @@ fi
 # setup must migrate that exact block in place, keeping a recoverable copy and
 # never leaving two servers pointing at the same store.
 MIGRATION_HOME="${WORK_DIR}/migration-home"
-mkdir -p "${MIGRATION_HOME}/.codex"
+mkdir -p \
+  "${MIGRATION_HOME}/.codex/prompts" \
+  "${MIGRATION_HOME}/.local/share/kmp/bin" \
+  "${MIGRATION_HOME}/.local/share/kmp/demo"
+printf 'retired prompt\n' > "${MIGRATION_HOME}/.codex/prompts/kmp-demo.md"
+printf 'retired script\n' > "${MIGRATION_HOME}/.local/share/kmp/bin/kmp-demo.sh"
+printf 'retired bundle\n' > \
+  "${MIGRATION_HOME}/.local/share/kmp/demo/checkout-latency.jsonl"
 printf '%s\n' \
   '[mcp_servers.kernel-memory]' \
   'command = "/previous/kmp-mcp"' \
@@ -585,6 +611,13 @@ grep -q '^\[mcp_servers\.kernel-memory\]$' \
 python3 -c 'import pathlib,sys,tomllib;tomllib.loads(pathlib.Path(sys.argv[1]).read_text())' \
   "${MIGRATION_HOME}/.codex/config.toml" \
   || fail "the migrated Codex config is not valid TOML"
+for retired in \
+  "${MIGRATION_HOME}/.codex/prompts/kmp-demo.md" \
+  "${MIGRATION_HOME}/.local/share/kmp/bin/kmp-demo.sh" \
+  "${MIGRATION_HOME}/.local/share/kmp/demo/checkout-latency.jsonl"
+do
+  [ ! -e "$retired" ] || fail "the installer left retired demo asset $retired"
+done
 
 # Codex copies the updater beside the binary installer rather than inside a
 # plugin root. Its one-command path must resolve that installed layout too.

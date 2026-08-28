@@ -36,5 +36,18 @@ time and never enter this fallback. Chinese, Japanese, and Thai fallback tags
 are rejected until Ask supports word segmentation for those scripts; storage
 remains byte-exact. Upgrades must leave this policy intact.
 
+Install or refresh the shipped guides after the engine and plugin agree on a
+version:
+
+```bash
+<plugin-root>/scripts/kmp-guide-sync.sh sync --binary <path-to-kmp-mcp>
+```
+
+This is a deterministic content sync, not sample data. It keeps two abouts
+aligned from one versioned manifest: `guide:kmp-agent` is the operational
+manual for the agent, while `guide:kmp` is the shorter human path that
+ChronoLoom opens with `open:guide`. Exact reruns add no events; a later plugin
+version supersedes changed guide entries without rewriting unrelated memory.
+
 Finish by rerunning `<plugin-root>/scripts/kmp-doctor.sh`. A running Codex
 session needs one restart to load changed skills or MCP wiring.

@@ -100,6 +100,17 @@ Answer in the user's language, but translate only the retry query. Never
 translate or rewrite stored evidence, refs, relation `why`, or source metadata.
 An upgrade must preserve the existing policy.
 
+**Versioned guides** — sync them after the engine and plugin agree:
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/kmp-guide-sync.sh" sync
+```
+
+The operation is deterministic. It updates the dense `guide:kmp-agent`
+manual the agent reads and the shorter `guide:kmp` path the person opens in
+ChronoLoom. Re-running the same version adds nothing and never touches project
+memory.
+
 Finish by re-running the doctor and telling the user whether memory is now
 answering. If the only thing left is a stale session, say that plainly — it
 is the one fix that has to happen outside this session.

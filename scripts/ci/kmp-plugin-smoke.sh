@@ -41,29 +41,19 @@ if servers != {"kmp": {"command": "kmp-mcp"}}:
     raise SystemExit(f"unexpected Codex MCP declaration: {servers!r}")
 PY
 
-# The demo bundle ships inside the plugin, so a packaging change that drops it
-# would leave /kmp:demo broken on every new install. That it *loads* is a Rust
-# test (tests/demo_bundle.rs); that it is *there* belongs here, where the
-# bundle's presence in the package is what is being proved.
-if [ ! -f "${PLUGIN_DIR}/demo/checkout-latency.jsonl" ]; then
-  echo "KMP plugin smoke: the demo bundle is missing from the plugin" >&2
-  exit 1
-fi
-python3 - "${PLUGIN_DIR}/demo/checkout-latency.jsonl" <<'PY'
-import json, sys
-
-path = sys.argv[1]
-with open(path, encoding="utf-8") as handle:
-    lines = [line for line in handle if line.strip()]
-header = json.loads(lines[0])
-events = len(lines) - 1
-if header["event_count"] != events:
-    sys.exit(
-        f"demo bundle header declares {header['event_count']} events, file has {events}"
-    )
-for line in lines[1:]:
-    json.loads(line)
-PY
+# Setup needs all guide sources as well as the empty-store bundle. The builder
+# later proves that these files match the live MCP surface and import cleanly.
+for guide_asset in \
+  guide/build-guide.py \
+  guide/editorial.json \
+  guide/guide.requests.json \
+  guide/memory.jsonl \
+  capabilities.json \
+  scripts/kmp-guide-sync.sh
+do
+  [ -f "${PLUGIN_DIR}/${guide_asset}" ] \
+    || fail "the shipped guide asset ${guide_asset} is missing"
+done
 
 # Both host manifests must carry the same version: a bundle that tells
 # Codex one version and Claude Code another is a packaging defect.
@@ -80,6 +70,36 @@ if codex != claude:
 EOF
 
 bash scripts/plugin/build-local-kmp-plugin.sh
+python3 "${PLUGIN_DIR}/guide/build-guide.py" check \
+  --binary "${PLUGIN_DIR}/bin/kmp-mcp"
+
+GUIDE_SYNC_STORE="${SMOKE_DATA_DIR}/guide-sync-store"
+GUIDE_FIRST_EXPORT="${SMOKE_DATA_DIR}/guide-first.jsonl"
+GUIDE_SECOND_EXPORT="${SMOKE_DATA_DIR}/guide-second.jsonl"
+for export_path in "$GUIDE_FIRST_EXPORT" "$GUIDE_SECOND_EXPORT"; do
+  KMP_MCP_DATA_DIR="$GUIDE_SYNC_STORE" KMP_VIEWER_ADDR=off \
+    bash "${PLUGIN_DIR}/scripts/kmp-guide-sync.sh" sync \
+      --binary "${PLUGIN_DIR}/bin/kmp-mcp" >/dev/null
+  KMP_MCP_DATA_DIR="$GUIDE_SYNC_STORE" KMP_VIEWER_ADDR=off \
+    "${PLUGIN_DIR}/bin/kmp-mcp" export "$export_path" >/dev/null
+done
+python3 - "$GUIDE_FIRST_EXPORT" "$GUIDE_SECOND_EXPORT" <<'PY'
+import json
+import pathlib
+import sys
+
+headers = []
+for raw in sys.argv[1:]:
+    with pathlib.Path(raw).open(encoding="utf-8") as handle:
+        headers.append(json.loads(handle.readline()))
+for header in headers:
+    if header["event_count"] != 2:
+        raise SystemExit(f"guide sync produced {header['event_count']} events, expected 2")
+    if header["abouts"] != ["guide:kmp", "guide:kmp-agent"]:
+        raise SystemExit(f"guide sync selected unexpected abouts: {header['abouts']}")
+if headers[0]["content_digest"] != headers[1]["content_digest"]:
+    raise SystemExit("an exact guide re-sync changed the exported memory")
+PY
 
 # An ignored binary can leak into a local marketplace snapshot, and an updater
 # from the previous release cannot use installer behavior that only exists in
@@ -423,7 +443,7 @@ printf '%s\n' \
   '[mcp_servers.kmp]' \
   'command = "kmp-mcp"' \
   > "${CODEX_DOCTOR_HOME}/.codex/config.toml"
-for prompt in kmp-setup kmp-doctor kmp-info kmp-moves kmp-demo kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall; do
+for prompt in kmp-setup kmp-doctor kmp-info kmp-moves kmp-guide kmp-catchup kmp-save kmp-restore kmp-revert kmp-uninstall; do
   : > "${CODEX_DOCTOR_HOME}/.codex/prompts/${prompt}.md"
 done
 stale_codex_output="$(
