@@ -420,6 +420,21 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
         supports.explanation.evidence().is_some(),
         "supports proof must carry the evidence text"
     );
+    let evidence = inspection
+        .evidence
+        .iter()
+        .find(|evidence| evidence.detail.node.node_id == "evidence:one")
+        .expect("inspect must resolve the stored evidence entity behind the supports link");
+    assert_eq!(evidence.supports, ["claim:one"]);
+    assert_eq!(
+        evidence
+            .detail
+            .detail
+            .as_ref()
+            .expect("stored evidence detail")
+            .detail,
+        "Transcript line supporting the first decision."
+    );
 
     let claim_support = inspection
         .incoming

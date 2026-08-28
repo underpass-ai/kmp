@@ -402,6 +402,15 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         inspect["result"]["structuredContent"]["object"]["ref"],
         "claim:rachel-austin"
     );
+    assert_eq!(
+        inspect["result"]["structuredContent"]["evidence"],
+        json!([{
+            "id": "evidence:rachel-turn-2",
+            "supports": ["claim:rachel-austin"],
+            "text": "Later she corrected it: the move is to Austin.",
+            "source": "conversation turn 2"
+        }])
+    );
 }
 
 #[tokio::test]

@@ -216,9 +216,16 @@ pub struct InspectMemoryResult {
     pub detail: GetNodeDetailResult,
     pub incoming: Vec<GraphRelationshipView>,
     pub outgoing: Vec<GraphRelationshipView>,
+    pub evidence: Vec<InspectedEvidence>,
     pub raw_coordinates: Vec<TemporalCoordinate>,
     pub include_details: bool,
     pub include_raw: bool,
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct InspectedEvidence {
+    pub detail: GetNodeDetailResult,
+    pub supports: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

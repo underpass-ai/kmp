@@ -169,6 +169,24 @@ impl GraphNeighborhoodReader for SeededGraphNeighborhoodReader {
     ) -> Result<Option<NodeNeighborhood>, PortError> {
         match root_node_id {
             "node-123" => Ok(Some(sample_node_neighborhood("node-123", "ACTIVE"))),
+            "evidence:node-123" => {
+                let mut root = temporal_projection(
+                    "evidence:node-123",
+                    "memory_evidence",
+                    "Stored evidence for node-123",
+                );
+                root.properties.insert(
+                    "payload_supports".to_string(),
+                    "[\"node-123\",\"node-456\"]".to_string(),
+                );
+                root.properties
+                    .insert("source".to_string(), "runbook:42".to_string());
+                Ok(Some(NodeNeighborhood {
+                    root,
+                    neighbors: Vec::new(),
+                    relations: Vec::new(),
+                }))
+            }
             "graph-only" => Ok(Some(sample_node_neighborhood("graph-only", "READY"))),
             "question:evidence-answer" => Ok(Some(NodeNeighborhood {
                 root: temporal_projection(
@@ -452,6 +470,14 @@ impl NodeRelationshipReader for SeededGraphNeighborhoodReader {
                             .with_rationale("seeded predecessor supports the inspected node")
                             .with_confidence("high"),
                     },
+                    NodeRelationProjection {
+                        source_node_id: "evidence:node-123".to_string(),
+                        target_node_id: "node-123".to_string(),
+                        relation_type: "supports".to_string(),
+                        explanation: RelationExplanation::new(RelationSemanticClass::Evidential)
+                            .with_rationale("stored evidence supports the inspected node")
+                            .with_confidence("high"),
+                    },
                 ],
                 outgoing: vec![NodeRelationProjection {
                     source_node_id: "node-123".to_string(),
@@ -528,6 +554,12 @@ impl NodeDetailReader for SeededNodeDetailReader {
                 node_id: "node-123".to_string(),
                 detail: "Expanded detail".to_string(),
                 content_hash: "hash-1".to_string(),
+                revision: 2,
+            }),
+            "evidence:node-123" => Some(NodeDetailProjection {
+                node_id: "evidence:node-123".to_string(),
+                detail: "The runbook observation proves node-123.".to_string(),
+                content_hash: "hash-evidence-node-123".to_string(),
                 revision: 2,
             }),
             "question:evidence-answer" => Some(NodeDetailProjection {
@@ -2057,8 +2089,18 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
         .into_inner();
     assert_eq!(inspect.object.expect("object").r#ref, "node-123");
     assert_eq!(inspect.evidence.len(), 1);
+    assert_eq!(inspect.evidence[0].id, "evidence:node-123");
+    assert_eq!(
+        inspect.evidence[0].supports,
+        ["node-123".to_string(), "node-456".to_string()]
+    );
+    assert_eq!(inspect.evidence[0].source, "runbook:42");
+    assert_eq!(
+        inspect.evidence[0].text,
+        "The runbook observation proves node-123."
+    );
     let links = inspect.links.expect("links");
-    assert_eq!(links.incoming.len(), 2);
+    assert_eq!(links.incoming.len(), 3);
     assert!(
         links
             .incoming
@@ -2085,7 +2127,8 @@ async fn memory_service_trace_and_inspect_use_existing_query_ports() {
         summary_only.object.expect("object").text,
         "Summary for node-123"
     );
-    assert!(summary_only.evidence.is_empty());
+    assert_eq!(summary_only.evidence.len(), 1);
+    assert_eq!(summary_only.evidence[0].id, "evidence:node-123");
 
     let raw = service
         .inspect(Request::new(InspectRequest {
