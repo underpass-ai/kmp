@@ -4,6 +4,10 @@ This section is technical by design. It describes the executable boundaries
 shared by the embedded and enterprise compositions; it does not describe the
 archived product plans.
 
+The current [architecture conformance audit](conformance-audit-2026-08-28.md)
+checks SOLID, domain types, dependency direction and module ownership, then
+orders the findings into small behaviour-preserving PRs.
+
 ## System map
 
 ```mermaid
