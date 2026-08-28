@@ -9,6 +9,47 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-08-28
+
+### Changed
+
+- `kmp-mcp export --about` can be repeated to create a verifiable format-2
+  bundle for selected abouts without publishing unrelated memory from a
+  shared store.
+- The CLI handles `-h` and `--help` before any mutation and rejects
+  flag-shaped positional paths instead of silently creating those files.
+- `kmp_inspect` now returns a successful partial response with continuation
+  guidance when its byte budget cannot fit every requested expansion, while
+  preserving the irreducible object core.
+
+### Fixed
+
+- Store selection reports an explicit durability outcome when a project store
+  is unusable, and `doctor` detects a maintained bundle orphaned by fallback
+  to another selected store.
+- The first-open SQLite concurrency gate now isolates store creation from its
+  separate contention workload, so it measures both processes entering the
+  new store without a scheduler-dependent false failure.
+
+## [0.4.1] - 2026-08-28
+
+### Changed
+
+- The updater detects Codex and Claude Code independently and keeps every
+  installed host's plugin aligned with the engine it launches.
+- ChronoLoom assigns a port per live session, allowing concurrent agents to
+  open independent viewers without stealing one another's listener.
+- The bundled checkout-latency journey is executable and guarded by CI.
+
+### Fixed
+
+- `kmp_wake` preserves supersession markers when byte budgets trim optional
+  projection detail.
+- `kmp_inspect` and `kmp_trace` reject refs outside the requested about before
+  inspecting or traversing them.
+- Plugin guidance no longer claims the embedded SQLite store is
+  single-writer.
+
 ## [0.4.0] - 2026-08-28
 
 ### Changed
@@ -513,7 +554,9 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/underpass-ai/kmp/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/underpass-ai/kmp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/underpass-ai/kmp/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/underpass-ai/kmp/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/underpass-ai/kmp/compare/v0.3.0...v0.3.1

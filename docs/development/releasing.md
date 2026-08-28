@@ -8,6 +8,7 @@ workflows; released tags and registry artifacts are immutable.
 Keep these in lockstep with the release script:
 
 - workspace and internal crate dependency versions in `Cargo.toml`;
+- a non-empty version section promoted from `[Unreleased]` in `CHANGELOG.md`;
 - Helm `version` and `appVersion`;
 - Codex and Claude plugin manifests;
 - `server.json` and the MCPB manifest.
@@ -16,7 +17,9 @@ Keep these in lockstep with the release script:
 bash scripts/release.sh version X.Y.Z
 ```
 
-The script deliberately clears the MCPB digest to a sentinel. Commit and push
+The script first turns the reviewed `[Unreleased]` entries into a dated
+`[X.Y.Z]` section and refuses to bump anything when those notes are empty.
+It deliberately clears the MCPB digest to a sentinel. Commit and push
 the version branch, then let the release helper dispatch and watch
 `release.yml`, download and verify its twenty-file candidate, stamp the exact
 MCPB digest into `server.json`, and validate the registry metadata:
