@@ -332,12 +332,12 @@ fn tools_list_core() -> Value {
             ),
             temporal_tool_definition(
                 "kmp_goto",
-                "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`.",
+                "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
                 "at",
             ),
             temporal_tool_definition(
                 "kmp_near",
-                "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`.",
+                "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
                 "around",
             ),
             temporal_tool_definition(
@@ -831,7 +831,7 @@ fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> 
         name,
         description,
         input_schema,
-        temporal_output_schema(cursor_key),
+        temporal_output_schema(name, cursor_key),
     )
 }
 
@@ -1153,9 +1153,15 @@ fn ask_output_schema() -> Value {
     output_object(properties)
 }
 
-fn temporal_output_schema(cursor_key: &str) -> Value {
+fn temporal_output_schema(tool_name: &str, cursor_key: &str) -> Value {
+    let cursor_description = match tool_name {
+        "kmp_goto" => "Boundary ref for earlier history. Do not pass it back to `at.ref`; follow top-level `next_action`, which continues with `kmp_rewind`.".to_string(),
+        "kmp_near" => "Boundary ref for a partial neighborhood. Do not pass it back to `around.ref`; follow top-level `next_action`, which names the earlier and later moves.".to_string(),
+        _ => format!("Memory-ref cursor for the next temporal slice; place it in `{cursor_key}.ref` while keeping the other arguments unchanged."),
+    };
     output_object(json!({
         "summary": described("string", "Concise description of the temporal selection."),
+        "next_action": nullable_described("string", "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete."),
         "temporal": nullable_described("object", "Resolved direction, selected clock axis, requested cursor, and resolved coordinate."),
         "coverage": output_object(json!({
             "requested": nullable_described("object", "Dimension selection requested by the caller."),
@@ -1164,10 +1170,7 @@ fn temporal_output_schema(cursor_key: &str) -> Value {
             "dimensions": described("array", "Per-dimension returned counts and presence flags.")
         })),
         "entries": described("array", "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata."),
-        "page": page_output_schema(
-            "temporal entries",
-            &format!("Memory-ref cursor for the next temporal slice; place it in `{cursor_key}.ref` while keeping the other arguments unchanged."),
-        ),
+        "page": page_output_schema("temporal entries", &cursor_description),
         "raw_refs": described("array", "Typed raw audit refs for selected entries when include.raw_refs=true."),
         "proof": proof_output_schema("Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty."),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
@@ -1802,6 +1805,26 @@ mod tests {
         );
         assert_eq!(tools[4]["name"], "kmp_goto");
         assert_eq!(tools[4]["inputSchema"]["required"][1], "at");
+        assert!(tools[4]["description"].as_str().is_some_and(|description| {
+            description.contains("feeding page.next_cursor back to kmp_goto does not paginate")
+        }));
+        assert!(
+            tools[4]["outputSchema"]["properties"]
+                .get("next_action")
+                .is_some()
+        );
+        assert!(
+            tools[4]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
+                ["description"]
+                .as_str()
+                .is_some_and(|description| description.contains("Do not pass it back to `at.ref`"))
+        );
+        assert!(
+            tools[5]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
+                ["description"]
+                .as_str()
+                .is_some_and(|description| description.contains("Do not pass it back to `around.ref`"))
+        );
     }
 
     #[test]

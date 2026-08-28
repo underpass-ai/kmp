@@ -138,8 +138,10 @@ fn array_len(value: &Value, path: &[&str]) -> usize {
 }
 
 pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
+    let next_action = temporal_next_action(&response);
     json!({
         "summary": response.summary,
+        "next_action": next_action,
         "temporal": response
             .temporal
             .as_ref()
@@ -181,6 +183,52 @@ pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
         "quality": optional_quality_json(response.quality.as_ref()),
         "warnings": response.warnings
     })
+}
+
+fn temporal_next_action(response: &TemporalMoveResponse) -> Value {
+    let Some(page) = response
+        .page
+        .as_ref()
+        .filter(|page| page.has_more && !page.next_cursor.trim().is_empty())
+    else {
+        return Value::Null;
+    };
+    let direction = response
+        .temporal
+        .as_ref()
+        .and_then(|state| TemporalDirection::try_from(state.direction).ok());
+    let unchanged = "Keep about, axis, dimensions, include, depth, budget, and limit unchanged.";
+    let action = match direction {
+        Some(TemporalDirection::Goto) => format!(
+            "Continue the earlier history with kmp_rewind using from.ref=\"{}\". {unchanged} Do not pass this cursor back to kmp_goto.",
+            page.next_cursor
+        ),
+        Some(TemporalDirection::Near) => {
+            let first = response
+                .entries
+                .first()
+                .map(|entry| entry.r#ref.as_str())
+                .unwrap_or(page.next_cursor.as_str());
+            let last = response
+                .entries
+                .last()
+                .map(|entry| entry.r#ref.as_str())
+                .unwrap_or(page.next_cursor.as_str());
+            format!(
+                "kmp_near is an anchor, not a self-paginator. Continue earlier with kmp_rewind using from.ref=\"{first}\" and later with kmp_forward using from.ref=\"{last}\". {unchanged} Do not pass page.next_cursor back to kmp_near."
+            )
+        }
+        Some(TemporalDirection::Rewind) => format!(
+            "Continue with kmp_rewind using from.ref=\"{}\". {unchanged}",
+            page.next_cursor
+        ),
+        Some(TemporalDirection::Forward) => format!(
+            "Continue with kmp_forward using from.ref=\"{}\". {unchanged}",
+            page.next_cursor
+        ),
+        _ => return Value::Null,
+    };
+    Value::String(action)
 }
 
 pub(crate) fn trace_from_response(response: TraceResponse) -> Value {
@@ -1202,6 +1250,65 @@ mod tests {
         assert_eq!(value["page"]["total"], 2);
         assert_eq!(value["page"]["has_more"], true);
         assert_eq!(value["page"]["next_cursor"], "claim:target");
+        assert!(
+            value["next_action"]
+                .as_str()
+                .is_some_and(|action| action.contains("kmp_forward")
+                    && action.contains("from.ref=\"claim:target\""))
+        );
+    }
+
+    #[test]
+    fn temporal_next_actions_name_the_tool_that_can_consume_each_cursor() {
+        let response = |direction| TemporalMoveResponse {
+            temporal: Some(TemporalState {
+                direction: direction as i32,
+                ..Default::default()
+            }),
+            entries: vec![
+                TemporalEntry {
+                    r#ref: "claim:first".to_string(),
+                    ..Default::default()
+                },
+                TemporalEntry {
+                    r#ref: "claim:last".to_string(),
+                    ..Default::default()
+                },
+            ],
+            page: Some(kmp_proto::v1beta1::PageInfo {
+                returned: 2,
+                total: 5,
+                has_more: true,
+                next_cursor: "claim:boundary".to_string(),
+            }),
+            ..Default::default()
+        };
+
+        let goto = temporal_from_response(response(TemporalDirection::Goto));
+        let goto_action = goto["next_action"].as_str().expect("goto action");
+        assert!(goto_action.contains("kmp_rewind"));
+        assert!(goto_action.contains("from.ref=\"claim:boundary\""));
+        assert!(goto_action.contains("Do not pass this cursor back to kmp_goto"));
+
+        let near = temporal_from_response(response(TemporalDirection::Near));
+        let near_action = near["next_action"].as_str().expect("near action");
+        assert!(near_action.contains("kmp_rewind using from.ref=\"claim:first\""));
+        assert!(near_action.contains("kmp_forward using from.ref=\"claim:last\""));
+        assert!(near_action.contains("Do not pass page.next_cursor back to kmp_near"));
+
+        for (direction, tool) in [
+            (TemporalDirection::Rewind, "kmp_rewind"),
+            (TemporalDirection::Forward, "kmp_forward"),
+        ] {
+            let value = temporal_from_response(response(direction));
+            let action = value["next_action"].as_str().expect("move action");
+            assert!(action.contains(tool));
+            assert!(action.contains("from.ref=\"claim:boundary\""));
+        }
+
+        let mut complete = response(TemporalDirection::Goto);
+        complete.page.as_mut().expect("page").has_more = false;
+        assert!(temporal_from_response(complete)["next_action"].is_null());
     }
 
     #[test]

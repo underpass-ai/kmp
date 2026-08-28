@@ -920,6 +920,53 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
 }
 
 #[tokio::test]
+async fn partial_goto_and_near_name_the_moves_that_can_continue_them() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+
+    let goto = call(
+        &server,
+        2,
+        "kmp_goto",
+        json!({
+            "about": "question:e3",
+            "at": {"sequence": 2},
+            "limit": {"entries": 1}
+        }),
+    )
+    .await;
+    assert_eq!(goto["page"]["has_more"], true, "{goto}");
+    assert!(
+        goto["next_action"]
+            .as_str()
+            .is_some_and(|action| action.contains("kmp_rewind")
+                && action.contains("Do not pass this cursor back to kmp_goto")),
+        "{goto}"
+    );
+
+    let near = call(
+        &server,
+        3,
+        "kmp_near",
+        json!({
+            "about": "question:e3",
+            "around": {"sequence": 2},
+            "window": {"before_entries": 0, "after_entries": 0}
+        }),
+    )
+    .await;
+    assert_eq!(near["page"]["has_more"], true, "{near}");
+    let action = near["next_action"].as_str().expect("near next action");
+    assert!(action.contains("kmp_rewind"), "{near}");
+    assert!(action.contains("kmp_forward"), "{near}");
+    assert!(
+        action.contains("Do not pass page.next_cursor back to kmp_near"),
+        "{near}"
+    );
+}
+
+#[tokio::test]
 async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
     const TOKEN_LIMIT: u32 = 3_000;
     const EXACT_ANSWER: &str = "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.";
