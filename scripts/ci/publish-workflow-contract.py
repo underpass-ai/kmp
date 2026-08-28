@@ -117,36 +117,84 @@ for clause in (
 marketplace_verifier = ROOT / "scripts/release/verify-marketplace.py"
 with tempfile.TemporaryDirectory() as raw_fixture:
     fixture = pathlib.Path(raw_fixture)
+    current_description = (
+        "Local-first agent memory: teaches the memory moves and opens memory in ChronoLoom."
+    )
     manifests = (
         fixture / ".claude-plugin/plugin.json",
         fixture / ".codex-plugin/plugin.json",
     )
     for manifest in manifests:
         manifest.parent.mkdir(parents=True, exist_ok=True)
-        manifest.write_text(json.dumps({"version": "0.4.2"}), encoding="utf-8")
+        manifest.write_text(
+            json.dumps({"version": "0.4.2", "description": current_description}),
+            encoding="utf-8",
+        )
+    listing = fixture / "marketplace.json"
+    listing.write_text(
+        json.dumps({"plugins": [{"name": "kmp", "description": current_description}]}),
+        encoding="utf-8",
+    )
+
+    verify = [
+        sys.executable,
+        marketplace_verifier,
+        "0.4.2",
+        "--root",
+        fixture,
+        "--listing",
+        listing,
+    ]
 
     subprocess.run(
-        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        verify,
         check=True,
         stdout=subprocess.DEVNULL,
     )
 
-    manifests[0].write_text(json.dumps({"version": "0.4.2+cache.1"}), encoding="utf-8")
+    manifests[0].write_text(
+        json.dumps({"version": "0.4.2+cache.1", "description": current_description}),
+        encoding="utf-8",
+    )
     subprocess.run(
-        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        verify,
         check=True,
         stdout=subprocess.DEVNULL,
     )
 
-    manifests[1].write_text(json.dumps({"version": "0.4.1"}), encoding="utf-8")
+    manifests[1].write_text(
+        json.dumps({"version": "0.4.1", "description": current_description}),
+        encoding="utf-8",
+    )
     stale = subprocess.run(
-        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        verify,
         check=False,
         capture_output=True,
         text=True,
     )
     if stale.returncode == 0 or "merge the underpass-ai/plugins mirror PR" not in stale.stderr:
         raise SystemExit("marketplace verifier accepted a stale host manifest")
+
+    manifests[1].write_text(
+        json.dumps({"version": "0.4.2", "description": current_description}),
+        encoding="utf-8",
+    )
+    listing.write_text(
+        json.dumps(
+            {
+                "plugins": [
+                    {
+                        "name": "kmp",
+                        "description": "Teaches the ten moves and diagnoses setup.",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    stale_copy = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if stale_copy.returncode == 0 or "ChronoLoom" not in stale_copy.stderr:
+        raise SystemExit("marketplace verifier accepted stale whole-surface copy")
 
 print("release trigger contract passed: PR validation, one candidate build, tag-only promotion")
 

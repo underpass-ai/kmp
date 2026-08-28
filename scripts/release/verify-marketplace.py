@@ -13,6 +13,7 @@ import urllib.request
 
 
 DEFAULT_ROOT = "https://raw.githubusercontent.com/underpass-ai/plugins/main/plugins/kmp"
+DEFAULT_LISTING = "https://raw.githubusercontent.com/underpass-ai/plugins/main/.claude-plugin/marketplace.json"
 MANIFESTS = (
     ("Claude", ".claude-plugin/plugin.json"),
     ("Codex", ".codex-plugin/plugin.json"),
@@ -61,8 +62,55 @@ def verify(expected: str, root: str) -> list[tuple[str, str]]:
                 f"kmp@underpass for {host} is {version!r}, not {expected!r}; "
                 "merge the underpass-ai/plugins mirror PR before promoting the release"
             )
+        verify_description(f"{host} marketplace manifest", manifest.get("description"))
         observed.append((host, version))
     return observed
+
+
+def read_listing(source: str) -> dict[str, object]:
+    if source.startswith("https://"):
+        request = urllib.request.Request(
+            source,
+            headers={"User-Agent": "kmp-marketplace-release-gate/1"},
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                payload = response.read()
+        except (OSError, urllib.error.URLError) as error:
+            raise SystemExit(f"could not read public marketplace listing {source}: {error}")
+    else:
+        try:
+            payload = pathlib.Path(source).read_bytes()
+        except OSError as error:
+            raise SystemExit(f"could not read marketplace listing {source}: {error}")
+    try:
+        value = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise SystemExit(f"marketplace listing {source} is not valid JSON: {error}")
+    if not isinstance(value, dict):
+        raise SystemExit(f"marketplace listing {source} must contain a JSON object")
+    return value
+
+
+def verify_description(source: str, description: object) -> None:
+    if not isinstance(description, str) or "ChronoLoom" not in description:
+        raise SystemExit(f"{source} must describe the ChronoLoom view")
+    if "ten moves" in description.lower():
+        raise SystemExit(f"{source} still advertises the retired ten-move whole-surface count")
+
+
+def verify_listing(source: str) -> None:
+    listing = read_listing(source)
+    plugins = listing.get("plugins")
+    if not isinstance(plugins, list):
+        raise SystemExit("marketplace listing has no plugins array")
+    kmp = next(
+        (plugin for plugin in plugins if isinstance(plugin, dict) and plugin.get("name") == "kmp"),
+        None,
+    )
+    if kmp is None:
+        raise SystemExit("marketplace listing has no kmp entry")
+    verify_description("public marketplace kmp entry", kmp.get("description"))
 
 
 def main() -> None:
@@ -73,9 +121,15 @@ def main() -> None:
         default=DEFAULT_ROOT,
         help="public raw plugin root, or a local fixture root for contract tests",
     )
+    parser.add_argument(
+        "--listing",
+        default=DEFAULT_LISTING,
+        help="public marketplace listing URL, or a local fixture for contract tests",
+    )
     args = parser.parse_args()
 
     observed = verify(args.version, args.root)
+    verify_listing(args.listing)
     versions = ", ".join(f"{host}={version}" for host, version in observed)
     print(f"marketplace parity verified: kmp@underpass {versions}")
 

@@ -160,7 +160,7 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:setup` | Installs and wires whatever is missing, then re-checks |
 | `/kmp:doctor` | Diagnoses the setup end to end and names the one thing to fix |
 | `/kmp:info` | What this install is and which memory this project opens — and why that one |
-| `/kmp:moves` | The thirteen-tool surface and when to use each tool, read live when reachable |
+| `/kmp:moves` | The memory and ChronoLoom moves, read from the live surface when reachable |
 | `/kmp:demo` | Loads an example memory — a real incident with a wrong turn in it |
 | `/kmp:catchup` | What changed since you last looked, from the event log |
 | `/kmp:save` | Commits this project's memory to the repository, and shows the diff |

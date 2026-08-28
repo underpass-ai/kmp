@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import sys
+import json
 from collections import deque
 from pathlib import Path
 
@@ -134,11 +135,37 @@ if unknown:
 number_words = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
     "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13,
 }
-for raw in re.findall(r"\b(\d+|zero|one|two|three|four|five|six|seven|eight|nine|ten) (?:MCP )?tools\b", current_text, re.I):
+count_words = "|".join(number_words)
+for raw in re.findall(rf"\b(\d+|{count_words}) (?:public |typed |MCP )?tools\b", current_text, re.I):
     count = int(raw) if raw.isdigit() else number_words[raw.lower()]
     if count != len(tool_names):
         sys.exit(f"documentation contract: docs say {raw} tools, binary source has {len(tool_names)}")
+
+plugin_root = root / "plugins/kmp"
+plugin_files = sorted(
+    path for path in plugin_root.rglob("*")
+    if path.is_file() and path.suffix in {".json", ".md", ".sh"}
+)
+ambiguous = []
+for path in plugin_files:
+    for line_number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        if re.search(r"\bthe ten moves\b|\bten-verb contract\b", line, re.I):
+            ambiguous.append(f"{path.relative_to(root)}:{line_number}")
+if ambiguous:
+    sys.exit(
+        "documentation contract: unqualified ten-move copy hides the three view tools: "
+        + ", ".join(ambiguous)
+    )
+
+for relative in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
+    manifest = json.loads((plugin_root / relative).read_text(encoding="utf-8"))
+    description = manifest.get("description", "")
+    if "ChronoLoom" not in description or re.search(rf"\b(?:\d+|{count_words})[- ](?:tool|move)", description, re.I):
+        sys.exit(
+            f"documentation contract: {relative} must describe ChronoLoom without a drifting tool count"
+        )
 
 counts = {status: sum(value == status for value in classified.values()) for status in ("current", "research", "historical")}
 print(
