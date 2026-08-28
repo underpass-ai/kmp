@@ -27,7 +27,7 @@ you configure one.
 
 | `KMP_MCP_BACKEND` | What it talks to | What it needs |
 |:--|:--|:--|
-| `embedded` (default) | the kernel in this process; fresh stores use shareable SQLite, existing redb stores remain compatible | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
+| `embedded` (default) | the kernel in this process; SQLite memory and quality telemetry, with format-1 reads kept for migration | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
 | `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 

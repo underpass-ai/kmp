@@ -25,6 +25,6 @@ pub use portability::{
 pub use replay::ProjectionRebuildReport;
 pub use store::EmbeddedKernelStore;
 pub use telemetry::{
-    QualityTelemetryRetention, RedbQualityTelemetryReader, RedbQualityTelemetryWriter,
-    quality_telemetry_path,
+    QualityTelemetryRetention, SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter,
+    legacy_quality_telemetry_path, quality_telemetry_path,
 };

@@ -10,35 +10,36 @@ graph reads over materialized adjacency, node detail, the append-only context
 event log, projection runtime state, snapshots and quality telemetry. No
 server, no cluster, no daemon.
 
-## Two engines, one seam
+## One active engine, one compatibility reader
 
-The ports are written once against a small storage seam; the engine behind
-it is chosen when the directory is created and recorded in `FORMAT_VERSION`,
-so a store is never reopened by the wrong one.
+The ports are written once against a small storage seam. Every new directory
+is SQLite and records format 2; the legacy reader exists only so format-1
+memory can still be opened and migrated.
 
 | Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |
-| SQLite, WAL mode | 2 | `store/kernel.sqlite3` | `sqlite` feature; enabled by default in `kmp-mcp` |
-| redb compatibility | 1 | `store/kernel.redb` | always |
+| SQLite, WAL mode | 2 | `store/kernel.sqlite3` | active; always available |
+| legacy redb reader | 1 | `store/kernel.redb` | compatibility and migration only |
 
-SQLite is the engine for a fresh user-facing `kmp-mcp` store: two agent hosts
-can open the same project memory, readers do not block the writer, and a
-second writer waits for the commit lock. The crate keeps SQLite feature-gated
-so a library consumer can still choose a pure-Rust build. Existing redb stores
-remain readable from their format stamp and never change engine implicitly.
-Both engines pass the same conformance and `kill -9` recovery suites; SQLite
-also passes a two-process, no-lost-events scenario. See ADR-018.
+Two agent hosts can open the same project memory, readers do not block the
+writer, and a second writer waits for the commit lock. Existing redb stores
+remain readable from their format stamp and never change engine implicitly;
+the public engine selector cannot create another one. SQLite passes the full
+conformance, `kill -9` recovery and two-process no-lost-events suites. See
+ADR-018.
 
-A binary built without the feature still recognises a SQLite store and
-refuses it by name, saying which feature to enable; a binary older than the
-layout refuses it as "newer than this binary supports". Neither ever opens an
-empty store beside it.
+Quality telemetry uses its own WAL journal at
+`telemetry/quality.sqlite3`. An existing `quality.redb` is imported once,
+bounded by the same retention policy and preserved on disk. redb remains a
+private compatibility dependency for these format-1 reads; no active store,
+telemetry writer or public engine option uses it.
 
 ## What durability means here
 
-Commits are fsync-durable on both engines (redb immediate durability; SQLite
-`synchronous=FULL` in WAL), so the crash contract is explicit: nothing is lost
-beyond the in-flight event, and replay applies nothing twice.
+Canonical memory commits use SQLite `synchronous=FULL` in WAL, so the crash
+contract is explicit: nothing is lost beyond the in-flight event, and replay
+applies nothing twice. The bounded telemetry journal uses periodic FULL
+durability and a final durable checkpoint.
 
 ## Not a special case
 

@@ -12,13 +12,9 @@ categories = ["command-line-utilities", "development-tools"]
 publish = true
 
 [features]
-# The user-facing binary ships able to open both layouts. A fresh store uses
-# SQLite so two editor windows work without rebuilding or setting engine
-# variables; existing redb stores continue to open from their format stamp.
+# Compatibility feature name retained for downstream manifests. SQLite is
+# always present; format-1 redb stores remain readable only for migration.
 default = ["sqlite"]
-# Forward through kmp-embedded only. kmp-adapter-embedded is a dev-dependency
-# here, and a feature that names a dev-dependency builds inside the workspace
-# but fails `cargo install` — which is how a user gets this binary.
 sqlite = ["kmp-embedded/sqlite"]
 
 [dependencies]

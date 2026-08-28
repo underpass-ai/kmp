@@ -25,23 +25,23 @@ if cargo tree -p kmp-embedded --edges normal --prefix none --locked \
   exit 1
 fi
 
-# ADR-018 distribution amendment: the user-facing default carries SQLite,
-# while `--no-default-features` preserves the small pure-Rust fallback.
-SQLITE_DEPS='rusqlite|libsqlite3-sys'
-echo "embedded-gates: checking the shipped default carries the shared engine"
-for dep in rusqlite libsqlite3-sys; do
-  if ! cargo tree -p kmp-mcp --edges normal --prefix none --locked \
-    | grep -E "^${dep} v" >/dev/null; then
-    echo "embedded-gates: default kmp-mcp is missing ${dep}" >&2
-    exit 1
+# ADR-018 distribution amendment: every installable MCP binary carries SQLite.
+# Feature selection may remove optional product surfaces, but it must never
+# silently restore redb as the active store.
+for feature_args in "" "--no-default-features"; do
+  label="default"
+  if [ -n "${feature_args}" ]; then
+    label="--no-default-features"
   fi
+  echo "embedded-gates: checking ${label} kmp-mcp carries SQLite"
+  for dep in rusqlite libsqlite3-sys; do
+    if ! cargo tree -p kmp-mcp ${feature_args} --edges normal --prefix none --locked \
+      | grep -E "^${dep} v" >/dev/null; then
+      echo "embedded-gates: ${label} kmp-mcp is missing ${dep}" >&2
+      exit 1
+    fi
+  done
 done
-echo "embedded-gates: checking the pure-Rust fallback remains available"
-if cargo tree -p kmp-mcp --no-default-features --edges normal --prefix none --locked \
-  | grep -E "^(${SQLITE_DEPS}) v"; then
-  echo "embedded-gates: SQLite leaked into --no-default-features" >&2
-  exit 1
-fi
 
 echo "embedded-gates: building release binary"
 cargo build --release -p kmp-mcp --locked
@@ -49,8 +49,7 @@ strip -o target/release/kmp-mcp.gates-stripped target/release/kmp-mcp
 SIZE="$(stat -c%s target/release/kmp-mcp.gates-stripped)"
 # SQLite, cl100k response accounting and the self-contained ChronoLoom MCP App
 # are intentional shipped product dependencies. Keep a recorded ceiling above
-# their CI baseline while the pure-Rust fallback and forbidden infrastructure
-# graph stay gated above.
+# their CI baseline while the forbidden infrastructure graph stays gated above.
 BUDGET=$((20 * 1024 * 1024))
 echo "embedded-gates: stripped binary ${SIZE} bytes (budget ${BUDGET})"
 if [ "${SIZE}" -gt "${BUDGET}" ]; then
