@@ -3,7 +3,7 @@
   "name": "io.github.underpass-ai/kmp",
   "title": "KMP",
   "description": "Local-first agent memory that preserves what happened, when and why",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "websiteUrl": "https://github.com/underpass-ai/kmp",
   "repository": {
     "url": "https://github.com/underpass-ai/kmp",
@@ -12,8 +12,8 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.3.0/kmp-mcp-v0.3.0.mcpb",
-      "fileSha256": "7d2be3b5ad98bbdcb3402a3ea52e6d05eb1421ace07169ffd49b69829bf90b4e",
+      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.3.1/kmp-mcp-v0.3.1.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
       "environmentVariables": [
         {
           "name": "KMP_MCP_DATA_DIR",
@@ -41,7 +41,7 @@
     {
       "registryType": "cargo",
       "identifier": "kmp-mcp",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "environmentVariables": [
         {
           "name": "KMP_MCP_DATA_DIR",

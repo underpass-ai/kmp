@@ -9,6 +9,20 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-28
+
+### Fixed
+
+- Uninstall rescue files now include a stable full-path identity, so memories
+  in stores with the same directory name cannot overwrite one another before
+  both stores are removed.
+- Concurrent memory writes now return a structured, retryable conflict that
+  tells agents to rebase and replay the same logical write with the same
+  idempotency key, while keeping reused-key content mismatches non-retryable.
+- ChronoLoom chooses semantic zoom from actual marks per lane as well as time
+  per pixel, opening dense memories in Atlas while keeping sparse long windows
+  at a useful level of detail.
+
 ## [0.3.0] - 2026-08-28
 
 ### Added
@@ -450,7 +464,9 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.2.10...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/underpass-ai/kmp/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/underpass-ai/kmp/compare/v0.2.10...v0.3.0
 [0.2.10]: https://github.com/underpass-ai/kmp/compare/v0.2.9...v0.2.10
 [0.2.1]: https://github.com/underpass-ai/kmp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/underpass-ai/kmp/compare/v0.1.18...v0.2.0
