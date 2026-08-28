@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use kmp_application::MemoryAnswerPolicy;
 use kmp_domain::{KmpBundle, RelationSemanticClass};
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
+use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
@@ -630,7 +631,7 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
 
     let main_clause = question
         .split(|character: char| !character.is_alphanumeric())
-        .map(str::to_lowercase)
+        .map(fold_search_term)
         .take_while(|token| !CONTEXT_BOUNDARIES.contains(&token.as_str()))
         .collect::<Vec<_>>()
         .join(" ");
@@ -656,13 +657,31 @@ fn informative_terms(value: &str) -> BTreeSet<String> {
     ];
     value
         .split(|character: char| !character.is_alphanumeric())
-        .map(str::to_lowercase)
+        .map(fold_search_term)
         .filter(|term| {
             !term.is_empty()
                 && !STOP_WORDS.contains(&term.as_str())
                 && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
         })
         .collect()
+}
+
+/// Produces the comparison form only. Stored evidence and returned query text
+/// stay byte-exact; the ranker indexes this folded sibling so a phone or
+/// foreign keyboard does not turn `válvula`, `arrêt`, `refrigeração`,
+/// `Straße`, or `Kühlventil` into an unreachable memory.
+fn fold_search_term(value: &str) -> String {
+    let mut folded = String::with_capacity(value.len());
+    for character in value
+        .nfkd()
+        .filter(|character| !is_combining_mark(*character))
+    {
+        match character {
+            'ß' | 'ẞ' => folded.push_str("ss"),
+            _ => folded.extend(character.to_lowercase()),
+        }
+    }
+    folded
 }
 
 fn terms_match(left: &str, right: &str) -> bool {
@@ -1236,6 +1255,35 @@ mod tests {
     fn shared_prefixes_do_not_create_semantic_matches() {
         assert!(!terms_match("prefix", "prefer"));
         assert!(!terms_match("deliberate", "delivered"));
+    }
+
+    #[test]
+    fn diacritic_free_queries_retrieve_supported_languages_without_rewriting_evidence() {
+        let ranker = AnswerEvidenceRanker::default();
+        for (query, stored) in [
+            ("valvula", "La válvula falló por sedimentación."),
+            ("refrigeracao", "A refrigeração parou."),
+            ("calcificacao", "A calcificação bloqueou a válvula."),
+            ("manutencao", "A manutenção terminou."),
+            ("arret", "L'arrêt venait du dépôt."),
+            ("strasse", "Die Straße blieb gesperrt."),
+            ("kuhlventil", "Das Kühlventil wurde ersetzt."),
+        ] {
+            let ranked = ranker.rank(
+                query,
+                MemoryAnswerPolicy::EvidenceOrUnknown,
+                vec![ev(stored)],
+            );
+            assert_eq!(ranked.len(), 1, "{query} did not retrieve {stored}");
+            assert_eq!(ranked[0].text, stored, "stored evidence was rewritten");
+            assert_eq!(
+                ranker.matched_query_terms(query, &ranked),
+                vec![query.to_string()]
+            );
+        }
+
+        assert_eq!(informative_terms("VÁLVULA"), informative_terms("valvula"));
+        assert_eq!(fold_search_term("Straße"), "strasse");
     }
 
     #[test]

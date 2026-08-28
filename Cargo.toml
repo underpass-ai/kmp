@@ -81,6 +81,7 @@ tokio-stream = { version = "0.1.18", features = ["net"] }
 tiktoken-rs = "0.9.1"
 tonic = { version = "0.12.3", features = ["transport", "tls", "tls-webpki-roots"] }
 tonic-build = "0.12.3"
+unicode-normalization = "0.1.25"
 opentelemetry = "0.32.0"
 opentelemetry-otlp = { version = "0.32.0", features = ["grpc-tonic", "metrics", "tls"] }
 opentelemetry_sdk = { version = "0.32.1", features = ["rt-tokio"] }

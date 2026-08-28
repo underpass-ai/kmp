@@ -27,6 +27,9 @@ Detailed notes from the early release cycle are preserved in the
   tier behind the stable core.
 - Ask fallback configuration now rejects Chinese, Japanese, and Thai language
   tags instead of accepting retries that word-based retrieval cannot serve.
+- Ask now folds diacritics for matching in German, French, Spanish, and
+  Portuguese, including German `ß` → `ss`, while returning stored evidence
+  byte-for-byte.
 
 ## [0.3.0] - 2026-08-28
 

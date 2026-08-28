@@ -631,6 +631,67 @@ fn language_fallback_seed_arguments() -> Value {
     })
 }
 
+fn diacritic_recall_seed_arguments() -> Value {
+    let records = [
+        (
+            "es",
+            "La válvula falló por sedimentación.",
+            "2026-08-24T11:00:00Z",
+        ),
+        (
+            "pt",
+            "A refrigeração parou por calcificação.",
+            "2026-08-24T11:00:01Z",
+        ),
+        ("fr", "L'arrêt venait du dépôt.", "2026-08-24T11:00:02Z"),
+        (
+            "de",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+            "2026-08-24T11:00:03Z",
+        ),
+    ];
+    let entries = records
+        .iter()
+        .enumerate()
+        .map(|(index, (language, text, occurred_at))| {
+            json!({
+                "id": format!("incident:diacritic:{language}"),
+                "kind": "incident",
+                "text": text,
+                "metadata": {"language": language},
+                "coordinates": [{
+                    "dimension": "work",
+                    "scope_id": "work:diacritic-recall",
+                    "occurred_at": occurred_at,
+                    "sequence": index + 1
+                }]
+            })
+        })
+        .collect::<Vec<_>>();
+    let evidence = records
+        .iter()
+        .map(|(language, text, _)| {
+            json!({
+                "id": format!("evidence:diacritic:{language}"),
+                "supports": [format!("incident:diacritic:{language}")],
+                "text": text,
+                "source": format!("{language} incident fixture"),
+                "metadata": {"language": language}
+            })
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "about": "project:diacritic-recall",
+        "idempotency_key": "ingest:diacritic-recall-regression",
+        "memory": {
+            "dimensions": [{"id": "work:diacritic-recall", "kind": "work"}],
+            "entries": entries,
+            "relations": [],
+            "evidence": evidence
+        }
+    })
+}
+
 #[tokio::test]
 async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it() {
     const TEXT: &str = "We chose redb because one writer matched one agent per project.";
@@ -684,6 +745,52 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
             .any(|relation| relation["why"] == WHY),
         "{english}"
     );
+}
+
+#[tokio::test]
+async fn ask_folds_diacritics_without_rewriting_multilingual_evidence() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", diacritic_recall_seed_arguments()).await;
+
+    for (index, (query, stored)) in [
+        ("valvula", "La válvula falló por sedimentación."),
+        ("refrigeracao", "A refrigeração parou por calcificação."),
+        ("arret", "L'arrêt venait du dépôt."),
+        (
+            "strasse",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+        ),
+        (
+            "kuhlventil",
+            "Die Straße blieb gesperrt; das Kühlventil wurde ersetzt.",
+        ),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let answer = call(
+            &server,
+            index as u64 + 2,
+            "kmp_ask",
+            json!({
+                "about": "project:diacritic-recall",
+                "question": query,
+                "answer_policy": "evidence_or_unknown",
+                "budget": {"detail": "full", "max_bytes": 20_000}
+            }),
+        )
+        .await;
+        assert_ne!(answer["answer"], "UNKNOWN", "{query}: {answer}");
+        assert!(
+            answer["proof"]["evidence"]
+                .as_array()
+                .expect("answer evidence")
+                .iter()
+                .any(|evidence| evidence["text"] == stored),
+            "{query} did not return byte-exact evidence: {answer}"
+        );
+    }
 }
 
 #[tokio::test]
