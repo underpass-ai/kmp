@@ -39,6 +39,7 @@ repository = "https://github.com/underpass-ai/kmp"
 [workspace.dependencies]
 axum = "0.8.9"
 base64 = "0.22.1"
+getrandom = "0.2.17"
 jsonwebtoken = { version = "11.0.0", default-features = false, features = ["aws_lc_rs"] }
 neo4rs = "0.8.0"
 # Internal crates. The ones carrying a `version` are the twelve published to

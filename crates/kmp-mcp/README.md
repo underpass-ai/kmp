@@ -2,7 +2,8 @@
 
 [KMP](https://github.com/underpass-ai/kmp) is local-first agent memory that
 preserves what happened, when and why. `kmp-mcp` gives an agent that memory as
-ten typed MCP tools.
+thirteen typed MCP tools: ten operate memory and three move the read-only view
+a person is looking at.
 
 - MCP Registry name: `mcp-name: io.github.underpass-ai/kmp`
 
@@ -32,15 +33,29 @@ you configure one.
 
 `embedded` is the one to start with: no server, no cluster, memory that
 survives the session on your own disk. It also brings its own
-[viewer](https://crates.io/crates/kmp-viewer) up at `http://127.0.0.1:7317/`
-over that same kernel — your memory as a graph, read-only, loopback only, no
-flag required. `KMP_VIEWER_ADDR` moves it; `off` declines it.
+[ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
+`http://127.0.0.1:7317/` over that same kernel — your memory as a graph,
+read-only and loopback only, no flag required. The process prints a random
+one-session capability link; the browser exchanges it for an HttpOnly cookie
+and removes the token from its URL. `KMP_VIEWER_ADDR` moves it; `off` declines
+it.
+
+Ask Codex or Claude to **“show me the memory behind this decision.”** The agent
+can open ChronoLoom at the relevant moment, select the evidence and light up
+the proof path. It declares semantic intent through `kmp_view_apply_intent`;
+the browser follows by long-poll, with the move explained and undoable.
+
+![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](https://raw.githubusercontent.com/underpass-ai/kmp/v0.3.0/docs/assets/kmp-agent-loom.gif)
+
+**The view is shared:** the agent can steer ChronoLoom for you; you can click,
+filter, pan, undo or take control yourself at any time.
 
 Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
-  `kmp_trace`, and `kmp_inspect`;
+  `kmp_trace`, `kmp_inspect`, `kmp_view_open`, `kmp_view_apply_intent`, and
+  `kmp_view_get_state`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
 - can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;

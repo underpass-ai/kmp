@@ -90,9 +90,12 @@ was written, so treat it with the same confidentiality as the store.
 
 ## Viewer and local telemetry
 
-An embedded session attempts to serve a read-only viewer on
-`http://127.0.0.1:7317/`. It binds loopback only. Set `KMP_VIEWER_ADDR` to a
-different loopback address or `off` to disable it.
+An embedded session attempts to serve a read-only viewer rooted at
+`http://127.0.0.1:7317/`. It binds loopback only and prints a random,
+per-session capability link. Opening that link exchanges the capability for
+an HttpOnly, SameSite cookie and redirects to the clean URL; requests from
+other local processes receive `401`. Set `KMP_VIEWER_ADDR` to a different
+loopback address or `off` to disable it.
 
 Logs and the bounded quality journal live inside the data directory. They are
 local diagnostics, not remote telemetry. KMP does not upload memory to

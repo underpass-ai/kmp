@@ -18,6 +18,7 @@ pub(crate) struct HttpRequest {
     pub(crate) path: String,
     pub(crate) query: BTreeMap<String, String>,
     pub(crate) host: Option<String>,
+    pub(crate) cookie: Option<String>,
 }
 
 impl HttpRequest {
@@ -27,6 +28,15 @@ impl HttpRequest {
             .map(String::as_str)
             .filter(|value| !value.trim().is_empty())
     }
+
+    pub(crate) fn cookie(&self, name: &str) -> Option<&str> {
+        self.cookie.as_deref().and_then(|header| {
+            header.split(';').find_map(|pair| {
+                let (candidate, value) = pair.trim().split_once('=')?;
+                (candidate == name).then_some(value)
+            })
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -34,6 +44,7 @@ pub(crate) struct HttpResponse {
     pub(crate) status: u16,
     pub(crate) content_type: &'static str,
     pub(crate) body: Vec<u8>,
+    pub(crate) headers: Vec<(&'static str, String)>,
     /// A HEAD answer: the same head a GET would send, with the body withheld.
     /// The body stays here so `Content-Length` keeps describing what a GET
     /// would return, which is what makes the two answers agree.
@@ -45,6 +56,11 @@ impl HttpResponse {
         self.omit_body = true;
         self
     }
+
+    pub(crate) fn with_header(mut self, name: &'static str, value: impl Into<String>) -> Self {
+        self.headers.push((name, value.into()));
+        self
+    }
 }
 
 impl HttpResponse {
@@ -53,6 +69,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/html; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            headers: Vec::new(),
             omit_body: false,
         }
     }
@@ -62,6 +79,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/css; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            headers: Vec::new(),
             omit_body: false,
         }
     }
@@ -71,6 +89,7 @@ impl HttpResponse {
             status: 200,
             content_type: "text/javascript; charset=utf-8",
             body: body.as_bytes().to_vec(),
+            headers: Vec::new(),
             omit_body: false,
         }
     }
@@ -81,6 +100,7 @@ impl HttpResponse {
                 status: 200,
                 content_type: "application/json",
                 body,
+                headers: Vec::new(),
                 omit_body: false,
             },
             Err(error) => Self::error(500, &format!("response serialization failed: {error}")),
@@ -93,6 +113,17 @@ impl HttpResponse {
             status,
             content_type: "application/json",
             body: body.to_string().into_bytes(),
+            headers: Vec::new(),
+            omit_body: false,
+        }
+    }
+
+    pub(crate) fn redirect(location: &'static str) -> Self {
+        Self {
+            status: 303,
+            content_type: "text/plain; charset=utf-8",
+            body: Vec::new(),
+            headers: vec![("Location", location.to_string())],
             omit_body: false,
         }
     }
@@ -133,14 +164,17 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
     };
 
     let mut host = None;
+    let mut cookies = Vec::new();
     for line in lines {
         if line.is_empty() {
             break;
         }
-        if let Some((name, value)) = line.split_once(':')
-            && name.trim().eq_ignore_ascii_case("host")
-        {
-            host = Some(value.trim().to_string());
+        if let Some((name, value)) = line.split_once(':') {
+            if name.trim().eq_ignore_ascii_case("host") {
+                host = Some(value.trim().to_string());
+            } else if name.trim().eq_ignore_ascii_case("cookie") {
+                cookies.push(value.trim());
+            }
         }
     }
 
@@ -149,6 +183,7 @@ pub(crate) async fn read_request(stream: &mut TcpStream) -> Result<HttpRequest, 
         path: percent_decode(path),
         query: parse_query(raw_query),
         host,
+        cookie: (!cookies.is_empty()).then(|| cookies.join("; ")),
     })
 }
 
@@ -160,7 +195,7 @@ pub(crate) async fn write_response(
     response: &HttpResponse,
 ) -> std::io::Result<()> {
     let reason = reason_phrase(response.status);
-    let head = format!(
+    let mut head = format!(
         "HTTP/1.1 {} {}\r\n\
          Content-Type: {}\r\n\
          Content-Length: {}\r\n\
@@ -169,13 +204,19 @@ pub(crate) async fn write_response(
          X-Content-Type-Options: nosniff\r\n\
          Referrer-Policy: no-referrer\r\n\
          Content-Security-Policy: default-src 'none'; script-src 'self'; \
-         style-src 'self'; connect-src 'self'; img-src 'self' data:\r\n\
-         \r\n",
+         style-src 'self'; connect-src 'self'; img-src 'self' data:\r\n",
         response.status,
         reason,
         response.content_type,
         response.body.len(),
     );
+    for (name, value) in &response.headers {
+        head.push_str(name);
+        head.push_str(": ");
+        head.push_str(value);
+        head.push_str("\r\n");
+    }
+    head.push_str("\r\n");
     stream.write_all(head.as_bytes()).await?;
     if !response.omit_body {
         stream.write_all(&response.body).await?;
@@ -263,7 +304,9 @@ fn hex_value(byte: u8) -> Option<u8> {
 fn reason_phrase(status: u16) -> &'static str {
     match status {
         200 => "OK",
+        303 => "See Other",
         400 => "Bad Request",
+        401 => "Unauthorized",
         403 => "Forbidden",
         404 => "Not Found",
         405 => "Method Not Allowed",

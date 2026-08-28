@@ -589,6 +589,8 @@ async fn kmp_write_memory_commit_uses_canonical_ingest_backend_path() {
 /// repeated on every write is a link nobody reads.
 #[tokio::test]
 async fn the_first_write_of_a_session_hands_over_the_viewer_link_and_the_second_does_not() {
+    const VIEWER_URL: &str =
+        "http://127.0.0.1:7317/?k=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     let calls = Arc::new(Mutex::new(Vec::new()));
     let server = KernelMcpServer::with_backend(StubBackend {
         calls: Arc::clone(&calls),
@@ -596,16 +598,16 @@ async fn the_first_write_of_a_session_hands_over_the_viewer_link_and_the_second_
         grpc_tls_mode_name: "disabled",
         response: Ok(stub_ingest_response()),
     })
-    .serving_viewer_at("http://127.0.0.1:7317/");
+    .serving_viewer_at(VIEWER_URL);
 
     let first = handle_with(&server, write_request(51)).await;
     let viewer = &first["result"]["structuredContent"]["viewer"];
-    assert_eq!(viewer["url"], "http://127.0.0.1:7317/");
+    assert_eq!(viewer["url"], VIEWER_URL);
     assert!(
         viewer["tell_the_user"]
             .as_str()
             .expect("the invitation is written for a human")
-            .contains("http://127.0.0.1:7317/"),
+            .contains(VIEWER_URL),
         "the sentence must carry the link, not just the sibling field"
     );
 

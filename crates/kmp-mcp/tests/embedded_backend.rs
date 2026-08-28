@@ -1459,6 +1459,40 @@ async fn view_intents_resolve_projection_names_against_the_mounted_store_and_rea
     )
     .await;
     assert_eq!(backwards["error"]["code"], "invalid_argument");
+
+    let nonexistent_zoom = call(
+        &server,
+        6,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "projection-validation",
+            "idempotency_key": "projection-validation-4",
+            "projection": {"semantic_zoom": "evidence"}
+        }),
+    )
+    .await;
+    assert_eq!(nonexistent_zoom["error"]["code"], "invalid_argument");
+
+    let explicit_trace_window = call(
+        &server,
+        7,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "projection-validation",
+            "idempotency_key": "projection-validation-5",
+            "focus": {"time_range": {
+                "axis": "occurred",
+                "from": "2026-08-27T00:00:00Z",
+                "to": "2026-08-28T00:00:00Z"
+            }},
+            "trace": {"from": "claim:e3", "to": "claim:e3-detail"}
+        }),
+    )
+    .await;
+    assert_eq!(
+        explicit_trace_window["unhonored"],
+        json!(["trace framing (explicit focus.time_range has priority)"])
+    );
 }
 
 #[tokio::test]

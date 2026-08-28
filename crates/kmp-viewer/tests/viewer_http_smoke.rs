@@ -2,7 +2,8 @@
 //! through the same facade the agent uses, and every viewer route exercised
 //! over real HTTP on an ephemeral loopback port.
 
-use std::sync::Arc;
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use kmp_application::{
     MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
@@ -12,6 +13,8 @@ use kmp_embedded::EmbeddedKernel;
 use kmp_viewer::{MemoryViewerServer, bind_loopback};
 
 const ABOUT: &str = "project:viewer-smoke";
+
+static AUTH_COOKIES: OnceLock<Mutex<BTreeMap<u16, String>>> = OnceLock::new();
 
 fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryData {
     MemoryEntryData {
@@ -83,13 +86,51 @@ fn corpus() -> MemoryIngestCommand {
     }
 }
 
+async fn authorize(port: u16, invitation: &str) {
+    let origin = format!("http://127.0.0.1:{port}");
+    let path = invitation
+        .strip_prefix(&origin)
+        .expect("invitation belongs to this listener");
+    let raw = raw_request(
+        port,
+        &format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"),
+    )
+    .await;
+    assert!(
+        raw.starts_with("HTTP/1.1 303"),
+        "bootstrap redirects: {raw}"
+    );
+    let cookie = raw
+        .lines()
+        .find_map(|line| line.strip_prefix("Set-Cookie: "))
+        .and_then(|value| value.split(';').next())
+        .expect("bootstrap sets a cookie")
+        .to_string();
+    AUTH_COOKIES
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
+        .lock()
+        .expect("test auth registry")
+        .insert(port, cookie);
+}
+
+fn auth_cookie(port: u16) -> String {
+    AUTH_COOKIES
+        .get_or_init(|| Mutex::new(BTreeMap::new()))
+        .lock()
+        .expect("test auth registry")
+        .get(&port)
+        .cloned()
+        .expect("viewer was bootstrapped")
+}
+
 async fn get(port: u16, path_and_query: &str) -> (u16, serde_json::Value) {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
         .await
         .expect("connect to viewer");
     let request = format!(
-        "GET {path_and_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        "GET {path_and_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nConnection: close\r\n\r\n",
+        auth_cookie(port)
     );
     stream
         .write_all(request.as_bytes())
@@ -119,13 +160,18 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         .await
         .expect("memory ingests");
 
-    let viewer = Arc::new(MemoryViewerServer::new(
-        kernel.service(),
-        Some(data_dir.path().display().to_string()),
-    ));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     let (status, info) = get(port, "/api/info").await;
     assert_eq!(status, 200);
@@ -285,13 +331,18 @@ async fn projection_compares_rfc3339_ranges_with_persisted_sortable_clocks() {
         .await
         .expect("memory ingests");
 
-    let viewer = Arc::new(MemoryViewerServer::new(
-        kernel.service(),
-        Some(data_dir.path().display().to_string()),
-    ));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     let (status, atlas) = get(port, &format!("/api/projection?about={}", urlencode(ABOUT))).await;
     assert_eq!(status, 200, "default visual projection failed: {atlas}");
@@ -344,13 +395,18 @@ async fn coarse_kind_totals_count_entries_once_across_multiple_lanes() {
         .await
         .expect("memory ingests");
 
-    let viewer = Arc::new(MemoryViewerServer::new(
-        kernel.service(),
-        Some(data_dir.path().display().to_string()),
-    ));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     let (status, episode) = get(
         port,
@@ -380,7 +436,9 @@ async fn non_local_hosts_are_refused() {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
-    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
     tokio::spawn(viewer.serve(listener));
@@ -402,6 +460,103 @@ async fn non_local_hosts_are_refused() {
     );
 }
 
+#[tokio::test]
+async fn a_session_capability_guards_memory_and_shared_view_state() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    kernel
+        .service()
+        .ingest(corpus())
+        .await
+        .expect("memory ingests");
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).expect("viewer creates capability"),
+    );
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+    tokio::spawn(viewer.serve(listener));
+
+    let unauthenticated_read = raw_request(
+        port,
+        &format!("GET /api/abouts HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"),
+    )
+    .await;
+    assert!(
+        unauthenticated_read.starts_with("HTTP/1.1 401"),
+        "a local socket alone cannot read memory: {unauthenticated_read}"
+    );
+
+    let view_id = format!("unauthorized-{port}");
+    let unauthenticated_move = raw_request(
+        port,
+        &format!(
+            "POST /api/view/open?id={view_id}&about={ABOUT} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(
+        unauthenticated_move.starts_with("HTTP/1.1 401"),
+        "a local socket alone cannot move the view: {unauthenticated_move}"
+    );
+
+    let wrong_capability = raw_request(
+        port,
+        &format!(
+            "GET /?k=not-the-capability HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(wrong_capability.starts_with("HTTP/1.1 401"));
+
+    let origin = format!("http://127.0.0.1:{port}");
+    let bootstrap_path = invitation
+        .strip_prefix(&origin)
+        .expect("invitation belongs to listener");
+    let bootstrap = raw_request(
+        port,
+        &format!(
+            "GET {bootstrap_path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(bootstrap.starts_with("HTTP/1.1 303"), "{bootstrap}");
+    assert!(bootstrap.contains("Location: /\r\n"));
+    let set_cookie = bootstrap
+        .lines()
+        .find_map(|line| line.strip_prefix("Set-Cookie: "))
+        .expect("bootstrap sets the capability cookie");
+    assert!(set_cookie.contains("; HttpOnly; SameSite=Strict; Path=/"));
+    let cookie = set_cookie
+        .split(';')
+        .next()
+        .expect("cookie pair is present");
+
+    let authorized_read = raw_request(
+        port,
+        &format!(
+            "GET /api/abouts HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(
+        authorized_read.starts_with("HTTP/1.1 200"),
+        "the browser cookie opens the memory: {authorized_read}"
+    );
+
+    let untouched_view = raw_request(
+        port,
+        &format!(
+            "GET /api/view?id={view_id} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {cookie}\r\nConnection: close\r\n\r\n"
+        ),
+    )
+    .await;
+    assert!(
+        untouched_view.starts_with("HTTP/1.1 404"),
+        "the refused POST created no view: {untouched_view}"
+    );
+}
+
 #[test]
 fn loopback_binding_refuses_public_addresses() {
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -419,13 +574,17 @@ async fn observability_unavailability_reports_its_actual_reason() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
     let viewer = Arc::new(
-        MemoryViewerServer::new(kernel.service(), None).with_observability_unavailable(
-            "the store's quality telemetry is held by another process",
-        ),
+        MemoryViewerServer::new(kernel.service(), None)
+            .expect("viewer creates capability")
+            .with_observability_unavailable(
+                "the store's quality telemetry is held by another process",
+            ),
     );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     let (status, body) = get(port, "/api/observability?about=project:test").await;
     assert_eq!(status, 503);
@@ -453,13 +612,18 @@ async fn the_cursors_the_ui_issues_return_the_entries_they_should() {
         .await
         .expect("memory ingests");
 
-    let viewer = Arc::new(MemoryViewerServer::new(
-        kernel.service(),
-        Some(data_dir.path().display().to_string()),
-    ));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     // What Replay asks for: `near`, wide in both directions, anchored on a
     // time. It needs nothing selected and must return the whole line.
@@ -550,13 +714,18 @@ async fn a_parameter_that_is_not_a_number_is_refused_rather_than_defaulted() {
         .await
         .expect("memory ingests");
 
-    let viewer = Arc::new(MemoryViewerServer::new(
-        kernel.service(),
-        Some(data_dir.path().display().to_string()),
-    ));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     for (query, key) in [
         ("depth=abc", "depth"),
@@ -594,13 +763,26 @@ async fn a_parameter_that_is_not_a_number_is_refused_rather_than_defaulted() {
 async fn head_answers_the_same_head_as_get_and_no_body() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
-    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
-    let head = raw_request(port, "HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
-    let get_response = raw_request(port, "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
+    let cookie = auth_cookie(port);
+    let head = raw_request(
+        port,
+        &format!("HEAD / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+    )
+    .await;
+    let get_response = raw_request(
+        port,
+        &format!("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+    )
+    .await;
 
     assert!(head.starts_with("HTTP/1.1 200"), "HEAD refused: {head}");
     let head_length = content_length(&head);
@@ -614,7 +796,11 @@ async fn head_answers_the_same_head_as_get_and_no_body() {
     assert!(body.is_empty(), "HEAD sent a body: {body:?}");
 
     // Everything else is still refused.
-    let post = raw_request(port, "POST / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").await;
+    let post = raw_request(
+        port,
+        &format!("POST / HTTP/1.1\r\nHost: 127.0.0.1\r\nCookie: {cookie}\r\n\r\n"),
+    )
+    .await;
     assert!(post.starts_with("HTTP/1.1 405"), "POST allowed: {post}");
 }
 
@@ -632,10 +818,14 @@ fn content_length(response: &str) -> usize {
 async fn a_get_cannot_move_the_view() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
-    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None));
+    let viewer = Arc::new(
+        MemoryViewerServer::new(kernel.service(), None).expect("viewer creates capability"),
+    );
     let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
     let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
     tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
 
     let (status, opened) = post(port, "/api/view/open?id=safety&about=about:anything").await;
     assert_eq!(status, 200, "opening a view is a POST: {opened}");
@@ -658,7 +848,8 @@ async fn post(port: u16, path_and_query: &str) -> (u16, serde_json::Value) {
     let raw = raw_request(
         port,
         &format!(
-            "POST {path_and_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n"
+            "POST {path_and_query} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nCookie: {}\r\nConnection: close\r\n\r\n",
+            auth_cookie(port)
         ),
     )
     .await;

@@ -15,7 +15,7 @@ flowchart TB
 
     M -->|embedded calls| EK[Embedded kernel]
     EK --> ES[(SQLite)]
-    EK --> V[Loopback read-only viewer]
+    EK --> V[Capability-guarded loopback viewer]
 
     M -->|remote gRPC| KS[KernelMemoryService]
     GW[Optional Streamable HTTP MCP gateway] -->|gRPC mTLS| KS
@@ -135,7 +135,7 @@ explicit combinations fail instead of silently opening a different store.
 | MCP to kernel | In-process call | gRPC with optional TLS/mTLS |
 | User authorization | Agent host and local filesystem policy | OIDC scopes/resource grants at HTTP gateway; operator policy for direct gRPC |
 | Persistence | Local filesystem | Neo4j, Valkey and NATS credentials and network policy |
-| Human inspection | Loopback viewer | Operator-selected interfaces and telemetry |
+| Human inspection | Loopback viewer with a random, process-lifetime capability | Operator-selected interfaces and telemetry |
 | Failure mode | Store, format or lock errors | Network, identity, storage and projection failures in addition to domain errors |
 
 ## Deployment views

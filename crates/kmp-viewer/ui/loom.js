@@ -305,7 +305,7 @@ async function loadProjection() {
   try {
     const projection = await fetchProjection(
       model.about,
-      null,
+      view.clock,
       new Date(Math.round(view.t0)).toISOString(),
       new Date(Math.round(view.t1)).toISOString(),
       lod,
@@ -340,7 +340,7 @@ async function loadAbout(about, announce = true) {
     // visible range and the rung the screen can actually display.
     const probe = await fetchProjection(
       about,
-      null,
+      view.clock,
       EXTENT_FROM,
       EXTENT_TO,
       "episode",
@@ -1778,13 +1778,17 @@ $("d-clear-trace").addEventListener("click", () => {
   requestDraw();
 });
 
-async function runTrace() {
+async function runTrace({ framePath = false, preserveWindow = false } = {}) {
   try {
-    const missingEndpoint = [tracePick.from, tracePick.to].find(
-      (ref) => ref && !model.byRef.has(ref)
-    );
-    if (missingEndpoint) await revealEntryAtMoment(missingEndpoint);
     const trace = await api("/api/trace", { from: tracePick.from, to: tracePick.to });
+    if (framePath) {
+      await frameRefs(trace.nodes.map((node) => node.id));
+    } else if (!preserveWindow) {
+      const missingEndpoint = [tracePick.from, tracePick.to].find(
+        (ref) => ref && !model.byRef.has(ref)
+      );
+      if (missingEndpoint) await revealEntryAtMoment(missingEndpoint);
+    }
     view.trace = {
       refs: new Set(trace.nodes.map((n) => n.id)),
       edgeKeys: new Set(trace.edges.map((e) => `${e.source} ${e.rel} ${e.target}`)),
@@ -2057,8 +2061,9 @@ async function applyAgentState(state) {
 
     const range = state.focus && state.focus.time_range;
     const refs = (state.focus && state.focus.refs) || [];
+    const explicitRange = Boolean(range && range.from && range.to);
     let framed = false;
-    if (range && range.from && range.to) {
+    if (explicitRange) {
       const from = Date.parse(range.from);
       const to = Date.parse(range.to);
       if (Number.isFinite(from) && Number.isFinite(to)) {
@@ -2068,7 +2073,7 @@ async function applyAgentState(state) {
         framed = true;
       }
     } else if (refs.length) {
-      framed = frameRefs(refs);
+      framed = await frameRefs(refs);
     }
     // A rung is a density to fall back on, not an override: an intent that
     // named its own window asked for that window.
@@ -2080,7 +2085,7 @@ async function applyAgentState(state) {
     }
     if (state.trace) {
       tracePick = { from: state.trace.from, to: state.trace.to };
-      await runTrace();
+      await runTrace({ framePath: !explicitRange, preserveWindow: explicitRange });
     }
     if (state.selection) {
       if (await selectEntry(state.selection)) centerOn(state.selection);
@@ -2092,17 +2097,32 @@ async function applyAgentState(state) {
 
 /* "Frame these refs" — the canonical intent. The window becomes the span
    they occupy on the current clock, with room to breathe. */
-function frameRefs(refs) {
-  const stamps = refs
-    .map((ref) => model.byRef.get(ref))
-    .filter(Boolean)
-    .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
-    .filter((t) => t !== null);
+async function frameRefs(refs) {
+  const stamps = [];
+  for (const ref of refs) {
+    let entry = model.byRef.get(ref);
+    if (!entry) {
+      const inspect = await api("/api/node", { id: ref, raw: "1" });
+      entry = KMP_LOOM.entryModel({
+        ref_id: inspect.node.id,
+        kind: inspect.node.kind,
+        text: inspect.node.summary || inspect.node.title || "",
+        coordinates: inspect.raw_coordinates || [],
+      });
+    }
+    const stamp = KMP_LOOM.placedMs(entry, view.clock);
+    if (stamp !== null) stamps.push(stamp);
+  }
   if (!stamps.length) return false;
   const lo = Math.min(...stamps);
   const hi = Math.max(...stamps);
   const pad = Math.max(60000, (hi - lo) * 0.4);
   setWindow(lo - pad, hi + pad);
+  // setWindow normally reloads after the gesture settles. An agent intent is
+  // atomic: load the framed projection before applying its trace or selection,
+  // so refs outside the previous Moment are present when those moves run.
+  clearTimeout(scheduleProjection.timer);
+  await loadProjection();
   return true;
 }
 
@@ -2110,7 +2130,7 @@ function frameRefs(refs) {
    asks for a window fine enough to show entries. */
 function applyZoomRung(rung) {
   const width = Math.max(1, canvas.clientWidth);
-  const target = { atlas: 1.2e6, episode: 120e3, moment: 8e3, evidence: 2e3 }[rung];
+  const target = { atlas: 1.2e6, episode: 120e3, moment: 8e3 }[rung];
   if (!target) return;
   const span = Math.max(1000, target * width);
   const centre = (view.t0 + view.t1) / 2;
@@ -2119,11 +2139,17 @@ function applyZoomRung(rung) {
 
 function renderProvenance(state) {
   const chip = $("agent-chip");
+  const undo = $("agent-undo");
   const change = state.last_change;
   if (!change || change.actor === "human") {
-    chip.hidden = true;
+    chip.classList.add("human-owned");
+    $("agent-chip-text").textContent = "human-controlled view";
+    undo.hidden = true;
+    chip.hidden = false;
     return;
   }
+  chip.classList.remove("human-owned");
+  undo.hidden = false;
   const why = change.explanation ? ` · ${change.explanation}` : "";
   $("agent-chip-text").textContent = `${change.actor} moved the loom${why}`;
   chip.hidden = false;
@@ -2134,7 +2160,7 @@ $("agent-undo").addEventListener("click", async () => {
     const state = await api("/api/view/undo", { id: VIEW_ID }, "POST");
     sync.revision = state.view_revision;
     await applyAgentState(state);
-    $("agent-chip").hidden = true;
+    renderProvenance(state);
   } catch (error) {
     showError(error.message);
   }
@@ -2166,7 +2192,7 @@ function reportView() {
     try {
       const state = await api("/api/view/report", Object.fromEntries(params), "POST");
       if (state.view_revision) sync.revision = state.view_revision;
-      $("agent-chip").hidden = true;
+      renderProvenance(state);
     } catch (error) {
       // The loom keeps working even when nobody is listening to it.
     }

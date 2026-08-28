@@ -215,7 +215,8 @@ async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Resu
     let mut viewer = kmp_viewer::MemoryViewerServer::new(
         kernel.service(),
         Some(kernel.data_dir().display().to_string()),
-    );
+    )
+    .map_err(|error| format!("viewer capability could not be created: {error}"))?;
     if let Some(reader) = kernel.quality_telemetry_reader() {
         viewer = viewer.with_observability(std::sync::Arc::new(reader));
     } else if let Some(reason) = telemetry_unavailable.as_deref() {
@@ -228,7 +229,8 @@ async fn spawn_viewer(kernel: &kmp_embedded::EmbeddedKernel, addr: &str) -> Resu
     let local_addr = listener
         .local_addr()
         .map_err(|error| format!("viewer listener has no local address: {error}"))?;
-    let url = format!("http://{local_addr}/");
+    let base_url = format!("http://{local_addr}/");
+    let url = viewer.capability_url(&base_url);
     if let Some(reason) = telemetry_unavailable {
         eprintln!("kmp-mcp: memory viewer at {url}; observability unavailable: {reason}");
     } else {

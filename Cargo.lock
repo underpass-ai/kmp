@@ -1872,6 +1872,7 @@ dependencies = [
 name = "kmp-viewer"
 version = "0.2.10"
 dependencies = [
+ "getrandom 0.2.17",
  "kmp-application",
  "kmp-domain",
  "kmp-embedded",

@@ -102,12 +102,22 @@ flowchart LR
 ```
 
 The plugin installs the skills and declares one local MCP process. The skill
-turns intent into one or more of ten typed tools. `kmp-mcp` validates the
+turns intent into one or more of thirteen typed tools. `kmp-mcp` validates the
 request, and the kernel reads or writes the local graph-temporal store. The
 agent—not KMP—turns returned evidence into conversational prose.
 
-Need the real boxes, trust boundaries and write sequences? Enter the
-[technical architecture](docs/architecture/README.md).
+## ChronoLoom — memory you can see
+
+Ask Codex or Claude: **“Show me the memory behind this decision.”** ChronoLoom
+opens on the evidence and lights up its proof path.
+
+![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](docs/assets/kmp-agent-loom.gif)
+
+**One shared view:** the agent can steer it; you can click, filter, pan, undo
+or take control at any time.
+
+[Explore ChronoLoom](crates/kmp-viewer/README.md) ·
+[Technical architecture](docs/architecture/README.md)
 
 ### Who owns what?
 
@@ -160,7 +170,7 @@ the relation vocabulary.
 |:--|:--|
 | Memory | Stored on your machine, normally in the repository's `.kernel/`. |
 | MCP transport | Local stdio between the agent host and `kmp-mcp`. |
-| Viewer | Read-only loopback HTTP, normally `http://127.0.0.1:7317/`. |
+| Viewer | Read-only loopback HTTP, normally rooted at `http://127.0.0.1:7317/`, behind a random per-session capability. |
 | External services | None required. |
 | Underpass | Receives no memory and operates no service in this path. |
 | Updates | Setup may contact GitHub Releases for checksummed packages. |
