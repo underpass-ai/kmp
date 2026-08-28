@@ -25,6 +25,8 @@ Detailed notes from the early release cycle are preserved in the
 - Recall detail tiers now change the observable expansion whenever the byte
   budget permits; the legacy token hint no longer silently suppresses every
   tier behind the stable core.
+- Ask fallback configuration now rejects Chinese, Japanese, and Thai language
+  tags instead of accepting retries that word-based retrieval cannot serve.
 
 ## [0.3.0] - 2026-08-28
 
