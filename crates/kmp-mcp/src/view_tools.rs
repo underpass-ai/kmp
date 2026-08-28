@@ -93,6 +93,11 @@ pub(crate) fn open(
         Err(ViewError::UnknownView(id)) => {
             return Err(ToolError::not_found(format!("no view under `{id}`")));
         }
+        Err(ViewError::IdempotencyConflict { key }) => {
+            return Err(ToolError::conflict(format!(
+                "idempotency key '{key}' was already accepted with different content"
+            )));
+        }
         Err(ViewError::Invalid(message)) => return Err(ToolError::invalid_argument(message)),
     };
     Ok(state_result(
@@ -132,6 +137,9 @@ pub(crate) fn undo(arguments: &Value) -> Result<Value, ToolError> {
         Ok(state) => Ok(state_result(&state, json!({"undone": true}), None)),
         Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
             "no view under `{id}` — open one with kmp_view_open first"
+        ))),
+        Err(ViewError::IdempotencyConflict { key }) => Err(ToolError::conflict(format!(
+            "idempotency key '{key}' was already accepted with different content"
         ))),
         Err(ViewError::Invalid(message)) => Err(ToolError::invalid_argument(message)),
         Err(ViewError::Conflict { .. }) => Err(ToolError::conflict(
@@ -344,6 +352,7 @@ pub(crate) fn apply_intent(
         )));
     }
     let (mut patch, _) = patch_from(arguments)?;
+    let intent_digest = patch.logical_digest();
     omit_unhonored_projection(&mut patch, &unavailable);
     let mut unhonored: Vec<String> = unavailable
         .dimensions
@@ -366,6 +375,7 @@ pub(crate) fn apply_intent(
         &view_id,
         expected,
         Some(idempotency_key),
+        Some(&intent_digest),
         patch,
         actor,
         explanation,
@@ -397,6 +407,9 @@ pub(crate) fn apply_intent(
         ))),
         Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
             "no view under `{id}` — open one with kmp_view_open first"
+        ))),
+        Err(ViewError::IdempotencyConflict { key }) => Err(ToolError::conflict(format!(
+            "idempotency key '{key}' was already accepted with different content"
         ))),
         Err(ViewError::Invalid(message)) => Err(ToolError::invalid_argument(message)),
     }

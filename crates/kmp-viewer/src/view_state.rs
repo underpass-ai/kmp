@@ -26,6 +26,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tokio::sync::Notify;
 
 use kmp_domain::compare_temporal_instants;
@@ -143,7 +144,7 @@ impl ViewState {
 /// One intent's worth of change. Every field is optional: an intent says what
 /// it means to change and stays silent about the rest, so two agents editing
 /// different facets do not clobber each other's.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct ViewPatch {
     pub about: Option<String>,
     pub clock: Option<String>,
@@ -170,6 +171,17 @@ impl ViewPatch {
             || self.trace.is_some()
             || self.search.is_some()
     }
+
+    /// Stable identity of what the caller asked the loom to change. This is
+    /// taken before store-local selectors are resolved, so a retry remains
+    /// the same intent even if the mounted catalog changes between calls.
+    pub fn logical_digest(&self) -> String {
+        let encoded = serde_json::to_vec(self)
+            .expect("view intents serialize: they hold only strings and vectors");
+        let mut hasher = Sha256::new();
+        hasher.update(encoded);
+        format!("{:x}", hasher.finalize())
+    }
 }
 
 /// Why an intent did not apply. A conflict is not a failure of the agent; it
@@ -182,6 +194,9 @@ pub enum ViewError {
         expected: u64,
         actual: u64,
         current: Box<ViewState>,
+    },
+    IdempotencyConflict {
+        key: String,
     },
     Invalid(String),
 }
@@ -198,8 +213,14 @@ pub struct Applied {
 struct ViewEntry {
     state: ViewState,
     history: Vec<ViewState>,
-    applied_keys: Vec<(String, u64)>,
+    applied_keys: Vec<AppliedKey>,
     touched: SystemTime,
+}
+
+struct AppliedKey {
+    key: String,
+    digest: String,
+    revision: u64,
 }
 
 /// Every open view in this process, and a bell that rings when one changes.
@@ -346,10 +367,12 @@ impl ViewRegistry {
         actor: &str,
         explanation: Option<&str>,
     ) -> Result<Applied, ViewError> {
+        let intent_digest = idempotency_key.map(|_| patch.logical_digest());
         self.apply_with_unhonored(
             view_id,
             expected_revision,
             idempotency_key,
+            intent_digest.as_deref(),
             patch,
             actor,
             explanation,
@@ -366,6 +389,7 @@ impl ViewRegistry {
         view_id: &str,
         expected_revision: Option<u64>,
         idempotency_key: Option<&str>,
+        intent_digest: Option<&str>,
         patch: ViewPatch,
         actor: &str,
         explanation: Option<&str>,
@@ -420,13 +444,22 @@ impl ViewRegistry {
             return Err(ViewError::UnknownView(view_id.to_string()));
         };
         entry.touched = SystemTime::now();
+        let computed_digest =
+            (idempotency_key.is_some() && intent_digest.is_none()).then(|| patch.logical_digest());
+        let intent_digest = intent_digest.or(computed_digest.as_deref());
 
-        // A replayed key is the same intent, answered the same way.
+        // A replayed key is the same intent, answered the same way. A key
+        // reused for another patch is a collision, not a replay.
         if let Some(key) = idempotency_key
-            && let Some((_, revision)) = entry.applied_keys.iter().find(|(seen, _)| seen == key)
+            && let Some(applied) = entry.applied_keys.iter().find(|applied| applied.key == key)
         {
+            if intent_digest != Some(applied.digest.as_str()) {
+                return Err(ViewError::IdempotencyConflict {
+                    key: key.to_string(),
+                });
+            }
             let mut state = entry.state.clone();
-            state.view_revision = state.view_revision.max(*revision);
+            state.view_revision = state.view_revision.max(applied.revision);
             return Ok(Applied {
                 state,
                 applied: false,
@@ -445,7 +478,12 @@ impl ViewRegistry {
         }
 
         if !patch.touches_anything() {
-            remember_key(entry, idempotency_key, entry.state.view_revision);
+            remember_key(
+                entry,
+                idempotency_key,
+                intent_digest,
+                entry.state.view_revision,
+            );
             return Ok(Applied {
                 state: entry.state.clone(),
                 applied: false,
@@ -456,7 +494,12 @@ impl ViewRegistry {
         let mut next = entry.state.clone();
         apply_patch(&mut next, patch);
         if next == entry.state {
-            remember_key(entry, idempotency_key, entry.state.view_revision);
+            remember_key(
+                entry,
+                idempotency_key,
+                intent_digest,
+                entry.state.view_revision,
+            );
             return Ok(Applied {
                 state: entry.state.clone(),
                 applied: false,
@@ -480,7 +523,12 @@ impl ViewRegistry {
             at: now_iso(),
         });
 
-        remember_key(entry, idempotency_key, entry.state.view_revision);
+        remember_key(
+            entry,
+            idempotency_key,
+            intent_digest,
+            entry.state.view_revision,
+        );
 
         let state = entry.state.clone();
         drop(views);
@@ -575,11 +623,15 @@ fn apply_patch(state: &mut ViewState, patch: ViewPatch) {
     }
 }
 
-fn remember_key(entry: &mut ViewEntry, key: Option<&str>, revision: u64) {
-    let Some(key) = key else {
+fn remember_key(entry: &mut ViewEntry, key: Option<&str>, digest: Option<&str>, revision: u64) {
+    let Some((key, digest)) = key.zip(digest) else {
         return;
     };
-    entry.applied_keys.push((key.to_string(), revision));
+    entry.applied_keys.push(AppliedKey {
+        key: key.to_string(),
+        digest: digest.to_string(),
+        revision,
+    });
     if entry.applied_keys.len() > IDEMPOTENCY_LIMIT {
         entry.applied_keys.remove(0);
     }
@@ -655,6 +707,7 @@ mod tests {
     #[test]
     fn a_replayed_key_is_the_same_intent_not_a_second_one() {
         let registry = registry();
+        let original_revision = registry.get("t").expect("view").view_revision;
         let patch = || ViewPatch {
             clock: Some("ingested".into()),
             ..ViewPatch::default()
@@ -662,12 +715,73 @@ mod tests {
         let first = registry
             .apply("t", None, Some("same"), patch(), "agent:test", None)
             .expect("first");
+        let later = registry
+            .apply(
+                "t",
+                Some(first.state.view_revision),
+                Some("later"),
+                ViewPatch {
+                    selection: Some(Some("entry:1".into())),
+                    ..ViewPatch::default()
+                },
+                "human",
+                None,
+            )
+            .expect("the view moves after the original intent");
         let second = registry
-            .apply("t", None, Some("same"), patch(), "agent:test", None)
-            .expect("replay");
+            .apply(
+                "t",
+                Some(original_revision),
+                Some("same"),
+                patch(),
+                "agent:test",
+                None,
+            )
+            .expect("a true replay bypasses a now-stale expected revision");
         assert!(first.applied);
         assert!(!second.applied, "a retry is not a second move");
-        assert_eq!(first.state.view_revision, second.state.view_revision);
+        assert_eq!(second.state.view_revision, later.state.view_revision);
+        assert_eq!(second.state.clock, "ingested");
+        assert_eq!(second.state.selection.as_deref(), Some("entry:1"));
+    }
+
+    #[test]
+    fn a_reused_key_with_a_different_intent_is_a_conflict() {
+        let registry = registry();
+        let first = registry
+            .apply(
+                "t",
+                None,
+                Some("same"),
+                ViewPatch {
+                    selection: Some(Some("entry:1".into())),
+                    ..ViewPatch::default()
+                },
+                "agent:test",
+                None,
+            )
+            .expect("first intent applies");
+
+        let collision = registry.apply(
+            "t",
+            None,
+            Some("same"),
+            ViewPatch {
+                search: Some(Some("another intent".into())),
+                ..ViewPatch::default()
+            },
+            "agent:test",
+            None,
+        );
+        assert!(matches!(
+            collision,
+            Err(ViewError::IdempotencyConflict { ref key }) if key == "same"
+        ));
+
+        let current = registry.get("t").expect("view remains open");
+        assert_eq!(current.view_revision, first.state.view_revision);
+        assert_eq!(current.selection.as_deref(), Some("entry:1"));
+        assert_eq!(current.search, None, "the colliding intent did not land");
     }
 
     #[test]

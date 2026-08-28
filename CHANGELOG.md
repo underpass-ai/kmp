@@ -14,6 +14,8 @@ Detailed notes from the early release cycle are preserved in the
 - Embedded and direct ingest now confine every caller-supplied entry,
   relation, and evidence ref to the exact about, closing the remaining path
   that could overwrite another about's entries or root anchor.
+- ChronoLoom now refuses an idempotency key reused for a different view
+  intent instead of silently treating the collision as a successful replay.
 
 ## [0.3.1] - 2026-08-28
 

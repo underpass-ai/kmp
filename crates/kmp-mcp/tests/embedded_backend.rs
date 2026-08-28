@@ -1910,6 +1910,65 @@ async fn view_intents_resolve_projection_names_against_the_mounted_store_and_rea
 }
 
 #[tokio::test]
+async fn view_idempotency_replays_the_same_intent_and_refuses_a_different_one() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    let view_id = "idempotency-collision-325";
+    let opened = call(
+        &server,
+        2,
+        "kmp_view_open",
+        json!({"view_id": view_id, "about": "question:e3"}),
+    )
+    .await;
+    let selection = json!({
+        "view_id": view_id,
+        "expected_revision": opened["state"]["view_revision"],
+        "idempotency_key": "one-intent-only",
+        "selection": "question:e3:claim:e3"
+    });
+
+    let first = call(&server, 3, "kmp_view_apply_intent", selection.clone()).await;
+    assert_eq!(first["applied"], true, "{first}");
+
+    let replay = call(&server, 4, "kmp_view_apply_intent", selection).await;
+    assert_eq!(replay["applied"], false, "{replay}");
+    assert_eq!(replay["view_revision"], first["view_revision"]);
+
+    let collision = call(
+        &server,
+        5,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": view_id,
+            "idempotency_key": "one-intent-only",
+            "search": "pool saturation"
+        }),
+    )
+    .await;
+    assert_eq!(collision["error"]["code"], "conflict", "{collision}");
+    assert!(
+        collision["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("one-intent-only")
+                && message.contains("different content")),
+        "the collision must tell the caller which key it reused: {collision}"
+    );
+
+    let current = call(
+        &server,
+        6,
+        "kmp_view_get_state",
+        json!({"view_id": view_id}),
+    )
+    .await;
+    assert_eq!(current["view_revision"], first["view_revision"]);
+    assert_eq!(current["state"]["selection"], "question:e3:claim:e3");
+    assert!(current["state"]["search"].is_null());
+}
+
+#[tokio::test]
 async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unreachable() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
