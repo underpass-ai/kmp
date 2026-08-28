@@ -36,6 +36,9 @@ Detailed notes from the early release cycle are preserved in the
 - Caller-supplied writer refs are now confined to safe descendants of the
   write's own about, preventing a write from replacing another about's entry,
   internal node, or root anchor.
+- HTTP ingest authorization now checks every caller-chosen entry, relation and
+  evidence ref, so an about-scoped token cannot write into another tenant's
+  graph through the low-level batch surface.
 
 ## [0.3.0] - 2026-08-28
 

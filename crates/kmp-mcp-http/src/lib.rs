@@ -523,6 +523,32 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn foreign_ingest_refs_are_denied_before_backend_call() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let call = json!({
+            "jsonrpc":"2.0", "id":2, "method":"tools/call",
+            "params":{
+                "name":"kmp_ingest",
+                "arguments":{
+                    "about":"project:kmp",
+                    "idempotency_key":"http-auth-cross-about",
+                    "memory":{
+                        "dimensions":[{"id":"timeline:kmp", "kind":"agentic_process"}],
+                        "entries":[{"id":"project:other:entry:1"}]
+                    }
+                }
+            }
+        });
+        let response = app_with(Ok(identity(&[authorization::WRITE_SCOPE])), calls.clone())
+            .oneshot(request(call))
+            .await
+            .expect("response");
+
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
     async fn origin_is_checked_before_token_or_backend() {
         let calls = Arc::new(AtomicUsize::new(0));
         let mut denied = request(json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}));
