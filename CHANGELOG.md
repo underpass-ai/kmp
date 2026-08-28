@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-08-28
+
 ### Fixed
 
 - Embedded and direct ingest now confine every caller-supplied entry,
