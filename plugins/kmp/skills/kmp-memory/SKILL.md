@@ -27,6 +27,7 @@ part of the goal the wake packet did not already answer.
 | A genuinely non-temporal question answerable from stored evidence | `kmp_ask` |
 | One cited ref must support a consequential claim | `kmp_inspect` |
 | A connection between two refs is part of the claim | `kmp_trace` |
+| The user asks to see, show, open, or navigate memory — including `muéstrame`, `enséñame`, `abre` or `ver` | Finish the retrieval lane, then `kmp_view_open` and `kmp_view_apply_intent` |
 | A durable decision, constraint or outcome was reached | `kmp_write_memory` |
 
 `kmp_ask` is direct-evidence retrieval. It is not time traversal and it does
@@ -73,6 +74,27 @@ Route again after every response:
 - A temporal response with `page.has_more=true` must consume
   `page.next_cursor` until complete or report the exact continuation. Never
   present the first page as the interval.
+
+## Share the view, not just the answer
+
+A request such as “Show me the memory behind this decision” has two lanes.
+First retrieve the memory that answers the question and inspect or trace the
+evidence the answer relies on. Then open that same about once with
+`kmp_view_open` and move the shared ChronoLoom view with
+`kmp_view_apply_intent`. The visual lane frames the retrieved evidence; it does
+not replace retrieval, and the view is not itself proof.
+
+Declare meaning, never screen coordinates: clock, range, semantic zoom,
+dimensions, relation classes, selection or trace. Pass the view's current
+`revision` as `expected_revision` on every intent. If another participant has
+moved the view and the revision conflicts, get the current state and rebase
+the intent on it instead of retrying blind. Do not call `kmp_view_open` again
+to navigate an already-open view.
+
+Before continuing the conversation after a shared-view interaction, call
+`kmp_view_get_state`. The person may have clicked, filtered, panned or undone
+the agent's last intent, and the next answer must continue from what both are
+actually looking at.
 
 ## Start here: recover before you re-derive
 

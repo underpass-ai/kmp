@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin temporal routing and bounded semantic language fallback for agents."""
+"""Pin temporal, semantic, audit, and shared-view routing for agents."""
 
 from __future__ import annotations
 
@@ -255,6 +255,29 @@ for asset in write_instruction_assets:
     if ("invalid" not in text and "validation fail" not in text) or "nothing" not in text:
         fail(f"{asset.relative_to(ROOT)} does not state fail-before-write behavior")
 
+memory_skill = (ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md").read_text(
+    encoding="utf-8"
+)
+memory_skill_folded = " ".join(memory_skill.casefold().split())
+for tool in ("kmp_view_open", "kmp_view_apply_intent", "kmp_view_get_state"):
+    if tool not in memory_skill:
+        fail(f"kmp-memory does not route the shared view through {tool}")
+for phrase in (
+    "show me the memory behind this decision",
+    "muéstrame",
+    "enséñame",
+    "expected_revision",
+    "view is not itself proof",
+    "do not call `kmp_view_open` again",
+):
+    if phrase.casefold() not in memory_skill_folded:
+        fail(f"kmp-memory lost shared-view routing clause: {phrase}")
+
+public_readme = (ROOT / "README.md").read_text(encoding="utf-8").casefold()
+invitation = "show me the memory behind this decision"
+if invitation not in public_readme or invitation not in memory_skill.casefold():
+    fail("the public ChronoLoom invitation is not routed by kmp-memory")
+
 protocol = (ROOT / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
 if "Normal writes are one call: omit `options.dry_run` or set it to false" not in protocol:
     fail("live MCP schema does not document the dry_run=false write default")
@@ -264,5 +287,6 @@ if "Set it to true only for an explicitly requested preview" not in protocol:
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "
     "result-driven UNKNOWN routing, bounded Ask selections, audit gates, opaque "
-    "abouts and refs, byte-exact evidence, single-call validated writes"
+    "abouts and refs, byte-exact evidence, shared-view intents, single-call "
+    "validated writes"
 )
