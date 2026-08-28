@@ -56,6 +56,54 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
     );
 }
 
+#[test]
+fn an_unexpanded_home_data_dir_is_refused_without_creating_a_literal_tilde() {
+    let working_dir = tempfile::tempdir().expect("working dir");
+    let home = tempfile::tempdir().expect("home dir");
+    let input = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n";
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .current_dir(working_dir.path())
+        .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
+        .env("HOME", home.path())
+        .env("KMP_VIEWER_ADDR", "off")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("stdio MCP binary should spawn");
+    child
+        .stdin
+        .as_mut()
+        .expect("stdin")
+        .write_all(input.as_bytes())
+        .expect("request is written");
+    drop(child.stdin.take());
+    let output = child.wait_with_output().expect("process exits");
+
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8(output.stderr).expect("stderr is UTF-8");
+    assert!(stderr.contains("MCP host configuration does not expand shell paths"));
+    assert!(
+        stderr.contains(&home.path().join("kmp-host-config").display().to_string()),
+        "the refusal names the absolute path the user probably meant: {stderr}"
+    );
+    assert!(
+        !working_dir.path().join("~").exists(),
+        "startup must not create a directory that only looks home-relative"
+    );
+
+    let info = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("info")
+        .current_dir(working_dir.path())
+        .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
+        .env("HOME", home.path())
+        .output()
+        .expect("info runs");
+    let report = String::from_utf8(info.stdout).expect("info output is UTF-8");
+    assert!(report.contains("the data directory does not resolve"));
+    assert!(report.contains(&home.path().join("kmp-host-config").display().to_string()));
+}
+
 /// The viewer follows the same implicit embedded default as the MCP backend.
 /// Previously this branch looked only for an explicit `KMP_MCP_BACKEND` and
 /// silently skipped the viewer in the zero-configuration path.
