@@ -562,6 +562,117 @@ fn info_and_doctor_report_the_data_dir_without_creating_it() {
 }
 
 #[test]
+fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
+    let project = tempfile::tempdir().expect("project");
+    std::fs::create_dir_all(project.path().join(".git")).expect("project marker");
+    let project_store = project.path().join(".kernel");
+    std::fs::create_dir_all(project_store.join("store")).expect("legacy store dir");
+    std::fs::write(project_store.join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
+    std::fs::write(project_store.join("store/kernel.redb"), b"legacy memory")
+        .expect("legacy store");
+    let bundle = project.path().join(".kmp/memory.jsonl");
+    std::fs::create_dir_all(bundle.parent().expect("bundle parent")).expect("bundle dir");
+    let original_bundle =
+        r#"{"bundle_format":1,"store_format":1,"event_count":0,"kernel_version":"0.2.4"}"#;
+    std::fs::write(&bundle, original_bundle).expect("maintained bundle");
+    let nested = project.path().join("src");
+    std::fs::create_dir_all(&nested).expect("nested working dir");
+    let user_data = tempfile::tempdir().expect("isolated user data");
+
+    let doctor = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("doctor")
+        .current_dir(&nested)
+        .env_remove("KMP_MCP_DATA_DIR")
+        .env("KMP_MCP_BACKEND", "embedded")
+        .env("KMP_VIEWER_ADDR", "off")
+        .env("XDG_DATA_HOME", user_data.path())
+        .output()
+        .expect("doctor runs");
+    assert_eq!(doctor.status.code(), Some(1));
+    let report = String::from_utf8_lossy(&doctor.stdout);
+    assert!(
+        report.contains("committed memory is no longer being maintained"),
+        "{report}"
+    );
+    assert!(report.contains(&bundle.display().to_string()), "{report}");
+    assert!(
+        report.contains(&project_store.display().to_string()),
+        "{report}"
+    );
+    let selected_store = user_data.path().join("kmp/default");
+    assert!(
+        report.contains(&selected_store.display().to_string()),
+        "{report}"
+    );
+
+    let write = |id: u64, suffix: &str| {
+        serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_write_memory",
+                "arguments": {
+                    "about": "project:fallback-notice",
+                    "intent": "record_observation",
+                    "actor": "agent:regression",
+                    "observed_at": "2026-08-28T17:00:00Z",
+                    "scope": {"process": "project:fallback-notice:process"},
+                    "current": {
+                        "ref": format!("project:fallback-notice:observation:{suffix}"),
+                        "kind": "observation",
+                        "summary": format!("Fallback write {suffix}"),
+                        "evidence": "The regression fixture selected the isolated user store."
+                    },
+                    "idempotency_key": format!("fallback-notice:{suffix}"),
+                    "options": {"strict": false}
+                }
+            }
+        })
+    };
+    let input = format!("{}\n{}\n", write(1, "one"), write(2, "two"));
+    let user_data_text = user_data.path().display().to_string();
+    let output = run_binary_from(
+        Some(&nested),
+        &[
+            ("KMP_MCP_BACKEND", "embedded"),
+            ("KMP_VIEWER_ADDR", "off"),
+            ("XDG_DATA_HOME", &user_data_text),
+        ],
+        &input,
+    );
+    assert!(
+        output.status.success(),
+        "writes succeed in fallback: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let responses = String::from_utf8(output.stdout).expect("utf8 responses");
+    let responses = responses
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("JSON-RPC response"))
+        .collect::<Vec<_>>();
+    assert_eq!(responses.len(), 2);
+    let notice = &responses[0]["result"]["structuredContent"]["durability"];
+    assert_eq!(notice["bundle_orphaned"], true, "{notice}");
+    assert_eq!(notice["bundle_path"], bundle.display().to_string());
+    assert_eq!(
+        notice["selected_store_path"],
+        selected_store.display().to_string()
+    );
+    assert!(
+        responses[1]["result"]["structuredContent"]["durability"].is_null(),
+        "the session says the same durability loss once: {}",
+        responses[1]
+    );
+    assert_eq!(
+        std::fs::read_to_string(&bundle).expect("bundle remains readable"),
+        original_bundle,
+        "fallback writes must never pretend to maintain the project bundle"
+    );
+    assert!(selected_store.join("store/kernel.sqlite3").is_file());
+}
+
+#[test]
 fn config_persists_and_initialize_reports_the_agent_policy() {
     let config_home = tempfile::tempdir().expect("config home");
     let bin = env!("CARGO_BIN_EXE_kmp-mcp");
@@ -719,6 +830,245 @@ fn migrate_rejects_corrupt_format_one_without_touching_source_or_destination() {
         );
         assert!(!destination.exists(), "{name}: no destination on refusal");
     }
+}
+
+#[test]
+fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
+    let cwd = tempfile::tempdir().expect("working dir");
+    let data_root = tempfile::tempdir().expect("data root");
+    let data_dir = data_root.path().join("must-not-be-created");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+    for command in [
+        "info",
+        "doctor",
+        "config",
+        "document",
+        "snapshot",
+        "uninstall",
+        "export",
+        "import",
+        "migrate",
+        "viewer",
+    ] {
+        for flag in ["--help", "-h"] {
+            let output = Command::new(bin)
+                .args([command, flag])
+                .current_dir(cwd.path())
+                .env("KMP_MCP_DATA_DIR", &data_dir)
+                .env("KMP_VIEWER_ADDR", "off")
+                .output()
+                .expect("subcommand help runs");
+            assert!(
+                output.status.success(),
+                "{command} {flag}: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            assert!(
+                String::from_utf8_lossy(&output.stdout).contains("Usage:"),
+                "{command} {flag} prints its usage"
+            );
+        }
+    }
+    assert!(!cwd.path().join("--help").exists());
+    assert!(!cwd.path().join("-h").exists());
+
+    for args in [
+        vec!["export", "--bogus"],
+        vec!["import", "--bogus"],
+        vec!["migrate", "--bogus", "destination"],
+        vec!["document", "--bogus"],
+        vec!["viewer", "--bogus"],
+    ] {
+        let output = Command::new(bin)
+            .args(&args)
+            .current_dir(cwd.path())
+            .env("KMP_MCP_DATA_DIR", &data_dir)
+            .env("KMP_VIEWER_ADDR", "off")
+            .output()
+            .expect("unknown option runs");
+        assert_eq!(output.status.code(), Some(2), "{args:?}");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("unknown option"),
+            "{args:?}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    assert!(!cwd.path().join("--bogus").exists());
+
+    let ambiguous = Command::new(bin)
+        .args(["export", "./-memory.jsonl"])
+        .current_dir(cwd.path())
+        .env("KMP_MCP_DATA_DIR", &data_dir)
+        .output()
+        .expect("ambiguous destination runs");
+    assert_eq!(ambiguous.status.code(), Some(2));
+    assert!(!cwd.path().join("-memory.jsonl").exists());
+    assert!(
+        !data_dir.exists(),
+        "help and invalid invocations must not prepare the store"
+    );
+}
+
+#[test]
+fn filtered_cli_export_is_verifiable_exact_and_importable() {
+    let source = tempfile::tempdir().expect("source store");
+    let target = tempfile::tempdir().expect("target store");
+    let output_dir = tempfile::tempdir().expect("output dir");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+    let ingest = |id: u64, about: &str, suffix: &str| {
+        serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_ingest",
+                "arguments": {
+                    "about": about,
+                    "idempotency_key": format!("filtered-export:{suffix}"),
+                    "memory": {
+                        "dimensions": [{"id": format!("timeline:{suffix}"), "kind": "timeline"}],
+                        "entries": [{
+                            "id": format!("{about}:observation:{suffix}"),
+                            "kind": "observation",
+                            "text": format!("memory {suffix}"),
+                            "coordinates": [{
+                                "dimension": "timeline",
+                                "scope_id": format!("timeline:{suffix}"),
+                                "sequence": 1
+                            }]
+                        }]
+                    }
+                }
+            }
+        })
+    };
+    let input = format!(
+        "{}\n{}\n",
+        ingest(1, "project:a", "a"),
+        ingest(2, "project:ab", "ab")
+    );
+    let source_text = source.path().display().to_string();
+    let seeded = run_binary(
+        &[
+            ("KMP_MCP_BACKEND", "embedded"),
+            ("KMP_MCP_DATA_DIR", &source_text),
+            ("KMP_VIEWER_ADDR", "off"),
+        ],
+        &input,
+    );
+    assert!(
+        seeded.status.success(),
+        "seed: {}",
+        String::from_utf8_lossy(&seeded.stderr)
+    );
+
+    let filtered_path = output_dir.path().join("project-a.jsonl");
+    let filtered = Command::new(bin)
+        .args([
+            "export",
+            filtered_path.to_str().expect("utf8 path"),
+            "--about",
+            "project:a",
+        ])
+        .env("KMP_MCP_DATA_DIR", source.path())
+        .output()
+        .expect("filtered export runs");
+    assert!(
+        filtered.status.success(),
+        "filtered export: {}",
+        String::from_utf8_lossy(&filtered.stderr)
+    );
+    let bundle = std::fs::read_to_string(&filtered_path).expect("filtered bundle");
+    let header = kmp_embedded::verify_bundle(&bundle).expect("filtered bundle verifies");
+    assert_eq!(header.abouts, ["project:a"]);
+    assert_eq!(header.event_count, 1);
+    assert_eq!(header.event_range.first, Some(1));
+    assert_eq!(header.event_range.last, Some(1));
+    for line in bundle.lines().skip(1) {
+        let event: Value = serde_json::from_str(line).expect("event JSON");
+        assert_eq!(event["root_node_id"], "project:a");
+    }
+
+    let snapshot_project = tempfile::tempdir().expect("snapshot project");
+    std::fs::create_dir_all(snapshot_project.path().join(".git")).expect("project marker");
+    let snapshot_path = snapshot_project
+        .path()
+        .join(".kmp/snapshots/filtered.jsonl");
+    std::fs::create_dir_all(snapshot_path.parent().expect("snapshot parent"))
+        .expect("snapshot directory");
+    std::fs::write(&snapshot_path, &bundle).expect("filtered snapshot");
+    let verified = Command::new(bin)
+        .args(["snapshot", "verify", "filtered"])
+        .current_dir(snapshot_project.path())
+        .env_remove("KMP_MCP_DATA_DIR")
+        .output()
+        .expect("snapshot verify runs on filtered bundle");
+    assert!(
+        verified.status.success(),
+        "snapshot verify: {}",
+        String::from_utf8_lossy(&verified.stderr)
+    );
+    assert!(String::from_utf8_lossy(&verified.stdout).contains("project:a"));
+
+    let repeated_path = output_dir.path().join("both.jsonl");
+    let repeated = Command::new(bin)
+        .args([
+            "export",
+            repeated_path.to_str().expect("utf8 path"),
+            "--about",
+            "project:ab",
+            "--about",
+            "project:a",
+        ])
+        .env("KMP_MCP_DATA_DIR", source.path())
+        .output()
+        .expect("repeatable filter runs");
+    assert!(repeated.status.success());
+    let repeated = std::fs::read_to_string(repeated_path).expect("repeated bundle");
+    let repeated = kmp_embedded::verify_bundle(&repeated).expect("repeated bundle verifies");
+    assert_eq!(repeated.abouts, ["project:a", "project:ab"]);
+    assert_eq!(repeated.event_count, 2);
+
+    let imported = Command::new(bin)
+        .args(["import", filtered_path.to_str().expect("utf8 path")])
+        .env("KMP_MCP_DATA_DIR", target.path())
+        .output()
+        .expect("filtered import runs");
+    assert!(
+        imported.status.success(),
+        "filtered import: {}",
+        String::from_utf8_lossy(&imported.stderr)
+    );
+    let round_trip_path = output_dir.path().join("round-trip.jsonl");
+    let round_trip = Command::new(bin)
+        .args(["export", round_trip_path.to_str().expect("utf8 path")])
+        .env("KMP_MCP_DATA_DIR", target.path())
+        .output()
+        .expect("round-trip export runs");
+    assert!(round_trip.status.success());
+    let round_trip = std::fs::read_to_string(round_trip_path).expect("round-trip bundle");
+    let round_trip = kmp_embedded::verify_bundle(&round_trip).expect("round trip verifies");
+    assert_eq!(round_trip.abouts, ["project:a"]);
+    assert_eq!(round_trip.event_count, 1);
+
+    let missing_path = output_dir.path().join("missing.jsonl");
+    let missing = Command::new(bin)
+        .args([
+            "export",
+            missing_path.to_str().expect("utf8 path"),
+            "--about",
+            "project:none",
+        ])
+        .env("KMP_MCP_DATA_DIR", source.path())
+        .output()
+        .expect("missing about export runs");
+    assert_eq!(missing.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&missing.stderr).contains("`project:none`"),
+        "{}",
+        String::from_utf8_lossy(&missing.stderr)
+    );
+    assert!(!missing_path.exists());
 }
 
 #[test]

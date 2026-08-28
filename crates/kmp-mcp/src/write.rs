@@ -504,6 +504,7 @@ pub(crate) fn write_commit_result(
     plan: &KernelWritePlan,
     ingest_result: Value,
     viewer_url: Option<&str>,
+    orphaned_bundle: Option<&kmp_embedded::OrphanedProjectBundle>,
 ) -> Value {
     let mut result = json!({
         "accepted": true,
@@ -520,7 +521,31 @@ pub(crate) fn write_commit_result(
     if let Some(url) = viewer_url {
         result["viewer"] = viewer_invitation(url);
     }
+    if let Some(orphaned) = orphaned_bundle {
+        result["durability"] = orphaned_bundle_notice(orphaned);
+    }
     result
+}
+
+fn orphaned_bundle_notice(orphaned: &kmp_embedded::OrphanedProjectBundle) -> Value {
+    json!({
+        "bundle_orphaned": true,
+        "bundle_path": orphaned.bundle_path.display().to_string(),
+        "project_store_path": orphaned.project_store_path.display().to_string(),
+        "selected_store_path": orphaned.selected_store_path.display().to_string(),
+        "reason": orphaned.reason,
+        "tell_the_user": format!(
+            "This project write succeeded in `{}`, but `{}` is no longer maintained because \
+             the project store `{}` could not be selected: {}. Say this once; refresh only this \
+             project's memory with `kmp-mcp export {} --about <project-about>` and inspect the \
+             diff.",
+            orphaned.selected_store_path.display(),
+            orphaned.bundle_path.display(),
+            orphaned.project_store_path.display(),
+            orphaned.reason,
+            orphaned.bundle_path.display(),
+        )
+    })
 }
 
 /// The one moment a link to the viewer is worth spending a line on: memory

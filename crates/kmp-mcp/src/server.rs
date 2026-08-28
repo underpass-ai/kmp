@@ -44,6 +44,11 @@ pub struct KernelMcpServer {
     /// moment worth saying it at is the first memory the session writes:
     /// before that there is nothing to look at.
     viewer_offered: AtomicBool,
+    /// Selection found a repository bundle beside an unopenable project
+    /// store, while this session writes to the shared user store instead.
+    orphaned_bundle: Option<kmp_embedded::OrphanedProjectBundle>,
+    /// The durability loss is actionable once and noisy thereafter.
+    orphaned_bundle_offered: AtomicBool,
     apps_negotiated: AtomicBool,
 }
 
@@ -95,6 +100,8 @@ impl KernelMcpServer {
             embedded_engine: None,
             viewer_url: None,
             viewer_offered: AtomicBool::new(false),
+            orphaned_bundle: None,
+            orphaned_bundle_offered: AtomicBool::new(false),
             apps_negotiated: AtomicBool::new(false),
         }
     }
@@ -140,6 +147,22 @@ impl KernelMcpServer {
             .swap(true, Ordering::SeqCst)
             .eq(&false)
             .then_some(url)
+    }
+
+    pub fn with_orphaned_bundle(
+        mut self,
+        orphaned_bundle: Option<kmp_embedded::OrphanedProjectBundle>,
+    ) -> Self {
+        self.orphaned_bundle = orphaned_bundle;
+        self
+    }
+
+    fn orphaned_bundle_notice(&self) -> Option<&kmp_embedded::OrphanedProjectBundle> {
+        let orphaned = self.orphaned_bundle.as_ref()?;
+        self.orphaned_bundle_offered
+            .swap(true, Ordering::SeqCst)
+            .eq(&false)
+            .then_some(orphaned)
     }
 
     pub fn from_env() -> Self {
@@ -206,7 +229,8 @@ impl KernelMcpServer {
                         engine,
                         commit_native,
                     ),
-                ))
+                )
+                .with_orphaned_bundle(resolved.orphaned_bundle().cloned()))
             }
             other => Err(format!(
                 "unsupported {MCP_BACKEND_ENV} value `{other}`; use `embedded` (the default), \
@@ -630,6 +654,7 @@ impl KernelMcpServer {
                     &plan,
                     ingest_result,
                     self.viewer_invitation(),
+                    self.orphaned_bundle_notice(),
                 ));
                 record_tool_success(
                     self.backend_name(),

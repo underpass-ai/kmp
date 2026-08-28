@@ -14,8 +14,11 @@ use sha2::{Digest, Sha256};
 use super::replay::ProjectionRebuildReport;
 use super::store::EmbeddedKernelStore;
 
-/// Inclusive positions in the exported event stream. A full-store snapshot
-/// starts at one; an empty snapshot has neither bound.
+/// Inclusive positions in this bundle's event stream. Export is a portable
+/// replay, not a view over the store's internal sequence keys: full and
+/// filtered bundles both renumber their payload positions from one while
+/// preserving every event's aggregate revision (and therefore every ref).
+/// An empty snapshot has neither bound.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BundleEventRange {
     pub first: Option<u64>,
@@ -61,6 +64,23 @@ impl EmbeddedKernelStore {
     /// followed by one event per line, in sequence order.
     pub async fn export_bundle(&self) -> Result<String, PortError> {
         let events = self.run(EmbeddedKernelStore::read_event_log).await?;
+        encode_bundle(&events, None)
+    }
+
+    /// Serializes only events rooted at one of `requested_abouts`.
+    ///
+    /// Abouts are opaque routing identifiers: matching is exact, with no
+    /// trimming, case folding, prefix expansion or other normalisation. The
+    /// filtered stream keeps the store's event order and each aggregate's
+    /// recorded revisions, then receives bundle-local positions starting at
+    /// one. A missing requested about is refused before callers can create a
+    /// destination file.
+    pub async fn export_bundle_for_abouts(
+        &self,
+        requested_abouts: &[String],
+    ) -> Result<String, PortError> {
+        let events = self.run(EmbeddedKernelStore::read_event_log).await?;
+        let events = filter_events_for_abouts(events, requested_abouts)?;
         encode_bundle(&events, None)
     }
 
@@ -305,6 +325,39 @@ fn abouts(events: &[ContextUpdatedEvent]) -> Vec<String> {
         .collect()
 }
 
+fn filter_events_for_abouts(
+    events: Vec<ContextUpdatedEvent>,
+    requested_abouts: &[String],
+) -> Result<Vec<ContextUpdatedEvent>, PortError> {
+    if requested_abouts.is_empty() {
+        return Err(PortError::InvalidState(
+            "filtered export requires at least one about".to_string(),
+        ));
+    }
+    let requested = requested_abouts.iter().cloned().collect::<BTreeSet<_>>();
+    let found = events
+        .iter()
+        .filter(|event| requested.contains(&event.root_node_id))
+        .map(|event| event.root_node_id.clone())
+        .collect::<BTreeSet<_>>();
+    let missing = requested.difference(&found).cloned().collect::<Vec<_>>();
+    if !missing.is_empty() {
+        return Err(PortError::InvalidState(format!(
+            "cannot export missing about{}: {}",
+            if missing.len() == 1 { "" } else { "s" },
+            missing
+                .iter()
+                .map(|about| format!("`{about}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )));
+    }
+    Ok(events
+        .into_iter()
+        .filter(|event| requested.contains(&event.root_node_id))
+        .collect())
+}
+
 fn content_digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
@@ -419,6 +472,45 @@ mod tests {
         );
         assert_eq!(header.abouts, ["project:a", "project:b"]);
         assert!(header.content_digest.starts_with("sha256:"));
+    }
+
+    #[test]
+    fn filtered_export_matches_opaque_abouts_exactly_and_renumbers_its_range() {
+        let events = vec![
+            event("project:a", 1, "a1"),
+            event("project:ab", 1, "ab1"),
+            event("project:a", 2, "a2"),
+        ];
+        let filtered = filter_events_for_abouts(events, &["project:a".to_string()])
+            .expect("exact about exists");
+        assert_eq!(filtered.len(), 2);
+        assert!(
+            filtered
+                .iter()
+                .all(|event| event.root_node_id == "project:a")
+        );
+
+        let bundle = encode_bundle(&filtered, None).expect("filtered bundle");
+        let header = verify_bundle(&bundle).expect("filtered bundle verifies");
+        assert_eq!(header.abouts, ["project:a"]);
+        assert_eq!(header.event_count, 2);
+        assert_eq!(
+            header.event_range,
+            BundleEventRange {
+                first: Some(1),
+                last: Some(2),
+            }
+        );
+    }
+
+    #[test]
+    fn filtered_export_names_every_requested_about_that_is_missing() {
+        let error = filter_events_for_abouts(
+            vec![event("project:a", 1, "a")],
+            &["project:a".into(), "project:none".into()],
+        )
+        .expect_err("missing about must fail");
+        assert!(error.to_string().contains("`project:none`"), "{error}");
     }
 
     #[test]
