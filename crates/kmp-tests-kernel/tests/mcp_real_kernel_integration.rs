@@ -73,7 +73,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
                 "about":"project:parity-preview",
                 "memory":{
                     "dimensions":[{"id":"timeline:parity","kind":"timeline"}],
-                    "entries":[{"id":"observation:parity","kind":"observation","text":"parity",
+                    "entries":[{"id":"project:parity-preview:observation:parity","kind":"observation","text":"parity",
                         "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity","sequence":1}]}]
                 },
                 "idempotency_key":"parity-dry-run", "dry_run":true
@@ -98,27 +98,27 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         ),
         (
             "kmp_goto",
-            json!({"about":"project:parity-live","at":{"ref":"observation:parity-after"}}),
+            json!({"about":"project:parity-live","at":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
             "kmp_near",
-            json!({"about":"project:parity-live","around":{"ref":"observation:parity-before"}}),
+            json!({"about":"project:parity-live","around":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
             "kmp_rewind",
-            json!({"about":"project:parity-live","from":{"ref":"observation:parity-after"}}),
+            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-after"}}),
         ),
         (
             "kmp_forward",
-            json!({"about":"project:parity-live","from":{"ref":"observation:parity-before"}}),
+            json!({"about":"project:parity-live","from":{"ref":"project:parity-live:observation:parity-before"}}),
         ),
         (
             "kmp_trace",
-            json!({"from":"observation:parity-after","to":"observation:parity-before"}),
+            json!({"from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before"}),
         ),
         (
             "kmp_inspect",
-            json!({"ref":"observation:parity-after","include":{"details":true}}),
+            json!({"ref":"project:parity-live:observation:parity-after","include":{"details":true}}),
         ),
     ];
 
@@ -396,28 +396,28 @@ fn parity_seed_arguments() -> Value {
         "memory":{
             "dimensions":[{"id":"timeline:parity-live","kind":"timeline"}],
             "entries":[
-                {"id":"observation:parity-before","kind":"observation","text":"Parity had one transport.",
+                {"id":"project:parity-live:observation:parity-before","kind":"observation","text":"Parity had one transport.",
                  "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:00:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":1}]},
-                {"id":"observation:parity-after","kind":"observation","text":"Parity now covers direct gRPC, stdio MCP, and HTTP MCP.",
+                {"id":"project:parity-live:observation:parity-after","kind":"observation","text":"Parity now covers direct gRPC, stdio MCP, and HTTP MCP.",
                  "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:01:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":2}]},
-                {"id":"observation:parity-proof-1","kind":"observation","text":"Compact projection remained bounded.",
+                {"id":"project:parity-live:observation:parity-proof-1","kind":"observation","text":"Compact projection remained bounded.",
                  "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:02:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":3}]},
-                {"id":"observation:parity-proof-2","kind":"observation","text":"Balanced projection retained evidence.",
+                {"id":"project:parity-live:observation:parity-proof-2","kind":"observation","text":"Balanced projection retained evidence.",
                  "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:03:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":4}]},
-                {"id":"observation:parity-proof-3","kind":"observation","text":"Full projection retained relation why.",
+                {"id":"project:parity-live:observation:parity-proof-3","kind":"observation","text":"Full projection retained relation why.",
                  "coordinates":[{"dimension":"timeline","scope_id":"timeline:parity-live","occurred_at":"2026-08-25T00:04:00Z","ingested_at":"2026-08-25T00:05:00Z","sequence":5}]}
             ],
             "relations":[
-                {"from":"observation:parity-after","to":"observation:parity-before","rel":"supersedes","class":"evidential","why":"The later observation records the expanded transport matrix.","evidence":"The same test invokes all three paths.","confidence":"high"},
-                {"from":"observation:parity-proof-1","to":"observation:parity-after","rel":"follows","class":"procedural","why":"The compact check ran after base parity.","evidence":"The parity test sequence records this order.","confidence":"high"},
-                {"from":"observation:parity-proof-2","to":"observation:parity-proof-1","rel":"follows","class":"procedural","why":"The balanced check followed compact.","evidence":"The parity test sequence records this order.","confidence":"high"},
-                {"from":"observation:parity-proof-3","to":"observation:parity-proof-2","rel":"follows","class":"procedural","why":"The full check followed balanced.","evidence":"The parity test sequence records this order.","confidence":"high"}
+                {"from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before","rel":"supersedes","class":"evidential","why":"The later observation records the expanded transport matrix.","evidence":"The same test invokes all three paths.","confidence":"high"},
+                {"from":"project:parity-live:observation:parity-proof-1","to":"project:parity-live:observation:parity-after","rel":"follows","class":"procedural","why":"The compact check ran after base parity.","evidence":"The parity test sequence records this order.","confidence":"high"},
+                {"from":"project:parity-live:observation:parity-proof-2","to":"project:parity-live:observation:parity-proof-1","rel":"follows","class":"procedural","why":"The balanced check followed compact.","evidence":"The parity test sequence records this order.","confidence":"high"},
+                {"from":"project:parity-live:observation:parity-proof-3","to":"project:parity-live:observation:parity-proof-2","rel":"follows","class":"procedural","why":"The full check followed balanced.","evidence":"The parity test sequence records this order.","confidence":"high"}
             ],
             "evidence":[
-                {"id":"evidence:parity-live","supports":["observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:parity-compact","supports":["observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:parity-balanced","supports":["observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:parity-full","supports":["observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity"}
+                {"id":"evidence:project:parity-live:parity-live","supports":["project:parity-live:observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:project:parity-live:parity-compact","supports":["project:parity-live:observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:project:parity-live:parity-balanced","supports":["project:parity-live:observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity"},
+                {"id":"evidence:project:parity-live:parity-full","supports":["project:parity-live:observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity"}
             ]
         },
         "provenance":{"source_kind":"agent","source_agent":"grpc_mcp_semantic_parity","observed_at":"2026-08-25T00:01:00Z"},
@@ -505,7 +505,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                     ],
                     "entries": [
                         {
-                            "id": "claim:mcp-ingest-before",
+                            "id": "question:mcp-ingest-smoke:claim:mcp-ingest-before",
                             "kind": "claim",
                             "text": "The MCP adapter should first prove memory can be submitted.",
                             "coordinates": [
@@ -518,7 +518,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                             ]
                         },
                         {
-                            "id": "claim:mcp-ingest-after",
+                            "id": "question:mcp-ingest-smoke:claim:mcp-ingest-after",
                             "kind": "claim",
                             "text": "The MCP adapter can submit memory through the live KernelMemoryService.",
                             "coordinates": [
@@ -533,8 +533,8 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                     ],
                     "relations": [
                         {
-                            "from": "claim:mcp-ingest-after",
-                            "to": "claim:mcp-ingest-before",
+                            "from": "question:mcp-ingest-smoke:claim:mcp-ingest-after",
+                            "to": "question:mcp-ingest-smoke:claim:mcp-ingest-before",
                             "rel": "supersedes",
                             "class": "evidential",
                             "why": "The later smoke claim proves the intended capability.",
@@ -543,8 +543,8 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
                     ],
                     "evidence": [
                         {
-                            "id": "evidence:mcp-ingest-smoke",
-                            "supports": ["claim:mcp-ingest-after"],
+                            "id": "evidence:question:mcp-ingest-smoke:current",
+                            "supports": ["question:mcp-ingest-smoke:claim:mcp-ingest-after"],
                             "text": "The live smoke accepted kmp_ingest over gRPC.",
                             "source": "mcp_real_kernel_integration"
                         }
@@ -608,14 +608,14 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             ingested_wake_content,
             "/proof/path",
             "question:mcp-ingest-smoke",
-            "claim:mcp-ingest-after",
+            "question:mcp-ingest-smoke:claim:mcp-ingest-after",
             "records",
         );
         assert_array_contains_relation(
             ingested_wake_content,
             "/proof/path",
-            "evidence:mcp-ingest-smoke",
-            "claim:mcp-ingest-after",
+            "evidence:question:mcp-ingest-smoke:current",
+            "question:mcp-ingest-smoke:claim:mcp-ingest-after",
             "supports",
         );
         assert_array_contains_evidence(
@@ -631,7 +631,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             json!({
                 "about": "question:mcp-ingest-smoke",
                 "from": {
-                    "ref": "claim:mcp-ingest-before"
+                    "ref": "question:mcp-ingest-smoke:claim:mcp-ingest-before"
                 },
                 "dimensions": {
                     "mode": "only",
@@ -653,7 +653,7 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_array_contains_entry(
             temporal_forward_content,
             "/entries",
-            "claim:mcp-ingest-after",
+            "question:mcp-ingest-smoke:claim:mcp-ingest-after",
         );
 
         let ingested_ask = call_tool(
@@ -679,14 +679,14 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
         assert_eq!(
             ingested_ask_content.pointer("/answer"),
             Some(&Value::String(
-                "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- claim:mcp-ingest-after [detail:evidence:mcp-ingest-smoke]\n- claim:mcp-ingest-after [entry:claim:mcp-ingest-after]"
+                "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:mcp-ingest-smoke:claim:mcp-ingest-after [detail:evidence:question:mcp-ingest-smoke:current]\n- question:mcp-ingest-smoke:claim:mcp-ingest-after [entry:question:mcp-ingest-smoke:claim:mcp-ingest-after]"
                     .to_string()
             ))
         );
         assert_eq!(
             ingested_ask_content.pointer("/because/0/ref"),
             Some(&Value::String(
-                "detail:evidence:mcp-ingest-smoke".to_string()
+                "detail:evidence:question:mcp-ingest-smoke:current".to_string()
             ))
         );
         assert_array_contains_evidence(

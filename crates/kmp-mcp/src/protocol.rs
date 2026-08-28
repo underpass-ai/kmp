@@ -189,7 +189,7 @@ fn tools_list_core() -> Value {
                                         "additionalProperties": true,
                                         "required": ["id", "kind", "text", "coordinates"],
                                         "properties": {
-                                            "id": string_schema("Memory entry id."),
+                                            "id": string_schema("Memory entry id. Must be a safe descendant of the exact about, beginning with `<about>:`; the about anchor and refs owned by another about are refused."),
                                             "kind": string_schema("Memory entry kind."),
                                             "text": string_schema("Memory entry text."),
                                             "coordinates": {
@@ -208,8 +208,8 @@ fn tools_list_core() -> Value {
                                         "additionalProperties": true,
                                         "required": ["from", "to", "rel", "class"],
                                         "properties": {
-                                            "from": string_schema("Source memory entry id."),
-                                            "to": string_schema("Target memory entry id."),
+                                            "from": string_schema("Source ref owned by the exact about, its anchor, or a declared dimension id."),
+                                            "to": string_schema("Target ref owned by the exact about, its anchor, or a declared dimension id."),
                                             "rel": {
                                                 "type": "string",
                                                 "minLength": 1,
@@ -232,8 +232,8 @@ fn tools_list_core() -> Value {
                                             },
                                             "motivation": string_schema("Optional motivation for the relation itself."),
                                             "method": string_schema("Optional method by which the relation holds."),
-                                            "decision_id": string_schema("Optional decision ref associated with the relation."),
-                                            "caused_by_node_id": string_schema("Optional causal predecessor ref."),
+                                            "decision_id": string_schema("Optional about-owned decision ref associated with the relation."),
+                                            "caused_by_node_id": string_schema("Optional about-owned causal predecessor ref."),
                                             "coordinate": temporal_coordinate_schema()
                                         }
                                     }
@@ -245,10 +245,10 @@ fn tools_list_core() -> Value {
                                         "additionalProperties": true,
                                         "required": ["id", "text"],
                                         "properties": {
-                                            "id": string_schema("Evidence id."),
+                                            "id": string_schema("Evidence id. Must begin with `evidence:<about>:` so it cannot overwrite evidence owned by another about."),
                                             "supports": {
                                                 "type": "array",
-                                                "items": string_schema("Memory ref supported by this evidence.")
+                                                "items": string_schema("About-owned memory ref supported by this evidence, the about anchor, or a declared dimension id.")
                                             },
                                             "text": string_schema("Evidence text."),
                                             "source": string_schema("Evidence source."),

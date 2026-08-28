@@ -28,7 +28,7 @@ fn corpus() -> MemoryIngestCommand {
                 metadata: Default::default(),
             }],
             entries: vec![MemoryEntryData {
-                id: "decision:first".to_string(),
+                id: "project:memory-api:decision:first".to_string(),
                 kind: "decision".to_string(),
                 text: "The first decision.".to_string(),
                 coordinates: vec![MemoryCoordinateData {
@@ -111,7 +111,7 @@ async fn a_consumer_recalls_memory_without_a_domain_type_in_sight() {
         recall
             .neighbors
             .iter()
-            .any(|node| node.node_id == "decision:first"),
+            .any(|node| node.node_id == "project:memory-api:decision:first"),
         "the ingested decision must come back as a plain node: {:?}",
         recall.neighbors
     );
@@ -183,7 +183,7 @@ fn record_request(key: &str, text: &str) -> MemoryRecordRequest {
             metadata: Default::default(),
         }],
         entries: vec![MemoryEntrySpec {
-            id: "observation:first".to_string(),
+            id: "project:recorded:observation:first".to_string(),
             kind: "observation".to_string(),
             text: text.to_string(),
             coordinates: vec![MemoryCoordinateSpec {
@@ -197,8 +197,8 @@ fn record_request(key: &str, text: &str) -> MemoryRecordRequest {
         }],
         relations: Vec::new(),
         evidence: vec![MemoryEvidenceSpec {
-            id: "evidence:first".to_string(),
-            supports: vec!["observation:first".to_string()],
+            id: "evidence:project:recorded:first".to_string(),
+            supports: vec!["project:recorded:observation:first".to_string()],
             text: "A synthetic reading backing the observation.".to_string(),
             source: Some("contract-test".to_string()),
             time: Some("2026-08-04T10:00:00Z".to_string()),
@@ -240,7 +240,7 @@ async fn what_a_consumer_records_a_consumer_recalls() {
         recall
             .neighbors
             .iter()
-            .any(|node| node.node_id == "observation:first"),
+            .any(|node| node.node_id == "project:recorded:observation:first"),
         "what went in through the contract must come back through the \
          contract: {:?}",
         recall.neighbors
@@ -318,14 +318,14 @@ async fn a_recorded_relation_comes_back_as_a_relationship() {
 
     let mut request = record_request("record:contract:related", "The retries began.");
     let mut second = request.entries[0].clone();
-    second.id = "observation:second".to_string();
+    second.id = "project:recorded:observation:second".to_string();
     second.text = "The deploy finished moments earlier.".to_string();
     request.entries.push(second);
     // Relations join entries — evidence declared alongside resolves later and
     // cannot be an endpoint, which the spec's doc says out loud.
     request.relations = vec![MemoryRelationSpec {
-        from: "observation:second".to_string(),
-        to: "observation:first".to_string(),
+        from: "project:recorded:observation:second".to_string(),
+        to: "project:recorded:observation:first".to_string(),
         rel: "supports".to_string(),
         semantic_class: "evidential".to_string(),
         why: Some("the deploy timing explains the retries".to_string()),
@@ -359,11 +359,11 @@ async fn a_claimed_link_without_a_stated_reason_is_refused() {
 
     let mut request = record_request("record:contract:unreasoned", "The retries began.");
     let mut second = request.entries[0].clone();
-    second.id = "observation:second".to_string();
+    second.id = "project:recorded:observation:second".to_string();
     request.entries.push(second);
     request.relations = vec![MemoryRelationSpec {
-        from: "observation:second".to_string(),
-        to: "observation:first".to_string(),
+        from: "project:recorded:observation:second".to_string(),
+        to: "project:recorded:observation:first".to_string(),
         rel: "supports".to_string(),
         semantic_class: "evidential".to_string(),
         why: None,

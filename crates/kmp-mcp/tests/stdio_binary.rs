@@ -629,7 +629,7 @@ fn cli_surface_version_export_import_and_errors() {
     let project_write = run_binary_from(
         Some(&nested),
         &[("KMP_MCP_BACKEND", "embedded")],
-        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:commit-native\",\"idempotency_key\":\"ingest:commit-native\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:protected\",\"kind\":\"decision\",\"text\":\"protected\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:commit-native\",\"idempotency_key\":\"ingest:commit-native\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"project:commit-native:decision:protected\",\"kind\":\"decision\",\"text\":\"protected\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
     );
     assert!(
         project_write.status.success(),
@@ -698,7 +698,7 @@ fn cli_surface_version_export_import_and_errors() {
             ("KMP_MCP_BACKEND", "embedded"),
             ("KMP_MCP_DATA_DIR", source.path().to_str().expect("utf8")),
         ],
-        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:cli\",\"idempotency_key\":\"ingest:cli\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"decision:cli\",\"kind\":\"decision\",\"text\":\"cli\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:cli\",\"idempotency_key\":\"ingest:cli\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"project:cli:decision:cli\",\"kind\":\"decision\",\"text\":\"cli\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
     );
     assert!(ingest.status.success());
 

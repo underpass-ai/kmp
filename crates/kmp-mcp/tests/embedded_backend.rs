@@ -25,7 +25,7 @@ fn ingest_arguments() -> Value {
             "dimensions": [{"id": "conversation:s1", "kind": "conversation"}],
             "entries": [
                 {
-                    "id": "claim:e3",
+                    "id": "question:e3:claim:e3",
                     "kind": "claim",
                     "text": "Embedded backend accepted.",
                     "metadata": {
@@ -40,7 +40,7 @@ fn ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "claim:e3-detail",
+                    "id": "question:e3:claim:e3-detail",
                     "kind": "claim",
                     "text": "The in-process backend serves KMP.",
                     "coordinates": [{
@@ -52,8 +52,8 @@ fn ingest_arguments() -> Value {
                 }
             ],
             "relations": [{
-                "from": "claim:e3",
-                "to": "claim:e3-detail",
+                "from": "question:e3:claim:e3",
+                "to": "question:e3:claim:e3-detail",
                 "rel": "supports",
                 "class": "evidential",
                 "why": "The accepted claim answers the checkpoint question.",
@@ -61,8 +61,8 @@ fn ingest_arguments() -> Value {
                 "confidence": "high",
                 "motivation": "Preserve the acceptance rationale.",
                 "method": "Embedded conformance probe.",
-                "decision_id": "decision:e3",
-                "caused_by_node_id": "claim:e3",
+                "decision_id": "question:e3:decision:e3",
+                "caused_by_node_id": "question:e3:claim:e3",
                 "coordinate": {
                     "dimension": "conversation",
                     "scope_id": "conversation:s1",
@@ -72,8 +72,8 @@ fn ingest_arguments() -> Value {
                 }
             }],
             "evidence": [{
-                "id": "evidence:e3",
-                "supports": ["claim:e3"],
+                "id": "evidence:question:e3:claim:e3:fixture",
+                "supports": ["question:e3:claim:e3"],
                 "text": "E3 acceptance fixture.",
                 "source": "embedded backend test",
                 "metadata": {"requested_by": "choreographer"}
@@ -109,13 +109,16 @@ async fn a_project_write_maintains_its_commit_native_bundle() {
     assert_eq!(header.abouts, ["question:e3"]);
     assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
 
-    let historical =
-        kmp_mcp::snapshot::read_only(&bundle, "kmp_inspect", json!({"ref": "claim:e3"}))
-            .await
-            .expect("read verified snapshot in isolation");
+    let historical = kmp_mcp::snapshot::read_only(
+        &bundle,
+        "kmp_inspect",
+        json!({"ref": "question:e3:claim:e3"}),
+    )
+    .await
+    .expect("read verified snapshot in isolation");
     assert_eq!(
         historical["result"]["structuredContent"]["object"]["ref"],
-        "claim:e3"
+        "question:e3:claim:e3"
     );
     let refused = kmp_mcp::snapshot::read_only(&bundle, "kmp_ingest", ingest_arguments())
         .await
@@ -165,8 +168,8 @@ fn large_recall_ingest_arguments() -> Value {
     let mut evidence = (0..301)
         .map(|index| {
             json!({
-                "id": format!("evidence:weak:{index:03}"),
-                "supports": ["claim:large-recall"],
+                "id": format!("evidence:project:large-recall:weak:{index:03}"),
+                "supports": ["project:large-recall:claim:large-recall"],
                 "text": format!(
                     "Gate deficiencies caused rejection; authority remains withheld for unrelated rollout {index}."
                 ),
@@ -175,8 +178,8 @@ fn large_recall_ingest_arguments() -> Value {
         })
         .collect::<Vec<_>>();
     evidence.push(json!({
-        "id": "evidence:exact:gate-rejection",
-        "supports": ["claim:large-recall"],
+        "id": "evidence:project:large-recall:exact:gate-rejection",
+        "supports": ["project:large-recall:claim:large-recall"],
         "text": "The exact deficiencies caused rejection were missing contract tests; authority remains withheld until the gate passes.",
         "source": "current gate review"
     }));
@@ -188,7 +191,7 @@ fn large_recall_ingest_arguments() -> Value {
             "dimensions": [{"id": "work:large-recall", "kind": "work"}],
             "entries": [
                 {
-                    "id": "claim:large-recall",
+                    "id": "project:large-recall:claim:large-recall",
                     "kind": "claim",
                     "text": "Large recall gate result.",
                     "coordinates": [{
@@ -199,7 +202,7 @@ fn large_recall_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "claim:gate-action",
+                    "id": "project:large-recall:claim:gate-action",
                     "kind": "claim",
                     "text": "Gate remediation must happen before authority is released.",
                     "coordinates": [{
@@ -211,8 +214,8 @@ fn large_recall_ingest_arguments() -> Value {
                 }
             ],
             "relations": [{
-                "from": "claim:large-recall",
-                "to": "claim:gate-action",
+                "from": "project:large-recall:claim:large-recall",
+                "to": "project:large-recall:claim:gate-action",
                 "rel": "triggers",
                 "class": "causal",
                 "why": "The rejected gate caused remediation to become the next required action.",
@@ -232,7 +235,7 @@ fn paraphrase_recall_ingest_arguments() -> Value {
             "dimensions": [{"id": "work:live-validation", "kind": "work"}],
             "entries": [
                 {
-                    "id": "success:ranking-correction-merged",
+                    "id": "project:live-validation:success:ranking-correction-merged",
                     "kind": "success_path",
                     "text": "The relevance-ranking correction passed its regression test and was merged.",
                     "coordinates": [{
@@ -243,7 +246,7 @@ fn paraphrase_recall_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "constraint:restart-live-service",
+                    "id": "project:live-validation:constraint:restart-live-service",
                     "kind": "constraint",
                     "text": "The connected live service must be rebuilt or reinstalled from the corrected release and restarted before it can validate the relevance-ranking change.",
                     "coordinates": [{
@@ -254,7 +257,7 @@ fn paraphrase_recall_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "success:corrected-service-installed",
+                    "id": "project:live-validation:success:corrected-service-installed",
                     "kind": "success_path",
                     "text": "The corrected service release is now installed for future launches.",
                     "coordinates": [{
@@ -265,7 +268,7 @@ fn paraphrase_recall_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "error:tls-projection-race",
+                    "id": "project:live-validation:error:tls-projection-race",
                     "kind": "error_path",
                     "text": "A TLS projection test observed a partial graph.",
                     "coordinates": [{
@@ -278,8 +281,8 @@ fn paraphrase_recall_ingest_arguments() -> Value {
             ],
             "relations": [
                 {
-                    "from": "constraint:restart-live-service",
-                    "to": "success:ranking-correction-merged",
+                    "from": "project:live-validation:constraint:restart-live-service",
+                    "to": "project:live-validation:success:ranking-correction-merged",
                     "rel": "depends_on",
                     "class": "causal",
                     "why": "Live validation depends on rebuilding and restarting the service because the running executable predates the corrected relevance-ranking implementation.",
@@ -287,8 +290,8 @@ fn paraphrase_recall_ingest_arguments() -> Value {
                     "confidence": "high"
                 },
                 {
-                    "from": "success:corrected-service-installed",
-                    "to": "constraint:restart-live-service",
+                    "from": "project:live-validation:success:corrected-service-installed",
+                    "to": "project:live-validation:constraint:restart-live-service",
                     "rel": "updates_state",
                     "class": "causal",
                     "why": "Installing the corrected release removes the stale executable for future launches, while an already-running process still requires restart.",
@@ -296,8 +299,8 @@ fn paraphrase_recall_ingest_arguments() -> Value {
                     "confidence": "high"
                 },
                 {
-                    "from": "error:tls-projection-race",
-                    "to": "constraint:restart-live-service",
+                    "from": "project:live-validation:error:tls-projection-race",
+                    "to": "project:live-validation:constraint:restart-live-service",
                     "rel": "checked_against",
                     "class": "evidential",
                     "why": "The projection race was compared with the live service restart constraint while triaging issue 80.",
@@ -307,20 +310,20 @@ fn paraphrase_recall_ingest_arguments() -> Value {
             ],
             "evidence": [
                 {
-                    "id": "evidence:old-live-service",
-                    "supports": ["constraint:restart-live-service"],
+                    "id": "evidence:project:live-validation:old-live-service",
+                    "supports": ["project:live-validation:constraint:restart-live-service"],
                     "text": "The running service used an older executable while the corrected repository build was newer. Its live query reproduced the stale weak-prefix result, so the corrected implementation had not yet been validated in that process.",
                     "source": "live validation probe"
                 },
                 {
-                    "id": "evidence:corrected-install",
-                    "supports": ["success:corrected-service-installed"],
+                    "id": "evidence:project:live-validation:corrected-install",
+                    "supports": ["project:live-validation:success:corrected-service-installed"],
                     "text": "The installer replaced the previous release with the corrected build for subsequent service launches.",
                     "source": "installation verification"
                 },
                 {
-                    "id": "evidence:tls-projection-race",
-                    "supports": ["error:tls-projection-race"],
+                    "id": "evidence:project:live-validation:tls-projection-race",
+                    "supports": ["project:live-validation:error:tls-projection-race"],
                     "text": "The TLS projection test returned seven of seventeen nodes because its wait was missing.",
                     "source": "unrelated projection investigation"
                 }
@@ -337,7 +340,7 @@ fn graph_reranker_ingest_arguments() -> Value {
             "dimensions": [{"id": "work:graph-reranker", "kind": "work"}],
             "entries": [
                 {
-                    "id": "decision:sqlite-wal",
+                    "id": "decision:sqlite-wal:entry:decision:sqlite-wal",
                     "kind": "decision",
                     "text": "SQLite WAL is the embedded engine for concurrent KMP processes sharing one store.",
                     "coordinates": [{
@@ -348,7 +351,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "constraint:shared-process-store",
+                    "id": "decision:sqlite-wal:constraint:shared-process-store",
                     "kind": "constraint",
                     "text": "Two KMP processes must safely share the same embedded store.",
                     "coordinates": [{
@@ -359,7 +362,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "outcome:migration-replay",
+                    "id": "decision:sqlite-wal:outcome:migration-replay",
                     "kind": "outcome",
                     "text": "Migration replay preserves existing redb stores while fresh stores use SQLite.",
                     "coordinates": [{
@@ -370,7 +373,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "note:earlier-features",
+                    "id": "decision:sqlite-wal:note:earlier-features",
                     "kind": "note",
                     "text": "KMP shipped more features earlier than one planning note expected.",
                     "coordinates": [{
@@ -381,7 +384,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "note:format-layout",
+                    "id": "decision:sqlite-wal:note:format-layout",
                     "kind": "note",
                     "text": "KMP format version names use the same directory layout.",
                     "coordinates": [{
@@ -392,7 +395,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "note:release-verification",
+                    "id": "decision:sqlite-wal:note:release-verification",
                     "kind": "note",
                     "text": "One local KMP release was verified after installation.",
                     "coordinates": [{
@@ -405,8 +408,8 @@ fn graph_reranker_ingest_arguments() -> Value {
             ],
             "relations": [
                 {
-                    "from": "decision:sqlite-wal",
-                    "to": "constraint:shared-process-store",
+                    "from": "decision:sqlite-wal:entry:decision:sqlite-wal",
+                    "to": "decision:sqlite-wal:constraint:shared-process-store",
                     "rel": "chosen_because",
                     "class": "motivational",
                     "why": "SQLite WAL replaced redb because concurrent processes need one shareable embedded store.",
@@ -414,8 +417,8 @@ fn graph_reranker_ingest_arguments() -> Value {
                     "confidence": "high"
                 },
                 {
-                    "from": "outcome:migration-replay",
-                    "to": "decision:sqlite-wal",
+                    "from": "decision:sqlite-wal:outcome:migration-replay",
+                    "to": "decision:sqlite-wal:entry:decision:sqlite-wal",
                     "rel": "depends_on",
                     "class": "causal",
                     "why": "Replay preserves legacy redb data while the SQLite decision governs fresh shared stores.",
@@ -425,38 +428,38 @@ fn graph_reranker_ingest_arguments() -> Value {
             ],
             "evidence": [
                 {
-                    "id": "evidence:sqlite-wal-decision",
-                    "supports": ["decision:sqlite-wal"],
+                    "id": "evidence:decision:sqlite-wal:sqlite-wal-decision",
+                    "supports": ["decision:sqlite-wal:entry:decision:sqlite-wal"],
                     "text": "SQLite WAL is the embedded storage engine selected for concurrent KMP processes sharing one store.",
                     "source": "ADR fixture"
                 },
                 {
-                    "id": "evidence:shared-process-constraint",
-                    "supports": ["constraint:shared-process-store"],
+                    "id": "evidence:decision:sqlite-wal:shared-process-constraint",
+                    "supports": ["decision:sqlite-wal:constraint:shared-process-store"],
                     "text": "Two KMP processes require a shareable embedded store.",
                     "source": "concurrency fixture"
                 },
                 {
-                    "id": "evidence:migration-replay",
-                    "supports": ["outcome:migration-replay"],
+                    "id": "evidence:decision:sqlite-wal:migration-replay",
+                    "supports": ["decision:sqlite-wal:outcome:migration-replay"],
                     "text": "Existing redb stores remain readable during migration; new stores select SQLite.",
                     "source": "migration fixture"
                 },
                 {
-                    "id": "evidence:earlier-features",
-                    "supports": ["note:earlier-features"],
+                    "id": "evidence:decision:sqlite-wal:earlier-features",
+                    "supports": ["decision:sqlite-wal:note:earlier-features"],
                     "text": "KMP added more features earlier than one roadmap expected.",
                     "source": "weak lexical distractor"
                 },
                 {
-                    "id": "evidence:format-layout",
-                    "supports": ["note:format-layout"],
+                    "id": "evidence:decision:sqlite-wal:format-layout",
+                    "supports": ["decision:sqlite-wal:note:format-layout"],
                     "text": "KMP version names use the same format layout.",
                     "source": "weak lexical distractor"
                 },
                 {
-                    "id": "evidence:release-verification",
-                    "supports": ["note:release-verification"],
+                    "id": "evidence:decision:sqlite-wal:release-verification",
+                    "supports": ["decision:sqlite-wal:note:release-verification"],
                     "text": "One KMP release was verified after installation.",
                     "source": "weak lexical distractor"
                 }
@@ -473,7 +476,7 @@ fn partial_default_update_ingest_arguments() -> Value {
             "dimensions": [{"id": "work:fresh-store-default", "kind": "work"}],
             "entries": [
                 {
-                    "id": "decision:two-engine-architecture",
+                    "id": "decision:fresh-store-default:decision:two-engine-architecture",
                     "kind": "decision",
                     "text": "KMP keeps redb compatibility and SQLite as two embedded storage engines.",
                     "coordinates": [{
@@ -484,7 +487,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "decision:historical-fresh-store-default",
+                    "id": "decision:fresh-store-default:decision:historical-fresh-store-default",
                     "kind": "decision",
                     "text": "Redb was the distribution default for a fresh KMP data directory.",
                     "coordinates": [{
@@ -495,7 +498,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "decision:current-fresh-store-default",
+                    "id": "decision:fresh-store-default:decision:current-fresh-store-default",
                     "kind": "decision",
                     "text": "Shipped KMP builds create fresh SQLite stores while preserving existing redb stores.",
                     "coordinates": [{
@@ -508,8 +511,8 @@ fn partial_default_update_ingest_arguments() -> Value {
             ],
             "relations": [
                 {
-                    "from": "decision:current-fresh-store-default",
-                    "to": "decision:historical-fresh-store-default",
+                    "from": "decision:fresh-store-default:decision:current-fresh-store-default",
+                    "to": "decision:fresh-store-default:decision:historical-fresh-store-default",
                     "rel": "updates_state",
                     "class": "causal",
                     "why": "The shipped fresh-store policy changes only the distribution default, not the two-engine architecture.",
@@ -517,8 +520,8 @@ fn partial_default_update_ingest_arguments() -> Value {
                     "confidence": "high"
                 },
                 {
-                    "from": "decision:current-fresh-store-default",
-                    "to": "decision:two-engine-architecture",
+                    "from": "decision:fresh-store-default:decision:current-fresh-store-default",
+                    "to": "decision:fresh-store-default:decision:two-engine-architecture",
                     "rel": "uses_background",
                     "class": "evidential",
                     "why": "The new default operates inside the existing two-engine compatibility architecture.",
@@ -528,22 +531,22 @@ fn partial_default_update_ingest_arguments() -> Value {
             ],
             "evidence": [
                 {
-                    "id": "evidence:historical-fresh-store-default",
-                    "supports": ["decision:historical-fresh-store-default"],
+                    "id": "evidence:decision:fresh-store-default:historical-fresh-store-default",
+                    "supports": ["decision:fresh-store-default:decision:historical-fresh-store-default"],
                     "text": "Before the distribution change, fresh KMP data directories defaulted to redb.",
                     "source": "historical release fixture",
                     "time": "2026-08-17T11:38:00Z"
                 },
                 {
-                    "id": "evidence:current-fresh-store-default",
-                    "supports": ["decision:current-fresh-store-default"],
+                    "id": "evidence:decision:fresh-store-default:current-fresh-store-default",
+                    "supports": ["decision:fresh-store-default:decision:current-fresh-store-default"],
                     "text": "Existing redb stores remain readable; a new KMP installation creates a fresh SQLite store by default.",
                     "source": "current release fixture",
                     "time": "2026-08-17T11:39:00Z"
                 },
                 {
-                    "id": "evidence:two-engine-architecture",
-                    "supports": ["decision:two-engine-architecture"],
+                    "id": "evidence:decision:fresh-store-default:two-engine-architecture",
+                    "supports": ["decision:fresh-store-default:decision:two-engine-architecture"],
                     "text": "The architecture retains both the redb compatibility path and the SQLite engine.",
                     "source": "architecture fixture",
                     "time": "2026-08-17T11:37:00Z"
@@ -560,7 +563,7 @@ fn relation_why_seed_arguments() -> Value {
         "memory": {
             "dimensions": [{"id": "work:relation-why", "kind": "work"}],
             "entries": [{
-                "id": "constraint:share-embedded-store",
+                "id": "project:relation-why-conformance:constraint:share-embedded-store",
                 "kind": "constraint",
                 "text": "Independent KMP agent processes must safely share one embedded store.",
                 "coordinates": [{
@@ -572,8 +575,8 @@ fn relation_why_seed_arguments() -> Value {
             }],
             "relations": [],
             "evidence": [{
-                "id": "evidence:shared-store-requirement",
-                "supports": ["constraint:share-embedded-store"],
+                "id": "evidence:project:relation-why-conformance:shared-store-requirement",
+                "supports": ["project:relation-why-conformance:constraint:share-embedded-store"],
                 "text": "The host architecture starts independent KMP processes against the same project store.",
                 "source": "host architecture fixture"
             }]
@@ -589,7 +592,7 @@ fn language_fallback_seed_arguments() -> Value {
             "dimensions": [{"id": "work:language-fallback", "kind": "work"}],
             "entries": [
                 {
-                    "id": "decision:embedded-redb",
+                    "id": "project:language-fallback:decision:embedded-redb",
                     "kind": "decision",
                     "text": "The embedded store uses redb.",
                     "coordinates": [{
@@ -600,7 +603,7 @@ fn language_fallback_seed_arguments() -> Value {
                     }]
                 },
                 {
-                    "id": "constraint:single-writer-ownership",
+                    "id": "project:language-fallback:constraint:single-writer-ownership",
                     "kind": "constraint",
                     "text": "One writer matches one agent per project.",
                     "coordinates": [{
@@ -612,8 +615,8 @@ fn language_fallback_seed_arguments() -> Value {
                 }
             ],
             "relations": [{
-                "from": "decision:embedded-redb",
-                "to": "constraint:single-writer-ownership",
+                "from": "project:language-fallback:decision:embedded-redb",
+                "to": "project:language-fallback:constraint:single-writer-ownership",
                 "rel": "uses_background",
                 "class": "evidential",
                 "why": "The single-writer model matches the product's per-project agent ownership.",
@@ -621,8 +624,8 @@ fn language_fallback_seed_arguments() -> Value {
                 "confidence": "high"
             }],
             "evidence": [{
-                "id": "evidence:embedded-redb-choice",
-                "supports": ["decision:embedded-redb"],
+                "id": "evidence:project:language-fallback:embedded-redb-choice",
+                "supports": ["project:language-fallback:decision:embedded-redb"],
                 "text": "We chose redb because one writer matched one agent per project.",
                 "source": "archive/docs/adr/ADR-011.md:42",
                 "metadata": {"language": "en", "digest": "sha256:language-fixture"}
@@ -655,7 +658,7 @@ fn diacritic_recall_seed_arguments() -> Value {
         .enumerate()
         .map(|(index, (language, text, occurred_at))| {
             json!({
-                "id": format!("incident:diacritic:{language}"),
+                "id": format!("project:diacritic-recall:incident:diacritic:{language}"),
                 "kind": "incident",
                 "text": text,
                 "metadata": {"language": language},
@@ -672,8 +675,8 @@ fn diacritic_recall_seed_arguments() -> Value {
         .iter()
         .map(|(language, text, _)| {
             json!({
-                "id": format!("evidence:diacritic:{language}"),
-                "supports": [format!("incident:diacritic:{language}")],
+                "id": format!("evidence:project:diacritic-recall:diacritic:{language}"),
+                "supports": [format!("project:diacritic-recall:incident:diacritic:{language}")],
                 "text": text,
                 "source": format!("{language} incident fixture"),
                 "metadata": {"language": language}
@@ -731,7 +734,9 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         .as_array()
         .expect("English retry carries evidence")
         .iter()
-        .find(|evidence| evidence["id"] == "detail:evidence:embedded-redb-choice")
+        .find(|evidence| {
+            evidence["id"] == "detail:evidence:project:language-fallback:embedded-redb-choice"
+        })
         .expect("English retry cites the stored evidence");
     assert_eq!(evidence["text"], TEXT);
     assert_eq!(evidence["source"], "archive/docs/adr/ADR-011.md:42");
@@ -823,7 +828,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         .as_array()
         .expect("goto entries are an array")
         .iter()
-        .find(|entry| entry["ref"] == "claim:e3")
+        .find(|entry| entry["ref"] == "question:e3:claim:e3")
         .expect("goto returns the first claim");
     assert_eq!(entry["metadata"]["window"], "10:00-10:20");
     assert_eq!(entry["metadata"]["probe_digest"], "sha256:e3");
@@ -832,22 +837,25 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         .as_array()
         .expect("goto proof evidence is an array")
         .iter()
-        .find(|evidence| evidence["id"] == "detail:evidence:e3")
+        .find(|evidence| evidence["id"] == "detail:evidence:question:e3:claim:e3:fixture")
         .expect("goto returns explicit evidence");
     assert_eq!(evidence["source"], "embedded backend test");
-    assert_eq!(evidence["supports"], json!(["claim:e3"]));
+    assert_eq!(evidence["supports"], json!(["question:e3:claim:e3"]));
     assert_eq!(evidence["metadata"]["requested_by"], "choreographer");
 
     let relation = goto["proof"]["path"]
         .as_array()
         .expect("goto proof path is an array")
         .iter()
-        .find(|relation| relation["from"] == "claim:e3" && relation["to"] == "claim:e3-detail")
+        .find(|relation| {
+            relation["from"] == "question:e3:claim:e3"
+                && relation["to"] == "question:e3:claim:e3-detail"
+        })
         .expect("goto returns the qualified relation");
     assert_eq!(relation["motivation"], "Preserve the acceptance rationale.");
     assert_eq!(relation["method"], "Embedded conformance probe.");
-    assert_eq!(relation["decision_id"], "decision:e3");
-    assert_eq!(relation["caused_by_node_id"], "claim:e3");
+    assert_eq!(relation["decision_id"], "question:e3:decision:e3");
+    assert_eq!(relation["caused_by_node_id"], "question:e3:claim:e3");
     assert_eq!(relation["coordinate"]["dimension"], "conversation");
     assert_eq!(
         relation["coordinate"]["valid_until"],
@@ -859,7 +867,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         .as_array()
         .expect("wake proof evidence is an array")
         .iter()
-        .find(|evidence| evidence["id"] == "detail:evidence:e3")
+        .find(|evidence| evidence["id"] == "detail:evidence:question:e3:claim:e3:fixture")
         .expect("wake returns explicit evidence");
     assert_eq!(wake_evidence["source"], "embedded backend test");
 
@@ -874,21 +882,33 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         .as_array()
         .expect("ask proof evidence is an array")
         .iter()
-        .find(|evidence| evidence["id"] == "detail:evidence:e3")
+        .find(|evidence| evidence["id"] == "detail:evidence:question:e3:claim:e3:fixture")
         .expect("ask returns explicit evidence");
     assert_eq!(ask_evidence["source"], "embedded backend test");
 
-    let inspected_entry = call(&server, 3, "kmp_inspect", json!({"ref": "claim:e3"})).await;
+    let inspected_entry = call(
+        &server,
+        3,
+        "kmp_inspect",
+        json!({"ref": "question:e3:claim:e3"}),
+    )
+    .await;
     assert_eq!(
         inspected_entry["object"]["metadata"]["window"],
         "10:00-10:20"
     );
     assert_eq!(
-        inspected_entry["links"]["outgoing"][0]["to"], "claim:e3-detail",
+        inspected_entry["links"]["outgoing"][0]["to"], "question:e3:claim:e3-detail",
         "default inspect must return direct links"
     );
 
-    let inspected_evidence = call(&server, 4, "kmp_inspect", json!({"ref": "evidence:e3"})).await;
+    let inspected_evidence = call(
+        &server,
+        4,
+        "kmp_inspect",
+        json!({"ref": "evidence:question:e3:claim:e3:fixture"}),
+    )
+    .await;
     assert_eq!(
         inspected_evidence["object"]["source"],
         "embedded backend test"
@@ -962,10 +982,8 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
         }),
     )
     .await;
-    assert!(
-        wake["wake"]["current_state"][0]
-            .as_str()
-            .is_some_and(|state| state.contains("--triggers-->")),
+    assert_eq!(
+        wake["wake"]["next_actions"][0], "triggers → project:large-recall:claim:gate-action",
         "{wake}"
     );
     assert_eq!(
@@ -1133,7 +1151,7 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
             .filter_map(|evidence| evidence["id"].as_str())
             .collect::<Vec<_>>();
         assert!(
-            evidence_ids.contains(&"detail:evidence:sqlite-wal-decision"),
+            evidence_ids.contains(&"detail:evidence:decision:sqlite-wal:sqlite-wal-decision"),
             "the answer-bearing architecture decision must survive reranking: {ask}"
         );
         assert!(
@@ -1141,7 +1159,9 @@ async fn graph_aware_reranker_keeps_answer_claims_ahead_of_weak_novelty() {
                 .as_array()
                 .expect("answer citations")
                 .iter()
-                .any(|reason| reason["claim"] == "decision:sqlite-wal"),
+                .any(|reason| {
+                    reason["claim"] == "decision:sqlite-wal:entry:decision:sqlite-wal"
+                }),
             "the scarce answer core must cite the architecture decision: {ask}"
         );
         assert!(
@@ -1193,7 +1213,8 @@ async fn current_default_recall_survives_a_partial_decision_update() {
 
             assert_ne!(ask["answer"], "UNKNOWN", "{question}: {ask}");
             assert_eq!(
-                ask["proof"]["evidence"][0]["supports"][0], "decision:current-fresh-store-default",
+                ask["proof"]["evidence"][0]["supports"][0],
+                "decision:fresh-store-default:decision:current-fresh-store-default",
                 "the current policy must rank first: {ask}"
             );
             assert!(
@@ -1241,8 +1262,13 @@ async fn current_default_recall_survives_a_partial_decision_update() {
         .iter()
         .filter_map(|entry| entry["ref"].as_str())
         .collect::<Vec<_>>();
-    assert!(before_refs.contains(&"decision:historical-fresh-store-default"));
-    assert!(!before_refs.contains(&"decision:current-fresh-store-default"));
+    assert!(
+        before_refs
+            .contains(&"decision:fresh-store-default:decision:historical-fresh-store-default")
+    );
+    assert!(
+        !before_refs.contains(&"decision:fresh-store-default:decision:current-fresh-store-default")
+    );
 
     let after = call(
         &server,
@@ -1260,7 +1286,9 @@ async fn current_default_recall_survives_a_partial_decision_update() {
             .as_array()
             .expect("goto entries")
             .iter()
-            .any(|entry| entry["ref"] == "decision:current-fresh-store-default"),
+            .any(|entry| {
+                entry["ref"] == "decision:fresh-store-default:decision:current-fresh-store-default"
+            }),
         "{after}"
     );
 
@@ -1269,7 +1297,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
         10,
         "kmp_inspect",
         json!({
-            "ref": "decision:two-engine-architecture"
+            "ref": "decision:fresh-store-default:decision:two-engine-architecture"
         }),
     )
     .await;
@@ -1303,7 +1331,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         &server,
         2,
         "kmp_inspect",
-        json!({"ref": "constraint:share-embedded-store"}),
+        json!({"ref": "project:relation-why-conformance:constraint:share-embedded-store"}),
     )
     .await;
     assert_eq!(
@@ -1325,7 +1353,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
                 "evidence": "The architecture comparison selected SQLite WAL over redb after exercising two independent processes."
             },
             "connect_to": [{
-                "ref": "constraint:share-embedded-store",
+                "ref": "project:relation-why-conformance:constraint:share-embedded-store",
                 "rel": "chosen_because",
                 "class": "motivational",
                 "why": WHY,
@@ -1333,7 +1361,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
                 "confidence": "high"
             }],
             "read_context": {
-                "inspected_refs": ["constraint:share-embedded-store"]
+                "inspected_refs": ["project:relation-why-conformance:constraint:share-embedded-store"]
             },
             "idempotency_key": "write:relation-why-sqlite-decision",
             "options": {"dry_run": dry_run, "strict": true, "sequence": 2}
@@ -1403,7 +1431,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         "kmp_trace",
         json!({
             "from": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
-            "to": "constraint:share-embedded-store"
+            "to": "project:relation-why-conformance:constraint:share-embedded-store"
         }),
     )
     .await;
@@ -1603,6 +1631,100 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
 }
 
 #[tokio::test]
+async fn raw_ingest_refs_cannot_escape_their_about_or_replace_another_root() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let record = |about: &str, summary: &str| {
+        json!({
+            "about": about,
+            "intent": "record_observation",
+            "actor": "agent:ingest-boundary-test",
+            "observed_at": "2026-08-28T07:00:00Z",
+            "scope": {"process": format!("{about}:patrol")},
+            "current": {
+                "kind": "observation",
+                "summary": summary,
+                "evidence": format!("seed evidence for {about}")
+            },
+            "options": {"strict": false}
+        })
+    };
+
+    let beta = call(
+        &server,
+        1,
+        "kmp_write_memory",
+        record("incident:beta", "beta keeps its own root anchor"),
+    )
+    .await;
+    let gamma = call(
+        &server,
+        2,
+        "kmp_write_memory",
+        record("incident:gamma", "gamma keeps its original memory"),
+    )
+    .await;
+    assert_eq!(beta["accepted"], true, "{beta}");
+    assert_eq!(gamma["accepted"], true, "{gamma}");
+    let gamma_ref = gamma["generated_refs"][0]
+        .as_str()
+        .expect("gamma generated ref")
+        .to_string();
+
+    let hostile_refs = [
+        gamma_ref.as_str(),
+        "incident:beta",
+        "incident:alfa:entry:x\nincident:beta:entry:y",
+        "../../incident:beta:entry:x",
+    ];
+    for (index, hostile_ref) in hostile_refs.into_iter().enumerate() {
+        let refused = call(
+            &server,
+            10 + index as u64,
+            "kmp_ingest",
+            json!({
+                "about": "incident:alfa",
+                "idempotency_key": format!("ingest:boundary-probe:{index}"),
+                "memory": {
+                    "dimensions": [{"id": "incident:alfa:patrol", "kind": "agentic_process"}],
+                    "entries": [{
+                        "id": hostile_ref,
+                        "kind": "observation",
+                        "text": "planted from the wrong about",
+                        "coordinates": [{
+                            "dimension": "agentic_process",
+                            "scope_id": "incident:alfa:patrol",
+                            "occurred_at": "2026-08-28T07:00:00Z"
+                        }]
+                    }],
+                    "relations": [],
+                    "evidence": []
+                }
+            }),
+        )
+        .await;
+        assert_eq!(refused["error"]["code"], "invalid_argument", "{refused}");
+        assert!(
+            refused["error"]["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("memory.entries[].id")),
+            "the refusal must identify the raw entry id: {refused}"
+        );
+    }
+
+    let gamma_entry = call(&server, 20, "kmp_inspect", json!({"ref": gamma_ref})).await;
+    assert_eq!(
+        gamma_entry["object"]["text"], "gamma keeps its original memory",
+        "rejected ingest calls must not overwrite gamma: {gamma_entry}"
+    );
+    let beta_anchor = call(&server, 21, "kmp_inspect", json!({"ref": "incident:beta"})).await;
+    assert_eq!(
+        beta_anchor["object"]["kind"], "memory_anchor",
+        "rejected ingest calls must not demote beta's root: {beta_anchor}"
+    );
+}
+
+#[tokio::test]
 async fn embedded_backend_returns_structured_not_found_errors() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
@@ -1774,7 +1896,10 @@ async fn view_intents_resolve_projection_names_against_the_mounted_store_and_rea
                 "from": "2026-08-27T00:00:00Z",
                 "to": "2026-08-28T00:00:00Z"
             }},
-            "trace": {"from": "claim:e3", "to": "claim:e3-detail"}
+            "trace": {
+                "from": "question:e3:claim:e3",
+                "to": "question:e3:claim:e3-detail"
+            }
         }),
     )
     .await;
@@ -1794,18 +1919,24 @@ async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unrea
         &server,
         2,
         "kmp_trace",
-        json!({"from": "claim:e3", "to": "claim:e3-detail"}),
+        json!({
+            "from": "question:e3:claim:e3",
+            "to": "question:e3:claim:e3-detail"
+        }),
     )
     .await;
     assert_eq!(forward["trace"].as_array().map(Vec::len), Some(1));
-    assert_eq!(forward["trace"][0]["from"], "claim:e3");
-    assert_eq!(forward["trace"][0]["to"], "claim:e3-detail");
+    assert_eq!(forward["trace"][0]["from"], "question:e3:claim:e3");
+    assert_eq!(forward["trace"][0]["to"], "question:e3:claim:e3-detail");
 
     let reverse = call(
         &server,
         3,
         "kmp_trace",
-        json!({"from": "claim:e3-detail", "to": "claim:e3"}),
+        json!({
+            "from": "question:e3:claim:e3-detail",
+            "to": "question:e3:claim:e3"
+        }),
     )
     .await;
     assert_eq!(reverse["trace"], json!([]), "{reverse}");
@@ -1846,8 +1977,8 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .call_tool(
             "kmp_trace",
             &serde_json::json!({
-                "from": "claim:e3",
-                "to": "claim:e3-detail"
+                "from": "question:e3:claim:e3",
+                "to": "question:e3:claim:e3-detail"
             }),
         )
         .await

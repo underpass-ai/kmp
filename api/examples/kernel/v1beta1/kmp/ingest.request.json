@@ -19,7 +19,7 @@
     ],
     "entries": [
       {
-        "id": "claim:rachel-denver",
+        "id": "question:830ce83f:claim:rachel-denver",
         "kind": "claim",
         "text": "Rachel said she was moving to Denver.",
         "coordinates": [
@@ -37,7 +37,7 @@
         ]
       },
       {
-        "id": "claim:rachel-austin",
+        "id": "question:830ce83f:claim:rachel-austin",
         "kind": "claim",
         "text": "Rachel later corrected the destination to Austin.",
         "coordinates": [
@@ -62,8 +62,8 @@
     ],
     "relations": [
       {
-        "from": "claim:rachel-austin",
-        "to": "claim:rachel-denver",
+        "from": "question:830ce83f:claim:rachel-austin",
+        "to": "question:830ce83f:claim:rachel-denver",
         "rel": "supersedes",
         "class": "evidential",
         "why": "The later statement corrects the earlier destination.",
@@ -73,9 +73,9 @@
     ],
     "evidence": [
       {
-        "id": "evidence:rachel-turn-2",
+        "id": "evidence:question:830ce83f:rachel-turn-2",
         "supports": [
-          "claim:rachel-austin"
+          "question:830ce83f:claim:rachel-austin"
         ],
         "text": "Later she corrected it: the move is to Austin.",
         "source": "conversation turn 2"

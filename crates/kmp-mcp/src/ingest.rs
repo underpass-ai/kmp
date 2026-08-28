@@ -1,5 +1,9 @@
 use std::collections::BTreeMap;
 
+use kmp_application::{
+    validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
+    validate_supplied_member_ref,
+};
 use serde_json::{Map, Value};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -36,6 +40,7 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
     let about = required_string(arguments.get("about"), "about")?;
+    validate_ref_token("about", &about)?;
     let idempotency_key = required_string(arguments.get("idempotency_key"), "idempotency_key")?;
     let memory = arguments
         .get("memory")
@@ -54,6 +59,7 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
     let mut changes = Vec::new();
     for dimension in dimensions {
         let id = required_object_string(dimension, "memory.dimensions[].id")?;
+        validate_ref_token("memory.dimensions[].id", id)?;
         let kind = required_object_string(dimension, "memory.dimensions[].kind")?;
         if dimension_kinds.insert(id, kind).is_some() {
             return Err(format!("duplicate memory dimension `{id}`"));
@@ -69,6 +75,7 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
 
     for entry in entries {
         let id = required_object_string(entry, "memory.entries[].id")?;
+        validate_supplied_entry_ref(&about, "memory.entries[].id", id)?;
         let _kind = required_object_string(entry, "memory.entries[].kind")?;
         let _text = required_object_string(entry, "memory.entries[].text")?;
         validate_entry_positions(entry, &dimension_kinds)?;
@@ -84,6 +91,18 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
     for relation in relations {
         let from = required_object_string(relation, "memory.relations[].from")?;
         let to = required_object_string(relation, "memory.relations[].to")?;
+        validate_ingest_member_ref(&about, "memory.relations[].from", from, &dimension_kinds)?;
+        validate_ingest_member_ref(&about, "memory.relations[].to", to, &dimension_kinds)?;
+        for field in ["decision_id", "caused_by_node_id"] {
+            if let Some(reference) = relation.get(field).and_then(Value::as_str) {
+                validate_ingest_member_ref(
+                    &about,
+                    &format!("memory.relations[].{field}"),
+                    reference,
+                    &dimension_kinds,
+                )?;
+            }
+        }
         let rel = required_object_string(relation, "memory.relations[].rel")?;
         let semantic_class = required_object_string(relation, "memory.relations[].class")?;
         validate_semantic_class(semantic_class)?;
@@ -111,8 +130,9 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
 
     for evidence_item in evidence {
         let id = required_object_string(evidence_item, "memory.evidence[].id")?;
+        validate_supplied_evidence_ref(&about, "memory.evidence[].id", id)?;
         let _text = required_object_string(evidence_item, "memory.evidence[].text")?;
-        validate_evidence_supports(evidence_item)?;
+        validate_evidence_supports(&about, evidence_item, &dimension_kinds)?;
         changes.push(KmpIngestChange {
             entity_kind: "memory_evidence".to_string(),
             entity_id: id.to_string(),
@@ -273,7 +293,24 @@ fn validate_relation_explanation(relation: &Value, semantic_class: &str) -> Resu
     Ok(())
 }
 
-fn validate_evidence_supports(evidence_item: &Value) -> Result<(), String> {
+fn validate_ingest_member_ref(
+    about: &str,
+    path: &str,
+    reference: &str,
+    dimension_kinds: &BTreeMap<&str, &str>,
+) -> Result<(), String> {
+    if dimension_kinds.contains_key(reference) {
+        validate_ref_token(path, reference)
+    } else {
+        validate_supplied_member_ref(about, path, reference)
+    }
+}
+
+fn validate_evidence_supports(
+    about: &str,
+    evidence_item: &Value,
+    dimension_kinds: &BTreeMap<&str, &str>,
+) -> Result<(), String> {
     for (index, support) in evidence_item
         .get("supports")
         .and_then(Value::as_array)
@@ -281,14 +318,20 @@ fn validate_evidence_supports(evidence_item: &Value) -> Result<(), String> {
         .flatten()
         .enumerate()
     {
-        if support
+        let Some(support) = support
             .as_str()
-            .is_none_or(|support| support.trim().is_empty())
-        {
+            .filter(|support| !support.trim().is_empty())
+        else {
             return Err(format!(
                 "argument `memory.evidence[].supports[{index}]` must be a non-empty string"
             ));
-        }
+        };
+        validate_ingest_member_ref(
+            about,
+            &format!("memory.evidence[].supports[{index}]"),
+            support,
+            dimension_kinds,
+        )?;
     }
     Ok(())
 }
@@ -422,7 +465,7 @@ mod tests {
         assert_eq!(plan.changes[1].scopes, vec!["conversation:rachel"]);
         assert_eq!(
             plan.changes[2].entity_id,
-            "relation:claim:rachel-austin:supersedes:claim:rachel-denver"
+            "relation:question:830ce83f:claim:rachel-austin:supersedes:question:830ce83f:claim:rachel-denver"
         );
     }
 
@@ -450,7 +493,7 @@ mod tests {
                 ],
                 "entries": [
                     {
-                        "id": "claim:rachel-austin",
+                        "id": "question:830ce83f:claim:rachel-austin",
                         "kind": "claim",
                         "text": "Rachel moved to Austin.",
                         "coordinates": [
@@ -504,6 +547,66 @@ mod tests {
         );
     }
 
+    #[test]
+    fn build_ingest_plan_bounds_every_caller_supplied_ref_field() {
+        const HOSTILE_REFS: &[&str] = &[
+            "incident:gamma:entry:observation:foreign",
+            "incident:beta",
+            "incident:alfa:entry:x\nincident:beta:entry:y",
+            "../../incident:beta:entry:x",
+        ];
+        const REF_FIELDS: &[&str] = &[
+            "entry.id",
+            "relation.from",
+            "relation.to",
+            "relation.decision_id",
+            "relation.caused_by_node_id",
+            "evidence.id",
+            "evidence.supports",
+        ];
+
+        for field in REF_FIELDS {
+            for hostile in HOSTILE_REFS {
+                let mut request = sample_ingest_request();
+                request["about"] = json!("incident:alfa");
+                request["memory"]["entries"][0]["id"] =
+                    json!("incident:alfa:entry:observation:local");
+                request["memory"]["relations"][0]["from"] =
+                    json!("incident:alfa:entry:observation:local");
+                request["memory"]["relations"][0]["to"] = json!("incident:alfa");
+                request["memory"]["evidence"][0]["id"] =
+                    json!("evidence:incident:alfa:entry:observation:local:current");
+                request["memory"]["evidence"][0]["supports"][0] =
+                    json!("incident:alfa:entry:observation:local");
+
+                match *field {
+                    "entry.id" => request["memory"]["entries"][0]["id"] = json!(hostile),
+                    "relation.from" => request["memory"]["relations"][0]["from"] = json!(hostile),
+                    "relation.to" => request["memory"]["relations"][0]["to"] = json!(hostile),
+                    "relation.decision_id" => {
+                        request["memory"]["relations"][0]["decision_id"] = json!(hostile)
+                    }
+                    "relation.caused_by_node_id" => {
+                        request["memory"]["relations"][0]["caused_by_node_id"] = json!(hostile)
+                    }
+                    "evidence.id" => request["memory"]["evidence"][0]["id"] = json!(hostile),
+                    "evidence.supports" => {
+                        request["memory"]["evidence"][0]["supports"][0] = json!(hostile)
+                    }
+                    unexpected => panic!("unknown test field {unexpected}"),
+                }
+
+                let error = build_ingest_plan(&request)
+                    .expect_err("an ingest ref outside the about must be refused");
+                assert!(
+                    error.contains("does not belong to about")
+                        || error.contains("memory refs cannot contain"),
+                    "{field} accepted or misclassified {hostile:?}: {error}"
+                );
+            }
+        }
+    }
+
     fn sample_ingest_request() -> Value {
         json!({
             "about": "question:830ce83f",
@@ -516,7 +619,7 @@ mod tests {
                 ],
                 "entries": [
                     {
-                        "id": "claim:rachel-austin",
+                        "id": "question:830ce83f:claim:rachel-austin",
                         "kind": "claim",
                         "text": "Rachel moved to Austin.",
                         "coordinates": [
@@ -530,8 +633,8 @@ mod tests {
                 ],
                 "relations": [
                     {
-                        "from": "claim:rachel-austin",
-                        "to": "claim:rachel-denver",
+                        "from": "question:830ce83f:claim:rachel-austin",
+                        "to": "question:830ce83f:claim:rachel-denver",
                         "rel": "supersedes",
                         "class": "evidential",
                         "why": "Later statement corrects earlier statement.",
@@ -541,8 +644,8 @@ mod tests {
                 ],
                 "evidence": [
                     {
-                        "id": "evidence:rachel",
-                        "supports": ["claim:rachel-austin"],
+                        "id": "evidence:question:830ce83f:claim:rachel-austin:current",
+                        "supports": ["question:830ce83f:claim:rachel-austin"],
                         "text": "Rachel corrected the destination.",
                         "source": "conversation"
                     }

@@ -48,17 +48,22 @@ fn corpus() -> MemoryIngestCommand {
                 metadata: Default::default(),
             }],
             entries: vec![
-                entry("decision:first", "Choose redb.", "2026-07-01T10:00:00Z", 1),
                 entry(
-                    "decision:second",
+                    "project:viewer-smoke:decision:first",
+                    "Choose redb.",
+                    "2026-07-01T10:00:00Z",
+                    1,
+                ),
+                entry(
+                    "project:viewer-smoke:decision:second",
                     "Embed the viewer.",
                     "2026-07-02T10:00:00Z",
                     2,
                 ),
             ],
             relations: vec![MemoryRelationData {
-                source_ref: "decision:second".to_string(),
-                target_ref: "decision:first".to_string(),
+                source_ref: "project:viewer-smoke:decision:second".to_string(),
+                target_ref: "project:viewer-smoke:decision:first".to_string(),
                 rel: "follows".to_string(),
                 semantic_class: "causal".to_string(),
                 why: Some("the store choice made an in-process viewer possible".to_string()),
@@ -72,8 +77,8 @@ fn corpus() -> MemoryIngestCommand {
                 coordinate: None,
             }],
             evidence: vec![MemoryEvidenceData {
-                id: "evidence:first".to_string(),
-                supports: vec!["decision:first".to_string()],
+                id: "evidence:project:viewer-smoke:first".to_string(),
+                supports: vec!["project:viewer-smoke:decision:first".to_string()],
                 text: "Benchmarks and the ADR-009 measurements.".to_string(),
                 source: None,
                 time: None,
@@ -211,11 +216,14 @@ async fn every_viewer_route_serves_the_ingested_memory() {
 
     let (status, node) = get(
         port,
-        &format!("/api/node?id={}&raw=1", urlencode("decision:first")),
+        &format!(
+            "/api/node?id={}&raw=1",
+            urlencode("project:viewer-smoke:decision:first")
+        ),
     )
     .await;
     assert_eq!(status, 200, "node failed: {node}");
-    assert_eq!(node["node"]["id"], "decision:first");
+    assert_eq!(node["node"]["id"], "project:viewer-smoke:decision:first");
     assert!(
         node["incoming"].as_array().is_some_and(|r| !r.is_empty()),
         "decision:first has the `follows` edge incoming"
@@ -225,7 +233,9 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         port,
         &format!(
             "/api/nodes?ids={}",
-            urlencode("decision:first,decision:second,node:unknown")
+            urlencode(
+                "project:viewer-smoke:decision:first,project:viewer-smoke:decision:second,node:unknown"
+            )
         ),
     )
     .await;
@@ -245,7 +255,9 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 200, "timeline failed: {timeline}");
     let entries = timeline["entries"].as_array().expect("entries");
     assert!(
-        entries.iter().any(|e| e["ref_id"] == "decision:second"),
+        entries
+            .iter()
+            .any(|e| e["ref_id"] == "project:viewer-smoke:decision:second"),
         "known-at-time read reaches the later decision, got {timeline}"
     );
 
@@ -282,8 +294,8 @@ async fn every_viewer_route_serves_the_ingested_memory() {
         port,
         &format!(
             "/api/trace?from={}&to={}",
-            urlencode("decision:second"),
-            urlencode("decision:first")
+            urlencode("project:viewer-smoke:decision:second"),
+            urlencode("project:viewer-smoke:decision:first")
         ),
     )
     .await;
@@ -659,7 +671,7 @@ async fn the_cursors_the_ui_issues_return_the_entries_they_should() {
         &format!(
             "/api/timeline?about={}&direction=goto&ref={}&before=8&after=8",
             urlencode(ABOUT),
-            urlencode("decision:first")
+            urlencode("project:viewer-smoke:decision:first")
         ),
     )
     .await;

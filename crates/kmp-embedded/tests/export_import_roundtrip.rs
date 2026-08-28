@@ -57,13 +57,13 @@ fn corpus_with_first_entry_text(
             }],
             entries: vec![
                 entry(
-                    "decision:first",
+                    "project:roundtrip:decision:first",
                     first_entry_text,
                     "2026-07-01T10:00:00Z",
                     1,
                 ),
                 entry(
-                    "decision:second",
+                    "project:roundtrip:decision:second",
                     "Second decision.",
                     "2026-07-02T10:00:00Z",
                     2,
@@ -71,8 +71,8 @@ fn corpus_with_first_entry_text(
             ],
             relations: vec![],
             evidence: vec![MemoryEvidenceData {
-                id: "evidence:first".to_string(),
-                supports: vec!["decision:first".to_string()],
+                id: "evidence:project:roundtrip:first".to_string(),
+                supports: vec!["project:roundtrip:decision:first".to_string()],
                 text: "Proof for the first decision.".to_string(),
                 source: None,
                 time: None,
@@ -113,7 +113,7 @@ async fn sqlite_import_keeps_sql_and_prompt_shaped_text_inert() {
     let inspection = target
         .service()
         .inspect(InspectMemoryQuery {
-            ref_id: "decision:first".to_string(),
+            ref_id: "project:roundtrip:decision:first".to_string(),
             include_details: true,
             include_incoming: false,
             include_outgoing: false,
@@ -206,14 +206,17 @@ async fn export_import_preserves_wake_temporal_and_proof() {
             })
             .await
             .expect("goto succeeds");
-        assert_eq!(goto.traversal.entries()[0].ref_id(), "decision:first");
+        assert_eq!(
+            goto.traversal.entries()[0].ref_id(),
+            "project:roundtrip:decision:first"
+        );
     }
 
     // Proof parity: the evidence supports relation survives with rationale.
     let inspection = target
         .service()
         .inspect(InspectMemoryQuery {
-            ref_id: "decision:first".to_string(),
+            ref_id: "project:roundtrip:decision:first".to_string(),
             include_details: true,
             include_incoming: true,
             include_outgoing: false,
@@ -226,7 +229,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
         .iter()
         .find(|relationship| {
             relationship.relationship_type == "supports"
-                && relationship.source_node_id == "evidence:first"
+                && relationship.source_node_id == "evidence:project:roundtrip:first"
         })
         .expect("imported store keeps the proof relation");
     assert!(supports.explanation.evidence().is_some());

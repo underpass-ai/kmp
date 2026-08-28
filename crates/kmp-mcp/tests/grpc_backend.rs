@@ -482,7 +482,7 @@ async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
                 "dimensions": [{"id": "conversation:dry-run", "kind": "conversation"}],
                 "entries": [
                     {
-                        "id": "claim:dry-run",
+                        "id": "question:dry-run:claim:dry-run",
                         "kind": "claim",
                         "text": "Dry run memory.",
                         "coordinates": [

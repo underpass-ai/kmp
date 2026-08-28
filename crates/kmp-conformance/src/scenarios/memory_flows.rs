@@ -62,13 +62,28 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 metadata: Default::default(),
             }],
             entries: vec![
-                entry("claim:one", "First decision.", "2026-07-01T10:00:00Z", 1),
-                entry("claim:two", "Second decision.", "2026-07-02T10:00:00Z", 2),
-                entry("claim:three", "Third decision.", "2026-07-03T10:00:00Z", 3),
+                entry(
+                    "question:conformance:claim:one",
+                    "First decision.",
+                    "2026-07-01T10:00:00Z",
+                    1,
+                ),
+                entry(
+                    "question:conformance:claim:two",
+                    "Second decision.",
+                    "2026-07-02T10:00:00Z",
+                    2,
+                ),
+                entry(
+                    "question:conformance:claim:three",
+                    "Third decision.",
+                    "2026-07-03T10:00:00Z",
+                    3,
+                ),
             ],
             relations: vec![MemoryRelationData {
-                source_ref: "claim:two".to_string(),
-                target_ref: "claim:one".to_string(),
+                source_ref: "question:conformance:claim:two".to_string(),
+                target_ref: "question:conformance:claim:one".to_string(),
                 rel: "supports".to_string(),
                 semantic_class: "evidential".to_string(),
                 why: Some("Second decision reinforces the first.".to_string()),
@@ -82,8 +97,8 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
                 coordinate: None,
             }],
             evidence: vec![MemoryEvidenceData {
-                id: "evidence:one".to_string(),
-                supports: vec!["claim:one".to_string()],
+                id: "evidence:question:conformance:one".to_string(),
+                supports: vec!["question:conformance:claim:one".to_string()],
                 text: "Transcript line supporting the first decision.".to_string(),
                 source: Some("transcript:1".to_string()),
                 time: Some("2026-07-01T10:00:00Z".to_string()),
@@ -162,10 +177,10 @@ pub async fn ingest_then_wake_is_read_after_write_consistent(
     let node_ids = bundle_node_ids(&wake.bundle);
     for expected in [
         namespaced_scope(),
-        "claim:one".to_string(),
-        "claim:two".to_string(),
-        "claim:three".to_string(),
-        "evidence:one".to_string(),
+        "question:conformance:claim:one".to_string(),
+        "question:conformance:claim:two".to_string(),
+        "question:conformance:claim:three".to_string(),
+        "evidence:question:conformance:one".to_string(),
     ] {
         assert!(
             node_ids.contains(&expected),
@@ -287,14 +302,17 @@ pub async fn temporal_moves_navigate_known_at_time_coordinates(
         .collect::<Vec<_>>();
     assert_eq!(
         goto_refs,
-        vec!["claim:one".to_string(), "claim:two".to_string()],
+        vec![
+            "question:conformance:claim:one".to_string(),
+            "question:conformance:claim:two".to_string(),
+        ],
         "goto by time must return the entries known at the cursor within its default page"
     );
 
     let forward = memory
         .temporal(temporal_query(
             TemporalDirection::Forward,
-            TemporalCursor::ref_id("claim:one").expect("valid cursor"),
+            TemporalCursor::ref_id("question:conformance:claim:one").expect("valid cursor"),
             TemporalWindow::new(0, 1),
         ))
         .await
@@ -306,18 +324,18 @@ pub async fn temporal_moves_navigate_known_at_time_coordinates(
         .map(|entry| entry.ref_id().to_string())
         .collect::<BTreeSet<_>>();
     assert!(
-        forward_refs.contains("claim:two"),
+        forward_refs.contains("question:conformance:claim:two"),
         "forward from claim:one must reach claim:two; got {forward_refs:?}"
     );
     assert!(
-        !forward_refs.contains("claim:one"),
+        !forward_refs.contains("question:conformance:claim:one"),
         "forward must move off the cursor entry"
     );
 
     let rewind = memory
         .temporal(temporal_query(
             TemporalDirection::Rewind,
-            TemporalCursor::ref_id("claim:three").expect("valid cursor"),
+            TemporalCursor::ref_id("question:conformance:claim:three").expect("valid cursor"),
             TemporalWindow::new(1, 0),
         ))
         .await
@@ -329,18 +347,18 @@ pub async fn temporal_moves_navigate_known_at_time_coordinates(
         .map(|entry| entry.ref_id().to_string())
         .collect::<BTreeSet<_>>();
     assert!(
-        rewind_refs.contains("claim:two"),
+        rewind_refs.contains("question:conformance:claim:two"),
         "rewind from claim:three must reach claim:two; got {rewind_refs:?}"
     );
     assert!(
-        !rewind_refs.contains("claim:three"),
+        !rewind_refs.contains("question:conformance:claim:three"),
         "rewind must move off the cursor entry"
     );
 
     let near = memory
         .temporal(temporal_query(
             TemporalDirection::Near,
-            TemporalCursor::ref_id("claim:two").expect("valid cursor"),
+            TemporalCursor::ref_id("question:conformance:claim:two").expect("valid cursor"),
             TemporalWindow::new(1, 1),
         ))
         .await
@@ -351,7 +369,10 @@ pub async fn temporal_moves_navigate_known_at_time_coordinates(
         .iter()
         .map(|entry| entry.ref_id().to_string())
         .collect::<BTreeSet<_>>();
-    for expected in ["claim:one", "claim:three"] {
+    for expected in [
+        "question:conformance:claim:one",
+        "question:conformance:claim:three",
+    ] {
         assert!(
             near_refs.contains(expected),
             "near claim:two with window 1/1 must include `{expected}`; got {near_refs:?}"
@@ -369,7 +390,7 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
 
     let inspection = memory
         .inspect(InspectMemoryQuery {
-            ref_id: "claim:one".to_string(),
+            ref_id: "question:conformance:claim:one".to_string(),
             include_details: true,
             include_incoming: true,
             include_outgoing: true,
@@ -405,7 +426,7 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
         .iter()
         .find(|relationship| {
             relationship.relationship_type == "supports"
-                && relationship.source_node_id == "evidence:one"
+                && relationship.source_node_id == "evidence:question:conformance:one"
         })
         .expect("inspect must surface the evidence supports relation");
     assert_eq!(
@@ -423,9 +444,9 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
     let evidence = inspection
         .evidence
         .iter()
-        .find(|evidence| evidence.detail.node.node_id == "evidence:one")
+        .find(|evidence| evidence.detail.node.node_id == "evidence:question:conformance:one")
         .expect("inspect must resolve the stored evidence entity behind the supports link");
-    assert_eq!(evidence.supports, ["claim:one"]);
+    assert_eq!(evidence.supports, ["question:conformance:claim:one"]);
     assert_eq!(
         evidence
             .detail
@@ -441,7 +462,7 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
         .iter()
         .find(|relationship| {
             relationship.relationship_type == "supports"
-                && relationship.source_node_id == "claim:two"
+                && relationship.source_node_id == "question:conformance:claim:two"
         })
         .expect("inspect must surface writer-declared relations");
     assert_eq!(
@@ -469,7 +490,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
     let trace = memory
         .trace(TraceMemoryQuery {
             from: ABOUT.to_string(),
-            to: "claim:two".to_string(),
+            to: "question:conformance:claim:two".to_string(),
             role: "memory".to_string(),
             token_budget: 4096,
             page: TracePageRequest::default(),
@@ -478,7 +499,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
         .expect("trace between anchor and entry must resolve");
     assert_eq!(trace.path_bundle.root_node().node_id(), ABOUT);
     assert!(
-        bundle_node_ids(&trace.path_bundle).contains("claim:two"),
+        bundle_node_ids(&trace.path_bundle).contains("question:conformance:claim:two"),
         "trace bundle must include the target entry"
     );
 

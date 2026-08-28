@@ -9,6 +9,12 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Fixed
+
+- Embedded and direct ingest now confine every caller-supplied entry,
+  relation, and evidence ref to the exact about, closing the remaining path
+  that could overwrite another about's entries or root anchor.
+
 ## [0.3.1] - 2026-08-28
 
 ### Fixed
