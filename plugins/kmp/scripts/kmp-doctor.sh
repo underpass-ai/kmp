@@ -160,10 +160,10 @@ VERSION="$("$BIN" --version 2>/dev/null | head -1)"
 #
 # The binary and the plugin update through different commands — `cargo
 # install --force` and `/plugin update` — and neither knows about the other.
-# A stale plugin with a fresh binary keeps working by luck: the launcher
-# falls through to PATH when a marketplace install has no bin/, so the engine
-# updates silently while the launcher, this doctor and the skills stay old.
-# Nothing announced that, so this does.
+# A stale plugin and a fresh binary are two independently updated halves. The
+# launcher accepts an automatically discovered engine only when its version
+# matches the plugin; the live launcher probe below decides whether this pair
+# can actually start rather than inferring that from either half alone.
 section "Plugin"
 
 PLUGIN_MANIFEST=""
@@ -190,9 +190,8 @@ else
     info "these update separately and neither announces the other:"
     info "  binary:  cargo install kmp-mcp --force"
     info "  plugin:  /plugin update kmp@underpass   (then restart the session)"
-    info "a stale plugin still starts, because the launcher falls back to the"
-    info "binary on PATH — so fixes that live in the launcher, this doctor or"
-    info "the skills are the ones you are missing."
+    info "the launcher accepts a discovered PATH engine only when its version"
+    info "matches the plugin; an explicit KMP_MCP_BIN is the only override."
     if [ "$PLUGIN_VERSION" != "$BINARY_VERSION" ]; then
       offer "/kmp:setup" "your engine is $BINARY_VERSION and the plugin is $PLUGIN_VERSION"
     fi
@@ -456,12 +455,13 @@ fi
 section "Tools"
 
 REQUEST='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-ERR_LOG="$(mktemp)"
+LAUNCHER_ERR_LOG="$(mktemp)"
+BINARY_ERR_LOG="$(mktemp)"
 PROBE_DIR="$(mktemp -d)"
-trap 'rm -rf "$ERR_LOG" "$PROBE_DIR"' EXIT
+trap 'rm -rf "$LAUNCHER_ERR_LOG" "$BINARY_ERR_LOG" "$PROBE_DIR"' EXIT
 
-RUNNER=""
-command -v timeout >/dev/null 2>&1 && RUNNER="timeout 30"
+RUNNER=()
+command -v timeout >/dev/null 2>&1 && RUNNER=(timeout 30)
 
 # Probe a throwaway data dir, never the real one. A diagnostic must not
 # create a store as a side effect, and must not take the single-writer lock
@@ -475,15 +475,11 @@ command -v timeout >/dev/null 2>&1 && RUNNER="timeout 30"
 # Empty rather than `off`: this script ships with the plugin and can meet an
 # older binary that has no word for declining, but every version has always
 # read an empty value as no viewer.
-RESPONSE="$(printf '%s\n' "$REQUEST" \
-  | env KMP_MCP_BACKEND="${BACKEND:-embedded}" KMP_MCP_DATA_DIR="$PROBE_DIR" \
-    KMP_VIEWER_ADDR= \
-    $RUNNER "$BIN" 2>"$ERR_LOG")"
-
-TOOLS=""
-if [ -n "$RESPONSE" ]; then
-  if command -v python3 >/dev/null 2>&1; then
-    TOOLS="$(printf '%s' "$RESPONSE" | python3 -c '
+tool_names_from_response() {
+  local response="$1"
+  if [ -n "$response" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+      printf '%s' "$response" | python3 -c '
 import json, sys
 names = []
 for line in sys.stdin:
@@ -498,26 +494,84 @@ for line in sys.stdin:
         if "name" in tool:
             names.append(tool["name"])
 print(" ".join(names))
-' 2>/dev/null)"
-  else
-    TOOLS="$(printf '%s' "$RESPONSE" | grep -o '"name":"kmp_[a-z_]*"' \
-      | sed 's/.*"kmp_/kmp_/; s/"$//' | tr '\n' ' ')"
+' 2>/dev/null
+    else
+      printf '%s' "$response" | grep -o '"name":"kmp_[a-z_]*"' \
+        | sed 's/.*"kmp_/kmp_/; s/"$//' | tr '\n' ' '
+    fi
   fi
+}
+
+run_tool_probe() {
+  local executable="$1" error_log="$2"
+  PROBE_RESPONSE="$(printf '%s\n' "$REQUEST" \
+    | env KMP_MCP_BACKEND="${BACKEND:-embedded}" KMP_MCP_DATA_DIR="$PROBE_DIR" \
+      KMP_VIEWER_ADDR= \
+      "${RUNNER[@]}" "$executable" 2>"$error_log")"
+  PROBE_STATUS=$?
+  PROBE_TOOLS="$(tool_names_from_response "$PROBE_RESPONSE")"
+  PROBE_COUNT="$(printf '%s' "$PROBE_TOOLS" | wc -w | tr -d ' ')"
+}
+
+PLUGIN_LAUNCHER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/run-embedded-mcp.sh"
+LAUNCHER_CHECKED=0
+LAUNCHER_WORKS=0
+if [ -f "$PLUGIN_LAUNCHER" ]; then
+  LAUNCHER_CHECKED=1
+  run_tool_probe "$PLUGIN_LAUNCHER" "$LAUNCHER_ERR_LOG"
+  if [ "$PROBE_STATUS" -eq 0 ] && [ "$PROBE_COUNT" -gt 0 ]; then
+    LAUNCHER_WORKS=1
+    ok "$PROBE_COUNT tools answered through the plugin launcher"
+    info "$PROBE_TOOLS"
+    [ "$PROBE_COUNT" -lt 13 ] \
+      && warn "expected the 13 declared moves; the launcher exposes $PROBE_COUNT"
+  else
+    fail "the plugin launcher cannot start a usable KMP session"
+    SESSION_USABLE=0
+    if [ "$PROBE_STATUS" -ne 0 ]; then
+      SESSION_REASON="the plugin launcher exits $PROBE_STATUS before the host gets KMP tools."
+    else
+      SESSION_REASON="the plugin launcher returns no KMP tools to the host."
+    fi
+    offer "/kmp:setup" "repair the plugin and engine version pair"
+    if [ -s "$LAUNCHER_ERR_LOG" ]; then
+      info "launcher stderr said:"
+      while IFS= read -r line; do info "  $line"; done < <(head -8 "$LAUNCHER_ERR_LOG")
+    fi
+  fi
+else
+  info "no sibling run-embedded-mcp.sh found; checking the binary directly"
 fi
 
-COUNT="$(printf '%s' "$TOOLS" | wc -w | tr -d ' ')"
-
-if [ "$COUNT" -gt 0 ]; then
-  ok "$COUNT tools answered"
-  info "$TOOLS"
-  [ "$COUNT" -lt 13 ] && warn "expected the 13 declared moves; this build exposes $COUNT"
+# Keep a direct engine probe even when the launcher fails. Its result tells a
+# person whether setup needs to repair the engine or only the plugin/version
+# pair instead of collapsing both failures into "no tools".
+run_tool_probe "$BIN" "$BINARY_ERR_LOG"
+if [ "$PROBE_STATUS" -eq 0 ] && [ "$PROBE_COUNT" -gt 0 ]; then
+  if [ "$LAUNCHER_CHECKED" -eq 1 ] && [ "$LAUNCHER_WORKS" -eq 0 ]; then
+    ok "$PROBE_COUNT tools answered from the binary alone"
+    info "the engine works; the plugin launcher is the blocking layer"
+  elif [ "$LAUNCHER_CHECKED" -eq 0 ]; then
+    ok "$PROBE_COUNT tools answered from the binary"
+  else
+    info "direct binary probe also answered $PROBE_COUNT tools"
+  fi
+  [ "$PROBE_COUNT" -lt 13 ] \
+    && warn "expected the 13 declared moves; this build exposes $PROBE_COUNT"
 else
-  fail "the binary did not return a usable tool list"
-  info "the probe ran against a scratch store, so this is the binary itself"
-  info "failing rather than anything to do with your project's memory"
-  if [ -s "$ERR_LOG" ]; then
+  if [ "$LAUNCHER_WORKS" -eq 1 ]; then
+    warn "the separately selected binary did not return a usable tool list"
+    info "the plugin launcher did answer, so this does not block the host session"
+  else
+    fail "the binary itself did not return a usable tool list"
+    SESSION_USABLE=0
+    [ -z "$SESSION_REASON" ] \
+      && SESSION_REASON="the KMP engine itself returns no usable tool list."
+    info "the direct probe ran against a scratch store, not your project's memory"
+  fi
+  if [ -s "$BINARY_ERR_LOG" ]; then
     info "stderr said:"
-    sed 's/^/        /' "$ERR_LOG" | head -8
+    while IFS= read -r line; do info "  $line"; done < <(head -8 "$BINARY_ERR_LOG")
   fi
 fi
 
