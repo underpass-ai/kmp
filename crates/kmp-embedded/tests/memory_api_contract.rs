@@ -449,7 +449,7 @@ async fn the_kernel_accounts_for_contract_recalls_in_its_own_telemetry() {
         // Dropping the kernel flushes its telemetry guard.
     }
 
-    let reader = kmp_adapter_embedded::RedbQualityTelemetryReader::open(directory.path())
+    let reader = kmp_adapter_embedded::SqliteQualityTelemetryReader::open(directory.path())
         .expect("the telemetry store opens");
     let observed = reader.latest(10).expect("the telemetry reads");
     assert!(

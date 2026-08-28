@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use kmp_adapter_embedded::{
-    EmbeddedKernelStore, QualityTelemetryRetention, RedbQualityTelemetryReader,
-    RedbQualityTelemetryWriter, StorageEngine,
+    EmbeddedKernelStore, QualityTelemetryRetention, SqliteQualityTelemetryReader,
+    SqliteQualityTelemetryWriter, StorageEngine,
 };
 use kmp_application::{
     CommandApplicationService, KernelMemoryApplicationService, QueryApplicationService,
@@ -35,7 +35,7 @@ pub struct EmbeddedKernel {
     service: Arc<EmbeddedMemoryService>,
     quality_observer: Arc<BufferedQualityMetricsObserver>,
     telemetry_guard: Option<EmbeddedTelemetryGuard>,
-    telemetry_writer: Option<Arc<RedbQualityTelemetryWriter>>,
+    telemetry_writer: Option<Arc<SqliteQualityTelemetryWriter>>,
     quality_telemetry_error: Option<String>,
 }
 
@@ -70,7 +70,7 @@ impl EmbeddedKernel {
                     "{message}; if another agent session is using this data dir, close it first \
                      (the redb engine is single-writer per ADR-011 — to share one store between \
                      hosts, migrate it to the sqlite engine: `kmp-mcp migrate <this-dir> \
-                     <new-dir> --engine sqlite`)"
+                     <new-dir>`)"
                 ))
             }
             other => other,
@@ -153,9 +153,9 @@ impl EmbeddedKernel {
         self.telemetry_guard.is_some()
     }
 
-    /// Live query side for the same local journal used by the quality
-    /// observer. Sharing its redb handle avoids a second-open lock conflict.
-    pub fn quality_telemetry_reader(&self) -> Option<RedbQualityTelemetryReader> {
+    /// Live query side for the same shareable SQLite journal used by the
+    /// quality observer.
+    pub fn quality_telemetry_reader(&self) -> Option<SqliteQualityTelemetryReader> {
         self.telemetry_writer.as_ref().map(|writer| writer.reader())
     }
 }
@@ -165,13 +165,13 @@ fn compose_quality_telemetry(
 ) -> (
     Arc<BufferedQualityMetricsObserver>,
     Option<EmbeddedTelemetryGuard>,
-    Option<Arc<RedbQualityTelemetryWriter>>,
+    Option<Arc<SqliteQualityTelemetryWriter>>,
     Option<String>,
 ) {
     let (observer, receiver) = BufferedQualityMetricsObserver::with_capacity(1_024);
     let observer = Arc::new(observer);
     let writer =
-        match RedbQualityTelemetryWriter::open(data_dir, QualityTelemetryRetention::default()) {
+        match SqliteQualityTelemetryWriter::open(data_dir, QualityTelemetryRetention::default()) {
             Ok(writer) => Arc::new(writer),
             Err(error) => {
                 drop(receiver);
@@ -256,15 +256,18 @@ mod tests {
     }
 
     #[test]
-    fn a_second_telemetry_composition_names_the_process_lock() {
+    fn two_telemetry_compositions_share_the_sqlite_journal() {
         let data_dir = tempfile::tempdir().expect("temp data dir");
         let first = super::compose_quality_telemetry(data_dir.path());
-        assert!(first.2.is_some(), "the first writer owns the journal");
+        assert!(first.2.is_some(), "the first writer opens the journal");
         let second = super::compose_quality_telemetry(data_dir.path());
-        let reason = second.3.expect("the second writer is unavailable");
         assert!(
-            reason.contains("held by another process"),
-            "the reason should describe the real contention: {reason}"
+            second.2.is_some(),
+            "the second writer opens the same journal"
+        );
+        assert!(
+            second.3.is_none(),
+            "SQLite does not report process ownership"
         );
     }
 }

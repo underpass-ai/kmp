@@ -27,7 +27,7 @@ you configure one.
 
 | `KMP_MCP_BACKEND` | What it talks to | What it needs |
 |:--|:--|:--|
-| `embedded` (default) | the kernel in this process; fresh stores use shareable SQLite, existing redb stores remain compatible | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
+| `embedded` (default) | the kernel in this process; SQLite memory and quality telemetry, with format-1 reads kept for migration | nothing; `KMP_MCP_DATA_DIR` optionally selects the directory |
 | `grpc` | a deployed kernel | `KMP_KERNEL_GRPC_ENDPOINT`, optionally the `KMP_KERNEL_GRPC_TLS_*` variables |
 | `fixture` | the reference examples from the contract | nothing — it answers from embedded fixtures |
 
@@ -36,9 +36,10 @@ survives the session on your own disk. It also brings its own
 [ChronoLoom visualizer](https://crates.io/crates/kmp-viewer) up at
 `http://127.0.0.1:7317/` over that same kernel — your memory as a graph,
 read-only and loopback only, no flag required. The process prints a random
-one-session capability link; the browser exchanges it for an HttpOnly cookie
-and removes the token from its URL. `KMP_VIEWER_ADDR` moves it; `off` declines
-it.
+one-session capability link; `kmp_view_open` and `kmp_view_get_state` return
+that same link when a host hides server output. The browser exchanges it for
+an HttpOnly cookie and removes the token from its URL. `KMP_VIEWER_ADDR` moves
+it; `off` declines it.
 
 Ask Codex or Claude to **“show me the memory behind this decision.”** The agent
 can open ChronoLoom at the relevant moment, select the evidence and light up

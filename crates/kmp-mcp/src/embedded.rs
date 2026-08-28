@@ -617,6 +617,7 @@ mod retry_tests {
     #[tokio::test]
     async fn a_redb_startup_lock_does_not_permanently_disable_the_backend() {
         let data_dir = tempfile::tempdir().expect("temp data dir");
+        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n").expect("legacy format stamp");
         let holder = EmbeddedKernel::open_with_engine(
             data_dir.path(),
             Some(kmp_embedded::StorageEngine::Redb),

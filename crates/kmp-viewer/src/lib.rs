@@ -202,7 +202,7 @@ where
                 } else {
                     HttpResponse::error(
                         401,
-                        "this ChronoLoom session needs the capability link printed by kmp-mcp",
+                        "this ChronoLoom session needs its capability link; ask the agent to open the loom, or use the link this session printed at startup",
                     )
                 }
             }

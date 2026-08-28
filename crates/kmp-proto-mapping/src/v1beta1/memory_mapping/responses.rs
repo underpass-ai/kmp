@@ -771,35 +771,35 @@ pub fn inspect_response_from_result(result: InspectMemoryResult) -> InspectRespo
     } else {
         result.detail.node.summary.clone()
     };
-    let evidence = if result.include_details {
-        result
-            .detail
-            .detail
-            .as_ref()
-            .map_or_else(Vec::new, |detail| {
-                vec![MemoryEvidence {
-                    id: format!("detail:{}", detail.node_id),
-                    supports: vec![detail.node_id.clone()],
-                    text: detail.detail.clone(),
-                    source: if source.is_empty() {
-                        detail.node_id.clone()
-                    } else {
-                        source.clone()
-                    },
-                    time: timestamp_from_sort_or_rfc3339(
-                        result
-                            .detail
-                            .node
-                            .properties
-                            .get("payload_time")
-                            .map(String::as_str),
-                    ),
-                    metadata: metadata.clone(),
-                }]
-            })
-    } else {
-        Vec::new()
-    };
+    let evidence = result
+        .evidence
+        .iter()
+        .map(|evidence| {
+            let properties = &evidence.detail.node.properties;
+            let mut metadata = persisted_memory_metadata(properties);
+            metadata
+                .entry("proof_role".to_string())
+                .or_insert_with(|| "stored_evidence".to_string());
+            MemoryEvidence {
+                id: evidence.detail.node.node_id.clone(),
+                supports: evidence.supports.clone(),
+                text: evidence
+                    .detail
+                    .detail
+                    .as_ref()
+                    .map(|detail| detail.detail.clone())
+                    .filter(|detail| !detail.trim().is_empty())
+                    .unwrap_or_else(|| evidence.detail.node.summary.clone()),
+                source: persisted_memory_source(properties)
+                    .unwrap_or(&evidence.detail.node.node_id)
+                    .to_string(),
+                time: timestamp_from_sort_or_rfc3339(
+                    properties.get("payload_time").map(String::as_str),
+                ),
+                metadata,
+            }
+        })
+        .collect();
     let incoming: Vec<MemoryRelation> = result
         .incoming
         .iter()

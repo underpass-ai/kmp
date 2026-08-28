@@ -140,12 +140,7 @@ impl StartupFailure {
 /// facade without a second store connection or read model.
 async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
     let viewer = kmp_mcp::viewer::viewer_addr_from_env();
-    let configured_backend = std::env::var(MCP_BACKEND_ENV).ok();
-    let endpoint = std::env::var(kmp_mcp::GRPC_ENDPOINT_ENV).ok();
-    let backend_is_embedded = match configured_backend.as_deref().map(str::trim) {
-        Some(value) if !value.is_empty() => value.eq_ignore_ascii_case("embedded"),
-        _ => endpoint.is_none_or(|value| value.trim().is_empty()),
-    };
+    let backend_is_embedded = backend_is_embedded_from_env();
 
     let Some(addr) = viewer.addr() else {
         return KernelMcpServer::try_from_env().map_err(StartupFailure::selecting_a_backend);
@@ -286,8 +281,7 @@ fn init_tracing() -> Option<tracing_appender::non_blocking::WorkerGuard> {
 /// `<data-dir>/logs/` when running the embedded backend; None otherwise or
 /// when resolution fails (the server will fail fast with the real error).
 fn embedded_log_dir() -> Option<std::path::PathBuf> {
-    let backend = std::env::var(MCP_BACKEND_ENV).ok()?;
-    if !backend.trim().eq_ignore_ascii_case("embedded") {
+    if !backend_is_embedded_from_env() {
         return None;
     }
     // Beside the memory it serves, when that is knowable. A data dir that
@@ -299,6 +293,19 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
         .unwrap_or_else(|_| user_state_home().join("kmp").join("logs"));
     std::fs::create_dir_all(&log_dir).ok()?;
     Some(log_dir)
+}
+
+/// Keep every zero-configuration sidecar on the same backend decision as the
+/// server itself. An absent or blank selector means embedded unless a live
+/// gRPC endpoint was configured; only an explicit non-embedded selector (or
+/// that endpoint fallback) turns embedded behaviour off.
+fn backend_is_embedded_from_env() -> bool {
+    let configured_backend = std::env::var(MCP_BACKEND_ENV).ok();
+    let endpoint = std::env::var(kmp_mcp::GRPC_ENDPOINT_ENV).ok();
+    match configured_backend.as_deref().map(str::trim) {
+        Some(value) if !value.is_empty() => value.eq_ignore_ascii_case("embedded"),
+        _ => endpoint.is_none_or(|value| value.trim().is_empty()),
+    }
 }
 
 fn user_state_home() -> std::path::PathBuf {
@@ -328,7 +335,14 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "config" => return run_config_command(args),
         "uninstall" => return run_uninstall_command(args).await,
         "migrate" => return run_migrate_command(args).await,
-        "share-memory" => return run_share_memory_command(first_argument).await,
+        "share-memory" => {
+            eprintln!(
+                "kmp-mcp: share-memory was retired; new stores already use SQLite. \
+                 Migrate a legacy format-1 store with `kmp-mcp migrate <source-dir> \
+                 <destination-dir>`."
+            );
+            return 2;
+        }
         "viewer" => return run_viewer_command(first_argument).await,
         "--help" | "-h" | "help" => {
             print_help();
@@ -344,21 +358,14 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             return code;
         }
         "--version" | "-V" | "version" => {
-            // The layouts this build opens, so a user can tell at a glance
-            // whether their binary carries the sqlite engine (ADR-018).
+            // Format 2 is the active SQLite layout. Format 1 remains readable
+            // only for the compatibility and migration promise.
             use kmp_embedded::StorageEngine;
-            let mut formats = vec![format!("{}", StorageEngine::Redb.format_version())];
-            if StorageEngine::Sqlite.is_compiled() {
-                formats.push(format!(
-                    "{} (sqlite)",
-                    StorageEngine::Sqlite.format_version()
-                ));
-            }
             println!(
-                "kmp-mcp {} (store format{} {})",
+                "kmp-mcp {} (store formats {} (legacy read), {} (sqlite))",
                 env!("CARGO_PKG_VERSION"),
-                if formats.len() > 1 { "s" } else { "" },
-                formats.join(", ")
+                StorageEngine::Redb.format_version(),
+                StorageEngine::Sqlite.format_version()
             );
             return 0;
         }
@@ -370,8 +377,8 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `config [ask-fallback-languages <tags>]` / \
                  `uninstall [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
-                 `migrate <source-dir> <destination-dir> [--engine redb|sqlite]` / \
-                 `share-memory [data-dir]` / `viewer [addr]` / `--version` / `--help`"
+                 `migrate <source-dir> <destination-dir>` / \
+                 `viewer [addr]` / `--version` / `--help`"
             );
             return 2;
         }
@@ -579,8 +586,7 @@ kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\
 kmp-mcp export [file]           Export the append-only event log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
-kmp-mcp migrate <src> <dst> [--engine redb|sqlite]\n  \
-kmp-mcp share-memory [data-dir] Make an existing redb store shareable\n  \
+kmp-mcp migrate <src> <dst>     Migrate a legacy store to SQLite\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
@@ -888,19 +894,6 @@ fn snapshot_result(
 /// when the environment-resolved store is the one that will not open, and
 /// asking an operator to fix that by exporting an environment variable is
 /// how the wrong directory gets migrated over the right one.
-/// `share-memory [data-dir]` — the seven manual steps, as one command.
-///
-/// Two agent hosts sharing one memory needs the sqlite engine (ADR-018), and
-/// getting there by hand meant: notice the binary cannot open a sqlite store,
-/// reinstall with the feature, discover the live store is locked by your own
-/// session so it cannot be migrated in place, snapshot it, migrate the
-/// snapshot, verify nothing was lost, move the original aside, move the new
-/// one in, restart. Seven steps, three of them non-obvious, and the product
-/// suggested none of them.
-///
-/// Nothing is deleted. The original data directory is moved aside under a
-/// dated name and stays exactly as it was, so this is reversible by moving it
-/// back.
 /// `uninstall` — what `/kmp:setup` never had an inverse for.
 ///
 /// The dry run is the default and `--apply` is how someone says to go ahead:
@@ -1145,221 +1138,23 @@ async fn run_document_command(args: &[&str]) -> i32 {
     0
 }
 
-async fn run_share_memory_command(explicit_dir: Option<&str>) -> i32 {
-    use kmp_embedded::{EmbeddedKernel, StorageEngine};
-
-    // A binary without the engine cannot do any of this, and finding that out
-    // after the migration would be the worst possible moment.
-    if !StorageEngine::Sqlite.is_compiled() {
-        eprintln!(
-            "kmp-mcp: this binary was built without the sqlite engine, so it cannot share a \
-             store between hosts.\n  install the shipped build with: cargo install kmp-mcp\n               (then re-run this command; nothing has been changed)"
-        );
-        return 2;
-    }
-
-    let data_dir = match explicit_dir {
-        Some(path) => std::path::PathBuf::from(path),
-        None => match kmp_embedded::resolve_data_dir_from_env() {
-            Ok(resolved) => resolved.path().to_path_buf(),
-            Err(error) => {
-                eprintln!("kmp-mcp: cannot resolve which data dir to share: {error}");
-                return 2;
-            }
-        },
-    };
-    if !data_dir.exists() {
-        eprintln!(
-            "kmp-mcp: no memory at `{}` yet. Start a current default build there and it is \
-             shareable from the first write (or set KMP_MCP_ENGINE=sqlite explicitly).",
-            data_dir.display()
-        );
-        return 2;
-    }
-
-    match kmp_embedded::EmbeddedKernelStore::engine_of(&data_dir) {
-        Ok(StorageEngine::Sqlite) => {
-            println!(
-                "already shareable: `{}` is on the sqlite engine. Point both hosts at it.",
-                data_dir.display()
-            );
-            return 0;
-        }
-        Ok(_) => {}
-        Err(error) => {
-            eprintln!(
-                "kmp-mcp: cannot read the store at `{}`: {error}",
-                data_dir.display()
-            );
-            return 2;
-        }
-    }
-
-    // The live store is very likely held by the session asking for this, and
-    // redb is single-writer — so the migration reads a snapshot, never the
-    // original. Copying files is a read; it does not need the lock.
-    // The working copies live beside the data directory rather than in a
-    // temp dir: same filesystem, so installing the result is a rename within
-    // one volume instead of a copy across two, and a failure leaves the
-    // evidence where the operator will look for it.
-    let work = data_dir.with_file_name(format!(
-        "{}-share-memory-work",
-        data_dir
-            .file_name()
-            .map(|name| name.to_string_lossy().to_string())
-            .unwrap_or_else(|| "kmp".to_string())
-    ));
-    if work.exists() {
-        eprintln!(
-            "kmp-mcp: `{}` is left over from an earlier run; move or remove it first. \
-             Nothing has been changed.",
-            work.display()
-        );
-        return 2;
-    }
-    let snapshot = work.join("snapshot");
-    let shared = work.join("shared");
-    if let Err(error) = copy_tree(&data_dir, &snapshot) {
-        eprintln!(
-            "kmp-mcp: could not snapshot `{}`: {error}",
-            data_dir.display()
-        );
-        return 2;
-    }
-    println!("snapshot taken (the live store was not touched)");
-
-    let receipt =
-        match kmp_embedded::migrate_data_dir_to(&snapshot, &shared, StorageEngine::Sqlite).await {
-            Ok(receipt) => receipt,
-            Err(error) => {
-                eprintln!("kmp-mcp: migration failed, nothing was changed: {error}");
-                return 2;
-            }
-        };
-    println!(
-        "migrated: {} events, {} mutations",
-        receipt.events_migrated, receipt.mutations_applied
-    );
-
-    // Verify before swapping, not after: a migration that reports success and
-    // loses events would otherwise be discovered by a reader, later.
-    match verify_same_log(&snapshot, &shared).await {
-        Ok((events, sequence)) => {
-            println!("verified: {events} events, last sequence {sequence}, on both engines");
-        }
-        Err(error) => {
-            eprintln!(
-                "kmp-mcp: the migrated store does not match the original, so nothing was \
-                 changed: {error}"
-            );
-            return 2;
-        }
-    }
-
-    let kept = data_dir.with_file_name(format!(
-        "{}-redb-before-share",
-        data_dir
-            .file_name()
-            .map(|name| name.to_string_lossy().to_string())
-            .unwrap_or_else(|| "kmp".to_string())
-    ));
-    if kept.exists() {
-        eprintln!(
-            "kmp-mcp: `{}` already exists, so the original cannot be moved aside safely; \
-             nothing was changed",
-            kept.display()
-        );
-        return 2;
-    }
-    if let Err(error) = std::fs::rename(&data_dir, &kept) {
-        eprintln!("kmp-mcp: could not move the original aside: {error}");
-        return 2;
-    }
-    if let Err(error) = copy_tree(&shared, &data_dir) {
-        eprintln!(
-            "kmp-mcp: could not install the shared store; the original is intact at `{}`: {error}",
-            kept.display()
-        );
-        return 2;
-    }
-
-    let _ = std::fs::remove_dir_all(&work);
-    drop(EmbeddedKernel::open(&data_dir));
-    println!(
-        "\n`{}` is now on the sqlite engine and two hosts can share it.\n\
-         the original is kept at `{}` — nothing was deleted\n\
-         restart every agent host so it opens the new store",
-        data_dir.display(),
-        kept.display()
-    );
-    0
-}
-
-/// Copies a data directory, file by file, without following the store's lock.
-fn copy_tree(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(to)?;
-    for entry in std::fs::read_dir(from)? {
-        let entry = entry?;
-        let target = to.join(entry.file_name());
-        if entry.file_type()?.is_dir() {
-            copy_tree(&entry.path(), &target)?;
-        } else {
-            std::fs::copy(entry.path(), target)?;
-        }
-    }
-    Ok(())
-}
-
-/// Both stores must hold the same log: same length, same last sequence.
-async fn verify_same_log(
-    original: &std::path::Path,
-    migrated: &std::path::Path,
-) -> Result<(u64, u64), String> {
-    let read = |dir: &std::path::Path| {
-        kmp_embedded::EmbeddedKernelStore::open(dir)
-            .map_err(|error| format!("could not open `{}`: {error}", dir.display()))
-    };
-    let before = read(original)?;
-    let after = read(migrated)?;
-    let before_stats = before
-        .event_log_stats()
-        .await
-        .map_err(|error| format!("could not read the original log: {error}"))?;
-    let after_stats = after
-        .event_log_stats()
-        .await
-        .map_err(|error| format!("could not read the migrated log: {error}"))?;
-    if before_stats != after_stats {
-        return Err(format!(
-            "original holds {} events (last sequence {}), migrated holds {} (last sequence {})",
-            before_stats.0, before_stats.1, after_stats.0, after_stats.1
-        ));
-    }
-    Ok(after_stats)
-}
-
 async fn run_migrate_command(args: &[&str]) -> i32 {
     let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
-        eprintln!(
-            "kmp-mcp: migrate requires <source-dir> <destination-dir> [--engine redb|sqlite]"
-        );
+        eprintln!("kmp-mcp: migrate requires <source-dir> <destination-dir>");
         return 2;
     };
-    // `--engine` picks the destination's engine; without it the destination
-    // keeps the default. `--engine sqlite` is how a store that one agent host
-    // owns becomes one that two can share (ADR-018).
-    let engine = match parse_engine_flag(&args[2..]) {
-        Ok(engine) => engine,
-        Err(message) => {
-            eprintln!("kmp-mcp: {message}");
-            return 2;
-        }
-    };
+    if let Some(unexpected) = args.get(2) {
+        eprintln!(
+            "kmp-mcp: migrate has no engine option; SQLite is the only destination \
+             engine (unexpected argument `{unexpected}`)"
+        );
+        return 2;
+    }
     let pulse = kmp_mcp::pulse::Pulse::start("replaying history onto the new engine…");
     let migrated = kmp_embedded::migrate_data_dir_to(
         std::path::Path::new(source),
         std::path::Path::new(destination),
-        engine,
+        kmp_embedded::StorageEngine::Sqlite,
     )
     .await;
     pulse.clear();
@@ -1384,24 +1179,6 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
             eprintln!("kmp-mcp: migration failed: {error}");
             2
         }
-    }
-}
-
-/// Parses the optional `--engine <name>` that follows the two directories.
-fn parse_engine_flag(rest: &[&str]) -> Result<kmp_embedded::StorageEngine, String> {
-    use kmp_embedded::StorageEngine;
-    match rest {
-        [] => Ok(StorageEngine::Redb),
-        ["--engine", "redb"] => Ok(StorageEngine::Redb),
-        ["--engine", "sqlite"] => Ok(StorageEngine::Sqlite),
-        ["--engine", other] => Err(format!(
-            "unknown engine `{other}`; expected `redb` or `sqlite`"
-        )),
-        ["--engine"] => Err("--engine needs a value: `redb` or `sqlite`".to_string()),
-        [other, ..] => Err(format!(
-            "unexpected argument `{other}`; migrate takes <source-dir> <destination-dir> \
-             [--engine redb|sqlite]"
-        )),
     }
 }
 

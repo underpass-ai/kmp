@@ -73,7 +73,12 @@ fn resolve_with_project_marker(
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        return ResolvedDataDir::Explicit(PathBuf::from(explicit));
+        let path = PathBuf::from(explicit);
+        return ResolvedDataDir::Explicit(if path.is_absolute() {
+            path
+        } else {
+            working_dir.join(path)
+        });
     }
 
     let mut current = Some(working_dir);
@@ -154,6 +159,7 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
                 .to_string(),
         )
     })?;
+    reject_unexpanded_home_override(env_override.as_deref())?;
 
     Ok(resolve_data_dir(
         env_override.as_deref(),
@@ -162,13 +168,47 @@ pub fn locate_data_dir_from_env() -> Result<ResolvedDataDir, PortError> {
     ))
 }
 
+fn reject_unexpanded_home_override(env_override: Option<&str>) -> Result<(), PortError> {
+    let Some(explicit) = env_override
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(());
+    };
+    let path = Path::new(explicit);
+    let starts_with_tilde = path
+        .components()
+        .next()
+        .is_some_and(|component| component.as_os_str() == "~");
+    if !starts_with_tilde {
+        return Ok(());
+    }
+
+    let suggestion = user_home()
+        .and_then(|home| path.strip_prefix("~").ok().map(|suffix| home.join(suffix)))
+        .map(|path| format!("; use `{}`", path.display()))
+        .unwrap_or_else(|| "; use an absolute path instead".to_string());
+    Err(PortError::InvalidState(format!(
+        "{DATA_DIR_ENV} value `{explicit}` starts with `~`, but MCP host configuration does not \
+         expand shell paths{suggestion}"
+    )))
+}
+
+fn user_home() -> Option<PathBuf> {
+    ["HOME", "USERPROFILE"]
+        .into_iter()
+        .find_map(std::env::var_os)
+        .map(PathBuf::from)
+        .filter(|path| !path.as_os_str().is_empty())
+}
+
 fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
     ensure_data_dir_skeleton(resolved.path())
 }
 
 /// Creates the non-store part of a KMP data directory.
 ///
-/// Fresh startup, `migrate`, and `share-memory` all call this function. The
+/// Fresh startup and `migrate` both call this function. The
 /// self-ignore file is deliberately installed even for an explicit path: an
 /// operator can put such a path inside a repository, and the store must not
 /// start appearing in `git status` merely because it arrived through a
@@ -237,6 +277,19 @@ mod tests {
             ResolvedDataDir::Explicit(PathBuf::from("/explicit/dir"))
         );
         assert_eq!(resolved.rule_name(), "env");
+    }
+
+    #[test]
+    fn a_relative_override_is_reported_as_the_path_that_will_actually_open() {
+        let resolved = resolve_data_dir(
+            Some("memory/kmp"),
+            Path::new("/workspace/project"),
+            Path::new("/home/u/.local/share"),
+        );
+        assert_eq!(
+            resolved,
+            ResolvedDataDir::Explicit(PathBuf::from("/workspace/project/memory/kmp"))
+        );
     }
 
     #[test]

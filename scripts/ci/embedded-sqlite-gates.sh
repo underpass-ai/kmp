@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 # ADR-018: the SQLite engine behind the storage seam.
 #
-# Everything the default build proves about the embedded store, proved again
-# with the opt-in engine compiled in — plus the two things only this engine
-# claims: it survives kill -9 like redb does, and two processes can write the
-# same store without losing an event. The default build's own gates stay
-# untouched; this runs alongside them, never instead of them.
+# SQLite is the product engine: it survives kill -9 and two processes can
+# write the same store without losing an event. The feature name remains as
+# a downstream compatibility alias, but no build selects redb for new data.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -18,7 +16,7 @@ cargo clippy -p kmp-adapter-embedded -p kmp-conformance -p kmp-embedded -p kmp-m
 echo "sqlite-gates: the sixteen conformance scenarios on the sqlite engine"
 cargo test -p kmp-conformance --features sqlite --locked --test embedded_sqlite_conformance
 
-echo "sqlite-gates: adapter suite with the engine compiled in (redb arm must be unchanged)"
+echo "sqlite-gates: adapter suite including legacy format-1 compatibility"
 cargo test -p kmp-adapter-embedded --features sqlite --locked
 
 echo "sqlite-gates: kmp-embedded and kmp-mcp still build and pass with the engine in"
@@ -98,32 +96,26 @@ for host in a b; do
   fi
 done
 
-# The command that exists so nobody has to do the seven steps by hand. It
-# only earns its place if it verifies, refuses and keeps the original — so
-# the gate drives all three rather than just the happy path.
-echo "sqlite-gates: share-memory migrates, verifies and keeps the original"
-SHARE_DIR="$(mktemp -d)"
-trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${SHARE_DIR}"' EXIT
-# A store on the default engine, created the way any first session creates
-# one. (Not migrated down from the sqlite one: migration runs one way.)
+# No public path may create a fresh redb store. The compatibility reader is
+# exercised by the Rust migration suite above; the CLI only migrates toward
+# SQLite, and the old shortcut explains its retirement.
+echo "sqlite-gates: redb selection and share-memory are retired"
+RETIRED_DIR="$(mktemp -d)"
+trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${RETIRED_DIR}"' EXIT
+set +e
 printf '%s\n' "${PROBE}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=redb \
-  KMP_MCP_DATA_DIR="${SHARE_DIR}/memory" \
-  "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
-grep -q 1 "${SHARE_DIR}/memory/FORMAT_VERSION" \
-  || { echo "sqlite-gates: the fixture store is not on redb" >&2; exit 1; }
-
-RECEIPT="$("${INSTALL_ROOT}/bin/kmp-mcp" share-memory "${SHARE_DIR}/memory")"
-echo "${RECEIPT}" | sed 's/^/    /'
-grep -q 2 "${SHARE_DIR}/memory/FORMAT_VERSION" \
-  || { echo "sqlite-gates: share-memory did not install the sqlite store" >&2; exit 1; }
-echo "${RECEIPT}" | grep -q "verified:" \
-  || { echo "sqlite-gates: share-memory installed without verifying" >&2; exit 1; }
-[ -d "${SHARE_DIR}/memory-redb-before-share" ] \
-  || { echo "sqlite-gates: share-memory did not keep the original" >&2; exit 1; }
-
-# Running it again must be a no-op, not a second migration.
-"${INSTALL_ROOT}/bin/kmp-mcp" share-memory "${SHARE_DIR}/memory" | grep -q "already shareable" \
-  || { echo "sqlite-gates: share-memory is not idempotent" >&2; exit 1; }
-echo "    rerun: already shareable"
+  KMP_MCP_DATA_DIR="${RETIRED_DIR}/memory" \
+  "${INSTALL_ROOT}/bin/kmp-mcp" >"${RETIRED_DIR}/redb.out" 2>"${RETIRED_DIR}/redb.err"
+redb_status=$?
+"${INSTALL_ROOT}/bin/kmp-mcp" share-memory \
+  >"${RETIRED_DIR}/share.out" 2>"${RETIRED_DIR}/share.err"
+share_status=$?
+set -e
+[ "${redb_status}" -ne 0 ] && grep -q "redb engine is retired" "${RETIRED_DIR}/redb.err" \
+  || { echo "sqlite-gates: KMP_MCP_ENGINE=redb was not rejected" >&2; exit 1; }
+[ "${share_status}" -eq 2 ] && grep -q "share-memory was retired" "${RETIRED_DIR}/share.err" \
+  || { echo "sqlite-gates: retired share-memory did not explain the replacement" >&2; exit 1; }
+[ ! -e "${RETIRED_DIR}/memory/FORMAT_VERSION" ] \
+  || { echo "sqlite-gates: rejected redb selector created a store" >&2; exit 1; }
 
 echo "sqlite-gates: passed"

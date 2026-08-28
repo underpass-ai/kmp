@@ -791,11 +791,18 @@ async fn mcp_tools_read_from_live_kernel_grpc_server() -> Result<(), Box<dyn Err
             inspect_content.pointer("/object/kind"),
             Some(&Value::String(DECISION_KIND.to_string()))
         );
+        assert_eq!(
+            inspect_content.pointer("/object/text"),
+            Some(&Value::String(DECISION_DETAIL.to_string())),
+            "include.details exposes the inspected object's live Valkey detail"
+        );
+        let self_citation = format!("detail:{DECISION_ID}");
         assert!(
             array_at(inspect_content, "/evidence")
                 .iter()
-                .any(|value| value.get("text").and_then(Value::as_str) == Some(DECISION_DETAIL)),
-            "kmp_inspect should expose the live Valkey detail"
+                .all(|value| value.get("id").and_then(Value::as_str)
+                    != Some(self_citation.as_str())),
+            "the inspected object must not be returned as evidence for itself"
         );
 
         Ok::<(), Box<dyn Error + Send + Sync>>(())

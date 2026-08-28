@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use kmp_application::{
     ObservabilityExemplar, ObservabilityMetricPoint, ObservabilityProjection, ObservabilityQuery,
@@ -7,19 +7,18 @@ use kmp_application::{
 };
 use kmp_domain::PortError;
 use kmp_observability::QualityTelemetryObservation;
-use redb::{Database, ReadableDatabase, ReadableTable, ReadableTableMetadata};
+use rusqlite::{Connection, params};
 
-use super::storage::{OBSERVATIONS, quality_telemetry_path};
-use crate::adapter::engine::redb::{range_error, table_error};
+use super::storage::open_quality_connection;
 use crate::adapter::serdes::decode;
 
-/// Read-only query adapter for the local quality journal.
+/// Read-only query adapter for the shareable local quality journal.
 #[derive(Debug, Clone)]
-pub struct RedbQualityTelemetryReader {
-    database: Arc<Database>,
+pub struct SqliteQualityTelemetryReader {
+    connection: Arc<Mutex<Connection>>,
 }
 
-impl ObservabilityQueryPort for RedbQualityTelemetryReader {
+impl ObservabilityQueryPort for SqliteQualityTelemetryReader {
     fn available_series(&self) -> Vec<String> {
         SUPPORTED_SERIES
             .iter()
@@ -136,28 +135,27 @@ fn quality_metric(observation: &QualityTelemetryObservation, name: &str) -> f64 
     }
 }
 
-impl RedbQualityTelemetryReader {
-    pub(super) fn from_database(database: Arc<Database>) -> Self {
-        Self { database }
+impl SqliteQualityTelemetryReader {
+    pub(super) fn from_connection(connection: Arc<Mutex<Connection>>) -> Self {
+        Self { connection }
     }
 
     pub fn open(data_dir: &Path) -> Result<Self, PortError> {
-        let path = quality_telemetry_path(data_dir);
-        let database = Database::open(&path).map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry could not open `{}` for reading: {error}",
-                path.display()
-            ))
-        })?;
-        Ok(Self::from_database(Arc::new(database)))
+        let connection = open_quality_connection(data_dir)?;
+        Ok(Self::from_connection(Arc::new(Mutex::new(connection))))
     }
 
     pub fn count(&self) -> Result<u64, PortError> {
-        let tx = self.begin_read()?;
-        let table = tx.open_table(OBSERVATIONS).map_err(table_error)?;
-        table.len().map_err(|error| {
-            PortError::Unavailable(format!("quality telemetry count failed: {error}"))
-        })
+        let count: i64 = self
+            .connection()?
+            .query_row("SELECT COUNT(*) FROM quality_observations", [], |row| {
+                row.get(0)
+            })
+            .map_err(|error| {
+                PortError::Unavailable(format!("quality telemetry count failed: {error}"))
+            })?;
+        u64::try_from(count)
+            .map_err(|_| PortError::InvalidState("quality telemetry count is negative".to_string()))
     }
 
     pub fn query_since(
@@ -190,16 +188,23 @@ impl RedbQualityTelemetryReader {
         if limit == 0 || until_millis < since_millis {
             return Ok(Vec::new());
         }
-        let tx = self.begin_read()?;
-        let table = tx.open_table(OBSERVATIONS).map_err(table_error)?;
+        let from = i64::try_from(since_millis).unwrap_or(i64::MAX);
+        let to = i64::try_from(until_millis).unwrap_or(i64::MAX);
+        let connection = self.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT payload FROM quality_observations \
+                 WHERE observed_at_millis BETWEEN ?1 AND ?2 \
+                 ORDER BY observed_at_millis ASC, id ASC",
+            )
+            .map_err(query_error)?;
+        let rows = statement
+            .query_map(params![from, to], |row| row.get::<_, Vec<u8>>(0))
+            .map_err(query_error)?;
         let mut observations = Vec::new();
-        for row in table
-            .range((since_millis, 0u64)..=(until_millis, u64::MAX))
-            .map_err(range_error)?
-        {
-            let (_, value) = row.map_err(range_error)?;
-            let observation: QualityTelemetryObservation =
-                decode("quality observation", value.value())?;
+        for row in rows {
+            let payload = row.map_err(query_error)?;
+            let observation: QualityTelemetryObservation = decode("quality observation", &payload)?;
             if rpc.is_some_and(|wanted| wanted != observation.rpc()) {
                 continue;
             }
@@ -218,22 +223,35 @@ impl RedbQualityTelemetryReader {
         if limit == 0 {
             return Ok(Vec::new());
         }
-        let tx = self.begin_read()?;
-        let table = tx.open_table(OBSERVATIONS).map_err(table_error)?;
-        let mut observations = Vec::new();
-        for row in table.iter().map_err(range_error)?.rev().take(limit) {
-            let (_, value) = row.map_err(range_error)?;
-            observations.push(decode("quality observation", value.value())?);
-        }
+        let connection = self.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT payload FROM quality_observations \
+                 ORDER BY observed_at_millis DESC, id DESC LIMIT ?1",
+            )
+            .map_err(query_error)?;
+        let rows = statement
+            .query_map([i64::try_from(limit).unwrap_or(i64::MAX)], |row| {
+                row.get::<_, Vec<u8>>(0)
+            })
+            .map_err(query_error)?;
+        let mut observations = rows
+            .map(|row| {
+                let payload = row.map_err(query_error)?;
+                decode("quality observation", &payload)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         observations.reverse();
         Ok(observations)
     }
 
-    fn begin_read(&self) -> Result<redb::ReadTransaction, PortError> {
-        self.database.begin_read().map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry read transaction failed: {error}"
-            ))
+    fn connection(&self) -> Result<MutexGuard<'_, Connection>, PortError> {
+        self.connection.lock().map_err(|_| {
+            PortError::Unavailable("quality telemetry connection lock is poisoned".to_string())
         })
     }
+}
+
+fn query_error(error: rusqlite::Error) -> PortError {
+    PortError::Unavailable(format!("quality telemetry query failed: {error}"))
 }

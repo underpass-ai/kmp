@@ -21,7 +21,7 @@ const TLS_ENV_VARS: &[&str] = &[
 /// whatever store this machine resolves would be writing in someone's real
 /// memory. Naming where to keep a store is not choosing a backend.
 #[test]
-fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
+fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configured() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let output = run_binary(
         &[
@@ -47,6 +47,61 @@ fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
         13,
         "ten memory tools and three view tools"
     );
+    let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
+        .expect("the implicit embedded backend creates its session journal")
+        .count();
+    assert!(
+        log_entries > 0,
+        "the default backend must journal exactly like explicit embedded mode"
+    );
+}
+
+#[test]
+fn an_unexpanded_home_data_dir_is_refused_without_creating_a_literal_tilde() {
+    let working_dir = tempfile::tempdir().expect("working dir");
+    let home = tempfile::tempdir().expect("home dir");
+    let input = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n";
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .current_dir(working_dir.path())
+        .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
+        .env("HOME", home.path())
+        .env("KMP_VIEWER_ADDR", "off")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("stdio MCP binary should spawn");
+    child
+        .stdin
+        .as_mut()
+        .expect("stdin")
+        .write_all(input.as_bytes())
+        .expect("request is written");
+    drop(child.stdin.take());
+    let output = child.wait_with_output().expect("process exits");
+
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8(output.stderr).expect("stderr is UTF-8");
+    assert!(stderr.contains("MCP host configuration does not expand shell paths"));
+    assert!(
+        stderr.contains(&home.path().join("kmp-host-config").display().to_string()),
+        "the refusal names the absolute path the user probably meant: {stderr}"
+    );
+    assert!(
+        !working_dir.path().join("~").exists(),
+        "startup must not create a directory that only looks home-relative"
+    );
+
+    let info = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("info")
+        .current_dir(working_dir.path())
+        .env("KMP_MCP_DATA_DIR", "~/kmp-host-config")
+        .env("HOME", home.path())
+        .output()
+        .expect("info runs");
+    let report = String::from_utf8(info.stdout).expect("info output is UTF-8");
+    assert!(report.contains("the data directory does not resolve"));
+    assert!(report.contains(&home.path().join("kmp-host-config").display().to_string()));
 }
 
 /// The viewer follows the same implicit embedded default as the MCP backend.
@@ -410,7 +465,11 @@ fn cli_surface_version_export_import_and_errors() {
         assert!(help.status.success(), "{flag} exits successfully");
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
-        assert!(stdout.contains("share-memory"), "{flag}: {stdout}");
+        assert!(
+            stdout.contains("Migrate a legacy store to SQLite"),
+            "{flag}: {stdout}"
+        );
+        assert!(!stdout.contains("share-memory"), "{flag}: {stdout}");
         assert!(stdout.contains("snapshot <verb>"), "{flag}: {stdout}");
     }
 
@@ -423,6 +482,13 @@ fn cli_surface_version_export_import_and_errors() {
         String::from_utf8_lossy(&version.stdout).contains("store format"),
         "--version must report binary and store format"
     );
+
+    let retired = Command::new(bin)
+        .arg("share-memory")
+        .output()
+        .expect("retired command explains itself");
+    assert_eq!(retired.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&retired.stderr).contains("share-memory was retired"));
 
     let unknown = Command::new(bin)
         .arg("bogus")

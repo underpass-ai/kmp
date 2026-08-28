@@ -3,27 +3,26 @@ name = "kmp-adapter-embedded"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "Embedded SQLite and redb-compatible storage adapters for every KMP persistence port"
+description = "Embedded SQLite storage adapters for every KMP persistence port"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["kmp", "redb", "sqlite", "embedded", "storage"]
+keywords = ["kmp", "sqlite", "embedded", "storage", "memory"]
 categories = ["database"]
 publish = true
 
 [features]
-default = []
-# A second engine behind the storage seam (ADR-018). The library keeps it
-# opt-in because it brings a C toolchain into downstream builds; the
-# user-facing kmp-mcp binary enables it by default for shareable fresh stores.
-sqlite = ["dep:rusqlite"]
+default = ["sqlite"]
+# Kept as a compatibility feature name for downstream manifests. SQLite is
+# always present because both canonical memory and quality telemetry use it.
+sqlite = []
 
 [lints]
 workspace = true
 
 [dependencies]
 redb = "4.1.0"
-rusqlite = { version = "0.40.1", features = ["bundled"], optional = true }
+rusqlite = { version = "0.40.1", features = ["bundled"] }
 sha2.workspace = true
 kmp-domain.workspace = true
 kmp-application.workspace = true

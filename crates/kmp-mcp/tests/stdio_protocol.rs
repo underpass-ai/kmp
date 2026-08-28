@@ -402,6 +402,15 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         inspect["result"]["structuredContent"]["object"]["ref"],
         "claim:rachel-austin"
     );
+    assert_eq!(
+        inspect["result"]["structuredContent"]["evidence"],
+        json!([{
+            "id": "evidence:rachel-turn-2",
+            "supports": ["claim:rachel-austin"],
+            "text": "Later she corrected it: the move is to Austin.",
+            "source": "conversation turn 2"
+        }])
+    );
 }
 
 #[tokio::test]
@@ -669,6 +678,65 @@ fn stub_ingest_response() -> Value {
         },
         "isError": false
     })
+}
+
+#[tokio::test]
+async fn view_open_and_get_state_hand_over_the_session_capability_link() {
+    const VIEWER_URL: &str =
+        "http://127.0.0.1:7317/?k=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    let server = KernelMcpServer::with_backend(StubBackend {
+        calls: Arc::new(Mutex::new(Vec::new())),
+        backend_name: "stub",
+        grpc_tls_mode_name: "disabled",
+        response: Ok(stub_ingest_response()),
+    })
+    .serving_viewer_at(VIEWER_URL);
+
+    let opened = handle_with(
+        &server,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 61,
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_view_open",
+                "arguments": {
+                    "view_id": "capability-handoff-293",
+                    "about": "incident:capability-handoff"
+                }
+            }
+        }),
+    )
+    .await;
+    assert_eq!(opened["result"]["structuredContent"]["url"], VIEWER_URL);
+    assert!(
+        opened["result"]["content"][0]["text"]
+            .as_str()
+            .expect("model-visible receipt")
+            .contains(VIEWER_URL),
+        "the agent must be able to hand the link to the user"
+    );
+
+    let state = handle_with(
+        &server,
+        json!({
+            "jsonrpc": "2.0",
+            "id": 62,
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_view_get_state",
+                "arguments": {"view_id": "capability-handoff-293"}
+            }
+        }),
+    )
+    .await;
+    assert_eq!(state["result"]["structuredContent"]["url"], VIEWER_URL);
+    assert!(
+        state["result"]["content"][0]["text"]
+            .as_str()
+            .expect("model-visible receipt")
+            .contains(VIEWER_URL)
+    );
 }
 
 /// Every tool declares `additionalProperties: false`. Until it was enforced,

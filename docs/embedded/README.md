@@ -61,17 +61,18 @@ The data directory is selected in this order:
    `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
    on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
-The current shipped `kmp-mcp` binary creates fresh stores on SQLite. Existing
-redb stores are supported as a legacy migration path: KMP opens the engine
-stamped on disk and never silently substitutes an empty SQLite store.
+KMP creates every fresh store on SQLite. Existing format-1 redb stores remain
+readable through a compatibility path, so an upgrade never substitutes an
+empty SQLite store for older memory.
 
 Do not create a new redb store. To change the store used by a project, point
 `KMP_MCP_DATA_DIR` at the intended directory and verify the selection with
 `kmp-mcp info` before writing.
 
-SQLite permits multiple local agent hosts to share one store. `kmp-mcp
-share-memory` snapshots, migrates and verifies a legacy redb store before
-replacing it with SQLite, while keeping the original.
+SQLite permits multiple local agent hosts to share one store. Stop legacy
+writers, then run `kmp-mcp migrate <source> <destination>` to replay a
+format-1 store into a fresh SQLite directory. The source stays untouched and
+the destination records a migration receipt.
 
 ## Durability and recovery
 
@@ -92,14 +93,19 @@ was written, so treat it with the same confidentiality as the store.
 
 An embedded session attempts to serve a read-only viewer rooted at
 `http://127.0.0.1:7317/`. It binds loopback only and prints a random,
-per-session capability link. Opening that link exchanges the capability for
-an HttpOnly, SameSite cookie and redirects to the clean URL; requests from
-other local processes receive `401`. Set `KMP_VIEWER_ADDR` to a different
-loopback address or `off` to disable it.
+per-session capability link. `kmp_view_open` and `kmp_view_get_state` return
+the same link, so an agent can hand it over even when its host hides server
+output. Opening the link exchanges the capability for an HttpOnly, SameSite
+cookie and redirects to the clean URL; requests from other local processes
+receive `401`. Set `KMP_VIEWER_ADDR` to a different loopback address or `off`
+to disable it.
 
-Logs and the bounded quality journal live inside the data directory. They are
-local diagnostics, not remote telemetry. KMP does not upload memory to
-Underpass.
+Logs and the bounded quality journal live inside the data directory. Quality
+observations use `telemetry/quality.sqlite3` in WAL mode, so every local host
+keeps its Observability Pulse. On first 0.3 startup, KMP imports an existing
+`telemetry/quality.redb` once, applies the same retention bound and leaves the
+legacy file in place as source evidence. They are local diagnostics, not
+remote telemetry; KMP does not upload memory to Underpass.
 
 ## Maintenance commands
 
@@ -111,8 +117,7 @@ Run `kmp-mcp --help` for the live command contract.
 | `export`, `import` | Checkpoint or restore an event bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
-| `migrate <src> <dst> [--engine ...]` | Replay memory into a fresh store. |
-| `share-memory` | Convert a legacy redb store to verified SQLite. |
+| `migrate <src> <dst>` | Replay legacy memory into a fresh SQLite store. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
 | `uninstall [--apply]` | Preview removal, then apply only when explicitly requested. |
 

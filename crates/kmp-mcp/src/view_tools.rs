@@ -38,7 +38,7 @@ fn view_id_of(arguments: &Value) -> String {
         .to_string()
 }
 
-fn state_result(state: &ViewState, extra: Value) -> Value {
+fn state_result(state: &ViewState, extra: Value, viewer_url: Option<&str>) -> Value {
     let mut result = json!({
         "view_id": state.view_id,
         "view_revision": state.view_revision,
@@ -49,12 +49,19 @@ fn state_result(state: &ViewState, extra: Value) -> Value {
             result.insert(key.clone(), value.clone());
         }
     }
+    if let (Some(result), Some(url)) = (result.as_object_mut(), viewer_url) {
+        result.insert("url".to_string(), Value::String(url.to_string()));
+    }
     result
 }
 
 /// Opens or rehydrates a view. The `about` must exist: a view onto memory
 /// that is not there would render an empty loom that looks like an answer.
-pub(crate) fn open(arguments: &Value, about_exists: bool) -> Result<Value, ToolError> {
+pub(crate) fn open(
+    arguments: &Value,
+    about_exists: bool,
+    viewer_url: Option<&str>,
+) -> Result<Value, ToolError> {
     let Some(about) = arguments.get("about").and_then(Value::as_str) else {
         return Err(ToolError::invalid_argument(
             "kmp_view_open needs `about`: the memory the loom should weave",
@@ -95,11 +102,12 @@ pub(crate) fn open(arguments: &Value, about_exists: bool) -> Result<Value, ToolE
             "clocks": kmp_viewer::view_state::CLOCKS,
             "semantic_zoom_ladder": kmp_viewer::view_state::ZOOMS,
         }),
+        viewer_url,
     ))
 }
 
 /// Reads the view without changing it — semantic state, never pixels.
-pub(crate) fn get_state(arguments: &Value) -> Result<Value, ToolError> {
+pub(crate) fn get_state(arguments: &Value, viewer_url: Option<&str>) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
     let Some(state) = ViewRegistry::shared().get(&view_id) else {
         return Err(ToolError::not_found(format!(
@@ -112,6 +120,7 @@ pub(crate) fn get_state(arguments: &Value) -> Result<Value, ToolError> {
             "reads": "the semantic state of the view, not its pixels",
             "observability": "projection.overlays are queried for the current range and drawn on the shared temporal axis",
         }),
+        viewer_url,
     ))
 }
 
@@ -120,7 +129,7 @@ pub(crate) fn get_state(arguments: &Value) -> Result<Value, ToolError> {
 pub(crate) fn undo(arguments: &Value) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
     match ViewRegistry::shared().undo(&view_id, "human") {
-        Ok(state) => Ok(state_result(&state, json!({"undone": true}))),
+        Ok(state) => Ok(state_result(&state, json!({"undone": true}), None)),
         Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
             "no view under `{id}` — open one with kmp_view_open first"
         ))),
@@ -368,6 +377,7 @@ pub(crate) fn apply_intent(
                 "applied": applied.applied,
                 "unhonored": applied.unhonored,
             }),
+            None,
         )),
         Err(ViewError::Conflict {
             expected,
