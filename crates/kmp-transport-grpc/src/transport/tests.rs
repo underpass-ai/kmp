@@ -1801,7 +1801,7 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
             .iter()
             .map(|entry| entry.r#ref.as_str())
             .collect::<Vec<_>>(),
-        vec!["claim:rachel-denver", "claim:rachel-austin"]
+        vec!["claim:rachel-austin", "claim:rachel-denver"]
     );
 
     let forward = service

@@ -21,6 +21,10 @@ Detailed notes from the early release cycle are preserved in the
 - `kmp-mcp migrate` can no longer panic on a truncated format-1 file or report
   success for an empty one. Both cases fail before a destination or scratch
   file is created and leave the source untouched.
+- Rewind pages now emit entries newest-to-oldest, matching the direction in
+  which continuation cursors move. Concatenating a complete rewind sweep is
+  globally descending and no longer changes its apparent latest entry with
+  the page size. Empty explicit-clock reads also name the absent clock.
 
 ## [0.3.2] - 2026-08-28
 

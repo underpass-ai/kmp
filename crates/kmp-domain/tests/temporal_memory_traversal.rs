@@ -80,7 +80,7 @@ fn rewind_sequence_uses_sequence_axis_without_mixing_time_only_coordinates() {
             .iter()
             .map(|entry| entry.ref_id())
             .collect::<Vec<_>>(),
-        vec!["claim:rachel-denver", "claim:rachel-austin"]
+        vec!["claim:rachel-austin", "claim:rachel-denver"]
     );
     assert!(result.entries().iter().all(|entry| {
         entry

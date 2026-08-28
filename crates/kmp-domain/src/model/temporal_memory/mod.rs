@@ -238,7 +238,14 @@ impl TemporalMemoryTraversal {
                 .any(|position| position.axis_key.axis() == axis_key.axis())
         });
         let selection = select_positions(&positions, &cursor, request);
-        let selected_ref_ids = ordered_unique_ref_ids(selection.positions);
+        let mut selected_ref_ids = ordered_unique_ref_ids(selection.positions);
+        // A rewind page is consumed in the same direction the cursor moves:
+        // newest to oldest. Keeping the page ascending while its continuation
+        // walks backwards makes concatenated pages non-monotonic and lets the
+        // page size change which entry appears "most recent".
+        if request.direction == TemporalDirection::Rewind {
+            selected_ref_ids.reverse();
+        }
         let page = TemporalTraversalPage::new(
             selected_ref_ids.len(),
             selection.total_unique_refs,
@@ -644,7 +651,7 @@ mod tests {
     }
 
     #[test]
-    fn rewind_preserves_sequence_order_for_timestamp_ties_at_either_boundary() {
+    fn rewind_descends_by_sequence_for_timestamp_ties_at_either_boundary() {
         let bundle = clocked_temporal_bundle(&[
             ("entry-1", "2026-08-27T10:00:00Z", 1),
             ("entry-2", "2026-08-27T11:00:00Z", 2),
@@ -673,11 +680,11 @@ mod tests {
 
         assert_eq!(
             rewind("2026-08-27T13:00:00Z"),
-            ["entry-2", "entry-z", "entry-a"]
+            ["entry-a", "entry-z", "entry-2"]
         );
         assert_eq!(
             rewind("2026-08-27T14:00:00Z"),
-            ["entry-z", "entry-a", "entry-5"]
+            ["entry-5", "entry-a", "entry-z"]
         );
     }
 
@@ -707,16 +714,25 @@ mod tests {
 
         let rewind = traverse(TemporalDirection::Rewind, "2026-08-27T14:00:00Z");
         let forward = traverse(TemporalDirection::Forward, "2026-08-27T11:00:00Z");
+        assert_eq!(rewind.page().returned(), 3);
+        assert_eq!(forward.page().returned(), 3);
+        assert_eq!(
+            rewind
+                .entries()
+                .iter()
+                .map(TemporalEntry::ref_id)
+                .collect::<Vec<_>>(),
+            ["entry-5", "entry-a", "entry-z"]
+        );
+        assert_eq!(
+            forward
+                .entries()
+                .iter()
+                .map(TemporalEntry::ref_id)
+                .collect::<Vec<_>>(),
+            ["entry-z", "entry-a", "entry-5"]
+        );
         for result in [&rewind, &forward] {
-            assert_eq!(result.page().returned(), 3);
-            assert_eq!(
-                result
-                    .entries()
-                    .iter()
-                    .map(TemporalEntry::ref_id)
-                    .collect::<Vec<_>>(),
-                ["entry-z", "entry-a", "entry-5"]
-            );
             assert!(
                 result
                     .entries()
@@ -760,7 +776,7 @@ mod tests {
                 .iter()
                 .map(TemporalEntry::ref_id)
                 .collect::<Vec<_>>(),
-            ["entry-1", "entry-2", "entry-z"]
+            ["entry-z", "entry-2", "entry-1"]
         );
         let forward = traverse(
             TemporalDirection::Forward,
@@ -799,6 +815,55 @@ mod tests {
                 .map(str::to_string)
                 .collect()
         );
+    }
+
+    #[test]
+    fn rewind_sweeps_are_globally_descending_for_every_page_size() {
+        let bundle = clocked_temporal_bundle(&[
+            ("e00", "2026-08-27T08:00:00Z", 1),
+            ("e01", "2026-08-27T09:00:00Z", 2),
+            ("e02", "2026-08-27T10:00:00Z", 3),
+            ("e03", "2026-08-27T11:00:00Z", 4),
+            ("e04", "2026-08-27T12:00:00Z", 5),
+            ("e05", "2026-08-27T12:00:00Z", 6),
+            ("e06", "2026-08-27T13:00:00Z", 7),
+            ("e07", "2026-08-27T14:00:00Z", 8),
+            ("e08", "2026-08-27T15:00:00Z", 9),
+            ("e09", "2026-08-27T16:00:00Z", 10),
+            ("e10", "2026-08-27T17:00:00Z", 11),
+            ("e11", "2026-08-27T18:00:00Z", 12),
+        ]);
+        let expected = (0..12)
+            .rev()
+            .map(|index| format!("e{index:02}"))
+            .collect::<Vec<_>>();
+
+        for limit in 1..=4 {
+            let mut cursor = TemporalCursor::time("2026-08-28T00:00:00Z").expect("time cursor");
+            let mut collected = Vec::new();
+            loop {
+                let page = TemporalMemoryTraversal::traverse(
+                    &bundle,
+                    &TemporalTraversalRequest::new(TemporalDirection::Rewind, cursor)
+                        .with_axis(TemporalAxis::Observed)
+                        .with_limit_entries(limit)
+                        .expect("limit"),
+                )
+                .expect("rewind page");
+                collected.extend(
+                    page.entries()
+                        .iter()
+                        .map(TemporalEntry::ref_id)
+                        .map(str::to_string),
+                );
+                let Some(next) = page.page().next_cursor() else {
+                    break;
+                };
+                cursor = TemporalCursor::ref_id(next).expect("continuation cursor");
+            }
+
+            assert_eq!(collected, expected, "page size {limit}");
+        }
     }
 
     #[test]
