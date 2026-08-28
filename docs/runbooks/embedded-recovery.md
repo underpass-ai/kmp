@@ -43,25 +43,26 @@ kmp-mcp snapshot create pre-change
 kmp-mcp snapshot verify pre-change
 ```
 
-## 4A. Migrate an existing redb store to SQLite
+## 4A. Migrate an existing format-1 redb store to SQLite
 
 ```bash
-kmp-mcp share-memory /exact/path/to/data-dir
+kmp-mcp migrate /exact/source /exact/fresh-destination
 ```
 
-The command migrates to SQLite, verifies the result and keeps the original
-legacy directory. Rerun `kmp-mcp info` from every intended host and confirm that
-both resolve to the same SQLite data directory.
+The command replays into SQLite, records a migration receipt and leaves the
+legacy source untouched. Point one test session at the destination, verify it,
+then rerun `kmp-mcp info` from every intended host and confirm that both resolve
+to the same SQLite data directory.
 
-## 4B. Move to a fresh directory or engine
+## 4B. Move a portable bundle to a fresh directory
 
 ```bash
-kmp-mcp migrate /exact/source /exact/fresh-destination --engine sqlite
+KMP_MCP_DATA_DIR=/exact/fresh-destination kmp-mcp import .kmp/memory.jsonl
 ```
 
-The destination must not contain a store. The source is preserved. Point one
-test session at the destination with `KMP_MCP_DATA_DIR`, verify it, then update
-the intended host configuration.
+The destination must not contain a store. Point one test session at the
+destination with `KMP_MCP_DATA_DIR`, verify it, then update the intended host
+configuration.
 
 ## 4C. Restore a repository bundle
 

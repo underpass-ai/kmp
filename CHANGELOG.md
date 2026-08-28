@@ -9,6 +9,15 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Changed
+
+- Embedded memory and its bounded quality telemetry now use shareable SQLite.
+  The quality journal moves to `telemetry/quality.sqlite3`, preserves retention
+  and imports an existing `quality.redb` exactly once while leaving that source
+  file intact. New redb stores, `KMP_MCP_ENGINE=redb`, migration destinations
+  on redb and `share-memory` are retired. Format-1 memory remains readable and
+  migratable through an isolated compatibility path for the 0.3 upgrade.
+
 ## [0.2.10] - 2026-08-28
 
 ### Changed

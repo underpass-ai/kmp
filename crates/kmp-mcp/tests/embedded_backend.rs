@@ -1,7 +1,7 @@
 //! E3 acceptance: the embedded backend serves KMP tools in-process and
 //! memory survives across sessions (fresh-machine criterion analog).
 
-use kmp_adapter_embedded::RedbQualityTelemetryReader;
+use kmp_adapter_embedded::SqliteQualityTelemetryReader;
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
 use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpServer};
@@ -1367,7 +1367,7 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
     );
     drop(server);
 
-    let telemetry = RedbQualityTelemetryReader::open(data_dir.path())
+    let telemetry = SqliteQualityTelemetryReader::open(data_dir.path())
         .expect("quality telemetry journal opens after the session");
     let wake_observations = telemetry
         .query_since(0, Some("kmp_wake"), 10)
@@ -1575,7 +1575,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .expect("goto succeeds");
     drop(backend);
 
-    let telemetry = RedbQualityTelemetryReader::open(data_dir.path()).expect("journal opens");
+    let telemetry = SqliteQualityTelemetryReader::open(data_dir.path()).expect("journal opens");
     let wakes = telemetry
         .query_since(0, Some("kmp_wake"), 10)
         .expect("wake observations query");

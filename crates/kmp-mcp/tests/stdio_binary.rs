@@ -465,7 +465,11 @@ fn cli_surface_version_export_import_and_errors() {
         assert!(help.status.success(), "{flag} exits successfully");
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
-        assert!(stdout.contains("share-memory"), "{flag}: {stdout}");
+        assert!(
+            stdout.contains("Migrate a legacy store to SQLite"),
+            "{flag}: {stdout}"
+        );
+        assert!(!stdout.contains("share-memory"), "{flag}: {stdout}");
         assert!(stdout.contains("snapshot <verb>"), "{flag}: {stdout}");
     }
 
@@ -478,6 +482,13 @@ fn cli_surface_version_export_import_and_errors() {
         String::from_utf8_lossy(&version.stdout).contains("store format"),
         "--version must report binary and store format"
     );
+
+    let retired = Command::new(bin)
+        .arg("share-memory")
+        .output()
+        .expect("retired command explains itself");
+    assert_eq!(retired.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&retired.stderr).contains("share-memory was retired"));
 
     let unknown = Command::new(bin)
         .arg("bogus")

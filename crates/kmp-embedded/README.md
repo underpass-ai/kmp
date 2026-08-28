@@ -19,10 +19,10 @@ let engine = default_engine_for_data_dir(dir.path());
 let kernel = EmbeddedKernel::open_with_engine(dir.path(), engine)?;
 ```
 
-Enable the `sqlite` feature for shareable fresh stores; this is what the
-user-facing `kmp-mcp` binary does by default. An existing store always opens
-with the engine recorded in its `FORMAT_VERSION`, including redb stores from
-earlier versions. KMP never guesses or silently changes that engine.
+Fresh stores always use shareable SQLite. The `sqlite` feature name remains
+as a compatibility alias for downstream manifests. An existing store opens
+from its `FORMAT_VERSION`; format-1 redb memory remains readable only for the
+legacy migration promise. KMP never guesses or silently changes that engine.
 
 Projection is synchronous on purpose: when a write returns, what it
 materialized is already readable. There is no queue to drain and no eventual

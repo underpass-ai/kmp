@@ -331,28 +331,12 @@ else
           info "the redb engine is single-writer (ADR-011): a second host"
           info "session on the same data dir gets no tools at all. Close that"
           info "session, point this one at a different KMP_MCP_DATA_DIR, or"
-          info "share the store between hosts by moving it to the sqlite engine."
-          # Say the one thing that is true of *this* machine, rather than a
-          # command that will fail on it. A binary without the engine cannot
-          # run the migration at all, and finding that out afterwards is the
-          # worst moment.
-          if printf '%s' "$VERSION" | grep -q "sqlite"; then
-            info ""
-            info "  kmp-mcp share-memory"
-            info ""
-            info "one command: snapshots the store (yours is locked, so it"
-            info "cannot be migrated in place), migrates, verifies the event"
-            info "log matches, keeps the original under a -redb-before-share"
-            info "name, and installs the result. Restart both hosts after."
-          else
-            info ""
-            info "this binary has no sqlite engine, so it cannot do that yet:"
-            info "  cargo install kmp-mcp"
-            info "  kmp-mcp share-memory"
-            info ""
-            info "through a release-bundle plugin, also point the launcher at"
-            info "the binary you built: KMP_MCP_BIN=\$HOME/.cargo/bin/kmp-mcp"
-          fi
+          info "move the store to SQLite. Close every host first, then run:"
+          info ""
+          info "  kmp-mcp migrate \"$DATA_DIR\" \"$DATA_DIR-sqlite\""
+          info ""
+          info "the source is left untouched and the destination carries a"
+          info "verified migration receipt. Point both hosts at the new path."
         fi
       else
         ok "store is free — no other process holds it"

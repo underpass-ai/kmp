@@ -3,7 +3,7 @@ name = "kmp-embedded"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "In-process KMP composition root over a stamped local SQLite or redb-compatible store"
+description = "In-process KMP composition root over a stamped local SQLite store"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
@@ -15,9 +15,8 @@ publish = true
 workspace = true
 
 [features]
-default = []
-# The SQLite engine for the embedded store (ADR-018): lets two agent hosts
-# share one memory. Off by default so the default build stays pure Rust.
+default = ["sqlite"]
+# Compatibility feature name: SQLite is now the only engine for fresh stores.
 sqlite = ["kmp-adapter-embedded/sqlite"]
 
 [dependencies]

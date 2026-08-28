@@ -208,7 +208,7 @@ fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
 
 /// Creates the non-store part of a KMP data directory.
 ///
-/// Fresh startup, `migrate`, and `share-memory` all call this function. The
+/// Fresh startup and `migrate` both call this function. The
 /// self-ignore file is deliberately installed even for an explicit path: an
 /// operator can put such a path inside a repository, and the store must not
 /// start appearing in `git status` merely because it arrived through a

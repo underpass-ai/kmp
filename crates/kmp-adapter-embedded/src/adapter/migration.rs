@@ -72,7 +72,7 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
-        Self::migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb, derive).await
+        Self::migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Sqlite, derive).await
     }
 
     /// [`migrate_data_dir`](Self::migrate_data_dir) with the destination
@@ -198,8 +198,13 @@ impl EmbeddedKernelStore {
     where
         F: Fn(&ContextUpdatedEvent) -> Result<Vec<ProjectionMutation>, PortError> + Send + 'static,
     {
-        Self::open_or_migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb, derive)
-            .await
+        Self::open_or_migrate_data_dir_to(
+            source_dir,
+            destination_dir,
+            StorageEngine::Sqlite,
+            derive,
+        )
+        .await
     }
 
     /// [`open_or_migrate_data_dir`](Self::open_or_migrate_data_dir) with the

@@ -21,7 +21,7 @@ pub async fn migrate_data_dir(
     source_dir: &Path,
     destination_dir: &Path,
 ) -> Result<StoreMigrationReceipt, PortError> {
-    migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Redb).await
+    migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Sqlite).await
 }
 
 /// [`migrate_data_dir`] with the destination engine chosen — how a store
