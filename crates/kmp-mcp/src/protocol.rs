@@ -415,7 +415,7 @@ fn tools_list_core() -> Value {
 fn view_open_definition() -> Value {
     tool_definition_with_output(
         "kmp_view_open",
-        "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Read-only with respect to memory: a view is a camera position, not a record.",
+        "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -430,7 +430,7 @@ fn view_open_definition() -> Value {
                 }
             }
         }),
-        view_output_schema(),
+        view_output_with_url_schema(),
     )
 }
 
@@ -518,7 +518,7 @@ fn view_apply_intent_definition() -> Value {
 fn view_get_state_definition() -> Value {
     tool_definition_with_output(
         "kmp_view_get_state",
-        "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns state, never pixels.",
+        "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -526,7 +526,7 @@ fn view_get_state_definition() -> Value {
                 "view_id": string_schema("Which view to read. Omit for the default one.")
             }
         }),
-        view_output_schema(),
+        view_output_with_url_schema(),
     )
 }
 
@@ -554,6 +554,15 @@ fn view_output_schema() -> Value {
         "reads": described("string", "What this answer is, in the reader's terms."),
         "observability": described("string", "How requested overlay series are queried and aligned on the view's temporal axis.")
     }))
+}
+
+fn view_output_with_url_schema() -> Value {
+    let mut schema = view_output_schema();
+    schema["properties"]["url"] = described(
+        "string",
+        "Loopback ChronoLoom URL carrying this session's capability. Present when this MCP process mounted the local viewer.",
+    );
+    schema
 }
 
 fn write_memory_schema() -> Value {
@@ -1695,6 +1704,21 @@ mod tests {
         );
 
         assert_eq!(view("kmp_view_open")["inputSchema"]["required"][0], "about");
+        for name in ["kmp_view_open", "kmp_view_get_state"] {
+            assert!(
+                view(name)["outputSchema"]["properties"]["url"]["description"]
+                    .as_str()
+                    .expect("viewer URL description")
+                    .contains("capability"),
+                "{name} must advertise the handoff link"
+            );
+        }
+        assert!(
+            view("kmp_view_apply_intent")["outputSchema"]["properties"]
+                .get("url")
+                .is_none(),
+            "only discovery tools promise the capability handoff"
+        );
         assert!(
             view("kmp_view_get_state")["description"]
                 .as_str()

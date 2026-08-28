@@ -393,12 +393,16 @@ impl KernelMcpServer {
         start: Instant,
     ) -> String {
         let outcome = match name {
-            "kmp_view_get_state" => crate::view_tools::get_state(arguments),
+            "kmp_view_get_state" => {
+                crate::view_tools::get_state(arguments, self.viewer_url.as_deref())
+            }
             "kmp_view_undo" => crate::view_tools::undo(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
                 match self.memory_ref_exists(about).await {
-                    Ok(exists) => crate::view_tools::open(arguments, exists),
+                    Ok(exists) => {
+                        crate::view_tools::open(arguments, exists, self.viewer_url.as_deref())
+                    }
                     Err(error) => Err(error),
                 }
             }
