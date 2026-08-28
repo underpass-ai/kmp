@@ -21,7 +21,7 @@ Rules:
 - Use only refs visible in current_ref, trace_target_ref, candidate_refs, candidate_ref_details, known_refs, or last_observed_refs.
 - Prefer candidate_ref_details when choosing between writer candidates.
 - Every tool call must be bounded.
-- For kmp_near and kmp_ask, about must equal the top-level about value exactly.
+- For kmp_near, kmp_ask, kmp_trace, and kmp_inspect, about must equal the top-level about value exactly.
 - Do not use current_ref as about.
 - kmp_inspect.include.raw must be false.
 - Use kernel_stop only when the visible state already contains sufficient evidence.
@@ -147,6 +147,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "about": {"type": "string", "description": "Current about id."},
                     "ref": {"type": "string", "description": "Visible ref to inspect."},
                     "include": {
                         "type": "object",
@@ -160,7 +161,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
                         "required": ["details", "incoming", "outgoing", "raw"],
                     },
                 },
-                "required": ["ref", "include"],
+                "required": ["about", "ref", "include"],
             },
         },
     },
@@ -172,6 +173,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "about": {"type": "string", "description": "Current about id."},
                     "from": {"type": "string", "description": "Start ref."},
                     "to": {"type": "string", "description": "Target ref."},
                     "goal": {"type": "string", "description": "Trace goal."},
@@ -185,7 +187,7 @@ KMP_FUNCTION_TOOLS: list[dict[str, Any]] = [
                         "required": ["depth", "tokens"],
                     },
                 },
-                "required": ["from", "to", "goal", "budget"],
+                "required": ["about", "from", "to", "goal", "budget"],
             },
         },
     },

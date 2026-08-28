@@ -545,6 +545,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
             "type": "tool_call",
             "tool": "kmp_inspect",
             "arguments": {
+                "about": trajectory.about,
                 "ref": current_ref,
                 "include": {
                     "details": true,
@@ -558,6 +559,7 @@ fn deterministic_action(trajectory: &Trajectory) -> Value {
             "type": "tool_call",
             "tool": "kmp_trace",
             "arguments": {
+                "about": trajectory.about,
                 "from": current_ref,
                 "to": trace_target_ref,
                 "goal": "Kernel operator deterministic trace probe",
@@ -863,6 +865,7 @@ mod tests {
                 "type": "tool_call",
                 "tool": "kmp_inspect",
                 "arguments": {
+                    "about": "memoryarena:run:r1:task_type:progressive_search:task:1",
                     "ref": "node:1",
                     "include": {
                         "details": true,
@@ -894,6 +897,7 @@ mod tests {
             "type": "tool_call",
             "tool": "kmp_inspect",
             "arguments": {
+                "about": "about:1",
                 "ref": "node:read",
                 "include": {
                     "details": true,
@@ -920,6 +924,7 @@ mod tests {
             "type": "tool_call",
             "tool": "kmp_trace",
             "arguments": {
+                "about": "about:1",
                 "from": "node:writer",
                 "to": "node:prior",
                 "budget": { "depth": 2, "tokens": 1600 }
@@ -1120,6 +1125,7 @@ mod tests {
             "type": "tool_call",
             "tool": "kmp_trace",
             "arguments": {
+                "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
                 "budget": { "depth": 2, "tokens": 2400 },
@@ -1208,6 +1214,7 @@ mod tests {
             "type": "tool_call",
             "tool": "kmp_trace",
             "arguments": {
+                "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
                 "budget": { "depth": 2, "tokens": 2400 },
@@ -1218,6 +1225,7 @@ mod tests {
             "type": "tool_call",
             "tool": "kmp_trace",
             "arguments": {
+                "about": "about:1",
                 "from": "node:1",
                 "to": "node:3",
                 "budget": { "depth": 2, "tokens": 2400 },

@@ -302,6 +302,7 @@ impl MemoryArenaSmartWriter {
                 }),
             );
             let verify_arguments = json!({
+                "about": event.about,
                 "ref": input.entry_ref,
                 "include": {
                     "incoming": true,
@@ -454,6 +455,7 @@ impl MemoryArenaSmartWriter {
                 request_id,
                 "kmp_inspect",
                 &json!({
+                    "about": about,
                     "ref": target_ref.as_str(),
                     "include": {
                         "incoming": true,

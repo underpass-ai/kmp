@@ -34,7 +34,7 @@ WAKE='{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"kmp_wake",
 call "${WAKE}" | grep -o 'decision:redb' | head -1
 
 echo "== session 3: audit the decision with its proof =="
-INSPECT='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"kmp_inspect","arguments":{"ref":"decision:redb","include":{"incoming":true,"details":true}}}}'
+INSPECT='{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"kmp_inspect","arguments":{"about":"project:demo","ref":"decision:redb","include":{"incoming":true,"details":true}}}}'
 call "${INSPECT}" | grep -o 'evidence:spike' | head -1
 
 echo "DEMO OK — memory survived three independent processes at ${DATA_DIR}"

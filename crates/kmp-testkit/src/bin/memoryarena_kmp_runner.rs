@@ -477,7 +477,7 @@ async fn run_mcp_navigation_probe(
             server,
             request_id,
             "kmp_inspect",
-            &inspect_probe_arguments(expected),
+            &inspect_probe_arguments(event, expected),
             event,
             log_mcp_navigation,
         )
@@ -491,7 +491,7 @@ async fn run_mcp_navigation_probe(
                 server,
                 request_id,
                 "kmp_trace",
-                &trace_probe_arguments(expected, target_ref),
+                &trace_probe_arguments(event, expected, target_ref),
                 event,
                 log_mcp_navigation,
             )
@@ -657,8 +657,9 @@ fn near_probe_arguments(event: &MemoryArenaEvent, expected: &MemoryArenaExpected
     })
 }
 
-fn inspect_probe_arguments(expected: &MemoryArenaExpected) -> Value {
+fn inspect_probe_arguments(event: &MemoryArenaEvent, expected: &MemoryArenaExpected) -> Value {
     json!({
+        "about": event.about,
         "ref": expected.current_question_ref,
         "include": {
             "incoming": true,
@@ -669,8 +670,13 @@ fn inspect_probe_arguments(expected: &MemoryArenaExpected) -> Value {
     })
 }
 
-fn trace_probe_arguments(expected: &MemoryArenaExpected, target_ref: &str) -> Value {
+fn trace_probe_arguments(
+    event: &MemoryArenaEvent,
+    expected: &MemoryArenaExpected,
+    target_ref: &str,
+) -> Value {
     json!({
+        "about": event.about,
         "from": expected.current_question_ref,
         "to": target_ref,
         "goal": "MemoryArena staged MCP navigation probe",

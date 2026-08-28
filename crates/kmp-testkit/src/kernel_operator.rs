@@ -48,14 +48,16 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 && path_cursor(arguments, &["around"]).is_some()
         }
         "kmp_trace" => {
-            path_string(arguments, &["from"]).is_some()
+            path_non_empty_string(arguments, &["about"])
+                && path_string(arguments, &["from"]).is_some()
                 && path_string(arguments, &["to"]).is_some()
                 && positive_limit(arguments, &["budget", "tokens"], 16_000)
                 && optional_limit(arguments, &["budget", "depth"], 8)
                 && optional_limit(arguments, &["page", "entries"], 256)
         }
         "kmp_inspect" => {
-            path_string(arguments, &["ref"]).is_some()
+            path_non_empty_string(arguments, &["about"])
+                && path_string(arguments, &["ref"]).is_some()
                 && arguments
                     .pointer("/include/raw")
                     .and_then(Value::as_bool)
@@ -291,9 +293,10 @@ fn validate_trace_arguments(arguments: &Value) -> Result<(), String> {
     exact_keys(
         arguments,
         "action.arguments",
-        &["from", "to", "budget"],
+        &["about", "from", "to", "budget"],
         &["goal", "role", "page"],
     )?;
+    required_non_empty_string(arguments, "about", "action.arguments")?;
     required_non_empty_string(arguments, "from", "action.arguments")?;
     required_non_empty_string(arguments, "to", "action.arguments")?;
     validate_budget(
@@ -309,7 +312,13 @@ fn validate_trace_arguments(arguments: &Value) -> Result<(), String> {
 }
 
 fn validate_inspect_arguments(arguments: &Value) -> Result<(), String> {
-    exact_keys(arguments, "action.arguments", &["ref", "include"], &[])?;
+    exact_keys(
+        arguments,
+        "action.arguments",
+        &["about", "ref", "include"],
+        &[],
+    )?;
+    required_non_empty_string(arguments, "about", "action.arguments")?;
     required_non_empty_string(arguments, "ref", "action.arguments")?;
     validate_inspect_include(
         required_value(arguments, "include", "action.arguments")?,
@@ -1145,6 +1154,7 @@ mod tests {
         assert!(kernel_operator_is_bounded_tool_call(
             "kmp_trace",
             &json!({
+                "about": "about:1",
                 "from": "node:2",
                 "to": "node:1",
                 "budget": { "depth": 1, "tokens": 1600 }
@@ -1153,6 +1163,7 @@ mod tests {
         assert!(kernel_operator_is_bounded_tool_call(
             "kmp_inspect",
             &json!({
+                "about": "about:1",
                 "ref": "node:1",
                 "include": { "details": true, "incoming": true, "outgoing": true, "raw": false }
             })
@@ -1235,6 +1246,7 @@ mod tests {
                 "type": "tool_call",
                 "tool": "kmp_inspect",
                 "arguments": {
+                    "about": "about:1",
                     "ref": "node:1",
                     "include": {
                         "details": true,

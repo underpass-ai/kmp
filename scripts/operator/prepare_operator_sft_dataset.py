@@ -42,9 +42,9 @@ Allowed action shapes:
 
 {"action":{"type":"tool_call","tool":"kmp_forward","arguments":{"about":"...","from":{"ref":"..."},"dimensions":{"mode":"all","scope":"current_about"},"include":{"evidence":true,"raw_refs":false,"relations":true},"limit":{"entries":12,"tokens":2400},"budget":{"depth":3,"tokens":2400},"window":{"before_entries":6,"after_entries":0}}}}
 
-{"action":{"type":"tool_call","tool":"kmp_trace","arguments":{"from":"...","to":"...","goal":"Kernel operator trace probe","role":"operator","budget":{"depth":1,"tokens":1600},"page":{"entries":16}}}}
+{"action":{"type":"tool_call","tool":"kmp_trace","arguments":{"about":"...","from":"...","to":"...","goal":"Kernel operator trace probe","role":"operator","budget":{"depth":1,"tokens":1600},"page":{"entries":16}}}}
 
-{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"...","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}
+{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"about":"...","ref":"...","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}
 
 {"action":{"type":"tool_call","tool":"kmp_write_memory","arguments":{"about":"...","intent":"record_decision","actor":"...","observed_at":"...","scope":{"process":"..."},"current":{"kind":"decision","summary":"...","evidence":"..."},"connect_to":[{"ref":"...","rel":"chosen_because","class":"causal","why":"...","evidence":"...","confidence":"high"}],"read_context":{"inspected_refs":["..."]},"idempotency_key":"...","options":{"dry_run":true,"strict":true}}}}
 

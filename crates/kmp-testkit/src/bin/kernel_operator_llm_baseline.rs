@@ -362,9 +362,9 @@ Allowed action shapes:
 
 {{"action":{{"type":"tool_call","tool":"kmp_near","arguments":{{"about":"...","around":{{"ref":"..."}},"dimensions":{{"mode":"all","scope":"current_about"}},"include":{{"evidence":true,"raw_refs":false,"relations":true}},"limit":{{"entries":12,"tokens":2400}},"budget":{{"depth":3,"tokens":2400}},"window":{{"before_entries":6,"after_entries":0}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_inspect","arguments":{{"about":"...","ref":"...","include":{{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}}}}}
 
-{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1,"tokens":1600}}}}}}}}
+{{"action":{{"type":"tool_call","tool":"kmp_trace","arguments":{{"about":"...","from":"...","to":"...","goal":"Kernel operator trace probe","budget":{{"depth":1,"tokens":1600}}}}}}}}
 
 {{"action":{{"type":"stop","answer_policy":"evidence_or_unknown","final_refs":["..."],"reason":"sufficient_evidence"}}}}
 
@@ -374,7 +374,7 @@ Policy:
 - If the last tool was `kmp_inspect` and `trace_target_ref` is present, call `kmp_trace` from `current_ref` to `trace_target_ref`.
 - Otherwise stop.
 - Every tool call must be bounded.
-- For `kmp_near`, `arguments.about` must equal the top-level `about` value exactly.
+- For `kmp_near`, `kmp_inspect`, and `kmp_trace`, `arguments.about` must equal the top-level `about` value exactly.
 - Do not use `current_ref` as `arguments.about`.
 - `kmp_inspect.include.raw` must be false.
 - Use only tools present in `allowed_tools`.
@@ -671,7 +671,7 @@ mod tests {
     #[test]
     fn parse_action_accepts_wrapped_tool_call() -> Result<(), Box<dyn Error + Send + Sync>> {
         let action = parse_action(
-            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}"#,
+            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"about":"about:1","ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":false}}}}"#,
         )?;
         assert_eq!(
             action.get("tool").and_then(Value::as_str),
@@ -683,7 +683,7 @@ mod tests {
     #[test]
     fn parse_action_rejects_raw_inspect() {
         let error = parse_action(
-            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":true}}}}"#,
+            r#"{"action":{"type":"tool_call","tool":"kmp_inspect","arguments":{"about":"about:1","ref":"node:1","include":{"details":true,"incoming":true,"outgoing":true,"raw":true}}}}"#,
         )
         .err()
         .map(|error| error.to_string())
@@ -732,6 +732,7 @@ mod tests {
                 "type": "tool_call",
                 "tool": "kmp_inspect",
                 "arguments": {
+                    "about": "about:1",
                     "ref": "node:2",
                     "include": {
                         "details": true,
