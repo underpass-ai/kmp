@@ -54,6 +54,7 @@ VERSION="${VERSION#v}"
   echo "kmp-update: invalid release version '${VERSION}'" >&2
   exit 1
 }
+TAGGED_RAW="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
 
 say() { printf '%s\n' "$*"; }
 run() {
@@ -90,6 +91,34 @@ if [ "$DRY_RUN" -eq 0 ]; then
   trap 'rm -rf "${UPDATE_WORK}"' EXIT
   cp "$INSTALLER_SOURCE" "${UPDATE_WORK}/kmp-install-binary.sh"
   INSTALLER="${UPDATE_WORK}/kmp-install-binary.sh"
+
+  # Stage the target release's guide independently of either host cache. A
+  # plugin manager may replace the directory this updater started from.
+  mkdir -p "${UPDATE_WORK}/guide-plugin/scripts" "${UPDATE_WORK}/guide-plugin/guide"
+  if [ -n "${KMP_UPDATE_GUIDE_SOURCE_DIR:-}" ]; then
+    cp "${KMP_UPDATE_GUIDE_SOURCE_DIR}/capabilities.json" \
+      "${UPDATE_WORK}/guide-plugin/capabilities.json"
+    cp "${KMP_UPDATE_GUIDE_SOURCE_DIR}/scripts/kmp-guide-sync.sh" \
+      "${UPDATE_WORK}/guide-plugin/scripts/kmp-guide-sync.sh"
+    for asset in build-guide.py editorial.json guide.requests.json memory.jsonl; do
+      cp "${KMP_UPDATE_GUIDE_SOURCE_DIR}/guide/${asset}" \
+        "${UPDATE_WORK}/guide-plugin/guide/${asset}"
+    done
+  else
+    curl --proto '=https' --tlsv1.2 -fsSL \
+      "${TAGGED_RAW}/plugins/kmp/capabilities.json" \
+      -o "${UPDATE_WORK}/guide-plugin/capabilities.json"
+    curl --proto '=https' --tlsv1.2 -fsSL \
+      "${TAGGED_RAW}/plugins/kmp/scripts/kmp-guide-sync.sh" \
+      -o "${UPDATE_WORK}/guide-plugin/scripts/kmp-guide-sync.sh"
+    for asset in build-guide.py editorial.json guide.requests.json memory.jsonl; do
+      curl --proto '=https' --tlsv1.2 -fsSL \
+        "${TAGGED_RAW}/plugins/kmp/guide/${asset}" \
+        -o "${UPDATE_WORK}/guide-plugin/guide/${asset}"
+    done
+  fi
+  chmod +x "${UPDATE_WORK}/guide-plugin/scripts/kmp-guide-sync.sh" \
+    "${UPDATE_WORK}/guide-plugin/guide/build-guide.py"
 fi
 
 if [ "$DO_CLAUDE" -eq 1 ]; then
@@ -182,19 +211,38 @@ if [ "$DO_CODEX" -eq 1 ]; then
   if [ "$STANDALONE" -eq 0 ]; then
     say "Codex plugin owns MCP and skills; no standalone prompts or registration were changed"
   else
-    tagged_raw="https://raw.githubusercontent.com/${REPO}/v${VERSION}"
     if [ "$DRY_RUN" -eq 1 ]; then
-      say "would: fetch ${tagged_raw}/scripts/mcp/install-kmp-plugin.sh"
+      say "would: fetch ${TAGGED_RAW}/scripts/mcp/install-kmp-plugin.sh"
       say "would: refresh the standalone Codex prompts, doctrine and registration from v${VERSION}"
     else
       curl --proto '=https' --tlsv1.2 -fsSL \
-        "${tagged_raw}/scripts/mcp/install-kmp-plugin.sh" \
+        "${TAGGED_RAW}/scripts/mcp/install-kmp-plugin.sh" \
         -o "${UPDATE_WORK}/install-kmp-plugin.sh"
-      KMP_PLUGIN_RAW_BASE="$tagged_raw" \
+      KMP_PLUGIN_RAW_BASE="$TAGGED_RAW" \
         bash "${UPDATE_WORK}/install-kmp-plugin.sh" \
           --codex --standalone --version "$VERSION"
     fi
   fi
+fi
+
+if [ "$DRY_RUN" -eq 1 ]; then
+  say "would: converge guide:kmp-agent and guide:kmp from v${VERSION} without duplicating events"
+else
+  if [ -n "${KMP_MCP_BIN:-}" ] && [ -x "$KMP_MCP_BIN" ]; then
+    GUIDE_BIN="$KMP_MCP_BIN"
+  elif [ -n "$CODEX_PLUGIN_ROOT" ] && [ -x "${CODEX_PLUGIN_ROOT}/bin/kmp-mcp" ]; then
+    GUIDE_BIN="${CODEX_PLUGIN_ROOT}/bin/kmp-mcp"
+  elif [ -x "${PLUGIN_ROOT}/bin/kmp-mcp" ]; then
+    GUIDE_BIN="${PLUGIN_ROOT}/bin/kmp-mcp"
+  elif command -v kmp-mcp >/dev/null 2>&1; then
+    GUIDE_BIN="$(command -v kmp-mcp)"
+  else
+    echo 'kmp-update: updated engine is not reachable for guide sync' >&2
+    exit 1
+  fi
+  KMP_GUIDE_PLUGIN_ROOT="${UPDATE_WORK}/guide-plugin" \
+    bash "${UPDATE_WORK}/guide-plugin/scripts/kmp-guide-sync.sh" \
+      sync --binary "$GUIDE_BIN"
 fi
 
 say "KMP ${VERSION} is in place. Restart the host so it loads the new plugin and tools."

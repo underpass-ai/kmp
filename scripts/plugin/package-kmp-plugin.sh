@@ -76,9 +76,12 @@ cp -R "${PLUGIN_DIR}/skills" "${STAGE_DIR}/kmp/skills"
 cp -R "${PLUGIN_DIR}/claude" "${STAGE_DIR}/kmp/claude"
 cp -R "${PLUGIN_DIR}/codex" "${STAGE_DIR}/kmp/codex"
 cp -R "${PLUGIN_DIR}/scripts" "${STAGE_DIR}/kmp/scripts"
-cp -R "${PLUGIN_DIR}/demo" "${STAGE_DIR}/kmp/demo"
+cp -R "${PLUGIN_DIR}/guide" "${STAGE_DIR}/kmp/guide"
 cp "${PLUGIN_DIR}/bin/kmp-mcp"* "${STAGE_DIR}/kmp/bin/"
-chmod +x "${STAGE_DIR}/kmp/scripts/run-embedded-mcp.sh" "${STAGE_DIR}/kmp/scripts/kmp-doctor.sh"
+chmod +x "${STAGE_DIR}/kmp/scripts/run-embedded-mcp.sh" \
+  "${STAGE_DIR}/kmp/scripts/kmp-doctor.sh" \
+  "${STAGE_DIR}/kmp/scripts/kmp-guide-sync.sh" \
+  "${STAGE_DIR}/kmp/guide/build-guide.py"
 [[ -f "${STAGE_DIR}/kmp/bin/kmp-mcp" ]] && chmod +x "${STAGE_DIR}/kmp/bin/kmp-mcp"
 
 OS_NAME="$(uname -s | tr '[:upper:]' '[:lower:]')"

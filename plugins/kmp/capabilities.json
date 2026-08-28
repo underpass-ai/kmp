@@ -58,12 +58,12 @@
       "claude_command": "moves"
     },
     {
-      "id": "demo",
-      "owner": "plugin-script",
-      "implementation": "skills/kmp-demo/SKILL.md",
-      "codex_skill": "kmp-demo",
-      "codex_standalone_prompt": "kmp-demo",
-      "claude_command": "demo"
+      "id": "guide",
+      "owner": "mcp-orchestration",
+      "implementation": "skills/kmp-guide/SKILL.md",
+      "codex_skill": "kmp-guide",
+      "codex_standalone_prompt": "kmp-guide",
+      "claude_command": "guide"
     },
     {
       "id": "catchup",

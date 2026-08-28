@@ -50,6 +50,16 @@ upgrades preserve it. Temporal requests never use language fallback. Answer in
 the user's language, while leaving stored evidence, refs, relation `why`, and
 source metadata byte-for-byte unchanged.
 
+Then install or refresh both versioned guides deterministically:
+
+```bash
+bash "@@GUIDE@@" sync --binary "$(command -v kmp-mcp)"
+```
+
+`guide:kmp-agent` is the dense operational manual for you. `guide:kmp` is the
+shorter human path opened visually by `open:guide`. An exact rerun adds no
+events and leaves project memory alone.
+
 Then re-run the doctor and tell me whether it is usable now. One line for what
 was already fine, one for what you changed, and the next command if anything
 is still missing.
