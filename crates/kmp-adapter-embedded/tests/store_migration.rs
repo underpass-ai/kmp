@@ -225,6 +225,85 @@ async fn migration_refuses_a_source_newer_than_this_binary() {
 }
 
 #[tokio::test]
+async fn migration_refuses_empty_and_truncated_legacy_stores_without_leaving_scratch() {
+    let empty = tempfile::tempdir().expect("empty source dir");
+    fs::write(format_version_path(empty.path()), "1\n").expect("legacy stamp");
+    let empty_file = store_file(empty.path());
+    fs::create_dir_all(empty_file.parent().expect("store parent")).expect("store dir");
+    fs::write(&empty_file, []).expect("zero-length store");
+    let empty_destination_parent = tempfile::tempdir().expect("destination parent");
+    let empty_destination = empty_destination_parent.path().join("migrated");
+
+    let error = EmbeddedKernelStore::migrate_data_dir(
+        empty.path(),
+        &empty_destination,
+        projection_mutations_for_context_event,
+    )
+    .await
+    .expect_err("an empty file is not an empty database");
+    let message = error.to_string();
+    assert!(message.contains("is empty"), "{message}");
+    assert!(
+        message.contains("source has not been modified"),
+        "{message}"
+    );
+    assert_eq!(fs::metadata(&empty_file).expect("source remains").len(), 0);
+    assert!(
+        !empty_destination.exists(),
+        "validation happens before creating a destination"
+    );
+
+    let truncated = seeded_source(200);
+    let truncated_file = store_file(truncated.path());
+    let original_len = fs::metadata(&truncated_file)
+        .expect("source metadata")
+        .len();
+    let truncated_len = original_len * 9 / 10;
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&truncated_file)
+        .expect("open fixture for truncation")
+        .set_len(truncated_len)
+        .expect("truncate fixture");
+    let truncated_digest = digest(&truncated_file);
+    let destination_parent = tempfile::tempdir().expect("destination parent");
+    let destination = destination_parent.path().join("migrated");
+
+    let error = EmbeddedKernelStore::migrate_data_dir(
+        truncated.path(),
+        &destination,
+        projection_mutations_for_context_event,
+    )
+    .await
+    .expect_err("a truncated redb file must be a normal migration error");
+    let message = error.to_string();
+    assert!(message.contains("truncated or corrupt"), "{message}");
+    assert!(
+        message.contains("source has not been modified"),
+        "{message}"
+    );
+    assert_eq!(
+        digest(&truncated_file),
+        truncated_digest,
+        "the damaged source is still the operator's untouched evidence"
+    );
+    assert_eq!(
+        fs::metadata(&truncated_file)
+            .expect("source metadata")
+            .len(),
+        truncated_len
+    );
+    assert!(
+        !destination.join("migration-source.redb").exists(),
+        "the failed read never leaves a scratch copy"
+    );
+    assert!(
+        !destination.join("store").exists(),
+        "the failed read never creates destination memory"
+    );
+}
+
+#[tokio::test]
 async fn open_or_migrate_runs_once_and_reopens_after() {
     let source = seeded_source(SEEDED_EVENTS);
     let destination = tempfile::tempdir().expect("temp destination dir");

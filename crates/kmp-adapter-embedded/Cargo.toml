@@ -21,7 +21,7 @@ sqlite = []
 workspace = true
 
 [dependencies]
-redb = "4.1.0"
+redb = "4.2.0"
 rusqlite = { version = "0.40.1", features = ["bundled"] }
 sha2.workspace = true
 kmp-domain.workspace = true

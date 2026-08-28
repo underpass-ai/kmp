@@ -403,6 +403,84 @@ fn run_binary_from(
         .expect("stdio MCP binary should exit after stdin EOF")
 }
 
+fn run_migrate(source: &std::path::Path, destination: &std::path::Path) -> std::process::Output {
+    let home = tempfile::tempdir().expect("isolated home");
+    Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("migrate")
+        .arg(source)
+        .arg(destination)
+        .env("HOME", home.path())
+        .env("XDG_DATA_HOME", home.path().join("xdg"))
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("migrate command runs")
+}
+
+#[test]
+fn migrate_refuses_damaged_redb_files_as_errors_instead_of_panics_or_success() {
+    let empty = tempfile::tempdir().expect("empty source");
+    std::fs::write(empty.path().join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
+    let empty_file = empty.path().join("store/kernel.redb");
+    std::fs::create_dir_all(empty_file.parent().expect("store parent")).expect("store dir");
+    std::fs::write(&empty_file, []).expect("empty store file");
+    let empty_destination_parent = tempfile::tempdir().expect("destination parent");
+    let empty_destination = empty_destination_parent.path().join("migrated");
+
+    let output = run_migrate(empty.path(), &empty_destination);
+    let error = String::from_utf8(output.stderr).expect("migration error is UTF-8");
+    assert_eq!(output.status.code(), Some(2), "{error}");
+    assert!(error.contains("migration failed"), "{error}");
+    assert!(error.contains("is empty"), "{error}");
+    assert!(error.contains("source has not been modified"), "{error}");
+    assert!(!error.contains("panicked"), "{error}");
+    assert_eq!(
+        std::fs::metadata(&empty_file)
+            .expect("source remains")
+            .len(),
+        0
+    );
+    assert!(!empty_destination.join("migration-source.redb").exists());
+    assert!(!empty_destination.join("store").exists());
+
+    let truncated = tempfile::tempdir().expect("truncated source");
+    std::fs::write(truncated.path().join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
+    drop(
+        kmp_embedded::EmbeddedKernelStore::open_with_engine(
+            truncated.path(),
+            kmp_embedded::StorageEngine::Redb,
+        )
+        .expect("real legacy store"),
+    );
+    let truncated_file = truncated.path().join("store/kernel.redb");
+    let original_len = std::fs::metadata(&truncated_file)
+        .expect("source metadata")
+        .len();
+    let truncated_len = original_len * 9 / 10;
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(&truncated_file)
+        .expect("open fixture")
+        .set_len(truncated_len)
+        .expect("truncate fixture");
+    let truncated_bytes = std::fs::read(&truncated_file).expect("damaged evidence");
+    let destination_parent = tempfile::tempdir().expect("destination parent");
+    let destination = destination_parent.path().join("migrated");
+
+    let output = run_migrate(truncated.path(), &destination);
+    let error = String::from_utf8(output.stderr).expect("migration error is UTF-8");
+    assert_eq!(output.status.code(), Some(2), "{error}");
+    assert!(error.contains("migration failed"), "{error}");
+    assert!(error.contains("truncated or corrupt"), "{error}");
+    assert!(error.contains("source has not been modified"), "{error}");
+    assert!(!error.contains("panicked"), "{error}");
+    assert_eq!(
+        std::fs::read(&truncated_file).expect("source remains"),
+        truncated_bytes
+    );
+    assert!(!destination.join("migration-source.redb").exists());
+    assert!(!destination.join("store").exists());
+}
+
 #[test]
 fn embedded_backend_serves_initialize_and_journals_logs_in_data_dir() {
     let data_dir = tempfile::tempdir().expect("temp data dir");

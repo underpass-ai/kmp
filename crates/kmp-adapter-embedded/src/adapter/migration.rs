@@ -129,6 +129,24 @@ impl EmbeddedKernelStore {
                 source_store_file.display()
             )));
         }
+        let source_metadata = fs::metadata(&source_store_file).map_err(|error| {
+            PortError::Unavailable(format!(
+                "migration could not inspect legacy store `{}`: {error}; the source has not been modified",
+                source_store_file.display()
+            ))
+        })?;
+        if !source_metadata.is_file() {
+            return Err(PortError::InvalidState(format!(
+                "migration source `{}` is not a regular store file; the source has not been modified",
+                source_store_file.display()
+            )));
+        }
+        if source_metadata.len() == 0 {
+            return Err(PortError::InvalidState(format!(
+                "migration source legacy store at `{}` is empty, not a readable redb database; the source has not been modified",
+                source_store_file.display()
+            )));
+        }
         let source_sha256 = sha256_of(&source_store_file)?;
 
         if format_version::existing_store_file(destination_dir).is_some() {
@@ -282,6 +300,7 @@ fn read_source_events(
     source_engine: StorageEngine,
     destination_dir: &Path,
 ) -> Result<Vec<ContextUpdatedEvent>, PortError> {
+    let destination_existed = destination_dir.exists();
     fs::create_dir_all(destination_dir).map_err(|error| {
         PortError::Unavailable(format!(
             "migration could not create destination `{}`: {error}",
@@ -289,22 +308,42 @@ fn read_source_events(
         ))
     })?;
     let copy_path: PathBuf = destination_dir.join(SOURCE_COPY_FILE);
-    fs::copy(source_store_file, &copy_path).map_err(|error| {
-        PortError::Unavailable(format!(
+    if let Err(error) = fs::copy(source_store_file, &copy_path) {
+        let _ = fs::remove_file(&copy_path);
+        if !destination_existed {
+            let _ = fs::remove_dir(destination_dir);
+        }
+        return Err(PortError::Unavailable(format!(
             "migration could not copy the source store to `{}`: {error}",
             copy_path.display()
-        ))
-    })?;
+        )));
+    }
 
     let events = {
-        let source = EmbeddedKernelStore::open_store_file(&copy_path, source_engine)?;
-        source.read_event_log_blocking()
+        EmbeddedKernelStore::open_store_file(&copy_path, source_engine)
+            .and_then(|source| source.read_event_log_blocking())
     };
 
-    // Best effort: a leftover copy is inert, but leaving it would make the
-    // destination directory lie about what it contains.
-    let _ = fs::remove_file(&copy_path);
-    events
+    let cleanup = fs::remove_file(&copy_path);
+    if !destination_existed && events.is_err() {
+        let _ = fs::remove_dir(destination_dir);
+    }
+    match (events, cleanup) {
+        (Err(error), Ok(())) => Err(PortError::InvalidState(format!(
+            "migration source legacy store at `{}` is truncated or corrupt; the source has not been modified ({error})",
+            source_store_file.display()
+        ))),
+        (Err(error), Err(cleanup_error)) => Err(PortError::InvalidState(format!(
+            "migration source legacy store at `{}` is truncated or corrupt; the source has not been modified ({error}); scratch copy `{}` could not be removed: {cleanup_error}",
+            source_store_file.display(),
+            copy_path.display()
+        ))),
+        (Ok(_), Err(error)) => Err(PortError::Unavailable(format!(
+            "migration read the source but could not remove scratch copy `{}`: {error}; the destination was not opened",
+            copy_path.display()
+        ))),
+        (Ok(events), Ok(())) => Ok(events),
+    }
 }
 
 fn sha256_of(path: &Path) -> Result<String, PortError> {
