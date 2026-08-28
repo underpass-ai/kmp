@@ -130,6 +130,8 @@ async fn two_processes_creating_the_same_sqlite_store_at_once_both_get_in() {
 #[tokio::test]
 async fn on_redb_the_second_process_is_refused_and_nothing_is_lost() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
+    std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n")
+        .expect("legacy format stamp");
     drop(
         EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
             .expect("stamp the directory for redb"),

@@ -19,6 +19,7 @@ const SEEDED_EVENTS: u64 = 25;
 /// so no handle is left open on it.
 fn seeded_source(events: u64) -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("temp source dir");
+    fs::write(format_version_path(dir.path()), "1\n").expect("legacy format stamp");
     drop(
         EmbeddedKernelStore::open_with_engine(dir.path(), StorageEngine::Redb)
             .expect("legacy fixture store opens"),

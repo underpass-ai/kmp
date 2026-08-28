@@ -33,9 +33,16 @@ impl EmbeddedKernelStore {
     }
 
     /// [`open`](Self::open) with the engine chosen: a fresh directory is
-    /// created for `engine`, and an existing one must already be `engine` —
-    /// a store is never reinterpreted as another engine's.
+    /// created for SQLite, and an existing one must already be `engine` — a
+    /// store is never reinterpreted as another engine's. redb is accepted
+    /// only when a format-1 stamp already exists.
     pub fn open_with_engine(data_dir: &Path, engine: StorageEngine) -> Result<Self, PortError> {
+        if engine == StorageEngine::Redb && !format_version::format_version_path(data_dir).exists() {
+            return Err(PortError::InvalidState(
+                "the redb engine is legacy-only and cannot create a new store; use SQLite"
+                    .to_string(),
+            ));
+        }
         Self::open_as(data_dir, Some(engine))
     }
 
@@ -134,4 +141,18 @@ impl EmbeddedKernelStore {
 
 pub(crate) fn aggregate_key(root_node_id: &str, role: &str) -> String {
     format!("{root_node_id}\u{1f}{role}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_public_api_cannot_create_a_fresh_redb_store() {
+        let data_dir = tempfile::tempdir().expect("temp data dir");
+        let error = EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
+            .expect_err("redb is legacy-only");
+        assert!(error.to_string().contains("legacy-only"), "{error}");
+        assert!(!format_version::format_version_path(data_dir.path()).exists());
+    }
 }
