@@ -94,6 +94,9 @@ for clause in release_clauses:
 
 release_script = (ROOT / "scripts/release.sh").read_text(encoding="utf-8")
 for clause in (
+    "candidate <X.Y.Z> [RUN_ID]",
+    "gh workflow run release.yml",
+    "scripts/release/stamp-server-mcpb.sh",
     "kmp-release-candidate-${version}",
     "release-candidate.py verify",
     "candidate-run: ${candidate_run}",

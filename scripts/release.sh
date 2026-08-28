@@ -3,11 +3,17 @@ set -euo pipefail
 
 # Release helper for KMP.
 #
-# Two verbs:
+# Three verbs:
 #   version <X.Y.Z>   — rewrite every versioned artefact in the repo so
 #                       Cargo, Helm, plugin and MCP Registry metadata stay in
 #                       lockstep. Resets the MCPB hash until a matching bundle
 #                       is built and stamped; idempotent and safe to re-run.
+#
+#   candidate <X.Y.Z> [RUN_ID]
+#                     — dispatch (or reuse) the five-platform candidate build,
+#                       wait for it, download and verify its twenty files, and
+#                       stamp server.json with the exact MCPB digest. This is
+#                       the only supported bridge from `version` to a green PR.
 #
 #   release <X.Y.Z>   — verify the tree is clean, versions already point at
 #                       X.Y.Z and a successful workflow_dispatch candidate
@@ -17,8 +23,11 @@ set -euo pipefail
 #
 # Typical flow:
 #   bash scripts/release.sh version 0.2.0
+#   git commit -am "chore: prepare v0.2.0" && git push
+#   bash scripts/release.sh candidate 0.2.0
+#   git commit -am "chore: seal v0.2.0" && git push
 #   bash scripts/ci/quality-gate.sh
-#   git commit -am "chore: v0.2.0" && gh pr create --fill
+#   gh pr create --fill
 #   # merge via CI
 #   git checkout main && git pull
 #   bash scripts/release.sh release 0.2.0
@@ -26,9 +35,26 @@ set -euo pipefail
 usage() {
     cat <<'USAGE' >&2
 release.sh version <X.Y.Z>
+release.sh candidate <X.Y.Z> [RUN_ID]
 release.sh release <X.Y.Z>
 USAGE
     exit 2
+}
+
+workspace_version() {
+    python3 -c \
+        'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])'
+}
+
+require_workspace_version() {
+    local version="$1"
+    local actual
+    actual="$(workspace_version)"
+    if [ "${actual}" != "${version}" ]; then
+        echo "error: workspace version '${actual}' does not match target '${version}'" >&2
+        echo "  hint: run 'bash scripts/release.sh version ${version}' first" >&2
+        exit 1
+    fi
 }
 
 semver_check() {
@@ -155,6 +181,97 @@ PY
     git --no-pager diff --stat -- Cargo.toml Cargo.lock distribution/charts/kmp/Chart.yaml \
         plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json \
         server.json distribution/mcpb/manifest.json
+
+    echo "next: commit and push this version branch, then run:" >&2
+    echo "  bash scripts/release.sh candidate ${version}" >&2
+}
+
+cmd_candidate() {
+    local version="$1"
+    local run_id="${2:-}"
+    semver_check "${version}"
+
+    local root
+    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    cd "${root}"
+    require_workspace_version "${version}"
+
+    # The helper must stamp one known tree. Uncommitted release inputs could
+    # otherwise produce bytes which no commit — and therefore no tag — names.
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "error: working tree is dirty — commit the version bump before building its candidate" >&2
+        git status --short >&2
+        exit 1
+    fi
+
+    local branch head_sha upstream_sha
+    branch="$(git rev-parse --abbrev-ref HEAD)"
+    head_sha="$(git rev-parse HEAD)"
+    if [ "${branch}" = "HEAD" ]; then
+        echo "error: candidate build requires a named version branch" >&2
+        exit 1
+    fi
+
+    if [ -z "${run_id}" ]; then
+        upstream_sha="$(git rev-parse --verify '@{upstream}' 2>/dev/null || true)"
+        if [ -z "${upstream_sha}" ] || [ "${upstream_sha}" != "${head_sha}" ]; then
+            echo "error: push ${branch} before building its candidate" >&2
+            exit 1
+        fi
+
+        local known_runs
+        known_runs="$(
+            gh run list --workflow release.yml --event workflow_dispatch --limit 100 \
+                --json databaseId --jq '.[].databaseId'
+        )"
+        gh workflow run release.yml --ref "${branch}"
+
+        local attempt candidate_id
+        for attempt in $(seq 1 60); do
+            while IFS= read -r candidate_id; do
+                [ -n "${candidate_id}" ] || continue
+                if ! grep -qx "${candidate_id}" <<<"${known_runs}"; then
+                    run_id="${candidate_id}"
+                    break 2
+                fi
+            done < <(
+                gh run list --workflow release.yml --event workflow_dispatch \
+                    --branch "${branch}" --limit 20 \
+                    --json databaseId,headSha \
+                    --jq ".[] | select(.headSha == \"${head_sha}\") | .databaseId"
+            )
+            sleep 2
+        done
+        if [ -z "${run_id}" ]; then
+            echo "error: release workflow dispatch did not appear for ${head_sha}" >&2
+            exit 1
+        fi
+        echo "candidate run: ${run_id}"
+    fi
+
+    gh run watch "${run_id}" --exit-status
+
+    mkdir -p "${root}/tmp"
+    local candidate_root candidate_dir mcpb
+    candidate_root="$(mktemp -d "${root}/tmp/release-candidate-stamp.XXXXXX")"
+    trap 'rm -rf "${candidate_root}"' RETURN
+    candidate_dir="${candidate_root}/candidate"
+    mkdir -p "${candidate_dir}"
+    gh run download "${run_id}" \
+        --name "kmp-release-candidate-${version}" \
+        --dir "${candidate_dir}"
+
+    mcpb="${candidate_dir}/assets/kmp-mcp-v${version}.mcpb"
+    bash scripts/release/stamp-server-mcpb.sh "${mcpb}"
+    python3 scripts/release/release-candidate.py verify \
+        --version "${version}" \
+        --directory "${candidate_dir}" \
+        --input-sha256 "$(python3 scripts/release/release-candidate.py inputs)" \
+        --run-id "${run_id}"
+    bash scripts/ci/mcp-registry.sh
+
+    echo "candidate ${run_id} verified and server.json stamped." >&2
+    echo "next: review, commit and push server.json; the PR registry check will turn green." >&2
 }
 
 cmd_release() {
@@ -292,6 +409,10 @@ case "${verb}" in
     version)
         [ $# -eq 1 ] || usage
         cmd_version "$1"
+        ;;
+    candidate)
+        [ $# -ge 1 ] && [ $# -le 2 ] || usage
+        cmd_candidate "$@"
         ;;
     release)
         [ $# -eq 1 ] || usage
