@@ -132,6 +132,7 @@ const model = {
   about: null,
   projection: null,
   currentLod: "atlas",
+  maxMarksPerLane: 0,
   total: 0,
   bins: [],
   clusters: [],
@@ -266,6 +267,7 @@ function applyProjection(projection, lod) {
     .sort(KMP_LOOM.compareModels);
   model.projection = projection;
   model.currentLod = lod;
+  model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
   model.total = Number((projection.page && projection.page.total) || 0);
   model.bins = projection.bins || [];
   model.clusters = projection.clusters || [];
@@ -301,17 +303,31 @@ async function loadProjection() {
   if (!model.about || !view.full) return;
   const generation = ++model.loadGeneration;
   const width = Math.max(1, canvas.clientWidth || 1);
-  const lod = KMP_LOOM.lodFor((view.t1 - view.t0) / width);
-  try {
-    const projection = await fetchProjection(
+  const msPerPx = (view.t1 - view.t0) / width;
+  let lod = KMP_LOOM.lodFor(msPerPx, width, model.maxMarksPerLane);
+  const bins = Math.max(24, Math.min(512, Math.floor(width / 7)));
+  const fetchAt = (level) =>
+    fetchProjection(
       model.about,
       view.clock,
       new Date(Math.round(view.t0)).toISOString(),
       new Date(Math.round(view.t1)).toISOString(),
-      lod,
-      Math.max(24, Math.min(512, Math.floor(width / 7)))
+      level,
+      bins
     );
+  try {
+    let projection = await fetchAt(lod);
     if (generation !== model.loadGeneration) return;
+    const resolvedLod = KMP_LOOM.lodFor(
+      msPerPx,
+      width,
+      KMP_LOOM.maxMarksPerLane(projection)
+    );
+    if (resolvedLod !== lod) {
+      lod = resolvedLod;
+      projection = await fetchAt(lod);
+      if (generation !== model.loadGeneration) return;
+    }
     applyProjection(projection, lod);
     if (projection.truncated) {
       showError(
@@ -350,6 +366,7 @@ async function loadAbout(about, announce = true) {
     const extent = projectionExtent(probe);
     if (!extent) throw new Error("no entry carries any clock — the loom has no axis to weave on");
     model.about = about;
+    model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(probe);
     model.overviewBins = probe.bins || [];
     const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
     view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };

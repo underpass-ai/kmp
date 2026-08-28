@@ -16,6 +16,9 @@ pub(crate) fn map_application_error(error: ApplicationError) -> Status {
             kmp_ports::PortError::Unavailable(message) => Status::unavailable(message),
             kmp_ports::PortError::Conflict(message) => Status::aborted(message),
         },
+        ApplicationError::RetryableConflict(message) => Status::aborted(format!(
+            "retryable write conflict: the store moved before this attempt committed; rebase and retry the same logical write with the same idempotency_key — replay is safe: {message}"
+        )),
         ApplicationError::NotFound(message) => Status::not_found(message),
         ApplicationError::Validation(message) => Status::invalid_argument(message),
     }

@@ -613,6 +613,7 @@ fn application_error_response(error: &ApplicationError) -> HttpResponse {
         ApplicationError::Validation(_) => 400,
         ApplicationError::Domain(DomainError::EmptyValue(_)) => 400,
         ApplicationError::Domain(DomainError::InvalidState(_)) => 400,
+        ApplicationError::RetryableConflict(_) => 409,
         ApplicationError::Ports(PortError::Unavailable(_)) => 503,
         ApplicationError::Ports(PortError::Conflict(_)) => 409,
         ApplicationError::Ports(PortError::InvalidState(_)) => 500,

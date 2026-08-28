@@ -142,8 +142,8 @@ where
         // Validate revision precondition
         let expected_revision = command.expected_revision.unwrap_or(current_revision);
         if expected_revision != current_revision {
-            return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
-                format!("expected revision {expected_revision}, current is {current_revision}"),
+            return Err(ApplicationError::RetryableConflict(format!(
+                "expected revision {expected_revision}, current is {current_revision}"
             )));
         }
 
@@ -155,8 +155,8 @@ where
                 .await?
             && expected_hash != current_hash
         {
-            return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
-                format!("expected content hash '{expected_hash}', current is '{current_hash}'"),
+            return Err(ApplicationError::RetryableConflict(format!(
+                "expected content hash '{expected_hash}', current is '{current_hash}'"
             )));
         }
 
@@ -194,7 +194,17 @@ where
         };
 
         // Append with optimistic concurrency
-        let new_revision = self.event_store.append(event, current_revision).await?;
+        let new_revision = self
+            .event_store
+            .append(event, current_revision)
+            .await
+            .map_err(|error| match error {
+                // The revision was read above and changed before append. No
+                // part of this event was committed, so replaying the same
+                // logical command under its existing idempotency key is safe.
+                PortError::Conflict(message) => ApplicationError::RetryableConflict(message),
+                other => ApplicationError::Ports(other),
+            })?;
 
         let projection_mutations =
             memory_projection_mutations(&command, new_revision, &content_hash)?;
@@ -340,8 +350,9 @@ mod tests {
             })
             .await;
 
-        assert!(err.is_err());
-        let msg = err.expect_err("should fail").to_string();
+        let error = err.expect_err("should fail");
+        assert!(matches!(&error, ApplicationError::RetryableConflict(_)));
+        let msg = error.to_string();
         assert!(msg.contains("expected revision 99"));
     }
 
@@ -528,8 +539,9 @@ mod tests {
             })
             .await;
 
-        assert!(err.is_err());
-        let msg = err.expect_err("should fail").to_string();
+        let error = err.expect_err("should fail");
+        assert!(matches!(&error, ApplicationError::RetryableConflict(_)));
+        let msg = error.to_string();
         assert!(msg.contains("expected content hash"));
 
         // Same command with correct hash succeeds

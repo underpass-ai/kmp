@@ -2229,6 +2229,11 @@ fn helper_mappers_cover_versions_errors_and_trim_logic() {
         map_application_error(ApplicationError::NotFound("missing".to_string())).code(),
         tonic::Code::NotFound
     );
+    let retryable = map_application_error(ApplicationError::RetryableConflict(
+        "revision moved".to_string(),
+    ));
+    assert_eq!(retryable.code(), tonic::Code::Aborted);
+    assert!(retryable.message().contains("same idempotency_key"));
     let session_bundle = sample_bundle("node-123", "developer", "Section one");
     let rendered_contexts = vec![kmp_application::render_graph_bundle_with_options(
         &session_bundle,

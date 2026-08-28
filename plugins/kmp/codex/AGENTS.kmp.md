@@ -59,8 +59,10 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
   `answers`/evidential or `uses_background`/evidential. The full guide is in
   the `kmp-memory` skill, section “Why the `why` matters”; `tools/list` is the
   authority for the current relation vocabulary.
-- **One `idempotency_key` per logical write.** A conflict on retry means the
-  write was already applied. That is success.
+- **One `idempotency_key` per logical write.** Replaying an accepted write
+  returns success without duplicating it. If the store moved before commit,
+  the conflict says it is retryable: rebase and replay the same logical write
+  with the same key. Never reuse a key accepted with different content.
 - **Scope is explicit.** Omitted means `current_about`; `abouts` needs a
   non-empty list; `all_abouts` traverses everything and is a real cost.
 - **If the tools are missing, say so** instead of silently re-deriving

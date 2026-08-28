@@ -284,6 +284,15 @@ fn kernel_error<'a>(
 
     move |error| {
         let code = match &error {
+            ApplicationError::RetryableConflict(reason) => {
+                return ToolError::conflict(format!(
+                    "embedded kernel {operation} write conflict for `{about}`: the store moved \
+                     while this write was being prepared, so this attempt was not applied. It \
+                     is safe to retry the same logical write with the same `idempotency_key`; \
+                     if an earlier attempt landed, idempotency returns that success instead of \
+                     duplicating memory. Kernel detail: {reason}"
+                ));
+            }
             ApplicationError::NotFound(_) => ToolErrorCode::NotFound,
             ApplicationError::Validation(_) => ToolErrorCode::InvalidArgument,
             // A domain error is an invariant the payload broke, so the caller
@@ -299,9 +308,14 @@ fn kernel_error<'a>(
             ApplicationError::Ports(PortError::Unavailable(_)) => ToolErrorCode::Unavailable,
             ApplicationError::Ports(PortError::InvalidState(_)) => ToolErrorCode::BackendError,
         };
+        let outcome = if code == ToolErrorCode::Conflict {
+            "conflict"
+        } else {
+            "failed"
+        };
         ToolError::new(
             code,
-            format!("embedded kernel {operation} failed for `{about}`: {error}"),
+            format!("embedded kernel {operation} {outcome} for `{about}`: {error}"),
         )
     }
 }
@@ -613,6 +627,22 @@ mod retry_tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn optimistic_write_conflicts_name_the_safe_retry_contract() {
+        let error = kernel_error("ingest", "incident:pool-saturation")(
+            kmp_application::ApplicationError::RetryableConflict(
+                "expected revision 16, current is 17".to_string(),
+            ),
+        );
+
+        assert_eq!(error.code, ToolErrorCode::Conflict);
+        assert!(error.message.contains("write conflict"), "{error}");
+        assert!(error.message.contains("attempt was not applied"), "{error}");
+        assert!(error.message.contains("safe to retry"), "{error}");
+        assert!(error.message.contains("same `idempotency_key`"), "{error}");
+        assert!(error.message.contains("expected revision 16"), "{error}");
+    }
 
     #[tokio::test]
     async fn a_redb_startup_lock_does_not_permanently_disable_the_backend() {
