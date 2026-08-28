@@ -12,7 +12,7 @@ use kmp_domain::{
 use crate::ApplicationError;
 use crate::commands::CommandApplicationService;
 use crate::memory::{
-    AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult,
+    AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
     MemoryIngestCommand, MemoryIngestOutcome, TemporalMemoryQuery, TemporalMemoryResult,
     TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery,
     build_visual_projection, translate_memory_ingest,
@@ -212,35 +212,63 @@ where
             })
             .await?;
 
-        let links = if include_incoming || include_outgoing || query.include_raw {
-            Some(
-                self.query_application
-                    .get_node_relationships(GetNodeRelationshipsQuery {
-                        node_id: query.ref_id.clone(),
-                    })
-                    .await?,
-            )
-        } else {
-            None
-        };
+        // Evidence is part of Inspect's contract independently of whether the
+        // caller asks to render the incoming links. Resolve the direct graph
+        // once, then follow only typed evidence sources.
+        let links = self
+            .query_application
+            .get_node_relationships(GetNodeRelationshipsQuery {
+                node_id: query.ref_id.clone(),
+            })
+            .await?;
+        let mut evidence = Vec::new();
+        let supporting_refs = links
+            .incoming
+            .iter()
+            .filter(|relationship| relationship.relationship_type == "supports")
+            .map(|relationship| relationship.source_node_id.clone())
+            .collect::<BTreeSet<_>>();
+        for evidence_ref in supporting_refs {
+            let evidence_detail = match self
+                .query_application
+                .get_node_detail(GetNodeDetailQuery {
+                    node_id: evidence_ref,
+                })
+                .await
+            {
+                Ok(detail) => detail,
+                // A stale edge must not make the inspected node disappear.
+                // It is not evidence unless its typed source still exists.
+                Err(ApplicationError::NotFound(_)) => continue,
+                Err(error) => return Err(error),
+            };
+            if !is_memory_evidence_kind(&evidence_detail.node.node_kind) {
+                continue;
+            }
+            evidence.push(InspectedEvidence {
+                supports: projected_evidence_supports(&evidence_detail, &query.ref_id),
+                detail: evidence_detail,
+            });
+        }
         let raw_coordinates = if query.include_raw {
-            inspect_raw_coordinates(&query.ref_id, links.as_ref())?
+            inspect_raw_coordinates(&query.ref_id, Some(&links))?
         } else {
             Vec::new()
         };
 
         Ok(InspectMemoryResult {
             detail,
-            incoming: links
-                .as_ref()
-                .filter(|_| include_incoming)
-                .map(|links| links.incoming.clone())
-                .unwrap_or_default(),
-            outgoing: links
-                .as_ref()
-                .filter(|_| include_outgoing)
-                .map(|links| links.outgoing.clone())
-                .unwrap_or_default(),
+            incoming: if include_incoming {
+                links.incoming.clone()
+            } else {
+                Vec::new()
+            },
+            outgoing: if include_outgoing {
+                links.outgoing.clone()
+            } else {
+                Vec::new()
+            },
+            evidence,
             raw_coordinates,
             include_details,
             include_raw: query.include_raw,
@@ -326,6 +354,19 @@ where
         }
         Ok(roots)
     }
+}
+
+fn projected_evidence_supports(
+    evidence: &crate::queries::GetNodeDetailResult,
+    inspected_ref: &str,
+) -> Vec<String> {
+    evidence
+        .node
+        .properties
+        .get("payload_supports")
+        .and_then(|value| serde_json::from_str::<Vec<String>>(value).ok())
+        .filter(|supports| !supports.is_empty())
+        .unwrap_or_else(|| vec![inspected_ref.to_string()])
 }
 
 fn should_filter_all_abouts_by_dimensions(selection: &DimensionSelection) -> bool {
