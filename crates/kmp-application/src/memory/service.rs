@@ -15,7 +15,7 @@ use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
     MemoryIngestCommand, MemoryIngestOutcome, TemporalMemoryQuery, TemporalMemoryResult,
     TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery,
-    build_visual_projection, translate_memory_ingest,
+    build_visual_projection, translate_memory_ingest, validate_supplied_member_ref,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
@@ -181,6 +181,8 @@ where
         &self,
         query: TraceMemoryQuery,
     ) -> Result<GetContextPathResult, ApplicationError> {
+        validate_read_member(&query.about, "from", &query.from)?;
+        validate_read_member(&query.about, "to", &query.to)?;
         self.query_application
             .get_context_path(GetContextPathQuery {
                 root_node_id: query.from,
@@ -202,6 +204,7 @@ where
         &self,
         query: InspectMemoryQuery,
     ) -> Result<InspectMemoryResult, ApplicationError> {
+        validate_read_member(&query.about, "ref", &query.ref_id)?;
         let include_incoming = query.include_incoming;
         let include_outgoing = query.include_outgoing;
         let include_details = query.include_details;
@@ -354,6 +357,10 @@ where
         }
         Ok(roots)
     }
+}
+
+fn validate_read_member(about: &str, path: &str, member_ref: &str) -> Result<(), ApplicationError> {
+    validate_supplied_member_ref(about, path, member_ref).map_err(ApplicationError::Validation)
 }
 
 fn projected_evidence_supports(

@@ -203,8 +203,8 @@ work.
 
 | Move | Use it when |
 | --- | --- |
-| `kmp_trace` | Prove a connection between two refs in the same memory graph. Abouts are never joined, so cross-about refs have no path. |
-| `kmp_inspect` | Examine one ref: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
+| `kmp_trace` | Prove a connection between two refs owned by the required `about`. Both endpoints are rejected before traversal if they cross that boundary. |
+| `kmp_inspect` | Examine one ref inside the required `about`: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
 
 **Write**
 
@@ -389,7 +389,8 @@ That gives the agent a complete read path:
 2. `kmp_ask` answers a paraphrased question from direct evidence and uses
    the graph context to keep the right citation in the core.
 3. `kmp_trace` proves the path between two refs; `kmp_inspect` shows the
-   stored object, links, and evidence verbatim.
+   stored object, links, and evidence verbatim. Pass the owning `about` to
+   both; neither tool has an implicit cross-about read scope.
 
 ### Write the rationale and its proof as a pair
 

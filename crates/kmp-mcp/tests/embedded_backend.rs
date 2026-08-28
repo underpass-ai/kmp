@@ -112,7 +112,7 @@ async fn a_project_write_maintains_its_commit_native_bundle() {
     let historical = kmp_mcp::snapshot::read_only(
         &bundle,
         "kmp_inspect",
-        json!({"ref": "question:e3:claim:e3"}),
+        json!({"about": "question:e3", "ref": "question:e3:claim:e3"}),
     )
     .await
     .expect("read verified snapshot in isolation");
@@ -890,7 +890,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         &server,
         3,
         "kmp_inspect",
-        json!({"ref": "question:e3:claim:e3"}),
+        json!({"about": "question:e3", "ref": "question:e3:claim:e3"}),
     )
     .await;
     assert_eq!(
@@ -906,7 +906,7 @@ async fn embedded_backend_round_trips_entry_metadata_and_evidence_source() {
         &server,
         4,
         "kmp_inspect",
-        json!({"ref": "evidence:question:e3:claim:e3:fixture"}),
+        json!({"about": "question:e3", "ref": "evidence:question:e3:claim:e3:fixture"}),
     )
     .await;
     assert_eq!(
@@ -1344,6 +1344,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
         10,
         "kmp_inspect",
         json!({
+            "about": "decision:fresh-store-default",
             "ref": "decision:fresh-store-default:decision:two-engine-architecture"
         }),
     )
@@ -1378,7 +1379,10 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         &server,
         2,
         "kmp_inspect",
-        json!({"ref": "project:relation-why-conformance:constraint:share-embedded-store"}),
+        json!({
+            "about": "project:relation-why-conformance",
+            "ref": "project:relation-why-conformance:constraint:share-embedded-store"
+        }),
     )
     .await;
     assert_eq!(
@@ -1477,6 +1481,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         7,
         "kmp_trace",
         json!({
+            "about": "project:relation-why-conformance",
             "from": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
             "to": "project:relation-why-conformance:constraint:share-embedded-store"
         }),
@@ -1489,7 +1494,10 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         &server,
         8,
         "kmp_inspect",
-        json!({"ref": "evidence:project:relation-why-conformance:decision:sqlite-wal-shared-store:relation:1"}),
+        json!({
+            "about": "project:relation-why-conformance",
+            "ref": "evidence:project:relation-why-conformance:decision:sqlite-wal-shared-store:relation:1"
+        }),
     )
     .await;
     assert!(
@@ -1567,7 +1575,7 @@ async fn generated_writer_refs_keep_repeated_and_long_prefix_memories_distinct()
             &server,
             10 + index as u64,
             "kmp_inspect",
-            json!({"ref": generated_ref}),
+            json!({"about": "incident:writer-ref-collision", "ref": generated_ref}),
         )
         .await;
         assert_eq!(inspected["object"]["text"], *summary, "{inspected}");
@@ -1622,9 +1630,50 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
     .await;
     assert_eq!(alpha["accepted"], true, "{alpha}");
     assert_eq!(beta["accepted"], true, "{beta}");
+    let alpha_ref = alpha["generated_refs"][0]
+        .as_str()
+        .expect("alpha generated ref");
     let beta_ref = beta["generated_refs"][0]
         .as_str()
         .expect("beta generated ref");
+
+    let foreign_inspect = call(
+        &server,
+        5,
+        "kmp_inspect",
+        json!({"about": "incident:alpha", "ref": beta_ref}),
+    )
+    .await;
+    assert_eq!(
+        foreign_inspect["error"]["code"], "invalid_argument",
+        "inspect must enforce its declared about before reading: {foreign_inspect}"
+    );
+    assert!(
+        !foreign_inspect
+            .to_string()
+            .contains("firmware del ascensor"),
+        "a rejected inspection must not narrate the foreign object: {foreign_inspect}"
+    );
+
+    let foreign_trace = call(
+        &server,
+        6,
+        "kmp_trace",
+        json!({
+            "about": "incident:alpha",
+            "from": alpha_ref,
+            "to": beta_ref
+        }),
+    )
+    .await;
+    assert_eq!(
+        foreign_trace["error"]["code"], "invalid_argument",
+        "trace must reject a foreign endpoint before path rendering: {foreign_trace}"
+    );
+    assert!(
+        !foreign_trace.to_string().contains("firmware del ascensor"),
+        "a rejected trace must not leak the foreign target summary: {foreign_trace}"
+    );
 
     let forbidden_refs = [
         beta_ref,
@@ -1665,12 +1714,24 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
         }
     }
 
-    let beta_entry = call(&server, 30, "kmp_inspect", json!({"ref": beta_ref})).await;
+    let beta_entry = call(
+        &server,
+        30,
+        "kmp_inspect",
+        json!({"about": "incident:beta", "ref": beta_ref}),
+    )
+    .await;
     assert_eq!(
         beta_entry["object"]["text"], "el firmware del ascensor caduco durante el invierno",
         "the rejected alpha writes must leave beta byte-for-byte addressable: {beta_entry}"
     );
-    let beta_anchor = call(&server, 31, "kmp_inspect", json!({"ref": "incident:beta"})).await;
+    let beta_anchor = call(
+        &server,
+        31,
+        "kmp_inspect",
+        json!({"about": "incident:beta", "ref": "incident:beta"}),
+    )
+    .await;
     assert_eq!(
         beta_anchor["object"]["kind"], "memory_anchor",
         "{beta_anchor}"
@@ -1759,12 +1820,24 @@ async fn raw_ingest_refs_cannot_escape_their_about_or_replace_another_root() {
         );
     }
 
-    let gamma_entry = call(&server, 20, "kmp_inspect", json!({"ref": gamma_ref})).await;
+    let gamma_entry = call(
+        &server,
+        20,
+        "kmp_inspect",
+        json!({"about": "incident:gamma", "ref": gamma_ref}),
+    )
+    .await;
     assert_eq!(
         gamma_entry["object"]["text"], "gamma keeps its original memory",
         "rejected ingest calls must not overwrite gamma: {gamma_entry}"
     );
-    let beta_anchor = call(&server, 21, "kmp_inspect", json!({"ref": "incident:beta"})).await;
+    let beta_anchor = call(
+        &server,
+        21,
+        "kmp_inspect",
+        json!({"about": "incident:beta", "ref": "incident:beta"}),
+    )
+    .await;
     assert_eq!(
         beta_anchor["object"]["kind"], "memory_anchor",
         "rejected ingest calls must not demote beta's root: {beta_anchor}"
@@ -2033,6 +2106,7 @@ async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unrea
         2,
         "kmp_trace",
         json!({
+            "about": "question:e3",
             "from": "question:e3:claim:e3",
             "to": "question:e3:claim:e3-detail"
         }),
@@ -2047,6 +2121,7 @@ async fn trace_returns_only_the_directed_path_and_warns_when_the_target_is_unrea
         3,
         "kmp_trace",
         json!({
+            "about": "question:e3",
             "from": "question:e3:claim:e3-detail",
             "to": "question:e3:claim:e3"
         }),
@@ -2090,6 +2165,7 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
         .call_tool(
             "kmp_trace",
             &serde_json::json!({
+                "about": "question:e3",
                 "from": "question:e3:claim:e3",
                 "to": "question:e3:claim:e3-detail"
             }),

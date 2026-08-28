@@ -390,6 +390,7 @@ pub async fn inspect_surfaces_relation_proof(factory: &impl ConformanceBackendFa
 
     let inspection = memory
         .inspect(InspectMemoryQuery {
+            about: ABOUT.to_string(),
             ref_id: "question:conformance:claim:one".to_string(),
             include_details: true,
             include_incoming: true,
@@ -489,6 +490,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
 
     let trace = memory
         .trace(TraceMemoryQuery {
+            about: ABOUT.to_string(),
             from: ABOUT.to_string(),
             to: "question:conformance:claim:two".to_string(),
             role: "memory".to_string(),
@@ -505,6 +507,7 @@ pub async fn trace_resolves_path_between_anchor_and_entry(
 
     let unreachable = memory
         .trace(TraceMemoryQuery {
+            about: ABOUT.to_string(),
             from: ABOUT.to_string(),
             to: "claim:absent".to_string(),
             role: "memory".to_string(),

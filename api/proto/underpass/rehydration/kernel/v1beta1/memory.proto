@@ -436,6 +436,7 @@ message TraceRequest {
   string goal = 3;
   MemoryBudget budget = 4;
   PageRequest page = 5;
+  string about = 6;
 }
 
 message TraceResponse {
@@ -449,6 +450,7 @@ message TraceResponse {
 message InspectRequest {
   string ref = 1;
   InspectInclude include = 2;
+  string about = 3;
 }
 
 message InspectResponse {

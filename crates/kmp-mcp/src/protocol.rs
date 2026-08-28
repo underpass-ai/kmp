@@ -352,12 +352,13 @@ fn tools_list_core() -> Value {
             ),
             tool_definition_with_output(
                 "kmp_trace",
-                "Trace the proof path between two memory refs in the same connected memory graph. Trace has no implicit cross-about scope: abouts are never joined, so refs from different abouts cannot produce a path.",
+                "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["from", "to"],
+                    "required": ["about", "from", "to"],
                     "properties": {
+                        "about": string_schema("Memory anchor that owns both refs."),
                         "from": string_schema("Source memory ref. In live gRPC mode this must resolve to a kernel node id."),
                         "to": string_schema("Target memory ref. In live gRPC mode this must resolve to a kernel node id."),
                         "role": string_schema("Optional caller role."),
@@ -370,12 +371,13 @@ fn tools_list_core() -> Value {
             ),
             tool_definition_with_output(
                 "kmp_inspect",
-                "Inspect the typed stored memory object, direct links, and evidence for one ref.",
+                "Inspect one typed stored memory object inside an explicit about boundary, with its direct links and evidence.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["ref"],
+                    "required": ["about", "ref"],
                     "properties": {
+                        "about": string_schema("Memory anchor that owns the inspected ref."),
                         "ref": string_schema("Memory ref to inspect. In live gRPC mode this must resolve to a kernel node id."),
                         "include": {
                             "type": "object",
@@ -1915,11 +1917,11 @@ mod tests {
         }
         assert_eq!(
             keys(schema("kmp_trace")),
-            expected(&["budget", "from", "goal", "page", "role", "to"])
+            expected(&["about", "budget", "from", "goal", "page", "role", "to"])
         );
         assert_eq!(
             keys(schema("kmp_inspect")),
-            expected(&["budget", "include", "ref"])
+            expected(&["about", "budget", "include", "ref"])
         );
 
         // These shared shapes are one-to-one with MemoryBudget,

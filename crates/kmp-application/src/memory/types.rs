@@ -179,6 +179,7 @@ pub struct TemporalMemoryQuery {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TraceMemoryQuery {
+    pub about: String,
     pub from: String,
     pub to: String,
     pub role: String,
@@ -204,6 +205,7 @@ impl TracePageRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InspectMemoryQuery {
+    pub about: String,
     pub ref_id: String,
     pub include_details: bool,
     pub include_incoming: bool,

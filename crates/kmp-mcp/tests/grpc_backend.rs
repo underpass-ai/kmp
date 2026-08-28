@@ -127,6 +127,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         3,
         "kmp_trace",
         json!({
+            "about": "node",
             "from": "node:root",
             "to": "node:target",
             "goal": "prove path",
@@ -152,6 +153,7 @@ async fn grpc_backend_maps_kernel_memory_service_responses_to_kmp_tools() {
         4,
         "kmp_inspect",
         json!({
+            "about": "node",
             "ref": "node:target",
             "include": {
                 "incoming": true,
@@ -525,6 +527,7 @@ async fn grpc_backend_connects_to_mutual_tls_kernel_memory_service() {
         9,
         "kmp_inspect",
         json!({
+            "about": "node",
             "ref": "node:mtls"
         }),
     )

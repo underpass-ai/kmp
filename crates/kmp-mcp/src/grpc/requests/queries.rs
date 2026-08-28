@@ -82,8 +82,9 @@ pub(crate) fn temporal_near_request_from_arguments(
 }
 
 pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceRequest, String> {
-    validate_required_arguments(arguments, &["from", "to"])?;
+    validate_required_arguments(arguments, &["about", "from", "to"])?;
     Ok(TraceRequest {
+        about: required_string(arguments, "about")?,
         from: required_string(arguments, "from")?,
         to: required_string(arguments, "to")?,
         goal: optional_string(arguments, "goal")
@@ -95,8 +96,9 @@ pub(crate) fn trace_request_from_arguments(arguments: &Value) -> Result<TraceReq
 }
 
 pub(crate) fn inspect_request_from_arguments(arguments: &Value) -> Result<InspectRequest, String> {
-    validate_required_arguments(arguments, &["ref"])?;
+    validate_required_arguments(arguments, &["about", "ref"])?;
     Ok(InspectRequest {
+        about: required_string(arguments, "about")?,
         r#ref: required_string(arguments, "ref")?,
         include: inspect_include_from_arguments(arguments)?,
     })

@@ -113,6 +113,7 @@ async fn sqlite_import_keeps_sql_and_prompt_shaped_text_inert() {
     let inspection = target
         .service()
         .inspect(InspectMemoryQuery {
+            about: "project:roundtrip".to_string(),
             ref_id: "project:roundtrip:decision:first".to_string(),
             include_details: true,
             include_incoming: false,
@@ -216,6 +217,7 @@ async fn export_import_preserves_wake_temporal_and_proof() {
     let inspection = target
         .service()
         .inspect(InspectMemoryQuery {
+            about: "project:roundtrip".to_string(),
             ref_id: "project:roundtrip:decision:first".to_string(),
             include_details: true,
             include_incoming: true,

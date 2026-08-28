@@ -632,7 +632,10 @@ mod retry_tests {
         let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
 
         let error = backend
-            .call_tool("kmp_inspect", &json!({"ref": "incident:format"}))
+            .call_tool(
+                "kmp_inspect",
+                &json!({"about": "incident:format", "ref": "incident:format"}),
+            )
             .await
             .expect_err("a newer layout cannot open");
         assert!(error.message.contains("upgrade the binary"), "{error}");

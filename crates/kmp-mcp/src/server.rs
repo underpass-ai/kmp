@@ -413,7 +413,7 @@ impl KernelMcpServer {
             "kmp_view_undo" => crate::view_tools::undo(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
-                match self.memory_ref_exists(about).await {
+                match self.memory_ref_exists(about, about).await {
                     Ok(exists) => {
                         crate::view_tools::open(arguments, exists, self.viewer_url.as_deref())
                     }
@@ -423,8 +423,12 @@ impl KernelMcpServer {
             "kmp_view_apply_intent" => {
                 let mut missing = Vec::new();
                 let mut failure = None;
+                let about = crate::view_tools::about_for_intent(arguments);
                 for reference in crate::view_tools::refs_named(arguments) {
-                    match self.memory_ref_exists(&reference).await {
+                    let Some(about) = about.as_deref() else {
+                        break;
+                    };
+                    match self.memory_ref_exists(about, &reference).await {
                         Ok(true) => {}
                         Ok(false) => missing.push(reference),
                         Err(error) => {
@@ -478,7 +482,7 @@ impl KernelMcpServer {
 
     /// Whether one ref is in this store, asked through the same read the
     /// agent would use. Never a write.
-    async fn memory_ref_exists(&self, reference: &str) -> Result<bool, ToolError> {
+    async fn memory_ref_exists(&self, about: &str, reference: &str) -> Result<bool, ToolError> {
         let reference = reference.trim();
         if reference.is_empty() {
             return Ok(false);
@@ -488,6 +492,7 @@ impl KernelMcpServer {
             .call_tool(
                 "kmp_inspect",
                 &serde_json::json!({
+                    "about": about,
                     "ref": reference,
                     "include": {"incoming": false, "outgoing": false, "details": false}
                 }),
@@ -682,6 +687,7 @@ impl KernelMcpServer {
             .call_tool(
                 "kmp_inspect",
                 &serde_json::json!({
+                    "about": about,
                     "ref": about,
                     "include": {"incoming": false, "outgoing": false, "details": false}
                 }),

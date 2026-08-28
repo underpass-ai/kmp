@@ -89,6 +89,7 @@ pub fn temporal_query_from_near_proto(
 pub fn trace_query_from_proto(request: TraceRequest) -> ProtoMappingResult<TraceMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
     Ok(TraceMemoryQuery {
+        about: request.about,
         from: request.from,
         to: request.to,
         role: non_empty(request.goal).unwrap_or_else(|| "tracer".to_string()),
@@ -109,6 +110,7 @@ pub fn inspect_query_from_proto(request: InspectRequest) -> ProtoMappingResult<I
         raw: false,
     });
     Ok(InspectMemoryQuery {
+        about: request.about,
         ref_id: request.r#ref,
         include_details: include.details,
         include_incoming: include.incoming,
@@ -279,6 +281,7 @@ mod tests {
     #[test]
     fn inspect_returns_direct_links_when_include_is_absent() {
         let query = inspect_query_from_proto(InspectRequest {
+            about: "project:kmp".to_string(),
             r#ref: "decision:one".to_string(),
             include: None,
         })

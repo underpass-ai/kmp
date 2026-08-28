@@ -263,10 +263,14 @@ where
     }
 
     async fn node(&self, request: &HttpRequest) -> HttpResponse {
+        let Some(about) = request.param("about") else {
+            return HttpResponse::error(400, "missing required parameter `about`");
+        };
         let Some(id) = request.param("id") else {
             return HttpResponse::error(400, "missing required parameter `id`");
         };
         let query = InspectMemoryQuery {
+            about: about.to_string(),
             ref_id: id.to_string(),
             include_details: true,
             include_incoming: true,
@@ -282,6 +286,9 @@ where
     /// Summaries for a batch of ids, so the UI can label freshly expanded
     /// neighbors in one request. Unknown ids are reported, not fatal.
     async fn nodes(&self, request: &HttpRequest) -> HttpResponse {
+        let Some(about) = request.param("about") else {
+            return HttpResponse::error(400, "missing required parameter `about`");
+        };
         let Some(ids) = request.param("ids") else {
             return HttpResponse::error(400, "missing required parameter `ids`");
         };
@@ -303,6 +310,7 @@ where
         let mut missing = Vec::new();
         for id in ids {
             let query = InspectMemoryQuery {
+                about: about.to_string(),
                 ref_id: id.to_string(),
                 include_details: false,
                 include_incoming: false,
@@ -444,10 +452,14 @@ where
     }
 
     async fn trace(&self, request: &HttpRequest) -> HttpResponse {
+        let Some(about) = request.param("about") else {
+            return HttpResponse::error(400, "missing required parameter `about`");
+        };
         let (Some(from), Some(to)) = (request.param("from"), request.param("to")) else {
             return HttpResponse::error(400, "missing required parameters `from` and `to`");
         };
         let query = TraceMemoryQuery {
+            about: about.to_string(),
             from: from.to_string(),
             to: to.to_string(),
             role: VIEWER_ROLE.to_string(),

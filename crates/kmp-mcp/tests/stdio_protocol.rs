@@ -313,11 +313,15 @@ async fn former_kernel_names_are_accepted_but_not_advertised() {
         (
             "kernel_trace",
             json!({
+                "about": "question:830ce83f",
                 "from": "claim:rachel-austin",
                 "to": "claim:rachel-denver"
             }),
         ),
-        ("kernel_inspect", json!({"ref": "claim:rachel-austin"})),
+        (
+            "kernel_inspect",
+            json!({"about": "question:830ce83f", "ref": "claim:rachel-austin"}),
+        ),
     ];
 
     for (id, (name, arguments)) in calls.into_iter().enumerate() {
@@ -373,6 +377,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "params": {
             "name": "kmp_trace",
             "arguments": {
+                "about": "question:830ce83f",
                 "from": "claim:rachel-austin",
                 "to": "claim:rachel-denver"
             }
@@ -413,6 +418,7 @@ async fn fixture_tools_cover_ingest_wake_trace_and_inspect() {
         "params": {
             "name": "kmp_inspect",
             "arguments": {
+                "about": "question:830ce83f",
                 "ref": "claim:rachel-austin"
             }
         }
@@ -1022,6 +1028,7 @@ async fn grpc_backend_returns_tool_error_when_live_kernel_is_unavailable() {
             "params": {
                 "name": "kmp_inspect",
                 "arguments": {
+                    "about": "node",
                     "ref": "node:missing"
                 }
             }
@@ -1047,6 +1054,7 @@ async fn invalid_tool_arguments_return_tool_error() {
         "params": {
             "name": "kmp_trace",
             "arguments": {
+                "about": "question:830ce83f",
                 "from": "claim:rachel-austin"
             }
         }
@@ -1160,6 +1168,7 @@ async fn server_wraps_injected_backend_errors_as_mcp_tool_errors() {
             "params": {
                 "name": "kmp_trace",
                 "arguments": {
+                    "about": "a",
                     "from": "a",
                     "to": "b"
                 }
