@@ -176,11 +176,11 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
 
     let codex_prompts = roots.home.join(".codex/prompts");
     let installed = kmp_prompts(&codex_prompts);
-    if !installed.is_empty() {
+    for prompt in installed {
         pieces.push(Piece {
             kind: PieceKind::HostFiles,
-            detail: format!("Codex — {} /kmp- prompts", installed.len()),
-            path: codex_prompts,
+            detail: format!("Codex /kmp- prompt — {}", describe_size(&prompt)),
+            path: prompt,
             bundled_events: None,
             ours_to_remove: true,
         });
@@ -421,15 +421,19 @@ fn kmp_prompts(directory: &Path) -> Vec<PathBuf> {
     let Ok(entries) = std::fs::read_dir(directory) else {
         return Vec::new();
     };
-    entries
+    let mut prompts = entries
         .flatten()
         .map(|entry| entry.path())
         .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("kmp-") && name.ends_with(".md"))
+            path.is_file()
+                && path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("kmp-") && name.ends_with(".md"))
         })
-        .collect()
+        .collect::<Vec<_>>();
+    prompts.sort();
+    prompts
 }
 
 fn file_mentions(path: &Path, needle: &str) -> bool {
@@ -694,6 +698,56 @@ mod tests {
         for piece in &wiring {
             assert!(remove(piece).is_err());
             assert!(piece.path.exists());
+        }
+    }
+
+    #[test]
+    fn uninstall_removes_only_kmp_prompts_from_the_shared_codex_directory() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let prompts = base.join("home/.codex/prompts");
+        std::fs::create_dir_all(prompts.join("kmp-not-a-prompt.md")).expect("prompt dirs");
+        for name in [
+            "kmp-audit.md",
+            "kmp-wake.md",
+            "mi-revision-de-codigo.md",
+            "notas-personales.md",
+            "plantilla-de-pr.md",
+        ] {
+            std::fs::write(prompts.join(name), name).expect("prompt");
+        }
+        std::fs::write(
+            prompts.join("kmp-not-a-prompt.md/owned-by-user.md"),
+            "leave me alone",
+        )
+        .expect("user-owned nested prompt");
+
+        let installed = survey(&roots(base))
+            .into_iter()
+            .filter(|piece| piece.kind == PieceKind::HostFiles && piece.detail.starts_with("Codex"))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            installed
+                .iter()
+                .map(|piece| piece.path.file_name().expect("prompt name"))
+                .collect::<Vec<_>>(),
+            ["kmp-audit.md", "kmp-wake.md"]
+        );
+
+        for piece in &installed {
+            remove(piece).expect("remove KMP prompt");
+        }
+
+        assert!(prompts.is_dir(), "the shared Codex directory must remain");
+        assert!(!prompts.join("kmp-audit.md").exists());
+        assert!(!prompts.join("kmp-wake.md").exists());
+        for name in [
+            "mi-revision-de-codigo.md",
+            "notas-personales.md",
+            "plantilla-de-pr.md",
+            "kmp-not-a-prompt.md/owned-by-user.md",
+        ] {
+            assert!(prompts.join(name).exists(), "preserve {name}");
         }
     }
 
