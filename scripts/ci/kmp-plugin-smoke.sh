@@ -89,6 +89,7 @@ LAUNCHER_PLUGIN="${SMOKE_DATA_DIR}/launcher-plugin"
 LAUNCHER_PATH_BIN="${SMOKE_DATA_DIR}/launcher-path-bin"
 mkdir -p "$LAUNCHER_PLUGIN/scripts" "$LAUNCHER_PLUGIN/bin" "$LAUNCHER_PATH_BIN"
 cp "$PLUGIN_DIR/scripts/run-embedded-mcp.sh" "$LAUNCHER_PLUGIN/scripts/"
+cp "$PLUGIN_DIR/scripts/kmp-doctor.sh" "$LAUNCHER_PLUGIN/scripts/"
 cp -R "$PLUGIN_DIR/.codex-plugin" "$LAUNCHER_PLUGIN/.codex-plugin"
 cp -R "$PLUGIN_DIR/.claude-plugin" "$LAUNCHER_PLUGIN/.claude-plugin"
 PLUGIN_ENGINE_VERSION="$(python3 - "$LAUNCHER_PLUGIN" <<'PY'
@@ -140,6 +141,53 @@ KMP_MCP_BIN="$LAUNCHER_PLUGIN/bin/kmp-mcp" \
     > "$SMOKE_DATA_DIR/launcher-explicit.txt"
 grep -qx 'stale-cache-ran' "$SMOKE_DATA_DIR/launcher-explicit.txt" \
   || fail "plugin launcher stopped honoring the explicit KMP_MCP_BIN override"
+
+# Doctor must probe the launcher the host actually starts. Reproduce a healthy
+# PATH engine whose version the plugin rejects: the direct probe should prove
+# the engine answers while the verdict remains blocking because the host gets
+# exit 127 and no tools.
+DOCTOR_MISMATCH_BIN="${SMOKE_DATA_DIR}/doctor-mismatch-bin"
+mkdir -p "$DOCTOR_MISMATCH_BIN"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'if [ "${1:-}" = "--version" ]; then' \
+  '  printf "kmp-mcp 0.0.2 (store formats 1, 2)\\n"' \
+  'elif [ "${1:-}" = "config" ]; then' \
+  '  printf "ask fallback languages: en\\n"' \
+  'else' \
+  '  while IFS= read -r _line; do' \
+  '    printf "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"tools\":[{\"name\":\"kmp_wake\"}]}}\n"' \
+  '  done' \
+  'fi' \
+  > "$DOCTOR_MISMATCH_BIN/kmp-mcp"
+chmod +x "$DOCTOR_MISMATCH_BIN/kmp-mcp"
+set +e
+doctor_mismatch_output="$(
+  HOME="${SMOKE_DATA_DIR}/doctor-mismatch-home" \
+  PATH="$DOCTOR_MISMATCH_BIN:$PATH" \
+  NO_COLOR=1 \
+  KMP_MCP_DATA_DIR="${SMOKE_DATA_DIR}/doctor-mismatch-store" \
+  KMP_VIEWER_ADDR=off \
+  KMP_DOCTOR_CLAUDE_MCP_LIST='' \
+  KMP_DOCTOR_CODEX_PLUGIN_LIST='' \
+  KMP_DOCTOR_CODEX_MCP_LIST='' \
+    bash "$LAUNCHER_PLUGIN/scripts/kmp-doctor.sh" 2>&1
+)"
+doctor_mismatch_status=$?
+set -e
+[ "$doctor_mismatch_status" -eq 1 ] \
+  || fail "doctor called a launcher-rejected version pair usable"
+for expected in \
+  '[✗] Tools      the plugin launcher cannot start a usable KMP session' \
+  '1 tools answered from the binary alone' \
+  'the engine works; the plugin launcher is the blocking layer' \
+  'Your memory is not answering in this session. the plugin launcher exits 127' \
+  'Run: /kmp:setup'; do
+  grep -Fq "$expected" <<<"$doctor_mismatch_output" \
+    || { printf '%s\n' "$doctor_mismatch_output" >&2; fail "doctor mismatch output omitted $expected"; }
+done
+grep -Fq 'Your memory works' <<<"$doctor_mismatch_output" \
+  && fail "doctor contradicted a launcher that exits before serving tools"
 
 # Windows executes the sibling cmd launcher. Its runtime smoke happens in the
 # Windows package job; pin the version-selection contract here as well so the
