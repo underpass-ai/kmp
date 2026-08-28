@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
+python3 scripts/release/sync-public-readme.py check
+
 python3 - <<'PY'
 from __future__ import annotations
 

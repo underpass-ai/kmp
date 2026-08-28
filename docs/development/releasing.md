@@ -9,6 +9,8 @@ Keep these in lockstep with the release script:
 
 - workspace and internal crate dependency versions in `Cargo.toml`;
 - a non-empty version section promoted from `[Unreleased]` in `CHANGELOG.md`;
+- the marketplace's marked public overview synchronized into the GitHub and
+  crates.io READMEs;
 - Helm `version` and `appVersion`;
 - Codex and Claude plugin manifests;
 - `server.json` and the MCPB manifest.
@@ -19,7 +21,9 @@ bash scripts/release.sh version X.Y.Z
 
 The script first turns the reviewed `[Unreleased]` entries into a dated
 `[X.Y.Z]` section and refuses to bump anything when those notes are empty.
-It deliberately clears the MCPB digest to a sentinel. Commit and push
+It also copies the marked public overview from `plugins/kmp/README.md` into
+`README.md` and `crates/kmp-mcp/README.md`; surface-specific sections stay
+separate. It deliberately clears the MCPB digest to a sentinel. Commit and push
 the version branch, then let the release helper dispatch and watch
 `release.yml`, download and verify its twenty-file candidate, stamp the exact
 MCPB digest into `server.json`, and validate the registry metadata:

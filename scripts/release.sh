@@ -76,6 +76,7 @@ cmd_version() {
     # A version is not meaningful without notes. Consume the reviewed
     # Unreleased entries into a dated release section before touching any
     # package metadata; an empty changelog fails without a partial bump.
+    python3 scripts/release/sync-public-readme.py sync
     python3 scripts/release/changelog.py prepare "${version}"
 
     python3 - "${version}" <<'PY'
@@ -200,6 +201,7 @@ cmd_candidate() {
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     cd "${root}"
     require_workspace_version "${version}"
+    python3 scripts/release/sync-public-readme.py check
     python3 scripts/release/changelog.py check "${version}"
 
     # The helper must stamp one known tree. Uncommitted release inputs could
@@ -288,6 +290,7 @@ cmd_release() {
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     cd "${root}"
 
+    python3 scripts/release/sync-public-readme.py check
     python3 scripts/release/changelog.py check "${version}"
 
     # A dirty tree would tag a commit that does not contain what was built.
