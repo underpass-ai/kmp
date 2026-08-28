@@ -30,10 +30,11 @@ done
 if [ "$DO_CLAUDE" -eq 0 ] && [ "$DO_CODEX" -eq 0 ]; then
   [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && DO_CLAUDE=1
   [ -f "$HOME/.codex/config.toml" ] && DO_CODEX=1
-  if [ "$DO_CLAUDE" -eq 0 ] && [ "$DO_CODEX" -eq 0 ]; then
-    command -v claude >/dev/null 2>&1 && DO_CLAUDE=1
-    command -v codex >/dev/null 2>&1 && DO_CODEX=1
-  fi
+  # Each host owns an independent plugin cache. Detect each one independently:
+  # finding Codex on disk must not suppress the PATH probe that discovers
+  # Claude Code (or vice versa) when this updater is run from a plain shell.
+  command -v claude >/dev/null 2>&1 && DO_CLAUDE=1
+  command -v codex >/dev/null 2>&1 && DO_CODEX=1
 fi
 
 if [ "$STANDALONE" -eq 1 ] && [ "$DO_CODEX" -eq 0 ]; then

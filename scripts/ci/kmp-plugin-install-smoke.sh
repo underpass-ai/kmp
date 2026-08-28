@@ -336,6 +336,27 @@ grep -q 'claude plugin update' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the plugin"; }
 grep -q 'kmp-install-binary.sh' "$WORK_DIR/update-dry-run.txt" \
   || { cat "$WORK_DIR/update-dry-run.txt" >&2; fail "update preview omitted the engine"; }
+
+# With both hosts installed, a plain-shell invocation must update both plugin
+# caches. A persistent Codex config used to suppress the PATH fallback that
+# was the only way this invocation discovered Claude Code.
+IMPLICIT_HOST_HOME="${WORK_DIR}/implicit-host-home"
+IMPLICIT_HOST_BIN="${WORK_DIR}/implicit-host-bin"
+mkdir -p "${IMPLICIT_HOST_HOME}/.codex" "$IMPLICIT_HOST_BIN"
+: > "${IMPLICIT_HOST_HOME}/.codex/config.toml"
+for host in claude codex; do
+  printf '#!/usr/bin/env bash\nexit 0\n' > "${IMPLICIT_HOST_BIN}/${host}"
+  chmod +x "${IMPLICIT_HOST_BIN}/${host}"
+done
+env -u CLAUDE_PLUGIN_ROOT \
+  HOME="$IMPLICIT_HOST_HOME" PATH="${IMPLICIT_HOST_BIN}:${PATH}" \
+  bash "$INSTALLED/scripts/kmp-update.sh" --dry-run \
+    --version "$WORKSPACE_VERSION" > "$WORK_DIR/implicit-host-update.txt"
+grep -q 'claude plugin update kmp@underpass' "$WORK_DIR/implicit-host-update.txt" \
+  || { cat "$WORK_DIR/implicit-host-update.txt" >&2; fail "plain-shell update skipped Claude Code when Codex was present"; }
+grep -q 'codex plugin add kmp@underpass' "$WORK_DIR/implicit-host-update.txt" \
+  || { cat "$WORK_DIR/implicit-host-update.txt" >&2; fail "plain-shell update skipped Codex when Claude Code was present"; }
+
 CLAUDE_PLUGIN_ROOT="$INSTALLED" \
   bash "$INSTALLED/scripts/kmp-update.sh" --codex --dry-run \
     --version "$WORKSPACE_VERSION" > "$WORK_DIR/codex-plugin-update-dry-run.txt"
