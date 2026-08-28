@@ -102,18 +102,6 @@ fail()    { AREA_LINES+=("  ${R}FAIL${Z}  $1")
             FAILURES=$((FAILURES + 1)); return 0; }
 info()    { AREA_LINES+=("        ${D}$1${Z}"); return 0; }
 
-# Asks a loopback port whether anything is behind it. Configuration says what
-# was intended; only the port says what is true. Loopback answers or refuses
-# at once, so there is nothing to time out.
-port_answers() {
-  local hostport="$1" host port
-  port="${hostport##*:}"
-  host="${hostport%:*}"
-  host="${host#[}"; host="${host%]}"
-  [ -n "$host" ] && [ -n "$port" ] || return 1
-  ( exec 3<>"/dev/tcp/$host/$port" ) >/dev/null 2>&1
-}
-
 # Claude Code prefixes plugin-provided servers as `plugin:<plugin>:<server>`.
 # Treat both whitespace and that colon namespace separator as identifier
 # boundaries; matching only a bare `kmp` made a healthy native plugin look
@@ -795,9 +783,9 @@ info "the session."
 section "Viewer"
 
 # The viewer is compiled into every kmp-mcp and mounts over a live embedded
-# session, so there is nothing to install. Resolve the address exactly as the
-# binary does — unset means the default, an empty value means declined — then
-# ask the port instead of trusting the configuration.
+# session, so there is nothing to install. Its capability belongs to that
+# process: this separate doctor must never advertise the bare address because
+# it cannot know the capability link and following that address returns 401.
 VIEWER_ADDR="${KMP_VIEWER_ADDR-127.0.0.1:7317}"
 case "$(printf '%s' "$VIEWER_ADDR" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')" in
   ''|off|none)
@@ -805,14 +793,8 @@ case "$(printf '%s' "$VIEWER_ADDR" | tr '[:upper:]' '[:lower:]' | tr -d '[:space
     info "unset that variable and restart the session to see your memory again"
     ;;
   *)
-    if port_answers "$VIEWER_ADDR"; then
-      ok "your memory, as a graph: http://$VIEWER_ADDR/"
-    else
-      brief "serves at http://$VIEWER_ADDR/ once a session is running"
-      info "nothing is listening there yet. A session on the embedded backend"
-      info "mounts it at startup; one already running from an older version"
-      info "needs restarting before it does."
-    fi
+    ok "ChronoLoom comes with the session — ask the agent to open it"
+    info "only that session knows its capability link"
     ;;
 esac
 
