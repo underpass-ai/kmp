@@ -1,12 +1,6 @@
-//! ADR-018's acceptance scenario, and the reason a second engine exists: two
+//! ADR-018's acceptance scenario: two
 //! OS processes open the same data directory and both write, and afterwards
 //! the store holds every event either of them was told was committed.
-//!
-//! On redb this is exactly the failure the ADR describes — the second
-//! process cannot open the store — and the test says so on purpose, so the
-//! difference between the engines is pinned by a test rather than by prose.
-//! If redb ever grows multi-process support, that assertion is the one to
-//! flip, and it will fail loudly the day it should.
 
 use std::path::Path;
 use std::process::{Command, Stdio};
@@ -124,29 +118,5 @@ async fn two_processes_creating_the_same_sqlite_store_at_once_both_get_in() {
         last_sequence,
         2 * EVENTS_PER_WRITER,
         "sequences must be contiguous across both writers: no gaps, no duplicates"
-    );
-}
-
-#[tokio::test]
-async fn on_redb_the_second_process_is_refused_and_nothing_is_lost() {
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n").expect("legacy format stamp");
-    drop(
-        EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
-            .expect("stamp the directory for redb"),
-    );
-
-    let succeeded = run_two_writers(data_dir.path());
-    assert_eq!(
-        succeeded, 1,
-        "redb is single-process (ADR-011): exactly one writer holds the store"
-    );
-
-    // The one that got in must have lost nothing to the one that did not.
-    let store = EmbeddedKernelStore::open(data_dir.path()).expect("store reopens");
-    let (log_length, _) = store.event_log_stats().await.expect("log stats");
-    assert_eq!(
-        log_length, EVENTS_PER_WRITER,
-        "the surviving writer's events are all there, and only those"
     );
 }

@@ -8,10 +8,7 @@ use rusqlite::{Connection, TransactionBehavior};
 
 use super::quality_telemetry_retention::QualityTelemetryRetention;
 use super::sqlite_quality_telemetry_reader::SqliteQualityTelemetryReader;
-use super::storage::{
-    enforce_retention, insert_observation, migrate_legacy_quality_telemetry,
-    open_quality_connection,
-};
+use super::storage::{enforce_retention, insert_observation, open_quality_connection};
 
 const DEFAULT_DURABLE_EVERY_BATCHES: u64 = 16;
 
@@ -23,7 +20,6 @@ pub struct SqliteQualityTelemetryWriter {
     batch_number: AtomicU64,
     durable_every_batches: u64,
     write_failures: AtomicU64,
-    migrated_legacy_observations: u64,
 }
 
 impl SqliteQualityTelemetryWriter {
@@ -45,21 +41,14 @@ impl SqliteQualityTelemetryWriter {
                 "quality telemetry durable interval must be greater than zero".to_string(),
             ));
         }
-        let mut connection = open_quality_connection(data_dir)?;
-        let migrated_legacy_observations =
-            migrate_legacy_quality_telemetry(&mut connection, data_dir, retention)?;
+        let connection = open_quality_connection(data_dir)?;
         Ok(Self {
             connection: Arc::new(Mutex::new(connection)),
             retention,
             batch_number: AtomicU64::new(0),
             durable_every_batches,
             write_failures: AtomicU64::new(0),
-            migrated_legacy_observations,
         })
-    }
-
-    pub fn migrated_legacy_observations(&self) -> u64 {
-        self.migrated_legacy_observations
     }
 
     pub fn write_batch(

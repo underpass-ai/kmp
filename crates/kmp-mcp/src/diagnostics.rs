@@ -66,18 +66,23 @@ impl Finding {
 
 /// The engines this build carries, as `--version` reports them.
 pub fn compiled_formats() -> String {
-    format!(
-        "{} (legacy read), {} (sqlite)",
-        StorageEngine::Redb.format_version(),
-        StorageEngine::Sqlite.format_version()
-    )
+    format!("{} (sqlite)", StorageEngine::Sqlite.format_version())
 }
 
-/// Which engine's store file is on disk, without opening either.
+/// Whether the compiled SQLite engine's store file is on disk.
 pub fn engine_on_disk(data_dir: &Path) -> Option<StorageEngine> {
-    [StorageEngine::Redb, StorageEngine::Sqlite]
-        .into_iter()
-        .find(|engine| kmp_embedded::store_file_path_for(data_dir, *engine).exists())
+    kmp_embedded::store_file_path_for(data_dir, StorageEngine::Sqlite)
+        .exists()
+        .then_some(StorageEngine::Sqlite)
+}
+
+fn store_file_on_disk(data_dir: &Path) -> Option<PathBuf> {
+    let sqlite = kmp_embedded::store_file_path_for(data_dir, StorageEngine::Sqlite);
+    if sqlite.exists() {
+        return Some(sqlite);
+    }
+    let legacy = kmp_embedded::legacy_redb_store_path(data_dir);
+    legacy.exists().then_some(legacy)
 }
 
 fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
@@ -99,9 +104,13 @@ fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
         Ok(None) => finding = finding.with("store format: not stamped yet"),
         Err(_) => {}
     }
-    match engine_on_disk(path) {
-        Some(engine) => finding = finding.with(format!("engine on disk: {engine}")),
-        None => finding = finding.with("no store yet — it is created on first write"),
+    if kmp_embedded::legacy_redb_store_path(path).exists() {
+        finding = finding.with("engine on disk: redb (unsupported; source left untouched)");
+    } else {
+        match engine_on_disk(path) {
+            Some(engine) => finding = finding.with(format!("engine on disk: {engine}")),
+            None => finding = finding.with("no store yet — it is created on first write"),
+        }
     }
     if let Some(bundle) = kmp_embedded::project_bundle_path(resolved) {
         finding = finding.with(format!(
@@ -137,8 +146,7 @@ fn data_dir_finding() -> (Finding, Option<ResolvedDataDir>) {
 /// not create one.
 fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Finding> {
     let bundle = kmp_embedded::project_bundle_path(resolved)?;
-    let store = engine_on_disk(resolved.path())
-        .map(|engine| kmp_embedded::store_file_path_for(resolved.path(), engine));
+    let store = store_file_on_disk(resolved.path());
     let pending = kmp_embedded::pending_bundle_exports(resolved.path());
     if !pending.is_empty() {
         let mut finding = Finding::new(
@@ -463,9 +471,9 @@ fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
     if !path.exists() {
         let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
         if legacy.exists() {
-            return Finding::new(Level::Warn, "legacy quality telemetry awaits import")
+            return Finding::new(Level::Warn, "legacy quality telemetry is unsupported")
                 .with(format!("source kept at {}", legacy.display()))
-                .with("the next kernel start imports it once into shareable SQLite");
+                .with("current KMP does not contain a redb reader; the file is left untouched");
         }
         return Finding::new(Level::Warn, "no quality telemetry journal yet").with(format!(
             "expected at {} after the first kernel start",
@@ -483,7 +491,7 @@ fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
                 let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
                 if legacy.exists() {
                     finding = finding.with(format!(
-                        "legacy import source preserved at {}",
+                        "unsupported legacy source preserved at {}",
                         legacy.display()
                     ));
                 }
@@ -766,7 +774,7 @@ mod tests {
     #[test]
     fn the_compiled_formats_name_the_engines_this_build_carries() {
         let formats = compiled_formats();
-        assert!(formats.contains("1 (legacy read)"), "{formats}");
+        assert!(!formats.contains("legacy read"), "{formats}");
         assert!(formats.contains("2 (sqlite)"), "{formats}");
     }
 
@@ -818,7 +826,11 @@ mod tests {
         let store = dir.path().join("store");
         std::fs::create_dir_all(&store).expect("store dir");
         std::fs::write(store.join("kernel.redb"), b"not a real store").expect("write");
-        assert_eq!(engine_on_disk(dir.path()), Some(StorageEngine::Redb));
+        assert!(engine_on_disk(dir.path()).is_none());
+        assert_eq!(
+            store_file_on_disk(dir.path()),
+            Some(store.join("kernel.redb"))
+        );
     }
 
     #[test]

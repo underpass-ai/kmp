@@ -3,17 +3,11 @@ use std::time::Duration;
 
 use kmp_domain::PortError;
 use kmp_observability::QualityTelemetryObservation;
-use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
-use rusqlite::{
-    Connection, OptionalExtension, Transaction, TransactionBehavior, config::DbConfig, params,
-};
+use rusqlite::{Connection, Transaction, config::DbConfig, params};
 
 use super::QualityTelemetryRetention;
-use crate::adapter::serdes::{decode, encode};
+use crate::adapter::serdes::encode;
 
-const LEGACY_OBSERVATIONS: TableDefinition<(u64, u64), &[u8]> =
-    TableDefinition::new("quality_observations");
-const LEGACY_IMPORT_KEY: &str = "legacy-quality-redb-v1";
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub fn quality_telemetry_path(data_dir: &Path) -> PathBuf {
@@ -49,49 +43,6 @@ pub(super) fn open_quality_connection(data_dir: &Path) -> Result<Connection, Por
         .map_err(|error| sqlite_error(&path, "configure durability", error))?;
     initialize_schema(&connection, &path)?;
     Ok(connection)
-}
-
-pub(super) fn migrate_legacy_quality_telemetry(
-    connection: &mut Connection,
-    data_dir: &Path,
-    retention: QualityTelemetryRetention,
-) -> Result<u64, PortError> {
-    let legacy_path = legacy_quality_telemetry_path(data_dir);
-    if !legacy_path.is_file() || legacy_import_complete(connection)? {
-        return Ok(0);
-    }
-
-    let observations = read_legacy_observations(&legacy_path)?;
-    let transaction = connection
-        .transaction_with_behavior(TransactionBehavior::Immediate)
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry legacy import could not start: {error}"
-            ))
-        })?;
-    if legacy_import_complete_in(&transaction)? {
-        return Ok(0);
-    }
-    for observation in &observations {
-        insert_observation(&transaction, observation)?;
-    }
-    enforce_retention(&transaction, retention)?;
-    transaction
-        .execute(
-            "INSERT INTO quality_metadata (key, value) VALUES (?1, ?2)",
-            params![LEGACY_IMPORT_KEY, observations.len().to_string()],
-        )
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry could not record its legacy import: {error}"
-            ))
-        })?;
-    transaction.commit().map_err(|error| {
-        PortError::Unavailable(format!(
-            "quality telemetry legacy import could not commit: {error}"
-        ))
-    })?;
-    Ok(observations.len() as u64)
 }
 
 pub(super) fn insert_observation(
@@ -213,96 +164,6 @@ fn is_busy(error: &rusqlite::Error) -> bool {
         error.sqlite_error_code(),
         Some(rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked)
     )
-}
-
-fn legacy_import_complete(connection: &Connection) -> Result<bool, PortError> {
-    connection
-        .query_row(
-            "SELECT 1 FROM quality_metadata WHERE key = ?1",
-            [LEGACY_IMPORT_KEY],
-            |_| Ok(()),
-        )
-        .optional()
-        .map(|value| value.is_some())
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry could not inspect legacy import state: {error}"
-            ))
-        })
-}
-
-fn legacy_import_complete_in(transaction: &Transaction<'_>) -> Result<bool, PortError> {
-    transaction
-        .query_row(
-            "SELECT 1 FROM quality_metadata WHERE key = ?1",
-            [LEGACY_IMPORT_KEY],
-            |_| Ok(()),
-        )
-        .optional()
-        .map(|value| value.is_some())
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "quality telemetry could not inspect concurrent legacy import state: {error}"
-            ))
-        })
-}
-
-fn read_legacy_observations(path: &Path) -> Result<Vec<QualityTelemetryObservation>, PortError> {
-    let database = open_legacy_with_retry(path)?;
-    let transaction = database.begin_read().map_err(|error| {
-        PortError::Unavailable(format!(
-            "legacy quality telemetry migration could not start reading: {error}"
-        ))
-    })?;
-    let table = transaction
-        .open_table(LEGACY_OBSERVATIONS)
-        .map_err(|error| {
-            PortError::Unavailable(format!(
-                "legacy quality telemetry migration could not open observations: {error}"
-            ))
-        })?;
-    let mut observations = Vec::new();
-    for row in table.iter().map_err(|error| {
-        PortError::Unavailable(format!(
-            "legacy quality telemetry migration could not scan observations: {error}"
-        ))
-    })? {
-        let (_, value) = row.map_err(|error| {
-            PortError::Unavailable(format!(
-                "legacy quality telemetry migration could not read an observation: {error}"
-            ))
-        })?;
-        observations.push(decode("legacy quality observation", value.value())?);
-    }
-    Ok(observations)
-}
-
-fn open_legacy_with_retry(path: &Path) -> Result<Database, PortError> {
-    let deadline = std::time::Instant::now() + BUSY_TIMEOUT;
-    let mut backoff = Duration::from_millis(2);
-    loop {
-        match Database::open(path) {
-            Ok(database) => return Ok(database),
-            Err(error)
-                if (error.to_string().contains("Cannot acquire lock")
-                    || error
-                        .to_string()
-                        .to_ascii_lowercase()
-                        .contains("already open"))
-                    && std::time::Instant::now() < deadline =>
-            {
-                std::thread::sleep(backoff);
-                backoff = (backoff * 2).min(Duration::from_millis(64));
-            }
-            Err(error) => {
-                return Err(PortError::Unavailable(format!(
-                    "legacy quality telemetry could not open `{}` for one-time migration: \
-                     {error}",
-                    path.display()
-                )));
-            }
-        }
-    }
 }
 
 fn sqlite_error(path: &Path, action: &str, error: rusqlite::Error) -> PortError {

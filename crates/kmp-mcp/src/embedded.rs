@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use kmp_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
@@ -40,14 +39,11 @@ pub struct EmbeddedKernelMcpBackend {
     commit_native: Option<CommitNativeBundle>,
 }
 
-/// Embedded backend that opens the store on the first memory call and retries
-/// transient redb ownership conflicts on later calls.
+/// Embedded backend that opens the SQLite store on the first memory call.
 ///
 /// MCP discovery (`initialize` and `tools/list`) does not need the database.
-/// Keeping that surface alive means a host does not permanently lose KMP just
-/// because another editor owned a redb store during process startup. Once the
-/// owner exits, the next tool call opens the store and the same MCP process
-/// recovers without a host restart.
+/// Keeping that surface alive lets diagnostics and discovery remain available
+/// even when the store layout itself is invalid or unsupported.
 pub struct RetryingEmbeddedKernelMcpBackend {
     data_dir: PathBuf,
     engine: Option<kmp_embedded::StorageEngine>,
@@ -78,10 +74,9 @@ impl RetryingEmbeddedKernelMcpBackend {
         let stamp = std::fs::read_to_string(self.data_dir.join("FORMAT_VERSION"))
             .ok()
             .and_then(|value| value.trim().parse::<u32>().ok())
-            .and_then(|version| match version {
-                1 => Some(kmp_embedded::StorageEngine::Redb),
-                2 => Some(kmp_embedded::StorageEngine::Sqlite),
-                _ => None,
+            .and_then(|version| {
+                (version == kmp_embedded::StorageEngine::Sqlite.format_version())
+                    .then_some(kmp_embedded::StorageEngine::Sqlite)
             });
         stamp.or(self.engine)
     }
@@ -97,38 +92,20 @@ impl RetryingEmbeddedKernelMcpBackend {
             return Ok(backend);
         }
 
-        let mut last_error = String::new();
-        for attempt in 0..3 {
-            match EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        let backend = Arc::new(
+            EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
                 &self.data_dir,
                 self.engine,
                 self.commit_native.clone(),
-            ) {
-                Ok(backend) => {
-                    let backend = Arc::new(backend);
-                    let mut opened = self
-                        .opened
-                        .lock()
-                        .map_err(|_| "embedded backend state lock is poisoned".to_string())?;
-                    let winner = opened.get_or_insert_with(|| Arc::clone(&backend));
-                    return Ok(Arc::clone(winner));
-                }
-                Err(error) => {
-                    let transient_lock = error.contains("Cannot acquire lock");
-                    last_error = error;
-                    if !transient_lock {
-                        return Err(format!("embedded store cannot be opened: {last_error}"));
-                    }
-                    if attempt == 2 {
-                        break;
-                    }
-                    std::thread::sleep(Duration::from_millis(100 * (attempt + 1) as u64));
-                }
-            }
-        }
-        Err(format!(
-            "embedded store is temporarily unavailable; the MCP server is still running and the next tool call will retry: {last_error}"
-        ))
+            )
+            .map_err(|error| format!("embedded store is unavailable: {error}"))?,
+        );
+        let mut opened = self
+            .opened
+            .lock()
+            .map_err(|_| "embedded backend state lock is poisoned".to_string())?;
+        let winner = opened.get_or_insert_with(|| Arc::clone(&backend));
+        Ok(Arc::clone(winner))
     }
 }
 
@@ -173,9 +150,7 @@ impl EmbeddedKernelMcpBackend {
     }
 
     /// The opened kernel, for composition roots that mount additional
-    /// in-process surfaces (the viewer) over this same session's store — on
-    /// the redb engine the only way to observe it live under the ADR-011
-    /// single-writer lock.
+    /// in-process surfaces (the viewer) over this same session's store.
     pub fn kernel(&self) -> &EmbeddedKernel {
         &self.kernel
     }
@@ -646,43 +621,6 @@ mod retry_tests {
         assert!(error.message.contains("same `idempotency_key`"), "{error}");
         assert!(error.message.contains("expected revision 16"), "{error}");
     }
-
-    #[tokio::test]
-    async fn a_redb_startup_lock_does_not_permanently_disable_the_backend() {
-        let data_dir = tempfile::tempdir().expect("temp data dir");
-        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "1\n").expect("legacy format stamp");
-        let holder = EmbeddedKernel::open_with_engine(
-            data_dir.path(),
-            Some(kmp_embedded::StorageEngine::Redb),
-        )
-        .expect("first redb owner");
-        let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
-        let request = json!({"ref": "missing:test"});
-
-        let locked = backend
-            .call_tool("kmp_inspect", &request)
-            .await
-            .expect_err("the other owner still holds redb");
-        assert!(
-            locked.message.contains("server is still running"),
-            "{locked}"
-        );
-
-        drop(holder);
-        let recovered = backend
-            .call_tool("kmp_inspect", &request)
-            .await
-            .expect_err("the node is absent, but the store now opens");
-        assert!(
-            recovered.message.to_ascii_lowercase().contains("not found"),
-            "{recovered}"
-        );
-        assert!(
-            !recovered.message.contains("temporarily unavailable"),
-            "{recovered}"
-        );
-    }
-
     #[tokio::test]
     async fn a_permanent_layout_error_never_promises_that_retry_will_fix_it() {
         let data_dir = tempfile::tempdir().expect("temp data dir");

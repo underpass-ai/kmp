@@ -342,10 +342,10 @@ fn user_state_home() -> std::path::PathBuf {
 
 /// Non-MCP maintenance surface (everything is a process — no library):
 /// `export <file>` and `import <file>` move the append-only event log
-/// between embedded stores, `migrate <source-dir> <destination-dir>` moves a
-/// store this binary refuses to open into one it does, and `viewer [addr]`
-/// serves the local web viewer over the store; stdout carries the command
-/// result only.
+/// between embedded stores, `migrate <source-dir> <destination-dir>` applies
+/// supported layout migrations (and fails closed for retired layouts), and
+/// `viewer [addr]` serves the local web viewer over the store; stdout carries
+/// the command result only.
 async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     let first_argument = args.first().copied();
     match command {
@@ -356,11 +356,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "uninstall" => return run_uninstall_command(args).await,
         "migrate" => return run_migrate_command(args).await,
         "share-memory" => {
-            eprintln!(
-                "kmp-mcp: share-memory was retired; new stores already use SQLite. \
-                 Migrate a legacy format-1 store with `kmp-mcp migrate <source-dir> \
-                 <destination-dir>`."
-            );
+            eprintln!("kmp-mcp: share-memory was retired; stores already use SQLite.");
             return 2;
         }
         "viewer" => return run_viewer_command(first_argument).await,
@@ -378,13 +374,11 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             return code;
         }
         "--version" | "-V" | "version" => {
-            // Format 2 is the active SQLite layout. Format 1 remains readable
-            // only for the compatibility and migration promise.
+            // Format 2 is the only compiled store layout.
             use kmp_embedded::StorageEngine;
             println!(
-                "kmp-mcp {} (store formats {} (legacy read), {} (sqlite))",
+                "kmp-mcp {} (store format {} (sqlite))",
                 env!("CARGO_PKG_VERSION"),
-                StorageEngine::Redb.format_version(),
                 StorageEngine::Sqlite.format_version()
             );
             return 0;
@@ -606,7 +600,7 @@ kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\
 kmp-mcp export [file]           Export the append-only event log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
-kmp-mcp migrate <src> <dst>     Migrate a legacy store to SQLite\n  \
+kmp-mcp migrate <src> <dst>     Apply a supported store-format migration\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
@@ -907,8 +901,8 @@ fn snapshot_result(
     })
 }
 
-/// `migrate <source-dir> <destination-dir>`: replays the source's history
-/// into a new store this binary can open.
+/// `migrate <source-dir> <destination-dir>`: applies a supported store-format
+/// migration. Retired format 1 is rejected with the 0.3.2 export bridge.
 ///
 /// Both directories are explicit on purpose. This command runs precisely
 /// when the environment-resolved store is the one that will not open, and
@@ -1170,7 +1164,7 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
         );
         return 2;
     }
-    let pulse = kmp_mcp::pulse::Pulse::start("replaying history onto the new engine…");
+    let pulse = kmp_mcp::pulse::Pulse::start("checking store migration…");
     let migrated = kmp_embedded::migrate_data_dir_to(
         std::path::Path::new(source),
         std::path::Path::new(destination),
@@ -1203,9 +1197,8 @@ async fn run_migrate_command(args: &[&str]) -> i32 {
 }
 
 /// Standalone viewer over the env-resolved data dir (same resolution as
-/// `export`/`import`). A redb store must be idle; SQLite can be shared, but
-/// setting `KMP_VIEWER_ADDR` on the agent session remains the direct path to
-/// its already-open kernel.
+/// `export`/`import`). SQLite can be shared, but setting `KMP_VIEWER_ADDR` on
+/// the agent session remains the direct path to its already-open kernel.
 async fn run_viewer_command(addr: Option<&str>) -> i32 {
     // `viewer` with no argument honours the same env the MCP mode uses.
     let addr = addr

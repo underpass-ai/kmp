@@ -115,12 +115,6 @@ impl ContextEventStore for EmbeddedKernelStore {
 }
 
 impl EmbeddedKernelStore {
-    /// The event log, read synchronously. The migration path uses this
-    /// before any runtime exists around the source copy.
-    pub(crate) fn read_event_log_blocking(&self) -> Result<Vec<ContextUpdatedEvent>, PortError> {
-        self.read_event_log()
-    }
-
     /// Reads the full append-only event log in sequence order (audit and
     /// replay surface).
     pub(crate) fn read_event_log(&self) -> Result<Vec<ContextUpdatedEvent>, PortError> {

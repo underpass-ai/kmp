@@ -13,10 +13,6 @@ use kmp_domain::{BundleQualityMetrics, QualityMetricsObserver, QualityObservatio
 use kmp_observability::{
     BufferedQualityMetricsObserver, EmbeddedTelemetryGuard, QualityTelemetryObservation,
 };
-use redb::{Database, TableDefinition};
-
-const LEGACY_OBSERVATIONS: TableDefinition<(u64, u64), &[u8]> =
-    TableDefinition::new("quality_observations");
 
 fn observe_n(observer: &BufferedQualityMetricsObserver, rpc: &str, count: usize) {
     let metrics = BundleQualityMetrics::new(100, 2.0, 0.5, 0.1, 0.9).expect("metrics");
@@ -204,16 +200,6 @@ fn telemetry_process_worker() {
 #[test]
 fn two_processes_keep_the_same_observability_pulse() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    let legacy_path = data_dir.path().join("telemetry/quality.redb");
-    std::fs::create_dir_all(legacy_path.parent().expect("parent")).expect("telemetry dir");
-    {
-        let database = Database::create(&legacy_path).expect("legacy journal");
-        let transaction = database.begin_write().expect("legacy transaction");
-        transaction
-            .open_table(LEGACY_OBSERVATIONS)
-            .expect("legacy observations");
-        transaction.commit().expect("legacy commit");
-    }
     let executable = std::env::current_exe().expect("current test executable");
     let spawn = |about: &str| {
         std::process::Command::new(&executable)
@@ -248,57 +234,4 @@ fn two_processes_keep_the_same_observability_pulse() {
             "each host keeps its observations"
         );
     }
-    assert!(legacy_path.is_file(), "concurrent import keeps the source");
-}
-
-#[test]
-fn legacy_redb_history_is_imported_once_and_left_in_place() {
-    let data_dir = tempfile::tempdir().expect("temp data dir");
-    let legacy_path = data_dir.path().join("telemetry/quality.redb");
-    std::fs::create_dir_all(legacy_path.parent().expect("parent")).expect("telemetry dir");
-    let metrics = BundleQualityMetrics::new(100, 2.0, 0.5, 0.1, 0.9).expect("metrics");
-    let observation = QualityTelemetryObservation::capture(
-        &metrics,
-        &QualityObservationContext {
-            rpc: "kmp_ask".to_string(),
-            root_node_id: "project:legacy".to_string(),
-            role: "resumer".to_string(),
-            revision: Some(7),
-        },
-    );
-    {
-        let database = Database::create(&legacy_path).expect("legacy journal");
-        let transaction = database.begin_write().expect("legacy transaction");
-        {
-            let mut table = transaction
-                .open_table(LEGACY_OBSERVATIONS)
-                .expect("legacy observations");
-            let payload = serde_json::to_vec(&observation).expect("legacy payload");
-            table
-                .insert((observation.observed_at_millis(), 1), payload.as_slice())
-                .expect("legacy insert");
-        }
-        transaction.commit().expect("legacy commit");
-    }
-
-    let first = SqliteQualityTelemetryWriter::open(
-        data_dir.path(),
-        QualityTelemetryRetention::new(10).expect("retention"),
-    )
-    .expect("sqlite journal opens");
-    assert_eq!(first.migrated_legacy_observations(), 1);
-    assert_eq!(first.reader().count().expect("count"), 1);
-    drop(first);
-
-    let second = SqliteQualityTelemetryWriter::open(
-        data_dir.path(),
-        QualityTelemetryRetention::new(10).expect("retention"),
-    )
-    .expect("sqlite journal reopens");
-    assert_eq!(second.migrated_legacy_observations(), 0);
-    assert_eq!(second.reader().count().expect("count"), 1);
-    assert!(
-        legacy_path.is_file(),
-        "the migration keeps the source evidence"
-    );
 }

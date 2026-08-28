@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use kmp_domain::PortError;
 
-use super::engine::redb::RedbEngine;
 use super::engine::{Engine, ReadTx, Table, WriteTx};
 use super::format_version::{self, StorageEngine};
 
@@ -13,9 +12,8 @@ use super::format_version::{self, StorageEngine};
 /// The engine behind it is chosen when the data directory is created and
 /// hidden behind the storage seam
 /// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
-/// SQLite for every fresh store, with redb retained only to open and migrate
-/// stamped format-1 stores. Cloning is cheap (shared engine handle). Commits
-/// are fsync-durable on both engines, so
+/// SQLite for every store this binary can open. Cloning is cheap (shared
+/// engine handle). Commits are fsync-durable, so
 /// each successful port write survives `kill -9`; a crash mid-transaction
 /// loses only the in-flight transaction.
 #[derive(Debug, Clone)]
@@ -34,16 +32,8 @@ impl EmbeddedKernelStore {
 
     /// [`open`](Self::open) with the engine chosen: a fresh directory is
     /// created for SQLite, and an existing one must already be `engine` — a
-    /// store is never reinterpreted as another engine's. redb is accepted
-    /// only when a format-1 stamp already exists.
+    /// store is never reinterpreted as another engine's.
     pub fn open_with_engine(data_dir: &Path, engine: StorageEngine) -> Result<Self, PortError> {
-        if engine == StorageEngine::Redb && !format_version::format_version_path(data_dir).exists()
-        {
-            return Err(PortError::InvalidState(
-                "the redb engine is legacy-only and cannot create a new store; use SQLite"
-                    .to_string(),
-            ));
-        }
         Self::open_as(data_dir, Some(engine))
     }
 
@@ -71,23 +61,8 @@ impl EmbeddedKernelStore {
             },
         )?;
 
-        Self::open_store_file(&store_file, engine)
-    }
-
-    /// Opens a bare store file, without the data-directory layout or its
-    /// format gate. Only two callers may want this: `open`, which has just
-    /// applied the gate itself, and the migration, which reads a *copy* of a
-    /// store whose format this binary refuses to open in place.
-    pub(crate) fn open_store_file(
-        store_file: &Path,
-        engine: StorageEngine,
-    ) -> Result<Self, PortError> {
-        let engine: Arc<dyn Engine> = match engine {
-            StorageEngine::Redb => Arc::new(RedbEngine::open_file(store_file)?),
-            StorageEngine::Sqlite => {
-                Arc::new(super::engine::sqlite::SqliteEngine::open_file(store_file)?)
-            }
-        };
+        let engine: Arc<dyn Engine> =
+            Arc::new(super::engine::sqlite::SqliteEngine::open_file(&store_file)?);
         Ok(Self { engine })
     }
 
@@ -133,27 +108,10 @@ impl EmbeddedKernelStore {
     pub fn compact_data_dir(data_dir: &Path) -> Result<bool, PortError> {
         let engine = format_version::check_or_stamp(data_dir)?;
         let store_file = format_version::store_file_path_for(data_dir, engine);
-        match engine {
-            StorageEngine::Redb => RedbEngine::compact_file(&store_file),
-            StorageEngine::Sqlite => super::engine::sqlite::SqliteEngine::compact_file(&store_file),
-        }
+        super::engine::sqlite::SqliteEngine::compact_file(&store_file)
     }
 }
 
 pub(crate) fn aggregate_key(root_node_id: &str, role: &str) -> String {
     format!("{root_node_id}\u{1f}{role}")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_public_api_cannot_create_a_fresh_redb_store() {
-        let data_dir = tempfile::tempdir().expect("temp data dir");
-        let error = EmbeddedKernelStore::open_with_engine(data_dir.path(), StorageEngine::Redb)
-            .expect_err("redb is legacy-only");
-        assert!(error.to_string().contains("legacy-only"), "{error}");
-        assert!(!format_version::format_version_path(data_dir.path()).exists());
-    }
 }

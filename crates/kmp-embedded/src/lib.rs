@@ -26,8 +26,9 @@ pub use engine::{
 pub use kernel::{EmbeddedKernel, EmbeddedMemoryService};
 pub use kmp_adapter_embedded::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, EmbeddedKernelStore,
-    SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader, StorageEngine, StoreMigrationReceipt,
-    format_version_path, legacy_quality_telemetry_path, merge_bundles, quality_telemetry_path,
-    read_stamped_version, store_file_path_for, validate_store_layout, verify_bundle,
+    LEGACY_REDB_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader,
+    StorageEngine, StoreMigrationReceipt, format_version_path, legacy_quality_telemetry_path,
+    legacy_redb_store_path, merge_bundles, quality_telemetry_path, read_stamped_version,
+    store_file_path_for, validate_store_layout, verify_bundle,
 };
 pub use migration::{migrate_data_dir, migrate_data_dir_to, open_or_migrate_data_dir};

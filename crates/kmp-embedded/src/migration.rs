@@ -14,9 +14,7 @@ use kmp_domain::PortError;
 /// Migrates `source_dir` into `destination_dir`, returning what was moved.
 /// The destination is created with the default engine.
 ///
-/// The source is never opened for writing and its bytes are verified
-/// unchanged when the migration finishes; the destination must not already
-/// hold a store.
+/// Retired layouts are rejected without touching the source or destination.
 pub async fn migrate_data_dir(
     source_dir: &Path,
     destination_dir: &Path,
@@ -24,16 +22,14 @@ pub async fn migrate_data_dir(
     migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Sqlite).await
 }
 
-/// [`migrate_data_dir`] with the destination engine chosen — how a store
-/// changes engines (ADR-018). A redb store becomes a SQLite one that two
-/// agent hosts can share by replaying its history into a fresh directory;
-/// the source stays as it was and the receipt records both layouts.
+/// [`migrate_data_dir`] with the destination engine chosen. Kept for API
+/// compatibility; current binaries only contain SQLite and cannot read
+/// format-1 stores.
 pub async fn migrate_data_dir_to(
     source_dir: &Path,
     destination_dir: &Path,
     destination_engine: StorageEngine,
 ) -> Result<StoreMigrationReceipt, PortError> {
-    crate::data_dir::ensure_data_dir_skeleton(destination_dir)?;
     let (_store, receipt) = EmbeddedKernelStore::migrate_data_dir_to(
         source_dir,
         destination_dir,
@@ -51,7 +47,6 @@ pub async fn open_or_migrate_data_dir(
     source_dir: &Path,
     destination_dir: &Path,
 ) -> Result<Option<StoreMigrationReceipt>, PortError> {
-    crate::data_dir::ensure_data_dir_skeleton(destination_dir)?;
     let (_store, receipt) = EmbeddedKernelStore::open_or_migrate_data_dir(
         source_dir,
         destination_dir,

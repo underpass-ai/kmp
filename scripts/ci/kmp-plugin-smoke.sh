@@ -342,6 +342,31 @@ assert_doctor_rejects_layout newer 3 'store format 3 is not supported'
 assert_doctor_rejects_layout corrupt banana 'FORMAT_VERSION is corrupt'
 assert_doctor_rejects_layout missing '<missing>' 'a store file exists but FORMAT_VERSION is missing'
 
+# Format 1 is inventory, never a health probe. Doctor must name the external
+# export bridge and leave even malformed bytes exactly as they were.
+LEGACY_STORE="${SMOKE_DATA_DIR}/doctor-store-format-1"
+mkdir -p "$LEGACY_STORE/store" "$LEGACY_STORE/logs"
+printf '*\n' > "$LEGACY_STORE/.gitignore"
+printf '1\n' > "$LEGACY_STORE/FORMAT_VERSION"
+printf 'truncated legacy bytes\n' > "$LEGACY_STORE/store/kernel.redb"
+cp "$LEGACY_STORE/store/kernel.redb" "$LEGACY_STORE/source.before"
+set +e
+legacy_output="$(run_doctor_for_store "$LEGACY_STORE" 2>&1)"
+legacy_status=$?
+set -e
+[ "$legacy_status" -eq 1 ] || fail "doctor accepted retired format 1"
+grep -Fq 'this binary contains no reader' <<<"$legacy_output" \
+  || fail "doctor did not explain the removed redb reader"
+grep -Fq 'KMP 0.3.2 export bridge' <<<"$legacy_output" \
+  || fail "doctor omitted the format-1 export bridge"
+grep -Fq 'inventory only; Doctor did not open or probe' <<<"$legacy_output" \
+  || fail "doctor treated legacy bytes as a live engine"
+if grep -Fq 'store is free' <<<"$legacy_output"; then
+  fail "doctor presented retired format 1 as usable"
+fi
+cmp "$LEGACY_STORE/source.before" "$LEGACY_STORE/store/kernel.redb" \
+  || fail "doctor changed the retired source"
+
 doctor_output="$(
   HOME="${SMOKE_DATA_DIR}/doctor-home" \
   NO_COLOR=1 \

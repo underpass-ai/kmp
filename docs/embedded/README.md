@@ -61,18 +61,18 @@ The data directory is selected in this order:
    `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
    on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
-KMP creates every fresh store on SQLite. Existing format-1 redb stores remain
-readable through a compatibility path, so an upgrade never substitutes an
-empty SQLite store for older memory.
+KMP creates and opens SQLite format-2 stores only. Existing format-1 redb
+stores are detected and rejected before their bytes are opened, so an upgrade
+never substitutes empty SQLite memory for an older store.
 
 Do not create a new redb store. To change the store used by a project, point
 `KMP_MCP_DATA_DIR` at the intended directory and verify the selection with
 `kmp-mcp info` before writing.
 
-SQLite permits multiple local agent hosts to share one store. Stop legacy
-writers, then run `kmp-mcp migrate <source> <destination>` to replay a
-format-1 store into a fresh SQLite directory. The source stays untouched and
-the destination records a migration receipt.
+SQLite permits multiple local agent hosts to share one store. To recover a
+format-1 store, stop its writers, export it with KMP 0.3.2, then import the
+portable bundle into an empty current store. The recovery runbook has the
+exact commands.
 
 ## Durability and recovery
 
@@ -102,10 +102,10 @@ to disable it.
 
 Logs and the bounded quality journal live inside the data directory. Quality
 observations use `telemetry/quality.sqlite3` in WAL mode, so every local host
-keeps its Observability Pulse. On first 0.3 startup, KMP imports an existing
-`telemetry/quality.redb` once, applies the same retention bound and leaves the
-legacy file in place as source evidence. They are local diagnostics, not
-remote telemetry; KMP does not upload memory to Underpass.
+keeps its Observability Pulse. Historical `telemetry/quality.redb` files stay
+in place as source evidence but current binaries do not read them. These are
+local diagnostics, not remote telemetry; KMP does not upload memory to
+Underpass.
 
 ## Maintenance commands
 
@@ -117,7 +117,7 @@ Run `kmp-mcp --help` for the live command contract.
 | `export`, `import` | Checkpoint or restore an event bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
-| `migrate <src> <dst>` | Replay legacy memory into a fresh SQLite store. |
+| `migrate <src> <dst>` | Reserved for supported format migrations; retired format 1 fails with recovery instructions. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
 | `uninstall [--apply]` | Preview removal, then apply only when explicitly requested. |
 
