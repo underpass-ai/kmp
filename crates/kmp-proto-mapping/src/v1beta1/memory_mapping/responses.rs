@@ -467,6 +467,22 @@ pub fn temporal_response_from_result(
             requested_cursor.r#ref
         ));
     }
+    let absent_requested_clock = if count == 0
+        && requested_cursor.r#ref.trim().is_empty()
+        && traversal
+            .missing()
+            .iter()
+            .any(|item| item == "temporal_positions")
+    {
+        explicit_clock_name(traversal.axis())
+    } else {
+        None
+    };
+    if let Some(clock) = absent_requested_clock {
+        warnings.push(format!(
+            "no temporal entries carry the requested `{clock}` clock"
+        ));
+    }
 
     let dimensions = temporal_dimension_coverage(
         &entries,
@@ -495,10 +511,15 @@ pub fn temporal_response_from_result(
     temporal_proof.expired = expired;
 
     TemporalMoveResponse {
-        summary: format!(
-            "Returned {count} temporal {}.",
-            if count == 1 { "entry" } else { "entries" }
-        ),
+        summary: match absent_requested_clock {
+            Some(clock) => format!(
+                "Returned 0 temporal entries; no entries carry the requested {clock} clock."
+            ),
+            None => format!(
+                "Returned {count} temporal {}.",
+                if count == 1 { "entry" } else { "entries" }
+            ),
+        },
         temporal: Some(TemporalState {
             direction: proto_direction(direction) as i32,
             axis: proto_temporal_axis(traversal.axis()) as i32,
@@ -594,6 +615,16 @@ fn missing_explicit_clock(
             Some("validity")
         }
         _ => None,
+    }
+}
+
+fn explicit_clock_name(axis: TemporalAxis) -> Option<&'static str> {
+    match axis {
+        TemporalAxis::Default => None,
+        TemporalAxis::Occurred => Some("occurred"),
+        TemporalAxis::Observed => Some("observed"),
+        TemporalAxis::Ingested => Some("ingested"),
+        TemporalAxis::Validity => Some("validity"),
     }
 }
 
@@ -1163,6 +1194,79 @@ mod temporal_lifecycle_tests {
         assert_eq!(
             response.warnings,
             ["temporal cursor ref `decision:sequence-only` exists but carries no `occurred` clock"]
+        );
+        assert_eq!(
+            response.proof.expect("proof").missing,
+            ["temporal_positions"]
+        );
+    }
+
+    #[test]
+    fn empty_time_read_names_the_explicit_clock_no_entry_carries() {
+        let node = |id: &str, kind: &str| {
+            BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            node("project:kmp", "memory_anchor"),
+            vec![
+                node("timeline:main", "memory_dimension"),
+                node("decision:sequence-only", "decision"),
+            ],
+            vec![BundleRelationship::new(
+                "timeline:main",
+                "decision:sequence-only",
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Rewind,
+                DomainCursor::time("2026-08-27T12:00:00Z").expect("cursor"),
+            )
+            .with_axis(TemporalAxis::Validity),
+        )
+        .expect("empty validity traversal");
+        let result = TemporalMemoryResult {
+            traversal,
+            source_bundle: bundle,
+            include: TemporalIncludeOptions {
+                evidence: false,
+                relations: false,
+                raw_refs: false,
+            },
+            quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+        };
+
+        let response = temporal_response_from_result(
+            TemporalCursor {
+                r#ref: String::new(),
+                time: Some(prost_types::Timestamp {
+                    seconds: 1_777_000_000,
+                    nanos: 0,
+                }),
+                sequence: None,
+            },
+            TemporalDirection::Rewind,
+            result,
+        );
+
+        assert_eq!(
+            response.summary,
+            "Returned 0 temporal entries; no entries carry the requested validity clock."
+        );
+        assert_eq!(
+            response.warnings,
+            ["no temporal entries carry the requested `validity` clock"]
         );
         assert_eq!(
             response.proof.expect("proof").missing,

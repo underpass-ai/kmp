@@ -342,12 +342,12 @@ fn tools_list_core() -> Value {
             ),
             temporal_tool_definition(
                 "kmp_rewind",
-                "Move backward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
+                "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
                 "from",
             ),
             temporal_tool_definition(
                 "kmp_forward",
-                "Move forward through memory from a timestamp, sequence, or ref. Cursor parameter: `from`.",
+                "Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`.",
                 "from",
             ),
             tool_definition_with_output(
