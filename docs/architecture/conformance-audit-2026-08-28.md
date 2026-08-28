@@ -5,8 +5,8 @@ the smallest safe order for changing it. It does not change runtime behaviour.
 
 ## Scope and method
 
-The snapshot has 25 crate directories, 452 Rust files and 141,537 Rust lines;
-ChronoLoom has 9,149 Rust and JavaScript lines. These are reproducible counts,
+The snapshot has 25 crate directories, 452 Rust files and 142,153 Rust lines;
+ChronoLoom has 9,153 Rust and JavaScript lines. These are reproducible counts,
 not estimates:
 
 ```bash
@@ -28,7 +28,7 @@ their types do not cross a product boundary
 | Hexagonal ports and adapters | Holds at the dependency boundary; outer orchestration needs splitting. | `crates/kmp-domain/Cargo.toml:17-19`; `crates/kmp-application/src/memory/service.rs:45-51`; `crates/kmp-embedded/src/kernel.rs:79-95`; `crates/kmp-mcp/src/server.rs:385-542` |
 | DDD without primitive obsession | Partial. Temporal requests and relation vocabulary are typed; stored coordinates, relation input and projection policy still leak strings. | `crates/kmp-domain/src/value_objects/temporal_cursor.rs:17-83`; `crates/kmp-domain/src/value_objects/temporal_coordinate.rs:4-14`; `crates/kmp-application/src/memory/types.rs:49-97`; `crates/kmp-application/src/memory/visual_projection.rs:523-527` |
 | SOLID | Dependency inversion and narrow ports hold. SRP is the active failure; OCP has deliberate closed vocabularies, and no LSP failure surfaced at the inspected ports. | `crates/kmp-application/src/memory/service.rs:28-51`; `crates/kmp-domain/src/repositories/graph_neighborhood_reader.rs:6-18`; `crates/kmp-viewer/src/routes.rs:68-130`; `crates/kmp-viewer/src/view_state.rs:59-206` |
-| One file — one class | Does not hold in six production hotspots or the reusable test library. | `crates/kmp-plugin-api/src/lib.rs:31-362`; `crates/kmp-application/src/memory/types.rs:12-240`; `crates/kmp-viewer/src/views.rs:22-541`; `crates/kmp-testkit/src/memoryarena.rs:13-176` |
+| One file — one class | Does not hold in six production hotspots or the reusable test library. | `crates/kmp-plugin-api/src/lib.rs:31-362`; `crates/kmp-application/src/memory/types.rs:12-252`; `crates/kmp-viewer/src/views.rs:22-545`; `crates/kmp-testkit/src/memoryarena.rs:13-176` |
 
 ## One file — one class
 
@@ -73,9 +73,11 @@ shape after production code establishes it.
   (`crates/kmp-application/src/memory/service.rs:28-51`). The embedded
   composition root supplies its concrete store only at wiring time
   (`crates/kmp-embedded/src/kernel.rs:79-95`).
-- Infrastructure points inward: the embedded adapter owns `redb` and
-  `rusqlite`, then depends on domain, application and ports
-  (`crates/kmp-adapter-embedded/Cargo.toml:24-34`). No adapter type appears in
+- Infrastructure points inward: the embedded adapter owns active SQLite plus
+  the redb reader retained only for stamped format-1 memory
+  (`crates/kmp-adapter-embedded/Cargo.toml:23-33`;
+  `crates/kmp-adapter-embedded/src/adapter/store.rs:11-47`), then depends on
+  domain, application and ports. No adapter type appears in
   the application facade signature
   (`crates/kmp-application/src/memory/service.rs:28-51`).
 - Visual projection stays on the application facade and calls the typed
@@ -96,7 +98,7 @@ shape after production code establishes it.
   is orchestration debt, not an inward dependency violation.
 - The binary root handles CLI dispatch, logging, backend selection, viewer
   composition and the stdio loop in one file
-  (`crates/kmp-mcp/src/main.rs:12-105`; `crates/kmp-mcp/src/main.rs:107-170`).
+  (`crates/kmp-mcp/src/main.rs:12-105`; `crates/kmp-mcp/src/main.rs:138-202`).
   Move those policies into focused outer modules; do not move transport into
   domain or application.
 
@@ -183,7 +185,7 @@ the three-rung enum at the MCP boundary
 (`crates/kmp-application/src/memory/visual_projection.rs:18-25`). Adding a rung
 must change both because it changes the public contract; that is not extension
 through an untrusted string. The remaining risk is drift, so keep the protocol
-contract test that pins the enum (`crates/kmp-mcp/src/protocol.rs:1687-1697`).
+contract test that pins the enum (`crates/kmp-mcp/src/protocol.rs:1686-1704`).
 
 ### Liskov substitution
 
@@ -295,5 +297,5 @@ Each PR preserves the temporal answers fixed by #268, #274, #276, #280 and
 a page boundary inside one multi-dimensional entry; PR 5 must not start until
 that regression shield passes on both graph adapters. Viewer PRs also preserve
 the loopback, capability and read-only boundary
-recorded in `docs/embedded/README.md:93-98` and
+recorded in `docs/embedded/README.md:94-101` and
 `archive/docs/adr/ADR-017-embedded-memory-viewer.md:30-59`.
