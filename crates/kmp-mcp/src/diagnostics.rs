@@ -438,16 +438,12 @@ fn memories_finding() -> Vec<Finding> {
     vec![finding]
 }
 
-/// Where a human can watch this memory. The viewer ships inside the binary
-/// and mounts itself on an embedded session, so the only thing worth saying
-/// is the address — and, when someone turned it off, how to get it back.
+/// Where a human can watch this memory. The capability belongs to the running
+/// session, so this separate diagnostic never prints a bare URL that will 401.
 fn viewer_finding() -> Finding {
     match crate::viewer::viewer_addr_from_env().addr() {
-        Some(addr) => Finding::new(
-            Level::Ok,
-            format!("your memory, as a graph: http://{addr}/"),
-        )
-        .with("an embedded session mounts it at startup; this command starts nothing"),
+        Some(_) => Finding::new(Level::Ok, "ChronoLoom comes with an embedded session")
+            .with("ask the agent to open it — only that session knows its capability link"),
         None => Finding::new(Level::Warn, "declined — no viewer this session").with(format!(
             "unset {} and restart the session to see your memory again",
             kmp_viewer::VIEWER_ADDR_ENV
@@ -916,6 +912,16 @@ mod tests {
         assert!(report.contains("13 tools on the MCP surface"));
         assert!(report.contains("kmp_write_memory"));
         assert!(!report.contains("Usable"), "info states, doctor judges");
+    }
+
+    #[test]
+    fn diagnostics_never_offer_an_unauthorised_viewer_url() {
+        let finding = viewer_finding();
+        assert!(
+            !finding.headline.contains("http://")
+                && finding.detail.iter().all(|line| !line.contains("http://")),
+            "a separate process cannot know the running session's capability: {finding:?}"
+        );
     }
 
     #[test]

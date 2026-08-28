@@ -486,6 +486,10 @@ async fn a_session_capability_guards_memory_and_shared_view_state() {
         unauthenticated_read.starts_with("HTTP/1.1 401"),
         "a local socket alone cannot read memory: {unauthenticated_read}"
     );
+    assert!(
+        unauthenticated_read.contains("ask the agent to open the loom"),
+        "the refusal must name a path to the capability: {unauthenticated_read}"
+    );
 
     let view_id = format!("unauthorized-{port}");
     let unauthenticated_move = raw_request(
