@@ -25,6 +25,8 @@
 
 use std::path::{Path, PathBuf};
 
+use sha2::{Digest, Sha256};
+
 /// What a piece of an installation is, which decides how it is treated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PieceKind {
@@ -242,7 +244,17 @@ pub fn rescue_path(piece: &Piece, workspace: &Path) -> Option<PathBuf> {
     if piece.kind != PieceKind::Store {
         return None;
     }
-    Some(workspace.join(format!("kmp-memory-{}.jsonl", store_label(&piece.path))))
+    // A readable basename is not an identity: two checkouts can both be
+    // called `api`, and arbitrary stores commonly end in `memory`. Keep the
+    // label for the human and bind the rescue to the store's full path so a
+    // later export in the same uninstall cannot truncate an earlier one.
+    let digest = Sha256::digest(piece.path.to_string_lossy().as_bytes());
+    let path_id = format!("{digest:x}");
+    Some(workspace.join(format!(
+        "kmp-memory-{}-{}.jsonl",
+        store_label(&piece.path),
+        &path_id[..12]
+    )))
 }
 
 fn store_label(store: &Path) -> String {
@@ -559,11 +571,12 @@ mod tests {
         // Never refused for want of a copy: the copy is made here.
         assert!(refusal(&store).is_none());
         let rescue = rescue_path(&store, &base.join("project")).expect("stores are saved");
-        assert_eq!(
-            rescue.file_name().and_then(|name| name.to_str()),
-            Some("kmp-memory-project.jsonl"),
-            "the file has to name the memory it holds"
-        );
+        let name = rescue
+            .file_name()
+            .and_then(|name| name.to_str())
+            .expect("rescue file name");
+        assert!(name.starts_with("kmp-memory-project-"), "{name}");
+        assert!(name.ends_with(".jsonl"), "{name}");
     }
 
     #[test]
@@ -583,6 +596,35 @@ mod tests {
     }
 
     #[test]
+    fn registered_stores_with_the_same_basename_get_distinct_rescues() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let first = base.join("checkouts/work/api/memory");
+        let second = base.join("checkouts/personal/api/memory");
+        store_at(&first, "2");
+        store_at(&second, "2");
+        let roots = roots(base);
+        crate::memories::remember(&roots.data_home, &first);
+        crate::memories::remember(&roots.data_home, &second);
+
+        let workspace = base.join("project");
+        let rescues = survey(&roots)
+            .iter()
+            .filter_map(|piece| rescue_path(piece, &workspace))
+            .collect::<Vec<_>>();
+
+        assert_eq!(rescues.len(), 2, "{rescues:?}");
+        assert_ne!(rescues[0], rescues[1], "{rescues:?}");
+        assert!(rescues.iter().all(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.starts_with("kmp-memory-memory-") && name.ends_with(".jsonl")
+                })
+        }));
+    }
+
+    #[test]
     fn the_dry_run_says_where_each_memory_will_be_saved() {
         let base = tempfile::tempdir().expect("temp");
         let base = base.path();
@@ -598,7 +640,8 @@ mod tests {
             crate::style::Style::Plain,
         );
         assert!(saving.contains("saved first to"), "{saving}");
-        assert!(saving.contains("kmp-memory-project.jsonl"), "{saving}");
+        assert!(saving.contains("kmp-memory-project-"), "{saving}");
+        assert!(saving.contains(".jsonl"), "{saving}");
 
         // ...and that --purge is the way to say no copy is wanted.
         let purged = report(&pieces, &workspace, true, false, crate::style::Style::Plain);

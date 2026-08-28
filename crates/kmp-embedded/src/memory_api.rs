@@ -195,14 +195,18 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
 
 /// The record side's error map.
 ///
-/// One case more than the recall side's: a port `Conflict` here is the
-/// idempotency key reused with different content — the kernel looked at the
-/// request and said no, and retrying it unchanged earns the same answer. On
-/// the recall side a conflict cannot mean that, so the shared map's reading
-/// of ports-as-environment stays right there.
+/// Two cases more than the recall side's. A port `Conflict` here is an
+/// idempotency key reused with different content and will not change on
+/// retry. A `RetryableConflict` is optimistic concurrency: this attempt did
+/// not land, and replaying the same logical write under the same key is safe.
 fn translate_record_error(error: ApplicationError) -> ApiError {
     match error {
         ApplicationError::Ports(PortError::Conflict(reason)) => ApiError::Refused { reason },
+        ApplicationError::RetryableConflict(reason) => ApiError::Refused {
+            reason: format!(
+                "retryable write conflict; rebase and retry the same logical write with the same idempotency_key — replay is safe: {reason}"
+            ),
+        },
         other => translate_error(other),
     }
 }
@@ -299,6 +303,11 @@ fn translate_error(error: ApplicationError) -> ApiError {
     match error {
         ApplicationError::NotFound(what) => ApiError::NotFound { what },
         ApplicationError::Validation(reason) => ApiError::Refused { reason },
+        ApplicationError::RetryableConflict(reason) => ApiError::Refused {
+            reason: format!(
+                "retryable write conflict; retry the same logical write with the same idempotency_key: {reason}"
+            ),
+        },
         refused @ ApplicationError::Domain(_) => ApiError::Refused {
             reason: refused.to_string(),
         },

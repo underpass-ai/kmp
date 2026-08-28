@@ -13,6 +13,7 @@ python3 scripts/ci/merge-coverage.py --self-test
 python3 scripts/ci/quality-workflow-contract.py
 bash scripts/ci/documentation-spine.sh
 bash scripts/ci/mcp-registry.sh
+node --test crates/kmp-viewer/ui/loom-core.test.js
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked

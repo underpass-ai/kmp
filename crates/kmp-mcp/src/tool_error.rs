@@ -25,10 +25,9 @@ pub enum ToolErrorCode {
     InvalidArgument,
     /// The memory asked for is not in this store.
     NotFound,
-    /// The write collided with one already applied. The documentation tells
-    /// agents that a conflicting retry means the write landed and is success;
-    /// until this code existed, that arrived as `backend_error` — the same
-    /// word as a corrupt store — and the advice could not be followed.
+    /// The operation collided with current state. The message distinguishes a
+    /// retryable optimistic-concurrency miss from a reused idempotency key
+    /// whose content does not match the accepted write.
     Conflict,
     /// The kernel could not be reached. Retrying the same call may work.
     Unavailable,
@@ -68,8 +67,9 @@ impl ToolErrorCode {
             }
             Self::NotFound => "the memory asked for is not in this store",
             Self::Conflict => {
-                "the write was already applied under this idempotency key; that is success, \
-                 not something to retry around"
+                "the operation conflicted with current state; follow the message — a retryable \
+                 write conflict is safely replayed with the same idempotency key, while a key \
+                 already accepted with different content must not be reused"
             }
             Self::Unavailable => "the kernel could not be reached; the same call may work later",
             Self::UnknownTool => "no such tool on this surface",
@@ -192,8 +192,8 @@ mod tests {
             assert!(!code.as_str().is_empty());
             assert!(!code.guidance().is_empty(), "{code} has no guidance");
         }
-        // A conflict has to be sayable, or the documented retry advice cannot
-        // be followed.
+        // A conflict has to be sayable, or the caller cannot distinguish a
+        // safe concurrency replay from a genuine content mismatch.
         assert!(ToolErrorCode::ALL.contains(&ToolErrorCode::Conflict));
     }
 }

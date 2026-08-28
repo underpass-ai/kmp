@@ -7,6 +7,10 @@ use kmp_domain::{DomainError, PortError};
 pub enum ApplicationError {
     Domain(DomainError),
     Ports(PortError),
+    /// Optimistic concurrency rejected this attempt before it committed.
+    /// Re-reading current state and replaying the same logical command with
+    /// the same idempotency key is safe.
+    RetryableConflict(String),
     NotFound(String),
     Validation(String),
 }
@@ -16,6 +20,7 @@ impl fmt::Display for ApplicationError {
         match self {
             Self::Domain(error) => error.fmt(f),
             Self::Ports(error) => error.fmt(f),
+            Self::RetryableConflict(message) => f.write_str(message),
             Self::NotFound(message) => f.write_str(message),
             Self::Validation(message) => f.write_str(message),
         }

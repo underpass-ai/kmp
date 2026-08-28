@@ -124,12 +124,59 @@ const KMP_LOOM = (() => {
   }
 
   /* ---------------- semantic zoom ladder ----------------
-     The zoom changes representation, not just size. Thresholds are explicit
-     milliseconds-per-pixel; evidence is a selection state, not a zoom. */
+     The zoom changes representation, not just size. Time chooses how much
+     detail is useful; actual marks per lane prevent dense memories from
+     opening as overlapping walls and keep sparse long ranges out of Atlas. */
 
-  function lodFor(msPerPx) {
-    if (msPerPx > 600e3) return "atlas"; // > 10 min per pixel: weeks on screen
-    if (msPerPx > 20e3) return "episode"; // > 20 s per pixel: hours on screen
+  function maxMarksPerLane(projection) {
+    const counts = new Map();
+    const grouped = (projection.clusters || []).length
+      ? projection.clusters
+      : projection.bins || [];
+    if (grouped.length) {
+      for (const item of grouped) {
+        counts.set(item.dimension, (counts.get(item.dimension) || 0) + Number(item.total || 0));
+      }
+    } else {
+      for (const entry of projection.entries || []) {
+        const dimensions = new Set((entry.coordinates || []).map((coord) => coord.dimension));
+        for (const dimension of dimensions) {
+          counts.set(dimension, (counts.get(dimension) || 0) + 1);
+        }
+      }
+    }
+
+    let maximum = Math.max(0, ...counts.values());
+    const returned = (projection.entries || []).length;
+    const total = Number((projection.page && projection.page.total) || 0);
+    if (!grouped.length && returned > 0 && total > returned) {
+      maximum = Math.ceil(maximum * (total / returned));
+    }
+    const dimensionCount = Math.max(
+      counts.size,
+      new Set(projection.included_dimensions || []).size
+    );
+    if (total > 0 && dimensionCount > 0) {
+      maximum = Math.max(maximum, Math.ceil(total / dimensionCount));
+    }
+    return maximum;
+  }
+
+  function lodFor(msPerPx, widthPx, marksPerLane) {
+    const knowsDensity =
+      Number.isFinite(widthPx) && widthPx > 0 &&
+      Number.isFinite(marksPerLane) && marksPerLane >= 0;
+    if (!knowsDensity) {
+      if (msPerPx > 600e3) return "atlas";
+      if (msPerPx > 20e3) return "episode";
+      return "moment";
+    }
+
+    if (marksPerLane === 0) return "moment";
+    const pixelsPerMark = widthPx / marksPerLane;
+    if (pixelsPerMark < 12) return "atlas";
+    if (msPerPx > 600e3 && pixelsPerMark < 80) return "atlas";
+    if (msPerPx > 20e3 || pixelsPerMark < 36) return "episode";
     return "moment";
   }
 
@@ -495,6 +542,7 @@ const KMP_LOOM = (() => {
     compareModels,
     buildLanes,
     extent,
+    maxMarksPerLane,
     lodFor,
     alignObservabilitySeries,
     formatMetricValue,
