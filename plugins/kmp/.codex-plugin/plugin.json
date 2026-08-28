@@ -1,6 +1,6 @@
 {
   "name": "kmp",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local-first agent memory that preserves what happened, when and why: wires the kmp MCP server, teaches the ten moves, and diagnoses setup.",
   "author": {
     "name": "Underpass AI"
