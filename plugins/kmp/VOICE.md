@@ -48,7 +48,7 @@ lands naturally, never a joke wedged into a place where a fact belongs.
 | `warn  no backend selected in this shell` | `ok    embedded — the kernel is right here` |
 | `KMP_KERNEL_GRPC_ENDPOINT is required when KMP_MCP_BACKEND=grpc` | `grpc needs somewhere to call. Unset it and the kernel runs right here.` |
 | `Doctor found 1 issue(s). Your memory works; none of them stop it today.` | `One thing to look at. Nothing that stops you today.` |
-| `viewer could not bind: Address already in use (os error 98)` | `something already has 7317 — usually another project's session. Try 7318.` |
+| `viewer could not bind: Address already in use (os error 98)` | `7317 was busy, so this session took its own free viewer port.` |
 | `no startup recorded here yet` | `never started here. This is day one.` |
 
 The pattern in every row: the left column reports on the software, the right

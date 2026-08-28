@@ -730,6 +730,10 @@ async fn view_open_and_get_state_hand_over_the_session_capability_link() {
     )
     .await;
     assert_eq!(opened["result"]["structuredContent"]["url"], VIEWER_URL);
+    assert_eq!(
+        opened["result"]["structuredContent"]["viewer_available"],
+        true
+    );
     assert!(
         opened["result"]["content"][0]["text"]
             .as_str()

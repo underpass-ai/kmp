@@ -100,15 +100,18 @@ pub(crate) fn open(
         }
         Err(ViewError::Invalid(message)) => return Err(ToolError::invalid_argument(message)),
     };
-    Ok(state_result(
-        &state,
-        json!({
-            "opened": true,
-            "clocks": kmp_viewer::view_state::CLOCKS,
-            "semantic_zoom_ladder": kmp_viewer::view_state::ZOOMS,
-        }),
-        viewer_url,
-    ))
+    let mut extra = json!({
+        "opened": true,
+        "viewer_available": viewer_url.is_some(),
+        "clocks": kmp_viewer::view_state::CLOCKS,
+        "semantic_zoom_ladder": kmp_viewer::view_state::ZOOMS,
+    });
+    if viewer_url.is_none() {
+        extra["unhonored"] = json!([
+            "ChronoLoom is unavailable in this session; the semantic view was recorded but no browser can render it"
+        ]);
+    }
+    Ok(state_result(&state, extra, viewer_url))
 }
 
 /// Reads the view without changing it — semantic state, never pixels.
@@ -122,6 +125,7 @@ pub(crate) fn get_state(arguments: &Value, viewer_url: Option<&str>) -> Result<V
     Ok(state_result(
         &state,
         json!({
+            "viewer_available": viewer_url.is_some(),
             "reads": "the semantic state of the view, not its pixels",
             "observability": "projection.overlays are queried for the current range and drawn on the shared temporal axis",
         }),

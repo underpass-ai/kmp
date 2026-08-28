@@ -1857,6 +1857,13 @@ async fn view_intents_resolve_projection_names_against_the_mounted_store_and_rea
         json!({"view_id": "projection-validation", "about": "question:e3"}),
     )
     .await;
+    assert_eq!(opened["viewer_available"], false, "{opened}");
+    assert!(
+        opened["unhonored"][0]
+            .as_str()
+            .is_some_and(|warning| warning.contains("unavailable in this session")),
+        "a semantic view without a browser must say what cannot be rendered: {opened}"
+    );
     let applied = call(
         &server,
         3,
