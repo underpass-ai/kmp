@@ -82,12 +82,22 @@ pub fn engine_on_disk(data_dir: &Path) -> Option<StorageEngine> {
 
 fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
     let path = resolved.path();
-    let mut finding = Finding::new(Level::Ok, path.display().to_string())
-        .with(format!("chosen by: {}", resolved.rule_name()));
+    let layout = kmp_embedded::validate_store_layout(path);
+    let mut finding = match &layout {
+        Ok(_) => Finding::new(Level::Ok, path.display().to_string()),
+        Err(error) => Finding::new(Level::Fail, "the selected memory cannot be opened")
+            .with(format!("data dir: {}", path.display()))
+            .with(error.to_string())
+            .with("the diagnostic left every store file untouched"),
+    }
+    .with(format!("chosen by: {}", resolved.rule_name()));
 
-    match kmp_embedded::read_stamped_version(path) {
-        Ok(version) => finding = finding.with(format!("store format: {version}")),
-        Err(_) => finding = finding.with("store format: not stamped yet"),
+    match layout {
+        Ok(Some(engine)) => {
+            finding = finding.with(format!("store format: {}", engine.format_version()));
+        }
+        Ok(None) => finding = finding.with("store format: not stamped yet"),
+        Err(_) => {}
     }
     match engine_on_disk(path) {
         Some(engine) => finding = finding.with(format!("engine on disk: {engine}")),
@@ -764,6 +774,42 @@ mod tests {
     fn an_empty_directory_reports_no_engine_rather_than_guessing() {
         let empty = tempfile::tempdir().expect("tempdir");
         assert!(engine_on_disk(empty.path()).is_none());
+    }
+
+    #[test]
+    fn an_unopenable_layout_is_a_failure_and_never_claims_memory_is_empty() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let store = kmp_embedded::store_file_path_for(dir.path(), StorageEngine::Sqlite);
+        std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
+        std::fs::write(&store, b"memory is still present").expect("store marker");
+        let resolved = ResolvedDataDir::Explicit(dir.path().to_path_buf());
+
+        for stamp in [Some("3\n"), Some("banana\n"), None] {
+            match stamp {
+                Some(stamp) => std::fs::write(kmp_embedded::format_version_path(dir.path()), stamp)
+                    .expect("write invalid stamp"),
+                None => std::fs::remove_file(kmp_embedded::format_version_path(dir.path()))
+                    .expect("remove stamp"),
+            }
+            let finding = describe_data_dir(&resolved);
+            assert_eq!(finding.level, Level::Fail, "{finding:?}");
+            assert!(finding.headline.contains("cannot be opened"), "{finding:?}");
+            assert!(
+                finding
+                    .detail
+                    .iter()
+                    .any(|line| line == "engine on disk: sqlite"),
+                "{finding:?}"
+            );
+            assert!(
+                finding
+                    .detail
+                    .iter()
+                    .all(|line| !line.contains("no store yet")),
+                "{finding:?}"
+            );
+            assert!(store.exists(), "diagnosis must preserve the memory file");
+        }
     }
 
     #[test]

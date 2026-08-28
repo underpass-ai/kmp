@@ -119,6 +119,67 @@ fn any_store_file_exists(data_dir: &Path) -> bool {
         .any(|engine| store_file_path_for(data_dir, *engine).exists())
 }
 
+/// Applies the existing-layout gate without creating or opening anything.
+///
+/// Diagnostics use this exact gate so they cannot call a store healthy when
+/// the next real kernel operation will refuse it. `None` means genuinely
+/// fresh: no stamp and no engine file. A stamp without a store file is also
+/// valid — startup may have stopped between stamping and first engine open.
+pub fn validate_store_layout(data_dir: &Path) -> Result<Option<StorageEngine>, PortError> {
+    let version_path = format_version_path(data_dir);
+    match fs::read_to_string(&version_path) {
+        Ok(raw) => {
+            let version: u32 = raw.trim().parse().map_err(|_| {
+                PortError::InvalidState(format!(
+                    "embedded store at `{}` has a corrupt FORMAT_VERSION (`{}`); refusing to open",
+                    data_dir.display(),
+                    raw.trim()
+                ))
+            })?;
+            let stamped = resolve_stamped(data_dir, version)?;
+            let present = StorageEngine::ALL
+                .into_iter()
+                .filter(|engine| store_file_path_for(data_dir, *engine).exists())
+                .collect::<Vec<_>>();
+            if present.len() > 1 {
+                return Err(PortError::InvalidState(format!(
+                    "embedded store at `{}` contains multiple engine files ({}); refusing to pick one",
+                    data_dir.display(),
+                    present
+                        .iter()
+                        .map(|engine| engine.name())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )));
+            }
+            if let Some(actual) = present.first()
+                && *actual != stamped
+            {
+                return Err(PortError::InvalidState(format!(
+                    "embedded store at `{}` says format version {} ({stamped}), but its store file is {actual}; refusing to open memory under the wrong engine",
+                    data_dir.display(),
+                    stamped.format_version()
+                )));
+            }
+            Ok(Some(stamped))
+        }
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            if any_store_file_exists(data_dir) {
+                return Err(PortError::InvalidState(format!(
+                    "embedded store at `{}` has a store file but no FORMAT_VERSION; the data \
+                     directory layout is corrupt, refusing to open",
+                    data_dir.display()
+                )));
+            }
+            Ok(None)
+        }
+        Err(error) => Err(PortError::Unavailable(format!(
+            "embedded store could not read FORMAT_VERSION at `{}`: {error}",
+            version_path.display()
+        ))),
+    }
+}
+
 /// The store file a stamped directory points at, if the stamp names a
 /// layout this crate knows and the file is there. `None` for a fresh
 /// directory. Does not apply the gate: the migration asks this about
@@ -146,17 +207,8 @@ pub(crate) fn check_or_stamp_as(
     data_dir: &Path,
     wanted: Option<StorageEngine>,
 ) -> Result<StorageEngine, PortError> {
-    let version_path = format_version_path(data_dir);
-    match fs::read_to_string(&version_path) {
-        Ok(raw) => {
-            let version: u32 = raw.trim().parse().map_err(|_| {
-                PortError::InvalidState(format!(
-                    "embedded store at `{}` has a corrupt FORMAT_VERSION (`{}`); refusing to open",
-                    data_dir.display(),
-                    raw.trim()
-                ))
-            })?;
-            let stamped = resolve_stamped(data_dir, version)?;
+    match validate_store_layout(data_dir)? {
+        Some(stamped) => {
             if let Some(wanted) = wanted
                 && wanted != stamped
             {
@@ -171,16 +223,10 @@ pub(crate) fn check_or_stamp_as(
             }
             Ok(stamped)
         }
-        Err(error) if error.kind() == ErrorKind::NotFound => {
-            if any_store_file_exists(data_dir) {
-                return Err(PortError::InvalidState(format!(
-                    "embedded store at `{}` has a store file but no FORMAT_VERSION; the data \
-                     directory layout is corrupt, refusing to open",
-                    data_dir.display()
-                )));
-            }
+        None => {
             let engine = wanted.unwrap_or(StorageEngine::Sqlite);
             require_compiled(data_dir, engine)?;
+            let version_path = format_version_path(data_dir);
             fs::write(&version_path, format!("{}\n", engine.format_version())).map_err(
                 |error| {
                     PortError::Unavailable(format!(
@@ -191,10 +237,6 @@ pub(crate) fn check_or_stamp_as(
             )?;
             Ok(engine)
         }
-        Err(error) => Err(PortError::Unavailable(format!(
-            "embedded store could not read FORMAT_VERSION at `{}`: {error}",
-            version_path.display()
-        ))),
     }
 }
 
@@ -287,6 +329,53 @@ mod tests {
 
         let error = check_or_stamp(dir.path()).expect_err("missing stamp must fail");
         assert!(error.to_string().contains("corrupt"));
+    }
+
+    #[test]
+    fn diagnostics_can_apply_the_open_gate_without_stamping_a_fresh_directory() {
+        let fresh = tempfile::tempdir().expect("tempdir");
+        assert_eq!(
+            validate_store_layout(fresh.path()).expect("fresh layout is valid"),
+            None
+        );
+        assert!(!format_version_path(fresh.path()).exists());
+
+        let invalid = tempfile::tempdir().expect("tempdir");
+        let store = store_file_path_for(invalid.path(), StorageEngine::Sqlite);
+        fs::create_dir_all(store.parent().expect("parent")).expect("mkdir");
+        fs::write(&store, b"memory remains here").expect("store marker");
+        for stamp in [Some("3\n"), Some("banana\n"), None] {
+            match stamp {
+                Some(stamp) => fs::write(format_version_path(invalid.path()), stamp)
+                    .expect("write invalid stamp"),
+                None => fs::remove_file(format_version_path(invalid.path())).expect("remove stamp"),
+            }
+            let error = validate_store_layout(invalid.path())
+                .expect_err("the same gate as real open must refuse this layout");
+            let message = error.to_string();
+            assert!(
+                message.contains("upgrade the binary")
+                    || message.contains("corrupt FORMAT_VERSION")
+                    || message.contains("store file but no FORMAT_VERSION"),
+                "{message}"
+            );
+            assert!(
+                store.exists(),
+                "the read-only probe preserves the memory file"
+            );
+        }
+    }
+
+    #[test]
+    fn a_stamp_cannot_hide_a_store_from_another_engine() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(format_version_path(dir.path()), "2\n").expect("sqlite stamp");
+        let redb = store_file_path_for(dir.path(), StorageEngine::Redb);
+        fs::create_dir_all(redb.parent().expect("parent")).expect("mkdir");
+        fs::write(redb, b"legacy memory").expect("redb marker");
+
+        let error = check_or_stamp(dir.path()).expect_err("mismatched engine must fail");
+        assert!(error.to_string().contains("store file is redb"), "{error}");
     }
 
     #[test]

@@ -260,21 +260,84 @@ else
       warn "$DATA_DIR/logs is missing — startup failures cannot be audited here"
     fi
 
-    # FORMAT_VERSION names the layout, which names the engine (ADR-018):
-    # 1 is redb, 2 is sqlite. The engine decides whether a second host can
-    # share this store, so say which one it is.
-    ENGINE="redb"
-    STORE_FILE="$DATA_DIR/store/kernel.redb"
-    if [ -f "$DATA_DIR/FORMAT_VERSION" ]; then
-      FORMAT="$(cat "$DATA_DIR/FORMAT_VERSION" 2>/dev/null | tr -d '[:space:]')"
-      case "$FORMAT" in
-        1) ENGINE="redb" ;;
-        2) ENGINE="sqlite"; STORE_FILE="$DATA_DIR/store/kernel.sqlite3" ;;
-        *) ENGINE="unknown" ;;
-      esac
-      info "store format: $FORMAT ($ENGINE engine)"
+    # FORMAT_VERSION names the layout, but it is not evidence that memory is
+    # absent. Discover physical engine files independently first: a missing,
+    # corrupt or newer stamp must never turn a real store into "empty".
+    REDB_STORE="$DATA_DIR/store/kernel.redb"
+    SQLITE_STORE="$DATA_DIR/store/kernel.sqlite3"
+    STORE_FILE=""
+    ENGINE=""
+    PHYSICAL_STORES=0
+    if [ -f "$REDB_STORE" ]; then
+      STORE_FILE="$REDB_STORE"; ENGINE="redb"
+      PHYSICAL_STORES=$((PHYSICAL_STORES + 1))
     fi
-    if [ -f "$STORE_FILE" ]; then
+    if [ -f "$SQLITE_STORE" ]; then
+      STORE_FILE="$SQLITE_STORE"; ENGINE="sqlite"
+      PHYSICAL_STORES=$((PHYSICAL_STORES + 1))
+    fi
+    if [ "$PHYSICAL_STORES" -gt 1 ]; then
+      fail "multiple engine files exist; refusing to guess which memory is live"
+      SESSION_USABLE=0
+      SESSION_REASON="the data dir contains both redb and sqlite store files"
+      info "$REDB_STORE"
+      info "$SQLITE_STORE"
+    fi
+
+    EXPECTED_STORE=""
+    EXPECTED_ENGINE=""
+    if [ -e "$DATA_DIR/FORMAT_VERSION" ]; then
+      if FORMAT="$(tr -d '[:space:]' < "$DATA_DIR/FORMAT_VERSION" 2>/dev/null)"; then
+        case "$FORMAT" in
+          1) EXPECTED_ENGINE="redb"; EXPECTED_STORE="$REDB_STORE" ;;
+          2) EXPECTED_ENGINE="sqlite"; EXPECTED_STORE="$SQLITE_STORE" ;;
+          0)
+            fail "store format 0 is older than this binary supports"
+            SESSION_USABLE=0
+            SESSION_REASON="store format 0 needs migration"
+            info "migrate it with: kmp-mcp migrate <this-dir> <new-dir>"
+            ;;
+          ''|*[!0-9]*)
+            fail "FORMAT_VERSION is corrupt (`${FORMAT:-empty}`); the store cannot open"
+            SESSION_USABLE=0
+            SESSION_REASON="FORMAT_VERSION is corrupt"
+            ;;
+          *)
+            fail "store format $FORMAT is not supported by this binary (newest: 2)"
+            SESSION_USABLE=0
+            SESSION_REASON="store format $FORMAT needs a different KMP binary"
+            info "upgrade the binary before opening or changing this memory"
+            offer "/kmp:setup" "the selected memory uses store format $FORMAT"
+            ;;
+        esac
+        if [ -n "$EXPECTED_ENGINE" ]; then
+          info "store format: $FORMAT ($EXPECTED_ENGINE engine)"
+        else
+          info "store format: ${FORMAT:-unreadable} (unsupported)"
+        fi
+      else
+        fail "FORMAT_VERSION cannot be read; the store cannot open"
+        SESSION_USABLE=0
+        SESSION_REASON="FORMAT_VERSION cannot be read"
+      fi
+    elif [ "$PHYSICAL_STORES" -gt 0 ]; then
+      fail "a store file exists but FORMAT_VERSION is missing"
+      SESSION_USABLE=0
+      SESSION_REASON="the memory layout has a store file but no FORMAT_VERSION"
+      info "the memory file is present and was left untouched"
+    else
+      info "store format: not stamped yet"
+    fi
+
+    if [ -n "$EXPECTED_STORE" ] && [ "$PHYSICAL_STORES" -gt 0 ] \
+        && [ "$STORE_FILE" != "$EXPECTED_STORE" ]; then
+      fail "FORMAT_VERSION selects $EXPECTED_ENGINE but the store file is $ENGINE"
+      SESSION_USABLE=0
+      SESSION_REASON="FORMAT_VERSION and the physical store engine disagree"
+      info "the memory file is present and was left untouched"
+    fi
+
+    if [ -n "$STORE_FILE" ]; then
       STORE_FILES=("$STORE_FILE")
       STORE_NEWEST_FILE="$STORE_FILE"
       STORE_SIZE="$(du -h "$STORE_FILE" 2>/dev/null | cut -f1)"

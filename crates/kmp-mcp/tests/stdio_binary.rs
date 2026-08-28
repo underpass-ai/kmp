@@ -177,7 +177,7 @@ fn an_endpoint_alone_still_chooses_grpc() {
     assert!(output.status.success());
     let stderr = String::from_utf8(output.stderr).expect("stderr should be UTF-8");
     assert!(
-        stderr.contains("grpc"),
+        stderr.to_ascii_lowercase().contains("grpc"),
         "the startup line should name the backend it chose: {stderr}"
     );
 }
@@ -401,6 +401,45 @@ fn run_binary_from(
     child
         .wait_with_output()
         .expect("stdio MCP binary should exit after stdin EOF")
+}
+
+#[test]
+fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
+    let home = tempfile::tempdir().expect("isolated home");
+    for stamp in [Some("3\n"), Some("banana\n"), None] {
+        let data_dir = tempfile::tempdir().expect("data dir");
+        let store = data_dir.path().join("store/kernel.sqlite3");
+        std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
+        std::fs::write(&store, b"recoverable memory remains here").expect("store marker");
+        if let Some(stamp) = stamp {
+            std::fs::write(data_dir.path().join("FORMAT_VERSION"), stamp).expect("invalid stamp");
+        }
+
+        let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+            .arg("doctor")
+            .env("HOME", home.path())
+            .env("XDG_DATA_HOME", home.path().join("xdg"))
+            .env("KMP_MCP_DATA_DIR", data_dir.path())
+            .env("KMP_VIEWER_ADDR", "off")
+            .env("NO_COLOR", "1")
+            .output()
+            .expect("doctor runs");
+        let report = String::from_utf8(output.stdout).expect("doctor output is UTF-8");
+
+        assert_eq!(output.status.code(), Some(1), "{report}");
+        assert!(
+            report.contains("the selected memory cannot be opened"),
+            "{report}"
+        );
+        assert!(report.contains("engine on disk: sqlite"), "{report}");
+        assert!(!report.contains("no store yet"), "{report}");
+        assert!(
+            report
+                .trim_end()
+                .ends_with("Not usable. Fix the FAIL above first.")
+        );
+        assert!(store.exists(), "doctor must leave the memory untouched");
+    }
 }
 
 #[test]
