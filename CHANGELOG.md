@@ -39,6 +39,9 @@ Detailed notes from the early release cycle are preserved in the
 - HTTP ingest authorization now checks every caller-chosen entry, relation and
   evidence ref, so an about-scoped token cannot write into another tenant's
   graph through the low-level batch surface.
+- Markdown documents now render stored fields as quoted literals and expose
+  terminal and bidirectional controls visibly, preventing evidence text from
+  inventing entry sections or changing what the terminal appears to show.
 
 ## [0.3.0] - 2026-08-28
 
