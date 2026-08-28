@@ -72,6 +72,27 @@ async fn malformed_json_returns_jsonrpc_parse_error() {
 }
 
 #[tokio::test]
+async fn malformed_utf8_returns_parse_error_without_poisoning_the_server() {
+    let server = KernelMcpServer::fixture();
+    let response = server
+        .handle_json_bytes(&[0xff, b'\n'])
+        .await
+        .expect("malformed UTF-8 should produce an error response");
+    let response = serde_json::from_str::<Value>(&response).expect("response should be JSON");
+
+    assert_eq!(response["error"]["code"], -32700);
+    assert_eq!(response["id"], Value::Null);
+
+    let next = server
+        .handle_json_bytes(br#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#)
+        .await
+        .expect("the request after a malformed line should still be served");
+    let next = serde_json::from_str::<Value>(&next).expect("response should be JSON");
+    assert_eq!(next["id"], 2);
+    assert!(next["result"]["tools"].is_array());
+}
+
+#[tokio::test]
 async fn missing_method_returns_jsonrpc_request_error() {
     let response = handle(json!({
         "jsonrpc": "2.0",
