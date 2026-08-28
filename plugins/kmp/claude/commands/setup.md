@@ -104,10 +104,10 @@ Finish by re-running the doctor and telling the user whether memory is now
 answering. If the only thing left is a stale session, say that plainly — it
 is the one fix that has to happen outside this session.
 
-One thing worth flagging while you are here: the embedded store is
-single-writer (ADR-011). If the user runs Claude Code and Codex in the same
-project at once, the second one gets no tools. That is the contract working,
-not a bug — different projects, or a different `KMP_MCP_DATA_DIR`.
+Claude Code and Codex may share the same embedded SQLite store. WAL and
+optimistic concurrency keep independent agent processes safe; a missing tool
+inventory in one host is a registration or stale-session problem, not an
+expected store lock.
 
 <!-- kmp:voice -->
 **Say it in the house voice.** One line per thing, and detail only where

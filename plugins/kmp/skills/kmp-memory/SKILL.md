@@ -520,11 +520,10 @@ fall back to re-deriving everything — say so. The usual causes are specific
 and fixable, and `/kmp:doctor` distinguishes them:
 
 - the `kmp-mcp` binary is not installed or not on `PATH`;
-- another session holds this project's `.kernel/` store — the embedded store
-  is single-writer by contract (ADR-011), and the tools are withheld rather
-  than risking corruption;
-- the session started before the MCP registration changed, so it is still
-  carrying the old inventory — restart the session.
+- the session started before the binary, plugin, or MCP registration changed,
+  so it is still carrying the old tool inventory — restart the session;
+- the configured binary or data directory no longer exists — run
+  `/kmp:doctor` to identify the stale path.
 
 ## Errors
 

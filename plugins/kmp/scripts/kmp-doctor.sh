@@ -492,9 +492,9 @@ RUNNER=()
 command -v timeout >/dev/null 2>&1 && RUNNER=(timeout 30)
 
 # Probe a throwaway data dir, never the real one. A diagnostic must not
-# create a store as a side effect, and must not take the single-writer lock
-# out from under a live session. Whether the real store is free is answered
-# above, by looking rather than by opening.
+# create a store as a side effect or mutate the user's real memory while
+# checking the binary. The real store is described above by looking rather
+# than by opening.
 #
 # The viewer is off for the same reason: the probe would otherwise bind the
 # viewer's port, and on the ordinary happy path — a live session already

@@ -66,7 +66,7 @@ returning `UNKNOWN` is a correct result, not a failure to work around.
 - **Scope is explicit.** Omitted means `current_about`; `abouts` needs a
   non-empty list; `all_abouts` traverses everything and is a real cost.
 - **If the tools are missing, say so** instead of silently re-deriving
-  everything. Usual causes: the binary is not on `PATH`, another session
-  holds this project's `.kernel/` store (single-writer, ADR-011), or the
-  session started before the MCP registration changed. Run `/kmp-doctor`.
+  everything. Usual causes: the binary is not on `PATH`, a configured binary
+  or data directory is stale, or the session started before the MCP
+  registration changed. Run `/kmp-doctor`.
 <!-- kmp:end -->
