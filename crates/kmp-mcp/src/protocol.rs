@@ -371,7 +371,7 @@ fn tools_list_core() -> Value {
             ),
             tool_definition_with_output(
                 "kmp_inspect",
-                "Inspect one typed stored memory object inside an explicit about boundary, with its direct links and evidence.",
+                "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
                 json!({
                     "type": "object",
                     "additionalProperties": false,
@@ -405,7 +405,8 @@ fn tools_list_core() -> Value {
                                 }
                             }
                         },
-                        "budget": inspect_budget_schema()
+                        "budget": inspect_budget_schema(),
+                        "page": inspect_page_schema()
                     }
                 }),
                 inspect_output_schema(),
@@ -1201,6 +1202,17 @@ fn inspect_output_schema() -> Value {
         })),
         "evidence": described("array", "Direct stored evidence for the object; text is canonical and supports names the refs it anchors."),
         "raw": described("array", "Typed raw audit records returned only when include.raw=true."),
+        "page": output_object(json!({
+            "offset": described("integer", "Number of expansion items reconstructed by earlier pages."),
+            "returned": described("integer", "Number of expansion items returned on this page."),
+            "total": described("integer", "Total evidence, outgoing-link, incoming-link and raw expansion items in the selection."),
+            "has_more": described("boolean", "Whether expansion items remain after this page."),
+            "next_cursor": nullable_described("string", "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor."),
+            "omitted": described("object", "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section."),
+            "sections": described("object", "Per-section returned-on-page, remaining and total counts."),
+            "required_bytes": described("integer", "Exact serialized bytes required by the complete inspection, so a partial result never forces callers to probe budgets."),
+            "guidance": nullable_described("string", "Continuation, narrowing and budget guidance when this response is partial; null for a complete first page.")
+        })),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
         "warnings": warnings_output_schema()
     }))
@@ -1437,7 +1449,21 @@ fn inspect_budget_schema() -> Value {
                 "type": "integer",
                 "minimum": 512,
                 "default": 10_000,
-                "description": "Normative maximum bytes for structuredContent. Inspect refuses an oversized result instead of overflowing the host; narrow include flags or raise this ceiling explicitly."
+                "description": "Normative maximum bytes for structuredContent. Inspect pages expandable sections instead of overflowing the host and errors only when the stable object itself cannot fit."
+            }
+        }
+    })
+}
+
+fn inspect_page_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "cursor": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change."
             }
         }
     })
@@ -1921,14 +1947,15 @@ mod tests {
         );
         assert_eq!(
             keys(schema("kmp_inspect")),
-            expected(&["about", "budget", "include", "ref"])
+            expected(&["about", "budget", "include", "page", "ref"])
         );
 
         // These shared shapes are one-to-one with MemoryBudget,
         // DimensionSelection and PageRequest. `depth` at the tool root is an
         // explicit compatibility alias for MemoryBudget.depth; Trace.role is
-        // an alias for TraceRequest.goal. Inspect.budget is explicitly
-        // transport-only result-size protection and may only carry max_bytes.
+        // an alias for TraceRequest.goal. Inspect.budget and Inspect.page are
+        // transport-only result projection and never cross the gRPC request;
+        // its budget may only carry max_bytes.
         let wake_properties = &schema("kmp_wake")["properties"];
         assert_eq!(
             keys(&wake_properties["budget"]),
@@ -1945,6 +1972,10 @@ mod tests {
         assert_eq!(
             keys(&schema("kmp_inspect")["properties"]["budget"]),
             expected(&["max_bytes"])
+        );
+        assert_eq!(
+            keys(&schema("kmp_inspect")["properties"]["page"]),
+            expected(&["cursor"])
         );
 
         // The writer is the sole non-RPC tool: every field belongs to the

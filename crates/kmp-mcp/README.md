@@ -78,9 +78,10 @@ Current status:
   `budget.max_bytes` is the cross-host hard ceiling;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index;
-- `kmp_inspect` supports about-bounded typed detail/link lookup and typed raw audit refs
-  when `include.raw=true`, including dimension coordinates when the inspected
-  object is contained by memory dimensions;
+- `kmp_inspect` keeps the typed object stable and pages evidence, outgoing
+  links, incoming links and typed raw audit refs under `budget.max_bytes`;
+  partial pages report the complete size and an opaque continuation cursor, so
+  callers can continue or raise the ceiling without probing;
 - temporal `include.raw_refs=true` returns typed raw audit refs for the selected
   entries, and an optional `axis` selects occurred, observed, ingested or
   validity time without fallback;
