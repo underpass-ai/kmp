@@ -970,7 +970,13 @@ fn truncate_json_text(value: &mut Value, max_chars: usize) -> usize {
 fn is_reference_key(key: &str) -> bool {
     matches!(
         key,
-        "id" | "ref" | "claim" | "supports" | "source_ref" | "target_ref" | "evidence_refs"
+        "id" | "ref"
+            | "claim"
+            | "supports"
+            | "source_ref"
+            | "target_ref"
+            | "evidence_refs"
+            | "superseded_by"
     ) || key.ends_with("_ref")
         || key.ends_with("_refs")
 }
@@ -1235,7 +1241,7 @@ fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    proof.superseded = select_projected(&proof.superseded, &superseded, superseded_value);
+    proof.superseded = select_projected_superseded(&proof.superseded, &superseded);
     let expired = value
         .get("expired")
         .and_then(Value::as_array)
@@ -1275,6 +1281,35 @@ fn select_projected<T: Clone>(
                 .map(|(index, _)| index)?;
             used[index] = true;
             Some(originals[index].clone())
+        })
+        .collect()
+}
+
+fn select_projected_superseded(
+    originals: &[SupersededMemory],
+    projected: &[Value],
+) -> Vec<SupersededMemory> {
+    let mut used = vec![false; originals.len()];
+    projected
+        .iter()
+        .filter_map(|wanted| {
+            let r#ref = wanted.get("ref").and_then(Value::as_str)?;
+            let superseded_by = wanted.get("superseded_by").and_then(Value::as_str)?;
+            let index = originals
+                .iter()
+                .enumerate()
+                .find(|(index, item)| {
+                    !used[*index] && item.r#ref == r#ref && item.superseded_by == superseded_by
+                })
+                .map(|(index, _)| index)?;
+            used[index] = true;
+            let mut selected = originals[index].clone();
+            selected.why = wanted
+                .get("why")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            Some(selected)
         })
         .collect()
 }
@@ -2271,6 +2306,57 @@ mod tests {
             .expect("second page accounting");
         assert_eq!(second_page.offset, 4);
         assert!(second_page.returned > 0);
+    }
+
+    #[test]
+    fn shortened_wake_core_keeps_every_supersession_marker() {
+        let mut response = typed_wake_fixture(24);
+        response.proof.as_mut().expect("wake proof").superseded = (0..5)
+            .map(|index| SupersededMemory {
+                r#ref: format!("project:kmp:decision:old-{index}"),
+                superseded_by: format!("project:kmp:decision:new-{index}"),
+                why: format!(
+                    "The later decision {index} replaces the earlier one because {}",
+                    "the verified operating state changed ".repeat(24)
+                ),
+            })
+            .collect();
+        let request = WakeRequest {
+            about: "project:kmp".to_string(),
+            budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                tokens: 30_000,
+                max_bytes: 4_000,
+                detail: MemoryDetailLevel::Full as i32,
+                depth: 1,
+                max_entries: 0,
+            }),
+            ..Default::default()
+        };
+
+        let projected = project_wake_response(response, &request).expect("bounded wake");
+        let proof = projected.proof.as_ref().expect("projected proof");
+        assert_eq!(proof.superseded.len(), 5);
+        for (index, marker) in proof.superseded.iter().enumerate() {
+            assert_eq!(marker.r#ref, format!("project:kmp:decision:old-{index}"));
+            assert_eq!(
+                marker.superseded_by,
+                format!("project:kmp:decision:new-{index}")
+            );
+            assert!(!marker.why.is_empty());
+        }
+        assert!(
+            projected
+                .projection
+                .as_ref()
+                .expect("projection")
+                .core_text_shortened
+        );
+        assert!(
+            serde_json::to_vec(&wake_value(&projected))
+                .expect("serialized bounded wake")
+                .len()
+                <= 4_000
+        );
     }
 
     impl ProjectionOutcome {
