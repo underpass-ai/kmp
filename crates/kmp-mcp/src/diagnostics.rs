@@ -464,11 +464,21 @@ fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
     }
     match kmp_embedded::SqliteQualityTelemetryReader::open(resolved.path()) {
         Ok(reader) => match reader.count() {
-            Ok(count) => Finding::new(
-                Level::Ok,
-                format!("quality pulse readable · {count} observations"),
-            )
-            .with(path.display().to_string()),
+            Ok(count) => {
+                let mut finding = Finding::new(
+                    Level::Ok,
+                    format!("quality pulse readable · {count} observations"),
+                )
+                .with(path.display().to_string());
+                let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
+                if legacy.exists() {
+                    finding = finding.with(format!(
+                        "legacy import source preserved at {}",
+                        legacy.display()
+                    ));
+                }
+                finding
+            }
             Err(error) => Finding::new(Level::Warn, "quality telemetry cannot be read")
                 .with(error.to_string()),
         },
