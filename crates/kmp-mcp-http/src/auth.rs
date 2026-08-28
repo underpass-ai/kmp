@@ -71,6 +71,7 @@ impl OidcJwtVerifier {
                 "OIDC jwks_uri must use https".to_string(),
             ));
         }
+        require_issuer_origin(&issuer, &jwks_uri)?;
         let keys = fetch_jwks(&client, &jwks_uri).await?;
         Ok(Self {
             client,
@@ -220,6 +221,15 @@ async fn fetch_jwks(client: &reqwest::Client, uri: &Url) -> Result<JwkSet, AuthE
     fetch_json(client, uri.clone(), MAX_JWKS_BYTES).await
 }
 
+fn require_issuer_origin(issuer: &Url, jwks_uri: &Url) -> Result<(), AuthError> {
+    if jwks_uri.origin() != issuer.origin() {
+        return Err(AuthError::Unavailable(
+            "OIDC jwks_uri must share the configured issuer origin".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 async fn fetch_json<T: for<'de> Deserialize<'de>>(
     client: &reqwest::Client,
     uri: Url,
@@ -346,5 +356,28 @@ mod tests {
             .await
             .expect_err("audience mismatch");
         assert!(matches!(error, AuthError::Unauthorized(_)));
+    }
+
+    #[test]
+    fn jwks_uri_cannot_leave_the_operator_configured_issuer_origin() {
+        let issuer = Url::parse("https://id.example/tenant").expect("issuer");
+        for uri in [
+            "https://keys.id.example/jwks",
+            "https://id.example:8443/jwks",
+            "http://id.example/jwks",
+        ] {
+            let error = require_issuer_origin(&issuer, &Url::parse(uri).expect("JWKS URI"))
+                .expect_err("a different origin must be refused");
+            assert!(
+                matches!(error, AuthError::Unavailable(ref message) if message.contains("issuer origin")),
+                "{error:?}"
+            );
+        }
+
+        require_issuer_origin(
+            &issuer,
+            &Url::parse("https://id.example/tenant/keys.json").expect("same-origin JWKS URI"),
+        )
+        .expect("the issuer may serve keys at any same-origin path");
     }
 }
