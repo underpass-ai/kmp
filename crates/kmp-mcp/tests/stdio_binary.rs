@@ -21,7 +21,7 @@ const TLS_ENV_VARS: &[&str] = &[
 /// whatever store this machine resolves would be writing in someone's real
 /// memory. Naming where to keep a store is not choosing a backend.
 #[test]
-fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
+fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configured() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let output = run_binary(
         &[
@@ -46,6 +46,13 @@ fn stdio_binary_serves_the_embedded_kernel_when_nothing_is_configured() {
             .len(),
         13,
         "ten memory tools and three view tools"
+    );
+    let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
+        .expect("the implicit embedded backend creates its session journal")
+        .count();
+    assert!(
+        log_entries > 0,
+        "the default backend must journal exactly like explicit embedded mode"
     );
 }
 
