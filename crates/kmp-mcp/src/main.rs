@@ -140,12 +140,7 @@ impl StartupFailure {
 /// facade without a second store connection or read model.
 async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
     let viewer = kmp_mcp::viewer::viewer_addr_from_env();
-    let configured_backend = std::env::var(MCP_BACKEND_ENV).ok();
-    let endpoint = std::env::var(kmp_mcp::GRPC_ENDPOINT_ENV).ok();
-    let backend_is_embedded = match configured_backend.as_deref().map(str::trim) {
-        Some(value) if !value.is_empty() => value.eq_ignore_ascii_case("embedded"),
-        _ => endpoint.is_none_or(|value| value.trim().is_empty()),
-    };
+    let backend_is_embedded = backend_is_embedded_from_env();
 
     let Some(addr) = viewer.addr() else {
         return KernelMcpServer::try_from_env().map_err(StartupFailure::selecting_a_backend);
@@ -286,8 +281,7 @@ fn init_tracing() -> Option<tracing_appender::non_blocking::WorkerGuard> {
 /// `<data-dir>/logs/` when running the embedded backend; None otherwise or
 /// when resolution fails (the server will fail fast with the real error).
 fn embedded_log_dir() -> Option<std::path::PathBuf> {
-    let backend = std::env::var(MCP_BACKEND_ENV).ok()?;
-    if !backend.trim().eq_ignore_ascii_case("embedded") {
+    if !backend_is_embedded_from_env() {
         return None;
     }
     // Beside the memory it serves, when that is knowable. A data dir that
@@ -299,6 +293,19 @@ fn embedded_log_dir() -> Option<std::path::PathBuf> {
         .unwrap_or_else(|_| user_state_home().join("kmp").join("logs"));
     std::fs::create_dir_all(&log_dir).ok()?;
     Some(log_dir)
+}
+
+/// Keep every zero-configuration sidecar on the same backend decision as the
+/// server itself. An absent or blank selector means embedded unless a live
+/// gRPC endpoint was configured; only an explicit non-embedded selector (or
+/// that endpoint fallback) turns embedded behaviour off.
+fn backend_is_embedded_from_env() -> bool {
+    let configured_backend = std::env::var(MCP_BACKEND_ENV).ok();
+    let endpoint = std::env::var(kmp_mcp::GRPC_ENDPOINT_ENV).ok();
+    match configured_backend.as_deref().map(str::trim) {
+        Some(value) if !value.is_empty() => value.eq_ignore_ascii_case("embedded"),
+        _ => endpoint.is_none_or(|value| value.trim().is_empty()),
+    }
 }
 
 fn user_state_home() -> std::path::PathBuf {
