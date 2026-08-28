@@ -19,10 +19,9 @@ fn bundle_path() -> PathBuf {
 #[tokio::test]
 async fn shipped_guides_import_and_keep_distinct_audiences() {
     let bundle = std::fs::read_to_string(bundle_path()).expect("the guide bundle ships");
-    let header: serde_json::Value = serde_json::from_str(
-        bundle.lines().next().expect("the bundle has a header"),
-    )
-    .expect("the guide header is JSON");
+    let header: serde_json::Value =
+        serde_json::from_str(bundle.lines().next().expect("the bundle has a header"))
+            .expect("the guide header is JSON");
     assert_eq!(header["bundle_format"], 2);
     assert_eq!(header["event_count"], 2);
     assert_eq!(
@@ -65,8 +64,14 @@ async fn shipped_guides_import_and_keep_distinct_audiences() {
             .incoming
             .iter()
             .chain(agent_verb.outgoing.iter())
-            .any(|relation| relation.explanation.rationale().is_some_and(|why| !why.is_empty())
-                && relation.explanation.evidence().is_some_and(|proof| !proof.is_empty())),
+            .any(|relation| relation
+                .explanation
+                .rationale()
+                .is_some_and(|why| !why.is_empty())
+                && relation
+                    .explanation
+                    .evidence()
+                    .is_some_and(|proof| !proof.is_empty())),
         "the operational verb is linked by an explained, evidenced relation"
     );
 
