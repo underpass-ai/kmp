@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
 use kmp_domain::{
     MemoryRelationQuality, MemoryRelationSpec, MemoryRelationType, RelationSemanticClass,
 };
@@ -1051,32 +1052,6 @@ fn validate_confidence(value: &str) -> Result<(), String> {
             "invalid kmp_write_memory relation confidence `{other}`"
         )),
     }
-}
-
-fn validate_supplied_entry_ref(about: &str, path: &str, entry_ref: &str) -> Result<(), String> {
-    validate_ref_token(path, entry_ref)?;
-    let owned_prefix = format!("{about}:");
-    if !entry_ref.starts_with(&owned_prefix) {
-        return Err(format!(
-            "`{path}` `{entry_ref}` does not belong to about `{about}`; it must start with `{owned_prefix}` and cannot replace the about anchor or a node from another about. Omit {path} to generate a safe ref for a new memory"
-        ));
-    }
-    Ok(())
-}
-
-fn validate_ref_token(path: &str, value: &str) -> Result<(), String> {
-    let unsafe_character = value
-        .chars()
-        .any(|ch| ch.is_control() || ch.is_whitespace() || matches!(ch, '/' | '\\'));
-    let unsafe_segment = value
-        .split(':')
-        .any(|segment| segment.is_empty() || matches!(segment, "." | ".."));
-    if unsafe_character || unsafe_segment {
-        return Err(format!(
-            "invalid `{path}` `{value}`; memory refs cannot contain whitespace, control characters, path separators, or empty/dot path segments"
-        ));
-    }
-    Ok(())
 }
 
 const GENERATED_REF_SEGMENT_MAX: usize = 80;

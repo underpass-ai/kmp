@@ -1,9 +1,14 @@
 mod ingest;
+mod ref_boundary;
 mod service;
 mod types;
 mod visual_projection;
 
 pub use ingest::{ExistingMemoryRefs, translate_memory_ingest};
+pub use ref_boundary::{
+    validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
+    validate_supplied_member_ref,
+};
 pub use service::KernelMemoryApplicationService;
 pub use types::{
     AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, InspectMemoryQuery, InspectMemoryResult,

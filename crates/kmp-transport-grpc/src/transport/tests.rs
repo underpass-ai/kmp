@@ -2277,7 +2277,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
                 metadata: Default::default(),
             }],
             entries: vec![MemoryEntry {
-                id: "claim:rachel-denver".to_string(),
+                id: "question:830ce83f:claim:rachel-denver".to_string(),
                 kind: "claim".to_string(),
                 text: "Rachel said she was moving to Denver.".to_string(),
                 coordinates: vec![ProtoTemporalCoordinate {
@@ -2291,7 +2291,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
             }],
             relations: vec![MemoryRelation {
                 source_ref: "conversation:rachel-2026-04-12".to_string(),
-                target_ref: "claim:rachel-denver".to_string(),
+                target_ref: "question:830ce83f:claim:rachel-denver".to_string(),
                 rel: "contains_entry".to_string(),
                 semantic_class: MemorySemanticClass::Structural as i32,
                 confidence: MemoryConfidence::Medium as i32,
@@ -2299,8 +2299,8 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
                 ..Default::default()
             }],
             evidence: vec![MemoryEvidence {
-                id: "evidence:rachel-denver".to_string(),
-                supports: vec!["claim:rachel-denver".to_string()],
+                id: "evidence:question:830ce83f:rachel-denver".to_string(),
+                supports: vec!["question:830ce83f:claim:rachel-denver".to_string()],
                 text: "Conversation transcript line 1".to_string(),
                 source: "transcript:1".to_string(),
                 time: Some(ts(100)),

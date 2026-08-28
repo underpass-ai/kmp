@@ -10,6 +10,11 @@ use crate::memory::{
     MemoryIngestCommand, MemoryIngestOutcome,
 };
 
+use super::ref_boundary::{
+    validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
+    validate_supplied_member_ref,
+};
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ExistingMemoryRefs {
     pub refs: BTreeSet<String>,
@@ -61,6 +66,7 @@ pub fn translate_memory_ingest(
 
 fn validate_command(command: &MemoryIngestCommand) -> Result<(), ApplicationError> {
     require_non_empty(&command.about, "about")?;
+    validate_ref_token("about", &command.about).map_err(ApplicationError::Validation)?;
     require_non_empty(&command.idempotency_key, "idempotency_key")?;
     if let Some(provenance) = command.provenance.as_ref() {
         SourceKind::parse(&provenance.source_kind).map_err(|error| {
@@ -111,6 +117,8 @@ fn namespaced_memory(
     let mut dimensions = Vec::new();
     for dimension in &memory.dimensions {
         require_non_empty(&dimension.id, "memory.dimensions[].id")?;
+        validate_ref_token("memory.dimensions[].id", &dimension.id)
+            .map_err(ApplicationError::Validation)?;
         require_non_empty(&dimension.kind, "memory.dimensions[].kind")?;
         let dimension_identity = dimension_identity(about, &dimension.id)?;
         let dimension_ref = dimension_identity.node_id();
@@ -158,6 +166,8 @@ fn namespaced_memory(
     let mut entries = Vec::new();
     for entry in &memory.entries {
         require_non_empty(&entry.id, "memory.entries[].id")?;
+        validate_supplied_entry_ref(about, "memory.entries[].id", &entry.id)
+            .map_err(ApplicationError::Validation)?;
         require_non_empty(&entry.kind, "memory.entries[].kind")?;
         require_non_empty(&entry.text, "memory.entries[].text")?;
         if entry.coordinates.is_empty() {
@@ -216,6 +226,10 @@ fn namespaced_memory(
             })?;
         let source_ref = normalize_ref(&relation.source_ref, &dimension_aliases);
         let target_ref = normalize_ref(&relation.target_ref, &dimension_aliases);
+        validate_supplied_member_ref(about, "memory.relations[].from", &source_ref)
+            .map_err(ApplicationError::Validation)?;
+        validate_supplied_member_ref(about, "memory.relations[].to", &target_ref)
+            .map_err(ApplicationError::Validation)?;
         if !known_refs.contains(&source_ref) || !known_refs.contains(&target_ref) {
             return Err(ApplicationError::Validation(format!(
                 "memory relation `{}` -> `{}` references unknown refs",
@@ -266,6 +280,18 @@ fn namespaced_memory(
         let mut relation = relation.clone();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
+        relation.decision_id = normalize_optional_member_ref(
+            about,
+            "memory.relations[].decision_id",
+            relation.decision_id.as_deref(),
+            &dimension_aliases,
+        )?;
+        relation.caused_by_node_id = normalize_optional_member_ref(
+            about,
+            "memory.relations[].caused_by_node_id",
+            relation.caused_by_node_id.as_deref(),
+            &dimension_aliases,
+        )?;
         relation.rel = relation_type.as_str().to_string();
         relation.coordinate = coordinate;
         relations.push(relation);
@@ -275,6 +301,8 @@ fn namespaced_memory(
     let mut evidence_items = Vec::new();
     for evidence in &memory.evidence {
         require_non_empty(&evidence.id, "memory.evidence[].id")?;
+        validate_supplied_evidence_ref(about, "memory.evidence[].id", &evidence.id)
+            .map_err(ApplicationError::Validation)?;
         require_non_empty(&evidence.text, "memory.evidence[].text")?;
         insert_unique(&mut evidence_ids, &evidence.id, "memory evidence")?;
         known_refs.insert(evidence.id.clone());
@@ -282,6 +310,8 @@ fn namespaced_memory(
         for supported in &evidence.supports {
             require_non_empty(supported, "memory.evidence[].supports[]")?;
             let supported_ref = normalize_ref(supported, &dimension_aliases);
+            validate_supplied_member_ref(about, "memory.evidence[].supports[]", &supported_ref)
+                .map_err(ApplicationError::Validation)?;
             if !known_refs.contains(&supported_ref) {
                 return Err(ApplicationError::Validation(format!(
                     "memory evidence `{}` supports unknown ref `{supported}`",
@@ -346,6 +376,22 @@ fn normalize_ref(value: &str, dimension_aliases: &BTreeMap<String, String>) -> S
         .get(value)
         .cloned()
         .unwrap_or_else(|| value.to_string())
+}
+
+fn normalize_optional_member_ref(
+    about: &str,
+    path: &str,
+    value: Option<&str>,
+    dimension_aliases: &BTreeMap<String, String>,
+) -> Result<Option<String>, ApplicationError> {
+    value
+        .map(|value| {
+            let normalized = normalize_ref(value, dimension_aliases);
+            validate_supplied_member_ref(about, path, &normalized)
+                .map_err(ApplicationError::Validation)?;
+            Ok(normalized)
+        })
+        .transpose()
 }
 
 fn normalize_coordinate(
@@ -571,7 +617,7 @@ mod tests {
         );
         assert_eq!(
             update.changes[2].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:claim:rachel-denver"
+            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
         let entry_payload: serde_json::Value =
             serde_json::from_str(&update.changes[1].payload_json).expect("entry payload json");
@@ -642,7 +688,7 @@ mod tests {
     #[test]
     fn translate_memory_ingest_fails_fast_for_unknown_relation_endpoint() {
         let mut command = sample_command();
-        command.memory.relations[0].target_ref = "claim:missing".to_string();
+        command.memory.relations[0].target_ref = "question:830ce83f:claim:missing".to_string();
 
         let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
             .expect_err("unknown ref should fail");
@@ -690,7 +736,7 @@ mod tests {
 
         assert_eq!(
             update.changes[2].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:claim:rachel-denver"
+            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
     }
 
@@ -714,16 +760,17 @@ mod tests {
         command.memory.dimensions.clear();
         command.memory.entries[0].coordinates[0].scope_id = "conversation:existing".to_string();
         command.memory.relations[0].source_ref = "conversation:existing".to_string();
-        command.memory.relations[0].target_ref = "claim:existing".to_string();
-        command.memory.evidence[0].supports = vec!["claim:existing".to_string()];
+        command.memory.relations[0].target_ref = "question:830ce83f:claim:existing".to_string();
+        command.memory.evidence[0].supports = vec!["question:830ce83f:claim:existing".to_string()];
+        let dimension_ref = "about:question:830ce83f:dimension:conversation:existing".to_string();
         let existing = ExistingMemoryRefs {
             refs: [
-                "conversation:existing".to_string(),
-                "claim:existing".to_string(),
+                dimension_ref.clone(),
+                "question:830ce83f:claim:existing".to_string(),
             ]
             .into_iter()
             .collect(),
-            dimensions: ["conversation:existing".to_string()].into_iter().collect(),
+            dimensions: [dimension_ref].into_iter().collect(),
             ..ExistingMemoryRefs::default()
         };
 
@@ -763,7 +810,7 @@ mod tests {
         );
         assert_eq!(
             update.changes[1].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:claim:rachel-denver"
+            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
     }
 
@@ -818,6 +865,69 @@ mod tests {
         assert_eq!(payload["coordinates"][0]["sequence"], 8);
     }
 
+    #[test]
+    fn translate_memory_ingest_bounds_every_caller_supplied_ref_field() {
+        const HOSTILE_REFS: &[&str] = &[
+            "incident:gamma:entry:observation:foreign",
+            "incident:beta",
+            "incident:alfa:entry:x\nincident:beta:entry:y",
+            "../../incident:beta:entry:x",
+        ];
+        const REF_FIELDS: &[&str] = &[
+            "entry.id",
+            "relation.from",
+            "relation.to",
+            "relation.decision_id",
+            "relation.caused_by_node_id",
+            "evidence.id",
+            "evidence.supports",
+        ];
+
+        for field in REF_FIELDS {
+            for hostile in HOSTILE_REFS {
+                let mut command = sample_command();
+                command.about = "incident:alfa".to_string();
+                command.memory.entries[0].id = "incident:alfa:entry:observation:local".to_string();
+                command.memory.relations[0].target_ref = command.memory.entries[0].id.clone();
+                command.memory.evidence[0].id =
+                    "evidence:incident:alfa:entry:observation:local:current".to_string();
+                command.memory.evidence[0].supports = vec![command.memory.entries[0].id.clone()];
+
+                match *field {
+                    "entry.id" => command.memory.entries[0].id = (*hostile).to_string(),
+                    "relation.from" => {
+                        command.memory.relations[0].source_ref = (*hostile).to_string()
+                    }
+                    "relation.to" => {
+                        command.memory.relations[0].target_ref = (*hostile).to_string()
+                    }
+                    "relation.decision_id" => {
+                        command.memory.relations[0].decision_id = Some((*hostile).to_string())
+                    }
+                    "relation.caused_by_node_id" => {
+                        command.memory.relations[0].caused_by_node_id = Some((*hostile).to_string())
+                    }
+                    "evidence.id" => command.memory.evidence[0].id = (*hostile).to_string(),
+                    "evidence.supports" => {
+                        command.memory.evidence[0].supports[0] = (*hostile).to_string()
+                    }
+                    unexpected => panic!("unknown test field {unexpected}"),
+                }
+
+                let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+                    .expect_err("an ingest ref outside the about must be refused");
+                assert_validation_contains(
+                    error,
+                    if hostile.contains('/') || hostile.contains('\n') {
+                        "memory refs cannot contain"
+                    } else {
+                        "does not belong to about"
+                    },
+                );
+            }
+        }
+    }
+
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
             about: "question:830ce83f".to_string(),
@@ -829,7 +939,7 @@ mod tests {
                     metadata: Default::default(),
                 }],
                 entries: vec![MemoryEntryData {
-                    id: "claim:rachel-denver".to_string(),
+                    id: "question:830ce83f:claim:rachel-denver".to_string(),
                     kind: "claim".to_string(),
                     text: "Rachel said she was moving to Denver.".to_string(),
                     coordinates: vec![MemoryCoordinateData {
@@ -848,7 +958,7 @@ mod tests {
                 }],
                 relations: vec![MemoryRelationData {
                     source_ref: "conversation:rachel-2026-04-12".to_string(),
-                    target_ref: "claim:rachel-denver".to_string(),
+                    target_ref: "question:830ce83f:claim:rachel-denver".to_string(),
                     rel: "contains_entry".to_string(),
                     semantic_class: "structural".to_string(),
                     why: None,
@@ -862,8 +972,8 @@ mod tests {
                     coordinate: None,
                 }],
                 evidence: vec![MemoryEvidenceData {
-                    id: "evidence:rachel-denver".to_string(),
-                    supports: vec!["claim:rachel-denver".to_string()],
+                    id: "evidence:question:830ce83f:claim:rachel-denver".to_string(),
+                    supports: vec!["question:830ce83f:claim:rachel-denver".to_string()],
                     text: "Conversation transcript line 1".to_string(),
                     source: Some("transcript:1".to_string()),
                     time: Some("2026-04-12T15:00:00Z".to_string()),

@@ -23,7 +23,8 @@ pub use memory::{
     TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, VisualBin,
     VisualCluster, VisualEntry, VisualLevelOfDetail, VisualMetric, VisualProjectionPage,
     VisualProjectionQuery, VisualProjectionResult, VisualRange, VisualRelation, WakeMemoryQuery,
-    build_visual_projection, translate_memory_ingest,
+    build_visual_projection, translate_memory_ingest, validate_ref_token,
+    validate_supplied_entry_ref, validate_supplied_evidence_ref, validate_supplied_member_ref,
 };
 pub use observability::{
     ObservabilityExemplar, ObservabilityMetricPoint, ObservabilityProjection, ObservabilityQuery,

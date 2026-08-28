@@ -275,12 +275,8 @@ fn authorize_ref(
     let Some(reference) = reference else {
         return Ok(());
     };
-    let current_about_grants = current_about.is_some_and(|about| {
-        reference == about
-            || reference
-                .strip_prefix(about)
-                .is_some_and(|suffix| suffix.starts_with(':'))
-    });
+    let current_about_grants =
+        current_about.is_some_and(|about| reference_belongs_to_about(reference, about));
     let prefix_grants = identity.ref_prefixes.contains("*")
         || identity
             .ref_prefixes
@@ -289,6 +285,21 @@ fn authorize_ref(
     require_allowed(current_about_grants || prefix_grants, || {
         format!("ref `{reference}` is outside the token grant")
     })
+}
+
+fn reference_belongs_to_about(reference: &str, about: &str) -> bool {
+    reference == about
+        || reference
+            .strip_prefix(about)
+            .is_some_and(|suffix| suffix.starts_with(':'))
+        || reference
+            .strip_prefix("evidence:")
+            .and_then(|reference| reference.strip_prefix(about))
+            .is_some_and(|suffix| suffix.starts_with(':'))
+        || reference
+            .strip_prefix("about:")
+            .and_then(|reference| reference.strip_prefix(about))
+            .is_some_and(|suffix| suffix.starts_with(":dimension:"))
 }
 
 fn require_allowed(
@@ -454,12 +465,25 @@ mod tests {
                     "caused_by_node_id":"project:kmp:finding:1"
                 }],
                 "evidence":[{
-                    "id":"project:kmp:evidence:1",
+                    "id":"evidence:project:kmp:entry:1:current",
                     "supports":["project:kmp:entry:1"]
                 }]
             }
         });
         assert!(authorize(&actor, &call("kmp_ingest", local)).is_ok());
+
+        let canonical_dimension = json!({
+            "about":"project:kmp",
+            "memory":{"dimensions":[{"id":"timeline:kmp"}], "entries":[],
+                "relations":[{
+                    "from":"about:project:kmp:dimension:timeline:kmp",
+                    "to":"project:kmp:entry:1"
+                }]}
+        });
+        assert!(
+            authorize(&actor, &call("kmp_ingest", canonical_dimension)).is_ok(),
+            "canonical evidence and dimension refs owned by the exact about must remain authorized"
+        );
 
         let foreign_payloads = [
             json!({
