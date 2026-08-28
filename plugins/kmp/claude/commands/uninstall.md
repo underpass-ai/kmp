@@ -31,10 +31,9 @@ After `--apply`, say **how many events were saved and into which file**, by
 name. A copy nobody can find is not a copy.
 
 If a store was kept because its export failed, say that plainly — nothing of
-that memory was removed — and name the cause, because it is nearly always the
-same one: **this session is holding it.** The embedded store is single-writer,
-and the session running the command is the writer. The way out is to close the
-session and run `kmp-mcp uninstall --apply` from a plain shell.
+that memory was removed — and name the reported cause. If another process is
+using the store, close the active agent sessions and run
+`kmp-mcp uninstall --apply` from a plain shell.
 
 Never run it with `--apply` or `--purge` on your own initiative — not when the
 dry run looks harmless, and not to "finish the job". `--purge` skips the export
