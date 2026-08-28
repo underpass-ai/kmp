@@ -15,9 +15,15 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/underpass-ai/kmp" alt="License"></a>
 </p>
 
-KMP remembers decisions, constraints, outcomes and the links that explain
-*why*. Your agent gets the context back next session without turning a chat
-transcript into a junk drawer.
+<!-- kmp:public-overview:begin -->
+KMP gives Codex and Claude Code local-first memory that preserves what
+happened, when and why. It stores decisions and evidence, not transcripts,
+and exposes them through ten memory tools plus a shared ChronoLoom view.
+
+Ask **“Show me the memory behind this decision.”** The agent retrieves the
+evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
+You can click, filter, pan, undo or take control of the same view at any time.
+<!-- kmp:public-overview:end -->
 
 ![KMP retrieving evidence and writing a local decision](docs/assets/kmp-demo.gif)
 

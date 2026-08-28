@@ -73,6 +73,12 @@ cmd_version() {
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     cd "${root}"
 
+    # A version is not meaningful without notes. Consume the reviewed
+    # Unreleased entries into a dated release section before touching any
+    # package metadata; an empty changelog fails without a partial bump.
+    python3 scripts/release/sync-public-readme.py sync
+    python3 scripts/release/changelog.py prepare "${version}"
+
     python3 - "${version}" <<'PY'
 import json, pathlib, re, sys
 
@@ -178,7 +184,7 @@ PY
     cargo metadata --format-version 1 >/dev/null
 
     # Surface what changed — the caller reviews before committing.
-    git --no-pager diff --stat -- Cargo.toml Cargo.lock distribution/charts/kmp/Chart.yaml \
+    git --no-pager diff --stat -- CHANGELOG.md Cargo.toml Cargo.lock distribution/charts/kmp/Chart.yaml \
         plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json \
         server.json distribution/mcpb/manifest.json
 
@@ -195,6 +201,8 @@ cmd_candidate() {
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     cd "${root}"
     require_workspace_version "${version}"
+    python3 scripts/release/sync-public-readme.py check
+    python3 scripts/release/changelog.py check "${version}"
 
     # The helper must stamp one known tree. Uncommitted release inputs could
     # otherwise produce bytes which no commit — and therefore no tag — names.
@@ -281,6 +289,9 @@ cmd_release() {
     local root
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
     cd "${root}"
+
+    python3 scripts/release/sync-public-readme.py check
+    python3 scripts/release/changelog.py check "${version}"
 
     # A dirty tree would tag a commit that does not contain what was built.
     if [ -n "$(git status --porcelain)" ]; then

@@ -1,8 +1,14 @@
 # KMP plugin — discovery for agents and humans
 
-Wires KMP agent memory into a coding agent and makes it discoverable from
-both sides: the agent learns *when* to reach for memory, and you get commands
-to see the surface and to find out why it is not working.
+<!-- kmp:public-overview:begin -->
+KMP gives Codex and Claude Code local-first memory that preserves what
+happened, when and why. It stores decisions and evidence, not transcripts,
+and exposes them through ten memory tools plus a shared ChronoLoom view.
+
+Ask **“Show me the memory behind this decision.”** The agent retrieves the
+evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
+You can click, filter, pan, undo or take control of the same view at any time.
+<!-- kmp:public-overview:end -->
 
 Without this plugin, using KMP means installing a binary, copying an MCP
 registration into your host's config, and pasting a context-recovery playbook

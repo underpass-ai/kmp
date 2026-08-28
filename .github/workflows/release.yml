@@ -45,6 +45,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
+      - name: Verify versioned changelog
+        shell: bash
+        run: |
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          python3 scripts/release/changelog.py check "${VERSION}"
+
+      - name: Verify public README parity
+        run: python3 scripts/release/sync-public-readme.py check
+
       - name: Install Rust toolchain
         uses: ./.github/actions/install-rust
         with:
@@ -284,6 +293,12 @@ jobs:
 
       - name: Verify public plugin marketplace parity
         run: python3 scripts/release/verify-marketplace.py "${{ steps.candidate.outputs.version }}"
+
+      - name: Verify versioned changelog
+        run: python3 scripts/release/changelog.py check "${{ steps.candidate.outputs.version }}"
+
+      - name: Verify public README parity
+        run: python3 scripts/release/sync-public-readme.py check
 
       - name: Download the approved candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
