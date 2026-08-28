@@ -3,8 +3,12 @@
 
 from __future__ import annotations
 
+import json
 import pathlib
 import re
+import subprocess
+import sys
+import tempfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -72,6 +76,10 @@ if "branches:" in publish_trigger or "- main" in publish_trigger:
     raise SystemExit("publish-distribution must not run automatically on main")
 if 'tags:\n      - "v*"' not in publish_trigger:
     raise SystemExit("publish-distribution lost its version-tag trigger")
+if 'verify-marketplace.py "${GITHUB_REF_NAME#v}"' not in publish_text:
+    raise SystemExit("publish-distribution can publish a tag before marketplace parity")
+if publish_text.count("needs: verify-marketplace") != 3:
+    raise SystemExit("every distribution publisher must depend on marketplace parity")
 
 plugin_text = (ROOT / ".github/workflows/plugin-package.yml").read_text(encoding="utf-8")
 plugin_trigger = plugin_text.split("\nenv:", 1)[0]
@@ -86,6 +94,7 @@ release_clauses = (
     "candidate-run:",
     "run-id: ${{ steps.candidate.outputs.run_id }}",
     "release-candidate.py verify",
+    'verify-marketplace.py "${{ steps.candidate.outputs.version }}"',
     "dist/candidate/assets/* --clobber",
 )
 for clause in release_clauses:
@@ -100,15 +109,51 @@ for clause in (
     "kmp-release-candidate-${version}",
     "release-candidate.py verify",
     "candidate-run: ${candidate_run}",
+    'verify-marketplace.py "${version}"',
 ):
     if clause not in release_script:
         raise SystemExit(f"release helper lost candidate approval clause: {clause}")
+
+marketplace_verifier = ROOT / "scripts/release/verify-marketplace.py"
+with tempfile.TemporaryDirectory() as raw_fixture:
+    fixture = pathlib.Path(raw_fixture)
+    manifests = (
+        fixture / ".claude-plugin/plugin.json",
+        fixture / ".codex-plugin/plugin.json",
+    )
+    for manifest in manifests:
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text(json.dumps({"version": "0.4.2"}), encoding="utf-8")
+
+    subprocess.run(
+        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+    manifests[0].write_text(json.dumps({"version": "0.4.2+cache.1"}), encoding="utf-8")
+    subprocess.run(
+        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+    manifests[1].write_text(json.dumps({"version": "0.4.1"}), encoding="utf-8")
+    stale = subprocess.run(
+        [sys.executable, marketplace_verifier, "0.4.2", "--root", fixture],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if stale.returncode == 0 or "merge the underpass-ai/plugins mirror PR" not in stale.stderr:
+        raise SystemExit("marketplace verifier accepted a stale host manifest")
 
 print("release trigger contract passed: PR validation, one candidate build, tag-only promotion")
 
 mcp_registry_text = (ROOT / ".github/workflows/mcp-registry.yml").read_text(encoding="utf-8")
 for clause in (
     "github.event_name == 'workflow_dispatch'",
+    "scripts/release/verify-marketplace.py",
     "VERSION=\"$(jq -r '.version' server.json)\"",
     "TAG=\"v${VERSION}\"",
     "-A 'kmp-mcp-release-check/0.1 (+https://github.com/underpass-ai/kmp)'",

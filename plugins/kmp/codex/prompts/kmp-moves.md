@@ -1,4 +1,4 @@
-Show me the KMP tool surface — the ten moves and when to use each.
+Show me the KMP thirteen-tool surface and when to use each tool.
 
 Prefer the live surface: if the `kmp` MCP server is available in
 this session, describe what it actually exposes, including the relation

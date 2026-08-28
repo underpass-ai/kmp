@@ -94,7 +94,7 @@ info "15:05\" a question worth asking."
 
 say ""
 say "${B}Try it${Z}"
-info "Point a session at it and use the ten moves:"
+info "Point a session at it and use KMP's memory moves:"
 say ""
 say "    export KMP_MCP_DATA_DIR=${DEMO_DIR}"
 say ""

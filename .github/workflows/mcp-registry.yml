@@ -40,6 +40,17 @@ jobs:
       - name: Check repository-owned Registry contracts
         run: bash scripts/ci/mcp-registry.sh
 
+      - name: Verify public plugin marketplace parity for publication
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(jq -r '.version' server.json)"
+          fi
+          python3 scripts/release/verify-marketplace.py "${version}"
+
       - name: Install the checksummed official publisher
         run: bash scripts/ci/install-mcp-publisher.sh "${RUNNER_TEMP}/mcp-publisher"
 
