@@ -23,9 +23,177 @@
 //! file — the store stays. `--purge` is how someone says they want it gone
 //! without a copy.
 
+use std::fs::{File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
+
+const STORE_LEASES_DIR: &str = "store-leases";
+
+/// A shared claim held for the lifetime of one embedded MCP host.
+///
+/// SQLite deliberately lets several hosts share a store. The shared file lock
+/// preserves that contract while giving selective uninstall one cross-platform
+/// operation that can prove no host still owns the path before removing it.
+pub struct StoreSessionLease {
+    _file: File,
+}
+
+/// The exclusive claim held across export and removal.
+pub struct StoreRemovalGuard {
+    _file: File,
+}
+
+/// Machine-local coordination files live outside the stores they protect.
+/// Keeping the lock outside the selected directory lets uninstall hold it
+/// until the directory is fully gone, including on Windows.
+pub fn store_leases_dir(data_home: &Path) -> PathBuf {
+    data_home.join("kmp").join(STORE_LEASES_DIR)
+}
+
+fn store_lease_path(data_home: &Path, store: &Path) -> PathBuf {
+    let identity = std::fs::canonicalize(store).unwrap_or_else(|_| store.to_path_buf());
+    let digest = Sha256::digest(identity.to_string_lossy().as_bytes());
+    store_leases_dir(data_home).join(format!("{digest:x}.lock"))
+}
+
+fn open_store_lease(data_home: &Path, store: &Path) -> Result<(File, PathBuf), String> {
+    let directory = store_leases_dir(data_home);
+    std::fs::create_dir_all(&directory).map_err(|error| {
+        format!(
+            "could not prepare store-use locks in `{}`: {error}",
+            directory.display()
+        )
+    })?;
+    let path = store_lease_path(data_home, store);
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(&path)
+        .map_err(|error| {
+            format!(
+                "could not open store-use lock `{}`: {error}",
+                path.display()
+            )
+        })?;
+    Ok((file, path))
+}
+
+impl StoreSessionLease {
+    /// Claim a store for this host without excluding other hosts.
+    pub fn acquire(data_home: &Path, store: &Path) -> Result<Self, String> {
+        let (file, path) = open_store_lease(data_home, store)?;
+        file.try_lock_shared().map_err(|error| match error {
+            TryLockError::WouldBlock => format!(
+                "store `{}` is being removed; this host did not open it. Retry after uninstall finishes",
+                store.display()
+            ),
+            TryLockError::Error(error) => {
+                format!("could not claim store-use lock `{}`: {error}", path.display())
+            }
+        })?;
+        Ok(Self { _file: file })
+    }
+}
+
+impl StoreRemovalGuard {
+    /// Refuse removal while any current host holds the selected store.
+    pub fn acquire(data_home: &Path, store: &Path) -> Result<Self, String> {
+        let (file, path) = open_store_lease(data_home, store)?;
+        match file.try_lock() {
+            Ok(()) => {}
+            Err(TryLockError::WouldBlock) => {
+                return Err(active_store_message(data_home, store));
+            }
+            Err(TryLockError::Error(error)) => {
+                return Err(format!(
+                    "could not exclusively claim store-use lock `{}`: {error}",
+                    path.display()
+                ));
+            }
+        }
+
+        // A pre-fix host does not know about the lease file. Linux exposes its
+        // open SQLite descriptor, so protect upgrades from those live sessions
+        // as well as sessions started by the corrected binary.
+        let holders = live_store_holders(store, &path);
+        if !holders.is_empty() {
+            return Err(format!(
+                "store `{}` is active in {}; stop or restart that owning host and retry. Nothing was removed",
+                store.display(),
+                holders.join(", ")
+            ));
+        }
+        Ok(Self { _file: file })
+    }
+}
+
+fn active_store_message(data_home: &Path, store: &Path) -> String {
+    let holders = live_store_holders(store, &store_lease_path(data_home, store));
+    let owner = if holders.is_empty() {
+        "another KMP host".to_string()
+    } else {
+        holders.join(", ")
+    };
+    format!(
+        "store `{}` is active in {owner}; stop or restart that owning host and retry. Nothing was removed",
+        store.display()
+    )
+}
+
+#[cfg(target_os = "linux")]
+fn live_store_holders(store: &Path, lease: &Path) -> Vec<String> {
+    let store = std::fs::canonicalize(store).unwrap_or_else(|_| store.to_path_buf());
+    let lease = std::fs::canonicalize(lease).unwrap_or_else(|_| lease.to_path_buf());
+    let own_pid = std::process::id();
+    let Ok(processes) = std::fs::read_dir("/proc") else {
+        return Vec::new();
+    };
+    let mut holders = Vec::new();
+    for process in processes.flatten() {
+        let Some(pid) = process
+            .file_name()
+            .to_str()
+            .and_then(|name| name.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid == own_pid {
+            continue;
+        }
+        let holds_path = std::fs::read_dir(process.path().join("fd"))
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|fd| std::fs::read_link(fd.path()).ok())
+            .any(|open| open == lease || open.starts_with(&store));
+        if !holds_path {
+            continue;
+        }
+        let command = std::fs::read(process.path().join("cmdline"))
+            .ok()
+            .map(|bytes| {
+                bytes
+                    .split(|byte| *byte == 0)
+                    .filter(|part| !part.is_empty())
+                    .map(String::from_utf8_lossy)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .filter(|command| !command.is_empty())
+            .unwrap_or_else(|| "unknown command".to_string());
+        holders.push(format!("pid {pid} (`{command}`)"));
+    }
+    holders.sort();
+    holders
+}
+
+#[cfg(not(target_os = "linux"))]
+fn live_store_holders(_store: &Path, _lease: &Path) -> Vec<String> {
+    Vec::new()
+}
 
 /// What a piece of an installation is, which decides how it is treated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -163,6 +331,20 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
         });
     }
 
+    let leases = store_leases_dir(&roots.data_home);
+    if leases.is_dir() {
+        pieces.push(Piece {
+            kind: PieceKind::HostFiles,
+            detail: format!(
+                "{} — machine-local locks that keep active stores safe",
+                describe_size(&leases)
+            ),
+            path: leases,
+            bundled_events: None,
+            ours_to_remove: true,
+        });
+    }
+
     let claude_plugin = roots.home.join(".claude/plugins/cache/underpass/kmp");
     if claude_plugin.is_dir() {
         pieces.push(Piece {
@@ -217,6 +399,39 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
     }
 
     pieces
+}
+
+/// Build the one-piece plan for `uninstall --store`.
+///
+/// The selector is deliberately absolute and resolves to one canonical store
+/// identity. The report therefore names the exact path protected by the lease
+/// even when the caller reached it through a symlink or a `.` component.
+pub fn selected_store(path: &Path) -> Result<Piece, String> {
+    if !path.is_absolute() {
+        return Err(format!(
+            "--store requires an absolute path; `{}` is relative",
+            path.display()
+        ));
+    }
+    let path = std::fs::canonicalize(path).map_err(|error| {
+        format!(
+            "could not resolve selected store `{}`: {error}",
+            path.display()
+        )
+    })?;
+    if !path.is_dir() || !path.join("FORMAT_VERSION").is_file() {
+        return Err(format!(
+            "`{}` is not a KMP store: expected a directory containing FORMAT_VERSION",
+            path.display()
+        ));
+    }
+    Ok(Piece {
+        kind: PieceKind::Store,
+        detail: describe_store(&path),
+        bundled_events: bundle_beside(&path).as_deref().and_then(bundle_event_count),
+        path,
+        ours_to_remove: true,
+    })
 }
 
 /// Whether this piece may be removed at all, and why not when it may not.
@@ -292,7 +507,7 @@ pub fn report(
         crate::banner::large_with(
             style,
             if applying {
-                "  uninstall — removing what is listed below"
+                "  uninstall — apply requested; preflighting what is listed"
             } else {
                 "  uninstall — a dry run; nothing has been removed"
             }
@@ -503,6 +718,9 @@ pub fn remove(piece: &Piece) -> Result<(), String> {
         return Err(reason);
     }
     let path = &piece.path;
+    if !path.exists() {
+        return Ok(());
+    }
     let result = if path.is_dir() {
         std::fs::remove_dir_all(path)
     } else {
@@ -522,6 +740,47 @@ mod tests {
             working_dir: base.join("project"),
             path_entries: Vec::new(),
         }
+    }
+
+    #[test]
+    fn selective_uninstall_requires_one_real_absolute_store() {
+        let base = tempfile::tempdir().expect("temp");
+        let store = base.path().join("memory");
+        store_at(&store, "2");
+
+        assert!(selected_store(Path::new("memory")).is_err());
+        assert!(selected_store(&base.path().join("missing")).is_err());
+
+        let selected = selected_store(&store).expect("the exact store is selected");
+        assert_eq!(selected.kind, PieceKind::Store);
+        assert_eq!(
+            selected.path,
+            std::fs::canonicalize(store).expect("canonical store")
+        );
+    }
+
+    #[test]
+    fn a_live_store_session_blocks_removal_without_blocking_other_stores() {
+        let base = tempfile::tempdir().expect("temp");
+        let data_home = base.path().join("data");
+        let active = base.path().join("active");
+        let other = base.path().join("other");
+        store_at(&active, "2");
+        store_at(&other, "2");
+
+        let session = StoreSessionLease::acquire(&data_home, &active).expect("session lease");
+        let refusal = StoreRemovalGuard::acquire(&data_home, &active)
+            .err()
+            .expect("an active session refuses removal");
+        assert!(refusal.contains("active"), "{refusal}");
+        assert!(refusal.contains("Nothing was removed"), "{refusal}");
+
+        let unrelated = StoreRemovalGuard::acquire(&data_home, &other)
+            .expect("a different store has a different identity");
+        drop(unrelated);
+        drop(session);
+        StoreRemovalGuard::acquire(&data_home, &active)
+            .expect("the store becomes removable when its owner exits");
     }
 
     fn store_at(path: &Path, format: &str) {

@@ -157,6 +157,42 @@ pub fn remember(data_home: &Path, path: &Path) {
     let _ = std::fs::write(&index, format!("{body}\n"));
 }
 
+/// Remove exactly one retired store from the machine-local index.
+///
+/// Other live entries survive byte-for-path identity. Missing stores are
+/// pruned at the same time, matching `remember`; the index itself disappears
+/// when there is nothing left to remember.
+pub fn forget(data_home: &Path, path: &Path) -> Result<(), String> {
+    let index = data_home.join("kmp").join(INDEX_FILE);
+    if !index.exists() {
+        return Ok(());
+    }
+    let retained = read_index(&index)
+        .into_iter()
+        .filter(|known| known != path && known.join("FORMAT_VERSION").is_file())
+        .collect::<Vec<_>>();
+    if retained.is_empty() {
+        return std::fs::remove_file(&index)
+            .map_err(|error| format!("could not remove empty store index: {error}"));
+    }
+    let body = retained
+        .iter()
+        .map(|known| {
+            format!(
+                "{{\"path\":{}}}",
+                serde_json::json!(known.display().to_string())
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    std::fs::write(&index, format!("{body}\n")).map_err(|error| {
+        format!(
+            "could not update store index `{}`: {error}",
+            index.display()
+        )
+    })
+}
+
 /// The paths the index names, in the order they were first seen.
 pub fn read_index(index: &Path) -> Vec<PathBuf> {
     let Ok(contents) = std::fs::read_to_string(index) else {
@@ -361,6 +397,30 @@ mod tests {
         // An index that only ever grows becomes a log of everywhere memory
         // has ever been, which is not what it is for.
         assert_eq!(index, vec![kept], "{index:?}");
+    }
+
+    #[test]
+    fn forgetting_one_store_preserves_every_other_live_index_entry() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let data_home = base.join("data");
+        let retired = base.join("retired/.kernel");
+        let current = base.join("current/.kernel");
+        store_at(&retired, "2", "sqlite3");
+        store_at(&current, "2", "sqlite3");
+        remember(&data_home, &retired);
+        remember(&data_home, &current);
+
+        forget(&data_home, &retired).expect("retire exactly one store");
+
+        assert_eq!(
+            read_index(&data_home.join("kmp").join(INDEX_FILE)),
+            vec![current]
+        );
+        assert!(
+            retired.exists(),
+            "forget updates the index; uninstall removes bytes"
+        );
     }
 
     #[test]

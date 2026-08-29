@@ -9,6 +9,13 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `kmp-mcp uninstall --store <absolute-path>` now scopes preview and apply to
+  exactly one memory, exports it before removal, and refuses while an owning
+  MCP host is live without stopping that host or disturbing other stores,
+  engines, plugins or wiring.
+
 ## [0.5.0] - 2026-08-29
 
 ### Added

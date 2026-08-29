@@ -13,14 +13,18 @@ Nothing is removed unless I pass `--apply`. Then tell me, in a few lines:
   has to point somewhere new;
 - anything found twice, especially two engines: that is how a live session
   answers from an older binary than the one holding the fix;
+- the scope: to remove one memory, require its absolute path and use `--store
+  <absolute-path>`. That mode leaves every other memory, engine, plugin and
+  host registration alone;
 - what the verb will not touch — a committed bundle, a registration inside a
   host's config, a binary outside my home — each with the command I run myself.
 
 After `--apply`, tell me how many events were saved and into which file, by
 name. If a store was kept because its export failed, say so plainly — none of
 that memory was removed — and name the reported cause. If another process is
-using the store, tell me to close the active agent sessions and run
-`kmp-mcp uninstall --apply` from a plain shell.
+using the store, name the owning host reported by the command. Never kill it.
+Tell me to stop or restart that host, then retry the same scoped command from a
+plain shell.
 
 Never add `--apply` or `--purge` on your own initiative. `--purge` skips the
 export, which is the one way this command loses memory for good.
