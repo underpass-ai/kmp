@@ -1,0 +1,7 @@
+Capture authority: committed OBS pack at 1bb522c.
+Render A scratch: tmp/campaign-final-render-1bb522c-samples-a.bc5G6M
+Render B scratch: tmp/campaign-final-render-1bb522c-samples-b.NKfxYN
+Both renders completed with exit 0.
+All three MP4 files and all three 48 kHz/24-bit PCM mix containers compared byte-for-byte equal.
+test_audio_contract.py compared canonical decoded PCM and passed all adversarial checks.
+Human mobile-muted and trained-audio panels were not run or inferred.

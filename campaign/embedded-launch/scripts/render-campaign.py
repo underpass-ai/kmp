@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import pathlib
 import re
 import subprocess
@@ -102,23 +103,37 @@ def promoted_cue_resolution(master_id: str) -> tuple[dict[str, object], dict[str
     bindings = promoted.get("evidence", {})
     cue_binding = bindings.get("audio-cues.json")
     anchor_binding = bindings.get("anchors.jsonl")
-    if not isinstance(cue_binding, dict) or not isinstance(anchor_binding, dict):
-        raise SystemExit(f"{master_id} promoted capture has no resolved cues/anchors")
+    contract_binding = bindings.get("audio-contract.json")
+    if not all(isinstance(item, dict) for item in (cue_binding, anchor_binding, contract_binding)):
+        raise SystemExit(f"{master_id} promoted capture has no resolved cues/anchors/contract")
     try:
         cue_path = resolve_repo_path(cue_binding.get("path"), ROOT)
         anchor_path = resolve_repo_path(anchor_binding.get("path"), ROOT)
+        captured_contract_path = resolve_repo_path(contract_binding.get("path"), ROOT)
     except ValueError as error:
-        raise SystemExit(f"{master_id} promoted cue/anchor path is non-portable: {error}") from error
+        raise SystemExit(f"{master_id} promoted audio evidence path is non-portable: {error}") from error
     for label, path, binding in (
-        ("resolved cues", cue_path, cue_binding), ("audio anchors", anchor_path, anchor_binding)
+        ("resolved cues", cue_path, cue_binding),
+        ("audio anchors", anchor_path, anchor_binding),
+        ("captured audio contract", captured_contract_path, contract_binding),
     ):
         if not path.is_file() or sha256(path) != binding.get("sha256"):
             raise SystemExit(f"{master_id} {label} are missing or differ from promotion")
     resolution = json.loads(cue_path.read_text(encoding="utf-8"))
     if resolution.get("contract") != "kmp.capture.audio-cue-resolution.v1":
         raise SystemExit(f"{master_id} resolved cue contract is invalid")
-    if resolution.get("audio_contract_sha256") != sha256(CAMPAIGN / "audio" / "contract.json"):
-        raise SystemExit(f"{master_id} resolved cues use another audio contract")
+    if resolution.get("audio_contract_sha256") != sha256(captured_contract_path):
+        raise SystemExit(f"{master_id} resolved cues use another captured audio contract")
+    captured_contract = json.loads(captured_contract_path.read_text(encoding="utf-8"))
+    captured_master = captured_contract["masters"].get(master_id)
+    current_master = audio_contract.CONTRACT["masters"].get(master_id)
+    if captured_master is None or current_master is None:
+        raise SystemExit(f"{master_id} is missing from a capture or postproduction contract")
+    for field in ("cue_anchors", "digital_silence"):
+        if captured_master.get(field) != current_master.get(field):
+            raise SystemExit(
+                f"{master_id} postproduction {field} drifted from the promoted capture contract"
+            )
     if resolution.get("anchors_sha256") != sha256(anchor_path):
         raise SystemExit(f"{master_id} resolved cues use another anchor set")
     return resolution, {
@@ -126,6 +141,8 @@ def promoted_cue_resolution(master_id: str) -> tuple[dict[str, object], dict[str
         "anchor_binding": anchor_binding,
         "cue_path": cue_path,
         "cue_binding": cue_binding,
+        "captured_contract_path": captured_contract_path,
+        "captured_contract_binding": contract_binding,
     }
 
 
@@ -174,6 +191,7 @@ def verify_cue_anchors(video: dict[str, object]) -> dict[str, object]:
             "visible_anchor": anchor_name,
             "anchor_seconds": anchor_seconds,
             "lag_frames": lag_frames,
+            "max_lag_frames": max_lag,
             "anchor_source": anchor.get("source"),
             "anchor_evidence": anchor.get("evidence"),
         })
@@ -187,10 +205,50 @@ def verify_cue_anchors(video: dict[str, object]) -> dict[str, object]:
     }
 
 
+def verify_rendered_cue_alignment(
+    video: dict[str, object], mix_report: dict[str, object], anchor_report: dict[str, object]
+) -> dict[str, object]:
+    fps = float(EDL["picture_contract"]["canvas"]["fps"])
+    instances = mix_report["cue_instances"]
+    anchors = anchor_report["cues"]
+    if len(instances) != len(anchors):
+        raise SystemExit(f"{video['id']} rendered cue count differs from anchor gate")
+    rendered: list[dict[str, object]] = []
+    for instance, anchor in zip(instances, anchors):
+        if instance["cue"] != anchor["cue"]:
+            raise SystemExit(f"{video['id']} rendered cue order differs from anchor gate")
+        encoded_start = float(instance["encoded_delay_samples"]) / 48_000
+        anchor_seconds = float(anchor["anchor_seconds"])
+        if encoded_start + 0.000001 < anchor_seconds:
+            raise SystemExit(
+                f"{video['id']} rendered {instance['cue']} starts before its visible anchor"
+            )
+        lag_frames = (encoded_start - anchor_seconds) * fps
+        max_lag = anchor.get("max_lag_frames")
+        if max_lag is not None and lag_frames > float(max_lag) + 0.0001:
+            raise SystemExit(
+                f"{video['id']} rendered {instance['cue']} is {lag_frames:.3f} frames "
+                f"after its anchor; maximum is {max_lag}"
+            )
+        rendered.append({
+            "cue": instance["cue"],
+            "visible_anchor": anchor["visible_anchor"],
+            "anchor_seconds": anchor_seconds,
+            "resolved_seconds": instance["resolved_at"],
+            "rendered_start_seconds": encoded_start,
+            "codec_guard_delay_seconds": instance["codec_guard_delay_seconds"],
+            "lag_frames": lag_frames,
+            "max_lag_frames": max_lag,
+        })
+    return {"passed": True, "cues": rendered}
+
+
 def silence_filters(master_id: str) -> list[str]:
     windows = audio_contract.CONTRACT["masters"][master_id]["digital_silence"]
+    guard = float(audio_contract.CONTRACT["distribution"]["decoded_silence_guard_seconds"])
     condition = "+".join(
-        f"between(t\\,{start}\\,{end})" for start, end in windows
+        f"between(t\\,{max(0.0, float(start) - guard)}\\,{float(end) + guard})"
+        for start, end in windows
     )
     # Timeline-enable expressions are evaluated once per audio frame and can
     # leak the leading samples of a declared silence interval. aeval evaluates
@@ -208,6 +266,9 @@ def render_mix(
         (float(start), float(end))
         for start, end in audio_contract.CONTRACT["masters"][str(video["id"])]["digital_silence"]
     ]
+    codec_guard = float(
+        audio_contract.CONTRACT["distribution"]["decoded_silence_guard_seconds"]
+    )
     inputs: list[str] = []
     filters: list[str] = []
     labels: list[str] = []
@@ -218,6 +279,10 @@ def render_mix(
             raise SystemExit(f"missing procedural cue: {source}")
         inputs.extend(["-i", str(source)])
         cue_start = float(start)
+        mix_start = cue_start
+        for _, silent_end in silence_windows:
+            if silent_end <= mix_start < silent_end + codec_guard:
+                mix_start = silent_end + codec_guard
         source_duration = float(audio_contract.probe(source)["format"]["duration"])
         effective_duration = source_duration
         for silent_start, silent_end in silence_windows:
@@ -225,8 +290,9 @@ def render_mix(
                 raise SystemExit(
                     f"{video['id']} cue {cue} starts inside digital silence at {cue_start}"
                 )
-            if cue_start < silent_start < cue_start + effective_duration:
-                effective_duration = silent_start - cue_start - 0.020
+            guarded_start = max(0.0, silent_start - codec_guard)
+            if mix_start < guarded_start <= mix_start + effective_duration:
+                effective_duration = guarded_start - mix_start
                 break
         if effective_duration <= 0:
             raise SystemExit(f"{video['id']} cue {cue} has no room before digital silence")
@@ -236,18 +302,24 @@ def render_mix(
             fade_duration = min(0.080, effective_duration / 2)
             fade_start = effective_duration - fade_duration
             cue_filters.append(f"afade=t=out:st={fade_start:.9f}:d={fade_duration:.9f}")
-        delay = round(cue_start * 1000)
+        delay_samples = math.ceil(mix_start * 48_000)
         label = f"a{index}"
-        cue_filters.extend([f"adelay={delay}|{delay}", f"apad=whole_dur={duration}"])
+        cue_filters.extend([
+            f"adelay={delay_samples}S|{delay_samples}S",
+            f"apad=whole_dur={duration}",
+        ])
         filters.append(f"[{index}:a]{','.join(cue_filters)}[{label}]")
         labels.append(f"[{label}]")
         cue_instances.append({
             "cue": cue,
             "resolved_at": cue_start,
+            "mix_start_seconds": mix_start,
+            "codec_guard_delay_seconds": mix_start - cue_start,
             "source_duration_seconds": source_duration,
             "effective_duration_seconds": effective_duration,
             "trimmed_for_digital_silence": trimmed,
-            "encoded_delay_ms": delay,
+            "encoded_delay_samples": delay_samples,
+            "encoded_delay_ms": delay_samples / 48,
         })
     precontrol = str(audio_contract.CONTRACT["mix"]["precontrol"])
     filters.append(
@@ -348,7 +420,45 @@ def mux(video: dict[str, object], picture: pathlib.Path, mix: pathlib.Path) -> p
     return target
 
 
-def probe(target: pathlib.Path, expected: float, master_id: str) -> dict[str, object]:
+def caption_cues(body: str) -> list[dict[str, object]]:
+    def milliseconds(stamp: str) -> int:
+        parts = stamp.split(":")
+        if len(parts) == 2:
+            hours = 0
+            minutes, seconds = parts
+        else:
+            hours, minutes, seconds = parts
+        whole, fraction = seconds.split(".")
+        return (
+            int(hours) * 3_600_000 + int(minutes) * 60_000 + int(whole) * 1000
+            + int(fraction.ljust(3, "0")[:3])
+        )
+
+    cues: list[dict[str, object]] = []
+    lines = body.replace("\r\n", "\n").splitlines()
+    index = 0
+    while index < len(lines):
+        line = lines[index].strip()
+        if " --> " not in line:
+            index += 1
+            continue
+        start, end = line.split(" --> ", 1)
+        index += 1
+        text_lines: list[str] = []
+        while index < len(lines) and lines[index].strip():
+            text_lines.append(lines[index].rstrip())
+            index += 1
+        cues.append({
+            "start_ms": milliseconds(start),
+            "end_ms": milliseconds(end.split()[0]),
+            "text": "\n".join(text_lines),
+        })
+    return cues
+
+
+def probe(
+    target: pathlib.Path, expected: float, master_id: str, captions: pathlib.Path
+) -> dict[str, object]:
     result = run([
         "ffprobe", "-v", "error", "-show_streams", "-show_format",
         "-of", "json", str(target),
@@ -363,12 +473,31 @@ def probe(target: pathlib.Path, expected: float, master_id: str) -> dict[str, ob
     first = target.read_bytes()[:1024 * 1024]
     if first.find(b"moov") < 0 or first.find(b"mdat") < first.find(b"moov"):
         raise SystemExit(f"{target.name} is not faststart")
+    subtitle = next(stream for stream in body["streams"] if stream["codec_type"] == "subtitle")
+    if subtitle.get("tags", {}).get("language") != "eng":
+        raise SystemExit(f"{target.name} subtitle language is not eng")
+    extracted = run([
+        "ffmpeg", "-v", "error", "-i", str(target), "-map", "0:s:0",
+        "-f", "webvtt", "-",
+    ], capture=True).stdout
+    source_cues = caption_cues(captions.read_text(encoding="utf-8"))
+    muxed_cues = caption_cues(extracted)
+    if source_cues != muxed_cues:
+        raise SystemExit(f"{target.name} muxed captions differ from {captions.name}")
     audio_report = audio_contract.assert_distribution_master(target, master_id)
     return {
         "path": str(target.relative_to(ROOT)),
         "duration": duration,
         "streams": codecs,
         "sha256": sha256(target),
+        "faststart": True,
+        "captions": {
+            "passed": True,
+            "language": "eng",
+            "cue_count": len(source_cues),
+            "source_path": captions.relative_to(ROOT).as_posix(),
+            "source_sha256": sha256(captions),
+        },
         "audio": audio_report,
     }
 
@@ -419,6 +548,7 @@ def main() -> None:
     build = pathlib.Path(sys.argv[2]).resolve()
     build.mkdir(parents=True, exist_ok=True)
     audio, premix_reports = prepare_audio(build, picture_locked=True)
+    premix_by_id = {str(report["master_id"]): report for report in premix_reports}
 
     manifest: dict[str, object] = {
         "schema_version": "1",
@@ -439,10 +569,17 @@ def main() -> None:
         }
         picture = render_picture(video, raw_root, build)
         anchor_report = verify_cue_anchors(video)
+        rendered_cue_report = verify_rendered_cue_alignment(
+            video, premix_by_id[str(video["id"])], anchor_report
+        )
         mix = build / f"{video['id']}-mix.wav"
         target = mux(video, picture, mix)
-        master_report = probe(target, float(video["duration"]), str(video["id"]))
+        captions = CAMPAIGN / str(video["captions"])
+        master_report = probe(
+            target, float(video["duration"]), str(video["id"]), captions
+        )
         master_report["cue_anchor_gate"] = anchor_report
+        master_report["rendered_cue_gate"] = rendered_cue_report
         manifest["masters"].append(master_report)
     (OUTPUT / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

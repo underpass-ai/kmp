@@ -1,0 +1,160 @@
+{
+  "assets": [
+    {
+      "artifact_file_sha256": "3e3445a0ae51f2d47ae0735d9aaf09e35db6bd1e68457aff8d6a744ccd81d1d7",
+      "decoded_pcm": {
+        "bytes": 6301440,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 1050240,
+        "sha256": "f2b2ec9c543a28d1489aa3b72a7f0d5e09cf48eb6e84e8032937e51027c5dd96"
+      },
+      "path": "evidence-knot-palette.wav"
+    },
+    {
+      "artifact_file_sha256": "71c323d65d659c0f016bbc0229b0c4cadda41c9a95601091d1bdfb2702f76c66",
+      "decoded_pcm": {
+        "bytes": 388800,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 64800,
+        "sha256": "c428413ab3d64634e2fe2038b62284b941c34f29b7bac6fc26df0186ee6f0d3d"
+      },
+      "path": "cues/clock-prism.wav"
+    },
+    {
+      "artifact_file_sha256": "625f29cd59c79c14c022c1b4daa4191c906de634497a702bbed906beac302ad0",
+      "decoded_pcm": {
+        "bytes": 656640,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 109440,
+        "sha256": "894d927b998e662bcfeedd2494d27e7fb6ff06514ef21fd42d796a7199549d8c"
+      },
+      "path": "cues/evidence-knot.wav"
+    },
+    {
+      "artifact_file_sha256": "43972f747bc2fa1ad357339ca26dcd2e7bb3e4a477fea159146e796f7cea101d",
+      "decoded_pcm": {
+        "bytes": 149760,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 24960,
+        "sha256": "90c73034a852b770e11e8920e02e2902667e7d0f4b88e78e9a6333bcf3f59be5"
+      },
+      "path": "cues/evidence-open.wav"
+    },
+    {
+      "artifact_file_sha256": "7a8419b45b34a8b550d876a26d7b30c9a0d33e085980b7afd2adb269344c630a",
+      "decoded_pcm": {
+        "bytes": 403200,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 67200,
+        "sha256": "d2b9ccd3354c3c4cfcae6ec85d8ef83b43778cb9a115772eb8882671592f4ec0"
+      },
+      "path": "cues/memory-stitch.wav"
+    },
+    {
+      "artifact_file_sha256": "54036929e0ca6bff2fbc614623a648930d37ed28060f138bca2201f3a0b0678c",
+      "decoded_pcm": {
+        "bytes": 144000,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 24000,
+        "sha256": "40803d02e48a694c2324466aef7990259a856a3c19504f7ad1cae1e5e530eb3c"
+      },
+      "path": "cues/proof-hop-1.wav"
+    },
+    {
+      "artifact_file_sha256": "b1a0f624f60521ed26276013ade2705dc9f3a01a20ad7696967616ab827c428b",
+      "decoded_pcm": {
+        "bytes": 144000,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 24000,
+        "sha256": "b9484e4397af98a21f21afa3dbcbb9949e66381cf7a28583fd61c338f9107fcd"
+      },
+      "path": "cues/proof-hop-2.wav"
+    },
+    {
+      "artifact_file_sha256": "05926967e22f5e78387ff480bd48f2cea2fcb4fd2649d2ab8977bca9a7e96ed8",
+      "decoded_pcm": {
+        "bytes": 144000,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 24000,
+        "sha256": "616085806c986011944af72ec3bae0673f2341a01e27ca466b0c6b085ab59eab"
+      },
+      "path": "cues/proof-hop-3.wav"
+    },
+    {
+      "artifact_file_sha256": "c2039e763d1c32a180c6c06012eced2799a592d40575a1f8884194fda16ff4ce",
+      "decoded_pcm": {
+        "bytes": 144000,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 24000,
+        "sha256": "f66d191cbde66c1e3abea4864d478a0f8287ba99dd7557bebef01b9500a95750"
+      },
+      "path": "cues/proof-hop-4.wav"
+    },
+    {
+      "artifact_file_sha256": "dfe1d4dd7991530133eefff8dda1be83f8fb92755b2892301c21d0afa8b20028",
+      "decoded_pcm": {
+        "bytes": 360000,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 60000,
+        "sha256": "fecd7de2fc0dd84b44b3ebafd1f5a2d0a478dc344401c939628115ffa81f27cd"
+      },
+      "path": "cues/relation-thread.wav"
+    },
+    {
+      "artifact_file_sha256": "ee5290aa3f34b007d2f389fc1c89499ea6fbef6fcedea80de0b1042ac73782a8",
+      "decoded_pcm": {
+        "bytes": 532800,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 88800,
+        "sha256": "7a6971bbd1d380ac87111eb812e3a250a23138fc1d6b029fdbd17f99720a1f70"
+      },
+      "path": "cues/retained-turn.wav"
+    },
+    {
+      "artifact_file_sha256": "2c3e19b278b85fb6ab31a10e41479e35264ea3bd2d8c88d3435e0233e3cae8b5",
+      "decoded_pcm": {
+        "bytes": 207360,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 34560,
+        "sha256": "f59473e60cc653f4a84c1ab74f12674b3d6f08cba206bb333dbee5e01cd4ab28"
+      },
+      "path": "cues/strand-left.wav"
+    },
+    {
+      "artifact_file_sha256": "27cf5d06348e481cb2af64680ba0a611bf9935c3752b6cae427ff3b7dbb3c245",
+      "decoded_pcm": {
+        "bytes": 207360,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 34560,
+        "sha256": "6e9c89fc658ead4b3cf3f99b8d85f610ee1533906e3a036ccdf55ca1bc79bfd5"
+      },
+      "path": "cues/strand-right.wav"
+    },
+    {
+      "artifact_file_sha256": "aa7512981e65f3421bfeaeae299cbaadd625d9888e252c325dc671fc4a9b3a0d",
+      "decoded_pcm": {
+        "bytes": 460800,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 76800,
+        "sha256": "c77f0002a02693041f8e84e18c2e5731177fb36010a0dcdc4434809c40af477b"
+      },
+      "path": "cues/wal-converge.wav"
+    }
+  ],
+  "determinism": {
+    "authority": "decoded PCM hashes, not WAV container hashes",
+    "contract_sha256": "24e41f02b860c64bbc688faa1f0cfb4d622874578dbc052ac3cda065a86ac174",
+    "cue_map_sha256": "436f7e743fe995bf684778676b37b5f1b9751e376b95e8c7a25c4f8083dc5210",
+    "fixed_csound_seed": 11871,
+    "mix_levels_sha256": "3f27cfab5d68f43ccba6e6aa2e131d63fdea23e84e807cbade0fafe9725bfcbe",
+    "source_sha256": "16801ce4c2c48b814de56f11c54f03624b543d4f293566713da8f12fd0b0d6c7"
+  },
+  "identity": "KMP Evidence Knot",
+  "license": "original procedural audio; distributed under the repository license",
+  "schema_version": "1",
+  "third_party_audio": false,
+  "toolchain": {
+    "csound": "--Csound version 6.18 (double samples) 2024-04-07",
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5+esm10 Copyright (c) 2000-2023 the FFmpeg developers"
+  }
+}

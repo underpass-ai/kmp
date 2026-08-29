@@ -238,6 +238,9 @@ def assert_distribution_master(path: pathlib.Path, master_id: str) -> dict[str, 
     stream = assert_aac(path)
     measured = loudness(path)
     mix = CONTRACT["mix"]
+    mono_contract = mix["mono_fold_down"]
+    mono = loudness(path, str(mono_contract["filter"]))
+    mono_delta = mono["integrated_lufs"] - measured["integrated_lufs"]
     distribution = CONTRACT["distribution"]
     failures: list[str] = []
     if abs(measured["integrated_lufs"] - float(mix["integrated_lufs"])) > float(mix["integrated_tolerance_lu"]):
@@ -246,6 +249,14 @@ def assert_distribution_master(path: pathlib.Path, master_id: str) -> dict[str, 
         failures.append(f"decoded true peak is {measured['true_peak_dbtp']} dBTP")
     if measured["lra_lu"] > float(mix["lra_max_lu"]):
         failures.append(f"decoded LRA is {measured['lra_lu']} LU")
+    if abs(mono_delta - float(mono_contract["expected_integrated_delta_lu"])) > float(
+        mono_contract["integrated_delta_tolerance_lu"]
+    ):
+        failures.append(f"decoded mono fold-down integrated delta is {mono_delta} LU")
+    if mono["true_peak_dbtp"] > float(mono_contract["true_peak_max_dbtp"]):
+        failures.append(f"decoded mono fold-down true peak is {mono['true_peak_dbtp']} dBTP")
+    if mono["lra_lu"] > float(mono_contract["lra_max_lu"]):
+        failures.append(f"decoded mono fold-down LRA is {mono['lra_lu']} LU")
     silence = [
         interval_is_zero(path, float(start), float(end))
         for start, end in CONTRACT["masters"][master_id]["digital_silence"]
@@ -262,6 +273,10 @@ def assert_distribution_master(path: pathlib.Path, master_id: str) -> dict[str, 
         "artifact_file_sha256": file_sha256(path),
         "stream": stream,
         "loudness": measured,
+        "mono_fold_down": {
+            **mono,
+            "integrated_delta_from_stereo_lu": mono_delta,
+        },
         "decoded_silence": silence,
         "passed": not failures,
         "failures": failures,

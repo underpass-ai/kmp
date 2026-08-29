@@ -46,6 +46,7 @@
     "sample_rate_hz": 48000,
     "channels": 2,
     "encoder_target_bits_per_second": 192000,
+    "decoded_silence_guard_seconds": 0.06,
     "decoded_silence_max_abs_sample": 64,
     "bitrate_contract": "encoder target only; ffprobe records the observed average stream bitrate"
   },

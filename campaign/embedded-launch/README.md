@@ -50,6 +50,11 @@ the SHA-256 of decoded interleaved `s24le` PCM; WAV container hashes are
 retained only for artifact integrity. The resulting `audio-evidence.json`
 remains explicitly `deterministic_premix_not_picture_locked`.
 
+AAC-LC uses a declared 60 ms codec guard outside each promised silence window.
+Cue tails fade before the guard and a cue exactly on a silence exit is delayed
+to the first safe sample; proof-hop timing remains bounded by its one-frame
+visible-anchor contract.
+
 Final MP4 audio is AAC-LC, 48 kHz stereo. `192 kb/s` is the encoder target,
 not a promise about the average bitrate of sparse audio; `ffprobe` records the
 observed stream bitrate and the release gate verifies codec, profile, sample

@@ -93,6 +93,9 @@ def main() -> None:
         fail("audio mono fold-down loosens the true-peak gate")
     if float(mono.get("lra_max_lu", 0)) > float(mix["lra_max_lu"]):
         fail("audio mono fold-down loosens the LRA gate")
+    guard = float(audio["distribution"].get("decoded_silence_guard_seconds", 0))
+    if not 0.02 <= guard <= 0.10:
+        fail("AAC silence guard must stay within 20..100 ms")
 
     forbidden_host_copy = ("codex", "claude", "agent a", "agent b", "two agents")
     for master_id, master in masters.items():

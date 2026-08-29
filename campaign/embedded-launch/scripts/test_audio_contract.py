@@ -56,6 +56,15 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="kmp-audio-contract-") as raw_temp:
         temp = pathlib.Path(raw_temp)
+        for master_id, mix in mixes.items():
+            encoded = temp / f"{master_id}.m4a"
+            ffmpeg(
+                "-i", str(mix), "-c:a", "aac", "-profile:a", "aac_low",
+                "-aac_coder", "twoloop", "-b:a", "192k", "-ar", "48000",
+                "-ac", "2", str(encoded),
+            )
+            audio_contract.assert_distribution_master(encoded, master_id)
+
         tagged = temp / "tagged.wav"
         ffmpeg("-i", str(fresh), "-map", "0:a:0", "-c:a", "pcm_s24le", "-metadata", "comment=container-drift", str(tagged))
         if audio_contract.file_sha256(fresh) == audio_contract.file_sha256(tagged):

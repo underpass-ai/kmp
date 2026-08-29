@@ -1,0 +1,10 @@
+python3 campaign/embedded-launch/scripts/validate-campaign.py
+python3 campaign/embedded-launch/scripts/render-campaign.py campaign/embedded-launch/evidence-pack/capture/raw tmp/campaign-final-render-a
+mkdir -p tmp/campaign-final-render-a/masters
+cp docs/assets/campaign/kmp-embedded/*.mp4 tmp/campaign-final-render-a/masters/
+python3 campaign/embedded-launch/scripts/render-campaign.py campaign/embedded-launch/evidence-pack/capture/raw tmp/campaign-final-render-b
+python3 campaign/embedded-launch/scripts/test_audio_contract.py tmp/campaign-final-render-a tmp/campaign-final-render-b
+cmp tmp/campaign-final-render-a/masters/fresh-process-same-why.mp4 docs/assets/campaign/kmp-embedded/fresh-process-same-why.mp4
+cmp tmp/campaign-final-render-a/masters/two-processes-one-memory.mp4 docs/assets/campaign/kmp-embedded/two-processes-one-memory.mp4
+cmp tmp/campaign-final-render-a/masters/keep-the-wrong-turn.mp4 docs/assets/campaign/kmp-embedded/keep-the-wrong-turn.mp4
+python3 campaign/embedded-launch/scripts/verify-final-media.py

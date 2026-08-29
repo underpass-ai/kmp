@@ -1,0 +1,66 @@
+{
+  "schema_version": "1",
+  "campaign_id": "kmp-embedded-first-launch",
+  "result": "PASS",
+  "editorial_go": false,
+  "human_panels": "PENDING",
+  "capture_commit": "1bb522c",
+  "checks": {
+    "source_mkv_hashes_match_promotion": true,
+    "masters_byte_identical_across_two_clean_working_tree_renders": true,
+    "canonical_pcm_identical_across_two_renders": true,
+    "aac_lc_48000hz_stereo": true,
+    "loudness_lra_true_peak": true,
+    "mono_fold_down": true,
+    "declared_silence_windows_decode_to_zero": true,
+    "captions_match_source_vtt": true,
+    "faststart": true,
+    "rendered_cues_follow_visible_anchors": true,
+    "proof_hops_within_one_frame": true
+  },
+  "masters": [
+    {
+      "id": "fresh-process-same-why",
+      "sha256": "b569375245330bd280eaa67a25400b54e6ad3047484d7557a109762e3e1e706d",
+      "bytes": 13969983,
+      "duration_seconds": 44.0,
+      "integrated_lufs": -18.03,
+      "lra_lu": 5.5,
+      "true_peak_dbtp": -5.81,
+      "mono_integrated_lufs": -21.04,
+      "mono_lra_lu": 5.5,
+      "mono_true_peak_dbtp": -6.14,
+      "decoded_silence_max_abs_sample": 0,
+      "caption_cues": 5
+    },
+    {
+      "id": "two-processes-one-memory",
+      "sha256": "c5f7d377571d1a8080d34db32bcfbbd4035cfff501213c03ed04a705ca6dc7fd",
+      "bytes": 14703013,
+      "duration_seconds": 46.0,
+      "integrated_lufs": -18.06,
+      "lra_lu": 7.7,
+      "true_peak_dbtp": -5.89,
+      "mono_integrated_lufs": -21.11,
+      "mono_lra_lu": 7.8,
+      "mono_true_peak_dbtp": -6.0,
+      "decoded_silence_max_abs_sample": 0,
+      "caption_cues": 5
+    },
+    {
+      "id": "keep-the-wrong-turn",
+      "sha256": "ea2a46fce0cd16422397ab71d89ac1d4b494ba6777a0d4d3b66d0bfdd45021a8",
+      "bytes": 17188925,
+      "duration_seconds": 54.0,
+      "integrated_lufs": -18.02,
+      "lra_lu": 6.3,
+      "true_peak_dbtp": -2.0,
+      "mono_integrated_lufs": -21.03,
+      "mono_lra_lu": 6.2,
+      "mono_true_peak_dbtp": -2.35,
+      "decoded_silence_max_abs_sample": 0,
+      "caption_cues": 6,
+      "proof_hop_lag_frames": [0.362783, 0.222484, 0.209431, 0.993901]
+    }
+  ]
+}
