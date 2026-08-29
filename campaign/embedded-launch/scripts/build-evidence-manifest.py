@@ -6,9 +6,11 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import subprocess
 import sys
 
 import panel_contract
+from capture_contract import credential_findings, resolve_repo_path
 
 
 CAMPAIGN = pathlib.Path(__file__).resolve().parents[1]
@@ -32,6 +34,7 @@ REQUIRED = [
     "campaign/embedded-launch/evidence-pack/release/quality-gates.json",
     "campaign/embedded-launch/evidence-pack/release/public-paths.json",
     "campaign/embedded-launch/evidence-pack/product/binary.sha256",
+    "campaign/embedded-launch/evidence-pack/product/candidate.json",
     "campaign/embedded-launch/evidence-pack/product/version.txt",
     "campaign/embedded-launch/evidence-pack/product/tools-list.json",
     "campaign/embedded-launch/evidence-pack/capture/raw/fresh-process-same-why.mkv",
@@ -87,6 +90,7 @@ def validate_file_binding(
     *,
     label: str,
     invalid: list[str],
+    base: pathlib.Path = ROOT,
 ) -> pathlib.Path | None:
     raw_path = binding.get("path")
     expected_sha = binding.get("sha256")
@@ -94,7 +98,11 @@ def validate_file_binding(
     if not isinstance(raw_path, str) or not isinstance(expected_sha, str):
         invalid.append(f"{label} has no path/SHA-256 binding")
         return None
-    path = pathlib.Path(raw_path)
+    try:
+        path = resolve_repo_path(raw_path, base)
+    except ValueError as error:
+        invalid.append(f"{label} has a non-portable path: {error}")
+        return None
     if not path.is_file():
         invalid.append(f"{label} is missing: {path}")
         return None
@@ -105,7 +113,12 @@ def validate_file_binding(
     return path
 
 
-def validate_promoted_capture(master_id: str, invalid: list[str]) -> None:
+def validate_promoted_capture(
+    master_id: str,
+    invalid: list[str],
+    *,
+    expected_binary_sha256: str | None = None,
+) -> None:
     index_path = PACK / "capture" / "promoted" / f"{master_id}.json"
     if not index_path.is_file():
         return
@@ -130,7 +143,11 @@ def validate_promoted_capture(master_id: str, invalid: list[str]) -> None:
     if not isinstance(run_dir_value, str):
         invalid.append(f"{master_id} promoted index has no run_dir")
         return
-    run_dir = pathlib.Path(run_dir_value).resolve()
+    try:
+        run_dir = resolve_repo_path(run_dir_value, ROOT)
+    except ValueError as error:
+        invalid.append(f"{master_id} run_dir is non-portable: {error}")
+        return
     allowed_runs = (PACK / "capture" / "runs" / master_id).resolve()
     if run_dir.parent != allowed_runs:
         invalid.append(f"{master_id} run_dir is outside its campaign run root")
@@ -157,22 +174,26 @@ def validate_promoted_capture(master_id: str, invalid: list[str]) -> None:
         invalid.append(f"{master_id} run manifest names another scenario")
     if raw is not None and run_manifest_body.get("recording", {}).get("sha256") != sha256(raw):
         invalid.append(f"{master_id} raw and run recording hashes differ")
+    invalid.extend(
+        f"{master_id} credential audit: {finding}"
+        for finding in credential_findings(run_dir)
+    )
 
     for item in run_manifest_body.get("files", []):
         relative = item.get("path")
         if not isinstance(relative, str):
             invalid.append(f"{master_id} run manifest contains a pathless file")
             continue
-        candidate = (run_dir / relative).resolve()
         try:
-            candidate.relative_to(run_dir)
-        except ValueError:
-            invalid.append(f"{master_id} run manifest escapes run_dir: {relative}")
+            candidate = resolve_repo_path(relative, run_dir)
+        except ValueError as error:
+            invalid.append(f"{master_id} run manifest path is non-portable: {error}")
             continue
         validate_file_binding(
-            {**item, "path": str(candidate)},
+            item,
             label=f"{master_id} run artifact {relative}",
             invalid=invalid,
+            base=run_dir,
         )
 
     evidence = promoted.get("evidence", {})
@@ -201,6 +222,11 @@ def validate_promoted_capture(master_id: str, invalid: list[str]) -> None:
             verification = json.loads(verification_path.read_text(encoding="utf-8"))
             if verification.get("passed") is not True:
                 invalid.append(f"{master_id} promoted capture did not pass verification")
+        lifecycle_path = run_dir / "process-lifecycle.json"
+        if lifecycle_path.is_file() and expected_binary_sha256 is not None:
+            lifecycle = json.loads(lifecycle_path.read_text(encoding="utf-8"))
+            if lifecycle.get("binary", {}).get("sha256") != expected_binary_sha256:
+                invalid.append(f"{master_id} captured a different product binary")
         captured_edl = run_dir / "edl.json"
         captured_edl_sha = run_dir / "edl.sha256"
         if captured_edl.is_file() and sha256(captured_edl) != sha256(CAMPAIGN / "edl.json"):
@@ -231,12 +257,10 @@ def referenced_files() -> list[pathlib.Path]:
         ROOT / "scripts" / "demo" / "record-chronoloom-gifs.sh",
         ROOT / "README.md",
     ]
-    campaign_binary = ROOT / brief["binary"]["path"]
-    if campaign_binary.is_file():
-        fixed.append(campaign_binary)
     for source_root in [
         CAMPAIGN / "audio",
         CAMPAIGN / "obs-harness",
+        CAMPAIGN / "roles",
         CAMPAIGN / "scripts",
         CAMPAIGN / "schema",
     ]:
@@ -260,7 +284,7 @@ def referenced_files() -> list[pathlib.Path]:
     for index in sorted((PACK / "capture" / "promoted").glob("*.json")):
         try:
             promoted = json.loads(index.read_text(encoding="utf-8"))
-            run_dir = pathlib.Path(promoted["run_dir"]).resolve()
+            run_dir = resolve_repo_path(promoted["run_dir"], ROOT)
             run_dir.relative_to((PACK / "capture" / "runs").resolve())
         except (json.JSONDecodeError, KeyError, OSError, ValueError):
             continue
@@ -285,14 +309,49 @@ def build() -> dict[str, object]:
     missing = [item for item in REQUIRED if not (ROOT / item).is_file()]
     invalid: list[str] = []
 
-    binary = ROOT / brief["binary"]["path"]
-    if not binary.is_file():
-        invalid.append(f"campaign binary does not exist: {brief['binary']['path']}")
-    elif sha256(binary) != brief["binary"]["sha256"]:
-        invalid.append("campaign binary hash differs from campaign.json")
     product_sha = PACK / "product" / "binary.sha256"
-    if product_sha.is_file() and product_sha.read_text(encoding="utf-8").split()[0] != brief["binary"]["sha256"]:
-        invalid.append("product/binary.sha256 differs from campaign.json")
+    if product_sha.is_file():
+        checksum_fields = product_sha.read_text(encoding="utf-8").split()
+        if not checksum_fields or checksum_fields[0] != brief["binary"]["sha256"]:
+            invalid.append("product/binary.sha256 differs from campaign.json")
+        asset_name = pathlib.PurePosixPath(str(brief["binary"]["path"])).name
+        if len(checksum_fields) < 2 or pathlib.PurePosixPath(checksum_fields[1]).name != asset_name:
+            invalid.append("product/binary.sha256 does not name the candidate asset")
+    candidate_path = PACK / "product" / "candidate.json"
+    if candidate_path.is_file():
+        try:
+            candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as error:
+            invalid.append(f"product/candidate.json is unreadable: {error}")
+        else:
+            expected_version = str(brief["binary"]["version"]).split()[1]
+            if candidate.get("contract") != "kmp.release-candidate.v1":
+                invalid.append("product/candidate.json has the wrong contract")
+            if candidate.get("source_sha") != brief["product_commit"]:
+                invalid.append("product/candidate.json source differs from campaign.json")
+            if candidate.get("version") != expected_version:
+                invalid.append("product/candidate.json version differs from campaign.json")
+            candidate_input = candidate.get("input_sha256")
+            expected_input = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/release/release-candidate.py"), "inputs"],
+                cwd=ROOT,
+                check=True,
+                text=True,
+                capture_output=True,
+            ).stdout.strip().splitlines()[-1]
+            if candidate_input != expected_input:
+                invalid.append("product/candidate.json input digest differs from release inputs")
+            run_id = candidate.get("run_id")
+            if not isinstance(run_id, str) or not run_id.isdigit():
+                invalid.append("product/candidate.json run_id is not a CI workflow run")
+            asset_name = pathlib.PurePosixPath(str(brief["binary"]["path"])).name
+            assets = [item for item in candidate.get("assets", []) if item.get("name") == asset_name]
+            if len(assets) != 1:
+                invalid.append(f"product/candidate.json does not uniquely bind {asset_name}")
+            elif assets[0].get("sha256") != brief["binary"]["sha256"]:
+                invalid.append("product/candidate.json binary hash differs from campaign.json")
+            elif not isinstance(assets[0].get("size"), int) or assets[0]["size"] <= 0:
+                invalid.append("product/candidate.json binary size is invalid")
     product_version = PACK / "product" / "version.txt"
     if product_version.is_file() and product_version.read_text(encoding="utf-8").strip() != brief["binary"]["version"]:
         invalid.append("product/version.txt differs from campaign.json")
@@ -324,7 +383,11 @@ def build() -> dict[str, object]:
     if derivative["other_gif_derivatives_allowed"] is not False:
         invalid.append("EDL permits more than one GIF derivative")
     for master in brief["masters"]:
-        validate_promoted_capture(master["id"], invalid)
+        validate_promoted_capture(
+            master["id"],
+            invalid,
+            expected_binary_sha256=str(brief["binary"]["sha256"]),
+        )
 
     master_hashes = {
         str(master["id"]): sha256(

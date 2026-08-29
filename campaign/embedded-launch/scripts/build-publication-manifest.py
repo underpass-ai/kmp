@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import sys
 
@@ -20,9 +21,7 @@ GIF = ROOT / "docs" / "assets" / "kmp-agent-loom.gif"
 MASTER = ROOT / "docs" / "assets" / "campaign" / "kmp-embedded" / "fresh-process-same-why.mp4"
 OUTPUT = PACK / "publication-manifest.json"
 SCHEMA = CAMPAIGN / "schema" / "launch-critic-output.schema.json"
-SHARED_SCHEMA = pathlib.Path(
-    "/home/gx10a/Documents/ai/kmp-campaign-agents/launch-critic/output.schema.json"
-)
+SCHEMA_OVERRIDE_ENV = "KMP_LAUNCH_CRITIC_OUTPUT_SCHEMA"
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -41,6 +40,17 @@ def binding(path: pathlib.Path) -> dict[str, object]:
     }
 
 
+def verify_optional_schema_override() -> None:
+    raw = os.environ.get(SCHEMA_OVERRIDE_ENV)
+    if not raw:
+        return
+    override = pathlib.Path(raw).expanduser()
+    if not override.is_file():
+        raise SystemExit(f"publication blocked: {SCHEMA_OVERRIDE_ENV} is not a file")
+    if sha256(SCHEMA) != sha256(override):
+        raise SystemExit("publication blocked: critic output schema differs from explicit override")
+
+
 def main() -> None:
     if sys.argv[1:] not in ([], ["--preflight"]):
         raise SystemExit("usage: build-publication-manifest.py [--preflight]")
@@ -49,8 +59,7 @@ def main() -> None:
     for path in required:
         if not path.is_file():
             raise SystemExit(f"publication blocked: missing {path.relative_to(ROOT)}")
-    if SHARED_SCHEMA.is_file() and sha256(SCHEMA) != sha256(SHARED_SCHEMA):
-        raise SystemExit("publication blocked: critic output schema differs from role contract")
+    verify_optional_schema_override()
 
     evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
     if evidence.get("status") != "complete":

@@ -1,0 +1,60 @@
+{
+  "contract": "kmp.release-candidate.v1",
+  "version": "0.5.0",
+  "input_sha256": "742e90d453ad17107cb3958414fe9dff99e593cc705742ef11fd008a4ad2cd95",
+  "source_sha": "11942b9ae0599557f73b037140f4266f2cbfa901",
+  "source_ref": "feat/embedded-launch",
+  "run_id": "33225071981",
+  "assets": [
+    {
+      "name": "kmp-mcp-v0.5.0-aarch64-apple-darwin",
+      "sha256": "07b65fab10cb77cc38f469a710a6f625b2db2343ad8f70a2614321c0a14cb000",
+      "size": 16683800
+    },
+    {
+      "name": "kmp-mcp-v0.5.0-aarch64-unknown-linux-gnu",
+      "sha256": "b7e3f654266094c2e691dd3d963612f29c389be1171642143a24f58706fb4fcf",
+      "size": 16806848
+    },
+    {
+      "name": "kmp-mcp-v0.5.0-x86_64-apple-darwin",
+      "sha256": "c6b95b172c0f4679111f9e836c65d12832bac76ac5107bf56b4f88619a69eb4f",
+      "size": 18231600
+    },
+    {
+      "name": "kmp-mcp-v0.5.0-x86_64-pc-windows-msvc.exe",
+      "sha256": "82bc7f75bdfa031659f9d87c305b0f2cbc5534a7abe868632639696cdfe6242f",
+      "size": 18612736
+    },
+    {
+      "name": "kmp-mcp-v0.5.0-x86_64-unknown-linux-gnu",
+      "sha256": "8aafaf8f7aec112f1446b34951413bef8341f6894daa47d017d1656c13dd5f8a",
+      "size": 19170864
+    },
+    {
+      "name": "kmp-mcp-v0.5.0.mcpb",
+      "sha256": "377b67b83095a3134a121c09499f24ca1dd858a2df3e4611b49dbcec48329c0a",
+      "size": 44308218
+    },
+    {
+      "name": "kmp-plugin-0.5.0-linux-arm64.tar.gz",
+      "sha256": "1a16000cae61048b2aceabaa60dfcbba093b8cda61449c0b2e31a5440db91900",
+      "size": 7357392
+    },
+    {
+      "name": "kmp-plugin-0.5.0-linux-x86_64.tar.gz",
+      "sha256": "87bac300b3bf781fa470d1baacecd727bae7198fd9857e9090c7fe2b42012663",
+      "size": 7820997
+    },
+    {
+      "name": "kmp-plugin-0.5.0-macos-arm64.tar.gz",
+      "sha256": "61b87cf9892b58f940f0f8f08edda5cd8afb4fc3a31914f15494797998316ab2",
+      "size": 7150537
+    },
+    {
+      "name": "kmp-plugin-0.5.0-windows-x86_64.tar.gz",
+      "sha256": "aedea38efe5b3ca19b42fe036275898bcb28ff977596cf2cfec51718b95fe8b7",
+      "size": 7571165
+    }
+  ]
+}

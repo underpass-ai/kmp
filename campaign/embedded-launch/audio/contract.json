@@ -29,8 +29,16 @@
     "integrated_tolerance_lu": 1.0,
     "true_peak_max_dbtp": -1.5,
     "normalizer_true_peak_target_dbtp": -2.0,
+    "normalizer_lra_target_lu": 5.0,
     "lra_max_lu": 8.0,
-    "precontrol": "acompressor=threshold=0.015:ratio=4:attack=5:release=120:makeup=3"
+    "precontrol": "acompressor=threshold=0.015:ratio=4:attack=5:release=120:makeup=3",
+    "mono_fold_down": {
+      "filter": "pan=mono|c0=0.5*c0+0.5*c1",
+      "expected_integrated_delta_lu": -3.0,
+      "integrated_delta_tolerance_lu": 1.0,
+      "true_peak_max_dbtp": -1.5,
+      "lra_max_lu": 8.0
+    }
   },
   "distribution": {
     "codec": "aac",

@@ -9,6 +9,11 @@ import re
 import subprocess
 import sys
 
+CAMPAIGN = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(CAMPAIGN / "scripts"))
+
+from capture_contract import credential_findings
+
 
 def sha256(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
@@ -40,6 +45,12 @@ global_text = global_ini.read_text()
 check("obs_password_redacted", "ServerPassword=<ephemeral-redacted>" in global_text, str(global_ini))
 
 check("ephemeral_capabilities_removed", not any(run.rglob("*.private")), "no *.private files")
+credential_audit = credential_findings(run)
+check(
+    "no_ephemeral_credentials",
+    not credential_audit,
+    credential_audit or "credential-shaped fields are absent or explicitly redacted",
+)
 
 recording = run / "obs-recording.mkv"
 probe = subprocess.run(

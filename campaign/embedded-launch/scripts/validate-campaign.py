@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import sys
 
@@ -14,9 +15,7 @@ import jsonschema
 CAMPAIGN = pathlib.Path(__file__).resolve().parents[1]
 ROOT = CAMPAIGN.parents[1]
 SCHEMA = CAMPAIGN / "schema" / "campaign-brief.schema.json"
-SHARED_SCHEMA = pathlib.Path(
-    "/home/gx10a/Documents/ai/kmp-campaign-agents/shared/campaign-brief.schema.json"
-)
+SCHEMA_OVERRIDE_ENV = "KMP_CAMPAIGN_BRIEF_SCHEMA"
 
 
 def fail(message: str) -> None:
@@ -27,12 +26,23 @@ def digest(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def verify_optional_schema_override() -> None:
+    """Cross-check a role-owned schema only when its path is supplied explicitly."""
+    raw = os.environ.get(SCHEMA_OVERRIDE_ENV)
+    if not raw:
+        return
+    override = pathlib.Path(raw).expanduser()
+    if not override.is_file():
+        fail(f"{SCHEMA_OVERRIDE_ENV} does not name a file: {override}")
+    if digest(SCHEMA) != digest(override):
+        fail("repository schema differs from the explicit campaign schema override")
+
+
 def main() -> None:
     brief = json.loads((CAMPAIGN / "campaign.json").read_text(encoding="utf-8"))
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     jsonschema.Draft202012Validator(schema).validate(brief)
-    if SHARED_SCHEMA.is_file() and digest(SCHEMA) != digest(SHARED_SCHEMA):
-        fail("repository schema snapshot differs from the shared campaign schema")
+    verify_optional_schema_override()
 
     edl = json.loads((CAMPAIGN / "edl.json").read_text(encoding="utf-8"))
     audio = json.loads((CAMPAIGN / "audio" / "contract.json").read_text(encoding="utf-8"))
@@ -59,6 +69,30 @@ def main() -> None:
         if duration <= 0 or name in cue_durations:
             fail(f"audio cue {name} has an invalid palette range")
         cue_durations[name] = duration
+
+    mix_levels = json.loads(
+        (CAMPAIGN / "audio" / "mix-levels.json").read_text(encoding="utf-8")
+    )
+    gains = mix_levels.get("gains_db", {})
+    if set(gains) != set(cue_durations):
+        fail("audio mix-level map does not name every palette cue exactly once")
+    if not all(isinstance(value, (int, float)) for value in gains.values()):
+        fail("audio mix-level map contains a non-numeric gain")
+
+    mix = audio["mix"]
+    if not 1.0 <= float(mix["normalizer_lra_target_lu"]) <= float(mix["lra_max_lu"]):
+        fail("audio normalizer LRA target does not leave room below the release gate")
+    if float(mix["normalizer_true_peak_target_dbtp"]) > float(mix["true_peak_max_dbtp"]):
+        fail("audio normalizer true-peak target exceeds the release gate")
+    mono = mix.get("mono_fold_down", {})
+    if mono.get("filter") != "pan=mono|c0=0.5*c0+0.5*c1":
+        fail("audio mono fold-down is not the canonical equal-channel sum")
+    if float(mono.get("integrated_delta_tolerance_lu", 0)) <= 0:
+        fail("audio mono fold-down has no integrated-loudness tolerance")
+    if float(mono.get("true_peak_max_dbtp", 0)) > float(mix["true_peak_max_dbtp"]):
+        fail("audio mono fold-down loosens the true-peak gate")
+    if float(mono.get("lra_max_lu", 0)) > float(mix["lra_max_lu"]):
+        fail("audio mono fold-down loosens the LRA gate")
 
     forbidden_host_copy = ("codex", "claude", "agent a", "agent b", "two agents")
     for master_id, master in masters.items():

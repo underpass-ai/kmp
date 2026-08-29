@@ -33,7 +33,6 @@ fs.writeFileSync(
   `${JSON.stringify({
     port,
     auth_required: true,
-    password_sha256: crypto.createHash("sha256").update(password).digest("hex"),
     cleartext_retained: false,
   }, null, 2)}\n`
 );

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 
-import crypto from "node:crypto";
 import fs from "node:fs";
+import { obsWebSocketAuthentication } from "./obs-websocket-auth.mjs";
 
 function now() {
   return { wall_time: new Date().toISOString(), monotonic_ns: process.hrtime.bigint().toString() };
@@ -31,14 +31,11 @@ class ObsConnection {
         if (packet.op === 0) {
           const identify = { rpcVersion: 1, eventSubscriptions: 64 };
           if (packet.d.authentication) {
-            const secret = crypto
-              .createHash("sha256")
-              .update(this.password + packet.d.authentication.salt)
-              .digest("base64");
-            identify.authentication = crypto
-              .createHash("sha256")
-              .update(secret + packet.d.authentication.challenge)
-              .digest("base64");
+            identify.authentication = obsWebSocketAuthentication(
+              this.password,
+              packet.d.authentication.salt,
+              packet.d.authentication.challenge,
+            );
           }
           this.ws.send(JSON.stringify({ op: 1, d: identify }));
           appendJsonl(this.trace, { direction: "client_to_obs", op: 1, authentication: "redacted" });

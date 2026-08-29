@@ -6,6 +6,12 @@ import json
 import pathlib
 import sys
 
+CAMPAIGN = pathlib.Path(__file__).resolve().parents[2]
+ROOT = CAMPAIGN.parents[1]
+sys.path.insert(0, str(CAMPAIGN / "scripts"))
+
+from capture_contract import credential_findings, repo_relative
+
 
 def sha256(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
@@ -24,6 +30,9 @@ index = pathlib.Path(sys.argv[3]).resolve()
 verification = json.loads((run / "verification.json").read_text())
 if not verification.get("passed"):
     raise SystemExit("refusing to promote a capture whose verification did not pass")
+findings = credential_findings(run)
+if findings:
+    raise SystemExit("refusing to promote capture with credentials:\n" + "\n".join(findings))
 manifest = run / "evidence-manifest.json"
 
 required = [
@@ -52,13 +61,17 @@ for relative in required:
     file = run / relative
     if not file.is_file():
         raise SystemExit(f"refusing to promote: missing {relative}")
-    evidence[relative] = {"path": str(file), "bytes": file.stat().st_size, "sha256": sha256(file)}
+    evidence[relative] = {
+        "path": repo_relative(file, ROOT),
+        "bytes": file.stat().st_size,
+        "sha256": sha256(file),
+    }
 
 
 def inventory(root: pathlib.Path) -> list[dict]:
     return [
         {
-            "path": str(file),
+            "path": repo_relative(file, ROOT),
             "relative_path": file.relative_to(run).as_posix(),
             "bytes": file.stat().st_size,
             "sha256": sha256(file),
@@ -71,14 +84,25 @@ def inventory(root: pathlib.Path) -> list[dict]:
 payload = {
     "contract": "kmp.obs-promoted-capture.v1",
     "scenario_id": verification["scenario_id"],
-    "run_dir": str(run),
-    "raw": {"path": str(raw), "bytes": raw.stat().st_size, "sha256": sha256(raw)},
-    "run_evidence_manifest": {"path": str(manifest), "sha256": sha256(manifest)},
+    "run_dir": repo_relative(run, ROOT),
+    "raw": {
+        "path": repo_relative(raw, ROOT),
+        "bytes": raw.stat().st_size,
+        "sha256": sha256(raw),
+    },
+    "run_evidence_manifest": {
+        "path": repo_relative(manifest, ROOT),
+        "sha256": sha256(manifest),
+    },
     "evidence": evidence,
     "obs_config": inventory(run / "obs-config"),
     "review_frames": inventory(run / "review-frames"),
     "obs_logs": [
-        {"path": str(file), "bytes": file.stat().st_size, "sha256": sha256(file)}
+        {
+            "path": repo_relative(file, ROOT),
+            "bytes": file.stat().st_size,
+            "sha256": sha256(file),
+        }
         for file in sorted(run.glob("obs.*.log"))
     ],
 }

@@ -17,6 +17,22 @@ CONTRACT_PATH = CAMPAIGN / "audio" / "contract.json"
 CONTRACT = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 
 
+def assert_loudness_contract() -> None:
+    mix = CONTRACT["mix"]
+    target_lra = float(mix["normalizer_lra_target_lu"])
+    maximum_lra = float(mix["lra_max_lu"])
+    if not 1.0 <= target_lra <= maximum_lra:
+        raise RuntimeError(
+            f"normalizer LRA target {target_lra} must be within 1..{maximum_lra} LU"
+        )
+    normalizer_peak = float(mix["normalizer_true_peak_target_dbtp"])
+    maximum_peak = float(mix["true_peak_max_dbtp"])
+    if normalizer_peak > maximum_peak:
+        raise RuntimeError(
+            f"normalizer true-peak target {normalizer_peak} exceeds {maximum_peak} dBTP"
+        )
+
+
 def run(command: list[str], *, binary: bool = False) -> subprocess.CompletedProcess[Any]:
     return subprocess.run(
         command,
@@ -79,12 +95,16 @@ def probe(path: pathlib.Path) -> dict[str, Any]:
     return {"stream": audio, "format": body["format"]}
 
 
-def loudness(path: pathlib.Path) -> dict[str, float]:
+def loudness(path: pathlib.Path, before_loudnorm: str | None = None) -> dict[str, float]:
     mix = CONTRACT["mix"]
+    filters = [] if before_loudnorm is None else [before_loudnorm]
+    filters.append(
+        f"loudnorm=I={mix['integrated_lufs']}:TP={mix['true_peak_max_dbtp']}:"
+        f"LRA={mix['lra_max_lu']}:print_format=json"
+    )
     measured = run([
         "ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-af",
-        f"loudnorm=I={mix['integrated_lufs']}:TP={mix['true_peak_max_dbtp']}:"
-        f"LRA={mix['lra_max_lu']}:print_format=json",
+        ",".join(filters),
         "-f", "null", "-",
     ])
     match = re.search(r"\{\s*\"input_i\".*?\}", measured.stderr, re.DOTALL)
@@ -138,9 +158,13 @@ def assert_pcm_24(path: pathlib.Path) -> dict[str, Any]:
 
 
 def assert_mix(path: pathlib.Path, master_id: str) -> dict[str, Any]:
+    assert_loudness_contract()
     assert_pcm_24(path)
     measured = loudness(path)
     mix = CONTRACT["mix"]
+    mono_contract = mix["mono_fold_down"]
+    mono = loudness(path, str(mono_contract["filter"]))
+    mono_delta = mono["integrated_lufs"] - measured["integrated_lufs"]
     failures: list[str] = []
     if abs(measured["integrated_lufs"] - float(mix["integrated_lufs"])) > float(mix["integrated_tolerance_lu"]):
         failures.append(f"integrated loudness is {measured['integrated_lufs']} LUFS")
@@ -148,6 +172,14 @@ def assert_mix(path: pathlib.Path, master_id: str) -> dict[str, Any]:
         failures.append(f"true peak is {measured['true_peak_dbtp']} dBTP")
     if measured["lra_lu"] > float(mix["lra_max_lu"]):
         failures.append(f"LRA is {measured['lra_lu']} LU")
+    if abs(mono_delta - float(mono_contract["expected_integrated_delta_lu"])) > float(
+        mono_contract["integrated_delta_tolerance_lu"]
+    ):
+        failures.append(f"mono fold-down integrated delta is {mono_delta} LU")
+    if mono["true_peak_dbtp"] > float(mono_contract["true_peak_max_dbtp"]):
+        failures.append(f"mono fold-down true peak is {mono['true_peak_dbtp']} dBTP")
+    if mono["lra_lu"] > float(mono_contract["lra_max_lu"]):
+        failures.append(f"mono fold-down LRA is {mono['lra_lu']} LU")
     silence = [
         interval_is_zero(path, float(start), float(end))
         for start, end in CONTRACT["masters"][master_id]["digital_silence"]
@@ -162,6 +194,10 @@ def assert_mix(path: pathlib.Path, master_id: str) -> dict[str, Any]:
         "file_sha256": file_sha256(path),
         "canonical_pcm": canonical_pcm(path),
         "loudness": measured,
+        "mono_fold_down": {
+            **mono,
+            "integrated_delta_from_stereo_lu": mono_delta,
+        },
         "digital_silence": silence,
         "passed": not failures,
         "failures": failures,
@@ -259,6 +295,7 @@ def write_palette_provenance(build: pathlib.Path) -> None:
             "authority": "decoded PCM hashes, not WAV container hashes",
             "source_sha256": file_sha256(CAMPAIGN / "audio" / "evidence-knot.csd"),
             "cue_map_sha256": file_sha256(CAMPAIGN / "audio" / "cues.tsv"),
+            "mix_levels_sha256": file_sha256(CAMPAIGN / "audio" / "mix-levels.json"),
             "contract_sha256": file_sha256(CONTRACT_PATH),
             "fixed_csound_seed": 11871,
         },

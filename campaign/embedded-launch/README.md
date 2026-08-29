@@ -39,13 +39,16 @@ python3 campaign/embedded-launch/scripts/test_audio_contract.py \
   tmp/campaign-audio
 ```
 
-That command synthesizes the original Evidence Knot palette, writes 48 kHz
-24-bit cue stems and pre-mixes, performs two-pass loudness normalization after
-dynamic precontrol, then fails unless every mix is within the LUFS, true-peak
-and LRA contract. Named transition and final-hold intervals must decode to
-digital zero. Determinism is the SHA-256 of decoded interleaved `s24le` PCM;
-WAV container hashes are retained only for artifact integrity. The resulting
-`audio-evidence.json` remains explicitly `deterministic_premix_not_picture_locked`.
+That command synthesizes the original Evidence Knot palette, applies the fixed
+cue-level staging, writes 48 kHz 24-bit stems and pre-mixes, then runs one
+deterministic precontrol stage and two-pass EBU R128 normalization. The
+normalizer works toward 5 LU LRA; the release gate remains no greater than 8
+LU at -18 LUFS-I ±1 and no greater than -1.5 dBTP. Named transition and
+final-hold intervals must decode to per-sample digital zero, and a mono
+fold-down must retain the expected energy, true peak and LRA. Determinism is
+the SHA-256 of decoded interleaved `s24le` PCM; WAV container hashes are
+retained only for artifact integrity. The resulting `audio-evidence.json`
+remains explicitly `deterministic_premix_not_picture_locked`.
 
 Final MP4 audio is AAC-LC, 48 kHz stereo. `192 kb/s` is the encoder target,
 not a promise about the average bitrate of sparse audio; `ffprobe` records the

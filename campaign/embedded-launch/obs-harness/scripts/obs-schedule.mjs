@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 "use strict";
 
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { obsWebSocketAuthentication } from "./obs-websocket-auth.mjs";
 
 const [edlPath, scenarioId, durationText, portText, passwordFile, traceFile, runDir] = process.argv.slice(2);
 if (!edlPath || !scenarioId || !durationText || !portText || !passwordFile || !traceFile || !runDir) {
@@ -69,8 +69,11 @@ const ready = new Promise((resolve, reject) => {
   ws.addEventListener("message", (event) => {
     const packet = JSON.parse(String(event.data));
     if (packet.op === 0) {
-      const secret = crypto.createHash("sha256").update(password + packet.d.authentication.salt).digest("base64");
-      const authentication = crypto.createHash("sha256").update(secret + packet.d.authentication.challenge).digest("base64");
+      const authentication = obsWebSocketAuthentication(
+        password,
+        packet.d.authentication.salt,
+        packet.d.authentication.challenge,
+      );
       ws.send(JSON.stringify({ op: 1, d: { rpcVersion: 1, eventSubscriptions: 4, authentication } }));
       append(traceFile, { direction: "scheduler_to_obs", op: 1, authentication: "redacted" });
     } else if (packet.op === 2) {

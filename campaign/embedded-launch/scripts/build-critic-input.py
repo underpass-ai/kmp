@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import re
 
@@ -15,9 +16,7 @@ CAMPAIGN = pathlib.Path(__file__).resolve().parents[1]
 ROOT = CAMPAIGN.parents[1]
 PACK = CAMPAIGN / "evidence-pack"
 SCHEMA = CAMPAIGN / "schema" / "launch-critic-input.schema.json"
-SHARED_SCHEMA = pathlib.Path(
-    "/home/gx10a/Documents/ai/kmp-campaign-agents/launch-critic/input.schema.json"
-)
+SCHEMA_OVERRIDE_ENV = "KMP_LAUNCH_CRITIC_INPUT_SCHEMA"
 OUTPUT = PACK / "critic-input.json"
 
 
@@ -42,9 +41,19 @@ def body(relative: str) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def verify_optional_schema_override() -> None:
+    raw = os.environ.get(SCHEMA_OVERRIDE_ENV)
+    if not raw:
+        return
+    override = pathlib.Path(raw).expanduser()
+    if not override.is_file():
+        raise SystemExit(f"critic input blocked: {SCHEMA_OVERRIDE_ENV} is not a file")
+    if sha256(SCHEMA) != sha256(override):
+        raise SystemExit("critic input blocked: repository schema differs from explicit override")
+
+
 def main() -> None:
-    if SHARED_SCHEMA.is_file() and sha256(SCHEMA) != sha256(SHARED_SCHEMA):
-        raise SystemExit("critic input blocked: repository schema differs from role contract")
+    verify_optional_schema_override()
 
     brief = json.loads((CAMPAIGN / "campaign.json").read_text(encoding="utf-8"))
     edl = json.loads((CAMPAIGN / "edl.json").read_text(encoding="utf-8"))
@@ -89,12 +98,12 @@ def main() -> None:
             "tool_list_path": "campaign/embedded-launch/evidence-pack/product/tools-list.json",
         },
         "brief_path": "campaign/embedded-launch/campaign.json",
-        "source_root": str(ROOT),
-        "evidence_pack_root": str(PACK),
+        "source_root": ".",
+        "evidence_pack_root": "campaign/embedded-launch/evidence-pack",
         "masters": masters,
         "role_contracts": {
-            "marketing": "/home/gx10a/Documents/ai/kmp-campaign-agents/marketing-director/AGENT.md",
-            "audio": "/home/gx10a/Documents/ai/kmp-campaign-agents/audio-director/AGENT.md",
+            "marketing": "campaign/embedded-launch/roles/marketing-director.md",
+            "audio": "campaign/embedded-launch/roles/audio-director.md",
         },
         "distribution_profiles": ["x-video-autoplay-muted-390px"],
         "required_human_panels": {"mobile_muted": 5, "audio_trained": 1},

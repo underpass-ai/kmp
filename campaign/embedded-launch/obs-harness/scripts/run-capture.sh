@@ -313,7 +313,8 @@ python3 "${SCRIPT_DIR}/verify-run.py" "${run_dir}" "${scenario}" "${run_dir}/edl
 if [ "${promote}" -eq 1 ]; then
   mkdir -p "${evidence_root}/raw"
   install -m 0644 "${run_dir}/obs-recording.mkv" "${evidence_root}/raw/${scenario_id}.mkv"
-  sha256sum "${evidence_root}/raw/${scenario_id}.mkv" >"${evidence_root}/raw/${scenario_id}.mkv.sha256"
+  raw_relative="campaign/embedded-launch/evidence-pack/capture/raw/${scenario_id}.mkv"
+  (cd "${ROOT}" && sha256sum "${raw_relative}") >"${evidence_root}/raw/${scenario_id}.mkv.sha256"
   python3 "${SCRIPT_DIR}/promote-run.py" \
     "${run_dir}" \
     "${evidence_root}/raw/${scenario_id}.mkv" \

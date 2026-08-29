@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 import audio_contract
+from capture_contract import repo_relative, resolve_repo_path
 
 
 CAMPAIGN = pathlib.Path(__file__).resolve().parents[1]
@@ -39,8 +40,8 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest()
 
 
-def render_picture(video: dict[str, object], raw_root: pathlib.Path, build: pathlib.Path) -> pathlib.Path:
-    """Remux a real OBS picture; still-image or DOM-terminal assembly is forbidden."""
+def promoted_picture(video: dict[str, object], raw_root: pathlib.Path) -> pathlib.Path:
+    """Resolve and authenticate one promoted raw independently of the checkout path."""
     source = raw_root / pathlib.Path(str(video["raw_picture"])).name
     if not source.is_file():
         raise SystemExit(f"missing OBS raw picture: {source}")
@@ -53,10 +54,20 @@ def render_picture(video: dict[str, object], raw_root: pathlib.Path, build: path
         raise SystemExit(f"{promoted_path.name} has the wrong capture contract")
     if promoted.get("scenario_id") != video["id"]:
         raise SystemExit(f"{promoted_path.name} names another scenario")
-    if source.resolve() != canonical.resolve() or pathlib.Path(promoted["raw"]["path"]).resolve() != canonical.resolve():
+    try:
+        promoted_raw = resolve_repo_path(promoted["raw"]["path"], ROOT)
+    except (KeyError, ValueError) as error:
+        raise SystemExit(f"{video['id']} promoted raw path is non-portable: {error}") from error
+    if source.resolve() != canonical.resolve() or promoted_raw != canonical.resolve():
         raise SystemExit(f"{video['id']} picture is not the canonical promoted OBS raw")
     if sha256(source) != promoted["raw"]["sha256"]:
         raise SystemExit(f"{video['id']} OBS raw hash differs from promoted capture")
+    return source
+
+
+def render_picture(video: dict[str, object], raw_root: pathlib.Path, build: pathlib.Path) -> pathlib.Path:
+    """Remux a real OBS picture; still-image or DOM-terminal assembly is forbidden."""
+    source = promoted_picture(video, raw_root)
     target = build / f"{video['id']}-picture.mp4"
     run(
         [
@@ -93,8 +104,11 @@ def promoted_cue_resolution(master_id: str) -> tuple[dict[str, object], dict[str
     anchor_binding = bindings.get("anchors.jsonl")
     if not isinstance(cue_binding, dict) or not isinstance(anchor_binding, dict):
         raise SystemExit(f"{master_id} promoted capture has no resolved cues/anchors")
-    cue_path = pathlib.Path(str(cue_binding.get("path", ""))).resolve()
-    anchor_path = pathlib.Path(str(anchor_binding.get("path", ""))).resolve()
+    try:
+        cue_path = resolve_repo_path(cue_binding.get("path"), ROOT)
+        anchor_path = resolve_repo_path(anchor_binding.get("path"), ROOT)
+    except ValueError as error:
+        raise SystemExit(f"{master_id} promoted cue/anchor path is non-portable: {error}") from error
     for label, path, binding in (
         ("resolved cues", cue_path, cue_binding), ("audio anchors", anchor_path, anchor_binding)
     ):
@@ -164,9 +178,9 @@ def verify_cue_anchors(video: dict[str, object]) -> dict[str, object]:
             "anchor_evidence": anchor.get("evidence"),
         })
     return {
-        "anchors_path": str(anchor_path),
+        "anchors_path": repo_relative(anchor_path, ROOT),
         "anchors_sha256": sha256(anchor_path),
-        "cue_resolution_path": str(cue_path),
+        "cue_resolution_path": repo_relative(cue_path, ROOT),
         "cue_resolution_sha256": sha256(cue_path),
         "passed": True,
         "cues": report,
@@ -174,9 +188,15 @@ def verify_cue_anchors(video: dict[str, object]) -> dict[str, object]:
 
 
 def silence_filters(master_id: str) -> list[str]:
+    windows = audio_contract.CONTRACT["masters"][master_id]["digital_silence"]
+    condition = "+".join(
+        f"between(t\\,{start}\\,{end})" for start, end in windows
+    )
+    # Timeline-enable expressions are evaluated once per audio frame and can
+    # leak the leading samples of a declared silence interval. aeval evaluates
+    # the condition per sample, so the contract's half-open windows are exact.
     return [
-        f"volume=0:enable='between(t\\,{start}\\,{end})'"
-        for start, end in audio_contract.CONTRACT["masters"][master_id]["digital_silence"]
+        f"aeval=if({condition}\\,0\\,val(0))|if({condition}\\,0\\,val(1))"
     ]
 
 
@@ -184,18 +204,51 @@ def render_mix(
     video: dict[str, object], audio: pathlib.Path, build: pathlib.Path
 ) -> tuple[pathlib.Path, dict[str, object]]:
     duration = float(video["duration"])
+    silence_windows = [
+        (float(start), float(end))
+        for start, end in audio_contract.CONTRACT["masters"][str(video["id"])]["digital_silence"]
+    ]
     inputs: list[str] = []
     filters: list[str] = []
     labels: list[str] = []
+    cue_instances: list[dict[str, object]] = []
     for index, (cue, start) in enumerate(video["cues"]):
         source = audio / "cues" / f"{cue}.wav"
         if not source.is_file():
             raise SystemExit(f"missing procedural cue: {source}")
         inputs.extend(["-i", str(source)])
-        delay = round(float(start) * 1000)
+        cue_start = float(start)
+        source_duration = float(audio_contract.probe(source)["format"]["duration"])
+        effective_duration = source_duration
+        for silent_start, silent_end in silence_windows:
+            if silent_start <= cue_start < silent_end:
+                raise SystemExit(
+                    f"{video['id']} cue {cue} starts inside digital silence at {cue_start}"
+                )
+            if cue_start < silent_start < cue_start + effective_duration:
+                effective_duration = silent_start - cue_start - 0.020
+                break
+        if effective_duration <= 0:
+            raise SystemExit(f"{video['id']} cue {cue} has no room before digital silence")
+        trimmed = effective_duration + 0.000001 < source_duration
+        cue_filters = [f"atrim=duration={effective_duration:.9f}"]
+        if trimmed:
+            fade_duration = min(0.080, effective_duration / 2)
+            fade_start = effective_duration - fade_duration
+            cue_filters.append(f"afade=t=out:st={fade_start:.9f}:d={fade_duration:.9f}")
+        delay = round(cue_start * 1000)
         label = f"a{index}"
-        filters.append(f"[{index}:a]adelay={delay}|{delay},apad=whole_dur={duration}[{label}]")
+        cue_filters.extend([f"adelay={delay}|{delay}", f"apad=whole_dur={duration}"])
+        filters.append(f"[{index}:a]{','.join(cue_filters)}[{label}]")
         labels.append(f"[{label}]")
+        cue_instances.append({
+            "cue": cue,
+            "resolved_at": cue_start,
+            "source_duration_seconds": source_duration,
+            "effective_duration_seconds": effective_duration,
+            "trimmed_for_digital_silence": trimmed,
+            "encoded_delay_ms": delay,
+        })
     precontrol = str(audio_contract.CONTRACT["mix"]["precontrol"])
     filters.append(
         f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0,"
@@ -211,7 +264,9 @@ def render_mix(
     mix_contract = audio_contract.CONTRACT["mix"]
     target_i = mix_contract["integrated_lufs"]
     target_tp = mix_contract["normalizer_true_peak_target_dbtp"]
-    target_lra = mix_contract["lra_max_lu"]
+    target_lra = mix_contract["normalizer_lra_target_lu"]
+    maximum_lra = mix_contract["lra_max_lu"]
+    audio_contract.assert_loudness_contract()
     measured = run([
         "ffmpeg", "-hide_banner", "-nostats", "-i", str(raw), "-af",
         f"loudnorm=I={target_i}:TP={target_tp}:LRA={target_lra}:print_format=json",
@@ -222,7 +277,7 @@ def render_mix(
         raise SystemExit(f"could not parse loudnorm first pass for {video['id']}")
     values = json.loads(match.group(0))
     second_pass = (
-        f"loudnorm=I={target_i}:TP={target_tp}:LRA={target_lra}:linear=true:"
+        f"loudnorm=I={target_i}:TP={target_tp}:LRA={target_lra}:linear=false:"
         f"measured_I={values['input_i']}:measured_TP={values['input_tp']}:"
         f"measured_LRA={values['input_lra']}:measured_thresh={values['input_thresh']}:"
         f"offset={values['target_offset']}:print_format=summary"
@@ -252,6 +307,8 @@ def render_mix(
     mix_report = {
         "master_id": video["id"],
         "precontrol_filter": precontrol,
+        "precontrol_passes": 1,
+        "cue_instances": cue_instances,
         "precontrolled": {
             "path": str(raw),
             "artifact_file_sha256": audio_contract.file_sha256(raw),
@@ -259,6 +316,11 @@ def render_mix(
         },
         "loudnorm": {
             "passes": 2,
+            "integrated_target_lufs": target_i,
+            "true_peak_target_dbtp": target_tp,
+            "lra_target_lu": target_lra,
+            "lra_gate_max_lu": maximum_lra,
+            "normalization_mode": "dynamic",
             "pass_1": values,
             "pass_2_filter": second_pass,
         },

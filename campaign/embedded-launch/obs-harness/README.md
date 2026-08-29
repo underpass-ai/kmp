@@ -36,7 +36,10 @@ campaign/embedded-launch/evidence-pack/capture/promoted/<scenario-id>.json
 The promoted JSON is the stable adapter for the campaign manifest. It binds the
 chosen run directory and hashes the raw recording, PTY, MCP wire, lifecycle,
 store, browser revisions, network observations, OBS config/logs and run-level
-evidence manifest; consumers never guess which UTC run is current.
+evidence manifest; consumers never guess which UTC run is current. Every path
+in that adapter is a POSIX path relative to the repository root. Consumers
+resolve it against their own checkout, reject absolute paths and reject `..` or
+symlink escapes.
 
 The three production ids are `fresh-process-same-why`,
 `two-processes-one-memory`, and `keep-the-wrong-turn`. Marketing owns their
@@ -80,6 +83,14 @@ redaction object that includes the SHA-256 of the original value. The raw wire
 line hash remains, so a reviewer can distinguish an exact payload from an
 explicitly redacted one. The ephemeral clear-text capabilities never survive
 finalization.
+
+Promotion and campaign validation both scan the complete run for surviving
+`*.private` files, clear ChronoLoom capabilities, OBS passwords or handshake
+responses, browser credential databases, private keys and common token formats.
+Only non-secret content hashes and the literal OBS value `redacted` survive.
+Password fingerprints are deliberately discarded with the password: the
+`auth_required` and `cleartext_retained` fields prove the security boundary
+without leaving a reusable correlation handle.
 
 OBS is the picture authority, not the event authority. MCP JSONL, PTY timing,
 browser revision events and OBS WebSocket timestamps share `CLOCK_MONOTONIC`

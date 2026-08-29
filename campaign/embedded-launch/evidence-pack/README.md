@@ -48,3 +48,10 @@ hashes. The audio panel is a separate independent human with documented
 audio-training context. Empty files, agent reviews, OCR and inferred answers do
 not count; the repository prepares a `PENDING` response template but never
 manufactures either approval.
+
+`scripts/freeze-product-evidence.py write` authenticates the downloaded release
+candidate, its checksum and its live `tools/list`, then records the candidate
+manifest, product commit and planned tag. Portable `check` validates that
+frozen identity without requiring `target/` or a downloaded binary in the
+checkout; `check --binary ...` additionally repeats the live MCP probe. Neither
+mode manufactures a public quality-gate result or a human sign-off.
