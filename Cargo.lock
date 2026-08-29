@@ -1501,7 +1501,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-adapter-embedded"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-application",
  "kmp-domain",
@@ -1517,7 +1517,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-adapter-nats"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "kmp-domain",
@@ -1534,7 +1534,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-adapter-neo4j"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-domain",
  "kmp-ports",
@@ -1547,7 +1547,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-adapter-valkey"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-domain",
  "kmp-ports",
@@ -1564,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-application"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-domain",
  "kmp-testkit",
@@ -1577,11 +1577,11 @@ dependencies = [
 
 [[package]]
 name = "kmp-config"
-version = "0.5.0"
+version = "0.5.1"
 
 [[package]]
 name = "kmp-conformance"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-adapter-embedded",
  "kmp-application",
@@ -1593,7 +1593,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-domain"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-plugin-api",
  "serde",
@@ -1601,7 +1601,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-embedded"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-adapter-embedded",
  "kmp-application",
@@ -1614,7 +1614,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-interpretation"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-plugin-api",
  "serde",
@@ -1622,7 +1622,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-mcp"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-adapter-embedded",
  "kmp-application",
@@ -1647,7 +1647,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-mcp-http"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "axum 0.8.9",
  "base64 0.22.1",
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-memory-api"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1673,7 +1673,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-observability"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-application",
  "kmp-domain",
@@ -1691,14 +1691,14 @@ dependencies = [
 
 [[package]]
 name = "kmp-plugin-api"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "kmp-ports"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-domain",
  "tokio",
@@ -1706,7 +1706,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-proto"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "prost 0.13.5",
  "prost-types 0.13.5",
@@ -1717,7 +1717,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-proto-mapping"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-application",
  "kmp-domain",
@@ -1731,7 +1731,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-server"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "kmp-adapter-nats",
  "kmp-adapter-neo4j",
@@ -1749,7 +1749,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-testkit"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "kmp-application",
@@ -1770,7 +1770,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-tests-kernel"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "axum 0.8.9",
@@ -1799,7 +1799,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-tests-paper"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "kmp-proto",
@@ -1815,7 +1815,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-tests-shared"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "kmp-adapter-nats",
@@ -1843,7 +1843,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-transport-grpc"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "async-nats",
  "kmp-application",
@@ -1870,7 +1870,7 @@ dependencies = [
 
 [[package]]
 name = "kmp-viewer"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "getrandom 0.2.17",
  "kmp-application",
