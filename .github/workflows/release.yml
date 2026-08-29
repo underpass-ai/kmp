@@ -54,6 +54,12 @@ jobs:
       - name: Verify public README parity
         run: python3 scripts/release/sync-public-readme.py check
 
+      - name: Verify versioned guide envelope
+        shell: bash
+        run: |
+          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          python3 scripts/release/guide.py check "${VERSION}"
+
       - name: Install Rust toolchain
         uses: ./.github/actions/install-rust
         with:
@@ -91,6 +97,10 @@ jobs:
         env:
           RUSTFLAGS: ${{ runner.os == 'Windows' && '-C link-arg=/Brepro' || '' }}
         run: cargo build --release -p kmp-mcp --locked --features sqlite --target ${{ matrix.target }}
+
+      - name: Verify both guides against the live release tool surface
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: python3 plugins/kmp/guide/build-guide.py check --binary target/${{ matrix.target }}/release/kmp-mcp
 
       - name: Package and checksum
         shell: bash
@@ -299,6 +309,9 @@ jobs:
 
       - name: Verify public README parity
         run: python3 scripts/release/sync-public-readme.py check
+
+      - name: Verify versioned guide envelope
+        run: python3 scripts/release/guide.py check "${{ steps.candidate.outputs.version }}"
 
       - name: Download the approved candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c

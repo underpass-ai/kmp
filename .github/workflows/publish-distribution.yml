@@ -45,6 +45,16 @@ jobs:
       - name: Verify public README parity
         run: python3 scripts/release/sync-public-readme.py check
 
+      - name: Verify versioned guide envelope
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          fi
+          python3 scripts/release/guide.py check "${version}"
+
       - name: Verify public plugin marketplace parity for tagged releases
         if: startsWith(github.ref, 'refs/tags/v')
         run: python3 scripts/release/verify-marketplace.py "${GITHUB_REF_NAME#v}"

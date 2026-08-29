@@ -38,4 +38,6 @@ python3 plugins/kmp/guide/build-guide.py write --binary target/debug/kmp-mcp
 `guide:kmp-agent` is the exact operational guide for agents. `guide:kmp` is a
 shorter human path opened visually through `open:guide`; do not collapse them
 into one audience. Setup, update, the three public READMEs and both guides must
-describe the same shipped version before a release is prepared.
+describe the same shipped version before a release is prepared. The supported
+`scripts/release.sh version` verb builds the bumped engine and regenerates both
+guide assets; candidate and tag paths reject a stale guide envelope.
