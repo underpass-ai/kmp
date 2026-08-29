@@ -158,7 +158,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let manifest = Manifest {
         benchmark: "MemoryAgentBench",
-        methodology: "archive/docs/research/memoryagentbench-benchmark.md",
+        methodology: "https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/research/memoryagentbench-benchmark.md",
         source_path: args.input.display().to_string(),
         generated_at_unix_seconds: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
         adapter: "memoryagentbench-kmp-adapter-v1",

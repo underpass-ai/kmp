@@ -16,12 +16,8 @@ promote archived prose into a current contract.
 | Tests and releases | [Development](development/README.md) | CI workflows and `scripts/ci` |
 | Research | [Research](research/README.md) | experiments and evidence, never release promises |
 
-## Archive boundary
+## History boundary
 
-The former root README and entire former `docs/` tree are preserved at
-[`archive/docs/audit-2026-08-26`](../archive/docs/audit-2026-08-26/ARCHIVE.md).
-They are inputs to an audit, not instructions. Earlier historical material
-also remains under [`archive/`](../archive/README.md).
-
-Do not copy an archived command or claim into maintained documentation without
-checking it against the current implementation.
+Superseded documents remain available in Git history and release tags; they
+are evidence, not current instructions. Check any historical command or claim
+against the current implementation before reusing it.

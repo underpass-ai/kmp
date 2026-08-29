@@ -4,8 +4,8 @@ Notable changes to KMP. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Detailed notes from the early release cycle are preserved in the
-[pre-0.2.0 snapshot](archive/changelog/pre-0.2.0.md).
+Detailed notes from the early release cycle remain available in the
+[`v0.5.0` Git tree](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/changelog/pre-0.2.0.md).
 
 ## [Unreleased]
 
@@ -383,8 +383,8 @@ Detailed notes from the early release cycle are preserved in the
 ### Changed
 
 - Historical documentation, Kubernetes experiments, product plans, research
-  artifacts and the previous README now live under `archive/`; maintained
-  Helm charts live under `distribution/`.
+  artifacts and the previous README remain available in Git history;
+  maintained Helm charts live under `distribution/`.
 - The root project metadata, MCP Registry listing, MCPB manifest, published
   crate pages and rustdocs now describe the same product: local-first agent
   memory that preserves what happened, when and why.

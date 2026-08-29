@@ -1,10 +1,10 @@
-//! Embedded edition storage adapters ([ADR-009](../../../archive/docs/adr/ADR-009-embedded-storage-engine.md)).
+//! Embedded edition storage adapters ([historical ADR-009](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-009-embedded-storage-engine.md)).
 //!
 //! One [`EmbeddedKernelStore`] opens one data directory
-//! ([ADR-012](../../../archive/docs/adr/ADR-012-embedded-data-directory.md) layout:
+//! ([historical ADR-012](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-012-embedded-data-directory.md) layout:
 //! `FORMAT_VERSION` plus an engine-named file under `store/`) and implements every persistence
 //! port the kernel needs: graph reads (materialized adjacency per
-//! [ADR-010](../../../archive/docs/adr/ADR-010-embedded-graph-representation.md)),
+//! [historical ADR-010](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-010-embedded-graph-representation.md)),
 //! node details, the append-only context event log, projection runtime state,
 //! and snapshots. SQLite is the only active engine and is fsync-durable, so
 //! the crash contract is: no data loss beyond the in-flight event, no duplicate

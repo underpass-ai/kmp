@@ -17,7 +17,7 @@ Primary generic contract:
 
 Reference:
 
-- [archived typed-service plan](../../archive/docs/product/kernel-memory-service-grpc-plan.md)
+- [historical typed-service plan](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/product/kernel-memory-service-grpc-plan.md)
 - [`api/examples/kernel/v1beta1/grpc`](../examples/kernel/v1beta1/grpc)
 
 Validation entrypoints:

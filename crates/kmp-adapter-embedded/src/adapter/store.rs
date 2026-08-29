@@ -11,7 +11,7 @@ use super::format_version::{self, StorageEngine};
 ///
 /// The engine behind it is chosen when the data directory is created and
 /// hidden behind the storage seam
-/// ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
+/// ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)):
 /// SQLite for every store this binary can open. Cloning is cheap (shared
 /// engine handle). Commits are fsync-durable, so
 /// each successful port write survives `kill -9`; a crash mid-transaction

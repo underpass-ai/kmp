@@ -18,8 +18,7 @@ Embedded is the default. Enterprise is optional and self-operated.
 - [Runbooks](runbooks/README.md) — diagnosis, recovery and enterprise deployment.
 - [Development](development/README.md) — tests, contracts and releases.
 - [Research](research/README.md) — current questions and retained publication work.
-- [Documentation catalog](documentation-catalog.md) — authority and archive boundaries.
+- [Documentation catalog](documentation-catalog.md) — authority and history boundaries.
 
 The complete documentation tree was restarted on 2026-08-26. The previous
-tree is retained as untrusted audit material under
-[`archive/docs/audit-2026-08-26`](../archive/docs/audit-2026-08-26/ARCHIVE.md).
+tree remains available as untrusted audit material in Git history.

@@ -160,7 +160,6 @@ for asset in retired_demo_assets:
 protected_demo_assets = [
     ROOT / "scripts" / "demo" / "embedded_two_sessions.sh",
     ROOT / "scripts" / "demo" / "record-chronoloom-gifs.sh",
-    ROOT / "archive" / "docs" / "research" / "demos",
 ]
 for asset in protected_demo_assets:
     if not asset.exists():

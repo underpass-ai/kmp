@@ -11,8 +11,8 @@ __pycache__/
 /.kernel/
 /.rehydration/
 
-# Generated test evidence that is not part of the maintained archive.
-/archive/artifacts/e2e-runs/
+# Generated test evidence stays outside the tracked repository history.
+/artifacts/
 
 # Per-developer agent configuration.
 /.codex/

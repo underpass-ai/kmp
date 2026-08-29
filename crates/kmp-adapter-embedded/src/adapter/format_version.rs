@@ -5,12 +5,12 @@ use std::path::{Path, PathBuf};
 use kmp_domain::PortError;
 
 /// The layout this binary creates for a fresh data directory: shareable
-/// SQLite ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
+/// SQLite ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 ///
 /// `FORMAT_VERSION` in a data directory names the *layout* — which engine
 /// wrote `store/`, and how. Bumping it is what makes a binary that predates
 /// a layout refuse the directory instead of opening an empty store beside
-/// it, so a new engine is a new number ([ADR-018](../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
+/// it, so a new engine is a new number ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Sqlite.format_version();
 
 /// Layout number used by the removed redb backend. Kept only so current

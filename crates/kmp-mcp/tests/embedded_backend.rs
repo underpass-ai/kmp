@@ -627,7 +627,7 @@ fn language_fallback_seed_arguments() -> Value {
                 "id": "evidence:project:language-fallback:embedded-redb-choice",
                 "supports": ["project:language-fallback:decision:embedded-redb"],
                 "text": "We chose redb because one writer matched one agent per project.",
-                "source": "archive/docs/adr/ADR-011.md:42",
+                "source": "https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-011-embedded-concurrency-model.md#L42",
                 "metadata": {"language": "en", "digest": "sha256:language-fixture"}
             }]
         }
@@ -739,7 +739,10 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         })
         .expect("English retry cites the stored evidence");
     assert_eq!(evidence["text"], TEXT);
-    assert_eq!(evidence["source"], "archive/docs/adr/ADR-011.md:42");
+    assert_eq!(
+        evidence["source"],
+        "https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-011-embedded-concurrency-model.md#L42"
+    );
     assert_eq!(evidence["metadata"]["language"], "en");
     assert_eq!(evidence["metadata"]["digest"], "sha256:language-fixture");
     assert!(

@@ -1,4 +1,4 @@
-//! The storage seam ([ADR-018](../../../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
+//! The storage seam ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! Everything the kernel ports need from a storage engine, and nothing an
 //! engine would need to know about the kernel: eleven key-to-bytes maps,
