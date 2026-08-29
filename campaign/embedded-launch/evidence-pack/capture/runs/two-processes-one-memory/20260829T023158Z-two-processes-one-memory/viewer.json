@@ -1,0 +1,32 @@
+{
+  "current_process_id": "process-b",
+  "switches": [
+    {
+      "process_id": "process-a",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17120",
+      "at": {
+        "wall_time": "2026-08-29T02:32:24.171Z",
+        "monotonic_ns": "131503008065424"
+      }
+    },
+    {
+      "process_id": "process-a",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17120",
+      "at": {
+        "wall_time": "2026-08-29T02:32:36.180Z",
+        "monotonic_ns": "131515017603071"
+      }
+    },
+    {
+      "process_id": "process-b",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17121",
+      "at": {
+        "wall_time": "2026-08-29T02:32:44.678Z",
+        "monotonic_ns": "131523514919484"
+      }
+    }
+  ]
+}

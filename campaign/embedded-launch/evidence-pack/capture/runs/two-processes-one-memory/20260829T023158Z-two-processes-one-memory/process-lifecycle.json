@@ -1,0 +1,148 @@
+{
+  "contract": "kmp.capture.process-lifecycle.v2",
+  "scenario_id": "two-processes-one-memory",
+  "fixture_label": null,
+  "client_pid": 2829049,
+  "start": {
+    "wall_time": "2026-08-29T02:32:24.114Z",
+    "monotonic_ns": "131502951532981"
+  },
+  "binary": {
+    "path": "/home/gx10a/Documents/ai/tmp/kmp-guide/tmp/release-candidate-0.5.0/assets/kmp-mcp-v0.5.0-aarch64-unknown-linux-gnu",
+    "bytes": 16806848,
+    "sha256": "b7e3f654266094c2e691dd3d963612f29c389be1171642143a24f58706fb4fcf"
+  },
+  "repository": {
+    "path": "/home/gx10a/Documents/ai/tmp/kmp-guide",
+    "commit": "d0499482eeb03479cc442a18677e0287b5e25a64",
+    "worktree_dirty": false,
+    "changed_paths": [],
+    "changed_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ignored_generated_prefixes": [
+      "campaign/embedded-launch/evidence-pack/capture/runs/"
+    ]
+  },
+  "scenario": {
+    "path": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/obs-harness/scenarios/two-processes-one-memory.json",
+    "sha256": "d7a2c96868f3250d4b80106440400feabea3b05d875fa698c9dcffcf5454e43f"
+  },
+  "declared_processes": [
+    {
+      "autostart": true,
+      "browser": true,
+      "id": "process-a",
+      "store_id": "shared-local"
+    },
+    {
+      "autostart": true,
+      "browser": false,
+      "id": "process-b",
+      "store_id": "shared-local"
+    }
+  ],
+  "process_runs": [
+    {
+      "process_id": "process-a",
+      "store_id": "shared-local",
+      "instance": 1,
+      "pid": 2829060,
+      "viewer_port": 17120,
+      "data_dir": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/two-processes-one-memory/20260829T023158Z-two-processes-one-memory/stores/shared-local",
+      "store_fingerprint": "74643c026b32",
+      "start": {
+        "wall_time": "2026-08-29T02:32:24.128Z",
+        "monotonic_ns": "131502965617292"
+      },
+      "viewer": {
+        "origin": "http://127.0.0.1:17120",
+        "capability_sha256": "e603e088ea2acb5049b1c1ce26beb389b4bd0a20990d34c597a9710b20bda80c",
+        "capability_retained": false
+      },
+      "end": {
+        "wall_time": "2026-08-29T02:33:13.743Z",
+        "monotonic_ns": "131552580121631"
+      },
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "process_id": "process-b",
+      "store_id": "shared-local",
+      "instance": 1,
+      "pid": 2829085,
+      "viewer_port": 17121,
+      "data_dir": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/two-processes-one-memory/20260829T023158Z-two-processes-one-memory/stores/shared-local",
+      "store_fingerprint": "74643c026b32",
+      "start": {
+        "wall_time": "2026-08-29T02:32:24.166Z",
+        "monotonic_ns": "131503003247960"
+      },
+      "viewer": {
+        "origin": "http://127.0.0.1:17121",
+        "capability_sha256": "945b8c5867a5b289f73c9df39c15591e698a2282cec03e159003a7b22645b544",
+        "capability_retained": false
+      },
+      "end": {
+        "wall_time": "2026-08-29T02:33:13.757Z",
+        "monotonic_ns": "131552594185363"
+      },
+      "exit": {
+        "code": 0,
+        "signal": null
+      }
+    }
+  ],
+  "browser_switches": [
+    {
+      "process_id": "process-a",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17120",
+      "at": {
+        "wall_time": "2026-08-29T02:32:24.171Z",
+        "monotonic_ns": "131503008065424"
+      }
+    },
+    {
+      "process_id": "process-a",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17120",
+      "at": {
+        "wall_time": "2026-08-29T02:32:36.180Z",
+        "monotonic_ns": "131515017603071"
+      }
+    },
+    {
+      "process_id": "process-b",
+      "instance": 1,
+      "origin": "http://127.0.0.1:17121",
+      "at": {
+        "wall_time": "2026-08-29T02:32:44.678Z",
+        "monotonic_ns": "131523514919484"
+      }
+    }
+  ],
+  "environment_allowlist": [
+    "PATH",
+    "LANG",
+    "LC_ALL",
+    "KMP_MCP_BACKEND",
+    "KMP_MCP_ENGINE",
+    "KMP_MCP_DATA_DIR",
+    "KMP_VIEWER_ADDR",
+    "RUST_LOG",
+    "XDG_DATA_HOME",
+    "XDG_CONFIG_HOME"
+  ],
+  "end": {
+    "wall_time": "2026-08-29T02:33:13.757Z",
+    "monotonic_ns": "131552594356403"
+  },
+  "failure": null,
+  "mcp_pid": 2829060,
+  "mcp_exit": {
+    "code": 0,
+    "signal": null
+  }
+}

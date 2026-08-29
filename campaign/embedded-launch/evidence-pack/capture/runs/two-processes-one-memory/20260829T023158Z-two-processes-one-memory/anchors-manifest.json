@@ -1,0 +1,8 @@
+{
+  "contract": "kmp.capture.anchor-set.v1",
+  "video_id": "two-processes-one-memory",
+  "ordered": true,
+  "count": 12,
+  "anchors_sha256": "ec7e9b5a8081884efa51e4268b0173773f6b0a55d049313dc5058d9998aa2175",
+  "clock_map_sha256": "5bdf7a8f455eb3b66f563a3dcf864ceb0807ec6a83be7cc0e18ac6211efcd83a"
+}

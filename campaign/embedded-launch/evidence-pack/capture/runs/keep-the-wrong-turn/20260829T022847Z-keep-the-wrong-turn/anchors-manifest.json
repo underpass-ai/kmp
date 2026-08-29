@@ -1,0 +1,8 @@
+{
+  "contract": "kmp.capture.anchor-set.v1",
+  "video_id": "keep-the-wrong-turn",
+  "ordered": true,
+  "count": 14,
+  "anchors_sha256": "2d2aa2bf94669cbcd99fee93ca007073a825530f6d4ab829a7205891940f4650",
+  "clock_map_sha256": "d48c795ec4bf24c4457e1e748c994571185a8b9091ad27c22013856977115deb"
+}

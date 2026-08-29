@@ -1,0 +1,27 @@
+{
+  "contract": "kmp.capture.monotonic-frame-map.v1",
+  "video_id": "fresh-process-same-why",
+  "timebase": "CLOCK_MONOTONIC nanoseconds",
+  "video_timebase": "nanoseconds from first encoded frame PTS",
+  "points": [
+    {
+      "monotonic_ns": "131426653334731",
+      "video_pts_ns": "0",
+      "source": "OBS RecordStateChanged/STARTED receipt",
+      "evidence": {
+        "obs_websocket_line_sha256": "7db4dde431ea92314de86c1404a79233cea27ddfaf8aa9b557e9a3de9ec8dc1a"
+      }
+    },
+    {
+      "monotonic_ns": "131470621527912",
+      "video_pts_ns": "43966000000",
+      "source": "OBS StopRecord response + ffprobe duration",
+      "evidence": {
+        "obs_stop_sha256": "8abf07678080a9069a272d84a948547cfc1e7dda8d06ce1875daa88dcd59cfda",
+        "ffprobe_sha256": "eb565d2ae3929e314952b71b6cc210ff9a91ffdc5d293dbbac4c92e50b78b68b"
+      }
+    }
+  ],
+  "mapping": "piecewise_linear_between_points",
+  "monotonic": true
+}

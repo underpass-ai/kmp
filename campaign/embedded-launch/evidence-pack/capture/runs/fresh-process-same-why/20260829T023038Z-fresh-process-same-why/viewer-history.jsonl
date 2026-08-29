@@ -1,0 +1,2 @@
+{"wall_time":"2026-08-29T02:31:04.595Z","monotonic_ns":"131423432039682","process_id":"session-01","instance":1,"origin":"http://127.0.0.1:17120","capability_sha256":"4b4e1e4d19239f37657052035a024c3f1b45bddcf1ebdaf1d1feefa307b9c9f5","capability_retained":false}
+{"wall_time":"2026-08-29T02:31:25.217Z","monotonic_ns":"131444054145588","process_id":"session-02","instance":1,"origin":"http://127.0.0.1:17121","capability_sha256":"32d797ec910da6be75d6c3866c98d9d501bf25792f77fe2952d4c6906c2daefd","capability_retained":false}

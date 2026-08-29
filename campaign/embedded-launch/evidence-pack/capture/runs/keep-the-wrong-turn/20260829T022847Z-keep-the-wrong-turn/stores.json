@@ -1,0 +1,71 @@
+{
+  "contract": "kmp.capture.stores.v2",
+  "engine": "sqlite",
+  "durability": "wal",
+  "isolated_from_user_store": true,
+  "selected_data_dir": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/stores/fixture-local",
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 2,
+      "sha256": "cdbcae15105d6b781e620813c79c7e868740d4e9cc53ce6f5fcbbc12387adf4b"
+    },
+    {
+      "path": "FORMAT_VERSION",
+      "bytes": 2,
+      "sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+    },
+    {
+      "path": "logs/kmp-mcp.log.2026-08-29",
+      "bytes": 12976,
+      "sha256": "83cf90f2452983c05f043c15b89b5faefa27f8dbcadf83fa7a29f4677934d3f0"
+    },
+    {
+      "path": "store/kernel.sqlite3",
+      "bytes": 135168,
+      "sha256": "41ac831ba395c3050482b759446372d7ede7bc98f2cfd05f01cd4d5240cd4448"
+    },
+    {
+      "path": "telemetry/quality.sqlite3",
+      "bytes": 20480,
+      "sha256": "63bb679ffd7bd633fc61c3618dcdf0f3834979e62fed5a0278a8c1b8cca076d2"
+    }
+  ],
+  "stores": [
+    {
+      "id": "fixture-local",
+      "engine": "sqlite",
+      "durability": "wal",
+      "selected_data_dir": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/stores/fixture-local",
+      "fingerprint": "802f3c772bd6",
+      "isolated_from_user_store": true,
+      "files": [
+        {
+          "path": ".gitignore",
+          "bytes": 2,
+          "sha256": "cdbcae15105d6b781e620813c79c7e868740d4e9cc53ce6f5fcbbc12387adf4b"
+        },
+        {
+          "path": "FORMAT_VERSION",
+          "bytes": 2,
+          "sha256": "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3"
+        },
+        {
+          "path": "logs/kmp-mcp.log.2026-08-29",
+          "bytes": 12976,
+          "sha256": "83cf90f2452983c05f043c15b89b5faefa27f8dbcadf83fa7a29f4677934d3f0"
+        },
+        {
+          "path": "store/kernel.sqlite3",
+          "bytes": 135168,
+          "sha256": "41ac831ba395c3050482b759446372d7ede7bc98f2cfd05f01cd4d5240cd4448"
+        },
+        {
+          "path": "telemetry/quality.sqlite3",
+          "bytes": 20480,
+          "sha256": "63bb679ffd7bd633fc61c3618dcdf0f3834979e62fed5a0278a8c1b8cca076d2"
+        }
+      ]
+    }
+  ]
+}

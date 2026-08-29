@@ -1,0 +1,205 @@
+{
+  "contract": "kmp.capture.readability-preflight.v1",
+  "scenario_id": "fresh-process-same-why",
+  "distribution_width_px": 390,
+  "target_minimum_cap_height_px": {
+    "hook": 14,
+    "prompt": 13,
+    "proof": 11,
+    "cta": 14
+  },
+  "measurement_status": "preparatory_only_not_cap_height_acceptance",
+  "measurement_note": "Bright line-band heights are an automated raster diagnostic, not glyph cap-height OCR and not the required muted panel.",
+  "muted_panel_status": "pending_5_of_5",
+  "frames": [
+    {
+      "index": 1,
+      "scene": "KMP/TerminalFocus",
+      "scene_contract": "Crop and scale the real PTY as the primary source; retain live Chromium as a secondary inset without recreating either window.",
+      "scene_at_ms": 0,
+      "sample_at_ms": 2000,
+      "full": {
+        "path": "review-frames/full-1920x1080/01-terminalfocus-002000ms.png",
+        "sha256": "66ed291bc4f04dd682c1473cc3a10cd11dac955725ae7dead13db421cb6fa2d9",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/01-terminalfocus-002000ms.png",
+        "sha256": "7f674e6df5e5bda65b898078f5cbede1e001e434acae8d6044b9df726c336362",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        15,
+        15
+      ],
+      "automated_bright_line_band_median_px": 15
+    },
+    {
+      "index": 2,
+      "scene": "KMP/ChronoFocus",
+      "scene_contract": "Crop and scale the real Chromium decision/prism area as the primary source; retain the live PTY as a secondary inset.",
+      "scene_at_ms": 9200,
+      "sample_at_ms": 11200,
+      "full": {
+        "path": "review-frames/full-1920x1080/02-chronofocus-011200ms.png",
+        "sha256": "4b2c23f9c4d95b6d159c829afa21c0d8f1cd2e960c44201ddf6a42c4d16b0648",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/02-chronofocus-011200ms.png",
+        "sha256": "ffc482b0d3b0953e9abece163b33f53a11a34cb50105fc5b41884cf5fb883619",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        10,
+        7,
+        6,
+        7,
+        4,
+        4,
+        4,
+        3
+      ],
+      "automated_bright_line_band_median_px": 6
+    },
+    {
+      "index": 3,
+      "scene": "KMP/TerminalFocus",
+      "scene_contract": "Crop and scale the real PTY as the primary source; retain live Chromium as a secondary inset without recreating either window.",
+      "scene_at_ms": 13200,
+      "sample_at_ms": 15200,
+      "full": {
+        "path": "review-frames/full-1920x1080/03-terminalfocus-015200ms.png",
+        "sha256": "45c4719a0bafe8de47e8db30929ee65bf09c3ed240611205bfe3a4ac43cac2f9",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/03-terminalfocus-015200ms.png",
+        "sha256": "de4949cf90f790cd304006237cdeb0b87b1e0d4d794915003ca38581f3c7b830",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        14,
+        14
+      ],
+      "automated_bright_line_band_median_px": 14
+    },
+    {
+      "index": 4,
+      "scene": "KMP/Wide",
+      "scene_contract": "One OBS XSHM capture shows the real PTY and real Chromium together; use only for transitions and the two-process/store identity.",
+      "scene_at_ms": 17200,
+      "sample_at_ms": 19200,
+      "full": {
+        "path": "review-frames/full-1920x1080/04-wide-019200ms.png",
+        "sha256": "feea8a626876da97a7188dd7170b1ebb828e797184f92b5c79a77e9b609d0ce5",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/04-wide-019200ms.png",
+        "sha256": "65b0801e6eca77757d02b237ee4d6b142174ae40491b621cd2970bc750fee494",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        5,
+        4,
+        6,
+        6
+      ],
+      "automated_bright_line_band_median_px": 6
+    },
+    {
+      "index": 5,
+      "scene": "KMP/TerminalFocus",
+      "scene_contract": "Crop and scale the real PTY as the primary source; retain live Chromium as a secondary inset without recreating either window.",
+      "scene_at_ms": 22000,
+      "sample_at_ms": 24000,
+      "full": {
+        "path": "review-frames/full-1920x1080/05-terminalfocus-024000ms.png",
+        "sha256": "4ec2f02077bb50345d172dd2483de13b2a4fa6af3c62fe92bfd80395ebc568ec",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/05-terminalfocus-024000ms.png",
+        "sha256": "332b699719ba05f0ee767d0f83be3a72e759fdd18329c51986ad17b32921b2f3",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        16,
+        17,
+        16,
+        19,
+        19,
+        12
+      ],
+      "automated_bright_line_band_median_px": 17
+    },
+    {
+      "index": 6,
+      "scene": "KMP/ChronoFocus",
+      "scene_contract": "Crop and scale the real Chromium decision/prism area as the primary source; retain the live PTY as a secondary inset.",
+      "scene_at_ms": 28800,
+      "sample_at_ms": 30800,
+      "full": {
+        "path": "review-frames/full-1920x1080/06-chronofocus-030800ms.png",
+        "sha256": "79723c7467b8d3dd003e37e786245bfc80a34d1be93a9888a6e168c0210fd837",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/06-chronofocus-030800ms.png",
+        "sha256": "1fdfde4de5391daf8a569a5c92f15ff3ac64433bbe4b7a2737706e96b2add1f1",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        10,
+        7,
+        6,
+        7,
+        4,
+        3,
+        4,
+        3,
+        3
+      ],
+      "automated_bright_line_band_median_px": 4
+    },
+    {
+      "index": 7,
+      "scene": "KMP/CTAFocus",
+      "scene_contract": "Scale the real PTY line containing the CTA as the primary source; retain the final real ChronoLoom state as a secondary inset.",
+      "scene_at_ms": 37100,
+      "sample_at_ms": 39100,
+      "full": {
+        "path": "review-frames/full-1920x1080/07-ctafocus-039100ms.png",
+        "sha256": "5b07f3b4c444c90dd3094eee03c95710b0fc4834781b44d67d2699e983ae5836",
+        "width": 1920,
+        "height": 1080
+      },
+      "mobile": {
+        "path": "review-frames/mobile-390/07-ctafocus-039100ms.png",
+        "sha256": "34ac2435abada1846a7ee642bcd3deb07b5108e8f0cf12844228d9fd028e804b",
+        "width": 390,
+        "height": 220
+      },
+      "automated_bright_line_band_heights_px": [
+        14,
+        15,
+        15,
+        15
+      ],
+      "automated_bright_line_band_median_px": 15
+    }
+  ]
+}

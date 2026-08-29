@@ -1,0 +1,27 @@
+{
+  "contract": "kmp.capture.monotonic-frame-map.v1",
+  "video_id": "keep-the-wrong-turn",
+  "timebase": "CLOCK_MONOTONIC nanoseconds",
+  "video_timebase": "nanoseconds from first encoded frame PTS",
+  "points": [
+    {
+      "monotonic_ns": "131315613323461",
+      "video_pts_ns": "0",
+      "source": "OBS RecordStateChanged/STARTED receipt",
+      "evidence": {
+        "obs_websocket_line_sha256": "408f2b2db79376e50673b0b44bc3f9f0251ae1187757581f4d0293e8c8ffcfab"
+      }
+    },
+    {
+      "monotonic_ns": "131369583614078",
+      "video_pts_ns": "54016000000",
+      "source": "OBS StopRecord response + ffprobe duration",
+      "evidence": {
+        "obs_stop_sha256": "c28b45ed88d7106c07549900d88785b1ce6fefd6f1639bade0a7c2a4cf4af0db",
+        "ffprobe_sha256": "823eb4033850e2df4990c655cdf2917d44a3c1fa2bf2b7a185a28eb5403ced78"
+      }
+    }
+  ],
+  "mapping": "piecewise_linear_between_points",
+  "monotonic": true
+}

@@ -1,0 +1,13 @@
+
+DevTools listening on ws://127.0.0.1:9320/devtools/browser/d06eddf1-afbe-484c-a01b-cdd243e13f36
+[2825808:2825808:0829/043105.135028:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825808:2825808:0829/043105.144287:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825755:2825792:0829/043107.142578:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[2825808:2825808:0829/043116.654574:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825808:2825808:0829/043116.660997:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+Created TensorFlow Lite XNNPACK delegate for CPU.
+[2825808:2825808:0829/043126.097254:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825808:2825808:0829/043126.107263:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825808:2825808:0829/043127.097170:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825808:2825808:0829/043127.106810:ERROR:gpu/command_buffer/service/context_group.cc:140] ContextResult::kFatalFailure: WebGL1 blocklisted
+[2825755:2825792:0829/043133.155552:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
