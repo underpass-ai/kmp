@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-29
+
 ### Changed
 
 - Embedded KMP now presents SQLite WAL only. Runtime diagnostics, store
@@ -599,7 +601,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/underpass-ai/kmp/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/underpass-ai/kmp/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/underpass-ai/kmp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/underpass-ai/kmp/compare/v0.4.0...v0.4.1
