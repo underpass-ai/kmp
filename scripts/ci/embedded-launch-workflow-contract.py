@@ -44,6 +44,7 @@ GATE_CLAUSES = (
     "campaign/embedded-launch/scripts/test_panel_contract.py",
     "campaign/embedded-launch/scripts/test_capture_portability.py",
     "campaign/embedded-launch/scripts/test_final_media_contract.py",
+    "campaign/embedded-launch/scripts/test_final_regeneration_gate.py",
     "campaign/embedded-launch/obs-harness/scripts/test-obs-websocket-auth.mjs",
     "campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs",
     "campaign/embedded-launch/scripts/freeze-product-evidence.py check",
@@ -105,6 +106,14 @@ def prove_mutation_guards(workflow: str, gate: str) -> None:
             workflow,
             gate.replace(
                 "node campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs\n",
+                "",
+                1,
+            ),
+        ),
+        "missing final regeneration source test": (
+            workflow,
+            gate.replace(
+                '"${python}" campaign/embedded-launch/scripts/test_final_regeneration_gate.py\n',
                 "",
                 1,
             ),
@@ -183,7 +192,7 @@ def main() -> None:
     prove_mutation_guards(workflow, gate)
     print(
         "embedded launch workflow contract passed: path scope, immutable tools, "
-        "source/final split, deterministic hook, portable roles/schemas, 8 mutation guards"
+        "source/final split, deterministic hook, portable roles/schemas, 9 mutation guards"
     )
 
 

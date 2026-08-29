@@ -20,6 +20,7 @@ cd "${root}"
 "${python}" campaign/embedded-launch/scripts/test_panel_contract.py
 "${python}" campaign/embedded-launch/scripts/test_capture_portability.py
 "${python}" campaign/embedded-launch/scripts/test_final_media_contract.py
+"${python}" campaign/embedded-launch/scripts/test_final_regeneration_gate.py
 node campaign/embedded-launch/obs-harness/scripts/test-obs-websocket-auth.mjs
 node campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs
 node campaign/embedded-launch/obs-harness/scripts/test-terminal-presentation.mjs
