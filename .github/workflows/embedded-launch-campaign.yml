@@ -64,7 +64,16 @@ jobs:
           dpkg-query --show --showformat='${Package}=${Version}\n' \
             ffmpeg csound python3-jsonschema
           ffmpeg -version | head -n 1
-          csound --version 2>&1 | head -n 2
+          csound_probe_status=0
+          timeout --kill-after=1s 5s csound --version </dev/null \
+            >"${RUNNER_TEMP}/kmp-csound-version.txt" 2>&1 || csound_probe_status=$?
+          if [[ "${csound_probe_status}" -ne 0 \
+            && "${csound_probe_status}" -ne 124 \
+            && "${csound_probe_status}" -ne 137 ]]; then
+            cat "${RUNNER_TEMP}/kmp-csound-version.txt"
+            exit "${csound_probe_status}"
+          fi
+          head -n 2 "${RUNNER_TEMP}/kmp-csound-version.txt"
 
       - name: Prove workflow and external-action contracts
         run: |

@@ -32,6 +32,8 @@ WORKFLOW_CLAUSES = (
     "-o Acquire::http::Timeout=30",
     "-o Acquire::https::Timeout=30",
     "sudo timeout --kill-after=15s 600 env DEBIAN_FRONTEND=noninteractive",
+    "timeout --kill-after=1s 5s csound --version </dev/null",
+    'head -n 2 "${RUNNER_TEMP}/kmp-csound-version.txt"',
     '"ffmpeg=${FFMPEG_DEB_VERSION}"',
     '"csound=${CSOUND_DEB_VERSION}"',
     '"python3-jsonschema=${JSONSCHEMA_DEB_VERSION}"',
@@ -94,6 +96,14 @@ def prove_mutation_guards(workflow: str, gate: str) -> None:
         ),
         "missing toolchain step timeout": (
             workflow.replace("        timeout-minutes: 16\n", "", 1),
+            gate,
+        ),
+        "unbounded csound version probe": (
+            workflow.replace(
+                "timeout --kill-after=1s 5s csound --version </dev/null",
+                "csound --version",
+                1,
+            ),
             gate,
         ),
         "unscoped pull requests": (
@@ -206,7 +216,7 @@ def main() -> None:
     prove_mutation_guards(workflow, gate)
     print(
         "embedded launch workflow contract passed: path scope, immutable tools, "
-        "source/final split, deterministic hook, portable roles/schemas, 11 mutation guards"
+        "source/final split, deterministic hook, portable roles/schemas, 12 mutation guards"
     )
 
 
