@@ -1,5 +1,5 @@
 ---
-description: Show the ten KMP moves and when to use each one
+description: Show the ten KMP memory moves and when to use each one
 argument-hint: "[read|write|time|audit]"
 ---
 

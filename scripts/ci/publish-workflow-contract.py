@@ -138,19 +138,65 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     current_description = (
         "Local-first agent memory: teaches the memory moves and opens memory in ChronoLoom."
     )
-    manifests = (
-        fixture / ".claude-plugin/plugin.json",
-        fixture / ".codex-plugin/plugin.json",
-    )
-    for manifest in manifests:
+    source_root = fixture / "release-source"
+    plugin_root = fixture / "plugins/kmp"
+    claude_root = fixture / "claude-source"
+    manifests = {
+        "source_claude": source_root / ".claude-plugin/plugin.json",
+        "source_codex": source_root / ".codex-plugin/plugin.json",
+        "snapshot_claude": plugin_root / ".claude-plugin/plugin.json",
+        "codex": plugin_root / ".codex-plugin/plugin.json",
+        "claude": claude_root / ".claude-plugin/plugin.json",
+        "claude_codex": claude_root / ".codex-plugin/plugin.json",
+    }
+    for manifest in manifests.values():
         manifest.parent.mkdir(parents=True, exist_ok=True)
         manifest.write_text(
             json.dumps({"version": "0.4.2", "description": current_description}),
             encoding="utf-8",
         )
-    listing = fixture / "marketplace.json"
-    listing.write_text(
-        json.dumps({"plugins": [{"name": "kmp", "description": current_description}]}),
+    for root in (source_root, plugin_root, claude_root):
+        skill = root / "skills/kmp-memory/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text("Recover before re-deriving.\n", encoding="utf-8")
+    claude_listing = fixture / "claude-marketplace.json"
+    claude_listing.write_text(
+        json.dumps(
+            {
+                "plugins": [
+                    {
+                        "name": "kmp",
+                        "description": current_description,
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/underpass-ai/kmp.git",
+                            "path": "plugins/kmp",
+                            "ref": "a" * 40,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    codex_listing = fixture / "codex-marketplace.json"
+    codex_listing.write_text(
+        json.dumps(
+            {
+                "plugins": [
+                    {
+                        "name": "kmp",
+                        "source": {"source": "local", "path": "./plugins/kmp"},
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    readme = fixture / "README.md"
+    readme.write_text(
+        "| `kmp` | product | snapshot | Local-first agent memory over thirteen MCP tools: "
+        "ten memory moves plus three shared ChronoLoom view tools. |\n",
         encoding="utf-8",
     )
 
@@ -159,9 +205,17 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         marketplace_verifier,
         "0.4.2",
         "--root",
-        fixture,
+        plugin_root,
         "--listing",
-        listing,
+        claude_listing,
+        "--codex-listing",
+        codex_listing,
+        "--readme",
+        readme,
+        "--claude-root",
+        claude_root,
+        "--source-root",
+        source_root,
     ]
 
     subprocess.run(
@@ -170,7 +224,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         stdout=subprocess.DEVNULL,
     )
 
-    manifests[0].write_text(
+    manifests["claude"].write_text(
         json.dumps({"version": "0.4.2+cache.1", "description": current_description}),
         encoding="utf-8",
     )
@@ -180,7 +234,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         stdout=subprocess.DEVNULL,
     )
 
-    manifests[1].write_text(
+    manifests["codex"].write_text(
         json.dumps({"version": "0.4.1", "description": current_description}),
         encoding="utf-8",
     )
@@ -193,17 +247,35 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     if stale.returncode == 0 or "merge the underpass-ai/plugins mirror PR" not in stale.stderr:
         raise SystemExit("marketplace verifier accepted a stale host manifest")
 
-    manifests[1].write_text(
+    manifests["codex"].write_text(
         json.dumps({"version": "0.4.2", "description": current_description}),
         encoding="utf-8",
     )
-    listing.write_text(
+    manifests["claude"].write_text(
+        json.dumps({"version": "0.4.1", "description": current_description}),
+        encoding="utf-8",
+    )
+    stale = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if stale.returncode == 0 or "for Claude is '0.4.1'" not in stale.stderr:
+        raise SystemExit("marketplace verifier read the mirrored manifest instead of Claude's source")
+
+    manifests["claude"].write_text(
+        json.dumps({"version": "0.4.2", "description": current_description}),
+        encoding="utf-8",
+    )
+    claude_listing.write_text(
         json.dumps(
             {
                 "plugins": [
                     {
                         "name": "kmp",
                         "description": "Teaches the ten moves and diagnoses setup.",
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/underpass-ai/kmp.git",
+                            "path": "plugins/kmp",
+                            "ref": "a" * 40,
+                        },
                     }
                 ]
             }
@@ -213,6 +285,93 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     stale_copy = subprocess.run(verify, check=False, capture_output=True, text=True)
     if stale_copy.returncode == 0 or "ChronoLoom" not in stale_copy.stderr:
         raise SystemExit("marketplace verifier accepted stale whole-surface copy")
+
+    claude_listing.write_text(
+        json.dumps(
+            {
+                "plugins": [
+                    {
+                        "name": "kmp",
+                        "description": current_description,
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/underpass-ai/kmp.git",
+                            "path": "plugins/kmp",
+                            "ref": "a" * 40,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    readme.write_text(
+        "| `kmp` | product | snapshot | Navigable memory: 10 KMP moves, with ChronoLoom. |\n",
+        encoding="utf-8",
+    )
+    stale_copy = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if stale_copy.returncode == 0 or "retired ten-move" not in stale_copy.stderr:
+        raise SystemExit("marketplace verifier accepted the stale public README product row")
+
+    readme.write_text(
+        "| `kmp` | product | snapshot | Local-first agent memory over thirteen MCP tools: "
+        "ten memory moves plus three shared ChronoLoom view tools. |\n",
+        encoding="utf-8",
+    )
+    claude_listing.write_text(
+        json.dumps(
+            {
+                "plugins": [
+                    {
+                        "name": "kmp",
+                        "description": current_description,
+                        "source": {
+                            "source": "git-subdir",
+                            "url": "https://github.com/underpass-ai/kmp.git",
+                            "path": "plugins/kmp",
+                            "ref": "main",
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    moving_ref = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if moving_ref.returncode == 0 or "immutable 40-character commit SHA" not in moving_ref.stderr:
+        raise SystemExit("marketplace verifier accepted a moving Claude source ref")
+
+    listing_body = json.loads(claude_listing.read_text(encoding="utf-8"))
+    listing_body["plugins"][0]["source"]["ref"] = "a" * 40
+    listing_body["plugins"][0]["source"]["path"] = "plugin/kmp"
+    claude_listing.write_text(json.dumps(listing_body), encoding="utf-8")
+    wrong_mapping = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if wrong_mapping.returncode == 0 or "no longer resolves" not in wrong_mapping.stderr:
+        raise SystemExit("marketplace verifier accepted the wrong Claude source path")
+    listing_body["plugins"][0]["source"]["path"] = "plugins/kmp"
+    claude_listing.write_text(json.dumps(listing_body), encoding="utf-8")
+
+    codex_body = json.loads(codex_listing.read_text(encoding="utf-8"))
+    codex_body["plugins"][0]["source"]["path"] = "./plugin/kmp"
+    codex_listing.write_text(json.dumps(codex_body), encoding="utf-8")
+    wrong_mapping = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if wrong_mapping.returncode == 0 or "reviewed plugins/kmp snapshot" not in wrong_mapping.stderr:
+        raise SystemExit("marketplace verifier accepted the wrong Codex source path")
+    codex_body["plugins"][0]["source"]["path"] = "./plugins/kmp"
+    codex_listing.write_text(json.dumps(codex_body), encoding="utf-8")
+
+    claude_skill = claude_root / "skills/kmp-memory/SKILL.md"
+    claude_skill.write_text("Stale routing.\n", encoding="utf-8")
+    stale_tree = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if stale_tree.returncode == 0 or "Claude marketplace source" not in stale_tree.stderr:
+        raise SystemExit("marketplace verifier accepted stale Claude content at the same version")
+    claude_skill.write_text("Recover before re-deriving.\n", encoding="utf-8")
+
+    codex_skill = plugin_root / "skills/kmp-memory/SKILL.md"
+    codex_skill.write_text("Stale routing.\n", encoding="utf-8")
+    stale_tree = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if stale_tree.returncode == 0 or "Codex marketplace snapshot" not in stale_tree.stderr:
+        raise SystemExit("marketplace verifier accepted stale Codex content at the same version")
 
 guide_verifier = ROOT / "scripts/release/guide.py"
 with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
