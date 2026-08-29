@@ -1,7 +1,6 @@
 $ErrorActionPreference = "Stop"
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$Plugin = Join-Path $Root "plugins/kmp"
 $Fixture = Join-Path $Root "tests/plugin/kmp-smoke.jsonl"
 $Work = Join-Path ([System.IO.Path]::GetTempPath()) ("kmp-windows-launcher-" + [guid]::NewGuid())
 $Copy = Join-Path $Work "kmp"
@@ -16,19 +15,24 @@ function Fail([string] $Message) {
 
 try {
     $Directories = @(
-        (Join-Path $Copy "scripts")
-        (Join-Path $Copy "bin")
+        $Work
         $PathBin
         $MismatchBin
     )
     New-Item -ItemType Directory -Force -Path $Directories | Out-Null
-    Copy-Item (Join-Path $Plugin "scripts/run-embedded-mcp.cmd") (Join-Path $Copy "scripts")
-    Copy-Item -Recurse (Join-Path $Plugin ".codex-plugin") $Copy
-    Copy-Item -Recurse (Join-Path $Plugin ".claude-plugin") $Copy
 
-    $Built = Join-Path $Plugin "bin/kmp-mcp.exe"
+    $Archives = @(Get-ChildItem (Join-Path $Root "dist/plugin") -Filter "kmp-plugin-*-windows-x86_64.tar.gz")
+    if ($Archives.Count -ne 1) {
+        Fail "expected one packaged Windows plugin, found $($Archives.Count)"
+    }
+    & tar -xzf $Archives[0].FullName -C $Work
+    if ($LASTEXITCODE -ne 0) {
+        Fail "could not extract the packaged Windows plugin"
+    }
+
+    $Built = Join-Path $Copy "bin/kmp-mcp.exe"
     if (-not (Test-Path $Built)) {
-        Fail "the workflow did not stage plugins/kmp/bin/kmp-mcp.exe"
+        Fail "the packaged plugin does not contain kmp/bin/kmp-mcp.exe"
     }
     Copy-Item $Built (Join-Path $PathBin "kmp-mcp.exe")
 
