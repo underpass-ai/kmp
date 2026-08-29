@@ -169,6 +169,12 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
+    let lease = kmp_embedded::user_data_home()
+        .map(|data_home| {
+            kmp_mcp::uninstall::StoreSessionLease::acquire(&data_home, resolved.path())
+        })
+        .transpose()
+        .map_err(StartupFailure::after_the_backend_was_chosen)?;
     let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
     let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
         resolved.path(),
@@ -209,6 +215,10 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
     };
     let server = KernelMcpServer::with_embedded_backend(backend)
         .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+    let server = match lease {
+        Some(lease) => server.with_store_session_lease(lease),
+        None => server,
+    };
     Ok(match url {
         Some(url) => server.serving_viewer_at(url),
         None => server,
@@ -401,7 +411,7 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
                  `config [ask-fallback-languages <tags>]` / \
-                 `uninstall [--apply] [--purge] [--keep-memory]` / \
+                 `uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `migrate <source-dir> <destination-dir>` / \
                  `viewer [addr]` / `--version` / `--help`"
@@ -694,7 +704,9 @@ fn subcommand_usage(command: &str) -> &'static str {
         "config" => "kmp-mcp config [ask-fallback-languages <tags|none>]",
         "document" => "kmp-mcp document <about> [--out FILE]",
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
-        "uninstall" => "kmp-mcp uninstall [--apply] [--purge] [--keep-memory]",
+        "uninstall" => {
+            "kmp-mcp uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]"
+        }
         "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
         "import" => "kmp-mcp import [file]",
         "migrate" => "kmp-mcp migrate <source-dir> <destination-dir>",
@@ -723,7 +735,8 @@ kmp-mcp config                  Show the agent orchestration policy\n  \
 kmp-mcp config ask-fallback-languages <tags|none>\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
-kmp-mcp uninstall [--apply]     Show what removing KMP would take, then take it\n  \
+kmp-mcp uninstall [--store <absolute-path>] [--apply]\n  \
+                                Remove one store, or preview the whole installation\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
@@ -1037,27 +1050,46 @@ fn snapshot_result(
 /// how the wrong directory gets migrated over the right one.
 /// `uninstall` — what `/kmp:setup` never had an inverse for.
 ///
-/// The dry run is the default and `--apply` is how someone says to go ahead:
-/// a destructive command whose first run destroys is one people learn to fear
-/// and then avoid. Exit 1 when anything was kept, so "uninstalled" is a
-/// checkable claim rather than a hope.
+/// The dry run is the default and `--apply` is how someone says to go ahead.
+/// `--store <absolute-path>` narrows both preview and apply to exactly one
+/// memory. Every selected store must be inactive before any part of the plan
+/// is removed, so uninstall never fixes contention by killing a host.
 async fn run_uninstall_command(args: &[&str]) -> i32 {
     let mut applying = false;
     let mut purge = false;
     let mut keep_memory = false;
-    for argument in args {
+    let mut selected_store = None;
+    let mut arguments = args.iter();
+    while let Some(argument) = arguments.next() {
         match *argument {
             "--apply" | "--yes" => applying = true,
             "--purge" => purge = true,
             "--keep-memory" => keep_memory = true,
+            "--store" => {
+                let Some(path) = arguments.next().filter(|path| !looks_like_option(path)) else {
+                    eprintln!("kmp-mcp uninstall: --store requires an absolute path");
+                    return 2;
+                };
+                if selected_store.replace(PathBuf::from(path)).is_some() {
+                    eprintln!("kmp-mcp uninstall: --store may be given only once");
+                    return 2;
+                }
+            }
             other => {
                 eprintln!(
-                    "kmp-mcp: uninstall has no option `{other}`; it takes --apply, --purge and \
-                     --keep-memory"
+                    "kmp-mcp uninstall: unknown option `{other}`; it takes --store, --apply, \
+                     --purge and --keep-memory"
                 );
                 return 2;
             }
         }
+    }
+    if selected_store.is_some() && keep_memory {
+        eprintln!(
+            "kmp-mcp uninstall: --store and --keep-memory conflict; the selected store is the \
+             only thing this command would remove"
+        );
+        return 2;
     }
 
     let home = std::env::var_os("HOME")
@@ -1076,10 +1108,21 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     };
 
     let workspace = roots.working_dir.clone();
-    let pieces: Vec<_> = kmp_mcp::uninstall::survey(&roots)
-        .into_iter()
-        .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::uninstall::PieceKind::Store))
-        .collect();
+    let selective = selected_store.is_some();
+    let pieces: Vec<_> = if let Some(store) = selected_store.as_deref() {
+        match kmp_mcp::uninstall::selected_store(store) {
+            Ok(piece) => vec![piece],
+            Err(reason) => {
+                eprintln!("kmp-mcp uninstall: {reason}");
+                return 2;
+            }
+        }
+    } else {
+        kmp_mcp::uninstall::survey(&roots)
+            .into_iter()
+            .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::uninstall::PieceKind::Store))
+            .collect()
+    };
     print!(
         "{}",
         kmp_mcp::uninstall::report(
@@ -1099,12 +1142,34 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         return 0;
     }
 
-    let mut kept = 0;
-    for piece in &pieces {
-        // Memory is handed back before it is taken. A failed save keeps the
-        // store: the copy is the point, and removing memory whose rescue did
-        // not happen is the one mistake this verb must not make.
-        if !purge && let Some(destination) = kmp_mcp::uninstall::rescue_path(piece, &workspace) {
+    // This preflight comes before export, engine removal, plugin removal or
+    // any other mutation. A live owner is a reason to stop, never a process
+    // uninstall is authorised to kill.
+    let mut store_guards = Vec::new();
+    for piece in pieces
+        .iter()
+        .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+    {
+        match kmp_mcp::uninstall::StoreRemovalGuard::acquire(&roots.data_home, &piece.path) {
+            Ok(guard) => store_guards.push(guard),
+            Err(reason) => {
+                println!("kept     {}\n         {reason}", piece.path.display());
+                println!("\nNothing was removed.");
+                return 1;
+            }
+        }
+    }
+
+    // Memory is handed back before anything is taken. Export every selected
+    // store first; a later export failure therefore leaves the installation
+    // intact instead of producing a half-uninstall.
+    if !purge {
+        for piece in pieces
+            .iter()
+            .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+        {
+            let destination = kmp_mcp::uninstall::rescue_path(piece, &workspace)
+                .expect("a store always has a rescue path");
             match save_store(&piece.path, &destination).await {
                 Ok(events) => println!(
                     "saved    {} — {events} {}",
@@ -1112,15 +1177,56 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
                     if events == 1 { "event" } else { "events" }
                 ),
                 Err(reason) => {
-                    kept += 1;
                     println!(
                         "kept     {}\n         could not save it first: {reason}",
                         piece.path.display()
                     );
-                    continue;
+                    println!("\nNothing was removed.");
+                    return 1;
                 }
             }
         }
+    }
+
+    // Stores go first. If their bytes or their exact index entries cannot be
+    // retired, preserve every engine and host integration for a clean retry.
+    for piece in pieces
+        .iter()
+        .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+    {
+        if let Err(reason) = kmp_mcp::uninstall::remove(piece) {
+            println!("kept     {}\n         {reason}", piece.path.display());
+            println!("\nThe store could not be removed; engines and hosts were left in place.");
+            return 1;
+        }
+        println!("removed  {}", piece.path.display());
+        if let Err(reason) = kmp_mcp::memories::forget(&roots.data_home, &piece.path) {
+            println!("kept     store index\n         {reason}");
+            println!("\nThe store is gone, but its machine-local index could not be updated.");
+            return 1;
+        }
+    }
+
+    let leases = kmp_mcp::uninstall::store_leases_dir(&roots.data_home);
+    let mut kept = 0;
+    for piece in pieces
+        .iter()
+        .filter(|piece| piece.kind != kmp_mcp::uninstall::PieceKind::Store && piece.path != leases)
+    {
+        match kmp_mcp::uninstall::remove(piece) {
+            Ok(()) => println!("removed  {}", piece.path.display()),
+            Err(reason) => {
+                kept += 1;
+                println!("kept     {}\n         {reason}", piece.path.display());
+            }
+        }
+    }
+
+    // A full uninstall may remove the coordination directory only after all
+    // exclusive handles have been released. Selective removal deliberately
+    // keeps it so future hosts and retries coordinate on the same identity.
+    drop(store_guards);
+    for piece in pieces.iter().filter(|piece| piece.path == leases) {
         match kmp_mcp::uninstall::remove(piece) {
             Ok(()) => println!("removed  {}", piece.path.display()),
             Err(reason) => {
@@ -1133,7 +1239,11 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         println!("\n{kept} left in place. KMP is not fully removed.");
         return 1;
     }
-    println!("\nEverything listed is gone.");
+    if selective {
+        println!("\nThe selected store is gone; every other KMP store and host was left alone.");
+    } else {
+        println!("\nEverything removable in the list is gone.");
+    }
     0
 }
 

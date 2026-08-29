@@ -119,7 +119,7 @@ Run `kmp-mcp --help` for the live command contract.
 | `document <about>` | Render one about as deterministic Markdown. |
 | `migrate <src> <dst>` | Reserved for supported format migrations; retired format 1 fails with recovery instructions. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
-| `uninstall [--apply]` | Preview removal, then apply only when explicitly requested. |
+| `uninstall [--store <absolute-path>] [--apply]` | Preview the whole installation or one exact store; apply refuses live owners and runs only when explicitly requested. |
 
 The ten MCP memory tools are a separate surface advertised by `tools/list`.
 

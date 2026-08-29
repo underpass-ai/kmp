@@ -34,6 +34,10 @@ fn client_supports_apps(request: &Value) -> bool {
 
 pub struct KernelMcpServer {
     backend: Arc<dyn KernelMcpToolBackend>,
+    /// Shared store-use claim held until this MCP transport exits. Selective
+    /// uninstall must acquire the exclusive counterpart before it can remove
+    /// the directory.
+    store_session_lease: Option<crate::uninstall::StoreSessionLease>,
     /// The storage engine under an embedded backend, for the startup line
     /// and the doctor. `None` for the other backends.
     embedded_engine: Option<kmp_embedded::StorageEngine>,
@@ -97,6 +101,7 @@ impl KernelMcpServer {
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
         Self {
             backend,
+            store_session_lease: None,
             embedded_engine: None,
             viewer_url: None,
             viewer_offered: AtomicBool::new(false),
@@ -135,6 +140,11 @@ impl KernelMcpServer {
     /// viewer is reachable and unmentioned, which is how it went unnoticed.
     pub fn serving_viewer_at(mut self, url: impl Into<String>) -> Self {
         self.viewer_url = Some(url.into());
+        self
+    }
+
+    pub fn with_store_session_lease(mut self, lease: crate::uninstall::StoreSessionLease) -> Self {
+        self.store_session_lease = Some(lease);
         self
     }
 
@@ -209,6 +219,11 @@ impl KernelMcpServer {
                     kmp_embedded::resolve_data_dir_from_env().map_err(|error| error.to_string())?;
                 let engine = kmp_embedded::resolve_engine_for_data_dir_from_env(resolved.path())
                     .map_err(|error| error.to_string())?;
+                let lease = kmp_embedded::user_data_home()
+                    .map(|data_home| {
+                        crate::uninstall::StoreSessionLease::acquire(&data_home, resolved.path())
+                    })
+                    .transpose()?;
                 tracing::info!(
                     data_dir = %resolved.path().display(),
                     rule = resolved.rule_name(),
@@ -223,14 +238,18 @@ impl KernelMcpServer {
                     crate::memories::remember(&data_home, resolved.path());
                 }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
-                Ok(Self::with_retrying_embedded_backend(
+                let server = Self::with_retrying_embedded_backend(
                     crate::embedded::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
                         resolved.path(),
                         engine,
                         commit_native,
                     ),
                 )
-                .with_orphaned_bundle(resolved.orphaned_bundle().cloned()))
+                .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+                Ok(match lease {
+                    Some(lease) => server.with_store_session_lease(lease),
+                    None => server,
+                })
             }
             other => Err(format!(
                 "unsupported {MCP_BACKEND_ENV} value `{other}`; use `embedded` (the default), \

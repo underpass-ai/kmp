@@ -504,7 +504,8 @@ fn memories_finding() -> Vec<Finding> {
     if unreachable > 0 {
         finding = finding.with(
             "`unreachable` means no rule resolves to it: open it with KMP_MCP_DATA_DIR, or \
-             remove it with `kmp-mcp uninstall`, which saves the memory first",
+             remove exactly it with `kmp-mcp uninstall --store <absolute path>`, which refuses \
+             live owners and saves the memory first",
         );
     }
     vec![finding]

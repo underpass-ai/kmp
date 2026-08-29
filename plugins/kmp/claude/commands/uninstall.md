@@ -1,6 +1,6 @@
 ---
 description: Show what removing KMP from this machine would take — engines, stores, host wiring — saving the memory into the workspace first
-argument-hint: "[--apply] [--purge] [--keep-memory]"
+argument-hint: "[--store <absolute-path>] [--apply] [--purge] [--keep-memory]"
 allowed-tools: Bash(kmp-mcp:*)
 ---
 
@@ -22,6 +22,9 @@ Then tell them, in a few lines:
   merge, so it has to point somewhere new;
 - **anything found twice.** Two engines is the shape that makes a live session
   answer from an older binary than the one holding the fix;
+- **the scope.** To remove one memory, require its absolute path and use
+  `--store <absolute-path>`. That mode must leave every other memory, engine,
+  plugin and host registration alone;
 - **what this verb will not touch**: a committed bundle belongs to the
   repository, a registration lives inside a host's own configuration file, and
   a binary outside their home may be a package manager's. Each prints the
@@ -32,8 +35,9 @@ name. A copy nobody can find is not a copy.
 
 If a store was kept because its export failed, say that plainly — nothing of
 that memory was removed — and name the reported cause. If another process is
-using the store, close the active agent sessions and run
-`kmp-mcp uninstall --apply` from a plain shell.
+using the store, name the owning host reported by the command. Never kill it.
+Ask the user to stop or restart that host, then retry the same scoped command
+from a plain shell.
 
 Never run it with `--apply` or `--purge` on your own initiative — not when the
 dry run looks harmless, and not to "finish the job". `--purge` skips the export

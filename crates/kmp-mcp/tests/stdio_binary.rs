@@ -1,5 +1,5 @@
 use std::io::{BufRead, BufReader, Write};
-use std::process::{Command, Stdio};
+use std::process::{Child, ChildStdout, Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
@@ -14,6 +14,101 @@ const TLS_ENV_VARS: &[&str] = &[
     "KMP_KERNEL_GRPC_TLS_KEY_PATH",
     "KMP_KERNEL_GRPC_TLS_DOMAIN_NAME",
 ];
+
+struct LiveMcp {
+    child: Child,
+    stdout: BufReader<ChildStdout>,
+    next_id: u64,
+}
+
+impl LiveMcp {
+    fn start(store: &std::path::Path, data_home: &std::path::Path, home: &std::path::Path) -> Self {
+        std::fs::create_dir_all(store).expect("store root");
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+            .env("KMP_MCP_DATA_DIR", store)
+            .env("KMP_VIEWER_ADDR", "off")
+            .env("XDG_DATA_HOME", data_home)
+            .env("HOME", home)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .expect("live MCP host starts");
+        let stdout = BufReader::new(child.stdout.take().expect("live MCP stdout"));
+        let mut host = Self {
+            child,
+            stdout,
+            next_id: 1,
+        };
+        let suffix = store
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("store");
+        let seeded = host.call(serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_ingest",
+                "arguments": {
+                    "about": format!("test:uninstall:{suffix}"),
+                    "idempotency_key": format!("uninstall-two-hosts:{suffix}"),
+                    "memory": {
+                        "dimensions": [{"id": "timeline:test", "kind": "timeline"}],
+                        "entries": [{
+                            "id": format!("test:uninstall:{suffix}:observation:seed"),
+                            "kind": "observation",
+                            "text": "live host seed",
+                            "coordinates": [{
+                                "dimension": "timeline",
+                                "scope_id": "timeline:test",
+                                "sequence": 1
+                            }]
+                        }]
+                    }
+                }
+            }
+        }));
+        assert!(seeded.get("error").is_none(), "seed failed: {seeded}");
+        host
+    }
+
+    fn call(&mut self, mut request: Value) -> Value {
+        request["id"] = Value::from(self.next_id);
+        self.next_id += 1;
+        writeln!(
+            self.child.stdin.as_mut().expect("live MCP stdin"),
+            "{request}"
+        )
+        .expect("request written");
+        self.child
+            .stdin
+            .as_mut()
+            .expect("live MCP stdin")
+            .flush()
+            .expect("request flushed");
+        let mut line = String::new();
+        self.stdout.read_line(&mut line).expect("response read");
+        serde_json::from_str(&line)
+            .unwrap_or_else(|error| panic!("invalid response {line:?}: {error}"))
+    }
+
+    fn tool_count(&mut self) -> usize {
+        let response = self.call(serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "tools/list",
+            "params": {}
+        }));
+        response["result"]["tools"]
+            .as_array()
+            .unwrap_or_else(|| panic!("tools/list failed: {response}"))
+            .len()
+    }
+
+    fn stop(mut self) {
+        drop(self.child.stdin.take());
+        assert!(self.child.wait().expect("live MCP exits").success());
+    }
+}
 
 /// The product is the embedded kernel, so an unconfigured binary serves it.
 /// This used to exit 2 asking for a gRPC endpoint nobody had mentioned — the
@@ -56,6 +151,116 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
         log_entries > 0,
         "the default backend must journal exactly like explicit embedded mode"
     );
+}
+
+#[test]
+fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
+    let root = tempfile::tempdir().expect("test root");
+    let home = root.path().join("home");
+    let data_home = root.path().join("data");
+    let workspace = root.path().join("workspace");
+    let first_store = root.path().join("first-store");
+    let second_store = root.path().join("second-store");
+    std::fs::create_dir_all(&home).expect("home");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+
+    let mut first = LiveMcp::start(&first_store, &data_home, &home);
+    let mut second = LiveMcp::start(&second_store, &data_home, &home);
+    assert_eq!(first.tool_count(), 13);
+    assert_eq!(second.tool_count(), 13);
+
+    let refused = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .args(["uninstall", "--store"])
+        .arg(&first_store)
+        .arg("--apply")
+        .current_dir(&workspace)
+        .env("HOME", &home)
+        .env("XDG_DATA_HOME", &data_home)
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("selective uninstall runs");
+    assert_eq!(refused.status.code(), Some(1));
+    let refusal = String::from_utf8(refused.stdout).expect("uninstall output");
+    assert!(refusal.contains("is active"), "{refusal}");
+    assert!(refusal.contains("Nothing was removed"), "{refusal}");
+    assert!(first_store.exists());
+    assert!(second_store.exists());
+    assert_eq!(first.tool_count(), 13, "uninstall must not kill its owner");
+    assert_eq!(
+        second.tool_count(),
+        13,
+        "an unrelated host must stay fully usable"
+    );
+
+    first.stop();
+    let removed = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .args(["uninstall", "--store"])
+        .arg(&first_store)
+        .arg("--apply")
+        .current_dir(&workspace)
+        .env("HOME", &home)
+        .env("XDG_DATA_HOME", &data_home)
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("selective uninstall retries");
+    assert!(
+        removed.status.success(),
+        "{}\n{}",
+        String::from_utf8_lossy(&removed.stdout),
+        String::from_utf8_lossy(&removed.stderr)
+    );
+    let report = String::from_utf8(removed.stdout).expect("uninstall output");
+    assert!(report.contains("every other KMP store and host was left alone"));
+    assert!(!first_store.exists());
+    assert!(second_store.exists());
+    assert_eq!(second.tool_count(), 13);
+
+    let rescues = std::fs::read_dir(&workspace)
+        .expect("workspace listing")
+        .flatten()
+        .filter(|entry| {
+            entry.file_name().to_str().is_some_and(|name| {
+                name.starts_with("kmp-memory-first-store-") && name.ends_with(".jsonl")
+            })
+        })
+        .count();
+    assert_eq!(rescues, 1, "the removed store has one recoverable export");
+    assert_eq!(
+        kmp_mcp::memories::read_index(&data_home.join("kmp").join(kmp_mcp::memories::INDEX_FILE)),
+        vec![std::fs::canonicalize(&second_store).expect("second store path")]
+    );
+    second.stop();
+}
+
+#[test]
+fn selective_uninstall_rejects_ambiguous_scope_without_mutating_any_store() {
+    let root = tempfile::tempdir().expect("test root");
+    let store = root.path().join("store");
+    std::fs::create_dir_all(&store).expect("store");
+    std::fs::write(store.join("FORMAT_VERSION"), "2\n").expect("store stamp");
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    for args in [
+        vec!["uninstall", "--store"],
+        vec!["uninstall", "--store", "relative", "--apply"],
+        vec![
+            "uninstall",
+            "--store",
+            store.to_str().expect("store path"),
+            "--keep-memory",
+        ],
+        vec!["uninstall", "--bogus"],
+    ] {
+        let output = Command::new(bin)
+            .args(&args)
+            .current_dir(root.path())
+            .env("HOME", root.path().join("home"))
+            .env("XDG_DATA_HOME", root.path().join("data"))
+            .output()
+            .expect("invalid uninstall runs");
+        assert_eq!(output.status.code(), Some(2), "{args:?}");
+        assert!(store.exists(), "invalid scope must never remove the store");
+    }
 }
 
 #[test]
