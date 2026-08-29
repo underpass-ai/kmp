@@ -76,8 +76,14 @@ if "branches:" in publish_trigger or "- main" in publish_trigger:
     raise SystemExit("publish-distribution must not run automatically on main")
 if 'tags:\n      - "v*"' not in publish_trigger:
     raise SystemExit("publish-distribution lost its version-tag trigger")
-if 'verify-marketplace.py "${GITHUB_REF_NAME#v}"' not in publish_text:
-    raise SystemExit("publish-distribution can publish a tag before marketplace parity")
+for clause in (
+    'verify-marketplace.py "${GITHUB_REF_NAME#v}"',
+    '--marketplace-commit "${marketplace_commit}"',
+):
+    if clause not in publish_text:
+        raise SystemExit(
+            "publish-distribution can publish a tag without its reviewed marketplace commit"
+        )
 if 'changelog.py check "${version}"' not in publish_text:
     raise SystemExit("publish-distribution can publish a tag without versioned notes")
 if "sync-public-readme.py check" not in publish_text:
@@ -100,7 +106,7 @@ release_clauses = (
     "candidate-run:",
     "run-id: ${{ steps.candidate.outputs.run_id }}",
     "release-candidate.py verify",
-    'verify-marketplace.py "${{ steps.candidate.outputs.version }}"',
+    '--marketplace-commit "${{ steps.candidate.outputs.marketplace_commit }}"',
     'changelog.py check "${{ steps.candidate.outputs.version }}"',
     "sync-public-readme.py check",
     'guide.py check "${{ steps.candidate.outputs.version }}"',
@@ -119,8 +125,10 @@ for clause in (
     "kmp-release-candidate-${version}",
     "release-candidate.py verify",
     "candidate-run: ${candidate_run}",
+    "marketplace-commit: ${marketplace_commit}",
     'verify-marketplace.py "${version}"',
     "--allow-unpublished-tag",
+    '--marketplace-commit "${marketplace_commit}"',
     'changelog.py prepare "${version}"',
     'changelog.py check "${version}"',
     "sync-public-readme.py sync",
