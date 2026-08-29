@@ -68,6 +68,17 @@ def terminal_event(text: str) -> dict:
     return next(row for row in terminal if row.get("text") == text)
 
 
+def scenario_terminal_text(at_ms: int) -> str:
+    matches = [
+        step.get("text")
+        for step in scenario.get("steps", [])
+        if step.get("at_ms") == at_ms and step.get("type") == "say"
+    ]
+    if len(matches) != 1 or not isinstance(matches[0], str):
+        raise KeyError(f"scenario has no unique terminal say event at {at_ms} ms")
+    return matches[0]
+
+
 def revision(explanation: str) -> dict:
     return next(row for row in revisions if row.get("explanation") == explanation)
 
@@ -174,7 +185,7 @@ def add_scene(anchor: str, scene: str, occurrence: int = 0) -> None:
 
 
 if video_id == "fresh-process-same-why":
-    add_terminal("hook_visible", "End the session. Keep the why.")
+    add_terminal("hook_visible", scenario_terminal_text(0))
     add_tool("memory_write_committed", "kmp_write_memory", "session-01")
     add_revision("viewer_decision_visible", "show the committed decision and its evidence")
     add_revision("viewer_evidence_visible", "show the committed decision and its evidence")
@@ -191,7 +202,7 @@ if video_id == "fresh-process-same-why":
     add_revision("recovered_evidence_visible", "recover the decision in a fresh process")
     add_terminal("end_card_visible", "Fresh process. Same decision. Evidence attached. Run KMP Embedded → github.com/underpass-ai/kmp")
 elif video_id == "two-processes-one-memory":
-    add_terminal("hook_visible", "Process A writes it. Process B recovers the why.")
+    add_terminal("hook_visible", scenario_terminal_text(0))
     second = process_run("process-b")
     add("process_b_spawn", int(second["start"]["monotonic_ns"]), "process-lifecycle.json", {
         "lifecycle_sha256": digest(lifecycle_path), "pid": second["pid"], "store_fingerprint": second["store_fingerprint"],
@@ -207,7 +218,7 @@ elif video_id == "two-processes-one-memory":
     add_revision("recovered_evidence_visible", "recover why max_connections returned to 200")
     add_terminal("end_card_visible", "Two processes. One local memory. See KMP Embedded → github.com/underpass-ai/kmp")
 elif video_id == "keep-the-wrong-turn":
-    add_terminal("hook_visible", "Delete the wrong turn. Lose the why.")
+    add_terminal("hook_visible", scenario_terminal_text(0))
     add_terminal("selection_question_visible", "Show me the memory behind the pool-limit decision.")
     add_revision("selection_applied_revision", "show the memory behind the pool-limit decision")
     add_revision("clock_prism_visible", "show the memory behind the pool-limit decision")
