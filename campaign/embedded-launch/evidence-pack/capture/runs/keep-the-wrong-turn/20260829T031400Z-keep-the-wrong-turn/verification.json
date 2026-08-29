@@ -1,0 +1,1111 @@
+{
+  "scenario_id": "keep-the-wrong-turn",
+  "passed": true,
+  "checks": [
+    {
+      "name": "obs_password_redacted",
+      "passed": true,
+      "evidence": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/global.ini"
+    },
+    {
+      "name": "ephemeral_capabilities_removed",
+      "passed": true,
+      "evidence": "no *.private files"
+    },
+    {
+      "name": "no_ephemeral_credentials",
+      "passed": true,
+      "evidence": "credential-shaped fields are absent or explicitly redacted"
+    },
+    {
+      "name": "obs_raw_exists",
+      "passed": true,
+      "evidence": 16914630
+    },
+    {
+      "name": "video_codec_h264",
+      "passed": true,
+      "evidence": "h264"
+    },
+    {
+      "name": "video_zero_latency_encoder",
+      "passed": true,
+      "evidence": {
+        "has_b_frames": 0
+      }
+    },
+    {
+      "name": "video_resolution",
+      "passed": true,
+      "evidence": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "name": "video_rate",
+      "passed": true,
+      "evidence": "30/1"
+    },
+    {
+      "name": "duration_covers_scenario",
+      "passed": true,
+      "evidence": 54.0
+    },
+    {
+      "name": "duration_within_one_frame",
+      "passed": true,
+      "evidence": {
+        "actual": 54.0,
+        "target": 54.0,
+        "tolerance_seconds": 0.034333333333333334
+      }
+    },
+    {
+      "name": "terminal_semantic_viewport_resets",
+      "passed": true,
+      "evidence": {
+        "expected": [
+          {
+            "at_ms": 0,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "c5d92f92dafbd521db78b9b295f4bbe00d814d6a6a0e6f9071b256f4a93f19ed"
+          },
+          {
+            "at_ms": 4000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "c3dbf56e3dbe6fecbd7f72732a428b9bac739d75cc07ab85c4ed680c2103a8ed"
+          },
+          {
+            "at_ms": 19000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "62b8c88b66c133441e7646b884a01fd3359d7aef6bb2146b52405a9d5994128f"
+          },
+          {
+            "at_ms": 47000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "b4791ba04377a68f74584b96595ca1a904790bd2eb67e0337fadbec0d35a4f76"
+          },
+          {
+            "at_ms": 49400,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "bbe39a60961d5ee0f430020faf3838251ade564c6e2c3a1cd78c74f3251f5179"
+          }
+        ],
+        "observed": [
+          {
+            "at_ms": 0,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "c5d92f92dafbd521db78b9b295f4bbe00d814d6a6a0e6f9071b256f4a93f19ed"
+          },
+          {
+            "at_ms": 4000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "c3dbf56e3dbe6fecbd7f72732a428b9bac739d75cc07ab85c4ed680c2103a8ed"
+          },
+          {
+            "at_ms": 19000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "62b8c88b66c133441e7646b884a01fd3359d7aef6bb2146b52405a9d5994128f"
+          },
+          {
+            "at_ms": 47000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "b4791ba04377a68f74584b96595ca1a904790bd2eb67e0337fadbec0d35a4f76"
+          },
+          {
+            "at_ms": 49400,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "bbe39a60961d5ee0f430020faf3838251ade564c6e2c3a1cd78c74f3251f5179"
+          }
+        ],
+        "reset_sequence_sha256": "27b14dbd3a32ae045585f50b4adf06b06e2882599df96eab6b535774ec2663d4"
+      }
+    },
+    {
+      "name": "terminal_semantic_row_budget",
+      "passed": true,
+      "evidence": [
+        {
+          "speaker": "process",
+          "text_sha256": "c5d92f92dafbd521db78b9b295f4bbe00d814d6a6a0e6f9071b256f4a93f19ed",
+          "rows": 5,
+          "rows_used": 5,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 0,
+          "guarded": true
+        },
+        {
+          "speaker": "user",
+          "text_sha256": "c3dbf56e3dbe6fecbd7f72732a428b9bac739d75cc07ab85c4ed680c2103a8ed",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 4000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": 3,
+          "rows_used": 6,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 7000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b00f20c279b0d57119d0d4634580a9506274146c4c5bcd82aa7299ca8deb3057",
+          "rows": 2,
+          "rows_used": 8,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 7000,
+          "guarded": true
+        },
+        {
+          "speaker": "user",
+          "text_sha256": "62b8c88b66c133441e7646b884a01fd3359d7aef6bb2146b52405a9d5994128f",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 19000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": 3,
+          "rows_used": 6,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 26000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "8c97b63df9717422fc7928863796ae0ebfc6754a74e654647caa5999dd0a5305",
+          "rows": 2,
+          "rows_used": 8,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 26000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 34000,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4b7c38ba237ac9601193fdcc2b572b1fb8d5e519b0c77021e729724d1ea37dad",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 34000,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 36400,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "ec5fd9208fd45d06cc4eb41c22c1fe53bf70862f177c5d9d1a97ddac96ff782f",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 36400,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 38800,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "d9219c6f4a0f6cf7f173f9feaf76ae2e096382a4b2f38ea45821796c66b4939b",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 38800,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "4f20e3f3c07f69fa63d780f42cacf1e1266d12c11a1e9a19f3848ca816b12f87",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 41200,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b08c0569ee10b6217ab48c837ccf2243016c3be95fdbf0d354c573bd0a2d2462",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ProofFocus",
+          "scheduled_at_ms": 41200,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b5141380527ca70acb03b237283a80ecc9fefc0642df7089b214f6b516ba2ae4",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 43600,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "5601daf6c890dea4fab097ce90da82c7009c262401707ca0e9099410300f9a70",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 43600,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "c3c7c09be7bad963a04e980bc3c1e5fbd0c688a3e999cdc0825d36643fe8ea3f",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 43600,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b69eaf2f7994db1ad463e3deddca9679392db63f51f8e0dd30752fab2428f5c4",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 43600,
+          "guarded": false
+        },
+        {
+          "speaker": "user",
+          "text_sha256": "b4791ba04377a68f74584b96595ca1a904790bd2eb67e0337fadbec0d35a4f76",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/Wide",
+          "scheduled_at_ms": 47000,
+          "guarded": false
+        },
+        {
+          "speaker": "process",
+          "text_sha256": "bbe39a60961d5ee0f430020faf3838251ade564c6e2c3a1cd78c74f3251f5179",
+          "rows": 4,
+          "rows_used": 4,
+          "scene": "KMP/CTAFocus",
+          "scheduled_at_ms": 49400,
+          "guarded": true
+        }
+      ]
+    },
+    {
+      "name": "real_mcp_wire",
+      "passed": true,
+      "evidence": 15
+    },
+    {
+      "name": "wire_hashes_present",
+      "passed": true,
+      "evidence": 33
+    },
+    {
+      "name": "all_declared_processes_started",
+      "passed": true,
+      "evidence": {
+        "declared": [
+          "process"
+        ],
+        "started": [
+          "process"
+        ]
+      }
+    },
+    {
+      "name": "mcp_pids_distinct",
+      "passed": true,
+      "evidence": [
+        2926360
+      ]
+    },
+    {
+      "name": "mcp_clean_exit",
+      "passed": true,
+      "evidence": [
+        {
+          "process_id": "process",
+          "instance": 1,
+          "exit": {
+            "code": 0,
+            "signal": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "process_store_binding",
+      "passed": true,
+      "evidence": [
+        {
+          "process_id": "process",
+          "store_id": "fixture-local",
+          "fingerprint": "b4415894484c"
+        }
+      ]
+    },
+    {
+      "name": "binary_bound",
+      "passed": true,
+      "evidence": {
+        "path": "/home/gx10a/Documents/ai/tmp/kmp-guide/tmp/release-candidate-0.5.0/assets/kmp-mcp-v0.5.0-aarch64-unknown-linux-gnu",
+        "bytes": 16806848,
+        "sha256": "b7e3f654266094c2e691dd3d963612f29c389be1171642143a24f58706fb4fcf"
+      }
+    },
+    {
+      "name": "worktree_state_disclosed",
+      "passed": true,
+      "evidence": {
+        "commit": "58deb64a7b1a3276768a5f930b0e95153da96a77",
+        "worktree_dirty": false,
+        "changed_path_count": 0,
+        "changed_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "isolated_sqlite_store",
+      "passed": true,
+      "evidence": [
+        {
+          "store_id": "fixture-local",
+          "path": "store/kernel.sqlite3",
+          "bytes": 135168,
+          "sha256": "0469406fb922149104718cca0fa71e4c663a8ccb193720156460a48755f4278e"
+        },
+        {
+          "store_id": "fixture-local",
+          "path": "telemetry/quality.sqlite3",
+          "bytes": 20480,
+          "sha256": "63bb679ffd7bd633fc61c3618dcdf0f3834979e62fed5a0278a8c1b8cca076d2"
+        }
+      ]
+    },
+    {
+      "name": "shared_store_fingerprint",
+      "passed": true,
+      "evidence": {
+        "fixture-local": "b4415894484c"
+      }
+    },
+    {
+      "name": "no_export_or_import",
+      "passed": true,
+      "evidence": [
+        "kmp_ingest",
+        "kmp_view_open",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_get_state"
+      ]
+    },
+    {
+      "name": "deterministic_fixture_7_7_3",
+      "passed": true,
+      "evidence": {
+        "entries": 7,
+        "relations": 7,
+        "evidence": 3
+      }
+    },
+    {
+      "name": "four_hop_relations_present",
+      "passed": true,
+      "evidence": {
+        "relations": [
+          "depends_on",
+          "chosen_because",
+          "contradicts",
+          "supersedes",
+          "chosen_because",
+          "verified_by",
+          "supports"
+        ],
+        "required": [
+          "verified_by",
+          "supersedes",
+          "chosen_because",
+          "depends_on"
+        ]
+      }
+    },
+    {
+      "name": "browser_observed_view",
+      "passed": true,
+      "evidence": {
+        "wall_time": "2026-08-29T03:15:10.619Z",
+        "monotonic_ns": "134069456415022",
+        "request_id": "2926486.60",
+        "view_revision": 7,
+        "actor": "agent",
+        "explanation": "proof hop 4 \u2014 depends_on",
+        "about": "incident:pool-saturation",
+        "origin": "http://127.0.0.1:17120",
+        "long_poll": true,
+        "since": 6,
+        "encoded_bytes": 853,
+        "body_sha256": "27b0986e3ae59e242b4383cb7b412019d9223ba8f6a4662597d914b1a3686ca1"
+      }
+    },
+    {
+      "name": "browser_observed_long_poll",
+      "passed": true,
+      "evidence": [
+        {
+          "wall_time": "2026-08-29T03:14:26.573Z",
+          "monotonic_ns": "134025410685517",
+          "request_id": "2926486.15",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 440,
+          "body_sha256": "7b9ffe52e70e7139d0096172a95439bfae7de92c36a84522e6d289847ee1f009"
+        },
+        {
+          "wall_time": "2026-08-29T03:14:36.412Z",
+          "monotonic_ns": "134035249270709",
+          "request_id": "2926486.18",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "show the memory behind the pool-limit decision",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 745,
+          "body_sha256": "ce36f9bcd3149c3726eb25c092d9d703cf527e441c7e0b57a0b30386d637ef2b"
+        },
+        {
+          "wall_time": "2026-08-29T03:14:55.412Z",
+          "monotonic_ns": "134054249584332",
+          "request_id": "2926486.22",
+          "view_revision": 3,
+          "actor": "agent",
+          "explanation": "light up the proof path",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 2,
+          "encoded_bytes": 812,
+          "body_sha256": "4a9365efd1f7095a22842440928970b2e33ea6e4c2dc651e6816e5988c0f14b5"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:03.416Z",
+          "monotonic_ns": "134062253231767",
+          "request_id": "2926486.32",
+          "view_revision": 4,
+          "actor": "agent",
+          "explanation": "proof hop 1 \u2014 verified_by",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 3,
+          "encoded_bytes": 850,
+          "body_sha256": "133eada62aa261c548db4a0c26bd27c592d5c67af82cf5e72de81e14bb841a62"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:05.811Z",
+          "monotonic_ns": "134064648604106",
+          "request_id": "2926486.43",
+          "view_revision": 5,
+          "actor": "agent",
+          "explanation": "proof hop 2 \u2014 supersedes",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 4,
+          "encoded_bytes": 855,
+          "body_sha256": "cecca9a6447688046c9b58d73425e89bd342b1278c02a5113e400b6d0e183ab2"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:08.211Z",
+          "monotonic_ns": "134067048231550",
+          "request_id": "2926486.51",
+          "view_revision": 6,
+          "actor": "agent",
+          "explanation": "proof hop 3 \u2014 chosen_because",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 5,
+          "encoded_bytes": 861,
+          "body_sha256": "ea12f2d57076196abcfb668c090fe7e3579f19796ad06683c36664e252966b98"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:10.619Z",
+          "monotonic_ns": "134069456415022",
+          "request_id": "2926486.60",
+          "view_revision": 7,
+          "actor": "agent",
+          "explanation": "proof hop 4 \u2014 depends_on",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 6,
+          "encoded_bytes": 853,
+          "body_sha256": "27b0986e3ae59e242b4383cb7b412019d9223ba8f6a4662597d914b1a3686ca1"
+        }
+      ]
+    },
+    {
+      "name": "browser_observed_agent_intent",
+      "passed": true,
+      "evidence": [
+        {
+          "wall_time": "2026-08-29T03:14:26.573Z",
+          "monotonic_ns": "134025410685517",
+          "request_id": "2926486.15",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 440,
+          "body_sha256": "7b9ffe52e70e7139d0096172a95439bfae7de92c36a84522e6d289847ee1f009"
+        },
+        {
+          "wall_time": "2026-08-29T03:14:36.412Z",
+          "monotonic_ns": "134035249270709",
+          "request_id": "2926486.18",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "show the memory behind the pool-limit decision",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 745,
+          "body_sha256": "ce36f9bcd3149c3726eb25c092d9d703cf527e441c7e0b57a0b30386d637ef2b"
+        },
+        {
+          "wall_time": "2026-08-29T03:14:55.412Z",
+          "monotonic_ns": "134054249584332",
+          "request_id": "2926486.22",
+          "view_revision": 3,
+          "actor": "agent",
+          "explanation": "light up the proof path",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 2,
+          "encoded_bytes": 812,
+          "body_sha256": "4a9365efd1f7095a22842440928970b2e33ea6e4c2dc651e6816e5988c0f14b5"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:03.416Z",
+          "monotonic_ns": "134062253231767",
+          "request_id": "2926486.32",
+          "view_revision": 4,
+          "actor": "agent",
+          "explanation": "proof hop 1 \u2014 verified_by",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 3,
+          "encoded_bytes": 850,
+          "body_sha256": "133eada62aa261c548db4a0c26bd27c592d5c67af82cf5e72de81e14bb841a62"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:05.811Z",
+          "monotonic_ns": "134064648604106",
+          "request_id": "2926486.43",
+          "view_revision": 5,
+          "actor": "agent",
+          "explanation": "proof hop 2 \u2014 supersedes",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 4,
+          "encoded_bytes": 855,
+          "body_sha256": "cecca9a6447688046c9b58d73425e89bd342b1278c02a5113e400b6d0e183ab2"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:08.211Z",
+          "monotonic_ns": "134067048231550",
+          "request_id": "2926486.51",
+          "view_revision": 6,
+          "actor": "agent",
+          "explanation": "proof hop 3 \u2014 chosen_because",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 5,
+          "encoded_bytes": 861,
+          "body_sha256": "ea12f2d57076196abcfb668c090fe7e3579f19796ad06683c36664e252966b98"
+        },
+        {
+          "wall_time": "2026-08-29T03:15:10.619Z",
+          "monotonic_ns": "134069456415022",
+          "request_id": "2926486.60",
+          "view_revision": 7,
+          "actor": "agent",
+          "explanation": "proof hop 4 \u2014 depends_on",
+          "about": "incident:pool-saturation",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 6,
+          "encoded_bytes": 853,
+          "body_sha256": "27b0986e3ae59e242b4383cb7b412019d9223ba8f6a4662597d914b1a3686ca1"
+        }
+      ]
+    },
+    {
+      "name": "browser_observed_each_intent",
+      "passed": true,
+      "evidence": {
+        "intents": 6,
+        "agent_revisions": 6
+      }
+    },
+    {
+      "name": "browser_switches_observed",
+      "passed": true,
+      "evidence": {
+        "pre_cdp_switches_collapsed_into_initial_navigation": 2,
+        "post_cdp_switches": 0,
+        "required_navigations": 1,
+        "navigations": 1
+      }
+    },
+    {
+      "name": "obs_isolated_xshm_sources",
+      "passed": true,
+      "evidence": {
+        "count": 9,
+        "kinds": [
+          "xshm_input"
+        ]
+      }
+    },
+    {
+      "name": "obs_focus_primary_plus_live_inset",
+      "passed": true,
+      "evidence": {
+        "KMP/TerminalFocus": [
+          "KMP/TerminalFocus \u00b7 primary-terminal \u00b7 isolated X11 screen 0",
+          "KMP/TerminalFocus \u00b7 secondary-chronoloom \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/ChronoFocus": [
+          "KMP/ChronoFocus \u00b7 primary-chronoloom \u00b7 isolated X11 screen 0",
+          "KMP/ChronoFocus \u00b7 secondary-terminal \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/ProofFocus": [
+          "KMP/ProofFocus \u00b7 primary-proof \u00b7 isolated X11 screen 0",
+          "KMP/ProofFocus \u00b7 secondary-terminal \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/CTAFocus": [
+          "KMP/CTAFocus \u00b7 primary-cta \u00b7 isolated X11 screen 0",
+          "KMP/CTAFocus \u00b7 secondary-chronoloom \u00b7 isolated X11 screen 0"
+        ]
+      }
+    },
+    {
+      "name": "terminal_focus_crop_tracks_semantic_origin",
+      "passed": true,
+      "evidence": [
+        {
+          "scene": "KMP/TerminalFocus",
+          "role": "primary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/ChronoFocus",
+          "role": "secondary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/ProofFocus",
+          "role": "secondary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/CTAFocus",
+          "role": "primary-cta",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        }
+      ]
+    },
+    {
+      "name": "obs_start_stop_verified",
+      "passed": true,
+      "evidence": "obs-websocket.jsonl"
+    },
+    {
+      "name": "obs_stop_one_frame_advance",
+      "passed": true,
+      "evidence": {
+        "picture_contract_fps": 30,
+        "advance_frames": 1,
+        "advance_ms": 33.333333,
+        "advance_ns": "33333333",
+        "target_monotonic_ns": "134082013170531",
+        "nominal_target_monotonic_ns": "134082046503864"
+      }
+    },
+    {
+      "name": "obs_schedule_matches_edl",
+      "passed": true,
+      "evidence": {
+        "expected": [
+          {
+            "at_ms": 0,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 11000,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 19000,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 33200,
+            "scene": "KMP/ProofFocus"
+          },
+          {
+            "at_ms": 43600,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 47000,
+            "scene": "KMP/Wide"
+          },
+          {
+            "at_ms": 49400,
+            "scene": "KMP/CTAFocus"
+          }
+        ],
+        "actual": [
+          {
+            "at_ms": 0,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 11000,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 19000,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 33200,
+            "scene": "KMP/ProofFocus"
+          },
+          {
+            "at_ms": 43600,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 47000,
+            "scene": "KMP/Wide"
+          },
+          {
+            "at_ms": 49400,
+            "scene": "KMP/CTAFocus"
+          }
+        ]
+      }
+    },
+    {
+      "name": "obs_schedule_timing",
+      "passed": true,
+      "evidence": [
+        35.227922,
+        11.138852,
+        13.252877,
+        5.775046,
+        12.405171,
+        9.709578,
+        12.139629
+      ]
+    },
+    {
+      "name": "audio_edit_anchors_complete",
+      "passed": true,
+      "evidence": {
+        "required": [
+          "clock_prism_visible",
+          "end_card_visible",
+          "full_path_visible",
+          "hook_visible",
+          "hop_1_focus",
+          "hop_2_focus",
+          "hop_3_focus",
+          "hop_4_focus",
+          "nice_visible",
+          "selection_applied_revision",
+          "selection_question_visible",
+          "signature_visible",
+          "trace_applied_revision",
+          "trace_question_visible"
+        ],
+        "actual": [
+          "hook_visible",
+          "selection_question_visible",
+          "clock_prism_visible",
+          "selection_applied_revision",
+          "trace_question_visible",
+          "trace_applied_revision",
+          "hop_1_focus",
+          "hop_2_focus",
+          "hop_3_focus",
+          "hop_4_focus",
+          "full_path_visible",
+          "nice_visible",
+          "end_card_visible",
+          "signature_visible"
+        ]
+      }
+    },
+    {
+      "name": "audio_edit_anchors_ordered_and_hashed",
+      "passed": true,
+      "evidence": {
+        "count": 14,
+        "ordered": true
+      }
+    },
+    {
+      "name": "monotonic_frame_map",
+      "passed": true,
+      "evidence": [
+        {
+          "monotonic_ns": "134028046503864",
+          "video_pts_ns": "0",
+          "source": "OBS RecordStateChanged/STARTED receipt",
+          "evidence": {
+            "obs_websocket_line_sha256": "75c854c48439fa1d633032369f19ebb5ba7e26476a52f4c41232686a91db32c4"
+          }
+        },
+        {
+          "monotonic_ns": "134082015788470",
+          "video_pts_ns": "54000000000",
+          "source": "OBS StopRecord response + ffprobe duration",
+          "evidence": {
+            "obs_stop_sha256": "315280b34d5205b9714127816424b63e0ae6fdd90aaf4e7484ebb8c5e5986ee9",
+            "ffprobe_sha256": "008e454e0fde656f309c0ccf0d9f3323067ff2964768fc61aa3da5ee93015c3e"
+          }
+        }
+      ]
+    },
+    {
+      "name": "audio_cues_do_not_precede_visible_anchors",
+      "passed": true,
+      "evidence": [
+        {
+          "cue": "retained-turn",
+          "planned_at": 0.55,
+          "resolved_at": 0.55,
+          "visible_anchor": "hook_visible",
+          "visible_at": 0.221174395,
+          "lag_frames": 9.86476815,
+          "passed": true
+        },
+        {
+          "cue": "clock-prism",
+          "planned_at": 15.2,
+          "resolved_at": 15.2,
+          "visible_anchor": "clock_prism_visible",
+          "visible_at": 7.206866136,
+          "lag_frames": 239.79401591999996,
+          "passed": true
+        },
+        {
+          "cue": "relation-thread",
+          "planned_at": 16.2,
+          "resolved_at": 16.2,
+          "visible_anchor": "clock_prism_visible",
+          "visible_at": 7.206866136,
+          "lag_frames": 269.79401592,
+          "passed": true
+        },
+        {
+          "cue": "proof-hop-1",
+          "planned_at": 34.0,
+          "resolved_at": 34.233333333,
+          "visible_anchor": "hop_1_focus",
+          "visible_at": 34.226195886,
+          "lag_frames": 0.21412340999994228,
+          "passed": true
+        },
+        {
+          "cue": "proof-hop-2",
+          "planned_at": 36.4,
+          "resolved_at": 36.633333333,
+          "visible_anchor": "hop_2_focus",
+          "visible_at": 36.622931497,
+          "lag_frames": 0.31205507999999327,
+          "passed": true
+        },
+        {
+          "cue": "proof-hop-3",
+          "planned_at": 38.8,
+          "resolved_at": 39.033333333,
+          "visible_anchor": "hop_3_focus",
+          "visible_at": 39.023924635,
+          "lag_frames": 0.2822609400000431,
+          "passed": true
+        },
+        {
+          "cue": "proof-hop-4",
+          "planned_at": 41.2,
+          "resolved_at": 41.466666667,
+          "visible_anchor": "hop_4_focus",
+          "visible_at": 41.43347867,
+          "lag_frames": 0.9956399099999658,
+          "passed": true
+        },
+        {
+          "cue": "evidence-knot",
+          "planned_at": 43.6,
+          "resolved_at": 43.833333333,
+          "visible_anchor": "full_path_visible",
+          "visible_at": 43.831046417,
+          "lag_frames": 0.06860747999986927,
+          "passed": true
+        },
+        {
+          "cue": "evidence-knot",
+          "planned_at": 47.0,
+          "resolved_at": 47.233333333,
+          "visible_anchor": "nice_visible",
+          "visible_at": 47.221669208,
+          "lag_frames": 0.3499237499998742,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "mobile_390_review_frames",
+      "passed": true,
+      "evidence": {
+        "frame_count": 7,
+        "scenes": [
+          "KMP/TerminalFocus",
+          "KMP/ChronoFocus",
+          "KMP/TerminalFocus",
+          "KMP/ProofFocus",
+          "KMP/ChronoFocus",
+          "KMP/Wide",
+          "KMP/CTAFocus"
+        ]
+      }
+    },
+    {
+      "name": "human_readability_gate_disclosed",
+      "passed": true,
+      "evidence": {
+        "measurement_status": "preparatory_only_not_cap_height_acceptance",
+        "muted_panel_status": "pending_5_of_5"
+      }
+    },
+    {
+      "name": "real_terminal_window",
+      "passed": true,
+      "evidence": "window-tree.txt"
+    },
+    {
+      "name": "real_chromium_window",
+      "passed": true,
+      "evidence": "window-tree.txt"
+    },
+    {
+      "name": "pty_transcript",
+      "passed": true,
+      "evidence": [
+        3070,
+        317
+      ]
+    },
+    {
+      "name": "obs_30_and_websocket",
+      "passed": true,
+      "evidence": "obs-studio/logs"
+    },
+    {
+      "name": "obs_x264_zerolatency_profile",
+      "passed": true,
+      "evidence": "obs-studio/logs"
+    },
+    {
+      "name": "no_desktop_audio_source",
+      "passed": true,
+      "evidence": "OBS scene has no desktop audio source"
+    }
+  ]
+}

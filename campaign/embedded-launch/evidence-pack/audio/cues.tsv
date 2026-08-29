@@ -1,0 +1,14 @@
+cue	start	end
+memory-stitch	0.00	1.40
+clock-prism	2.00	3.35
+relation-thread	4.00	5.25
+evidence-open	6.00	6.52
+proof-hop-1	8.00	8.50
+proof-hop-2	9.00	9.50
+proof-hop-3	10.00	10.50
+proof-hop-4	11.00	11.50
+evidence-knot	12.00	14.28
+retained-turn	15.00	16.85
+strand-left	18.00	18.72
+strand-right	19.00	19.72
+wal-converge	20.00	21.60

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
-for command in node npm ffmpeg; do
+for command in node npm sha256sum; do
   command -v "${command}" >/dev/null 2>&1 || {
     echo "record-chronoloom-gifs: ${command} is required" >&2
     exit 1
@@ -49,43 +49,31 @@ export NODE_PATH="${CAPTURE_ROOT}/playwright/node_modules"
 export KMP_CHRONOLOOM_CAPTURE_ROOT="${CAPTURE_ROOT}"
 export KMP_CAPTURE_CHROME="${CAPTURE_CHROME}"
 export KMP_MCP_BIN="${BIN}"
+export KMP_CAMPAIGN_COMMIT="$(git rev-parse HEAD)"
+if [ -n "$(git status --short)" ]; then
+  export KMP_CAMPAIGN_WORKTREE_DIRTY=true
+else
+  export KMP_CAMPAIGN_WORKTREE_DIRTY=false
+fi
 node scripts/demo/record-chronoloom-gifs.js
 
-encode_six_states() {
-  local ready="$1" question="$2" selection="$3" followup="$4" trace="$5" nice="$6" output="$7"
-  ffmpeg -hide_banner -loglevel error -y \
-    -loop 1 -t 2.5 -i "${ready}" \
-    -loop 1 -t 3.8 -i "${question}" \
-    -loop 1 -t 6.0 -i "${selection}" \
-    -loop 1 -t 3.8 -i "${followup}" \
-    -loop 1 -t 4.8 -i "${trace}" \
-    -loop 1 -t 7.0 -i "${nice}" \
-    -filter_complex \
-      "[0:v]fps=10,format=rgba,settb=AVTB[a]; \
-       [1:v]fps=10,format=rgba,settb=AVTB[b]; \
-       [2:v]fps=10,format=rgba,settb=AVTB[c]; \
-       [3:v]fps=10,format=rgba,settb=AVTB[d]; \
-       [4:v]fps=10,format=rgba,settb=AVTB[e]; \
-       [5:v]fps=10,format=rgba,settb=AVTB[f]; \
-       [a][b]xfade=transition=fade:duration=0.30:offset=2.20[ab]; \
-       [ab][c]xfade=transition=fade:duration=0.35:offset=5.65[abc]; \
-       [abc][d]xfade=transition=fade:duration=0.35:offset=11.30[abcd]; \
-       [abcd][e]xfade=transition=fade:duration=0.35:offset=14.75[abcde]; \
-       [abcde][f]xfade=transition=fade:duration=0.40:offset=19.15[scene]; \
-       [scene]fps=10,scale=1600:640:flags=lanczos,split[palette_source][pixels]; \
-       [palette_source]palettegen=max_colors=112:stats_mode=diff[palette]; \
-       [pixels][palette]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle[out]" \
-    -map "[out]" -loop 0 "${output}"
-}
+EVIDENCE="${ROOT}/campaign/embedded-launch/evidence-pack/capture/product-probe"
+PRODUCT="${ROOT}/campaign/embedded-launch/evidence-pack/product"
+mkdir -p "${EVIDENCE}/states" "${PRODUCT}"
+cp "${CAPTURE_ROOT}/capture-evidence.json" "${EVIDENCE}/capture-evidence.json"
+cp "${CAPTURE_ROOT}/tool-calls.jsonl" "${EVIDENCE}/tool-calls.jsonl"
+cp "${CAPTURE_ROOT}/tools-list.json" "${EVIDENCE}/tools-list.json"
+cp "${CAPTURE_ROOT}"/states/*.png "${EVIDENCE}/states/"
+cp "${CAPTURE_ROOT}/tools-list.json" "${PRODUCT}/tools-list.json"
+sha256sum "${BIN}" | cut -d' ' -f1 > "${PRODUCT}/binary.sha256"
+"${BIN}" --version > "${PRODUCT}/version.txt"
+(
+  cd "${EVIDENCE}"
+  find . -type f ! -name SHA256SUMS -print0 \
+    | sort -z \
+    | xargs -0 sha256sum > SHA256SUMS
+)
 
-encode_six_states \
-  "${CAPTURE_ROOT}/states/agent-01-ready.png" \
-  "${CAPTURE_ROOT}/states/agent-02-question.png" \
-  "${CAPTURE_ROOT}/states/agent-03-selection.png" \
-  "${CAPTURE_ROOT}/states/agent-04-followup.png" \
-  "${CAPTURE_ROOT}/states/agent-05-trace.png" \
-  "${CAPTURE_ROOT}/states/agent-06-nice.png" \
-  "${ROOT}/docs/assets/kmp-agent-loom.gif"
-
-echo "record-chronoloom-gifs: wrote"
-du -h docs/assets/kmp-agent-loom.gif
+echo "record-chronoloom-gifs: wrote browser/product evidence only"
+echo "record-chronoloom-gifs: final campaign picture must come from the OBS capture adapter"
+du -sh "${EVIDENCE}"

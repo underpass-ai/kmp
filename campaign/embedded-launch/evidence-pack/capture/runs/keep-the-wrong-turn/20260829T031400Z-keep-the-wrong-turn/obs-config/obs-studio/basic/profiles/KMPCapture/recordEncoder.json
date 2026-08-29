@@ -1,0 +1,1 @@
+{"rate_control":"CBR","bitrate":2500,"use_bufsize":true,"buffer_size":2500,"keyint_sec":0,"crf":23,"preset":"veryfast","profile":"","tune":"zerolatency","x264opts":"bframes=0 rc-lookahead=0 sync-lookahead=0","bf":0}

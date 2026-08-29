@@ -1,0 +1,84 @@
+name: embedded-launch-campaign
+
+on:
+  pull_request:
+    paths:
+      - "campaign/embedded-launch/**"
+      - "docs/assets/campaign/kmp-embedded/**"
+      - "docs/assets/kmp-agent-loom.gif"
+      - "scripts/demo/record-chronoloom-gifs.js"
+      - "scripts/demo/record-chronoloom-gifs.sh"
+      - "scripts/ci/embedded-launch-campaign.sh"
+      - "scripts/ci/embedded-launch-workflow-contract.py"
+      - ".github/workflows/embedded-launch-campaign.yml"
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths:
+      - "campaign/embedded-launch/**"
+      - "docs/assets/campaign/kmp-embedded/**"
+      - "docs/assets/kmp-agent-loom.gif"
+      - "scripts/demo/record-chronoloom-gifs.js"
+      - "scripts/demo/record-chronoloom-gifs.sh"
+      - "scripts/ci/embedded-launch-campaign.sh"
+      - "scripts/ci/embedded-launch-workflow-contract.py"
+      - ".github/workflows/embedded-launch-campaign.yml"
+      - "README.md"
+  workflow_dispatch:
+
+concurrency:
+  group: embedded-launch-campaign-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # ubuntu-24.04 (Noble) archive versions. The final regeneration gate also
+  # compares canonical PCM, so a toolchain that renders different bytes fails.
+  FFMPEG_DEB_VERSION: "7:6.1.1-3ubuntu5"
+  CSOUND_DEB_VERSION: "1:6.18.1+dfsg-1ubuntu4"
+  JSONSCHEMA_DEB_VERSION: "4.10.3-2ubuntu1"
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install pinned campaign toolchain
+        timeout-minutes: 16
+        run: |
+          sudo timeout --kill-after=15s 300 apt-get update \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30
+          sudo timeout --kill-after=15s 600 env DEBIAN_FRONTEND=noninteractive \
+            apt-get install --yes --no-install-recommends \
+            "ffmpeg=${FFMPEG_DEB_VERSION}" \
+            "csound=${CSOUND_DEB_VERSION}" \
+            "python3-jsonschema=${JSONSCHEMA_DEB_VERSION}"
+          dpkg-query --show --showformat='${Package}=${Version}\n' \
+            ffmpeg csound python3-jsonschema
+          ffmpeg -version | head -n 1
+          csound_probe_status=0
+          timeout --kill-after=1s 5s csound --version </dev/null \
+            >"${RUNNER_TEMP}/kmp-csound-version.txt" 2>&1 || csound_probe_status=$?
+          if [[ "${csound_probe_status}" -ne 0 \
+            && "${csound_probe_status}" -ne 124 \
+            && "${csound_probe_status}" -ne 137 ]]; then
+            cat "${RUNNER_TEMP}/kmp-csound-version.txt"
+            exit "${csound_probe_status}"
+          fi
+          head -n 2 "${RUNNER_TEMP}/kmp-csound-version.txt"
+
+      - name: Prove workflow and external-action contracts
+        run: |
+          python3 scripts/ci/embedded-launch-workflow-contract.py
+          python3 scripts/ci/github-actions-contract.py
+
+      - name: Verify campaign sources or complete final evidence
+        run: bash scripts/ci/embedded-launch-campaign.sh

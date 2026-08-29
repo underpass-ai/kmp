@@ -1,0 +1,251 @@
+{
+  "id": "keep-the-wrong-turn",
+  "title": "Keep the wrong turn inside its proof path",
+  "about": "incident:pool-saturation",
+  "fixture_label": "DETERMINISTIC PRODUCT FIXTURE",
+  "duration_ms": 54000,
+  "stores": [
+    { "id": "fixture-local" }
+  ],
+  "processes": [
+    { "id": "process", "store_id": "fixture-local", "autostart": true, "browser": true }
+  ],
+  "bootstrap": [
+    {
+      "at_ms": 0,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_ingest",
+      "arguments": {
+        "about": "incident:pool-saturation",
+        "idempotency_key": "ingest:chronoloom-campaign-pool-saturation-v1",
+        "provenance": {
+          "source_kind": "agent",
+          "source_agent": "chronoloom-campaign-capture",
+          "observed_at": "2026-08-27T10:22:00Z"
+        },
+        "memory": {
+          "dimensions": [
+            { "id": "timeline:pool-saturation", "kind": "timeline", "title": "Incident timeline" },
+            { "id": "decision:pool-saturation", "kind": "decision", "title": "Decision thread" }
+          ],
+          "entries": [
+            {
+              "id": "incident:pool-saturation:cfg-change",
+              "kind": "decision",
+              "text": "The deploy lowered max_connections from 200 to 20.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 1, "occurred_at": "2026-08-27T03:12:00Z", "observed_at": "2026-08-27T09:40:00Z", "ingested_at": "2026-08-27T09:41:00Z" },
+                { "dimension": "decision", "scope_id": "decision:pool-saturation", "sequence": 1, "occurred_at": "2026-08-27T03:12:00Z", "observed_at": "2026-08-27T09:40:00Z", "ingested_at": "2026-08-27T09:41:00Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:saturation",
+              "kind": "observation",
+              "text": "Connection checkout latency crossed two seconds.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 2, "occurred_at": "2026-08-27T09:38:00Z", "observed_at": "2026-08-27T09:38:20Z", "ingested_at": "2026-08-27T09:39:00Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:hypo-traffic",
+              "kind": "decision",
+              "text": "This looks like a traffic spike; scale the service.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 3, "occurred_at": "2026-08-27T09:41:00Z", "observed_at": "2026-08-27T09:41:00Z", "ingested_at": "2026-08-27T09:41:20Z" },
+                { "dimension": "decision", "scope_id": "decision:pool-saturation", "sequence": 2, "occurred_at": "2026-08-27T09:41:00Z", "observed_at": "2026-08-27T09:41:00Z", "ingested_at": "2026-08-27T09:41:20Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:volume-flat",
+              "kind": "observation",
+              "text": "Request volume had stayed flat all morning.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 4, "occurred_at": "2026-08-27T09:52:00Z", "observed_at": "2026-08-27T09:52:00Z", "ingested_at": "2026-08-27T09:52:20Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:root-cause",
+              "kind": "decision",
+              "text": "The pool ceiling caused the incident; restore max_connections to 200.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 5, "occurred_at": "2026-08-27T10:05:00Z", "observed_at": "2026-08-27T10:05:00Z", "ingested_at": "2026-08-27T10:05:20Z" },
+                { "dimension": "decision", "scope_id": "decision:pool-saturation", "sequence": 3, "occurred_at": "2026-08-27T10:05:00Z", "observed_at": "2026-08-27T10:05:00Z", "ingested_at": "2026-08-27T10:05:20Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:deploy-freeze",
+              "kind": "constraint",
+              "text": "Deployments are frozen while the restored pool is verified.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 6, "occurred_at": "2026-08-27T10:07:00Z", "observed_at": "2026-08-27T10:07:00Z", "ingested_at": "2026-08-27T10:07:20Z", "valid_from": "2026-08-27T10:07:00Z", "valid_until": "2026-08-27T14:00:00Z" },
+                { "dimension": "decision", "scope_id": "decision:pool-saturation", "sequence": 4, "occurred_at": "2026-08-27T10:07:00Z", "observed_at": "2026-08-27T10:07:00Z", "ingested_at": "2026-08-27T10:07:20Z", "valid_from": "2026-08-27T10:07:00Z", "valid_until": "2026-08-27T14:00:00Z" }
+              ]
+            },
+            {
+              "id": "incident:pool-saturation:verified",
+              "kind": "success_path",
+              "text": "Checkout latency is back to 180 ms and the pool is healthy.",
+              "coordinates": [
+                { "dimension": "timeline", "scope_id": "timeline:pool-saturation", "sequence": 7, "occurred_at": "2026-08-27T10:22:00Z", "observed_at": "2026-08-27T10:22:00Z", "ingested_at": "2026-08-27T10:22:20Z" }
+              ]
+            }
+          ],
+          "relations": [
+            { "from": "incident:pool-saturation:saturation", "to": "incident:pool-saturation:cfg-change", "rel": "depends_on", "class": "causal", "why": "A pool ceiling of 20 is what saturated under ordinary load.", "evidence": "The ceiling was the only capacity change before checkout latency crossed two seconds.", "confidence": "high" },
+            { "from": "incident:pool-saturation:hypo-traffic", "to": "incident:pool-saturation:saturation", "rel": "chosen_because", "class": "motivational", "why": "The saturation was read as demand before request volume was checked.", "evidence": "The first mitigation proposed scaling while the dashboard still showed a flat request rate.", "confidence": "high" },
+            { "from": "incident:pool-saturation:volume-flat", "to": "incident:pool-saturation:hypo-traffic", "rel": "contradicts", "class": "evidential", "why": "Flat request volume contradicts the traffic-spike hypothesis.", "evidence": "The request-rate series stayed inside its morning baseline through the incident.", "confidence": "high" },
+            { "from": "incident:pool-saturation:root-cause", "to": "incident:pool-saturation:hypo-traffic", "rel": "supersedes", "class": "evidential", "why": "The config change replaces the traffic-spike reading.", "evidence": "The pool limit changed from 200 to 20 while traffic remained flat.", "confidence": "high" },
+            { "from": "incident:pool-saturation:deploy-freeze", "to": "incident:pool-saturation:root-cause", "rel": "chosen_because", "class": "motivational", "why": "The team froze unrelated deploys so the pool restoration could be verified cleanly.", "evidence": "The freeze began two minutes after the root cause was recorded.", "confidence": "high" },
+            { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:root-cause", "rel": "verified_by", "class": "evidential", "why": "Restoring the pool returned latency to baseline.", "evidence": "Checkout latency fell to 180 ms after max_connections returned to 200.", "confidence": "high" },
+            { "from": "incident:pool-saturation:volume-flat", "to": "incident:pool-saturation:root-cause", "rel": "supports", "class": "evidential", "why": "Stable demand isolates the configuration change as the relevant capacity shift.", "evidence": "Request volume did not rise while pool wait time did.", "confidence": "high" }
+          ],
+          "evidence": [
+            { "id": "evidence:incident:pool-saturation:pool-config-diff", "supports": ["incident:pool-saturation:cfg-change", "incident:pool-saturation:root-cause"], "text": "The deployment diff changed max_connections from 200 to 20.", "source": "deployment diff", "time": "2026-08-27T03:12:00Z" },
+            { "id": "evidence:incident:pool-saturation:pool-latency", "supports": ["incident:pool-saturation:saturation", "incident:pool-saturation:verified"], "text": "Checkout latency crossed two seconds, then returned to 180 ms after restoration.", "source": "pool telemetry", "time": "2026-08-27T10:22:00Z" },
+            { "id": "evidence:incident:pool-saturation:request-volume", "supports": ["incident:pool-saturation:volume-flat", "incident:pool-saturation:root-cause"], "text": "Request volume stayed flat across the incident window.", "source": "request-rate telemetry", "time": "2026-08-27T09:52:00Z" }
+          ]
+        }
+      }
+    },
+    {
+      "at_ms": 0,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_open",
+      "arguments": { "about": "incident:pool-saturation" }
+    }
+  ],
+  "steps": [
+    { "at_ms": 0, "type": "say", "speaker": "process", "text": "DETERMINISTIC PRODUCT FIXTURE\nDelete the wrong turn. Lose the why." },
+    { "at_ms": 4000, "type": "say", "speaker": "user", "text": "Show me the memory behind the pool-limit decision." },
+    {
+      "at_ms": 7000,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-select-cfg-change",
+        "actor": "agent",
+        "explanation": "show the memory behind the pool-limit decision",
+        "focus": { "refs": ["incident:pool-saturation:cfg-change"] },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "incident:pool-saturation:cfg-change"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 19000, "type": "say", "speaker": "user", "text": "Great! Can you light up the proof path?" },
+    {
+      "at_ms": 26000,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-trace-proof",
+        "actor": "agent",
+        "explanation": "light up the proof path",
+        "trace": { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:cfg-change" }
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    {
+      "at_ms": 34000,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-proof-hop-1",
+        "actor": "agent",
+        "explanation": "proof hop 1 — verified_by",
+        "focus": { "refs": ["incident:pool-saturation:verified", "incident:pool-saturation:root-cause"] },
+        "selection": "incident:pool-saturation:verified",
+        "trace": { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:cfg-change" }
+      },
+      "display_paths": [
+        { "label": "hop 1", "path": "structuredContent.state.last_change.explanation" }
+      ]
+    },
+    {
+      "at_ms": 36400,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-proof-hop-2",
+        "actor": "agent",
+        "explanation": "proof hop 2 — supersedes",
+        "focus": { "refs": ["incident:pool-saturation:root-cause", "incident:pool-saturation:hypo-traffic"] },
+        "selection": "incident:pool-saturation:root-cause",
+        "trace": { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:cfg-change" }
+      },
+      "display_paths": [
+        { "label": "hop 2", "path": "structuredContent.state.last_change.explanation" }
+      ]
+    },
+    {
+      "at_ms": 38800,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-proof-hop-3",
+        "actor": "agent",
+        "explanation": "proof hop 3 — chosen_because",
+        "focus": { "refs": ["incident:pool-saturation:hypo-traffic", "incident:pool-saturation:saturation"] },
+        "selection": "incident:pool-saturation:hypo-traffic",
+        "trace": { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:cfg-change" }
+      },
+      "display_paths": [
+        { "label": "hop 3", "path": "structuredContent.state.last_change.explanation" }
+      ]
+    },
+    {
+      "at_ms": 41200,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:chronoloom-campaign-proof-hop-4",
+        "actor": "agent",
+        "explanation": "proof hop 4 — depends_on",
+        "focus": { "refs": ["incident:pool-saturation:saturation", "incident:pool-saturation:cfg-change"] },
+        "selection": "incident:pool-saturation:saturation",
+        "trace": { "from": "incident:pool-saturation:verified", "to": "incident:pool-saturation:cfg-change" }
+      },
+      "display_paths": [
+        { "label": "hop 4", "path": "structuredContent.state.last_change.explanation" }
+      ]
+    },
+    {
+      "at_ms": 43600,
+      "type": "tool",
+      "process_id": "process",
+      "name": "kmp_view_get_state",
+      "arguments": { "view_id": "default" },
+      "display_paths": [
+        { "label": "proof from", "path": "structuredContent.state.trace.from" },
+        { "label": "proof to", "path": "structuredContent.state.trace.to" },
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 47000, "type": "say", "speaker": "user", "text": "Nice." },
+    { "at_ms": 49400, "type": "say", "speaker": "process", "text": "Memory, with receipts. See KMP Embedded → github.com/underpass-ai/kmp" },
+    { "at_ms": 53500, "type": "hold" }
+  ]
+}

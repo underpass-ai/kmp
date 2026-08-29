@@ -1,0 +1,3898 @@
+{
+  "_meta": {
+    "kmp/errorCodes": [
+      {
+        "code": "invalid_argument",
+        "means": "the arguments cannot produce a call; fix them \u2014 retrying unchanged cannot work"
+      },
+      {
+        "code": "not_found",
+        "means": "the memory asked for is not in this store"
+      },
+      {
+        "code": "conflict",
+        "means": "the operation conflicted with current state; follow the message \u2014 a retryable write conflict is safely replayed with the same idempotency key, while a key already accepted with different content must not be reused"
+      },
+      {
+        "code": "unavailable",
+        "means": "the kernel could not be reached; the same call may work later"
+      },
+      {
+        "code": "unknown_tool",
+        "means": "no such tool on this surface"
+      },
+      {
+        "code": "backend_error",
+        "means": "the kernel failed for a reason the arguments cannot fix"
+      }
+    ]
+  },
+  "tools": [
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref this memory should attach to.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "dry_run": {
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "description": "Required stable idempotency key for replay-safe ingest.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "memory": {
+            "additionalProperties": true,
+            "properties": {
+              "dimensions": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "id": {
+                      "description": "Dimension scope id.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "Dimension kind.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "metadata": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "title": {
+                      "description": "Optional dimension title.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "entries": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "coordinates": {
+                      "items": {
+                        "additionalProperties": true,
+                        "properties": {
+                          "dimension": {
+                            "description": "Dimension kind for this coordinate.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "ingested_at": {
+                            "description": "Optional RFC3339 ingest timestamp.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "additionalProperties": {
+                              "type": "string"
+                            },
+                            "type": "object"
+                          },
+                          "observed_at": {
+                            "description": "Optional RFC3339 observation timestamp, in UTC.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "occurred_at": {
+                            "description": "Optional RFC3339 occurrence timestamp.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "rank": {
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "scope_id": {
+                            "description": "Dimension scope id.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "sequence": {
+                            "minimum": 1,
+                            "type": "integer"
+                          },
+                          "valid_from": {
+                            "description": "Optional RFC3339 validity start.",
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "valid_until": {
+                            "description": "Optional RFC3339 validity end.",
+                            "minLength": 1,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "dimension",
+                          "scope_id"
+                        ],
+                        "type": "object"
+                      },
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "id": {
+                      "description": "Memory entry id. Must be a safe descendant of the exact about, beginning with `<about>:`; the about anchor and refs owned by another about are refused.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "kind": {
+                      "description": "Memory entry kind.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "metadata": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "text": {
+                      "description": "Memory entry text.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "text",
+                    "coordinates"
+                  ],
+                  "type": "object"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "evidence": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "id": {
+                      "description": "Evidence id. Must begin with `evidence:<about>:` so it cannot overwrite evidence owned by another about.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "metadata": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "source": {
+                      "description": "Evidence source.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "supports": {
+                      "items": {
+                        "description": "About-owned memory ref supported by this evidence, the about anchor, or a declared dimension id.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "text": {
+                      "description": "Evidence text.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "time": {
+                      "description": "Evidence timestamp.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "relations": {
+                "items": {
+                  "additionalProperties": true,
+                  "properties": {
+                    "caused_by_node_id": {
+                      "description": "Optional about-owned causal predecessor ref.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "class": {
+                      "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                      "enum": [
+                        "structural",
+                        "causal",
+                        "motivational",
+                        "procedural",
+                        "evidential",
+                        "constraint"
+                      ],
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low",
+                        "unknown"
+                      ],
+                      "type": "string"
+                    },
+                    "coordinate": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "dimension": {
+                          "description": "Dimension kind for this coordinate.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "ingested_at": {
+                          "description": "Optional RFC3339 ingest timestamp.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "metadata": {
+                          "additionalProperties": {
+                            "type": "string"
+                          },
+                          "type": "object"
+                        },
+                        "observed_at": {
+                          "description": "Optional RFC3339 observation timestamp, in UTC.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "occurred_at": {
+                          "description": "Optional RFC3339 occurrence timestamp.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "rank": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "scope_id": {
+                          "description": "Dimension scope id.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "sequence": {
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "valid_from": {
+                          "description": "Optional RFC3339 validity start.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "valid_until": {
+                          "description": "Optional RFC3339 validity end.",
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "dimension",
+                        "scope_id"
+                      ],
+                      "type": "object"
+                    },
+                    "decision_id": {
+                      "description": "Optional about-owned decision ref associated with the relation.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "evidence": {
+                      "description": "Optional concrete observation or source that supports the relation rationale.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "from": {
+                      "description": "Source ref owned by the exact about, its anchor, or a declared dimension id.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "method": {
+                      "description": "Optional method by which the relation holds.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "motivation": {
+                      "description": "Optional motivation for the relation itself.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "rel": {
+                      "description": "Relationship type. Unknown extension types are preserved but carry no writer spec; prefer the cataloged vocabulary. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types \u2014 anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation disambiguates whether refs describe the same item). same_entity_as (rich; evidential; identity relation disambiguates whether refs describe the same item). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "sequence": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "to": {
+                      "description": "Target ref owned by the exact about, its anchor, or a declared dimension id.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "why": {
+                      "description": "Optional rationale explaining why this specific semantic connection holds and what a later reader should understand when traversing it.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to",
+                    "rel",
+                    "class"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "dimensions",
+              "entries"
+            ],
+            "type": "object"
+          },
+          "provenance": {
+            "additionalProperties": false,
+            "properties": {
+              "causation_id": {
+                "description": "Optional causation id.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "correlation_id": {
+                "description": "Optional correlation id.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "observed_at": {
+                "description": "RFC3339 observation timestamp, in UTC.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "source_agent": {
+                "description": "Agent or component that observed the memory.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "source_kind": {
+                "enum": [
+                  "human",
+                  "agent",
+                  "projection",
+                  "derived"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "source_kind",
+              "source_agent",
+              "observed_at"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "memory",
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_ingest",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "memory": {
+            "additionalProperties": false,
+            "properties": {
+              "about": {
+                "description": "Memory anchor the write attached to.",
+                "type": "string"
+              },
+              "accepted": {
+                "additionalProperties": false,
+                "properties": {
+                  "entries": {
+                    "description": "Number of entries accepted.",
+                    "type": "integer"
+                  },
+                  "evidence": {
+                    "description": "Number of evidence items accepted.",
+                    "type": "integer"
+                  },
+                  "relations": {
+                    "description": "Number of relations accepted.",
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "memory_id": {
+                "description": "Stable id of the accepted memory event.",
+                "type": "string"
+              },
+              "read_after_write_ready": {
+                "description": "Whether a read issued now is guaranteed to observe this write.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "summary": {
+            "description": "Concise statement of what the kernel accepted.",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "not": {
+                "properties": {
+                  "options": {
+                    "properties": {
+                      "strict": {
+                        "const": false
+                      }
+                    },
+                    "required": [
+                      "strict"
+                    ]
+                  }
+                },
+                "required": [
+                  "options"
+                ]
+              }
+            },
+            "then": {
+              "properties": {
+                "current": {
+                  "required": [
+                    "kind",
+                    "summary",
+                    "evidence"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref this semantic memory event should attach to.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "actor": {
+            "description": "Human, agent, or component producing the write.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "connect_to": {
+            "description": "Existing memory refs the new entry connects to. Omit this field or send an empty array only for the first strict write that creates a new about; once the about exists, strict runtime validation requires at least one relation.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "class": {
+                  "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                  "enum": [
+                    "structural",
+                    "causal",
+                    "motivational",
+                    "procedural",
+                    "evidential",
+                    "constraint"
+                  ],
+                  "type": "string"
+                },
+                "confidence": {
+                  "enum": [
+                    "high",
+                    "medium",
+                    "low",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                "evidence": {
+                  "description": "The concrete observation or source that supports the relation rationale. Required for non-structural relations.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "ref": {
+                  "description": "Existing memory ref this new memory connects to.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rel": {
+                  "description": "Relation type for this link. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types \u2014 anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation disambiguates whether refs describe the same item). same_entity_as (rich; evidential; identity relation disambiguates whether refs describe the same item). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                  "enum": [
+                    "follows",
+                    "answers",
+                    "uses_background",
+                    "depends_on",
+                    "chosen_because",
+                    "triggers",
+                    "authorizes",
+                    "verified_by",
+                    "semantic_delta_from",
+                    "updates_state",
+                    "supports",
+                    "supersedes",
+                    "contradicts",
+                    "satisfies_constraint",
+                    "violates_constraint",
+                    "contributes_to",
+                    "excluded_from",
+                    "checked_against",
+                    "derived_from",
+                    "confirms_selection",
+                    "restates",
+                    "corrects",
+                    "component_of",
+                    "total_of",
+                    "same_event_as",
+                    "same_entity_as",
+                    "qualifies_as",
+                    "matches_requirement",
+                    "contains",
+                    "member_of",
+                    "scoped_to"
+                  ],
+                  "type": "string"
+                },
+                "why": {
+                  "description": "Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations.",
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "ref",
+                "rel",
+                "class"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "current": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "description": "Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "kind": {
+                "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
+                "enum": [
+                  "turn",
+                  "observation",
+                  "decision",
+                  "feedback",
+                  "semantic_delta",
+                  "constraint",
+                  "preference",
+                  "derived_value",
+                  "error_path",
+                  "success_path"
+                ],
+                "type": "string"
+              },
+              "ref": {
+                "description": "Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary": {
+                "description": "Concise semantic memory text to store.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "summary"
+            ],
+            "type": "object"
+          },
+          "idempotency_key": {
+            "description": "Optional stable idempotency key. Omit to generate one from the write payload.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "intent": {
+            "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact.",
+            "enum": [
+              "record_turn",
+              "record_observation",
+              "record_decision",
+              "record_feedback",
+              "record_delta"
+            ],
+            "type": "string"
+          },
+          "observed_at": {
+            "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused \u2014 read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "occurred_at": {
+            "description": "Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "options": {
+            "additionalProperties": false,
+            "properties": {
+              "dry_run": {
+                "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits.",
+                "type": "boolean"
+              },
+              "sequence": {
+                "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "strict": {
+                "description": "When true, fail fast on unsupported relations and missing proof. Defaults to true.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "rank": {
+            "description": "Optional positive rank within each emitted coordinate.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "read_context": {
+            "additionalProperties": false,
+            "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
+            "properties": {
+              "ask_refs": {
+                "items": {
+                  "description": "Memory ref observed in deterministic kmp_ask proof/evidence before writing.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "inspected_refs": {
+                "items": {
+                  "description": "Memory ref inspected with kmp_inspect before writing.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "temporal_refs": {
+                "items": {
+                  "description": "Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "trace_paths": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "from": {
+                      "description": "Trace source ref observed before writing.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "refs": {
+                      "items": {
+                        "description": "Optional intermediate ref observed in the trace path.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "to": {
+                      "description": "Trace target ref observed before writing.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "wake_refs": {
+                "items": {
+                  "description": "Memory ref observed in a kmp_wake packet before writing.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "scope": {
+            "additionalProperties": false,
+            "properties": {
+              "episode": {
+                "description": "Optional agentic episode dimension scope id.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "process": {
+                "description": "Caller-defined stable id for the agentic process this memory belongs to. Unknown values intentionally create or attach that process dimension; this is an identifier, not an enum.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "task": {
+                "description": "Optional task dimension scope id.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "process"
+            ],
+            "type": "object"
+          },
+          "semantic_delta": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "description": "Evidence proving the state change.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "from": {
+                "description": "Previous known state.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "ref": {
+                "description": "Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "to": {
+                "description": "New state.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "why": {
+                "description": "Why this state change is valid.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to",
+              "why",
+              "evidence"
+            ],
+            "type": "object"
+          },
+          "source_kind": {
+            "enum": [
+              "human",
+              "agent",
+              "projection",
+              "derived"
+            ],
+            "type": "string"
+          },
+          "valid_from": {
+            "description": "Optional RFC3339 start of the interval in which the recorded state is valid.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "valid_until": {
+            "description": "Optional RFC3339 exclusive end of the interval in which the recorded state is valid.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about",
+          "intent",
+          "actor",
+          "observed_at",
+          "scope",
+          "current"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_write_memory",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
+            "type": "boolean"
+          },
+          "diagnostics": {
+            "description": "Planner diagnostics that qualify the write.",
+            "type": "array"
+          },
+          "dry_run": {
+            "description": "Whether this response is a validated preview that wrote nothing.",
+            "type": "boolean"
+          },
+          "generated_refs": {
+            "description": "Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "ingest_preview": {
+            "description": "Canonical kmp_ingest arguments. Present only on dry-run.",
+            "type": "object"
+          },
+          "ingest_result": {
+            "description": "Canonical kmp_ingest result. Present only after a committed write.",
+            "type": "object"
+          },
+          "next_suggested_reads": {
+            "description": "Concrete refs worth reading next to verify or continue the write.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "relation_quality": {
+            "description": "Per-relation validation, including rich/anemic quality and prior-context evidence.",
+            "type": "array"
+          },
+          "relation_quality_metrics": {
+            "description": "Aggregate counts and prior-context coverage for the compiled relations.",
+            "type": "object"
+          },
+          "relations": {
+            "description": "Typed relation names compiled into the canonical ingest.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "description": "Counts and scope of the semantic write the planner prepared.",
+            "type": "string"
+          },
+          "viewer": {
+            "additionalProperties": false,
+            "properties": {
+              "tell_the_user": {
+                "description": "One-time handoff text for the human; it is not another kernel instruction.",
+                "type": "string"
+              },
+              "url": {
+                "description": "Loopback, read-only viewer URL carrying this session's capability.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to wake from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 2,
+                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 1600,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 1600 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "intent": {
+            "description": "Optional continuation intent.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "role": {
+            "description": "Optional caller role.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_wake",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "projection": {
+            "additionalProperties": false,
+            "properties": {
+              "budget": {
+                "description": "The normative byte ceiling, bytes actually used, and retained token-planning hint.",
+                "type": "object"
+              },
+              "contract": {
+                "description": "The projection contract version, e.g. kmp.recall.projection.v1.",
+                "type": "string"
+              },
+              "core_text_shortened": {
+                "description": "Whether stable core prose had to be shortened to fit max_bytes.",
+                "type": "boolean"
+              },
+              "detail": {
+                "description": "compact | balanced | full \u2014 the detail tier that was served.",
+                "type": "string"
+              },
+              "excluded_by_detail": {
+                "description": "Items a richer `budget.detail` would have included. Not a truncation: they were never eligible at this tier.",
+                "type": "integer"
+              },
+              "next_action": {
+                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "page": {
+                "additionalProperties": false,
+                "properties": {
+                  "has_more": {
+                    "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                    "type": "boolean"
+                  },
+                  "next_cursor": {
+                    "description": "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "offset": {
+                    "description": "Number of eligible expansion items reconstructed by earlier pages.",
+                    "type": "integer"
+                  },
+                  "returned": {
+                    "description": "How many items this response carries.",
+                    "type": "integer"
+                  },
+                  "total": {
+                    "description": "How many eligible expansion items the selection holds in total.",
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "sections": {
+                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "type": "object"
+              },
+              "selection_omitted": {
+                "description": "Items excluded by budget.max_entries before paging.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Wake uses medium for a non-empty deterministic retrieval packet; this is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "resume_cursor": {
+            "description": "Newest temporal coordinate covered by this packet; null when the packet carries no temporal anchor.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "summary": {
+            "description": "Four-line L0 resume summary: objective, status, blocker, and next action.",
+            "type": "string"
+          },
+          "truncation": {
+            "additionalProperties": false,
+            "properties": {
+              "byte_limit": {
+                "description": "Normative serialized-byte ceiling applied.",
+                "type": "integer"
+              },
+              "omitted": {
+                "description": "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.",
+                "type": "object"
+              },
+              "token_limit": {
+                "description": "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Always true when this optional object is present.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "wake": {
+            "additionalProperties": false,
+            "properties": {
+              "causal_spine": {
+                "description": "Highest-salience explanatory relations, each with claim, because, and evidence_ref.",
+                "type": "array"
+              },
+              "current_state": {
+                "description": "Current semantic state selected from the rendered memory.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "guardrails": {
+                "description": "Stored constraints the continuation should preserve.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "next_actions": {
+                "description": "Next-action statements reflected by the L0 summary; empty means no concrete next action was identified.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "objective": {
+                "description": "The continuation intent supplied by the caller.",
+                "type": "string"
+              },
+              "open_loops": {
+                "description": "Live blocker statements reflected by the L0 summary; empty means no blocker was identified.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` \u2014 `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to ask from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "answer_policy": {
+            "description": "Deterministic evidence policy. show_conflicts surfaces explicit conflict relations in proof.conflicts; best_effort does not generate fallback text.",
+            "enum": [
+              "evidence_or_unknown",
+              "show_conflicts",
+              "best_effort"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 2,
+                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "question": {
+            "description": "Natural-language question.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about",
+          "question"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_ask",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "description": "UNKNOWN when the selected policy found no answerable evidence; otherwise names the retrieved citations without claiming they prove the answer.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "because": {
+            "description": "At most five retained citation refs. Empty beside UNKNOWN; canonical text lives in proof.evidence.",
+            "type": "array"
+          },
+          "projection": {
+            "additionalProperties": false,
+            "properties": {
+              "budget": {
+                "description": "The normative byte ceiling, bytes actually used, and retained token-planning hint.",
+                "type": "object"
+              },
+              "contract": {
+                "description": "The projection contract version, e.g. kmp.recall.projection.v1.",
+                "type": "string"
+              },
+              "core_text_shortened": {
+                "description": "Whether stable core prose had to be shortened to fit max_bytes.",
+                "type": "boolean"
+              },
+              "detail": {
+                "description": "compact | balanced | full \u2014 the detail tier that was served.",
+                "type": "string"
+              },
+              "excluded_by_detail": {
+                "description": "Items a richer `budget.detail` would have included. Not a truncation: they were never eligible at this tier.",
+                "type": "integer"
+              },
+              "next_action": {
+                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "page": {
+                "additionalProperties": false,
+                "properties": {
+                  "has_more": {
+                    "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                    "type": "boolean"
+                  },
+                  "next_cursor": {
+                    "description": "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "offset": {
+                    "description": "Number of eligible expansion items reconstructed by earlier pages.",
+                    "type": "integer"
+                  },
+                  "returned": {
+                    "description": "How many items this response carries.",
+                    "type": "integer"
+                  },
+                  "total": {
+                    "description": "How many eligible expansion items the selection holds in total.",
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              },
+              "sections": {
+                "description": "Per-section core, returned, eligible, and total counts for reconstructing the full proof.",
+                "type": "object"
+              },
+              "selection_omitted": {
+                "description": "Items excluded by budget.max_entries before paging.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "summary": {
+            "description": "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained.",
+            "type": "string"
+          },
+          "truncation": {
+            "additionalProperties": false,
+            "properties": {
+              "byte_limit": {
+                "description": "Normative serialized-byte ceiling applied.",
+                "type": "integer"
+              },
+              "omitted": {
+                "description": "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.",
+                "type": "object"
+              },
+              "token_limit": {
+                "description": "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Always true when this optional object is present.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to traverse from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "at": {
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "description": "Memory ref cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "sequence": {
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "time": {
+                "description": "ISO-8601 temporal cursor.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "axis": {
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 3,
+                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "include": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "type": "boolean"
+              },
+              "raw_refs": {
+                "description": "Return typed raw audit refs for selected temporal entries.",
+                "type": "boolean"
+              },
+              "relations": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "limit": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "window": {
+            "additionalProperties": false,
+            "properties": {
+              "after_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "before_entries": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "at"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_goto",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "description": "Per-dimension returned counts and presence flags.",
+                "type": "array"
+              },
+              "included": {
+                "description": "Dimension scope ids included in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "missing": {
+                "description": "Requested dimension scope ids not present in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "requested": {
+                "description": "Dimension selection requested by the caller.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "entries": {
+            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "type": "array"
+          },
+          "next_action": {
+            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Boundary ref for earlier history. Do not pass it back to `at.ref`; follow top-level `next_action`, which continues with `kmp_rewind`.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many temporal entries the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "raw_refs": {
+            "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Concise description of the temporal selection.",
+            "type": "string"
+          },
+          "temporal": {
+            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to traverse from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "around": {
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "description": "Memory ref cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "sequence": {
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "time": {
+                "description": "ISO-8601 temporal cursor.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "axis": {
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 3,
+                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "include": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "type": "boolean"
+              },
+              "raw_refs": {
+                "description": "Return typed raw audit refs for selected temporal entries.",
+                "type": "boolean"
+              },
+              "relations": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "limit": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "window": {
+            "additionalProperties": false,
+            "properties": {
+              "after_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "before_entries": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "around"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_near",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "description": "Per-dimension returned counts and presence flags.",
+                "type": "array"
+              },
+              "included": {
+                "description": "Dimension scope ids included in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "missing": {
+                "description": "Requested dimension scope ids not present in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "requested": {
+                "description": "Dimension selection requested by the caller.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "entries": {
+            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "type": "array"
+          },
+          "next_action": {
+            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Boundary ref for a partial neighborhood. Do not pass it back to `around.ref`; follow top-level `next_action`, which names the earlier and later moves.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many temporal entries the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "raw_refs": {
+            "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Concise description of the temporal selection.",
+            "type": "string"
+          },
+          "temporal": {
+            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to traverse from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 3,
+                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "from": {
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "description": "Memory ref cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "sequence": {
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "time": {
+                "description": "ISO-8601 temporal cursor.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "include": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "type": "boolean"
+              },
+              "raw_refs": {
+                "description": "Return typed raw audit refs for selected temporal entries.",
+                "type": "boolean"
+              },
+              "relations": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "limit": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "window": {
+            "additionalProperties": false,
+            "properties": {
+              "after_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "before_entries": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "from"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_rewind",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "description": "Per-dimension returned counts and presence flags.",
+                "type": "array"
+              },
+              "included": {
+                "description": "Dimension scope ids included in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "missing": {
+                "description": "Requested dimension scope ids not present in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "requested": {
+                "description": "Dimension selection requested by the caller.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "entries": {
+            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "type": "array"
+          },
+          "next_action": {
+            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many temporal entries the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "raw_refs": {
+            "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Concise description of the temporal selection.",
+            "type": "string"
+          },
+          "temporal": {
+            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor or root ref to traverse from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "Optional clock for this read. Omit it to preserve the compatible precedence (occurred, validity start, observed, ingested). An explicit axis never substitutes another clock.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 3,
+                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "depth": {
+            "description": "Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together \u2014 this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "from": {
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "description": "Memory ref cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "sequence": {
+                "description": "Sequence within a temporal coordinate and dimension scope; it is not a store-global event number.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "time": {
+                "description": "ISO-8601 temporal cursor.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "include": {
+            "additionalProperties": false,
+            "properties": {
+              "evidence": {
+                "type": "boolean"
+              },
+              "raw_refs": {
+                "description": "Return typed raw audit refs for selected temporal entries.",
+                "type": "boolean"
+              },
+              "relations": {
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "limit": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "window": {
+            "additionalProperties": false,
+            "properties": {
+              "after_entries": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "before_entries": {
+                "minimum": 0,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "about",
+          "from"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_forward",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "description": "Per-dimension returned counts and presence flags.",
+                "type": "array"
+              },
+              "included": {
+                "description": "Dimension scope ids included in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "missing": {
+                "description": "Requested dimension scope ids not present in the result.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "requested": {
+                "description": "Dimension selection requested by the caller.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "type": "object"
+          },
+          "entries": {
+            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "type": "array"
+          },
+          "next_action": {
+            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many temporal entries the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "confidence": {
+                "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information \u2014 this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "raw_refs": {
+            "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Concise description of the temporal selection.",
+            "type": "string"
+          },
+          "temporal": {
+            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor that owns both refs.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 1,
+                "description": "Graph traversal depth; defaults to 1 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 1600,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 1600 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "from": {
+            "description": "Source memory ref. In live gRPC mode this must resolve to a kernel node id.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "goal": {
+            "description": "Optional trace goal.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by page.next_cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum number of trace relations to return in this page.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "role": {
+            "description": "Optional caller role.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "to": {
+            "description": "Target memory ref. In live gRPC mode this must resolve to a kernel node id.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about",
+          "from",
+          "to"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_trace",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Opaque trace cursor; repeat it as page.cursor with every other argument unchanged.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many trace relations the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "summary": {
+            "description": "Concise statement of the path selection.",
+            "type": "string"
+          },
+          "trace": {
+            "description": "Ordered typed relations connecting from to to; empty means no path in the same memory graph.",
+            "type": "array"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor that owns the inspected ref.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for structuredContent. Inspect pages expandable sections instead of overflowing the host and errors only when the stable object itself cannot fit.",
+                "minimum": 512,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "include": {
+            "additionalProperties": false,
+            "properties": {
+              "details": {
+                "default": true,
+                "description": "Return the inspected object's stored details. Defaults to true.",
+                "type": "boolean"
+              },
+              "incoming": {
+                "default": true,
+                "description": "Return direct typed relations whose target is this ref. Defaults to true; set false to narrow an oversized inspection.",
+                "type": "boolean"
+              },
+              "outgoing": {
+                "default": true,
+                "description": "Return direct typed relations whose source is this ref. Defaults to true; set false to narrow an oversized inspection.",
+                "type": "boolean"
+              },
+              "raw": {
+                "default": false,
+                "description": "Return typed raw audit refs for the inspected object.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "ref": {
+            "description": "Memory ref to inspect. In live gRPC mode this must resolve to a kernel node id.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about",
+          "ref"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_inspect",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "description": "Direct stored evidence for the object; text is canonical and supports names the refs it anchors.",
+            "type": "array"
+          },
+          "links": {
+            "additionalProperties": false,
+            "properties": {
+              "incoming": {
+                "description": "Direct typed relations whose target is the inspected ref.",
+                "type": "array"
+              },
+              "outgoing": {
+                "description": "Direct typed relations whose source is the inspected ref.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "object": {
+            "description": "Stored object with ref, kind, canonical text, metadata, and optional source.",
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "guidance": {
+                "description": "Continuation, narrowing and budget guidance when this response is partial; null for a complete first page.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "has_more": {
+                "description": "Whether expansion items remain after this page.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "offset": {
+                "description": "Number of expansion items reconstructed by earlier pages.",
+                "type": "integer"
+              },
+              "omitted": {
+                "description": "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section.",
+                "type": "object"
+              },
+              "required_bytes": {
+                "description": "Exact serialized bytes required by the complete inspection, so a partial result never forces callers to probe budgets.",
+                "type": "integer"
+              },
+              "returned": {
+                "description": "Number of expansion items returned on this page.",
+                "type": "integer"
+              },
+              "sections": {
+                "description": "Per-section returned-on-page, remaining and total counts.",
+                "type": "object"
+              },
+              "total": {
+                "description": "Total evidence, outgoing-link, incoming-link and raw expansion items in the selection.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "quality": {
+            "additionalProperties": false,
+            "description": "Response-shape metrics; null when the backend supplied none.",
+            "properties": {
+              "causal_density": {
+                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "type": "number"
+              },
+              "detail_coverage": {
+                "description": "Share of returned nodes that carry stored detail.",
+                "type": "number"
+              },
+              "details": {
+                "description": "Returned node-detail count.",
+                "type": "integer"
+              },
+              "nodes": {
+                "description": "Returned node count.",
+                "type": "integer"
+              },
+              "relationships": {
+                "description": "Returned relation count.",
+                "type": "integer"
+              },
+              "truncated": {
+                "description": "Whether the rendering dropped anything.",
+                "type": "boolean"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "raw": {
+            "description": "Typed raw audit records returned only when include.raw=true.",
+            "type": "array"
+          },
+          "summary": {
+            "description": "Concise statement of which typed object was inspected.",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "Memory anchor the loom should weave. It must exist; a view onto absent memory would render an empty loom that looks like an answer.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_revision": {
+            "description": "When changing an existing view to another about, the view_revision this open was prepared against. A stale open conflicts instead of discarding a newer camera state.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "view_id": {
+            "description": "Which view to open. Omit for the one window a local viewer shows.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_view_open",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "applied": {
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "type": "boolean"
+          },
+          "clocks": {
+            "description": "The clocks the axis can read.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "observability": {
+            "description": "How requested overlay series are queried and aligned on the view's temporal axis.",
+            "type": "string"
+          },
+          "opened": {
+            "description": "Whether a view was opened or rehydrated.",
+            "type": "boolean"
+          },
+          "reads": {
+            "description": "What this answer is, in the reader's terms.",
+            "type": "string"
+          },
+          "semantic_zoom_ladder": {
+            "description": "The rungs, coarse to fine.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "state": {
+            "additionalProperties": true,
+            "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change.",
+            "type": "object"
+          },
+          "unhonored": {
+            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "url": {
+            "description": "Loopback ChronoLoom URL carrying this session's capability. Present when this MCP process mounted the local viewer.",
+            "type": "string"
+          },
+          "view_id": {
+            "description": "The view this answer is about.",
+            "type": "string"
+          },
+          "view_revision": {
+            "description": "The view's own revision, which is not the memory's.",
+            "type": "integer"
+          },
+          "viewer_available": {
+            "description": "Whether this MCP process mounted a ChronoLoom browser for the semantic view.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Move the view by declaring what it should show \u2014 focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "description": "Who is moving the view, for provenance. Defaults to `agent`.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "expected_revision": {
+            "description": "The view_revision this intent was prepared against. Omit only when the move is unconditional; passing it is what stops an agent from yanking the loom out from under a person mid-gesture.",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "explanation": {
+            "description": "Why, in the reader's terms. Shown to the human beside the change, because an agent may not rearrange what someone is looking at anonymously.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "focus": {
+            "additionalProperties": false,
+            "properties": {
+              "refs": {
+                "description": "Refs the view should frame. Each must exist; the loom does not draw placeholders that look like data.",
+                "items": {
+                  "description": "Memory ref to bring into focus.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "time_range": {
+                "additionalProperties": false,
+                "properties": {
+                  "axis": {
+                    "description": "Which clock the loom's axis reads. KMP keeps several; say which one you mean.",
+                    "enum": [
+                      "occurred",
+                      "observed",
+                      "ingested",
+                      "validity"
+                    ],
+                    "type": "string"
+                  },
+                  "from": {
+                    "description": "ISO-8601 start of the window.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "to": {
+                    "description": "ISO-8601 end of the window.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "idempotency_key": {
+            "description": "A retried intent must be the same intent, not a second one. A replay answers with applied=false and the CURRENT state \u2014 success, not a conflict, because that intent already landed; read the state it returns to see whether the person has moved since.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "projection": {
+            "additionalProperties": false,
+            "properties": {
+              "dimensions": {
+                "items": {
+                  "description": "Memory dimension to keep as a lane.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "overlays": {
+                "description": "Exact observability series to align above the loom on its current time axis. Missing backend series are reported by the viewer without inventing replacements.",
+                "items": {
+                  "description": "Observability series to align over the loom.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "relation_classes": {
+                "items": {
+                  "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                  "enum": [
+                    "structural",
+                    "causal",
+                    "motivational",
+                    "procedural",
+                    "evidential",
+                    "constraint"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "semantic_zoom": {
+                "description": "Which rung of the ladder to show. The zoom changes representation, not just size.",
+                "enum": [
+                  "atlas",
+                  "episode",
+                  "moment"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "search": {
+            "description": "Query to highlight, or null to clear.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "selection": {
+            "description": "Ref to select, or null to clear.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "target": {
+            "additionalProperties": false,
+            "properties": {
+              "about": {
+                "description": "Weave a different about.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "trace": {
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "description": "Where the claim starts.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "to": {
+                "description": "Where it should lead.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "view_id": {
+            "description": "Which view to move. Omit for the default one.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_view_apply_intent",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "applied": {
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "type": "boolean"
+          },
+          "clocks": {
+            "description": "The clocks the axis can read.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "observability": {
+            "description": "How requested overlay series are queried and aligned on the view's temporal axis.",
+            "type": "string"
+          },
+          "opened": {
+            "description": "Whether a view was opened or rehydrated.",
+            "type": "boolean"
+          },
+          "reads": {
+            "description": "What this answer is, in the reader's terms.",
+            "type": "string"
+          },
+          "semantic_zoom_ladder": {
+            "description": "The rungs, coarse to fine.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "state": {
+            "additionalProperties": true,
+            "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change.",
+            "type": "object"
+          },
+          "unhonored": {
+            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "view_id": {
+            "description": "The view this answer is about.",
+            "type": "string"
+          },
+          "view_revision": {
+            "description": "The view's own revision, which is not the memory's.",
+            "type": "integer"
+          },
+          "viewer_available": {
+            "description": "Whether this MCP process mounted a ChronoLoom browser for the semantic view.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
+      "description": "Read the view's semantic state \u2014 clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "view_id": {
+            "description": "Which view to read. Omit for the default one.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "kmp_view_get_state",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "applied": {
+            "description": "Whether this call is the one that moved the view. A replayed idempotency key answers false.",
+            "type": "boolean"
+          },
+          "clocks": {
+            "description": "The clocks the axis can read.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "observability": {
+            "description": "How requested overlay series are queried and aligned on the view's temporal axis.",
+            "type": "string"
+          },
+          "opened": {
+            "description": "Whether a view was opened or rehydrated.",
+            "type": "boolean"
+          },
+          "reads": {
+            "description": "What this answer is, in the reader's terms.",
+            "type": "string"
+          },
+          "semantic_zoom_ladder": {
+            "description": "The rungs, coarse to fine.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "state": {
+            "additionalProperties": true,
+            "description": "The semantic view state: about, clock, focus, projection, selection, trace, search, and the provenance of the last change.",
+            "type": "object"
+          },
+          "unhonored": {
+            "description": "Parts of the intent this build recorded but cannot render yet.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "url": {
+            "description": "Loopback ChronoLoom URL carrying this session's capability. Present when this MCP process mounted the local viewer.",
+            "type": "string"
+          },
+          "view_id": {
+            "description": "The view this answer is about.",
+            "type": "string"
+          },
+          "view_revision": {
+            "description": "The view's own revision, which is not the memory's.",
+            "type": "integer"
+          },
+          "viewer_available": {
+            "description": "Whether this MCP process mounted a ChronoLoom browser for the semantic view.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ]
+}

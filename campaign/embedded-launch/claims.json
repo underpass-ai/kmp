@@ -1,0 +1,72 @@
+{
+  "schema_version": "1",
+  "campaign_id": "kmp-embedded-first-launch",
+  "fixture_disclosure": "All incident data shown in the campaign is a deterministic product fixture, not a customer incident.",
+  "evidence_contract": {
+    "adapter": "kmp.obs-promoted-capture.v1",
+    "root": "evidence-pack/capture/promoted",
+    "resolution": "Open the promoted index for the master, verify every declared SHA-256, resolve the named run artifact through index.evidence, then apply the selector to that immutable artifact.",
+    "forbidden_resolution": "Do not select the newest UTC run or accept an unpromoted capture."
+  },
+  "claims": [
+    {
+      "id": "C01",
+      "master_id": "fresh-process-same-why",
+      "claim": "After one KMP MCP process commits a decision and exits, a fresh process can recover that decision and its attached evidence from the same local store.",
+      "allowed_copy": ["End the session. Keep the why.", "Fresh process. Same decision. Evidence attached."],
+      "forbidden_copy": ["KMP never forgets", "Your agent remembers forever", "Crash-proof memory"],
+      "evidence": [
+        {"promoted_index": "evidence-pack/capture/promoted/fresh-process-same-why.json", "artifact": "process-lifecycle.json", "selector": "two distinct successful MCP process lifecycles"},
+        {"promoted_index": "evidence-pack/capture/promoted/fresh-process-same-why.json", "artifact": "stores.json", "selector": "both lifecycles resolve to the same isolated SQLite store fingerprint"},
+        {"promoted_index": "evidence-pack/capture/promoted/fresh-process-same-why.json", "artifact": "tool-calls.jsonl", "selector": "process 1 kmp_write_memory accepted response and process 2 kmp_inspect response for the identical ref"},
+        {"promoted_index": "evidence-pack/capture/promoted/fresh-process-same-why.json", "artifact": "pty.typescript", "selector": "visible process exit, fresh PID and recovered evidence"}
+      ]
+    },
+    {
+      "id": "C02",
+      "master_id": "two-processes-one-memory",
+      "claim": "Two independent local KMP MCP processes can open one SQLite WAL store, and the second can recover a decision committed by the first without export or import.",
+      "allowed_copy": ["Process A writes it. Process B recovers the why.", "Two processes. One local memory."],
+      "forbidden_copy": ["Codex writes it. Claude already knows", "Shared across machines", "Cloud sync", "Two agents"],
+      "evidence": [
+        {"promoted_index": "evidence-pack/capture/promoted/two-processes-one-memory.json", "artifact": "process-lifecycle.json", "selector": "distinct successful Process A and Process B MCP PIDs"},
+        {"promoted_index": "evidence-pack/capture/promoted/two-processes-one-memory.json", "artifact": "stores.json", "selector": "both processes resolve to the same isolated SQLite WAL store fingerprint"},
+        {"promoted_index": "evidence-pack/capture/promoted/two-processes-one-memory.json", "artifact": "tool-calls.jsonl", "selector": "Process A accepted write and Process B recovery of the identical ref; no export or import calls"},
+        {"promoted_index": "evidence-pack/capture/promoted/two-processes-one-memory.json", "artifact": "pty.typescript", "selector": "visible PROCESS A and PROCESS B identities, PIDs, store fingerprint and recovered evidence"}
+      ]
+    },
+    {
+      "id": "C03",
+      "master_id": "keep-the-wrong-turn",
+      "claim": "In the deterministic pool-saturation fixture, KMP preserves the traffic-spike hypothesis, the later root-cause decision and a four-relation proof path between verification and the configuration change.",
+      "allowed_copy": ["Delete the wrong turn. Lose the why.", "Memory, with receipts."],
+      "forbidden_copy": ["Customer incident", "Production outage", "KMP proved causality", "KMP generated the explanation"],
+      "evidence": [
+        {"promoted_index": "evidence-pack/capture/promoted/keep-the-wrong-turn.json", "artifact": "tool-calls.jsonl", "selector": "fixture bootstrap, selection intent and four-hop trace intent with exact MCP wire hashes"},
+        {"promoted_index": "evidence-pack/capture/promoted/keep-the-wrong-turn.json", "artifact": "viewer-revisions.jsonl", "selector": "browser-observed long-poll revisions for selection and complete audit path"},
+        {"promoted_index": "evidence-pack/capture/promoted/keep-the-wrong-turn.json", "artifact": "pty.typescript", "selector": "visible fixture label, both user prompts and response-derived proof output"},
+        {"promoted_index": "evidence-pack/capture/promoted/keep-the-wrong-turn.json", "artifact": "verification.json", "selector": "passed=true and real PTY, Chromium, long-poll and OBS checks"}
+      ]
+    },
+    {
+      "id": "C04",
+      "master_id": "all",
+      "claim": "ChronoLoom reacts to public semantic view-tool calls through its real long-poll path.",
+      "allowed_copy": ["ChronoLoom lights the path.", "Agent-directed. Human-controlled."],
+      "forbidden_copy": ["The browser understands your intent", "Autonomous UI", "KMP controls your browser"],
+      "evidence": [
+        {"promoted_index": "each scheduled master's promoted index", "artifact": "tool-calls.jsonl", "selector": "kmp_view_apply_intent request and successful response"},
+        {"promoted_index": "each scheduled master's promoted index", "artifact": "viewer-revisions.jsonl", "selector": "subsequent browser-observed /api/view long-poll revision"},
+        {"promoted_index": "each scheduled master's promoted index", "artifact": "browser-network.jsonl", "selector": "sanitized real Chromium network observation of the long-poll path"},
+        {"promoted_index": "each scheduled master's promoted index", "artifact": "obs-scene-schedule.jsonl", "selector": "monotonic OBS focus-scene requests matching the captured EDL"}
+      ]
+    }
+  ],
+  "global_boundaries": [
+    "Local-first describes KMP storage; evidence sent to a cloud agent follows that host's policy.",
+    "SQLite WAL sharing is local multi-process access to one directory, not cross-machine synchronization.",
+    "KMP returns stored evidence; any conversational prose belongs to the agent host.",
+    "Codex and Claude may be named only after raw captures prove both real hosts.",
+    "No unpublished release, marketplace version or quality-gate result may appear in a CTA."
+  ]
+}

@@ -1,0 +1,14 @@
+python3 campaign/embedded-launch/scripts/validate-campaign.py
+python3 campaign/embedded-launch/scripts/render-campaign.py campaign/embedded-launch/evidence-pack/capture/raw tmp/campaign-mobile-safe-render-a
+mkdir -p tmp/campaign-mobile-safe-render-a/masters
+cp docs/assets/campaign/kmp-embedded/*.mp4 tmp/campaign-mobile-safe-render-a/masters/
+cp docs/assets/campaign/kmp-embedded/manifest.json tmp/campaign-mobile-safe-render-a/manifest.json
+python3 campaign/embedded-launch/scripts/render-campaign.py campaign/embedded-launch/evidence-pack/capture/raw tmp/campaign-mobile-safe-render-b
+python3 campaign/embedded-launch/scripts/test_audio_contract.py tmp/campaign-mobile-safe-render-a tmp/campaign-mobile-safe-render-b
+cmp tmp/campaign-mobile-safe-render-a/masters/fresh-process-same-why.mp4 docs/assets/campaign/kmp-embedded/fresh-process-same-why.mp4
+cmp tmp/campaign-mobile-safe-render-a/masters/two-processes-one-memory.mp4 docs/assets/campaign/kmp-embedded/two-processes-one-memory.mp4
+cmp tmp/campaign-mobile-safe-render-a/masters/keep-the-wrong-turn.mp4 docs/assets/campaign/kmp-embedded/keep-the-wrong-turn.mp4
+cmp tmp/campaign-mobile-safe-render-a/fresh-process-same-why-mix.wav tmp/campaign-mobile-safe-render-b/fresh-process-same-why-mix.wav
+cmp tmp/campaign-mobile-safe-render-a/two-processes-one-memory-mix.wav tmp/campaign-mobile-safe-render-b/two-processes-one-memory-mix.wav
+cmp tmp/campaign-mobile-safe-render-a/keep-the-wrong-turn-mix.wav tmp/campaign-mobile-safe-render-b/keep-the-wrong-turn-mix.wav
+python3 campaign/embedded-launch/scripts/verify-final-media.py

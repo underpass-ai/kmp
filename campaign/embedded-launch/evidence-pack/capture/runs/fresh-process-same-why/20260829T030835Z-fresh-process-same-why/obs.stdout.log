@@ -1,0 +1,171 @@
+debug: Found portal inhibitor
+debug: Attempted path: share/obs/obs-studio/locale/en-US.ini
+debug: Attempted path: /usr/share/obs/obs-studio/locale/en-US.ini
+debug: Attempted path: share/obs/obs-studio/locale.ini
+debug: Attempted path: /usr/share/obs/obs-studio/locale.ini
+debug: Attempted path: share/obs/obs-studio/themes/Yami.qss
+debug: Attempted path: /usr/share/obs/obs-studio/themes/Yami.qss
+info: Command Line Arguments: --multi --collection KMP Capture --profile KMP Capture --scene KMP Capture --websocket_port 45120 --disable-shutdown-check --disable-missing-files-check --only-bundled-plugins
+info: Using EGL/X11
+info: Physical Cores: 20, Logical Cores: 20
+info: Physical Memory: 124546MB Total, 16505MB Free
+info: Kernel Version: Linux 6.17.0-1029-nvidia
+info: Distribution: "Ubuntu" "24.04"
+info: Desktop Environment: ubuntu:GNOME (ubuntu)
+info: Session Type: x11
+info: Window System: X11.0, Vendor: The X.Org Foundation, Version: 1.21.1
+info: Qt Version: 6.4.2 (runtime), 6.4.2 (compiled)
+info: Portable mode: false
+warning: Third-party plugins disabled.
+info: OBS 30.0.2.1-3build1 (linux)
+info: ---------------------------------
+info: ---------------------------------
+info: audio settings reset:
+	samples per sec: 48000
+	speakers:        2
+	max buffering:   960 milliseconds
+	buffering type:  dynamically increasing
+info: ---------------------------------
+info: Initializing OpenGL...
+info: Loading up OpenGL on adapter Mesa llvmpipe (LLVM 20.1.2, 128 bits)
+info: OpenGL loaded successfully, version 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2, shading language 4.50
+info: ---------------------------------
+info: video settings reset:
+	base resolution:   1920x1080
+	output resolution: 1920x1080
+	downscale filter:  Bicubic
+	fps:               30/1
+	format:            NV12
+	YUV mode:          Rec. 709/Partial
+info: NV12 texture support not available
+info: P010 texture support not available
+info: Audio monitoring device:
+	name: Default
+	id: default
+info: ---------------------------------
+warning: Failed to load 'en-US' text for module: 'decklink-captions.so'
+warning: Failed to load 'en-US' text for module: 'decklink-output-ui.so'
+warning: A DeckLink iterator could not be created.  The DeckLink drivers may not be installed
+warning: Failed to initialize module 'decklink.so'
+info: [pipewire] Available captures:
+info: [pipewire]     - Desktop capture
+info: [pipewire]     - Window capture
+warning: v4l2loopback not installed, virtual camera disabled
+info: NVENC supported
+info: FFmpeg VAAPI H264 encoding not supported
+info: FFmpeg VAAPI HEVC encoding not supported
+info: [obs-websocket] [obs_module_load] you can haz websockets (Version: 5.3.4 | RPC Version: 1)
+info: [obs-websocket] [obs_module_load] Qt version (compile-time): 6.4.2 | Qt version (run-time): 6.4.2
+info: [obs-websocket] [obs_module_load] Linked ASIO Version: 102801
+info: [obs-websocket] [Config::Load] --websocket_port passed. Overriding WebSocket port with: 45120
+info: [obs-websocket] [obs_module_load] Module loaded.
+info: [vlc-video]: VLC 3.0.20 Vetinari found, VLC video source enabled
+info: ---------------------------------
+info:   Loaded Modules:
+info:     vlc-video.so
+info:     text-freetype2.so
+info:     rtmp-services.so
+info:     obs-x264.so
+info:     obs-websocket.so
+info:     obs-transitions.so
+info:     obs-outputs.so
+info:     obs-filters.so
+info:     obs-ffmpeg.so
+info:     linux-v4l2.so
+info:     linux-pulseaudio.so
+info:     linux-pipewire.so
+info:     linux-jack.so
+info:     linux-capture.so
+info:     linux-alsa.so
+info:     image-source.so
+info:     frontend-tools.so
+info:     decklink-output-ui.so
+info:     decklink-captions.so
+info: ---------------------------------
+info: [obs-websocket] [obs_module_post_load] WebSocket server is enabled, starting...
+info: [obs-websocket] [WebSocketServer::Start] Not locked to IPv4 bindings
+info: [obs-websocket] [WebSocketServer::ServerRunner] IO thread started.
+info: [obs-websocket] [WebSocketServer::Start] Server started successfully on port 45120. Possible connect address: 192.168.1.53
+info: ==== Startup complete ===============================================
+info: All scene data cleared
+info: ------------------------------------------------
+info: Switched to scene 'KMP Capture'
+info: ------------------------------------------------
+info: Loaded scenes:
+info: - scene 'KMP Capture':
+info: ------------------------------------------------
+info: [rtmp-services plugin] Successfully updated file 'services.json' (version 286)
+info: [rtmp-services plugin] Successfully updated package (version 286)
+info: [obs-websocket] [WebSocketServer::onOpen] New WebSocket client has connected from [::ffff:127.0.0.1]:49862
+info: User added scene 'KMP/Wide'
+info: User added scene 'KMP/TerminalFocus'
+info: User added scene 'KMP/ChronoFocus'
+info: User added scene 'KMP/ProofFocus'
+info: User added scene 'KMP/CTAFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/Wide · wide · isolated X11 screen 0' (xshm_input) to scene 'KMP/Wide'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/TerminalFocus · primary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/TerminalFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/TerminalFocus · secondary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/TerminalFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/ChronoFocus · primary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/ChronoFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/ChronoFocus · secondary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/ChronoFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/ProofFocus · primary-proof · isolated X11 screen 0' (xshm_input) to scene 'KMP/ProofFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/ProofFocus · secondary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/ProofFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/CTAFocus · primary-cta · isolated X11 screen 0' (xshm_input) to scene 'KMP/CTAFocus'
+info: xshm-input: Missing Xinerama extension !
+info: xshm-input: Geometry 1920x1080 @ 0,0
+info: User added source 'KMP/CTAFocus · secondary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/CTAFocus'
+info: User switched to scene 'KMP/Wide'
+info: ---------------------------------
+info: [x264 encoder: 'advanced_video_recording'] preset: veryfast
+info: [x264 encoder: 'advanced_video_recording'] tune: zerolatency
+info: [x264 encoder: 'advanced_video_recording'] settings:
+	rate_control: CBR
+	bitrate:      2500
+	buffer size:  2500
+	crf:          23
+	fps_num:      30
+	fps_den:      1
+	width:        1920
+	height:       1080
+	keyint:       250
+
+info: [x264 encoder: 'advanced_video_recording'] custom settings: 
+	bframes = 0
+	rc-lookahead = 0
+	sync-lookahead = 0
+info: ---------------------------------
+info: [FFmpeg aac encoder: 'Track1'] bitrate: 160, channels: 2, channel_layout: stereo
+
+info: ==== Recording Start ===============================================
+info: [ffmpeg muxer: 'adv_file_output'] Writing file '/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/obs-output/2026-08-29_05-09-03.mkv'...
+info: [obs-websocket] [WebSocketServer::onClose] WebSocket client `[::ffff:127.0.0.1]:49862` has disconnected with code `1000` and reason: 
+info: [obs-websocket] [WebSocketServer::onOpen] New WebSocket client has connected from [::ffff:127.0.0.1]:53538
+info: User switched to scene 'KMP/TerminalFocus'
+info: User switched to scene 'KMP/ChronoFocus'
+info: User switched to scene 'KMP/TerminalFocus'
+info: User switched to scene 'KMP/Wide'
+info: User switched to scene 'KMP/TerminalFocus'
+info: User switched to scene 'KMP/ChronoFocus'
+info: User switched to scene 'KMP/CTAFocus'
+info: [obs-websocket] [WebSocketServer::onClose] WebSocket client `[::ffff:127.0.0.1]:53538` has disconnected with code `1000` and reason: 
+info: [ffmpeg muxer: 'adv_file_output'] Output of file '/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/obs-output/2026-08-29_05-09-03.mkv' stopped
+info: Output 'adv_file_output': stopping
+info: Output 'adv_file_output': Total frames output: 1321
+info: Output 'adv_file_output': Total drawn frames: 1321 (1325 attempted)
+info: Output 'adv_file_output': Number of lagged frames due to rendering lag/stalls: 4 (0.3%)
+info: ==== Recording Stop ================================================

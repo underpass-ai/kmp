@@ -3,3 +3,8 @@
 # causal order; `kmp-mcp snapshot merge` accepts only an exact fast-forward.
 .kmp/*.jsonl text eol=lf -merge
 .kmp/**/*.jsonl text eol=lf -merge
+
+# OBS logs and terminal typescripts are retained byte-for-byte as capture
+# evidence. Their producer-owned trailing blanks and carriage returns are
+# data, not source formatting to normalize during review.
+campaign/embedded-launch/evidence-pack/capture/runs/** whitespace=-blank-at-eol

@@ -1,0 +1,125 @@
+{
+  "id": "fresh-process-same-why",
+  "title": "Fresh process · same local memory",
+  "about": "project:campaign-fresh-process",
+  "duration_ms": 44000,
+  "stores": [
+    { "id": "shared-local" }
+  ],
+  "processes": [
+    { "id": "session-01", "store_id": "shared-local", "autostart": true, "browser": true },
+    { "id": "session-02", "store_id": "shared-local", "autostart": false, "browser": false }
+  ],
+  "bootstrap": [],
+  "steps": [
+    { "at_ms": 0, "type": "say", "speaker": "process", "text": "End the session. Keep the why." },
+    { "at_ms": 4000, "type": "say", "speaker": "user", "text": "Remember why KMP Embedded uses SQLite WAL." },
+    {
+      "at_ms": 5000,
+      "type": "tool",
+      "process_id": "session-01",
+      "name": "kmp_write_memory",
+      "arguments": {
+        "about": "project:campaign-fresh-process",
+        "intent": "record_decision",
+        "actor": "process:session-01",
+        "occurred_at": "2026-08-28T15:58:00Z",
+        "observed_at": "2026-08-28T16:00:00Z",
+        "scope": { "process": "campaign:kmp-embedded-launch" },
+        "current": {
+          "ref": "project:campaign-fresh-process:decision:sqlite-wal",
+          "kind": "decision",
+          "summary": "Use SQLite WAL so independent KMP processes can recover the same local memory.",
+          "evidence": "The two-process regression writes through one store and both processes recover the committed decision."
+        },
+        "idempotency_key": "write:campaign:fresh-process:sqlite-wal:v1",
+        "options": { "dry_run": false, "strict": false, "sequence": 1 }
+      },
+      "display_paths": [
+        { "label": "accepted", "path": "structuredContent.accepted" },
+        { "label": "ref", "path": "structuredContent.generated_refs.0" }
+      ]
+    },
+    {
+      "at_ms": 8500,
+      "type": "tool",
+      "process_id": "session-01",
+      "name": "kmp_view_open",
+      "arguments": { "about": "project:campaign-fresh-process" },
+      "display_paths": [
+        { "label": "view opened", "path": "structuredContent.opened" }
+      ]
+    },
+    {
+      "at_ms": 9200,
+      "type": "tool",
+      "process_id": "session-01",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:campaign:fresh:commit",
+        "actor": "agent",
+        "explanation": "show the committed decision and its evidence",
+        "focus": { "refs": ["project:campaign-fresh-process:decision:sqlite-wal"] },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "project:campaign-fresh-process:decision:sqlite-wal"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 13200, "type": "process", "action": "stop", "process_id": "session-01" },
+    { "at_ms": 17200, "type": "process", "action": "start", "process_id": "session-02" },
+    { "at_ms": 18000, "type": "process", "action": "switch_browser", "process_id": "session-02" },
+    {
+      "at_ms": 19000,
+      "type": "tool",
+      "process_id": "session-02",
+      "name": "kmp_view_open",
+      "arguments": { "about": "project:campaign-fresh-process" },
+      "display_paths": [
+        { "label": "view opened", "path": "structuredContent.opened" }
+      ]
+    },
+    { "at_ms": 22000, "type": "say", "speaker": "user", "text": "Why does KMP Embedded use SQLite WAL?" },
+    {
+      "at_ms": 23000,
+      "type": "tool",
+      "process_id": "session-02",
+      "name": "kmp_inspect",
+      "arguments": {
+        "about": "project:campaign-fresh-process",
+        "ref": "project:campaign-fresh-process:decision:sqlite-wal",
+        "include": { "details": true, "incoming": true, "outgoing": true },
+        "budget": { "max_bytes": 12000 }
+      },
+      "display_paths": [
+        { "label": "ref", "path": "structuredContent.object.ref" },
+        { "label": "decision", "path": "structuredContent.object.text" },
+        { "label": "evidence", "path": "structuredContent.evidence.0.text" }
+      ]
+    },
+    {
+      "at_ms": 28800,
+      "type": "tool",
+      "process_id": "session-02",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:campaign:fresh:recover",
+        "actor": "agent",
+        "explanation": "recover the decision in a fresh process",
+        "focus": { "refs": ["project:campaign-fresh-process:decision:sqlite-wal"] },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "project:campaign-fresh-process:decision:sqlite-wal"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 37100, "type": "say", "speaker": "process", "text": "Fresh process. Same decision. Evidence attached. Run KMP Embedded → github.com/underpass-ai/kmp" },
+    { "at_ms": 43500, "type": "hold" }
+  ]
+}

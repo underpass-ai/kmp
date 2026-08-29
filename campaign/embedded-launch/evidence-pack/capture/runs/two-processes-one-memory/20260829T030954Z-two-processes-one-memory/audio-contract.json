@@ -1,0 +1,99 @@
+{
+  "schema_version": "1",
+  "identity": "KMP Evidence Knot",
+  "source_policy": {
+    "original_procedural_only": true,
+    "captured_obs_audio_allowed": false,
+    "forbidden_cues": [
+      "typing",
+      "enter",
+      "process startup",
+      "process exit",
+      "browser navigation",
+      "long-poll",
+      "operating-system notification",
+      "error alarm",
+      "room tone",
+      "music bed"
+    ]
+  },
+  "pcm": {
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "bits_per_sample": 24,
+    "codec": "pcm_s24le",
+    "canonical_hash_format": "s24le-48000hz-stereo-interleaved"
+  },
+  "mix": {
+    "integrated_lufs": -18.0,
+    "integrated_tolerance_lu": 1.0,
+    "true_peak_max_dbtp": -1.5,
+    "normalizer_true_peak_target_dbtp": -2.0,
+    "normalizer_lra_target_lu": 5.0,
+    "lra_max_lu": 8.0,
+    "precontrol": "acompressor=threshold=0.015:ratio=4:attack=5:release=120:makeup=3",
+    "mono_fold_down": {
+      "filter": "pan=mono|c0=0.5*c0+0.5*c1",
+      "expected_integrated_delta_lu": -3.0,
+      "integrated_delta_tolerance_lu": 1.0,
+      "true_peak_max_dbtp": -1.5,
+      "lra_max_lu": 8.0
+    }
+  },
+  "distribution": {
+    "codec": "aac",
+    "profile": "LC",
+    "sample_rate_hz": 48000,
+    "channels": 2,
+    "encoder_target_bits_per_second": 192000,
+    "decoded_silence_guard_seconds": 0.06,
+    "decoded_silence_max_abs_sample": 64,
+    "bitrate_contract": "encoder target only; ffprobe records the observed average stream bitrate"
+  },
+  "masters": {
+    "fresh-process-same-why": {
+      "digital_silence": [[13.2, 28.8], [39.4, 44.0]],
+      "cue_anchors": [
+        {"cue": "memory-stitch", "at": 0.55, "visible_anchor": "hook_visible", "not_before": 0.0},
+        {"cue": "memory-stitch", "at": 9.25, "visible_anchor": "viewer_decision_visible", "not_before": 9.2},
+        {"cue": "relation-thread", "at": 10.1, "visible_anchor": "viewer_decision_visible", "not_before": 9.2},
+        {"cue": "evidence-open", "at": 12.6, "visible_anchor": "viewer_evidence_visible", "not_before": 9.2},
+        {"cue": "memory-stitch", "at": 29.4, "visible_anchor": "recovered_decision_visible", "not_before": 28.8},
+        {"cue": "evidence-open", "at": 30.1, "visible_anchor": "recovered_evidence_visible", "not_before": 28.8},
+        {"cue": "evidence-knot", "at": 37.1, "visible_anchor": "end_card_visible", "not_before": 37.1}
+      ]
+    },
+    "two-processes-one-memory": {
+      "digital_silence": [[15.0, 28.0], [41.6, 46.0]],
+      "cue_anchors": [
+        {"cue": "strand-left", "at": 0.55, "visible_anchor": "hook_visible", "not_before": 0.0},
+        {"cue": "strand-right", "at": 1.15, "visible_anchor": "hook_visible", "not_before": 0.0},
+        {"cue": "memory-stitch", "at": 9.6, "visible_anchor": "process_a_decision_visible", "not_before": 9.6},
+        {"cue": "relation-thread", "at": 11.2, "visible_anchor": "process_a_decision_visible", "not_before": 9.6},
+        {"cue": "evidence-open", "at": 13.8, "visible_anchor": "process_a_decision_visible", "not_before": 9.6},
+        {"cue": "strand-left", "at": 31.2, "visible_anchor": "shared_store_recall_visible", "not_before": 28.0},
+        {"cue": "strand-right", "at": 31.52, "visible_anchor": "shared_store_recall_visible", "not_before": 28.0},
+        {"cue": "strand-left", "at": 32.15, "visible_anchor": "shared_store_recall_visible", "not_before": 28.0},
+        {"cue": "strand-right", "at": 32.47, "visible_anchor": "shared_store_recall_visible", "not_before": 28.0},
+        {"cue": "wal-converge", "at": 33.2, "visible_anchor": "shared_store_recall_visible", "not_before": 28.0},
+        {"cue": "memory-stitch", "at": 34.3, "visible_anchor": "process_b_recovered_view_visible", "not_before": 34.3},
+        {"cue": "evidence-open", "at": 35.0, "visible_anchor": "process_b_recovered_view_visible", "not_before": 34.3},
+        {"cue": "evidence-knot", "at": 39.3, "visible_anchor": "end_card_visible", "not_before": 39.3}
+      ]
+    },
+    "keep-the-wrong-turn": {
+      "digital_silence": [[2.4, 15.2], [17.45, 34.0], [49.3, 54.0]],
+      "cue_anchors": [
+        {"cue": "retained-turn", "at": 0.55, "visible_anchor": "hook_visible", "not_before": 0.0},
+        {"cue": "clock-prism", "at": 15.2, "visible_anchor": "clock_prism_visible", "not_before": 11.0},
+        {"cue": "relation-thread", "at": 16.2, "visible_anchor": "clock_prism_visible", "not_before": 11.0},
+        {"cue": "proof-hop-1", "at": 34.0, "visible_anchor": "hop_1_focus", "not_before": 34.0, "max_lag_frames": 1},
+        {"cue": "proof-hop-2", "at": 36.4, "visible_anchor": "hop_2_focus", "not_before": 36.4, "max_lag_frames": 1},
+        {"cue": "proof-hop-3", "at": 38.8, "visible_anchor": "hop_3_focus", "not_before": 38.8, "max_lag_frames": 1},
+        {"cue": "proof-hop-4", "at": 41.2, "visible_anchor": "hop_4_focus", "not_before": 41.2, "max_lag_frames": 1},
+        {"cue": "evidence-knot", "at": 43.6, "visible_anchor": "full_path_visible", "not_before": 43.6},
+        {"cue": "evidence-knot", "at": 47.0, "visible_anchor": "nice_visible", "not_before": 47.0}
+      ]
+    }
+  }
+}

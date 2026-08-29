@@ -1,0 +1,139 @@
+{
+  "id": "two-processes-one-memory",
+  "title": "Process A writes · Process B recovers",
+  "about": "incident:campaign-pool-limit",
+  "duration_ms": 46000,
+  "stores": [
+    { "id": "shared-local" }
+  ],
+  "processes": [
+    { "id": "process-a", "store_id": "shared-local", "autostart": true, "browser": true },
+    { "id": "process-b", "store_id": "shared-local", "autostart": true, "browser": false }
+  ],
+  "bootstrap": [],
+  "steps": [
+    { "at_ms": 0, "type": "say", "speaker": "process", "text": "Process A writes it. Process B recovers the why." },
+    { "at_ms": 4000, "type": "say", "speaker": "user", "text": "Remember: restore max_connections to 200. The pool ceiling caused saturation." },
+    {
+      "at_ms": 5000,
+      "type": "tool",
+      "process_id": "process-a",
+      "name": "kmp_write_memory",
+      "arguments": {
+        "about": "incident:campaign-pool-limit",
+        "intent": "record_decision",
+        "actor": "process:a",
+        "occurred_at": "2026-08-28T15:58:00Z",
+        "observed_at": "2026-08-28T16:00:00Z",
+        "scope": { "process": "campaign:kmp-embedded-launch" },
+        "current": {
+          "ref": "incident:campaign-pool-limit:decision:restore-max-connections",
+          "kind": "decision",
+          "summary": "Restore max_connections to 200. The pool ceiling caused saturation.",
+          "evidence": "Checkout latency returned to 180 ms after restoring the connection ceiling while request volume stayed flat."
+        },
+        "idempotency_key": "write:campaign:two-processes:restore-pool:v1",
+        "options": { "dry_run": false, "strict": false, "sequence": 1 }
+      },
+      "display_paths": [
+        { "label": "accepted", "path": "structuredContent.accepted" },
+        { "label": "ref", "path": "structuredContent.generated_refs.0" }
+      ]
+    },
+    {
+      "at_ms": 8500,
+      "type": "tool",
+      "process_id": "process-a",
+      "name": "kmp_view_open",
+      "arguments": { "about": "incident:campaign-pool-limit" },
+      "display_paths": [
+        { "label": "view opened", "path": "structuredContent.opened" }
+      ]
+    },
+    {
+      "at_ms": 9600,
+      "type": "tool",
+      "process_id": "process-a",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:campaign:processes:a",
+        "actor": "agent",
+        "explanation": "show the memory Process A committed",
+        "focus": { "refs": ["incident:campaign-pool-limit:decision:restore-max-connections"] },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "incident:campaign-pool-limit:decision:restore-max-connections"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 15000, "type": "say", "speaker": "process", "text": "Two processes. Same local store." },
+    {
+      "at_ms": 16000,
+      "type": "tool",
+      "process_id": "process-b",
+      "name": "kmp_view_open",
+      "arguments": { "about": "incident:campaign-pool-limit" },
+      "display_paths": [
+        { "label": "view opened", "path": "structuredContent.opened" }
+      ]
+    },
+    { "at_ms": 17000, "type": "process", "action": "switch_browser", "process_id": "process-b" },
+    { "at_ms": 20000, "type": "say", "speaker": "user", "text": "Why is max_connections back at 200?" },
+    {
+      "at_ms": 21000,
+      "type": "tool",
+      "process_id": "process-b",
+      "name": "kmp_ask",
+      "arguments": {
+        "about": "incident:campaign-pool-limit",
+        "question": "Why is max_connections back at 200?",
+        "answer_policy": "evidence_or_unknown",
+        "budget": { "detail": "full", "max_bytes": 12000 }
+      },
+      "display_paths": [
+        { "label": "decision", "path": "structuredContent.proof.evidence.0.text" },
+        { "label": "evidence", "path": "structuredContent.proof.evidence.1.text" }
+      ]
+    },
+    {
+      "at_ms": 24000,
+      "type": "tool",
+      "process_id": "process-b",
+      "name": "kmp_inspect",
+      "arguments": {
+        "about": "incident:campaign-pool-limit",
+        "ref": "incident:campaign-pool-limit:decision:restore-max-connections",
+        "include": { "details": true, "incoming": true, "outgoing": true },
+        "budget": { "max_bytes": 12000 }
+      },
+      "display_paths": [
+        { "label": "ref", "path": "structuredContent.object.ref" }
+      ]
+    },
+    { "at_ms": 28000, "type": "say", "speaker": "process", "text": "No export. No import. One local SQLite WAL store." },
+    {
+      "at_ms": 34300,
+      "type": "tool",
+      "process_id": "process-b",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "view:campaign:processes:b",
+        "actor": "agent",
+        "explanation": "recover why max_connections returned to 200",
+        "focus": { "refs": ["incident:campaign-pool-limit:decision:restore-max-connections"] },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "incident:campaign-pool-limit:decision:restore-max-connections"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 39300, "type": "say", "speaker": "process", "text": "Two processes. One local memory. See KMP Embedded → github.com/underpass-ai/kmp" },
+    { "at_ms": 45500, "type": "hold" }
+  ]
+}

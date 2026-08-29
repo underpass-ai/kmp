@@ -1,0 +1,143 @@
+{
+  "contract": "kmp.capture.audio-cue-resolution.v1",
+  "video_id": "keep-the-wrong-turn",
+  "frame_rate": "30/1",
+  "policy": "max(planned_at, not_before, first encoded frame at or after visible anchor)",
+  "audio_contract_sha256": "24e41f02b860c64bbc688faa1f0cfb4d622874578dbc052ac3cda065a86ac174",
+  "anchors_sha256": "1cd87cd42d686dbc6b6ae933d7ed2b9417dc86445d4e4d2422153bc38cb1f138",
+  "cues": [
+    {
+      "cue": "retained-turn",
+      "at": 0.55,
+      "visible_anchor": "hook_visible",
+      "not_before": 0.0,
+      "planned_at": 0.55,
+      "resolved_at": 0.55,
+      "visible_anchor_pts": 0.221174395,
+      "visible_anchor_evidence": {
+        "terminal_event_line_sha256": "0c6ddcea53ad2bbbfc9a1685b42acfbc9542023712209614edf1e562a6cbf7c9"
+      }
+    },
+    {
+      "cue": "clock-prism",
+      "at": 15.2,
+      "visible_anchor": "clock_prism_visible",
+      "not_before": 11.0,
+      "planned_at": 15.2,
+      "resolved_at": 15.2,
+      "visible_anchor_pts": 7.206866136,
+      "visible_anchor_evidence": {
+        "view_revision": 2,
+        "body_sha256": "ce36f9bcd3149c3726eb25c092d9d703cf527e441c7e0b57a0b30386d637ef2b",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "8e7397f66ee674b38611f2c9b916a00485023eccbd00af0ca4fd0012b02580a4"
+      }
+    },
+    {
+      "cue": "relation-thread",
+      "at": 16.2,
+      "visible_anchor": "clock_prism_visible",
+      "not_before": 11.0,
+      "planned_at": 16.2,
+      "resolved_at": 16.2,
+      "visible_anchor_pts": 7.206866136,
+      "visible_anchor_evidence": {
+        "view_revision": 2,
+        "body_sha256": "ce36f9bcd3149c3726eb25c092d9d703cf527e441c7e0b57a0b30386d637ef2b",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "8e7397f66ee674b38611f2c9b916a00485023eccbd00af0ca4fd0012b02580a4"
+      }
+    },
+    {
+      "cue": "proof-hop-1",
+      "at": 34.0,
+      "visible_anchor": "hop_1_focus",
+      "not_before": 34.0,
+      "max_lag_frames": 1,
+      "planned_at": 34.0,
+      "resolved_at": 34.233333333,
+      "visible_anchor_pts": 34.226195886,
+      "visible_anchor_evidence": {
+        "view_revision": 4,
+        "body_sha256": "133eada62aa261c548db4a0c26bd27c592d5c67af82cf5e72de81e14bb841a62",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "dab068bc779f156f154f1828701bb4b32e6f361a59b7a93d2d113044ee263620"
+      }
+    },
+    {
+      "cue": "proof-hop-2",
+      "at": 36.4,
+      "visible_anchor": "hop_2_focus",
+      "not_before": 36.4,
+      "max_lag_frames": 1,
+      "planned_at": 36.4,
+      "resolved_at": 36.633333333,
+      "visible_anchor_pts": 36.622931497,
+      "visible_anchor_evidence": {
+        "view_revision": 5,
+        "body_sha256": "cecca9a6447688046c9b58d73425e89bd342b1278c02a5113e400b6d0e183ab2",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "77e0c4d70e7294dfc2bb99295431f77de65fa651138e19b85b90806e9edef488"
+      }
+    },
+    {
+      "cue": "proof-hop-3",
+      "at": 38.8,
+      "visible_anchor": "hop_3_focus",
+      "not_before": 38.8,
+      "max_lag_frames": 1,
+      "planned_at": 38.8,
+      "resolved_at": 39.033333333,
+      "visible_anchor_pts": 39.023924635,
+      "visible_anchor_evidence": {
+        "view_revision": 6,
+        "body_sha256": "ea12f2d57076196abcfb668c090fe7e3579f19796ad06683c36664e252966b98",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "e3cf722f479f717e248e90f75e6de7ed75331c44f008f7d38bc2ee31dc4d35b7"
+      }
+    },
+    {
+      "cue": "proof-hop-4",
+      "at": 41.2,
+      "visible_anchor": "hop_4_focus",
+      "not_before": 41.2,
+      "max_lag_frames": 1,
+      "planned_at": 41.2,
+      "resolved_at": 41.466666667,
+      "visible_anchor_pts": 41.43347867,
+      "visible_anchor_evidence": {
+        "view_revision": 7,
+        "body_sha256": "27b0986e3ae59e242b4383cb7b412019d9223ba8f6a4662597d914b1a3686ca1",
+        "origin": "http://127.0.0.1:17120",
+        "evidence_line_sha256": "e4405b9bcbeebd3a32b05d3c809848cc644a14f45f3c79e3134a020d6385079c"
+      }
+    },
+    {
+      "cue": "evidence-knot",
+      "at": 43.6,
+      "visible_anchor": "full_path_visible",
+      "not_before": 43.6,
+      "planned_at": 43.6,
+      "resolved_at": 43.833333333,
+      "visible_anchor_pts": 43.831046417,
+      "visible_anchor_evidence": {
+        "scene": "KMP/ChronoFocus",
+        "requested_at_ms": 43600,
+        "lateness_ms": 12.405171,
+        "evidence_line_sha256": "365f88632915dac46b9d2713f097897f213e64171f4d31d7761a92c64bf99c3f"
+      }
+    },
+    {
+      "cue": "evidence-knot",
+      "at": 47.0,
+      "visible_anchor": "nice_visible",
+      "not_before": 47.0,
+      "planned_at": 47.0,
+      "resolved_at": 47.233333333,
+      "visible_anchor_pts": 47.221669208,
+      "visible_anchor_evidence": {
+        "terminal_event_line_sha256": "55d4bee2c7d124d993e858b6cfb9d89e63d0b5d4863634d375a91c763216d0d6"
+      }
+    }
+  ]
+}

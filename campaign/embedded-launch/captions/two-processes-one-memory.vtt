@@ -1,0 +1,17 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+Process A writes it. Process B recovers the why.
+
+00:00:04.000 --> 00:00:15.000
+Process A records the pool-limit decision with evidence.
+
+00:00:15.000 --> 00:00:28.000
+Two real MCP processes. Same local store. No export. No import.
+
+00:00:28.000 --> 00:00:39.300
+Process B recovers why max_connections returned to 200.
+
+00:00:39.300 --> 00:00:46.000
+Two processes. One local memory.
+See KMP Embedded: github.com/underpass-ai/kmp

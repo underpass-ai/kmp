@@ -1,0 +1,5 @@
+{
+  "port": 45120,
+  "auth_required": true,
+  "cleartext_retained": false
+}

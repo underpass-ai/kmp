@@ -1,0 +1,1047 @@
+{
+  "scenario_id": "fresh-process-same-why",
+  "passed": true,
+  "checks": [
+    {
+      "name": "obs_password_redacted",
+      "passed": true,
+      "evidence": "/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/obs-config/obs-studio/global.ini"
+    },
+    {
+      "name": "ephemeral_capabilities_removed",
+      "passed": true,
+      "evidence": "no *.private files"
+    },
+    {
+      "name": "no_ephemeral_credentials",
+      "passed": true,
+      "evidence": "credential-shaped fields are absent or explicitly redacted"
+    },
+    {
+      "name": "obs_raw_exists",
+      "passed": true,
+      "evidence": 13776794
+    },
+    {
+      "name": "video_codec_h264",
+      "passed": true,
+      "evidence": "h264"
+    },
+    {
+      "name": "video_zero_latency_encoder",
+      "passed": true,
+      "evidence": {
+        "has_b_frames": 0
+      }
+    },
+    {
+      "name": "video_resolution",
+      "passed": true,
+      "evidence": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "name": "video_rate",
+      "passed": true,
+      "evidence": "30/1"
+    },
+    {
+      "name": "duration_covers_scenario",
+      "passed": true,
+      "evidence": 44.01
+    },
+    {
+      "name": "duration_within_one_frame",
+      "passed": true,
+      "evidence": {
+        "actual": 44.01,
+        "target": 44.0,
+        "tolerance_seconds": 0.034333333333333334
+      }
+    },
+    {
+      "name": "terminal_semantic_viewport_resets",
+      "passed": true,
+      "evidence": {
+        "expected": [
+          {
+            "at_ms": 0,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "dd3224abd14bfd09d62d7acbbd899a56a787da70649c7b4b4c9dd1d3c5e29459"
+          },
+          {
+            "at_ms": 4000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "3a2ad56dd3c462d67836d78881caa20d3d38cc1786a8c85e21f0faf9626bd923"
+          },
+          {
+            "at_ms": 13200,
+            "type": "process",
+            "action": "stop",
+            "process_id": "session-01"
+          },
+          {
+            "at_ms": 17200,
+            "type": "process",
+            "action": "start",
+            "process_id": "session-02"
+          },
+          {
+            "at_ms": 18000,
+            "type": "process",
+            "action": "switch_browser",
+            "process_id": "session-02"
+          },
+          {
+            "at_ms": 22000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "128342f1271f046c0ef406d07ef57f7bb807e6639616d0e5cee65c0de140402d"
+          },
+          {
+            "at_ms": 37100,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "71a31737406c1fd9f500a5a77dc8ec17c5987ae76e6fd869d538fc36770999e6"
+          }
+        ],
+        "observed": [
+          {
+            "at_ms": 0,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "dd3224abd14bfd09d62d7acbbd899a56a787da70649c7b4b4c9dd1d3c5e29459"
+          },
+          {
+            "at_ms": 4000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "3a2ad56dd3c462d67836d78881caa20d3d38cc1786a8c85e21f0faf9626bd923"
+          },
+          {
+            "at_ms": 13200,
+            "type": "process",
+            "action": "stop",
+            "process_id": "session-01"
+          },
+          {
+            "at_ms": 17200,
+            "type": "process",
+            "action": "start",
+            "process_id": "session-02"
+          },
+          {
+            "at_ms": 18000,
+            "type": "process",
+            "action": "switch_browser",
+            "process_id": "session-02"
+          },
+          {
+            "at_ms": 22000,
+            "type": "say",
+            "speaker": "user",
+            "text_sha256": "128342f1271f046c0ef406d07ef57f7bb807e6639616d0e5cee65c0de140402d"
+          },
+          {
+            "at_ms": 37100,
+            "type": "say",
+            "speaker": "process",
+            "text_sha256": "71a31737406c1fd9f500a5a77dc8ec17c5987ae76e6fd869d538fc36770999e6"
+          }
+        ],
+        "reset_sequence_sha256": "27b14dbd3a32ae045585f50b4adf06b06e2882599df96eab6b535774ec2663d4"
+      }
+    },
+    {
+      "name": "terminal_semantic_row_budget",
+      "passed": true,
+      "evidence": [
+        {
+          "speaker": "process",
+          "text_sha256": "dd3224abd14bfd09d62d7acbbd899a56a787da70649c7b4b4c9dd1d3c5e29459",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 0,
+          "guarded": true
+        },
+        {
+          "speaker": "user",
+          "text_sha256": "3a2ad56dd3c462d67836d78881caa20d3d38cc1786a8c85e21f0faf9626bd923",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 4000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "33fb5664282bbc153c9ceca7ad490d55fce1dd8dd82f6e31272738b68830e3f9",
+          "rows": 3,
+          "rows_used": 6,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 5000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b403744417383de3cef8ad86cd393c114fe6ffb35f76e4e0975079e651c5b4c5",
+          "rows": 2,
+          "rows_used": 8,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 5000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "08fad9c8361b9ea9acce67103a66f6d87023c26be96c83a28836f22e7af9d30a",
+          "rows": 3,
+          "rows_used": 11,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 5000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "1c16d4ed8e375af8a61a4617c527f311ccf7063b46a084d0fa6dd99df5404673",
+          "rows": 2,
+          "rows_used": 13,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 8500,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "2c97b2a5fd5274772a0d0593a3efba0e8b8b1a22504ea081bc7ab7c358d26761",
+          "rows": 2,
+          "rows_used": 15,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 8500,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "45310339fe6b424457fd32751e2e2b6098bdfb6e05a5b83cecdbd24db80dc42b",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 9200,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b00f20c279b0d57119d0d4634580a9506274146c4c5bcd82aa7299ca8deb3057",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 9200,
+          "guarded": false
+        },
+        {
+          "speaker": "process",
+          "text_sha256": "49d019aab7879eccdd55b31a7f058236360f2856d90fb4b9ada033b501c098cf",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 13200,
+          "guarded": true
+        },
+        {
+          "speaker": "process",
+          "text_sha256": "cd76e12f2e2c374d3052607cbf391d883052000a4b669d5d051db164b7a8ed27",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/Wide",
+          "scheduled_at_ms": 17200,
+          "guarded": false
+        },
+        {
+          "speaker": "process",
+          "text_sha256": "5d4c1de8818ddc802ef315a19430cd452cafe9d88ebb2e38f9f48541274545e3",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/Wide",
+          "scheduled_at_ms": 18000,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "41e0a04344d85094c8580392cb0ec9b0f1d9f2315e53faa22b6bba2ef5ef011f",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/Wide",
+          "scheduled_at_ms": 19000,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "2c97b2a5fd5274772a0d0593a3efba0e8b8b1a22504ea081bc7ab7c358d26761",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/Wide",
+          "scheduled_at_ms": 19000,
+          "guarded": false
+        },
+        {
+          "speaker": "user",
+          "text_sha256": "128342f1271f046c0ef406d07ef57f7bb807e6639616d0e5cee65c0de140402d",
+          "rows": 3,
+          "rows_used": 3,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 22000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "65275a9f4f8ed8264350ab320e8bd7bf5a9a0d404fc52b94e8b51fbd8388daa8",
+          "rows": 2,
+          "rows_used": 5,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 23000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "08fad9c8361b9ea9acce67103a66f6d87023c26be96c83a28836f22e7af9d30a",
+          "rows": 3,
+          "rows_used": 8,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 23000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "889cfbb37b104d50bbf4a0762221fd194267ea303a6ef4817e0c8a1a6adea171",
+          "rows": 4,
+          "rows_used": 12,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 23000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "ff875fa50d7f57f4a987b013d663dfc607e222d68303c8ee2dbb5a95600abd2d",
+          "rows": 5,
+          "rows_used": 17,
+          "scene": "KMP/TerminalFocus",
+          "scheduled_at_ms": 23000,
+          "guarded": true
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "97aba9fee805736d8d878f59b4883d7b51fd2a016e0080fdfdb0f6bb471cd2f5",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 28800,
+          "guarded": false
+        },
+        {
+          "speaker": "kmp",
+          "text_sha256": "b00f20c279b0d57119d0d4634580a9506274146c4c5bcd82aa7299ca8deb3057",
+          "rows": null,
+          "rows_used": null,
+          "scene": "KMP/ChronoFocus",
+          "scheduled_at_ms": 28800,
+          "guarded": false
+        },
+        {
+          "speaker": "process",
+          "text_sha256": "71a31737406c1fd9f500a5a77dc8ec17c5987ae76e6fd869d538fc36770999e6",
+          "rows": 5,
+          "rows_used": 5,
+          "scene": "KMP/CTAFocus",
+          "scheduled_at_ms": 37100,
+          "guarded": true
+        }
+      ]
+    },
+    {
+      "name": "real_mcp_wire",
+      "passed": true,
+      "evidence": 8
+    },
+    {
+      "name": "wire_hashes_present",
+      "passed": true,
+      "evidence": 22
+    },
+    {
+      "name": "all_declared_processes_started",
+      "passed": true,
+      "evidence": {
+        "declared": [
+          "session-01",
+          "session-02"
+        ],
+        "started": [
+          "session-01",
+          "session-02"
+        ]
+      }
+    },
+    {
+      "name": "mcp_pids_distinct",
+      "passed": true,
+      "evidence": [
+        2917052,
+        2917885
+      ]
+    },
+    {
+      "name": "mcp_clean_exit",
+      "passed": true,
+      "evidence": [
+        {
+          "process_id": "session-01",
+          "instance": 1,
+          "exit": {
+            "code": 0,
+            "signal": null
+          }
+        },
+        {
+          "process_id": "session-02",
+          "instance": 1,
+          "exit": {
+            "code": 0,
+            "signal": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "process_store_binding",
+      "passed": true,
+      "evidence": [
+        {
+          "process_id": "session-01",
+          "store_id": "shared-local",
+          "fingerprint": "e86d4f9cba9f"
+        },
+        {
+          "process_id": "session-02",
+          "store_id": "shared-local",
+          "fingerprint": "e86d4f9cba9f"
+        }
+      ]
+    },
+    {
+      "name": "fresh_process_handoff_order",
+      "passed": true,
+      "evidence": {
+        "session_01_end": 133716207990526,
+        "session_02_start": 133720178042904
+      }
+    },
+    {
+      "name": "binary_bound",
+      "passed": true,
+      "evidence": {
+        "path": "/home/gx10a/Documents/ai/tmp/kmp-guide/tmp/release-candidate-0.5.0/assets/kmp-mcp-v0.5.0-aarch64-unknown-linux-gnu",
+        "bytes": 16806848,
+        "sha256": "b7e3f654266094c2e691dd3d963612f29c389be1171642143a24f58706fb4fcf"
+      }
+    },
+    {
+      "name": "worktree_state_disclosed",
+      "passed": true,
+      "evidence": {
+        "commit": "16c7d538066dddd1cf2a0d809dd82b77bc916590",
+        "worktree_dirty": false,
+        "changed_path_count": 0,
+        "changed_paths_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "name": "isolated_sqlite_store",
+      "passed": true,
+      "evidence": [
+        {
+          "store_id": "shared-local",
+          "path": "store/kernel.sqlite3",
+          "bytes": 65536,
+          "sha256": "6ec892e3a79207c1df02fd3afe5184d9e691068bafb2fd8474ddc8d199821ff8"
+        },
+        {
+          "store_id": "shared-local",
+          "path": "telemetry/quality.sqlite3",
+          "bytes": 20480,
+          "sha256": "63bb679ffd7bd633fc61c3618dcdf0f3834979e62fed5a0278a8c1b8cca076d2"
+        }
+      ]
+    },
+    {
+      "name": "shared_store_fingerprint",
+      "passed": true,
+      "evidence": {
+        "shared-local": "e86d4f9cba9f"
+      }
+    },
+    {
+      "name": "no_export_or_import",
+      "passed": true,
+      "evidence": [
+        "kmp_write_memory",
+        "kmp_view_open",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent",
+        "kmp_view_open",
+        "kmp_inspect",
+        "kmp_view_get_state",
+        "kmp_view_apply_intent"
+      ]
+    },
+    {
+      "name": "browser_observed_view",
+      "passed": true,
+      "evidence": {
+        "wall_time": "2026-08-29T03:09:32.945Z",
+        "monotonic_ns": "133731782294714",
+        "request_id": "2917274.72",
+        "view_revision": 2,
+        "actor": "agent",
+        "explanation": "recover the decision in a fresh process",
+        "about": "project:campaign-fresh-process",
+        "origin": "http://127.0.0.1:17121",
+        "long_poll": true,
+        "since": 1,
+        "encoded_bytes": 759,
+        "body_sha256": "97dc287412ec392d4805d959a3bed589d63da75db2a8de9254072fd8727b8058"
+      }
+    },
+    {
+      "name": "browser_observed_long_poll",
+      "passed": true,
+      "evidence": [
+        {
+          "wall_time": "2026-08-29T03:09:12.807Z",
+          "monotonic_ns": "133711644506025",
+          "request_id": "2917274.28",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 446,
+          "body_sha256": "1b0bbc3bb902a9308f1f5833e48eb6730411819a4f246ba12397523878bd5a72"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:13.344Z",
+          "monotonic_ns": "133712181039196",
+          "request_id": "2917274.31",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "show the committed decision and its evidence",
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 763,
+          "body_sha256": "657cc433d630b7eca2bc548cceccdc5197f431d3c0a4e1cd4f4dc50666d055a4"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:22.264Z",
+          "monotonic_ns": "133721101402561",
+          "request_id": "2917274.51",
+          "actor": null,
+          "explanation": null,
+          "about": null,
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 361,
+          "body_sha256": "284ffb63b085319ed93e09f2412fae7effb398efdf81d6a328f60f2b3cf5f3e8"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:23.241Z",
+          "monotonic_ns": "133722078392950",
+          "request_id": "2917274.69",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 446,
+          "body_sha256": "1b0bbc3bb902a9308f1f5833e48eb6730411819a4f246ba12397523878bd5a72"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:32.945Z",
+          "monotonic_ns": "133731782294714",
+          "request_id": "2917274.72",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "recover the decision in a fresh process",
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 759,
+          "body_sha256": "97dc287412ec392d4805d959a3bed589d63da75db2a8de9254072fd8727b8058"
+        }
+      ]
+    },
+    {
+      "name": "browser_observed_agent_intent",
+      "passed": true,
+      "evidence": [
+        {
+          "wall_time": "2026-08-29T03:09:12.807Z",
+          "monotonic_ns": "133711644506025",
+          "request_id": "2917274.28",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 446,
+          "body_sha256": "1b0bbc3bb902a9308f1f5833e48eb6730411819a4f246ba12397523878bd5a72"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:13.344Z",
+          "monotonic_ns": "133712181039196",
+          "request_id": "2917274.31",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "show the committed decision and its evidence",
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17120",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 763,
+          "body_sha256": "657cc433d630b7eca2bc548cceccdc5197f431d3c0a4e1cd4f4dc50666d055a4"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:22.264Z",
+          "monotonic_ns": "133721101402561",
+          "request_id": "2917274.51",
+          "actor": null,
+          "explanation": null,
+          "about": null,
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 361,
+          "body_sha256": "284ffb63b085319ed93e09f2412fae7effb398efdf81d6a328f60f2b3cf5f3e8"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:23.241Z",
+          "monotonic_ns": "133722078392950",
+          "request_id": "2917274.69",
+          "view_revision": 1,
+          "actor": null,
+          "explanation": null,
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": false,
+          "since": null,
+          "encoded_bytes": 446,
+          "body_sha256": "1b0bbc3bb902a9308f1f5833e48eb6730411819a4f246ba12397523878bd5a72"
+        },
+        {
+          "wall_time": "2026-08-29T03:09:32.945Z",
+          "monotonic_ns": "133731782294714",
+          "request_id": "2917274.72",
+          "view_revision": 2,
+          "actor": "agent",
+          "explanation": "recover the decision in a fresh process",
+          "about": "project:campaign-fresh-process",
+          "origin": "http://127.0.0.1:17121",
+          "long_poll": true,
+          "since": 1,
+          "encoded_bytes": 759,
+          "body_sha256": "97dc287412ec392d4805d959a3bed589d63da75db2a8de9254072fd8727b8058"
+        }
+      ]
+    },
+    {
+      "name": "browser_observed_each_intent",
+      "passed": true,
+      "evidence": {
+        "intents": 2,
+        "agent_revisions": 2
+      }
+    },
+    {
+      "name": "browser_switches_observed",
+      "passed": true,
+      "evidence": {
+        "pre_cdp_switches_collapsed_into_initial_navigation": 1,
+        "post_cdp_switches": 3,
+        "required_navigations": 4,
+        "navigations": 4
+      }
+    },
+    {
+      "name": "obs_isolated_xshm_sources",
+      "passed": true,
+      "evidence": {
+        "count": 9,
+        "kinds": [
+          "xshm_input"
+        ]
+      }
+    },
+    {
+      "name": "obs_focus_primary_plus_live_inset",
+      "passed": true,
+      "evidence": {
+        "KMP/TerminalFocus": [
+          "KMP/TerminalFocus \u00b7 primary-terminal \u00b7 isolated X11 screen 0",
+          "KMP/TerminalFocus \u00b7 secondary-chronoloom \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/ChronoFocus": [
+          "KMP/ChronoFocus \u00b7 primary-chronoloom \u00b7 isolated X11 screen 0",
+          "KMP/ChronoFocus \u00b7 secondary-terminal \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/ProofFocus": [
+          "KMP/ProofFocus \u00b7 primary-proof \u00b7 isolated X11 screen 0",
+          "KMP/ProofFocus \u00b7 secondary-terminal \u00b7 isolated X11 screen 0"
+        ],
+        "KMP/CTAFocus": [
+          "KMP/CTAFocus \u00b7 primary-cta \u00b7 isolated X11 screen 0",
+          "KMP/CTAFocus \u00b7 secondary-chronoloom \u00b7 isolated X11 screen 0"
+        ]
+      }
+    },
+    {
+      "name": "terminal_focus_crop_tracks_semantic_origin",
+      "passed": true,
+      "evidence": [
+        {
+          "scene": "KMP/TerminalFocus",
+          "role": "primary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/ChronoFocus",
+          "role": "secondary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/ProofFocus",
+          "role": "secondary-terminal",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        },
+        {
+          "scene": "KMP/CTAFocus",
+          "role": "primary-cta",
+          "crop": [
+            0,
+            40,
+            672,
+            378
+          ]
+        }
+      ]
+    },
+    {
+      "name": "obs_start_stop_verified",
+      "passed": true,
+      "evidence": "obs-websocket.jsonl"
+    },
+    {
+      "name": "obs_stop_one_frame_advance",
+      "passed": true,
+      "evidence": {
+        "picture_contract_fps": 30,
+        "advance_frames": 1,
+        "advance_ms": 33.333333,
+        "advance_ns": "33333333",
+        "target_monotonic_ns": "133746705013469",
+        "nominal_target_monotonic_ns": "133746738346802"
+      }
+    },
+    {
+      "name": "obs_schedule_matches_edl",
+      "passed": true,
+      "evidence": {
+        "expected": [
+          {
+            "at_ms": 0,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 9200,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 13200,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 17200,
+            "scene": "KMP/Wide"
+          },
+          {
+            "at_ms": 22000,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 28800,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 37100,
+            "scene": "KMP/CTAFocus"
+          }
+        ],
+        "actual": [
+          {
+            "at_ms": 0,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 9200,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 13200,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 17200,
+            "scene": "KMP/Wide"
+          },
+          {
+            "at_ms": 22000,
+            "scene": "KMP/TerminalFocus"
+          },
+          {
+            "at_ms": 28800,
+            "scene": "KMP/ChronoFocus"
+          },
+          {
+            "at_ms": 37100,
+            "scene": "KMP/CTAFocus"
+          }
+        ]
+      }
+    },
+    {
+      "name": "obs_schedule_timing",
+      "passed": true,
+      "evidence": [
+        19.013864,
+        7.223427,
+        10.309158,
+        8.308201,
+        11.798173,
+        9.785482,
+        13.237189
+      ]
+    },
+    {
+      "name": "audio_edit_anchors_complete",
+      "passed": true,
+      "evidence": {
+        "required": [
+          "end_card_visible",
+          "hook_visible",
+          "memory_write_committed",
+          "process_1_exit",
+          "process_2_spawn",
+          "question_2_visible",
+          "recovered_decision_visible",
+          "recovered_evidence_visible",
+          "viewer_decision_visible",
+          "viewer_evidence_visible"
+        ],
+        "actual": [
+          "hook_visible",
+          "memory_write_committed",
+          "viewer_decision_visible",
+          "viewer_evidence_visible",
+          "process_1_exit",
+          "process_2_spawn",
+          "question_2_visible",
+          "recovered_decision_visible",
+          "recovered_evidence_visible",
+          "end_card_visible"
+        ]
+      }
+    },
+    {
+      "name": "audio_edit_anchors_ordered_and_hashed",
+      "passed": true,
+      "evidence": {
+        "count": 10,
+        "ordered": true
+      }
+    },
+    {
+      "name": "monotonic_frame_map",
+      "passed": true,
+      "evidence": [
+        {
+          "monotonic_ns": "133702738346802",
+          "video_pts_ns": "0",
+          "source": "OBS RecordStateChanged/STARTED receipt",
+          "evidence": {
+            "obs_websocket_line_sha256": "05b4e48c0440ff54ecd02410c094e451488153b376274bf15d584c8f656311f2"
+          }
+        },
+        {
+          "monotonic_ns": "133746706625653",
+          "video_pts_ns": "44010000000",
+          "source": "OBS StopRecord response + ffprobe duration",
+          "evidence": {
+            "obs_stop_sha256": "b310e00e794a5876ba2215350865c81814738924572f4221abb48e47ee7e0172",
+            "ffprobe_sha256": "10aeee2dbe44a298f6f431d4c65211e274cbae97bfc42a99348d69c5eb68807e"
+          }
+        }
+      ]
+    },
+    {
+      "name": "audio_cues_do_not_precede_visible_anchors",
+      "passed": true,
+      "evidence": [
+        {
+          "cue": "memory-stitch",
+          "planned_at": 0.55,
+          "resolved_at": 0.55,
+          "visible_anchor": "hook_visible",
+          "visible_at": 0.262268042,
+          "lag_frames": 8.631958740000002,
+          "passed": true
+        },
+        {
+          "cue": "memory-stitch",
+          "planned_at": 9.25,
+          "resolved_at": 9.466666667,
+          "visible_anchor": "viewer_decision_visible",
+          "visible_at": 9.451652489,
+          "lag_frames": 0.4504253399999847,
+          "passed": true
+        },
+        {
+          "cue": "relation-thread",
+          "planned_at": 10.1,
+          "resolved_at": 10.1,
+          "visible_anchor": "viewer_decision_visible",
+          "visible_at": 9.451652489,
+          "lag_frames": 19.45042532999997,
+          "passed": true
+        },
+        {
+          "cue": "evidence-open",
+          "planned_at": 12.6,
+          "resolved_at": 12.6,
+          "visible_anchor": "viewer_evidence_visible",
+          "visible_at": 9.451652489,
+          "lag_frames": 94.45042532999997,
+          "passed": true
+        },
+        {
+          "cue": "memory-stitch",
+          "planned_at": 29.4,
+          "resolved_at": 29.4,
+          "visible_anchor": "recovered_decision_visible",
+          "visible_at": 29.071507482,
+          "lag_frames": 9.85477553999992,
+          "passed": true
+        },
+        {
+          "cue": "evidence-open",
+          "planned_at": 30.1,
+          "resolved_at": 30.1,
+          "visible_anchor": "recovered_evidence_visible",
+          "visible_at": 29.071507482,
+          "lag_frames": 30.854775540000006,
+          "passed": true
+        },
+        {
+          "cue": "evidence-knot",
+          "planned_at": 37.1,
+          "resolved_at": 37.4,
+          "visible_anchor": "end_card_visible",
+          "visible_at": 37.371772446,
+          "lag_frames": 0.8468266199999164,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "mobile_390_review_frames",
+      "passed": true,
+      "evidence": {
+        "frame_count": 7,
+        "scenes": [
+          "KMP/TerminalFocus",
+          "KMP/ChronoFocus",
+          "KMP/TerminalFocus",
+          "KMP/Wide",
+          "KMP/TerminalFocus",
+          "KMP/ChronoFocus",
+          "KMP/CTAFocus"
+        ]
+      }
+    },
+    {
+      "name": "human_readability_gate_disclosed",
+      "passed": true,
+      "evidence": {
+        "measurement_status": "preparatory_only_not_cap_height_acceptance",
+        "muted_panel_status": "pending_5_of_5"
+      }
+    },
+    {
+      "name": "real_terminal_window",
+      "passed": true,
+      "evidence": "window-tree.txt"
+    },
+    {
+      "name": "real_chromium_window",
+      "passed": true,
+      "evidence": "window-tree.txt"
+    },
+    {
+      "name": "pty_transcript",
+      "passed": true,
+      "evidence": [
+        3229,
+        385
+      ]
+    },
+    {
+      "name": "obs_30_and_websocket",
+      "passed": true,
+      "evidence": "obs-studio/logs"
+    },
+    {
+      "name": "obs_x264_zerolatency_profile",
+      "passed": true,
+      "evidence": "obs-studio/logs"
+    },
+    {
+      "name": "no_desktop_audio_source",
+      "passed": true,
+      "evidence": "OBS scene has no desktop audio source"
+    }
+  ]
+}

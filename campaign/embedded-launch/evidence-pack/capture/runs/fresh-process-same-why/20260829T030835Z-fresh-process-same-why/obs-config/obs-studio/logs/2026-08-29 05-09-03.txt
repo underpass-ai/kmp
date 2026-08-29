@@ -1,0 +1,168 @@
+05:09:03.103: Command Line Arguments: --multi --collection KMP Capture --profile KMP Capture --scene KMP Capture --websocket_port 45120 --disable-shutdown-check --disable-missing-files-check --only-bundled-plugins
+05:09:03.103: Using EGL/X11
+05:09:03.103: Physical Cores: 20, Logical Cores: 20
+05:09:03.103: Physical Memory: 124546MB Total, 16505MB Free
+05:09:03.103: Kernel Version: Linux 6.17.0-1029-nvidia
+05:09:03.103: Distribution: "Ubuntu" "24.04"
+05:09:03.103: Desktop Environment: ubuntu:GNOME (ubuntu)
+05:09:03.103: Session Type: x11
+05:09:03.103: Window System: X11.0, Vendor: The X.Org Foundation, Version: 1.21.1
+05:09:03.104: Qt Version: 6.4.2 (runtime), 6.4.2 (compiled)
+05:09:03.104: Portable mode: false
+05:09:03.104: Third-party plugins disabled.
+05:09:03.126: OBS 30.0.2.1-3build1 (linux)
+05:09:03.126: ---------------------------------
+05:09:03.127: ---------------------------------
+05:09:03.127: audio settings reset:
+05:09:03.127: 	samples per sec: 48000
+05:09:03.127: 	speakers:        2
+05:09:03.127: 	max buffering:   960 milliseconds
+05:09:03.127: 	buffering type:  dynamically increasing
+05:09:03.127: ---------------------------------
+05:09:03.127: Initializing OpenGL...
+05:09:03.161: Loading up OpenGL on adapter Mesa llvmpipe (LLVM 20.1.2, 128 bits)
+05:09:03.161: OpenGL loaded successfully, version 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2, shading language 4.50
+05:09:03.238: ---------------------------------
+05:09:03.238: video settings reset:
+05:09:03.238: 	base resolution:   1920x1080
+05:09:03.238: 	output resolution: 1920x1080
+05:09:03.238: 	downscale filter:  Bicubic
+05:09:03.238: 	fps:               30/1
+05:09:03.238: 	format:            NV12
+05:09:03.238: 	YUV mode:          Rec. 709/Partial
+05:09:03.238: NV12 texture support not available
+05:09:03.238: P010 texture support not available
+05:09:03.245: Audio monitoring device:
+05:09:03.245: 	name: Default
+05:09:03.245: 	id: default
+05:09:03.245: ---------------------------------
+05:09:03.255: Failed to load 'en-US' text for module: 'decklink-captions.so'
+05:09:03.263: Failed to load 'en-US' text for module: 'decklink-output-ui.so'
+05:09:03.275: A DeckLink iterator could not be created.  The DeckLink drivers may not be installed
+05:09:03.275: Failed to initialize module 'decklink.so'
+05:09:03.354: window manager does not support Extended Window Manager Hints (EWMH).
+05:09:03.354: XComposite capture disabled.
+05:09:03.395: [pipewire] Available captures:
+05:09:03.395: [pipewire]     - Desktop capture
+05:09:03.395: [pipewire]     - Window capture
+05:09:03.424: v4l2loopback not installed, virtual camera disabled
+05:09:03.481: NVENC supported
+05:09:03.482: VAAPI: Failed to initialize display in vaapi_device_h264_supported
+05:09:03.482: FFmpeg VAAPI H264 encoding not supported
+05:09:03.482: VAAPI: Failed to initialize display in vaapi_device_hevc_supported
+05:09:03.482: FFmpeg VAAPI HEVC encoding not supported
+05:09:03.538: [obs-websocket] [obs_module_load] you can haz websockets (Version: 5.3.4 | RPC Version: 1)
+05:09:03.538: [obs-websocket] [obs_module_load] Qt version (compile-time): 6.4.2 | Qt version (run-time): 6.4.2
+05:09:03.538: [obs-websocket] [obs_module_load] Linked ASIO Version: 102801
+05:09:03.538: [obs-websocket] [Config::Load] --websocket_port passed. Overriding WebSocket port with: 45120
+05:09:03.544: [obs-websocket] [obs_module_load] Module loaded.
+05:09:03.594: [vlc-video]: VLC 3.0.20 Vetinari found, VLC video source enabled
+05:09:03.594: ---------------------------------
+05:09:03.594:   Loaded Modules:
+05:09:03.594:     vlc-video.so
+05:09:03.594:     text-freetype2.so
+05:09:03.594:     rtmp-services.so
+05:09:03.594:     obs-x264.so
+05:09:03.594:     obs-websocket.so
+05:09:03.594:     obs-transitions.so
+05:09:03.594:     obs-outputs.so
+05:09:03.594:     obs-filters.so
+05:09:03.594:     obs-ffmpeg.so
+05:09:03.594:     linux-v4l2.so
+05:09:03.594:     linux-pulseaudio.so
+05:09:03.594:     linux-pipewire.so
+05:09:03.594:     linux-jack.so
+05:09:03.594:     linux-capture.so
+05:09:03.594:     linux-alsa.so
+05:09:03.594:     image-source.so
+05:09:03.594:     frontend-tools.so
+05:09:03.594:     decklink-output-ui.so
+05:09:03.594:     decklink-captions.so
+05:09:03.594: ---------------------------------
+05:09:03.594: [obs-websocket] [obs_module_post_load] WebSocket server is enabled, starting...
+05:09:03.594: [obs-websocket] [WebSocketServer::Start] Not locked to IPv4 bindings
+05:09:03.594: [obs-websocket] [WebSocketServer::ServerRunner] IO thread started.
+05:09:03.594: [obs-websocket] [WebSocketServer::Start] Server started successfully on port 45120. Possible connect address: 192.168.1.53
+05:09:03.594: ==== Startup complete ===============================================
+05:09:03.619: All scene data cleared
+05:09:03.619: ------------------------------------------------
+05:09:03.621: Switched to scene 'KMP Capture'
+05:09:03.621: ------------------------------------------------
+05:09:03.621: Loaded scenes:
+05:09:03.621: - scene 'KMP Capture':
+05:09:03.621: ------------------------------------------------
+05:09:03.726: [rtmp-services plugin] Successfully updated file 'services.json' (version 286)
+05:09:03.726: [rtmp-services plugin] Successfully updated package (version 286)
+05:09:03.758: [obs-websocket] [WebSocketServer::onOpen] New WebSocket client has connected from [::ffff:127.0.0.1]:49862
+05:09:03.768: User added scene 'KMP/Wide'
+05:09:03.769: User added scene 'KMP/TerminalFocus'
+05:09:03.769: User added scene 'KMP/ChronoFocus'
+05:09:03.770: User added scene 'KMP/ProofFocus'
+05:09:03.771: User added scene 'KMP/CTAFocus'
+05:09:03.773: xshm-input: Missing Xinerama extension !
+05:09:03.773: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.779: User added source 'KMP/Wide · wide · isolated X11 screen 0' (xshm_input) to scene 'KMP/Wide'
+05:09:03.781: xshm-input: Missing Xinerama extension !
+05:09:03.782: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.788: User added source 'KMP/TerminalFocus · primary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/TerminalFocus'
+05:09:03.789: xshm-input: Missing Xinerama extension !
+05:09:03.789: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.795: User added source 'KMP/TerminalFocus · secondary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/TerminalFocus'
+05:09:03.798: xshm-input: Missing Xinerama extension !
+05:09:03.798: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.804: User added source 'KMP/ChronoFocus · primary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/ChronoFocus'
+05:09:03.808: xshm-input: Missing Xinerama extension !
+05:09:03.808: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.813: User added source 'KMP/ChronoFocus · secondary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/ChronoFocus'
+05:09:03.815: xshm-input: Missing Xinerama extension !
+05:09:03.815: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.821: User added source 'KMP/ProofFocus · primary-proof · isolated X11 screen 0' (xshm_input) to scene 'KMP/ProofFocus'
+05:09:03.826: xshm-input: Missing Xinerama extension !
+05:09:03.826: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.833: User added source 'KMP/ProofFocus · secondary-terminal · isolated X11 screen 0' (xshm_input) to scene 'KMP/ProofFocus'
+05:09:03.837: xshm-input: Missing Xinerama extension !
+05:09:03.838: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.843: User added source 'KMP/CTAFocus · primary-cta · isolated X11 screen 0' (xshm_input) to scene 'KMP/CTAFocus'
+05:09:03.846: xshm-input: Missing Xinerama extension !
+05:09:03.846: xshm-input: Geometry 1920x1080 @ 0,0
+05:09:03.851: User added source 'KMP/CTAFocus · secondary-chronoloom · isolated X11 screen 0' (xshm_input) to scene 'KMP/CTAFocus'
+05:09:03.858: User switched to scene 'KMP/Wide'
+05:09:03.862: ---------------------------------
+05:09:03.862: [x264 encoder: 'advanced_video_recording'] preset: veryfast
+05:09:03.862: [x264 encoder: 'advanced_video_recording'] tune: zerolatency
+05:09:03.862: [x264 encoder: 'advanced_video_recording'] settings:
+05:09:03.862: 	rate_control: CBR
+05:09:03.862: 	bitrate:      2500
+05:09:03.862: 	buffer size:  2500
+05:09:03.862: 	crf:          23
+05:09:03.862: 	fps_num:      30
+05:09:03.862: 	fps_den:      1
+05:09:03.862: 	width:        1920
+05:09:03.862: 	height:       1080
+05:09:03.862: 	keyint:       250
+05:09:03.862: 
+05:09:03.862: [x264 encoder: 'advanced_video_recording'] custom settings: 
+05:09:03.862: 	bframes = 0
+05:09:03.862: 	rc-lookahead = 0
+05:09:03.862: 	sync-lookahead = 0
+05:09:03.864: ---------------------------------
+05:09:03.864: [FFmpeg aac encoder: 'Track1'] bitrate: 160, channels: 2, channel_layout: stereo
+05:09:03.864: 
+05:09:03.866: ==== Recording Start ===============================================
+05:09:03.866: [ffmpeg muxer: 'adv_file_output'] Writing file '/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/obs-output/2026-08-29_05-09-03.mkv'...
+05:09:04.003: [obs-websocket] [WebSocketServer::onClose] WebSocket client `[::ffff:127.0.0.1]:49862` has disconnected with code `1000` and reason: 
+05:09:04.090: [obs-websocket] [WebSocketServer::onOpen] New WebSocket client has connected from [::ffff:127.0.0.1]:53538
+05:09:04.155: User switched to scene 'KMP/TerminalFocus'
+05:09:13.343: User switched to scene 'KMP/ChronoFocus'
+05:09:17.346: User switched to scene 'KMP/TerminalFocus'
+05:09:21.344: User switched to scene 'KMP/Wide'
+05:09:26.148: User switched to scene 'KMP/TerminalFocus'
+05:09:32.946: User switched to scene 'KMP/ChronoFocus'
+05:09:41.249: User switched to scene 'KMP/CTAFocus'
+05:09:47.870: [obs-websocket] [WebSocketServer::onClose] WebSocket client `[::ffff:127.0.0.1]:53538` has disconnected with code `1000` and reason: 
+05:09:48.013: [ffmpeg muxer: 'adv_file_output'] Output of file '/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/obs-output/2026-08-29_05-09-03.mkv' stopped
+05:09:48.013: Output 'adv_file_output': stopping
+05:09:48.013: Output 'adv_file_output': Total frames output: 1321
+05:09:48.013: Output 'adv_file_output': Total drawn frames: 1321 (1325 attempted)
+05:09:48.013: Output 'adv_file_output': Number of lagged frames due to rendering lag/stalls: 4 (0.3%)
+05:09:48.014: ==== Recording Stop ================================================
