@@ -306,12 +306,9 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path.startswith(("scripts/mcp/", "scripts/install/")):
             known.add(path)
             plan["embedded_binary"] = True
-        elif path.startswith(("scripts/demo/", "scripts/e2e/")):
+        elif path.startswith("scripts/e2e/"):
             known.add(path)
             plan["rust"] = True
-            plan["codeql"] = True
-        elif path.startswith("scripts/operator/"):
-            known.add(path)
             plan["codeql"] = True
         elif path.startswith("scripts/ci/kmp-") or path.startswith("scripts/ci/pitch-"):
             known.add(path)

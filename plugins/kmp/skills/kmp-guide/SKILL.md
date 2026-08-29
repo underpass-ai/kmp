@@ -7,10 +7,12 @@ description: Synchronize KMP's versioned agent and human guides, learn the agent
 
 Resolve the plugin root as two directories above this `SKILL.md`.
 
-Run `<plugin-root>/scripts/kmp-guide-sync.sh sync`. This is the lifecycle
-verb: it deterministically converges `guide:kmp-agent` and `guide:kmp` to the
-content shipped with the installed plugin. It is safe after first setup, after
-an update and on an already-current store.
+Name the data effect first: this command writes into KMP's currently selected
+store. In a project it changes project memory and `.kmp/memory.jsonl`; it is
+not part of software install or update. Then run
+`<plugin-root>/scripts/kmp-guide-sync.sh sync`. It deterministically converges
+`guide:kmp-agent` and `guide:kmp` to the content shipped with the installed
+plugin and is idempotent on an already-current store.
 
 The guides are different:
 

@@ -16,7 +16,7 @@ memory plus three semantic view tools over shared ChronoLoom. After editing
 it, run:
 
 ```bash
-python3 scripts/release/sync-public-readme.py sync
+cargo run --locked --quiet -p kmp-release -- readme sync
 ```
 
 Do not hand-edit the corresponding marked blocks in the other two files.
@@ -32,7 +32,7 @@ must update `plugins/kmp/guide/editorial.json` in the same change and regenerate
 both guide abouts with:
 
 ```bash
-python3 plugins/kmp/guide/build-guide.py write --binary target/debug/kmp-mcp
+cargo run --locked --quiet -p kmp-release -- guide assets write --binary target/debug/kmp-mcp
 ```
 
 `guide:kmp-agent` is the exact operational guide for agents. `guide:kmp` is a

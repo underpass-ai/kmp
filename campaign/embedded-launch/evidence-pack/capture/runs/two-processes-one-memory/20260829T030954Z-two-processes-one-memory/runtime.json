@@ -1,1 +1,0 @@
-{"wall_time":"2026-08-29T03:09:54.781Z","monotonic_ns":"133753618314408","scenario_id":"two-processes-one-memory","run_id":"20260829T030954Z-two-processes-one-memory","x11":{"server":":120","capture_screen":0,"obs_screen":1,"tcp_listener":false},"ports":{"obs_websocket":45120,"viewer":17120,"chrome_devtools":9320}}

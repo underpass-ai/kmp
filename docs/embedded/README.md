@@ -10,13 +10,13 @@ Use the native KMP plugin where available:
 
 ```bash
 # Codex CLI
-codex plugin marketplace add underpass-ai/plugins
+codex plugin marketplace add underpass-ai/kmp --ref marketplace
 codex plugin add kmp@underpass
 ```
 
 ```text
 # Claude Code
-/plugin marketplace add underpass-ai/plugins
+/plugin marketplace add underpass-ai/kmp@marketplace
 /plugin install kmp@underpass
 /kmp:setup
 ```
@@ -28,14 +28,14 @@ started with.
 The plugin must be the single MCP owner. Do not combine it with standalone
 global `mcp_servers.kmp` or retired `mcp_servers.kernel-memory` wiring.
 
-Standalone fallback:
+If the platform has no published engine asset, build only the engine with:
 
 ```bash
 cargo install kmp-mcp --locked
 ```
 
-Then register the resulting binary once with the host. Detailed plugin
-ownership and packaging live in [`plugins/kmp`](../../plugins/kmp/README.md).
+Keep the native plugin as the MCP owner and rerun its setup workflow. Detailed
+plugin ownership and packaging live in [`plugins/kmp`](../../plugins/kmp/README.md).
 
 ## Verify
 

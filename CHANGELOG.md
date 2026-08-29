@@ -9,6 +9,31 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-08-29
+
+### Changed
+
+- Setup, update and host diagnosis now run through one Rust lifecycle boundary
+  with explicit domain objects, use cases, ports, adapters, mappers and
+  machine-readable receipts. Shell entrypoints only locate and execute the
+  binary.
+- The plugin API separates domain value objects, application DTOs and plugin
+  ports, while the HTTP gateway separates authentication domain objects,
+  verifier ports, OIDC adapters, claim mapping and authorization use cases.
+- Campaign production files no longer live in the KMP product repository.
+
+### Fixed
+
+- Native Claude Code and Codex installs now converge every enabled KMP
+  consumer, prove the actual engine each host launches, require exact plugin
+  tree parity and preserve the previous shared engine until all earlier gates
+  pass.
+- Project writes now lock and compare the live event stream with the committed
+  bundle before SQLite changes. Doctor audits exact history parity and reports
+  pending or divergent revisions as blocking failures.
+- External lifecycle commands and MCP surface proofs are time-bounded without
+  allowing full output pipes to deadlock the child process.
+
 ## [0.5.1] - 2026-08-29
 
 ### Changed
@@ -604,7 +629,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/underpass-ai/kmp/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/underpass-ai/kmp/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/underpass-ai/kmp/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/underpass-ai/kmp/compare/v0.4.1...v0.4.2

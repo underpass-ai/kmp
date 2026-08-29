@@ -15,6 +15,7 @@ members = [
     "crates/kmp-mcp-http",
     "crates/kmp-memory-api",
     "crates/kmp-plugin-api",
+    "crates/kmp-release",
     "crates/kmp-ports",
     "crates/kmp-proto",
     "crates/kmp-proto-mapping",
@@ -28,10 +29,15 @@ members = [
 ]
 resolver = "3"
 
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
+
 [workspace.package]
 edition = "2024"
 rust-version = "1.97"
-version = "0.5.1"
+version = "0.5.2"
 license = "Apache-2.0"
 description = "Local-first agent memory that preserves what happened, when and why"
 repository = "https://github.com/underpass-ai/kmp"
@@ -39,6 +45,7 @@ repository = "https://github.com/underpass-ai/kmp"
 [workspace.dependencies]
 axum = "0.8.9"
 base64 = "0.22.1"
+flate2 = "1.1.10"
 getrandom = "0.2.17"
 jsonwebtoken = { version = "11.0.0", default-features = false, features = ["aws_lc_rs"] }
 neo4rs = "0.8.0"
@@ -48,27 +55,28 @@ neo4rs = "0.8.0"
 # registry. The rest stay path-only on purpose: a dev-dependency without a
 # version is dropped from the published manifest, which is what keeps
 # `kmp-application` publishable while it still tests against `kmp-testkit`.
-kmp-adapter-embedded = { path = "crates/kmp-adapter-embedded", version = "0.5.1" }
+kmp-adapter-embedded = { path = "crates/kmp-adapter-embedded", version = "0.5.2" }
 kmp-adapter-nats = { path = "crates/kmp-adapter-nats" }
 kmp-adapter-neo4j = { path = "crates/kmp-adapter-neo4j" }
 kmp-adapter-valkey = { path = "crates/kmp-adapter-valkey" }
-kmp-application = { path = "crates/kmp-application", version = "0.5.1" }
+kmp-application = { path = "crates/kmp-application", version = "0.5.2" }
 kmp-config = { path = "crates/kmp-config" }
 kmp-conformance = { path = "crates/kmp-conformance" }
-kmp-domain = { path = "crates/kmp-domain", version = "0.5.1" }
-kmp-embedded = { path = "crates/kmp-embedded", version = "0.5.1" }
-kmp-memory-api = { path = "crates/kmp-memory-api", version = "0.5.1" }
+kmp-domain = { path = "crates/kmp-domain", version = "0.5.2" }
+kmp-embedded = { path = "crates/kmp-embedded", version = "0.5.2" }
+kmp-memory-api = { path = "crates/kmp-memory-api", version = "0.5.2" }
 kmp-interpretation = { path = "crates/kmp-interpretation" }
-kmp-mcp = { path = "crates/kmp-mcp", version = "0.5.1" }
-kmp-observability = { path = "crates/kmp-observability", version = "0.5.1", default-features = false }
-kmp-plugin-api = { path = "crates/kmp-plugin-api", version = "0.5.1" }
-kmp-ports = { path = "crates/kmp-ports", version = "0.5.1" }
-kmp-proto = { path = "crates/kmp-proto", version = "0.5.1" }
-kmp-proto-mapping = { path = "crates/kmp-proto-mapping", version = "0.5.1" }
+kmp-mcp = { path = "crates/kmp-mcp", version = "0.5.2" }
+kmp-observability = { path = "crates/kmp-observability", version = "0.5.2", default-features = false }
+kmp-plugin-api = { path = "crates/kmp-plugin-api", version = "0.5.2" }
+kmp-release = { path = "crates/kmp-release" }
+kmp-ports = { path = "crates/kmp-ports", version = "0.5.2" }
+kmp-proto = { path = "crates/kmp-proto", version = "0.5.2" }
+kmp-proto-mapping = { path = "crates/kmp-proto-mapping", version = "0.5.2" }
 kmp-testkit = { path = "crates/kmp-testkit" }
 kmp-tests-shared = { path = "crates/kmp-tests-shared" }
 kmp-transport-grpc = { path = "crates/kmp-transport-grpc" }
-kmp-viewer = { path = "crates/kmp-viewer", version = "0.5.1" }
+kmp-viewer = { path = "crates/kmp-viewer", version = "0.5.2" }
 prost = "0.13.5"
 prost-types = "0.13.5"
 reqwest = { version = "0.12.28", default-features = false, features = ["json", "rustls-tls"] }
@@ -79,6 +87,7 @@ serde_yaml = "0.9.34"
 tokio = { version = "1.50.0", features = ["io-util", "macros", "net", "rt-multi-thread", "sync", "time"] }
 tokio-stream = { version = "0.1.18", features = ["net"] }
 tiktoken-rs = "0.9.1"
+tar = { version = "0.4.46", default-features = false }
 tonic = { version = "0.12.3", features = ["transport", "tls", "tls-webpki-roots"] }
 tonic-build = "0.12.3"
 unicode-normalization = "0.1.25"
@@ -89,6 +98,8 @@ tracing = "0.1.44"
 tracing-opentelemetry = "0.33.0"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 url = "2.5.8"
+wait-timeout = "0.2.1"
+zip = { version = "8.2.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

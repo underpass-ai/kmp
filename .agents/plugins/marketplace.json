@@ -1,0 +1,20 @@
+{
+  "name": "underpass",
+  "interface": {
+    "displayName": "Underpass"
+  },
+  "plugins": [
+    {
+      "name": "kmp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/kmp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

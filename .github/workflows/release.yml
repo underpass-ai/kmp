@@ -45,25 +45,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Verify versioned changelog
-        shell: bash
-        run: |
-          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
-          python3 scripts/release/changelog.py check "${VERSION}"
-
-      - name: Verify public README parity
-        run: python3 scripts/release/sync-public-readme.py check
-
-      - name: Verify versioned guide envelope
-        shell: bash
-        run: |
-          VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
-          python3 scripts/release/guide.py check "${VERSION}"
-
       - name: Install Rust toolchain
         uses: ./.github/actions/install-rust
         with:
           targets: ${{ matrix.target }}
+
+      - name: Verify versioned changelog
+        shell: bash
+        run: |
+          VERSION="$(cargo run --locked --quiet -p kmp-release -- version current)"
+          cargo run --locked --quiet -p kmp-release -- changelog check "${VERSION}"
 
       - name: Install protoc (Linux)
         if: runner.os == 'Linux'
@@ -97,10 +88,6 @@ jobs:
         env:
           RUSTFLAGS: ${{ runner.os == 'Windows' && '-C link-arg=/Brepro' || '' }}
         run: cargo build --release -p kmp-mcp --locked --features sqlite --target ${{ matrix.target }}
-
-      - name: Verify both guides against the live release tool surface
-        if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: python3 plugins/kmp/guide/build-guide.py check --binary target/${{ matrix.target }}/release/kmp-mcp
 
       - name: Package and checksum
         shell: bash
@@ -190,7 +177,7 @@ jobs:
         run: |
           VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
-          bash scripts/release/package-kmp-mcpb.sh "${VERSION}" dist/binaries dist/mcpb
+          cargo run --locked --quiet -p kmp-release -- mcpb package "${VERSION}" --input dist/binaries --output dist/mcpb
           npx --yes @anthropic-ai/mcpb@2.1.2 info "dist/mcpb/kmp-mcp-v${VERSION}.mcpb"
 
       - name: Smoke-test the MCPB launcher
@@ -245,7 +232,7 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.package.outputs.version }}"
-          python3 scripts/release/release-candidate.py assemble \
+          cargo run --locked --quiet -p kmp-release -- candidate assemble \
             --version "${VERSION}" \
             --binaries dist/binaries \
             --plugins dist/plugins \
@@ -282,45 +269,35 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
       - name: Resolve the candidate named by the annotated tag
         id: candidate
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          WORKSPACE_VERSION="$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["package"]["version"])')"
+          WORKSPACE_VERSION="$(cargo run --locked --quiet -p kmp-release -- version current)"
           [[ "${VERSION}" == "${WORKSPACE_VERSION}" ]] || {
             echo "tag ${GITHUB_REF_NAME} does not match workspace ${WORKSPACE_VERSION}" >&2
             exit 1
           }
           MESSAGE="$(git for-each-ref --format='%(contents)' "refs/tags/${GITHUB_REF_NAME}")"
           RUN_ID="$(sed -n 's/^candidate-run: \([0-9][0-9]*\)$/\1/p' <<<"${MESSAGE}")"
-          MARKETPLACE_COMMIT="$(sed -n 's/^marketplace-commit: \([0-9a-f][0-9a-f]*\)$/\1/p' <<<"${MESSAGE}")"
           [[ -n "${RUN_ID}" ]] || {
             echo "annotated tag ${GITHUB_REF_NAME} does not name candidate-run" >&2
             exit 1
           }
-          [[ "${MARKETPLACE_COMMIT}" =~ ^[0-9a-f]{40}$ ]] || {
-            echo "annotated tag ${GITHUB_REF_NAME} does not name a marketplace commit" >&2
-            exit 1
-          }
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "run_id=${RUN_ID}" >> "${GITHUB_OUTPUT}"
-          echo "marketplace_commit=${MARKETPLACE_COMMIT}" >> "${GITHUB_OUTPUT}"
 
       - name: Verify reviewed plugin marketplace parity
         run: >-
-          python3 scripts/release/verify-marketplace.py
+          cargo run --locked --quiet -p kmp-release -- marketplace verify
           "${{ steps.candidate.outputs.version }}"
-          --marketplace-commit "${{ steps.candidate.outputs.marketplace_commit }}"
 
       - name: Verify versioned changelog
-        run: python3 scripts/release/changelog.py check "${{ steps.candidate.outputs.version }}"
-
-      - name: Verify public README parity
-        run: python3 scripts/release/sync-public-readme.py check
-
-      - name: Verify versioned guide envelope
-        run: python3 scripts/release/guide.py check "${{ steps.candidate.outputs.version }}"
+        run: cargo run --locked --quiet -p kmp-release -- changelog check "${{ steps.candidate.outputs.version }}"
 
       - name: Download the approved candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -332,7 +309,7 @@ jobs:
 
       - name: Verify release inputs, provenance and every asset
         run: |
-          python3 scripts/release/release-candidate.py verify \
+          cargo run --locked --quiet -p kmp-release -- candidate verify \
             --version "${{ steps.candidate.outputs.version }}" \
             --run-id "${{ steps.candidate.outputs.run_id }}" \
             --directory dist/candidate

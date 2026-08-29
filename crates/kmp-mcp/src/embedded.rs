@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use kmp_domain::{QualityMetricsObserver, QualityObservationContext, TemporalDirection};
+use kmp_domain::{PortError, QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
@@ -178,17 +178,15 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 return embedded_tool_result(&service, quality_observer.as_ref(), name, arguments)
                     .await;
             };
-            let pending = commit_native.begin_write().map_err(|error| {
-                ToolError::unavailable(format!(
-                    "memory write was refused before changing the store because its committed \
-                     bundle could not be guarded: {error}"
-                ))
-            })?;
+            let pending = commit_native
+                .begin_write(store)
+                .await
+                .map_err(commit_native_preflight_error)?;
             let result =
                 embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await;
             match result {
                 Ok(result) => {
-                    let header = commit_native.publish(store).await.map_err(|error| {
+                    let header = commit_native.publish(store, &pending).await.map_err(|error| {
                         ToolError::backend(format!(
                             "memory write committed, but the commit-native bundle `{}` did not: \
                              {error}. The pending marker remains; run `kmp-mcp export` before \
@@ -227,6 +225,18 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 Err(error) => Err(error),
             }
         })
+    }
+}
+
+fn commit_native_preflight_error(error: PortError) -> ToolError {
+    let message = format!(
+        "memory write was refused before changing the store because its committed bundle could \
+         not be guarded: {error}"
+    );
+    match error {
+        PortError::Conflict(_) => ToolError::conflict(message),
+        PortError::Unavailable(_) => ToolError::unavailable(message),
+        PortError::InvalidState(_) => ToolError::backend(message),
     }
 }
 

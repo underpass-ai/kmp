@@ -1,70 +1,70 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.underpass-ai/kmp",
-  "title": "KMP",
   "description": "Local-first agent memory that preserves what happened, when and why",
-  "version": "0.5.1",
-  "websiteUrl": "https://github.com/underpass-ai/kmp",
-  "repository": {
-    "url": "https://github.com/underpass-ai/kmp",
-    "source": "github"
-  },
+  "name": "io.github.underpass-ai/kmp",
   "packages": [
     {
-      "registryType": "mcpb",
-      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.5.1/kmp-mcp-v0.5.1.mcpb",
-      "fileSha256": "2b289769f334615749bdd8aae50b59ce4fcb8dae0c00c633f2f5aab9c83eb0fd",
       "environmentVariables": [
         {
-          "name": "KMP_MCP_DATA_DIR",
           "description": "Optional memory directory; otherwise KMP uses the project or per-user default",
           "format": "filepath",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_MCP_DATA_DIR"
         },
         {
-          "name": "KMP_VIEWER_ADDR",
           "description": "Optional viewer address, or off to disable the local viewer",
-          "placeholder": "127.0.0.1:7317 or off",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_VIEWER_ADDR",
+          "placeholder": "127.0.0.1:7317 or off"
         },
         {
-          "name": "KMP_KERNEL_GRPC_ENDPOINT",
           "description": "Optional remote KMP endpoint; omit it to keep the kernel in this process",
-          "placeholder": "https://kmp.example.com",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_KERNEL_GRPC_ENDPOINT",
+          "placeholder": "https://kmp.example.com"
         }
       ],
+      "fileSha256": "99bf04b26a5d0b2dc0d67273e7fba181ac112e930cb7caf7e5729a6f3a7aa015",
+      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.5.2/kmp-mcp-v0.5.2.mcpb",
+      "registryType": "mcpb",
       "transport": {
         "type": "stdio"
       }
     },
     {
-      "registryType": "cargo",
-      "identifier": "kmp-mcp",
-      "version": "0.5.1",
       "environmentVariables": [
         {
-          "name": "KMP_MCP_DATA_DIR",
           "description": "Optional memory directory; otherwise KMP uses the project or per-user default",
           "format": "filepath",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_MCP_DATA_DIR"
         },
         {
-          "name": "KMP_VIEWER_ADDR",
           "description": "Optional viewer address, or off to disable the local viewer",
-          "placeholder": "127.0.0.1:7317 or off",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_VIEWER_ADDR",
+          "placeholder": "127.0.0.1:7317 or off"
         },
         {
-          "name": "KMP_KERNEL_GRPC_ENDPOINT",
           "description": "Optional remote KMP endpoint; omit it to keep the kernel in this process",
-          "placeholder": "https://kmp.example.com",
-          "isRequired": false
+          "isRequired": false,
+          "name": "KMP_KERNEL_GRPC_ENDPOINT",
+          "placeholder": "https://kmp.example.com"
         }
       ],
+      "identifier": "kmp-mcp",
+      "registryType": "cargo",
       "transport": {
         "type": "stdio"
-      }
+      },
+      "version": "0.5.2"
     }
-  ]
+  ],
+  "repository": {
+    "source": "github",
+    "url": "https://github.com/underpass-ai/kmp"
+  },
+  "title": "KMP",
+  "version": "0.5.2",
+  "websiteUrl": "https://github.com/underpass-ai/kmp"
 }

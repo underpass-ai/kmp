@@ -25,9 +25,8 @@ if cargo tree -p kmp-embedded --edges normal --prefix none --locked \
   exit 1
 fi
 
-# ADR-018 distribution amendment: every installable MCP binary carries SQLite.
-# Feature selection may remove optional product surfaces, but it must never
-# silently restore redb as the active store.
+# Every installable MCP binary carries SQLite. Feature selection may remove
+# optional product surfaces, but it cannot change the embedded storage engine.
 for feature_args in "" "--no-default-features"; do
   label="default"
   if [ -n "${feature_args}" ]; then

@@ -29,20 +29,18 @@ sha256sum -c kmp-plugin-<version>-<os>-<arch>.sha256
 tar -xzf kmp-plugin-<version>-<os>-<arch>.tar.gz
 ```
 
-Codex reads `.codex-plugin/plugin.json` and starts the installed `kmp-mcp`
-from its inline MCP declaration. Claude Code reads
+Codex reads `.codex-plugin/plugin.json` and starts `kmp-mcp` from `PATH`.
+Claude Code reads
 `.claude-plugin/plugin.json` and starts through `.mcp.json` →
 `scripts/run-embedded-mcp.sh`, which can prefer the binary bundled in a
-release package. On Windows hosts, register `scripts\run-embedded-mcp.cmd`
-instead. To build the package from a checkout:
+release package. Put the bundled `bin/` on `PATH` for Codex. On Windows hosts,
+Claude uses `scripts\run-embedded-mcp.cmd`. To build the package from a checkout:
 `bash scripts/plugin/package-kmp-plugin.sh`.
 
-**Claude Code** — native install from the marketplace. The manifest lives in
-[underpass-ai/plugins](https://github.com/underpass-ai/plugins), which carries
-both Underpass plugins, so the same source also offers `made@underpass`:
+**Claude Code** — native install from KMP's co-located stable marketplace:
 
 ```
-/plugin marketplace add underpass-ai/plugins
+/plugin marketplace add underpass-ai/kmp@marketplace
 /plugin install kmp@underpass
 ```
 
@@ -87,23 +85,15 @@ PATH-based MCP declaration, so it does not need a second registration in
 `~/.codex/config.toml`:
 
 ```bash
-codex plugin marketplace add underpass-ai/plugins
+codex plugin marketplace add underpass-ai/kmp --ref marketplace
 codex plugin add kmp@underpass
 ```
 
 Run the native `kmp-setup` skill to install the matching engine and diagnose
 the result. Re-running it preserves the plugin as the single MCP owner.
 
-Standalone Codex wiring remains available as an explicit advanced path. It
-owns a global MCP table, copied prompts and a fenced AGENTS section, and must
-not be combined with an enabled KMP plugin:
-
-```bash
-bash scripts/mcp/install-kmp-plugin.sh --codex --standalone
-```
-
-The script works outside a checkout too, fetching what it needs from the
-repository. Pass `--dry-run` to preview its changes.
+The native plugin is the only supported Codex owner. Do not add a second
+global `mcp_servers.kmp` table or copy prompts and AGENTS fragments beside it.
 
 ### Agent routing policy
 
@@ -130,10 +120,11 @@ the half-open UTC interval and consumes every page. It captures the inclusive
 start with `kmp_goto` before the strictly-after `kmp_forward`, merges refs and
 excludes the end. Setup and upgrades preserve the configured list.
 
-Setup and update also sync two versioned guide memories from one manifest.
-`guide:kmp-agent` explains every live verb to the agent; `guide:kmp` is the
-short human path opened visually with `/kmp:guide`. The sync is deterministic:
-an exact rerun adds no events and an update does not touch project memory.
+Setup and update install the versioned guide assets but never select or write
+a memory store. `/kmp:guide` performs the separate, explicit sync:
+`guide:kmp-agent` explains every live verb to the agent and `guide:kmp` is the
+short human path. The sync is deterministic, but it writes to the selected
+store; in a project it changes project memory and `.kmp/memory.jsonl`.
 
 ## What you get
 
@@ -157,11 +148,11 @@ The skill points at `tools/list` as the authority on the relation vocabulary,
 because that catalog is generated from the kernel's own writer spec and moves
 with the kernel. The skill teaches the shape; the schema carries the truth.
 
-Setup also synchronizes `guide:kmp-agent`, a versioned operating guide inside
-KMP itself. Its explicit verb cards say when to use a move, when not to, the
-minimum input, the expected result and the normal next move. The separate
-`guide:kmp` is for people and opens visually in ChronoLoom; it is not a shorter
-set of agent instructions.
+An explicit `/kmp:guide` synchronizes `guide:kmp-agent`, a versioned operating
+guide inside KMP itself. Its explicit verb cards say when to use a move, when
+not to, the minimum input, the expected result and the normal next move. The
+separate `guide:kmp` is for people and opens visually in ChronoLoom; it is not
+a shorter set of agent instructions.
 
 The payoff appears on the read path: `kmp_wake` reconstructs the causal
 spine, `kmp_ask` can keep the right citation when the question is
@@ -208,10 +199,10 @@ there. It separates them:
 - **tool surface** — a real `tools/list` over stdio, counting what answers;
 - **host registration** — whether Claude Code and Codex actually have it.
 
-For Codex it also distinguishes plugin-managed from standalone wiring. If an
-enabled plugin and a global `mcp_servers.kmp` table both claim the server, the
-doctor names both owners and the global store-affecting environment instead of
-declaring the setup healthy.
+For Codex it also detects obsolete global wiring. If an enabled plugin and a
+global `mcp_servers.kmp` table both claim the server, Doctor names both owners
+and the global store-affecting environment instead of declaring the setup
+healthy.
 
 Two failures it names rather than leaving you to guess: an unsupported store
 format, which current KMP detects but deliberately does not open — Doctor

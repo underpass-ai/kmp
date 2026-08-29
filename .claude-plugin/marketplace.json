@@ -1,0 +1,20 @@
+{
+  "name": "underpass",
+  "description": "KMP by Underpass",
+  "owner": {
+    "name": "Underpass AI",
+    "url": "https://underpassai.com"
+  },
+  "plugins": [
+    {
+      "name": "kmp",
+      "description": "Local-first agent memory that preserves what happened, when and why, with a shared ChronoLoom view.",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/underpass-ai/kmp.git",
+        "path": "plugins/kmp",
+        "ref": "v0.5.2"
+      }
+    }
+  ]
+}

@@ -186,7 +186,6 @@ if unknown_guard["post_unknown_tool_trace"] != [unknown_guard["next_move"]]:
 
 instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
-    ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
     ROOT / "crates/kmp-mcp/src/agent_policy.rs",
 ]
 required = (
@@ -210,10 +209,7 @@ for asset in instruction_assets:
     if missing:
         fail(f"{asset.relative_to(ROOT)} lacks routing clauses: {missing}")
 
-opaque_ref_instruction_assets = instruction_assets + [
-    ROOT / "plugins/kmp/codex/prompts/kmp-moves.md",
-    ROOT / "plugins/kmp/claude/commands/moves.md",
-]
+opaque_ref_instruction_assets = instruction_assets
 for asset in opaque_ref_instruction_assets:
     text = " ".join(asset.read_text(encoding="utf-8").casefold().split())
     for phrase in (
@@ -240,9 +236,6 @@ for asset in opaque_ref_instruction_assets:
 
 write_instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
-    ROOT / "plugins/kmp/codex/AGENTS.kmp.md",
-    ROOT / "plugins/kmp/codex/prompts/kmp-moves.md",
-    ROOT / "plugins/kmp/claude/commands/moves.md",
 ]
 for asset in write_instruction_assets:
     text = asset.read_text(encoding="utf-8").casefold()

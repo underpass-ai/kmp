@@ -1,10 +1,11 @@
 //! Commit-native memory safety for project-scoped embedded stores.
 //!
-//! A write is bracketed by a local pending marker. The marker exists before
-//! the store can change and disappears only after the complete event stream is
-//! durably replaced at `.kmp/memory.jsonl`. A crash or an ambiguous backend
-//! failure therefore leaves something `doctor` can name instead of silently
-//! leaving the only current copy in `.kernel/`.
+//! A write is bracketed by a local pending marker and an inter-process lock.
+//! Before the store can change, the live event stream must exactly match the
+//! committed `.kmp/memory.jsonl` stream. The marker then disappears only after
+//! the complete post-write stream is durably published. A stale checkout is
+//! therefore rejected before SQLite changes, while a crash or an ambiguous
+//! backend failure leaves something `doctor` can name.
 
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -51,8 +52,13 @@ impl CommitNativeBundle {
         &self.bundle_path
     }
 
-    /// Marks a write as needing an export before the store can change.
-    pub fn begin_write(&self) -> Result<PendingBundleExport, PortError> {
+    /// Proves that the live store and committed bundle are the same history,
+    /// then marks a write as needing an export before the store can change.
+    /// The returned guard holds the inter-process lock through publication.
+    pub async fn begin_write(
+        &self,
+        store: &EmbeddedKernelStore,
+    ) -> Result<PendingBundleExport, PortError> {
         let pending_dir = self.data_dir.join(PENDING_EXPORT_DIR);
         fs::create_dir_all(&pending_dir).map_err(|error| {
             PortError::Unavailable(format!(
@@ -60,6 +66,87 @@ impl CommitNativeBundle {
                 pending_dir.display()
             ))
         })?;
+        let lock_path = self.data_dir.join(EXPORT_LOCK_FILE);
+        let publish_lock = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(&lock_path)
+            .map_err(|error| {
+                PortError::Unavailable(format!(
+                    "could not open commit-native export lock `{}`: {error}",
+                    lock_path.display()
+                ))
+            })?;
+        publish_lock.try_lock().map_err(|error| match error {
+            std::fs::TryLockError::WouldBlock => PortError::Conflict(format!(
+                "another commit-native memory write holds `{}`; retry after it completes",
+                lock_path.display()
+            )),
+            std::fs::TryLockError::Error(error) => PortError::Unavailable(format!(
+                "could not lock commit-native export `{}`: {error}",
+                lock_path.display()
+            )),
+        })?;
+
+        let pending = pending_bundle_exports(&self.data_dir);
+        if !pending.is_empty() {
+            return Err(PortError::Conflict(format!(
+                "{} commit-native export marker(s) are still pending in `{}`; reconcile the \
+                 canonical bundle explicitly before another memory write",
+                pending.len(),
+                pending_dir.display()
+            )));
+        }
+
+        let live_before = store.export_bundle().await?;
+        let live_header = verify_bundle(&live_before)?;
+        let canonical_before = match fs::read_to_string(&self.bundle_path) {
+            Ok(bundle) => {
+                let canonical_header = verify_bundle(&bundle).map_err(|error| {
+                    PortError::InvalidState(format!(
+                        "committed memory bundle `{}` is invalid: {error}",
+                        self.bundle_path.display()
+                    ))
+                })?;
+                // Equal-length histories can still be different branches, so
+                // compare their decoded event streams rather than trusting
+                // metadata alone. Prefixes are valid bundles but not a safe
+                // base for a new project write: Git and SQLite must agree
+                // exactly before either can advance.
+                merge_bundles(&bundle, &live_before, "commit-native-preflight")?;
+                if canonical_header.event_count != live_header.event_count {
+                    return Err(PortError::Conflict(format!(
+                        "committed memory bundle `{}` has {} events while the live store has {}; \
+                         refusing to change SQLite until the two histories are explicitly \
+                         reconciled",
+                        self.bundle_path.display(),
+                        canonical_header.event_count,
+                        live_header.event_count
+                    )));
+                }
+                Some(bundle)
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                if live_header.event_count != 0 {
+                    return Err(PortError::Conflict(format!(
+                        "live project store has {} events but committed memory bundle `{}` is \
+                         missing; export or recover it explicitly before another memory write",
+                        live_header.event_count,
+                        self.bundle_path.display()
+                    )));
+                }
+                None
+            }
+            Err(error) => {
+                return Err(PortError::Unavailable(format!(
+                    "could not read committed memory bundle `{}`: {error}",
+                    self.bundle_path.display()
+                )));
+            }
+        };
+
         let marker = pending_dir.join(unique_name("write", "pending"));
         let mut file = OpenOptions::new()
             .create_new(true)
@@ -84,50 +171,53 @@ impl CommitNativeBundle {
             ))
         })?;
         sync_parent(Some(&pending_dir))?;
-        Ok(PendingBundleExport { marker })
+        Ok(PendingBundleExport {
+            marker,
+            publish_lock,
+            canonical_before,
+            live_before,
+        })
     }
 
     /// Writes the complete stream after a successful memory mutation. An
     /// identical digest is already current, so an idempotent retry does not
     /// churn the snapshot creation time in git.
-    pub async fn publish(&self, store: &EmbeddedKernelStore) -> Result<BundleHeader, PortError> {
+    pub async fn publish(
+        &self,
+        store: &EmbeddedKernelStore,
+        pending: &PendingBundleExport,
+    ) -> Result<BundleHeader, PortError> {
         let bundle = store.export_bundle().await?;
         let header = verify_bundle(&bundle)?;
-        let lock_path = self.data_dir.join(EXPORT_LOCK_FILE);
-        let publish_lock = OpenOptions::new()
-            .create(true)
-            .truncate(false)
-            .read(true)
-            .write(true)
-            .open(&lock_path)
-            .map_err(|error| {
-                PortError::Unavailable(format!(
-                    "could not open commit-native export lock `{}`: {error}",
-                    lock_path.display()
-                ))
-            })?;
-        publish_lock.lock().map_err(|error| {
-            PortError::Unavailable(format!(
-                "could not lock commit-native export `{}`: {error}",
-                lock_path.display()
-            ))
-        })?;
-        if let Ok(current_bundle) = fs::read_to_string(&self.bundle_path)
-            && let Ok(current_header) = verify_bundle(&current_bundle)
-        {
-            if current_header.content_digest == header.content_digest
-                && current_header.event_count == header.event_count
-            {
-                return Ok(header);
+        merge_bundles(
+            &pending.live_before,
+            &bundle,
+            "commit-native-post-write-check",
+        )?;
+        let live_before_header = verify_bundle(&pending.live_before)?;
+        if header.event_count < live_before_header.event_count {
+            return Err(PortError::Conflict(format!(
+                "live memory history shrank from {} to {} events during a guarded write",
+                live_before_header.event_count, header.event_count
+            )));
+        }
+
+        let canonical_now = match fs::read_to_string(&self.bundle_path) {
+            Ok(bundle) => Some(bundle),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(error) => {
+                return Err(PortError::Unavailable(format!(
+                    "could not re-read committed memory bundle `{}`: {error}",
+                    self.bundle_path.display()
+                )));
             }
-            // This is both a compatibility proof and a stale-writer guard.
-            // A later export may already protect more events; never replace
-            // it with this writer's shorter view. Divergence is loud and
-            // leaves the pending marker for recovery.
-            merge_bundles(&current_bundle, &bundle, "commit-native-prefix-check")?;
-            if current_header.event_count > header.event_count {
-                return Ok(current_header);
-            }
+        };
+        if canonical_now != pending.canonical_before {
+            return Err(PortError::Conflict(format!(
+                "committed memory bundle `{}` changed during a guarded write; the pending marker \
+                 remains for explicit recovery",
+                self.bundle_path.display()
+            )));
         }
         write_bundle_atomically(&self.bundle_path, &bundle)?;
         Ok(header)
@@ -139,11 +229,20 @@ impl CommitNativeBundle {
 /// remain visible to `doctor`.
 pub struct PendingBundleExport {
     marker: PathBuf,
+    publish_lock: fs::File,
+    canonical_before: Option<String>,
+    live_before: String,
 }
 
 impl PendingBundleExport {
     pub fn complete(self) -> Result<(), PortError> {
-        remove_marker(&self.marker)
+        remove_marker(&self.marker)?;
+        self.publish_lock.unlock().map_err(|error| {
+            PortError::Unavailable(format!(
+                "could not unlock commit-native export after clearing `{}`: {error}",
+                self.marker.display()
+            ))
+        })
     }
 }
 
@@ -342,18 +441,44 @@ fn sync_parent(_parent: Option<&Path>) -> Result<(), PortError> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn pending_marker_survives_until_the_export_completes() {
+    #[tokio::test]
+    async fn pending_marker_survives_until_the_export_completes() {
         let dir = tempfile::tempdir().expect("dir");
+        let kernel = crate::EmbeddedKernel::open(&dir.path().join(".kernel")).expect("kernel");
         let native = CommitNativeBundle::new(
             dir.path().join(".kernel"),
             dir.path().join(".kmp/memory.jsonl"),
         );
-        let pending = native.begin_write().expect("marker");
+        let pending = native.begin_write(kernel.store()).await.expect("marker");
         assert_eq!(pending_bundle_exports(&dir.path().join(".kernel")).len(), 1);
 
         pending.complete().expect("complete");
         assert!(pending_bundle_exports(&dir.path().join(".kernel")).is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_concurrent_writer_is_rejected_without_blocking_the_runtime() {
+        let dir = tempfile::tempdir().expect("dir");
+        let data_dir = dir.path().join(".kernel");
+        let kernel = crate::EmbeddedKernel::open(&data_dir).expect("kernel");
+        let native = CommitNativeBundle::new(&data_dir, dir.path().join(".kmp/memory.jsonl"));
+        let lock_path = data_dir.join(EXPORT_LOCK_FILE);
+        let competing_writer = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(&lock_path)
+            .expect("lock file");
+        competing_writer.lock().expect("competing lock");
+
+        let error = match native.begin_write(kernel.store()).await {
+            Ok(_) => panic!("a second writer must fail fast"),
+            Err(error) => error,
+        };
+
+        assert!(matches!(error, PortError::Conflict(_)));
+        assert!(pending_bundle_exports(&data_dir).is_empty());
     }
 
     #[test]

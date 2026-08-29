@@ -82,6 +82,14 @@ fn ingest_arguments() -> Value {
     })
 }
 
+fn distinct_ingest_arguments(suffix: &str) -> Value {
+    let body = ingest_arguments()
+        .to_string()
+        .replace("question:e3", &format!("question:e3-{suffix}"))
+        .replace("ingest:e3-accept", &format!("ingest:e3-{suffix}"));
+    serde_json::from_str(&body).expect("distinct ingest fixture")
+}
+
 #[tokio::test]
 async fn a_project_write_maintains_its_commit_native_bundle() {
     let project = tempfile::tempdir().expect("project");
@@ -127,7 +135,7 @@ async fn a_project_write_maintains_its_commit_native_bundle() {
 }
 
 #[tokio::test]
-async fn a_failed_bundle_refresh_leaves_a_loud_pending_marker() {
+async fn an_unwritable_bundle_is_refused_before_the_store_changes() {
     let project = tempfile::tempdir().expect("project");
     let data_dir = project.path().join(".kernel");
     let blocked_parent = project.path().join("blocked");
@@ -149,19 +157,92 @@ async fn a_failed_bundle_refresh_leaves_a_loud_pending_marker() {
     let response: Value = serde_json::from_str(&response).expect("json");
     assert_eq!(
         response["result"]["structuredContent"]["error"]["code"],
-        "backend_error"
+        "unavailable"
     );
     assert!(
         response["result"]["structuredContent"]["error"]["message"]
             .as_str()
-            .is_some_and(|message| message.contains("write committed")),
+            .is_some_and(|message| message.contains("refused before changing the store")),
         "{response}"
     );
+    let kernel = kmp_embedded::EmbeddedKernel::open(&data_dir).expect("store remains readable");
+    let live = kernel.store().export_bundle().await.expect("live export");
     assert_eq!(
-        kmp_embedded::pending_bundle_exports(&data_dir).len(),
-        1,
-        "doctor must have durable evidence that export did not complete"
+        kmp_embedded::verify_bundle(&live)
+            .expect("header")
+            .event_count,
+        0
     );
+    assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
+}
+
+#[tokio::test]
+async fn a_stale_project_store_is_refused_before_sqlite_changes() {
+    let project = tempfile::tempdir().expect("project");
+    let data_dir = project.path().join(".kernel");
+    let bundle_path = project.path().join(".kmp/memory.jsonl");
+    let commit_native = kmp_embedded::CommitNativeBundle::new(&data_dir, &bundle_path);
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        &data_dir,
+        None,
+        Some(commit_native),
+    )
+    .expect("embedded backend");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    let one_event_bundle = std::fs::read_to_string(&bundle_path).expect("first bundle");
+    call(
+        &server,
+        2,
+        "kmp_ingest",
+        distinct_ingest_arguments("second"),
+    )
+    .await;
+    assert_eq!(
+        kmp_embedded::verify_bundle(&std::fs::read_to_string(&bundle_path).expect("second bundle"))
+            .expect("second header")
+            .event_count,
+        2
+    );
+
+    // Model a checkout whose committed bundle moved backwards while this
+    // machine's SQLite store retained the later event.
+    std::fs::write(&bundle_path, &one_event_bundle).expect("stale canonical bundle");
+    let response = server
+        .handle_json_line(&tool_call(
+            3,
+            "kmp_ingest",
+            distinct_ingest_arguments("third"),
+        ))
+        .await
+        .expect("response");
+    let response: Value = serde_json::from_str(&response).expect("json");
+    assert_eq!(
+        response["result"]["structuredContent"]["error"]["code"],
+        "conflict"
+    );
+    assert!(
+        response["result"]["structuredContent"]["error"]["message"]
+            .as_str()
+            .is_some_and(|message| message.contains("refused before changing the store")),
+        "{response}"
+    );
+
+    let kernel = kmp_embedded::EmbeddedKernel::open(&data_dir).expect("store remains readable");
+    let live = kernel.store().export_bundle().await.expect("live export");
+    assert_eq!(
+        kmp_embedded::verify_bundle(&live)
+            .expect("live header")
+            .event_count,
+        2,
+        "the refused third event must not reach SQLite"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&bundle_path).expect("canonical remains stale"),
+        one_event_bundle
+    );
+    assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
 }
 
 fn large_recall_ingest_arguments() -> Value {

@@ -1,12 +1,8 @@
 # How KMP talks
 
-One product, one voice. This file is the source of truth for both halves of
-that: the **shape** a command's output takes, and the **register** it is
-written in. `scripts/ci/kmp-plugin-voice.sh` fails the build when a command
-drifts out of either.
-
-If you are adding a command, copy the block at the bottom of this file into it
-verbatim and write the rest to match.
+One product, one voice. This file describes the product register. Workflow
+rules live once, in `skills/*/SKILL.md`; Claude command files are thin host
+adapters and must not copy those rules.
 
 ## The shape
 
@@ -54,18 +50,8 @@ lands naturally, never a joke wedged into a place where a fact belongs.
 The pattern in every row: the left column reports on the software, the right
 column talks to the person, in the same length or shorter.
 
-## The block
+## Ownership
 
-Every file in `commands/` and `codex/prompts/` carries this, byte for byte,
-between its markers. The check compares them against this copy.
-
-<!-- kmp:voice -->
-**Say it in the house voice.** One line per thing, and detail only where
-something needs it. The fix goes next to the problem, never in a footer. Close
-with a verdict in plain words and at most one next command.
-
-Write it young, fresh and a little freak: short sentences, present tense,
-talking to the person rather than reporting on the software. No emoji soup,
-and never a joke inside a failure. If the personality costs an extra line, cut
-the personality.
-<!-- /kmp:voice -->
+The Rust binary owns machine state and lifecycle receipts. Skills own agent
+behavior. Claude commands only route to a skill. Codex consumes the skills
+directly. If a rule appears in two Markdown files, the extra copy is a bug.

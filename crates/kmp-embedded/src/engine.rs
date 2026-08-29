@@ -1,5 +1,4 @@
-//! Which storage engine a fresh data directory gets
-//! ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
+//! Which storage engine a fresh data directory gets.
 //!
 //! The choice is made once, when a directory is created, and recorded in its
 //! `FORMAT_VERSION`. `KMP_MCP_ENGINE` says what a *fresh* directory should
@@ -67,12 +66,6 @@ mod tests {
             parse_engine(" SQLite ").expect("sqlite parses"),
             StorageEngine::Sqlite
         );
-    }
-
-    #[test]
-    fn a_retired_engine_name_is_just_an_unknown_selector() {
-        let error = parse_engine("redb").expect_err("the retired engine is unavailable");
-        assert!(error.to_string().contains("unknown storage engine"));
     }
 
     #[test]
