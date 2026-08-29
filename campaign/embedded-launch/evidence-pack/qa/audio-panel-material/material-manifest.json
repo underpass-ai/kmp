@@ -1,0 +1,54 @@
+{
+  "campaign_id": "kmp-embedded-first-launch",
+  "master_bindings": [
+    {
+      "bytes": 13976413,
+      "duration_seconds": 44.0,
+      "id": "fresh-process-same-why",
+      "path": "docs/assets/campaign/kmp-embedded/fresh-process-same-why.mp4",
+      "role": "canonical picture-locked MP4 for sync and audio review",
+      "sha256": "a8423e5be6343f3f9df21046573195e87e8977a7bb1f6ee1e55821a017eb138c"
+    },
+    {
+      "bytes": 14692159,
+      "duration_seconds": 46.0,
+      "id": "two-processes-one-memory",
+      "path": "docs/assets/campaign/kmp-embedded/two-processes-one-memory.mp4",
+      "role": "canonical picture-locked MP4 for sync and audio review",
+      "sha256": "cdd63994659b3aa1f4f59e4d942caa827f315bfb26429baaf9162702d12afea3"
+    },
+    {
+      "bytes": 17188941,
+      "duration_seconds": 54.0,
+      "id": "keep-the-wrong-turn",
+      "path": "docs/assets/campaign/kmp-embedded/keep-the-wrong-turn.mp4",
+      "role": "canonical picture-locked MP4 for sync and audio review",
+      "sha256": "def66da83510ec5e613b90d4ac6bf34c58a7094d591862124bf7c02346c033c5"
+    }
+  ],
+  "panel_status": "not_run",
+  "panel_type": "independent trained-human audio review",
+  "playback_protocol": [
+    "Review every canonical MP4 from beginning to end with its picture visible; sync is part of the review.",
+    "First pass: use reliable headphones in a quiet room at a comfortable, fixed listening level.",
+    "Second pass: use a phone speaker or comparable small mono speaker at an ordinary listening level.",
+    "Do not extract, remaster, loudness-normalize, enhance or replace the MP4 audio.",
+    "Judge the complete master, including deliberate silence and the final silent reading hold."
+  ],
+  "required_master_fields": [
+    "mastering_approved",
+    "semantic_cues_follow_picture",
+    "mobile_translation_passed",
+    "no_false_product_sound",
+    "notes"
+  ],
+  "required_reviewers": 1,
+  "result_path": "campaign/embedded-launch/evidence-pack/qa/audio-panel.json",
+  "reviewer_requirements": {
+    "independent": true,
+    "qualification_context_required": true,
+    "reviewer_kind": "human",
+    "trained_audio_reviewer": true
+  },
+  "schema_version": "1"
+}

@@ -1,0 +1,52 @@
+{
+  "campaign_id": "kmp-embedded-first-launch",
+  "instructions": [
+    "This file is a response template, not a review or approval.",
+    "One independent trained human must perform both playback passes and fill every field from their own observation.",
+    "Record qualification_context in the reviewer's own terms; do not infer credentials.",
+    "Copy notes faithfully. Agents and automated measurements cannot answer for the reviewer.",
+    "Set result to PASS only after every master field is explicitly approved by that human."
+  ],
+  "masters": [
+    {
+      "id": "fresh-process-same-why",
+      "master_sha256": "a8423e5be6343f3f9df21046573195e87e8977a7bb1f6ee1e55821a017eb138c",
+      "mastering_approved": null,
+      "mobile_translation_passed": null,
+      "no_false_product_sound": null,
+      "notes": "",
+      "semantic_cues_follow_picture": null
+    },
+    {
+      "id": "two-processes-one-memory",
+      "master_sha256": "cdd63994659b3aa1f4f59e4d942caa827f315bfb26429baaf9162702d12afea3",
+      "mastering_approved": null,
+      "mobile_translation_passed": null,
+      "no_false_product_sound": null,
+      "notes": "",
+      "semantic_cues_follow_picture": null
+    },
+    {
+      "id": "keep-the-wrong-turn",
+      "master_sha256": "def66da83510ec5e613b90d4ac6bf34c58a7094d591862124bf7c02346c033c5",
+      "mastering_approved": null,
+      "mobile_translation_passed": null,
+      "no_false_product_sound": null,
+      "notes": "",
+      "semantic_cues_follow_picture": null
+    }
+  ],
+  "material_manifest": {
+    "path": "campaign/embedded-launch/evidence-pack/qa/audio-panel-material/material-manifest.json",
+    "sha256": "3fc620a0046672b08f2c25f14f3c77ef70096670cd0eba71f454465344000dea"
+  },
+  "result": "PENDING",
+  "reviewer": {
+    "independent": null,
+    "qualification_context": "",
+    "reviewer_id": "",
+    "reviewer_kind": "PENDING",
+    "trained_audio_reviewer": null
+  },
+  "schema_version": "1"
+}
