@@ -333,11 +333,14 @@ cmd_release() {
     bash scripts/ci/mcp-registry.sh
 
     # Both hosts discover KMP through underpass-ai/plugins. Codex installs its
-    # reviewed snapshot; Claude follows that catalog's git-subdir into KMP
-    # main. Verify both resolved sources before the tag makes the engine
-    # discoverable, or an updater can pair it with stale skills and launchers.
-    # The tag workflow repeats this gate so a manual tag cannot bypass it.
-    python3 scripts/release/verify-marketplace.py "${version}"
+    # reviewed snapshot; Claude clones the immutable version tag into KMP.
+    # Before that tag exists, prove that its catalog entry names this version,
+    # that remote main is this reviewed commit and that both plugin trees are
+    # identical. Tag workflows repeat the gate in strict mode and audit the
+    # published annotated tag plus its peeled commit.
+    python3 scripts/release/verify-marketplace.py "${version}" \
+        --expected-commit "$(git rev-parse HEAD)" \
+        --allow-unpublished-tag
 
     # Building once means the tag must name one already-reviewed candidate,
     # rather than quietly falling back to another five-platform compile. The

@@ -120,6 +120,7 @@ for clause in (
     "release-candidate.py verify",
     "candidate-run: ${candidate_run}",
     'verify-marketplace.py "${version}"',
+    "--allow-unpublished-tag",
     'changelog.py prepare "${version}"',
     'changelog.py check "${version}"',
     "sync-public-readme.py sync",
@@ -141,6 +142,59 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     source_root = fixture / "release-source"
     plugin_root = fixture / "plugins/kmp"
     claude_root = fixture / "claude-source"
+    claude_remote = fixture / "claude-remote.git"
+    claude_work = fixture / "claude-work"
+    subprocess.run(
+        ["git", "init", "--bare", claude_remote],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["git", "init", "--initial-branch=main", claude_work],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "KMP contract"],
+        cwd=claude_work,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "kmp-contract@example.invalid"],
+        cwd=claude_work,
+        check=True,
+    )
+    (claude_work / "README.md").write_text("cloneable release tag fixture\n", encoding="utf-8")
+    subprocess.run(["git", "add", "README.md"], cwd=claude_work, check=True)
+    subprocess.run(
+        ["git", "commit", "-m", "fixture: release 0.4.2"],
+        cwd=claude_work,
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    expected_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=claude_work,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    subprocess.run(
+        ["git", "tag", "-a", "v0.4.2", "-m", "Release v0.4.2"],
+        cwd=claude_work,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "remote", "add", "origin", claude_remote.as_uri()],
+        cwd=claude_work,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "push", "origin", "main", "refs/tags/v0.4.2"],
+        cwd=claude_work,
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
     manifests = {
         "source_claude": source_root / ".claude-plugin/plugin.json",
         "source_codex": source_root / ".codex-plugin/plugin.json",
@@ -171,7 +225,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
                             "source": "git-subdir",
                             "url": "https://github.com/underpass-ai/kmp.git",
                             "path": "plugins/kmp",
-                            "ref": "a" * 40,
+                            "ref": "v0.4.2",
                         },
                     }
                 ]
@@ -214,6 +268,10 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         readme,
         "--claude-root",
         claude_root,
+        "--claude-repository",
+        claude_remote.as_uri(),
+        "--expected-commit",
+        expected_commit,
         "--source-root",
         source_root,
     ]
@@ -223,6 +281,50 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         check=True,
         stdout=subprocess.DEVNULL,
     )
+
+    claude_clone = fixture / "claude-code-clone"
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--branch",
+            "v0.4.2",
+            claude_remote.as_uri(),
+            claude_clone,
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    cloned_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=claude_clone,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if cloned_commit != expected_commit:
+        raise SystemExit("Claude clone invocation did not check out the peeled release commit")
+
+    impossible_clone = subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--branch",
+            expected_commit,
+            claude_remote.as_uri(),
+            fixture / "claude-code-clone-by-sha",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if impossible_clone.returncode == 0 or "Remote branch" not in impossible_clone.stderr:
+        raise SystemExit("Claude clone regression did not reproduce the bare-SHA failure")
 
     manifests["claude"].write_text(
         json.dumps({"version": "0.4.2+cache.1", "description": current_description}),
@@ -274,7 +376,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
                             "source": "git-subdir",
                             "url": "https://github.com/underpass-ai/kmp.git",
                             "path": "plugins/kmp",
-                            "ref": "a" * 40,
+                            "ref": "v0.4.2",
                         },
                     }
                 ]
@@ -297,7 +399,7 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
                             "source": "git-subdir",
                             "url": "https://github.com/underpass-ai/kmp.git",
                             "path": "plugins/kmp",
-                            "ref": "a" * 40,
+                            "ref": "v0.4.2",
                         },
                     }
                 ]
@@ -338,11 +440,17 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
         encoding="utf-8",
     )
     moving_ref = subprocess.run(verify, check=False, capture_output=True, text=True)
-    if moving_ref.returncode == 0 or "immutable 40-character commit SHA" not in moving_ref.stderr:
+    if moving_ref.returncode == 0 or "clonable immutable release tag v0.4.2" not in moving_ref.stderr:
         raise SystemExit("marketplace verifier accepted a moving Claude source ref")
 
     listing_body = json.loads(claude_listing.read_text(encoding="utf-8"))
-    listing_body["plugins"][0]["source"]["ref"] = "a" * 40
+    listing_body["plugins"][0]["source"]["ref"] = expected_commit
+    claude_listing.write_text(json.dumps(listing_body), encoding="utf-8")
+    bare_sha = subprocess.run(verify, check=False, capture_output=True, text=True)
+    if bare_sha.returncode == 0 or "clonable immutable release tag v0.4.2" not in bare_sha.stderr:
+        raise SystemExit("marketplace verifier accepted a bare Claude source SHA")
+
+    listing_body["plugins"][0]["source"]["ref"] = "v0.4.2"
     listing_body["plugins"][0]["source"]["path"] = "plugin/kmp"
     claude_listing.write_text(json.dumps(listing_body), encoding="utf-8")
     wrong_mapping = subprocess.run(verify, check=False, capture_output=True, text=True)
