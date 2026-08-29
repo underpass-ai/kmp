@@ -9,6 +9,8 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-29
+
 ### Added
 
 - Setup and update deterministically seed two versioned format-2 guides:
@@ -58,6 +60,7 @@ Detailed notes from the early release cycle are preserved in the
 - Store selection reports an explicit durability outcome when a project store
   is unusable, and `doctor` detects a maintained bundle orphaned by fallback
   to another selected store.
+
 ## [0.4.1] - 2026-08-28
 
 ### Changed
@@ -581,7 +584,8 @@ Detailed notes from the early release cycle are preserved in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/underpass-ai/kmp/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/underpass-ai/kmp/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/underpass-ai/kmp/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/underpass-ai/kmp/compare/v0.3.2...v0.4.0
