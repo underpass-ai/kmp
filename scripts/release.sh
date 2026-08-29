@@ -332,11 +332,11 @@ cmd_release() {
     # at a different or not-yet-built artifact.
     bash scripts/ci/mcp-registry.sh
 
-    # Both hosts install from the separate underpass-ai/plugins snapshot.
-    # Publish that reviewed mirror before the tag makes this release
-    # discoverable; otherwise an updater can install the new engine beside
-    # stale skills and launchers. The tag workflow repeats this same gate so a
-    # manually pushed tag cannot bypass it.
+    # Both hosts discover KMP through underpass-ai/plugins. Codex installs its
+    # reviewed snapshot; Claude follows that catalog's git-subdir into KMP
+    # main. Verify both resolved sources before the tag makes the engine
+    # discoverable, or an updater can pair it with stale skills and launchers.
+    # The tag workflow repeats this gate so a manual tag cannot bypass it.
     python3 scripts/release/verify-marketplace.py "${version}"
 
     # Building once means the tag must name one already-reviewed candidate,
