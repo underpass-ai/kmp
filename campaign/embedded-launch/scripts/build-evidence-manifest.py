@@ -181,6 +181,8 @@ def validate_promoted_capture(master_id: str, invalid: list[str]) -> None:
         "process-lifecycle.json", "stores.json", "viewer-revisions.jsonl",
         "browser-network.jsonl", "obs-websocket.jsonl",
         "obs-scene-schedule.jsonl", "edl.json", "edl.sha256",
+        "audio-contract.json", "audio-cues.json", "anchors.jsonl",
+        "anchors-manifest.json", "clock-map.json", "readability-preflight.json",
         "ffprobe.json", "verification.json",
     }
     if not isinstance(evidence, dict) or set(evidence) != required_evidence:
@@ -235,6 +237,7 @@ def referenced_files() -> list[pathlib.Path]:
     for source_root in [
         CAMPAIGN / "audio",
         CAMPAIGN / "obs-harness",
+        CAMPAIGN / "scripts",
         CAMPAIGN / "schema",
     ]:
         fixed.extend(
