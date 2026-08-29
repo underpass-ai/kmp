@@ -15,11 +15,13 @@ set -euo pipefail
 #                       stamp server.json with the exact MCPB digest. This is
 #                       the only supported bridge from `version` to a green PR.
 #
-#   release <X.Y.Z>   — verify the tree is clean, versions already point at
-#                       X.Y.Z and a successful workflow_dispatch candidate
-#                       matches the release inputs, then create an annotated
-#                       `vX.Y.Z` tag naming that candidate. The tag promotes
-#                       its exact bytes and starts tag-only distribution.
+#   release <X.Y.Z> <MARKETPLACE_COMMIT>
+#                     — verify the tree is clean, versions already point at
+#                       X.Y.Z, the reviewed marketplace commit is green, and a
+#                       successful workflow_dispatch candidate matches the
+#                       release inputs. Then create an annotated `vX.Y.Z` tag
+#                       naming both reviewed inputs. The tag promotes its exact
+#                       bytes and starts tag-only distribution.
 #
 # Typical flow:
 #   bash scripts/release.sh version 0.2.0
@@ -30,13 +32,13 @@ set -euo pipefail
 #   gh pr create --fill
 #   # merge via CI
 #   git checkout main && git pull
-#   bash scripts/release.sh release 0.2.0
+#   bash scripts/release.sh release 0.2.0 <MARKETPLACE_COMMIT>
 
 usage() {
     cat <<'USAGE' >&2
 release.sh version <X.Y.Z>
 release.sh candidate <X.Y.Z> [RUN_ID]
-release.sh release <X.Y.Z>
+release.sh release <X.Y.Z> <MARKETPLACE_COMMIT>
 USAGE
     exit 2
 }
@@ -294,7 +296,12 @@ cmd_candidate() {
 
 cmd_release() {
     local version="$1"
+    local marketplace_commit="$2"
     semver_check "${version}"
+    if ! [[ "${marketplace_commit}" =~ ^[0-9a-f]{40}$ ]]; then
+        echo "error: marketplace commit must be a lowercase 40-character SHA" >&2
+        exit 1
+    fi
 
     local root
     root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -332,15 +339,23 @@ cmd_release() {
     # at a different or not-yet-built artifact.
     bash scripts/ci/mcp-registry.sh
 
-    # Both hosts discover KMP through underpass-ai/plugins. Codex installs its
-    # reviewed snapshot; Claude clones the immutable version tag into KMP.
-    # Before that tag exists, prove that its catalog entry names this version,
-    # that remote main is this reviewed commit and that both plugin trees are
-    # identical. Tag workflows repeat the gate in strict mode and audit the
-    # published annotated tag plus its peeled commit.
+    # Both hosts discover KMP through underpass-ai/plugins. Verify the exact
+    # reviewed marketplace PR commit while public main still advertises the
+    # previous, fully installable release. Publishing that catalog before the
+    # tag exists would recreate the clone --branch failure fixed in #390.
+    local marketplace_checks
+    marketplace_checks="$(
+        gh api "repos/underpass-ai/plugins/commits/${marketplace_commit}/check-runs" \
+            --jq '[.check_runs[] | select(.name == "kmp-contract" and .conclusion == "success")] | length'
+    )"
+    if [ "${marketplace_checks}" -lt 1 ]; then
+        echo "error: marketplace commit ${marketplace_commit} has no successful kmp-contract check" >&2
+        exit 1
+    fi
     python3 scripts/release/verify-marketplace.py "${version}" \
         --expected-commit "$(git rev-parse HEAD)" \
-        --allow-unpublished-tag
+        --allow-unpublished-tag \
+        --marketplace-commit "${marketplace_commit}"
 
     # Building once means the tag must name one already-reviewed candidate,
     # rather than quietly falling back to another five-platform compile. The
@@ -396,12 +411,13 @@ cmd_release() {
     git tag -a "${tag}" \
         -m "Release ${tag}" \
         -m "candidate-run: ${candidate_run}" \
-        -m "candidate-inputs: ${candidate_input}"
+        -m "candidate-inputs: ${candidate_input}" \
+        -m "marketplace-commit: ${marketplace_commit}"
     git push origin "${tag}"
     echo "tagged ${tag} and pushed; candidate run ${candidate_run} approved."
     echo "publish-distribution: image + chart + crates.io chain."
     echo "release: promotes the candidate binaries, host bundles and MCPB without rebuilding."
-    echo "Plugin marketplace: verified kmp@underpass ${version} for Codex and Claude."
+    echo "Plugin marketplace: reviewed ${marketplace_commit}; merge it only after release assets are public."
     echo "mcp-registry: validates the tag; production publish remains gated."
 }
 
@@ -422,8 +438,8 @@ case "${verb}" in
         cmd_candidate "$@"
         ;;
     release)
-        [ $# -eq 1 ] || usage
-        cmd_release "$1"
+        [ $# -eq 2 ] || usage
+        cmd_release "$1" "$2"
         ;;
     *)
         usage
