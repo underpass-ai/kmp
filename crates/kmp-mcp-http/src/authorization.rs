@@ -1,33 +1,12 @@
 use serde_json::Value;
 
 use crate::auth::Identity;
+pub use crate::domain::authorization_error::AuthorizationError;
 
 pub const READ_SCOPE: &str = "kmp:read";
 pub const WRITE_SCOPE: &str = "kmp:write";
 pub const RAW_SCOPE: &str = "kmp:inspect:raw";
 pub const ALL_ABOUTS_SCOPE: &str = "kmp:all-abouts";
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct AuthorizationError {
-    pub reason: String,
-    pub required_scope: Option<&'static str>,
-}
-
-impl AuthorizationError {
-    fn missing_scope(scope: &'static str) -> Self {
-        Self {
-            reason: format!("required scope `{scope}` is missing"),
-            required_scope: Some(scope),
-        }
-    }
-
-    fn denied(reason: impl Into<String>) -> Self {
-        Self {
-            reason: reason.into(),
-            required_scope: None,
-        }
-    }
-}
 
 pub fn authorize(identity: &Identity, request: &Value) -> Result<(), AuthorizationError> {
     match request.get("method").and_then(Value::as_str) {

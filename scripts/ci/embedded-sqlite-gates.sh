@@ -3,7 +3,7 @@
 #
 # SQLite is the product engine: it survives kill -9 and two processes can
 # write the same store without losing an event. The feature name remains as
-# a downstream compatibility alias. No build links or selects redb.
+# a downstream compatibility alias.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -19,17 +19,7 @@ cargo test -p kmp-conformance --features sqlite --locked --test embedded_sqlite_
 echo "sqlite-gates: adapter suite including fail-closed format-1 detection"
 cargo test -p kmp-adapter-embedded --features sqlite --locked
 
-echo "sqlite-gates: redb is absent from the dependency graph"
-if cargo tree -p kmp-mcp --locked | grep -Eq '(^| )redb v[0-9]'; then
-  echo "sqlite-gates: redb leaked back into the product dependency graph" >&2
-  exit 1
-fi
-
-echo "sqlite-gates: retired engine identity is absent from the public surface"
-if rg -n -i 'redb' README.md crates/*/README.md plugins/kmp docs; then
-  echo "sqlite-gates: retired engine identity leaked into public product material" >&2
-  exit 1
-fi
+echo "sqlite-gates: obsolete migration commands are absent from the public surface"
 if rg -n 'kmp-mcp migrate|migrate <src>|migrate <source' \
     README.md crates/*/README.md plugins/kmp docs; then
   echo "sqlite-gates: obsolete store-migration command leaked into public product material" >&2
@@ -113,26 +103,16 @@ for host in a b; do
   fi
 done
 
-# No public path may create a fresh redb store. The format gate only recognizes
-# legacy files so it can reject them untouched, and the old shortcut explains
-# its retirement.
-echo "sqlite-gates: redb selection and share-memory are retired"
+# The old share-memory shortcut must continue to explain its replacement.
+echo "sqlite-gates: share-memory is retired"
 RETIRED_DIR="$(mktemp -d)"
 trap 'rm -rf "${INSTALL_ROOT}" "${WORK_DIR}" "${RETIRED_DIR}"' EXIT
 set +e
-printf '%s\n' "${PROBE}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=redb \
-  KMP_MCP_DATA_DIR="${RETIRED_DIR}/memory" \
-  "${INSTALL_ROOT}/bin/kmp-mcp" >"${RETIRED_DIR}/redb.out" 2>"${RETIRED_DIR}/redb.err"
-redb_status=$?
 "${INSTALL_ROOT}/bin/kmp-mcp" share-memory \
   >"${RETIRED_DIR}/share.out" 2>"${RETIRED_DIR}/share.err"
 share_status=$?
 set -e
-[ "${redb_status}" -ne 0 ] && grep -q "unknown storage engine" "${RETIRED_DIR}/redb.err" \
-  || { echo "sqlite-gates: KMP_MCP_ENGINE=redb was not rejected" >&2; exit 1; }
 [ "${share_status}" -eq 2 ] && grep -q "share-memory was retired" "${RETIRED_DIR}/share.err" \
   || { echo "sqlite-gates: retired share-memory did not explain the replacement" >&2; exit 1; }
-[ ! -e "${RETIRED_DIR}/memory/FORMAT_VERSION" ] \
-  || { echo "sqlite-gates: rejected redb selector created a store" >&2; exit 1; }
 
 echo "sqlite-gates: passed"

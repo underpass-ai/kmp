@@ -9,13 +9,10 @@ on:
     paths:
       - "plugins/kmp/**"
       - "scripts/plugin/**"
-      - "scripts/ci/kmp-plugin-smoke.sh"
       - "scripts/ci/kmp-windows-launcher-smoke.ps1"
-      - "scripts/ci/kmp-plugin-install-smoke.sh"
-      - "scripts/ci/kmp-plugin-voice.sh"
+      - "crates/kmp-release/**"
       - "scripts/ci/kmp-capability-contract.py"
       - "scripts/ci/kmp-agent-routing-contract.py"
-      - "scripts/ci/kmp-codex-installed-smoke.sh"
       - "tests/plugin/**"
       - "crates/kmp-mcp/**"
       - ".github/actions/install-rust/**"
@@ -52,7 +49,7 @@ jobs:
       # review: a command written in a hurry that reads like a different
       # product. Runs first so a voice failure is the first thing on the log.
       - name: Check the plugin speaks with one voice
-        run: bash scripts/ci/kmp-plugin-voice.sh
+        run: cargo run --locked --quiet -p kmp-release -- plugin check
 
       - name: Check the plugin capability contract
         run: python3 scripts/ci/kmp-capability-contract.py
@@ -60,18 +57,24 @@ jobs:
       - name: Check agent routing and language fallback
         run: python3 scripts/ci/kmp-agent-routing-contract.py
 
-      - name: Smoke-test the plugin bundle
-        run: bash scripts/ci/kmp-plugin-smoke.sh
+      - name: Prove the packaged canonical plugin tree
+        run: cargo test --locked -p kmp-release --test plugin_package_contract
 
-      # The bundle smoke proves what we package. This one proves what a host
-      # gets: no bundled binary, started through .mcp.json, from an unrelated
-      # working directory. Runs before packaging so a broken install fails
-      # the job whether or not the bundle builds.
-      - name: Smoke-test a marketplace-shaped install
-        run: bash scripts/ci/kmp-plugin-install-smoke.sh
+      - name: Prove plugin bootstrap, lifecycle, guide and protocol contracts
+        run: |
+          cargo test --locked -p kmp-mcp --test plugin_bootstrap
+          cargo test --locked -p kmp-mcp --test plugin_notice
+          cargo test --locked -p kmp-mcp --test lifecycle_cli
+          cargo test --locked -p kmp-mcp --test lifecycle_update
+          cargo test --locked -p kmp-mcp --test lifecycle_native_hosts
+          cargo test --locked -p kmp-mcp --test guide_sync
+          cargo test --locked -p kmp-mcp --test stdio_binary
 
-      - name: Smoke-test the effective Codex install
-        run: bash scripts/ci/kmp-codex-installed-smoke.sh
+      - name: Install native plugin managers for lifecycle convergence
+        run: npm install --global @anthropic-ai/claude-code@2.1.251 @openai/codex@0.151.0
+
+      - name: Prove clean install and 0.4.2 update on both real hosts
+        run: cargo test -p kmp-mcp --test lifecycle_real_hosts -- --ignored
 
   windows-launcher:
     runs-on: windows-2022

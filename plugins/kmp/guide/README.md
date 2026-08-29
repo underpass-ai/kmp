@@ -18,10 +18,12 @@ gets a new logical key and updates those stable refs through ordinary
 Existing stores use the exact same requests through the public MCP writer; the
 bundle loader remains restore-only.
 
-Build and verify with the matching workspace binary:
+Build the assets with the matching workspace binary. Runtime behavior and the
+shipped bundle are covered by focused crate tests:
 
 ```bash
 cargo build --locked -p kmp-mcp
-python3 plugins/kmp/guide/build-guide.py write --binary target/debug/kmp-mcp
-python3 plugins/kmp/guide/build-guide.py check --binary target/debug/kmp-mcp
+cargo run --locked --quiet -p kmp-release -- guide assets write --binary target/debug/kmp-mcp
+cargo test --locked -p kmp-adapter-embedded --test guide_bundle
+cargo test --locked -p kmp-mcp --test guide_sync
 ```

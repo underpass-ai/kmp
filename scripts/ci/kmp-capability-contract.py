@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when KMP's MCP, skill, command, prompt, and docs inventories drift."""
+"""Fail when KMP's MCP, skill, thin Claude adapters, and docs drift."""
 
 from __future__ import annotations
 
@@ -56,7 +56,6 @@ if len(ids) != len(workflows):
     fail("human workflow ids are not unique")
 
 claude = names(PLUGIN / "claude" / "commands")
-prompts = names(PLUGIN / "codex" / "prompts", "kmp-")
 codex_skills = {entry["codex_skill"] for entry in workflows}
 native_skills = {
     path.parent.name for path in (PLUGIN / "skills").glob("*/SKILL.md")
@@ -64,8 +63,6 @@ native_skills = {
 
 if claude != ids:
     fail(f"Claude commands differ: contract={sorted(ids)}, files={sorted(claude)}")
-if prompts != ids:
-    fail(f"standalone prompts differ: contract={sorted(ids)}, files={sorted(prompts)}")
 if native_skills != codex_skills | {"kmp-memory"}:
     fail(
         "native Codex skills differ: "
@@ -82,8 +79,6 @@ for tool in sorted(name for name in EXPECTED_TOOLS if name.startswith("kmp_view_
 for entry in workflows:
     if entry["claude_command"] != entry["id"]:
         fail(f"{entry['id']} has a mismatched Claude exposure")
-    if entry["codex_standalone_prompt"] != f"kmp-{entry['id']}":
-        fail(f"{entry['id']} has a mismatched standalone prompt")
     implementation = PLUGIN / entry["implementation"]
     if not implementation.is_file():
         fail(f"{entry['id']} implementation is missing: {implementation}")
@@ -95,7 +90,7 @@ for skill in sorted((PLUGIN / "skills").glob("*/SKILL.md")):
         fail(f"skill name does not match its directory: {skill}")
 
 native_workflow_clauses = {
-    "kmp-setup": ("scripts/kmp-doctor.sh", "scripts/kmp-update.sh --codex"),
+    "kmp-setup": ("scripts/kmp-doctor.sh", "scripts/kmp-update.sh"),
     "kmp-doctor": ("scripts/kmp-doctor.sh", "host wiring and ownership"),
     "kmp-guide": (
         "scripts/kmp-guide-sync.sh",
@@ -120,19 +115,6 @@ for command in sorted((PLUGIN / "claude" / "commands").glob("*.md")):
     if not re.search(r"(?m)^argument-hint:\s*", command.read_text(encoding="utf-8")):
         fail(f"{command.name} can be accidentally auto-migrated by Codex")
 
-installer = (ROOT / "scripts/mcp/install-kmp-plugin.sh").read_text(encoding="utf-8")
-doctor = (PLUGIN / "scripts/kmp-doctor.sh").read_text(encoding="utf-8")
-for label, text, variable in (
-    ("installer", installer, "CODEX_PROMPTS"),
-    ("doctor", doctor, "CODEX_PROMPT_NAMES"),
-):
-    match = re.search(rf'(?m)^\s*{variable}="([^"]+)"$', text)
-    if not match:
-        fail(f"{label} does not declare {variable}")
-    declared = {name.removeprefix("kmp-") for name in match.group(1).split()}
-    if declared != ids:
-        fail(f"{label} workflow list differs: {sorted(declared)}")
-
 readme = (PLUGIN / "README.md").read_text(encoding="utf-8")
 table_names = set(re.findall(r"(?m)^\| `/kmp:([a-z]+)` \|", readme))
 if table_names != ids:
@@ -140,14 +122,11 @@ if table_names != ids:
 if "For you — ten commands" not in readme:
     fail("README does not state the ten-command contract")
 
-# The seeded guide replaced the user-facing checkout-latency specimen. Keep
-# the retired surface gone as one unit, while protecting the unrelated demo
-# journeys that still prove product and capture behavior.
+# The seeded guide replaced the retired public demo surface.
 retired_demo_assets = [
     PLUGIN / "skills" / "kmp-demo" / "SKILL.md",
     PLUGIN / "scripts" / "kmp-demo.sh",
     PLUGIN / "claude" / "commands" / "demo.md",
-    PLUGIN / "codex" / "prompts" / "kmp-demo.md",
     PLUGIN / "demo" / "README.md",
     PLUGIN / "demo" / "checkout-latency.jsonl",
     ROOT / "crates" / "kmp-adapter-embedded" / "tests" / "demo_bundle.rs",
@@ -157,24 +136,11 @@ for asset in retired_demo_assets:
     if asset.exists():
         fail(f"retired user demo asset returned: {asset.relative_to(ROOT)}")
 
-protected_demo_assets = [
-    ROOT / "scripts" / "demo" / "embedded_two_sessions.sh",
-    ROOT / "scripts" / "demo" / "record-chronoloom-gifs.sh",
-]
-for asset in protected_demo_assets:
-    if not asset.exists():
-        fail(f"unrelated demo asset was removed: {asset.relative_to(ROOT)}")
-
-retired_bundle = "plugins/kmp/demo/checkout-latency.jsonl"
-for pitch in (ROOT / "scripts" / "demo" / "pitch").glob("*.sh"):
-    if retired_bundle in pitch.read_text(encoding="utf-8"):
-        fail(f"pitch script references the retired demo bundle: {pitch.relative_to(ROOT)}")
-
 root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
 if "docs/assets/kmp-demo.gif" in root_readme:
     fail("root README still embeds the retired demo GIF")
-if "docs/assets/kmp-agent-loom.gif" not in root_readme:
-    fail("root README lost the selected ChronoLoom opening capture")
+if "docs/assets/campaign" in root_readme or "kmp-agent-loom.gif" in root_readme:
+    fail("root README still promotes an archived, unapproved campaign asset")
 
 # Public setup docs must agree on ownership. A bare `--codex` installer was
 # the former global-wiring path; prescribing it beside the native plugin
@@ -188,11 +154,11 @@ for asset in ownership_docs:
     text = asset.read_text(encoding="utf-8")
     if "codex plugin add kmp@underpass" not in text:
         fail(f"Codex native-plugin setup is missing: {asset.relative_to(ROOT)}")
-    standalone_removed = text.replace(
-        "scripts/mcp/install-kmp-plugin.sh --codex --standalone", ""
-    )
-    if "scripts/mcp/install-kmp-plugin.sh --codex" in standalone_removed:
-        fail(f"Codex docs prescribe ambiguous global wiring: {asset.relative_to(ROOT)}")
+    if "install-kmp-plugin.sh" in text or "--standalone" in text:
+        fail(f"Codex docs prescribe retired global wiring: {asset.relative_to(ROOT)}")
+
+if (ROOT / "scripts/mcp/install-kmp-plugin.sh").exists():
+    fail("retired standalone installer still duplicates native plugin ownership")
 
 manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
 if manifest.get("skills") != "./skills/":
@@ -200,7 +166,6 @@ if manifest.get("skills") != "./skills/":
 
 codex_assets = [
     *(PLUGIN / "skills").glob("**/*"),
-    *(PLUGIN / "codex").glob("**/*"),
     PLUGIN / ".codex-plugin/plugin.json",
 ]
 for asset in codex_assets:
@@ -213,7 +178,6 @@ retired = re.compile(
 living = [
     PLUGIN / "README.md",
     *(PLUGIN / "claude" / "commands").glob("*.md"),
-    *(PLUGIN / "codex" / "prompts").glob("*.md"),
     *(PLUGIN / "skills").glob("*/SKILL.md"),
 ]
 for asset in living:

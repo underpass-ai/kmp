@@ -24,6 +24,7 @@ async fn shipped_guides_import_and_keep_distinct_audiences() {
             .expect("the guide header is JSON");
     assert_eq!(header["bundle_format"], 2);
     assert_eq!(header["event_count"], 2);
+    assert_eq!(header["kernel_version"], env!("CARGO_PKG_VERSION"));
     assert_eq!(
         header["abouts"],
         serde_json::json!(["guide:kmp", "guide:kmp-agent"])

@@ -737,11 +737,22 @@ fn info_and_doctor_report_the_data_dir_without_creating_it() {
     let project = tempfile::tempdir().expect("project dir");
     std::fs::create_dir_all(project.path().join(".git")).expect(".git marker");
     let kernel = project.path().join(".kernel");
+    let home = project.path().join("home");
+    let empty_path = project.path().join("empty-path");
+    std::fs::create_dir_all(&home).expect("isolated home");
+    std::fs::create_dir_all(&empty_path).expect("isolated PATH");
 
     for verb in ["info", "doctor"] {
         let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
             .arg(verb)
             .current_dir(project.path())
+            .env("HOME", &home)
+            .env("CLAUDE_CONFIG_DIR", project.path().join("claude"))
+            .env("CODEX_HOME", project.path().join("codex"))
+            .env("XDG_DATA_HOME", project.path().join("xdg-data"))
+            .env("XDG_CONFIG_HOME", project.path().join("xdg-config"))
+            .env("XDG_CACHE_HOME", project.path().join("xdg-cache"))
+            .env("PATH", &empty_path)
             .env_remove("KMP_MCP_DATA_DIR")
             .env_remove("KMP_MCP_BACKEND")
             .output()
@@ -1531,4 +1542,57 @@ fn cli_surface_version_export_import_and_errors() {
         "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_wake\",\"arguments\":{\"about\":\"project:cli\"}}}\n",
     );
     assert!(String::from_utf8_lossy(&wake.stdout).contains("decision:cli"));
+}
+
+#[test]
+fn doctor_rejects_a_verified_bundle_from_a_different_live_revision() {
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(std::path::Path::parent)
+        .expect("workspace");
+    let scratch = workspace.join("tmp");
+    std::fs::create_dir_all(&scratch).expect("scratch");
+    let project = tempfile::Builder::new()
+        .prefix("doctor-divergence.")
+        .tempdir_in(&scratch)
+        .expect("project");
+    let data_dir = project.path().join(".kernel");
+    std::fs::create_dir_all(project.path().join(".git")).expect("project marker");
+    let bundle_dir = project.path().join(".kmp");
+    let committed = bundle_dir.join("memory.jsonl");
+    std::fs::create_dir_all(&bundle_dir).expect("bundle dir");
+    let guide = workspace.join("plugins/kmp/guide/memory.jsonl");
+    let binary = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    let imported = Command::new(binary)
+        .args(["import", guide.to_str().expect("guide path")])
+        .env("KMP_MCP_DATA_DIR", &data_dir)
+        .output()
+        .expect("guide import");
+    assert!(imported.status.success(), "{imported:?}");
+
+    let empty_store = project.path().join("empty-store");
+    let exported = Command::new(binary)
+        .args(["export", committed.to_str().expect("bundle path")])
+        .env("KMP_MCP_DATA_DIR", empty_store)
+        .output()
+        .expect("empty export");
+    assert!(exported.status.success(), "{exported:?}");
+
+    let doctor = Command::new(binary)
+        .arg("doctor")
+        .current_dir(project.path())
+        .env_remove("KMP_MCP_DATA_DIR")
+        .env("HOME", project.path().join("home"))
+        .env("XDG_DATA_HOME", project.path().join("xdg-data"))
+        .env("XDG_CONFIG_HOME", project.path().join("xdg-config"))
+        .env("PATH", "/usr/bin:/bin")
+        .output()
+        .expect("doctor");
+    let report = String::from_utf8_lossy(&doctor.stdout);
+    assert_eq!(doctor.status.code(), Some(1), "{report}");
+    assert!(
+        report.contains("live store and committed memory are different revisions"),
+        "{report}"
+    );
 }

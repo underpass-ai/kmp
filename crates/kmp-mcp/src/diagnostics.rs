@@ -214,6 +214,53 @@ fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Finding> {
             );
         }
     };
+    if store.is_some() {
+        let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
+            .and_then(|store| store.export_bundle_blocking());
+        let live = match live {
+            Ok(live) => live,
+            Err(error) => {
+                return Some(
+                    Finding::new(Level::Fail, "the live memory cannot be audited")
+                        .with(error.to_string()),
+                );
+            }
+        };
+        let live_header = match kmp_embedded::verify_bundle(&live) {
+            Ok(header) => header,
+            Err(error) => {
+                return Some(
+                    Finding::new(Level::Fail, "the live memory export does not verify")
+                        .with(error.to_string()),
+                );
+            }
+        };
+        if let Err(error) = kmp_embedded::merge_bundles(&text, &live, "doctor-history-audit") {
+            return Some(
+                Finding::new(
+                    Level::Fail,
+                    "the live store and committed memory are divergent histories",
+                )
+                .with(error.to_string())
+                .with("reconcile them explicitly; do not restore an archived machine history"),
+            );
+        }
+        if header.event_count != live_header.event_count
+            || header.content_digest != live_header.content_digest
+        {
+            return Some(
+                Finding::new(
+                    Level::Fail,
+                    "the live store and committed memory are different revisions",
+                )
+                .with(format!(
+                    "live events: {}; committed events: {}",
+                    live_header.event_count, header.event_count
+                ))
+                .with("run `kmp-mcp export`, inspect the diff, and reconcile explicitly"),
+            );
+        }
+    }
     if let Some(store) = store
         && newer_than(&store, &bundle)
     {
@@ -654,7 +701,31 @@ pub fn doctor() -> (String, i32) {
     doctor_styled(Style::for_stdout())
 }
 
+fn lifecycle_findings() -> Vec<Finding> {
+    use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
+
+    crate::lifecycle::NativeLifecycle::diagnose()
+        .findings()
+        .iter()
+        .map(|finding| {
+            let level = match finding.severity() {
+                DiagnosticSeverity::Ok => Level::Ok,
+                DiagnosticSeverity::Warn => Level::Warn,
+                DiagnosticSeverity::Fail => Level::Fail,
+            };
+            finding.detail().iter().fold(
+                Finding::new(level, finding.headline()),
+                |rendered, detail| rendered.with(detail),
+            )
+        })
+        .collect()
+}
+
 fn doctor_styled(style: Style) -> (String, i32) {
+    doctor_styled_with_lifecycle(style, lifecycle_findings())
+}
+
+fn doctor_styled_with_lifecycle(style: Style, lifecycle: Vec<Finding>) -> (String, i32) {
     let mut out = String::new();
     let _ = writeln!(
         out,
@@ -687,6 +758,16 @@ fn doctor_styled(style: Style) -> (String, i32) {
     let surface = tool_surface_finding(&tools, &crate::protocol::declared_tool_names());
     let surface_level = surface.level;
     section(&mut out, style, "Tools", &[surface]);
+    let lifecycle_level = lifecycle
+        .iter()
+        .map(|finding| finding.level)
+        .max_by_key(|level| match level {
+            Level::Ok => 0,
+            Level::Warn => 1,
+            Level::Fail => 2,
+        })
+        .unwrap_or(Level::Ok);
+    section(&mut out, style, "Hosts", &lifecycle);
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.level;
     section(&mut out, style, "Agent", &[agent_policy]);
@@ -720,6 +801,7 @@ fn doctor_styled(style: Style) -> (String, i32) {
         data_dir_level,
         durability_level,
         surface_level,
+        lifecycle_level,
         backend.level,
         history_level,
         agent_policy_level,
@@ -800,6 +882,13 @@ fn tool_surface_finding(observed: &[String], declared: &[String]) -> Finding {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn lifecycle_fixture() -> Vec<Finding> {
+        vec![Finding::new(
+            Level::Ok,
+            "native hosts use the tested lifecycle",
+        )]
+    }
 
     #[test]
     fn a_detail_line_wraps_instead_of_asking_the_terminal_to() {
@@ -1038,7 +1127,7 @@ mod tests {
     /// written, tested and never rendered.
     #[test]
     fn the_two_surfaces_a_user_actually_reaches_carry_the_mark() {
-        let (doctor_report, _) = doctor();
+        let (doctor_report, _) = doctor_styled_with_lifecycle(Style::Plain, lifecycle_fixture());
         for (surface, report) in [("info", info()), ("doctor", doctor_report)] {
             assert!(
                 report.starts_with(banner::LARGE),
@@ -1060,8 +1149,8 @@ mod tests {
             crate::style::stripped(&info_styled(Style::Ansi)),
             info_styled(Style::Plain)
         );
-        let (styled, _) = doctor_styled(Style::Ansi);
-        let (plain, _) = doctor_styled(Style::Plain);
+        let (styled, _) = doctor_styled_with_lifecycle(Style::Ansi, lifecycle_fixture());
+        let (plain, _) = doctor_styled_with_lifecycle(Style::Plain, lifecycle_fixture());
         assert_eq!(crate::style::stripped(&styled), plain);
     }
 
@@ -1086,7 +1175,7 @@ mod tests {
 
     #[test]
     fn doctor_ends_in_a_verdict() {
-        let (report, code) = doctor();
+        let (report, code) = doctor_styled_with_lifecycle(Style::Plain, lifecycle_fixture());
         assert!(report.contains("▌KMP▐ Binary"));
         assert!(report.contains("▌KMP▐ Tools"));
         let verdict = report.lines().rfind(|line| !line.trim().is_empty());

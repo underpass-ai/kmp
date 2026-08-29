@@ -6,15 +6,14 @@ description: Install, update, and configure KMP for Codex. Use for first setup, 
 # KMP setup
 
 Resolve the plugin root as two directories above this `SKILL.md`. Diagnose
-first with `<plugin-root>/scripts/kmp-doctor.sh`; it includes host ownership
-and effective wiring checks that the process-local `kmp-mcp doctor` cannot
-see. Fall back to `kmp-mcp doctor` only if the bundled script is unavailable,
-and say that host ownership was not checked.
+first with `<plugin-root>/scripts/kmp-doctor.sh`; it is a thin adapter into
+`kmp-mcp doctor`, whose Rust lifecycle diagnosis owns host inventory, engine
+proof, effective wiring and plugin-tree parity.
 
 When a session notice or version comparison says a newer release exists, run
-`<plugin-root>/scripts/kmp-update.sh --codex`. That updates the native Codex
-plugin and installs the checksummed engine from the same release. Do not update
-only one half.
+`<plugin-root>/scripts/kmp-update.sh`. That inventories both native hosts,
+updates every installed KMP plugin, and installs the checksummed engine from
+the same release. Do not update only one host or one half.
 
 For an enabled Codex plugin, the plugin owns MCP. Install or update the engine
 with `<plugin-root>/scripts/kmp-install-binary.sh`, but do not add a global
@@ -22,9 +21,8 @@ with `<plugin-root>/scripts/kmp-install-binary.sh`, but do not add a global
 global registration also exists, report the collision and remove it only as
 the explicit ownership repair for the requested setup.
 
-Standalone Codex wiring is an advanced, explicit mode:
-`install-kmp-plugin.sh --codex --standalone`. Refuse that mode while a KMP
-plugin is enabled.
+Standalone Codex wiring is retired. The native plugin is the single MCP owner;
+reject `--standalone` and diagnose any old global registration as a collision.
 
 Show the active semantic-Ask fallback policy with `kmp-mcp config`. Change it
 with `kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
@@ -36,18 +34,18 @@ time and never enter this fallback. Chinese, Japanese, and Thai fallback tags
 are rejected until Ask supports word segmentation for those scripts; storage
 remains byte-exact. Upgrades must leave this policy intact.
 
-Install or refresh the shipped guides after the engine and plugin agree on a
-version:
+Setup and update must not select or write a memory store. Guide sync is a
+separate, explicit data operation. Run it only when the user asks to install
+or refresh the guides:
 
 ```bash
-<plugin-root>/scripts/kmp-guide-sync.sh sync --binary <path-to-kmp-mcp>
+KMP_MCP_BIN=<path-to-kmp-mcp> <plugin-root>/scripts/kmp-guide-sync.sh sync
 ```
 
-This is a deterministic content sync, not sample data. It keeps two abouts
-aligned from one versioned manifest: `guide:kmp-agent` is the operational
-manual for the agent, while `guide:kmp` is the shorter human path that
-ChronoLoom opens with `open:guide`. Exact reruns add no events; a later plugin
-version supersedes changed guide entries without rewriting unrelated memory.
+It writes `guide:kmp-agent` and `guide:kmp` into the store selected by that
+command. In a project, that is project memory and its commit-native bundle.
+Name this effect before running it. Exact reruns add no events; a later plugin
+version supersedes only changed guide entries.
 
 Finish by rerunning `<plugin-root>/scripts/kmp-doctor.sh`. A running Codex
 session needs one restart to load changed skills or MCP wiring.

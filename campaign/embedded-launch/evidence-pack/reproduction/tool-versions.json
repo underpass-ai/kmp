@@ -1,7 +1,0 @@
-{
-  "schema_version": "1",
-  "ffmpeg": "6.1.1-3ubuntu5+esm10",
-  "ffprobe": "6.1.1-3ubuntu5+esm10",
-  "csound": "6.18 double samples, 2024-04-07",
-  "python": "3.12.3"
-}

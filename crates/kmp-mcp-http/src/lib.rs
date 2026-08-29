@@ -1,10 +1,15 @@
+pub mod adapters;
+pub mod application;
 pub mod auth;
 pub mod authorization;
 pub mod config;
+pub mod domain;
+pub mod ports;
 mod protocol;
 
 use std::sync::Arc;
 
+use application::use_cases::authorize_mcp_request::AuthorizeMcpRequest;
 use auth::{AuthError, TokenVerifier};
 use authorization::AuthorizationError;
 use axum::Router;
@@ -135,7 +140,7 @@ async fn handle_mcp(State(state): State<AppState>, headers: HeaderMap, body: Byt
     };
     let tool = request_tool(&request);
     let about = request_about(&request);
-    if let Err(error) = authorization::authorize(&identity, &request) {
+    if let Err(error) = AuthorizeMcpRequest::execute(&identity, &request) {
         audit(&identity, "deny", tool, about, Some(&error.reason));
         return forbidden(&state, id, error);
     }

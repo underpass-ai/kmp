@@ -48,7 +48,7 @@ memory server. No Underpass cloud.
 ### Codex CLI
 
 ```bash
-codex plugin marketplace add underpass-ai/plugins
+codex plugin marketplace add underpass-ai/kmp --ref marketplace
 codex plugin add kmp@underpass
 ```
 
@@ -57,7 +57,7 @@ Then ask Codex to run `kmp-setup` and restart Codex once.
 ### Claude Code
 
 ```text
-/plugin marketplace add underpass-ai/plugins
+/plugin marketplace add underpass-ai/kmp@marketplace
 /plugin install kmp@underpass
 /kmp:setup
 ```
@@ -71,8 +71,8 @@ kmp-mcp doctor
 ```
 
 That is the happy path. The plugin owns the MCP registration, so do not add a
-second KMP server by hand. Standalone installation, store selection and repair
-live in [Embedded KMP](docs/embedded/README.md).
+second KMP server by hand. Store selection and repair live in
+[Embedded KMP](docs/embedded/README.md).
 
 ## Talk to it like a human
 
@@ -112,11 +112,6 @@ agent—not KMP—turns returned evidence into conversational prose.
 
 Ask your agent: **“Show me the memory behind this decision.”** ChronoLoom
 opens on the evidence and lights up its proof path.
-
-![A real KMP process records a decision and a fresh process recovers it with evidence in ChronoLoom](docs/assets/kmp-agent-loom.gif)
-
-<sub>Campaign preview; publish only after the verified OBS recapture.
-Deterministic product fixture, not customer data.</sub>
 
 **You control the same view:** your agent can steer it; you can click, filter,
 pan or undo at any time.

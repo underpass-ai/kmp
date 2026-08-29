@@ -60,11 +60,16 @@ pub struct ImportReport {
 }
 
 impl EmbeddedKernelStore {
+    /// Synchronous export for already-blocking operational paths such as
+    /// Doctor. Async application paths should use [`Self::export_bundle`].
+    pub fn export_bundle_blocking(&self) -> Result<String, PortError> {
+        encode_bundle(&self.read_event_log()?, None)
+    }
+
     /// Serializes the full event log as a JSON-Lines bundle: one header line
     /// followed by one event per line, in sequence order.
     pub async fn export_bundle(&self) -> Result<String, PortError> {
-        let events = self.run(EmbeddedKernelStore::read_event_log).await?;
-        encode_bundle(&events, None)
+        self.run(|store| store.export_bundle_blocking()).await
     }
 
     /// Serializes only events rooted at one of `requested_abouts`.
