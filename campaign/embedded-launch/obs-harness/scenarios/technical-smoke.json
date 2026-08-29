@@ -1,0 +1,80 @@
+{
+  "id": "technical-smoke",
+  "title": "Real PTY + real ChronoLoom + OBS control",
+  "about": "project:campaign-obs-harness-smoke",
+  "fixture_label": "DETERMINISTIC PRODUCT FIXTURE",
+  "duration_ms": 10000,
+  "bootstrap": [
+    {
+      "at_ms": 0,
+      "type": "tool",
+      "name": "kmp_write_memory",
+      "arguments": {
+        "about": "project:campaign-obs-harness-smoke",
+        "intent": "record_decision",
+        "actor": "process:capture-smoke",
+        "occurred_at": "2026-08-27T10:05:00Z",
+        "observed_at": "2026-08-27T10:05:20Z",
+        "scope": { "process": "campaign:obs-harness-smoke" },
+        "current": {
+          "ref": "project:campaign-obs-harness-smoke:decision:pool-limit",
+          "kind": "decision",
+          "summary": "Restore max_connections to 200 because the pool ceiling caused saturation.",
+          "evidence": "Checkout latency returned to 180 ms after the ceiling was restored while request volume stayed flat."
+        },
+        "idempotency_key": "capture:technical-smoke:pool-limit:v1",
+        "options": { "dry_run": false, "strict": false, "sequence": 1 }
+      }
+    },
+    {
+      "at_ms": 0,
+      "type": "tool",
+      "name": "kmp_view_open",
+      "arguments": { "about": "project:campaign-obs-harness-smoke" }
+    }
+  ],
+  "steps": [
+    {
+      "at_ms": 800,
+      "type": "say",
+      "speaker": "user",
+      "text": "Show me the memory behind the pool-limit decision."
+    },
+    {
+      "at_ms": 2600,
+      "type": "tool",
+      "name": "kmp_inspect",
+      "arguments": {
+        "about": "project:campaign-obs-harness-smoke",
+        "ref": "project:campaign-obs-harness-smoke:decision:pool-limit",
+        "include": { "details": true, "incoming": true, "outgoing": true },
+        "budget": { "max_bytes": 12000 }
+      },
+      "display_paths": [
+        { "label": "decision", "path": "structuredContent.object.text" }
+      ]
+    },
+    {
+      "at_ms": 5000,
+      "type": "tool",
+      "name": "kmp_view_apply_intent",
+      "arguments": {
+        "view_id": "default",
+        "expected_revision": "$CURRENT_VIEW_REVISION",
+        "idempotency_key": "capture:technical-smoke:focus:v1",
+        "actor": "agent",
+        "explanation": "show the memory behind the pool-limit decision",
+        "focus": {
+          "refs": ["project:campaign-obs-harness-smoke:decision:pool-limit"]
+        },
+        "projection": { "semantic_zoom": "moment" },
+        "selection": "project:campaign-obs-harness-smoke:decision:pool-limit"
+      },
+      "display_paths": [
+        { "label": "viewer revision", "path": "structuredContent.view_revision" }
+      ]
+    },
+    { "at_ms": 8000, "type": "say", "speaker": "user", "text": "Nice." },
+    { "at_ms": 9500, "type": "hold" }
+  ]
+}

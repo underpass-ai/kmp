@@ -1,0 +1,65 @@
+{
+  "campaign_id": "kmp-embedded-first-launch",
+  "concept": "KMP Embedded — memory, with receipts",
+  "product_commit": "b97a9497b16c31ea6e080e081f239c60ec4bb2c2",
+  "binary": {
+    "path": "target/debug/kmp-mcp",
+    "sha256": "0f67b9cff3f68aee0a10a4f79f4cd69a24b83b7008acebc1d0b1848acea39b65",
+    "version": "kmp-mcp 0.4.2 (store format 2 (sqlite))"
+  },
+  "masters": [
+    {
+      "id": "fresh-process-same-why",
+      "duration_seconds": 44.0,
+      "picture_source": "evidence-pack/capture/raw/fresh-process-same-why.mkv",
+      "captions": "captions/fresh-process-same-why.vtt",
+      "beats": [
+        {"start": 0.0, "end": 4.0, "visual_action": "OBS terminal-focus scene; real PTY and ChronoLoom remain visible.", "product_action": null, "copy": "End the session. Keep the why."},
+        {"start": 4.0, "end": 9.2, "visual_action": "The PTY shows the exact kmp_write_memory request while ChronoLoom shows the selected about.", "product_action": "Process 1 calls kmp_write_memory for project:campaign-fresh-process.", "copy": "Remember why KMP Embedded uses SQLite WAL."},
+        {"start": 9.2, "end": 13.2, "visual_action": "ChronoLoom detail focus shows the committed decision and attached evidence.", "product_action": "Process 1 receives accepted=true, opens the view and selects the committed ref.", "copy": "Decision committed. Evidence attached."},
+        {"start": 13.2, "end": 17.2, "visual_action": "The real PTY shows process 1 exit and its recorded PID.", "product_action": "Process 1 exits with code 0.", "copy": "Session 01 ended."},
+        {"start": 17.2, "end": 22.0, "visual_action": "The real PTY shows a distinct process 2 PID and the same store fingerprint.", "product_action": "Process 2 starts against the same local data directory; no export or import occurs.", "copy": "Fresh process. Same local store."},
+        {"start": 22.0, "end": 28.8, "visual_action": "OBS terminal-focus scene makes the exact inspect request readable at 390 px.", "product_action": "Process 2 calls kmp_inspect for the ref written by process 1.", "copy": "Why does KMP Embedded use SQLite WAL?"},
+        {"start": 28.8, "end": 37.1, "visual_action": "ChronoLoom detail focus shows the recovered object and its evidence.", "product_action": "Process 2 recovers the object and moves the shared view to the same ref.", "copy": "A fresh process recovered the same decision and evidence."},
+        {"start": 37.1, "end": 44.0, "visual_action": "OBS CTA scene retains both real windows and enlarges the release-valid action.", "product_action": null, "copy": "Fresh process. Same decision. Evidence attached. Run KMP Embedded → github.com/underpass-ai/kmp"}
+      ]
+    },
+    {
+      "id": "two-processes-one-memory",
+      "duration_seconds": 46.0,
+      "picture_source": "evidence-pack/capture/raw/two-processes-one-memory.mkv",
+      "captions": "captions/two-processes-one-memory.vtt",
+      "beats": [
+        {"start": 0.0, "end": 4.0, "visual_action": "OBS wide scene identifies Process A and Process B without third-party host branding.", "product_action": null, "copy": "Process A writes it. Process B recovers the why."},
+        {"start": 4.0, "end": 9.6, "visual_action": "The real Process A PTY shows the exact write request.", "product_action": "Process A calls kmp_write_memory with the pool-limit decision and evidence.", "copy": "Restore max_connections to 200. The pool ceiling caused saturation."},
+        {"start": 9.6, "end": 15.0, "visual_action": "ChronoLoom detail focus shows the accepted decision.", "product_action": "Process A opens and selects the committed ref.", "copy": "Process A committed the decision with evidence."},
+        {"start": 15.0, "end": 20.0, "visual_action": "Both real PTYs show distinct PIDs and the same local store fingerprint.", "product_action": "Process B opens the same SQLite WAL store; no export or import occurs.", "copy": "Two processes. Same local store."},
+        {"start": 20.0, "end": 28.0, "visual_action": "The Process B PTY shows the exact kmp_ask request at mobile-safe scale.", "product_action": "Process B asks why max_connections returned to 200.", "copy": "Why is max_connections back at 200?"},
+        {"start": 28.0, "end": 34.3, "visual_action": "The capture holds the two PIDs, same fingerprint and raw response evidence.", "product_action": "Process B receives Ask evidence and inspects Process A's ref.", "copy": "No export. No import. One local SQLite WAL store."},
+        {"start": 34.3, "end": 39.3, "visual_action": "ChronoLoom detail focus shows the recovered decision and evidence.", "product_action": "Process B moves its ChronoLoom view to the recovered ref.", "copy": "Process B recovered what Process A wrote."},
+        {"start": 39.3, "end": 46.0, "visual_action": "OBS CTA scene retains both real windows and enlarges the action.", "product_action": null, "copy": "Two processes. One local memory. See KMP Embedded → github.com/underpass-ai/kmp"}
+      ]
+    },
+    {
+      "id": "keep-the-wrong-turn",
+      "duration_seconds": 54.0,
+      "picture_source": "evidence-pack/capture/raw/keep-the-wrong-turn.mkv",
+      "captions": "captions/keep-the-wrong-turn.vtt",
+      "beats": [
+        {"start": 0.0, "end": 4.0, "visual_action": "OBS terminal-focus scene visibly identifies the incident as a deterministic product fixture.", "product_action": null, "copy": "Delete the wrong turn. Lose the why."},
+        {"start": 4.0, "end": 11.0, "visual_action": "The real PTY shows the semantic request; the real browser remains visible.", "product_action": null, "copy": "Show me the memory behind the pool-limit decision."},
+        {"start": 11.0, "end": 19.0, "visual_action": "ChronoLoom prism focus makes reality, perception and persistence readable at 390 px.", "product_action": "kmp_view_apply_intent selects the pool-limit ref and the browser reacts through long-poll.", "copy": "One decision. Three recorded times."},
+        {"start": 19.0, "end": 33.2, "visual_action": "The real PTY shows the second semantic request with the selected decision still visible.", "product_action": null, "copy": "Great! Can you light up the proof path?"},
+        {"start": 33.2, "end": 43.6, "visual_action": "ChronoLoom proof focus reveals the real Audit Path, then enlarges verified_by, supersedes, chosen_because and depends_on for 2.4 seconds each.", "product_action": "kmp_view_apply_intent requests the four-hop trace and then focuses each returned hop without altering memory.", "copy": "Four auditable hops: verified_by, supersedes, chosen_because, depends_on."},
+        {"start": 43.6, "end": 49.4, "visual_action": "ChronoLoom proof overview and the real PTY keep the completed path visible.", "product_action": "kmp_view_get_state records the final semantic view revision.", "copy": "The wrong hypothesis remains inside its proof path. Nice."},
+        {"start": 49.4, "end": 54.0, "visual_action": "OBS CTA scene retains both real windows and enlarges the action.", "product_action": null, "copy": "Memory, with receipts. See KMP Embedded → github.com/underpass-ai/kmp"}
+      ]
+    }
+  ],
+  "constraints": {
+    "muted_complete": true,
+    "third_party_audio": false,
+    "autoplay_muted": true,
+    "real_hosts_required_for_host_names": true
+  }
+}

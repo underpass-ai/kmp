@@ -110,13 +110,16 @@ agent—not KMP—turns returned evidence into conversational prose.
 
 ## ChronoLoom — memory you can see
 
-Ask Codex or Claude: **“Show me the memory behind this decision.”** ChronoLoom
+Ask your agent: **“Show me the memory behind this decision.”** ChronoLoom
 opens on the evidence and lights up its proof path.
 
-![Codex asks KMP about a decision and ChronoLoom answers with the live memory and proof path](docs/assets/kmp-agent-loom.gif)
+![A real KMP process records a decision and a fresh process recovers it with evidence in ChronoLoom](docs/assets/kmp-agent-loom.gif)
 
-**One shared view:** the agent can steer it; you can click, filter, pan, undo
-or take control at any time.
+<sub>Campaign preview; publish only after the verified OBS recapture.
+Deterministic product fixture, not customer data.</sub>
+
+**You control the same view:** your agent can steer it; you can click, filter,
+pan or undo at any time.
 
 [Explore ChronoLoom](crates/kmp-viewer/README.md) ·
 [Technical architecture](docs/architecture/README.md)

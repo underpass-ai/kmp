@@ -1,0 +1,17 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+End the session. Keep the why.
+
+00:00:04.000 --> 00:00:13.200
+Session 01 records why KMP Embedded uses SQLite WAL, with evidence attached.
+
+00:00:13.200 --> 00:00:22.000
+Session 01 ends. Session 02 starts as a fresh process against the same local store.
+
+00:00:22.000 --> 00:00:37.100
+The fresh process recovers the same decision and its evidence.
+
+00:00:37.100 --> 00:00:44.000
+Fresh process. Same decision. Evidence attached.
+Run KMP Embedded: github.com/underpass-ai/kmp

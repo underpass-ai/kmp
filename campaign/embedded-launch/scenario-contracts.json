@@ -1,0 +1,118 @@
+{
+  "schema_version": "1",
+  "campaign_id": "kmp-embedded-first-launch",
+  "capture_interface": "campaign/embedded-launch/obs-harness/scenario.schema.json",
+  "edl": "campaign/embedded-launch/edl.json",
+  "global_rules": [
+    "Every displayed KMP value is extracted from the named real tool response; hooks, user prompts and CTAs are terminal say events, never product output.",
+    "Every process uses the campaign binary SHA-256 and an isolated campaign store; no user memory is opened.",
+    "The OBS scheduler executes the matching edl.json obs_schedule on the same monotonic clock as the PTY and MCP wire.",
+    "No promoted capture may use Codex, Claude, Agent A or Agent B branding; the fallback identity is Process A/B.",
+    "No scene may use red host or plugin treatment; red is reserved for genuine product state and must not appear as editorial error chrome.",
+    "The final hold contains no new product action or audio cue."
+  ],
+  "masters": [
+    {
+      "id": "fresh-process-same-why",
+      "scenario_path": "campaign/embedded-launch/obs-harness/scenarios/fresh-process-same-why.json",
+      "about": "project:campaign-fresh-process",
+      "duration_ms": 44000,
+      "stores": [{"id": "shared-local"}],
+      "processes": [
+        {"id": "session-01", "store_id": "shared-local", "autostart": true, "browser": true},
+        {"id": "session-02", "store_id": "shared-local", "autostart": false, "browser": false}
+      ],
+      "required_events": [
+        {"at_ms": 0, "type": "say", "speaker": "process", "text": "End the session. Keep the why."},
+        {"at_ms": 4000, "type": "say", "speaker": "user", "text": "Remember why KMP Embedded uses SQLite WAL."},
+        {"window_ms": [5000, 9200], "type": "tool", "process_id": "session-01", "name": "kmp_write_memory", "proof": "accepted=true, committed ref and evidence"},
+        {"at_ms": 9200, "type": "tool", "process_id": "session-01", "name": "kmp_view_apply_intent", "proof": "ChronoLoom selects the committed ref"},
+        {"window_ms": [13200, 17200], "type": "process", "action": "stop", "process_id": "session-01", "proof": "clean exit is recorded before session-02 starts"},
+        {"at_ms": 17200, "type": "process", "action": "start", "process_id": "session-02", "proof": "new MCP PID, same store fingerprint"},
+        {"window_ms": [17200, 22000], "type": "process", "action": "switch_browser", "process_id": "session-02", "proof": "real Chromium follows the fresh process viewer"},
+        {"at_ms": 22000, "type": "say", "speaker": "user", "text": "Why does KMP Embedded use SQLite WAL?"},
+        {"window_ms": [23000, 28800], "type": "tool", "process_id": "session-02", "name": "kmp_inspect", "proof": "same ref, decision and evidence written by session-01"},
+        {"at_ms": 28800, "type": "tool", "process_id": "session-02", "name": "kmp_view_apply_intent", "proof": "fresh process selects the recovered ref"},
+        {"at_ms": 37100, "type": "say", "speaker": "process", "text": "Fresh process. Same decision. Evidence attached. Run KMP Embedded → github.com/underpass-ai/kmp"},
+        {"at_ms": 43500, "type": "hold"}
+      ],
+      "acceptance": [
+        "session-01 and session-02 MCP PIDs differ",
+        "session-01 exits before session-02 starts",
+        "both processes resolve to the same store fingerprint",
+        "session-02 returns the exact ref and stored evidence from session-01",
+        "no export or import tool call appears in the wire"
+      ]
+    },
+    {
+      "id": "two-processes-one-memory",
+      "scenario_path": "campaign/embedded-launch/obs-harness/scenarios/two-processes-one-memory.json",
+      "about": "incident:campaign-pool-limit",
+      "duration_ms": 46000,
+      "stores": [{"id": "shared-local"}],
+      "processes": [
+        {"id": "process-a", "store_id": "shared-local", "autostart": true, "browser": true},
+        {"id": "process-b", "store_id": "shared-local", "autostart": true, "browser": false}
+      ],
+      "required_events": [
+        {"at_ms": 0, "type": "say", "speaker": "process", "text": "Process A writes it. Process B recovers the why."},
+        {"at_ms": 4000, "type": "say", "speaker": "user", "text": "Remember: restore max_connections to 200. The pool ceiling caused saturation."},
+        {"window_ms": [5000, 9600], "type": "tool", "process_id": "process-a", "name": "kmp_write_memory", "proof": "accepted pool-limit decision and evidence"},
+        {"at_ms": 9600, "type": "tool", "process_id": "process-a", "name": "kmp_view_apply_intent", "proof": "Process A's viewer selects the committed ref"},
+        {"at_ms": 15000, "type": "say", "speaker": "process", "text": "Two processes. Same local store."},
+        {"window_ms": [17000, 20000], "type": "process", "action": "switch_browser", "process_id": "process-b", "proof": "Process B remains a distinct live MCP PID"},
+        {"at_ms": 20000, "type": "say", "speaker": "user", "text": "Why is max_connections back at 200?"},
+        {"window_ms": [21000, 28000], "type": "tool", "process_id": "process-b", "name": "kmp_ask", "proof": "citation points to Process A's ref"},
+        {"window_ms": [21000, 28000], "type": "tool", "process_id": "process-b", "name": "kmp_inspect", "proof": "exact decision and evidence from Process A"},
+        {"at_ms": 28000, "type": "say", "speaker": "process", "text": "No export. No import. One local SQLite WAL store."},
+        {"at_ms": 34300, "type": "tool", "process_id": "process-b", "name": "kmp_view_apply_intent", "proof": "Process B's viewer selects the recovered ref"},
+        {"at_ms": 39300, "type": "say", "speaker": "process", "text": "Two processes. One local memory. See KMP Embedded → github.com/underpass-ai/kmp"},
+        {"at_ms": 45500, "type": "hold"}
+      ],
+      "acceptance": [
+        "Process A and Process B are simultaneously live with distinct MCP PIDs",
+        "both processes resolve to the same SQLite WAL store fingerprint",
+        "Process B returns the exact ref and evidence committed by Process A",
+        "no export or import tool call appears in the wire",
+        "no host name or logo appears in the picture"
+      ]
+    },
+    {
+      "id": "keep-the-wrong-turn",
+      "scenario_path": "campaign/embedded-launch/obs-harness/scenarios/keep-the-wrong-turn.json",
+      "about": "incident:pool-saturation",
+      "fixture_label": "DETERMINISTIC PRODUCT FIXTURE",
+      "duration_ms": 54000,
+      "stores": [{"id": "fixture-local"}],
+      "processes": [
+        {"id": "process", "store_id": "fixture-local", "autostart": true, "browser": true}
+      ],
+      "bootstrap": [
+        "kmp_ingest exactly seven entries, seven semantic relations and three evidence records for incident:pool-saturation",
+        "kmp_view_open incident:pool-saturation"
+      ],
+      "required_events": [
+        {"at_ms": 0, "type": "say", "speaker": "process", "text": "Delete the wrong turn. Lose the why."},
+        {"at_ms": 4000, "type": "say", "speaker": "user", "text": "Show me the memory behind the pool-limit decision."},
+        {"window_ms": [7000, 11000], "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "select cfg-change and expose the three recorded times through long-poll"},
+        {"at_ms": 19000, "type": "say", "speaker": "user", "text": "Great! Can you light up the proof path?"},
+        {"window_ms": [26000, 33200], "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "trace verified → cfg-change and browser reports four hops"},
+        {"at_ms": 34000, "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "focus hop 1 verified_by"},
+        {"at_ms": 36400, "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "focus hop 2 supersedes"},
+        {"at_ms": 38800, "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "focus hop 3 chosen_because"},
+        {"at_ms": 41200, "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "focus hop 4 depends_on"},
+        {"at_ms": 43600, "type": "tool", "process_id": "process", "name": "kmp_view_get_state", "proof": "complete four-hop path remains visible"},
+        {"at_ms": 47000, "type": "say", "speaker": "user", "text": "Nice."},
+        {"at_ms": 49400, "type": "say", "speaker": "process", "text": "Memory, with receipts. See KMP Embedded → github.com/underpass-ai/kmp"},
+        {"at_ms": 53500, "type": "hold"}
+      ],
+      "acceptance": [
+        "the fixture label is visible before the hook can circulate alone",
+        "the selected cfg-change shows reality 03:12, perception 09:40 and persistence 09:41",
+        "the Audit Path contains verified_by, supersedes, chosen_because and depends_on in that order",
+        "each hop receives 2.4 seconds and the final state retains the whole path",
+        "the browser-observed revision follows each real semantic intent over long-poll"
+      ]
+    }
+  ]
+}

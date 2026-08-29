@@ -9,6 +9,37 @@ Detailed notes from the early release cycle are preserved in the
 
 ## [Unreleased]
 
+### Added
+
+- Setup and update deterministically seed two versioned format-2 guides:
+  `guide:kmp-agent` for exact agent operations and the shorter `guide:kmp` for
+  people. `open:guide` opens the human guide directly in ChronoLoom without
+  replacing the agent's routing instructions.
+- KMP Embedded's first campaign ships a reproducible OBS harness for a real PTY
+  beside real Chromium, three release-bound MP4 stories, one README GIF
+  derivative, captions, fixed-seed procedural audio and evidence gates that
+  keep generated media unpublished until human review passes.
+
+### Changed
+
+- The `kmp-memory` router now treats visual requests as a first-class lane:
+  recover memory first, then open ChronoLoom and apply semantic view intents
+  with revision-aware conflict rebasing. English and Spanish request forms are
+  covered by the routing contract.
+- Public plugin descriptions no longer embed a tool count that can drift from
+  the live surface. The GitHub, marketplace and crates.io overviews are
+  synchronized from one reviewed block and release preparation checks their
+  content parity.
+- Release preparation now regenerates both guide audiences from the exact
+  bumped `kmp-mcp` binary, rejects stale guide envelopes or empty notes, and
+  refuses to tag until the public marketplace carries the matching plugin.
+
+### Fixed
+
+- The first-open SQLite concurrency gate isolates simultaneous store creation
+  from its separate lock-contention workload, so the central multi-process
+  property no longer depends on scheduler timing.
+
 ## [0.4.2] - 2026-08-28
 
 ### Changed
@@ -27,10 +58,6 @@ Detailed notes from the early release cycle are preserved in the
 - Store selection reports an explicit durability outcome when a project store
   is unusable, and `doctor` detects a maintained bundle orphaned by fallback
   to another selected store.
-- The first-open SQLite concurrency gate now isolates store creation from its
-  separate contention workload, so it measures both processes entering the
-  new store without a scheduler-dependent false failure.
-
 ## [0.4.1] - 2026-08-28
 
 ### Changed
