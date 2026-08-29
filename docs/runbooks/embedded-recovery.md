@@ -15,8 +15,8 @@ If `KMP_MCP_DATA_DIR` is set, resolve its exact value before continuing.
 
 ## 2. Stop writers
 
-Stop agent sessions using that store. This is mandatory for a legacy redb
-store and for a pending bundle-recovery condition.
+Stop agent sessions using that store. This is mandatory for an unsupported
+store format and for a pending bundle-recovery condition.
 
 ## 3. Export and verify evidence
 
@@ -53,20 +53,23 @@ kmp-mcp snapshot create pre-change
 kmp-mcp snapshot verify pre-change
 ```
 
-## 4A. Bridge an existing format-1 redb store to SQLite
+## 4A. Bridge an unsupported store format into SQLite
+
+Current KMP opens format 2 only. Keep the unsupported source untouched and use
+an explicitly archived compatible exporter to write an engine-independent
+event bundle outside the source directory. Verify the exporter and its exact
+source path before running it; current KMP deliberately does not carry a
+reader or migration command for retired layouts.
+
+Restore that verified bundle into an empty SQLite store:
 
 ```bash
-cargo install kmp-mcp --version 0.3.2 --locked --root /tmp/kmp-0.3.2
-KMP_MCP_DATA_DIR=/exact/source /tmp/kmp-0.3.2/bin/kmp-mcp export /safe/memory.jsonl
 KMP_MCP_DATA_DIR=/exact/fresh-destination kmp-mcp import /safe/memory.jsonl
 ```
 
-Current KMP deliberately contains no redb reader. Version 0.3.2 is the last
-bridge: it opens the legacy source and writes the engine-independent event
-bundle; the current binary restores that bundle into SQLite. Keep the source
-untouched. Point one test session at the destination, verify it, then rerun
-`kmp-mcp info` from every intended host and confirm that all resolve to the
-same SQLite data directory.
+Point one test session at the destination, verify it, then rerun `kmp-mcp info`
+from every intended host and confirm that all resolve to the same SQLite data
+directory.
 
 ## 4B. Move a portable bundle to a fresh directory
 

@@ -13,7 +13,7 @@ server, no cluster, no daemon.
 ## One engine
 
 The ports are written once against a small storage seam. Every new directory
-is SQLite and records format 2. The crate does not link redb.
+is SQLite and records format 2. No retired engine is linked.
 
 | Engine | `FORMAT_VERSION` | Store file | Availability |
 | --- | --- | --- | --- |
@@ -22,12 +22,11 @@ is SQLite and records format 2. The crate does not link redb.
 Two agent hosts can open the same project memory, readers do not block the
 writer, and a second writer waits for the commit lock. SQLite passes the full
 conformance, `kill -9` recovery and two-process no-lost-events suites. See
-ADR-018. A format-1 store is detected and rejected without touching its bytes;
-export it with KMP 0.3.2, then import the portable bundle into current KMP.
+ADR-018. An unsupported store format is detected and rejected without touching
+its bytes; preserve it, export with an explicitly archived compatible binary,
+then import the portable bundle into an empty current store.
 
-Quality telemetry uses its own WAL journal at
-`telemetry/quality.sqlite3`. Historical `quality.redb` files are left in place
-as evidence but are not read by current binaries.
+Quality telemetry uses its own WAL journal at `telemetry/quality.sqlite3`.
 
 ## What durability means here
 

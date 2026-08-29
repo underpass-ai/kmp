@@ -773,8 +773,11 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
     let project_store = project.path().join(".kernel");
     std::fs::create_dir_all(project_store.join("store")).expect("legacy store dir");
     std::fs::write(project_store.join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
-    std::fs::write(project_store.join("store/kernel.redb"), b"legacy memory")
-        .expect("legacy store");
+    std::fs::write(
+        project_store.join("store/retired-layout.bin"),
+        b"legacy memory",
+    )
+    .expect("legacy store");
     let bundle = project.path().join(".kmp/memory.jsonl");
     std::fs::create_dir_all(bundle.parent().expect("bundle parent")).expect("bundle dir");
     let original_bundle =
@@ -998,46 +1001,6 @@ fn config_persists_and_initialize_reports_the_agent_policy() {
 }
 
 #[test]
-fn migrate_rejects_corrupt_format_one_without_touching_source_or_destination() {
-    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
-
-    for (name, bytes) in [
-        ("truncated", b"short redb header".as_slice()),
-        ("empty", b"".as_slice()),
-    ] {
-        let source = tempfile::tempdir().expect("source");
-        std::fs::write(source.path().join("FORMAT_VERSION"), "1\n").expect("stamp");
-        let store = source.path().join("store/kernel.redb");
-        std::fs::create_dir_all(store.parent().expect("store parent")).expect("store dir");
-        std::fs::write(&store, bytes).expect("legacy bytes");
-        let destination_parent = tempfile::tempdir().expect("destination parent");
-        let destination = destination_parent.path().join(name);
-
-        let result = Command::new(bin)
-            .args([
-                "migrate",
-                &source.path().display().to_string(),
-                &destination.display().to_string(),
-            ])
-            .output()
-            .expect("migrate runs");
-
-        assert_eq!(result.status.code(), Some(2), "{name}");
-        let stderr = String::from_utf8_lossy(&result.stderr);
-        assert!(
-            stderr.contains("contains no redb reader"),
-            "{name}: {stderr}"
-        );
-        assert_eq!(
-            std::fs::read(&store).expect("source after"),
-            bytes,
-            "{name}"
-        );
-        assert!(!destination.exists(), "{name}: no destination on refusal");
-    }
-}
-
-#[test]
 fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
     let cwd = tempfile::tempdir().expect("working dir");
     let data_root = tempfile::tempdir().expect("data root");
@@ -1052,7 +1015,6 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
         "uninstall",
         "export",
         "import",
-        "migrate",
         "viewer",
     ] {
         for flag in ["--help", "-h"] {
@@ -1080,7 +1042,6 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
     for args in [
         vec!["export", "--bogus"],
         vec!["import", "--bogus"],
-        vec!["migrate", "--bogus", "destination"],
         vec!["document", "--bogus"],
         vec!["viewer", "--bogus"],
     ] {
@@ -1112,6 +1073,35 @@ fn subcommand_help_and_unknown_options_never_create_flag_named_files() {
         !data_dir.exists(),
         "help and invalid invocations must not prepare the store"
     );
+}
+
+#[test]
+fn obsolete_store_migration_command_is_not_exposed_or_executed() {
+    let bin = env!("CARGO_BIN_EXE_kmp-mcp");
+    let parent = tempfile::tempdir().expect("isolated paths");
+    let source = parent.path().join("source");
+    let destination = parent.path().join("destination");
+
+    let output = Command::new(bin)
+        .args([
+            "migrate",
+            &source.display().to_string(),
+            &destination.display().to_string(),
+        ])
+        .output()
+        .expect("obsolete command is rejected");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("unknown command `migrate`"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(!source.exists());
+    assert!(!destination.exists());
+
+    let help = Command::new(bin).arg("--help").output().expect("help runs");
+    assert!(!String::from_utf8_lossy(&help.stdout).contains("migrate <"));
 }
 
 #[test]
@@ -1286,9 +1276,10 @@ fn cli_surface_version_export_import_and_errors() {
         let stdout = String::from_utf8_lossy(&help.stdout);
         assert!(stdout.contains("Serve MCP over stdio"), "{flag}: {stdout}");
         assert!(
-            stdout.contains("supported store-format migration"),
+            stdout.contains("Import an event-log bundle"),
             "{flag}: {stdout}"
         );
+        assert!(!stdout.contains("migrate <"), "{flag}: {stdout}");
         assert!(!stdout.contains("share-memory"), "{flag}: {stdout}");
         assert!(stdout.contains("snapshot <verb>"), "{flag}: {stdout}");
     }

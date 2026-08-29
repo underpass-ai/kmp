@@ -219,7 +219,7 @@ The application service depends on port bounds, while the embedded composition
 root constructs concrete adapters (`crates/kmp-application/src/memory/service.rs:28-51`;
 `crates/kmp-embedded/src/kernel.rs:79-95`). This axis holds. The remediation
 must keep constructors at composition roots and must not expose `rusqlite`,
-`redb`, `tonic` or HTTP types to application signatures
+SQLite, `tonic` or HTTP types to application signatures
 (`crates/kmp-adapter-embedded/Cargo.toml:24-34`;
 `crates/kmp-mcp/Cargo.toml:24-39`).
 

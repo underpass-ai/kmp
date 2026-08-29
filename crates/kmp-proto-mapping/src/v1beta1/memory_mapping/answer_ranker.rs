@@ -702,7 +702,7 @@ fn concept_key(term: &str) -> &str {
         | "relocates" | "relocating" => "concept:movement",
         "replace" | "replaced" | "replaces" | "replacing" | "supersede" | "superseded"
         | "supersedes" => "concept:lifecycle",
-        "backend" | "engine" | "redb" | "sqlite" => "concept:storage-engine",
+        "backend" | "engine" | "sqlite" => "concept:storage-engine",
         "data" | "directory" | "store" | "stores" | "storage" => "concept:store",
         "build" | "builds" | "built" | "create" | "created" | "fresh" | "install"
         | "installation" | "installed" | "new" | "reinstall" | "reinstalled" => {
@@ -875,8 +875,7 @@ mod tests {
 
     #[test]
     fn graph_why_relevance_survives_diversification() {
-        let question =
-            "What sqlite storage engine replaced redb for shared concurrent processes migration?";
+        let question = "What sqlite storage engine replaced the previous one for shared concurrent processes migration?";
         let candidates = vec![
             claim_ev(
                 "first",
@@ -902,7 +901,7 @@ mod tests {
                     vec![relation(
                         "chosen_because",
                         RelationSemanticClass::Motivational,
-                        "sqlite storage engine replaced redb shared concurrent processes migration",
+                        "sqlite storage engine replaced previous shared concurrent processes migration",
                     )],
                 ),
                 (
@@ -910,7 +909,7 @@ mod tests {
                     vec![relation(
                         "chosen_because",
                         RelationSemanticClass::Motivational,
-                        "sqlite storage engine replaced redb shared concurrent processes migration",
+                        "sqlite storage engine replaced previous shared concurrent processes migration",
                     )],
                 ),
                 (
@@ -938,9 +937,9 @@ mod tests {
 
     #[test]
     fn candidate_permutations_produce_the_same_order() {
-        let question = "Which sqlite engine replaced redb for concurrent processes?";
+        let question = "Which sqlite engine replaced the previous one for concurrent processes?";
         let candidates = vec![
-            claim_ev("c", "claim:c", "sqlite engine redb concurrent"),
+            claim_ev("c", "claim:c", "sqlite engine previous concurrent"),
             claim_ev("a", "claim:a", "sqlite engine replaced processes"),
             claim_ev("b", "claim:b", "sqlite engine replaced concurrent"),
         ];
@@ -964,11 +963,12 @@ mod tests {
 
     #[test]
     fn weak_distractor_terms_do_not_displace_subject_bearing_evidence() {
-        let question = "Which embedded storage engine replaced redb for two KMP processes?";
+        let question =
+            "Which embedded storage engine replaced the previous one for two KMP processes?";
         let answer = claim_ev(
             "answer",
             "claim:answer",
-            "SQLite replaced redb as the embedded storage engine for two KMP processes.",
+            "SQLite replaced the previous embedded storage engine for two KMP processes.",
         );
         let baseline = AnswerEvidenceRanker::default().rank(
             question,
@@ -995,10 +995,10 @@ mod tests {
             "claim:unrelated",
             "chosen_because",
             RelationSemanticClass::Motivational,
-            "sqlite replaced redb for concurrent processes",
+            "sqlite replaced the previous engine for concurrent processes",
         );
         let ranked = ranker.rank(
-            "Which sqlite engine replaced redb for concurrent processes?",
+            "Which sqlite engine replaced the previous one for concurrent processes?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![claim_ev(
                 "unrelated",
@@ -1012,14 +1012,14 @@ mod tests {
 
     #[test]
     fn lifecycle_relation_why_can_rerank_an_eligible_candidate() {
-        let question = "Which sqlite engine replaced redb?";
-        let candidate = claim_ev("adr", "claim:adr", "sqlite engine migration");
-        let distractor = claim_ev("other", "claim:other", "sqlite engine rollout");
+        let question = "Which sqlite engine replaced the previous one?";
+        let candidate = claim_ev("adr", "claim:adr", "sqlite engine previous migration");
+        let distractor = claim_ev("other", "claim:other", "sqlite engine previous rollout");
         let ranker = ranker_with_claim_relation(
             "claim:adr",
             "supersedes",
             RelationSemanticClass::Evidential,
-            "SQLite superseded redb during the engine migration.",
+            "SQLite superseded the previous engine during the migration.",
         );
 
         let ranked = ranker.rank(
@@ -1037,18 +1037,18 @@ mod tests {
 
     #[test]
     fn bundle_relation_type_direction_why_and_evidence_feed_the_reranker() {
-        let question = "Which sqlite engine replaced redb?";
+        let question = "Which sqlite engine replaced the previous one?";
         let ranker = ranker_from_relationship(
             "supersedes",
             RelationSemanticClass::Evidential,
-            "SQLite superseded redb during the engine migration.",
+            "SQLite superseded the previous engine during the migration.",
         );
         let ranked = ranker.rank(
             question,
             MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![
-                claim_ev("other", "claim:other", "sqlite engine migration"),
-                claim_ev("adr", "claim:adr", "sqlite engine migration"),
+                claim_ev("other", "claim:other", "sqlite engine previous migration"),
+                claim_ev("adr", "claim:adr", "sqlite engine previous migration"),
             ],
         );
 
@@ -1068,10 +1068,10 @@ mod tests {
         let ranker = ranker_from_relationship(
             "contains_entry",
             RelationSemanticClass::Structural,
-            "SQLite replaced redb for concurrent processes.",
+            "SQLite replaced the previous engine for concurrent processes.",
         );
         let ranked = ranker.rank(
-            "Which sqlite engine replaced redb?",
+            "Which sqlite engine replaced the previous one?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![claim_ev("weak", "claim:adr", "sqlite engine documentation")],
         );
@@ -1085,11 +1085,11 @@ mod tests {
         let ranker = ranker_from_relationship_with_evidence(
             "chosen_because",
             RelationSemanticClass::Motivational,
-            "SQLite replaced redb for concurrent processes.",
+            "SQLite replaced the previous engine for concurrent processes.",
             None,
         );
         let ranked = ranker.rank(
-            "Which sqlite engine replaced redb?",
+            "Which sqlite engine replaced the previous one?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![claim_ev("weak", "claim:adr", "sqlite engine documentation")],
         );
@@ -1107,7 +1107,7 @@ mod tests {
         let ranker = ranker_from_relationship(
             "supersedes",
             RelationSemanticClass::Evidential,
-            "SQLite replaced redb for the shared embedded store.",
+            "SQLite replaced the previous engine for the shared embedded store.",
         );
         let ranked = ranker.rank(
             "Which embedded engine is current for the shared store?",
@@ -1116,7 +1116,7 @@ mod tests {
                 claim_ev(
                     "old",
                     "claim:current",
-                    "redb is the current embedded engine for the shared store",
+                    "the previous engine is current for the shared embedded store",
                 ),
                 claim_ev(
                     "new",
@@ -1135,7 +1135,7 @@ mod tests {
         let ranker = ranker_from_relationship(
             "supersedes",
             RelationSemanticClass::Evidential,
-            "SQLite replaced redb for the shared embedded store.",
+            "SQLite replaced the previous engine for the shared embedded store.",
         );
         let ranked = ranker.rank(
             "Which engine was replaced before SQLite?",
@@ -1143,7 +1143,7 @@ mod tests {
             vec![claim_ev(
                 "old",
                 "claim:current",
-                "redb was the engine before SQLite",
+                "the previous engine came before SQLite",
             )],
         );
 
@@ -1161,10 +1161,10 @@ mod tests {
             "claim:popular",
             "supports",
             RelationSemanticClass::Evidential,
-            "sqlite replaced redb concurrent processes",
+            "sqlite replaced the previous engine for concurrent processes",
         );
         let ranked = ranker.rank(
-            "Which sqlite engine replaced redb for concurrent processes?",
+            "Which sqlite engine replaced the previous one for concurrent processes?",
             MemoryAnswerPolicy::EvidenceOrUnknown,
             vec![claim_ev(
                 "weak",
@@ -1313,12 +1313,12 @@ mod tests {
         let current = claim_ev(
             "current-default",
             "decision:fresh-store-default",
-            "Shipped KMP builds create fresh SQLite stores while preserving existing redb stores.",
+            "Shipped KMP builds create fresh SQLite stores while preserving existing legacy stores.",
         );
         let historical = claim_ev(
             "historical-default",
             "decision:historical-default",
-            "Redb was the distribution default for a KMP data directory.",
+            "A single-writer layout was the distribution default for a KMP data directory.",
         );
         let ranker = AnswerEvidenceRanker::default();
 

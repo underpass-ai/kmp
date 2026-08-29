@@ -13,10 +13,6 @@ use kmp_domain::PortError;
 /// it, so a new engine is a new number ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 pub const SUPPORTED_FORMAT_VERSION: u32 = StorageEngine::Sqlite.format_version();
 
-/// Layout number used by the removed redb backend. Kept only so current
-/// binaries can identify legacy memory and refuse it without touching it.
-pub const LEGACY_REDB_FORMAT_VERSION: u32 = 1;
-
 /// The logical shape of the event log carried by a portable bundle.
 pub const EVENT_FORMAT_VERSION: u32 = 1;
 
@@ -73,10 +69,10 @@ pub fn format_version_path(data_dir: &Path) -> PathBuf {
     data_dir.join(FORMAT_VERSION_FILE)
 }
 
-/// The version stamped in `data_dir`, without applying the gate.
+/// The version stamped in `data_dir`, without applying the open gate.
 ///
-/// The migration needs to know what it is looking at precisely when the
-/// internal `check_or_stamp` gate would refuse to open it.
+/// Kept as a compatibility API for callers that need to report an unsupported
+/// layout without opening it.
 pub fn read_stamped_version(data_dir: &Path) -> Result<u32, PortError> {
     let version_path = format_version_path(data_dir);
     let raw = fs::read_to_string(&version_path).map_err(|error| {
@@ -99,17 +95,37 @@ pub fn store_file_path_for(data_dir: &Path, engine: StorageEngine) -> PathBuf {
     data_dir.join("store").join(engine.store_file_name())
 }
 
-/// Historical format-1 store location. Current binaries never open this
-/// file; the path is exposed only for diagnostics and fail-fast detection.
-pub fn legacy_redb_store_path(data_dir: &Path) -> PathBuf {
-    data_dir.join("store").join("kernel.redb")
-}
-
 /// Whether any engine's store file is present — the "half-initialized
 /// layout" signal used to refuse a directory with a store but no stamp.
 fn any_store_file_exists(data_dir: &Path) -> bool {
-    store_file_path_for(data_dir, StorageEngine::Sqlite).exists()
-        || legacy_redb_store_path(data_dir).exists()
+    fs::read_dir(data_dir.join("store"))
+        .is_ok_and(|entries| entries.flatten().any(|entry| entry.path().is_file()))
+}
+
+/// Files in `store/` that are not part of the only supported SQLite layout.
+///
+/// The names of retired engines are deliberately irrelevant here. Unknown
+/// bytes are preserved and rejected as unsupported storage artifacts.
+fn unsupported_store_files(data_dir: &Path) -> Vec<PathBuf> {
+    let sqlite = store_file_path_for(data_dir, StorageEngine::Sqlite);
+    let wal = sqlite.with_file_name("kernel.sqlite3-wal");
+    let shm = sqlite.with_file_name("kernel.sqlite3-shm");
+    let rollback_journal = sqlite.with_file_name("kernel.sqlite3-journal");
+    let mut paths = fs::read_dir(data_dir.join("store"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.is_file()
+                && path != &sqlite
+                && path != &wal
+                && path != &shm
+                && path != &rollback_journal
+        })
+        .collect::<Vec<_>>();
+    paths.sort();
+    paths
 }
 
 /// Applies the existing-layout gate without creating or opening anything.
@@ -130,19 +146,17 @@ pub fn validate_store_layout(data_dir: &Path) -> Result<Option<StorageEngine>, P
                 ))
             })?;
             let stamped = resolve_stamped(data_dir, version)?;
-            let sqlite_present = store_file_path_for(data_dir, StorageEngine::Sqlite).exists();
-            let legacy_present = legacy_redb_store_path(data_dir).exists();
-            if sqlite_present && legacy_present {
+            let unsupported = unsupported_store_files(data_dir);
+            if !unsupported.is_empty() {
                 return Err(PortError::InvalidState(format!(
-                    "embedded store at `{}` contains multiple engine files (sqlite, redb); refusing to pick one",
-                    data_dir.display()
-                )));
-            }
-            if legacy_present {
-                return Err(PortError::InvalidState(format!(
-                    "embedded store at `{}` says format version {} ({stamped}), but its store file is redb; refusing to open memory under the wrong engine",
+                    "embedded store at `{}` says format version {} ({stamped}), but `store/` contains unsupported storage artifacts: {}; refusing to open memory under an unknown layout",
                     data_dir.display(),
-                    stamped.format_version()
+                    stamped.format_version(),
+                    unsupported
+                        .iter()
+                        .map(|path| path.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )));
             }
             Ok(Some(stamped))
@@ -164,10 +178,7 @@ pub fn validate_store_layout(data_dir: &Path) -> Result<Option<StorageEngine>, P
     }
 }
 
-/// The store file a stamped directory points at, if the stamp names a
-/// layout this crate knows and the file is there. `None` for a fresh
-/// directory. Does not apply the gate: the migration asks this about
-/// directories it may be about to refuse.
+/// The supported store file named by a valid stamp, when it already exists.
 pub(crate) fn existing_store_file(data_dir: &Path) -> Option<(StorageEngine, PathBuf)> {
     let version = read_stamped_version(data_dir).ok()?;
     let engine = StorageEngine::from_format_version(version)?;
@@ -198,9 +209,8 @@ pub(crate) fn check_or_stamp_as(
             {
                 return Err(PortError::InvalidState(format!(
                     "embedded store at `{}` is a {stamped} store (format version {}), not {wanted}; \
-                     a store is never reopened with another engine — to change engines, migrate it: \
-                     `kmp-mcp migrate <this-dir> <new-dir>`, or unset the engine \
-                     to open it as it is",
+                     a store is never reopened under another layout; unset the engine selector \
+                     to open the stamped SQLite layout",
                     data_dir.display(),
                     stamped.format_version()
                 )));
@@ -234,12 +244,13 @@ fn resolve_stamped(data_dir: &Path, version: u32) -> Result<StorageEngine, PortE
             StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
         )));
     }
-    if version == LEGACY_REDB_FORMAT_VERSION {
+    if version < SUPPORTED_FORMAT_VERSION {
         return Err(PortError::InvalidState(format!(
-            "embedded store at `{}` uses retired format 1 (redb); this binary contains no \
-             redb reader and left the store untouched. Use KMP 0.3.2 to export \
-             `.kmp/memory.jsonl`, then import that bundle with the current KMP",
-            data_dir.display()
+            "embedded store at `{}` uses unsupported format version {version}; current KMP \
+             opens format {SUPPORTED_FORMAT_VERSION} only and left the directory untouched. \
+             Preserve the source, use an explicitly archived compatible exporter to create \
+             `.kmp/memory.jsonl`, then import that bundle into an empty current store",
+            data_dir.display(),
         )));
     }
     StorageEngine::from_format_version(version).ok_or_else(|| {
@@ -287,7 +298,10 @@ mod tests {
             message.contains("unsupported format version 0"),
             "{message}"
         );
-        assert!(message.contains("left the store untouched"), "{message}");
+        assert!(
+            message.contains("left the directory untouched"),
+            "{message}"
+        );
     }
 
     #[test]
@@ -302,7 +316,7 @@ mod tests {
     #[test]
     fn store_without_version_stamp_is_a_corrupt_layout() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let store = legacy_redb_store_path(dir.path());
+        let store = dir.path().join("store/unknown-store.bin");
         fs::create_dir_all(store.parent().expect("parent")).expect("mkdir");
         fs::write(&store, b"stub").expect("write store stub");
 
@@ -346,29 +360,53 @@ mod tests {
     }
 
     #[test]
-    fn a_stamp_cannot_hide_a_store_from_another_engine() {
+    fn a_stamp_cannot_hide_an_unsupported_storage_artifact() {
         let dir = tempfile::tempdir().expect("tempdir");
         fs::write(format_version_path(dir.path()), "2\n").expect("sqlite stamp");
-        let redb = legacy_redb_store_path(dir.path());
-        fs::create_dir_all(redb.parent().expect("parent")).expect("mkdir");
-        fs::write(redb, b"legacy memory").expect("redb marker");
+        let unsupported = dir.path().join("store/retired-layout.bin");
+        fs::create_dir_all(unsupported.parent().expect("parent")).expect("mkdir");
+        fs::write(unsupported, b"legacy memory").expect("legacy marker");
 
         let error = check_or_stamp(dir.path()).expect_err("mismatched engine must fail");
-        assert!(error.to_string().contains("store file is redb"), "{error}");
+        assert!(
+            error.to_string().contains("unsupported storage artifacts"),
+            "{error}"
+        );
     }
 
     #[test]
-    fn a_legacy_redb_store_is_rejected_without_being_opened() {
+    fn a_transient_sqlite_rollback_journal_is_part_of_the_supported_layout() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(format_version_path(dir.path()), "2\n").expect("sqlite stamp");
+        let journal = dir.path().join("store/kernel.sqlite3-journal");
+        fs::create_dir_all(journal.parent().expect("parent")).expect("mkdir");
+        fs::write(&journal, b"startup in progress").expect("journal marker");
+
+        assert_eq!(
+            validate_store_layout(dir.path()).expect("SQLite journal is recognized"),
+            Some(StorageEngine::Sqlite)
+        );
+        assert!(journal.exists(), "validation is read-only");
+    }
+
+    #[test]
+    fn a_format_one_store_is_rejected_without_being_opened() {
         let dir = tempfile::tempdir().expect("tempdir");
         fs::write(format_version_path(dir.path()), "1\n").expect("legacy stamp");
-        let store = legacy_redb_store_path(dir.path());
+        let store = dir.path().join("store/retired-layout.bin");
         fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
         fs::write(&store, b"legacy bytes").expect("legacy bytes");
 
-        let error = check_or_stamp(dir.path()).expect_err("redb must not open");
+        let error = check_or_stamp(dir.path()).expect_err("format 1 must not open");
         let message = error.to_string();
-        assert!(message.contains("contains no redb reader"), "{message}");
-        assert!(message.contains("KMP 0.3.2"), "{message}");
+        assert!(
+            message.contains("unsupported format version 1"),
+            "{message}"
+        );
+        assert!(
+            message.contains("archived compatible exporter"),
+            "{message}"
+        );
         assert_eq!(fs::read(&store).expect("source remains"), b"legacy bytes");
     }
 

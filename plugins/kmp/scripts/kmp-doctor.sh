@@ -261,15 +261,24 @@ else
     fi
 
     # FORMAT_VERSION names the layout, but it is not evidence that memory is
-    # absent. Discover physical engine files independently first: a missing,
-    # corrupt or newer stamp must never turn a real store into "empty".
-    REDB_STORE="$DATA_DIR/store/kernel.redb"
+    # absent. Discover the SQLite file and any unsupported artifacts first: a
+    # missing, corrupt or newer stamp must never turn real bytes into "empty".
     SQLITE_STORE="$DATA_DIR/store/kernel.sqlite3"
+    UNSUPPORTED_STORE=""
+    if [ -d "$DATA_DIR/store" ]; then
+      while IFS= read -r artifact; do
+        UNSUPPORTED_STORE="$artifact"
+        break
+      done < <(find "$DATA_DIR/store" -maxdepth 1 -type f \
+          ! -name 'kernel.sqlite3' ! -name 'kernel.sqlite3-wal' ! -name 'kernel.sqlite3-shm' \
+          ! -name 'kernel.sqlite3-journal' \
+          -print 2>/dev/null | LC_ALL=C sort)
+    fi
     STORE_FILE=""
     ENGINE=""
     PHYSICAL_STORES=0
-    if [ -f "$REDB_STORE" ]; then
-      STORE_FILE="$REDB_STORE"; ENGINE="redb"
+    if [ -n "$UNSUPPORTED_STORE" ]; then
+      STORE_FILE="$UNSUPPORTED_STORE"; ENGINE="unsupported"
       PHYSICAL_STORES=$((PHYSICAL_STORES + 1))
     fi
     if [ -f "$SQLITE_STORE" ]; then
@@ -277,10 +286,10 @@ else
       PHYSICAL_STORES=$((PHYSICAL_STORES + 1))
     fi
     if [ "$PHYSICAL_STORES" -gt 1 ]; then
-      fail "multiple engine files exist; refusing to guess which memory is live"
+      fail "SQLite and unsupported storage artifacts coexist; refusing to guess which memory is live"
       SESSION_USABLE=0
-      SESSION_REASON="the data dir contains both redb and sqlite store files"
-      info "$REDB_STORE"
+      SESSION_REASON="the data dir contains conflicting storage artifacts"
+      info "$UNSUPPORTED_STORE"
       info "$SQLITE_STORE"
     fi
 
@@ -290,12 +299,13 @@ else
       if FORMAT="$(tr -d '[:space:]' < "$DATA_DIR/FORMAT_VERSION" 2>/dev/null)"; then
         case "$FORMAT" in
           1)
-            EXPECTED_ENGINE="redb"; EXPECTED_STORE="$REDB_STORE"
-            fail "store format 1 uses retired redb; this binary contains no reader"
+            EXPECTED_ENGINE="unsupported"; EXPECTED_STORE="$UNSUPPORTED_STORE"
+            fail "store format 1 is unsupported by this binary"
             SESSION_USABLE=0
-            SESSION_REASON="store format 1 requires the KMP 0.3.2 export bridge"
+            SESSION_REASON="store format 1 requires an archived compatible exporter"
             info "the source was left untouched"
-            info "export it with KMP 0.3.2, then import .kmp/memory.jsonl with current KMP"
+            info "use an explicitly archived compatible exporter to create .kmp/memory.jsonl"
+            info "then import that bundle into an empty current KMP store"
             ;;
           2) EXPECTED_ENGINE="sqlite"; EXPECTED_STORE="$SQLITE_STORE" ;;
           0)
@@ -368,8 +378,8 @@ else
         STORE_WHEN="$(date -r "$STORE_FILE" '+%Y-%m-%d %H:%M' 2>/dev/null)"
       fi
       info "store size: ${STORE_SIZE:-?}"
-      if [ "$ENGINE" = "redb" ]; then
-        info "legacy redb bytes are inventory only; Doctor did not open or probe them"
+      if [ "$ENGINE" = "unsupported" ]; then
+        info "unsupported storage bytes are inventory only; Doctor did not open or probe them"
       else
         HOLDER=""
         if command -v fuser >/dev/null 2>&1; then

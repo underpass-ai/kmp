@@ -8,8 +8,8 @@
 //! node details, the append-only context event log, projection runtime state,
 //! and snapshots. SQLite is the only active engine and is fsync-durable, so
 //! the crash contract is: no data loss beyond the in-flight event, no duplicate
-//! application on replay. Format-1 stores are detected and rejected without
-//! being touched; this crate contains no redb reader.
+//! application on replay. Unsupported store formats are detected and rejected
+//! without being touched.
 //!
 //! The observable semantics are pinned by `kmp-conformance`: the same
 //! suite that certifies the in-memory kernel store and the Neo4j/Valkey
@@ -19,9 +19,9 @@ mod adapter;
 
 pub use adapter::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, EVENT_FORMAT_VERSION,
-    EmbeddedKernelStore, ImportReport, LEGACY_REDB_FORMAT_VERSION, ProjectionRebuildReport,
-    QualityTelemetryRetention, SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader,
-    SqliteQualityTelemetryWriter, StorageEngine, StoreMigrationReceipt, format_version_path,
-    legacy_quality_telemetry_path, legacy_redb_store_path, merge_bundles, quality_telemetry_path,
-    read_stamped_version, store_file_path_for, validate_store_layout, verify_bundle,
+    EmbeddedKernelStore, ImportReport, ProjectionRebuildReport, QualityTelemetryRetention,
+    SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter,
+    StorageEngine, StoreMigrationReceipt, format_version_path, merge_bundles,
+    quality_telemetry_path, read_stamped_version, store_file_path_for, validate_store_layout,
+    verify_bundle,
 };

@@ -1,6 +1,6 @@
 //! Conformance arm (a): the suite against the coherent in-memory kernel
-//! store. This is the fastest arm and the reference the embedded (redb)
-//! adapters will be developed against.
+//! store. This is the fastest arm and the reference embedded adapters are
+//! developed against.
 
 use kmp_conformance::{ConformanceBackend, ConformanceBackendFactory, scenarios};
 use kmp_testkit::{

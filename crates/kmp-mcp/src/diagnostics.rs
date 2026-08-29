@@ -81,8 +81,15 @@ fn store_file_on_disk(data_dir: &Path) -> Option<PathBuf> {
     if sqlite.exists() {
         return Some(sqlite);
     }
-    let legacy = kmp_embedded::legacy_redb_store_path(data_dir);
-    legacy.exists().then_some(legacy)
+    let mut artifacts = std::fs::read_dir(data_dir.join("store"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.is_file())
+        .collect::<Vec<_>>();
+    artifacts.sort();
+    artifacts.into_iter().next()
 }
 
 fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
@@ -104,13 +111,16 @@ fn describe_data_dir(resolved: &ResolvedDataDir) -> Finding {
         Ok(None) => finding = finding.with("store format: not stamped yet"),
         Err(_) => {}
     }
-    if kmp_embedded::legacy_redb_store_path(path).exists() {
-        finding = finding.with("engine on disk: redb (unsupported; source left untouched)");
-    } else {
-        match engine_on_disk(path) {
-            Some(engine) => finding = finding.with(format!("engine on disk: {engine}")),
+    match engine_on_disk(path) {
+        Some(engine) => finding = finding.with(format!("engine on disk: {engine}")),
+        None => match store_file_on_disk(path) {
+            Some(artifact) => {
+                finding = finding
+                    .with("storage artifact on disk: unsupported; source left untouched")
+                    .with(format!("artifact: {}", artifact.display()));
+            }
             None => finding = finding.with("no store yet — it is created on first write"),
-        }
+        },
     }
     if let Some(bundle) = kmp_embedded::project_bundle_path(resolved) {
         finding = finding.with(format!(
@@ -490,9 +500,9 @@ fn memories_finding() -> Vec<Finding> {
             crate::memories::human_size(memory.bytes),
             memory.reach.as_str(),
             memory
-                .engine
+                .storage
                 .as_deref()
-                .map(|engine| format!(" · {engine}"))
+                .map(|storage| format!(" · {storage}"))
                 .unwrap_or_default(),
             memory
                 .last_opened
@@ -527,12 +537,6 @@ fn viewer_finding() -> Finding {
 fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
     let path = kmp_embedded::quality_telemetry_path(resolved.path());
     if !path.exists() {
-        let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
-        if legacy.exists() {
-            return Finding::new(Level::Warn, "legacy quality telemetry is unsupported")
-                .with(format!("source kept at {}", legacy.display()))
-                .with("current KMP does not contain a redb reader; the file is left untouched");
-        }
         return Finding::new(Level::Warn, "no quality telemetry journal yet").with(format!(
             "expected at {} after the first kernel start",
             path.display()
@@ -540,21 +544,11 @@ fn telemetry_finding(resolved: &ResolvedDataDir) -> Finding {
     }
     match kmp_embedded::SqliteQualityTelemetryReader::open(resolved.path()) {
         Ok(reader) => match reader.count() {
-            Ok(count) => {
-                let mut finding = Finding::new(
-                    Level::Ok,
-                    format!("quality pulse readable · {count} observations"),
-                )
-                .with(path.display().to_string());
-                let legacy = kmp_embedded::legacy_quality_telemetry_path(resolved.path());
-                if legacy.exists() {
-                    finding = finding.with(format!(
-                        "unsupported legacy source preserved at {}",
-                        legacy.display()
-                    ));
-                }
-                finding
-            }
+            Ok(count) => Finding::new(
+                Level::Ok,
+                format!("quality pulse readable · {count} observations"),
+            )
+            .with(path.display().to_string()),
             Err(error) => Finding::new(Level::Warn, "quality telemetry cannot be read")
                 .with(error.to_string()),
         },
@@ -879,15 +873,15 @@ mod tests {
     }
 
     #[test]
-    fn the_engine_is_read_from_the_file_on_disk() {
+    fn an_unknown_storage_artifact_is_preserved_without_naming_an_engine() {
         let dir = tempfile::tempdir().expect("tempdir");
         let store = dir.path().join("store");
         std::fs::create_dir_all(&store).expect("store dir");
-        std::fs::write(store.join("kernel.redb"), b"not a real store").expect("write");
+        std::fs::write(store.join("retired-layout.bin"), b"not a real store").expect("write");
         assert!(engine_on_disk(dir.path()).is_none());
         assert_eq!(
             store_file_on_disk(dir.path()),
-            Some(store.join("kernel.redb"))
+            Some(store.join("retired-layout.bin"))
         );
     }
 
@@ -945,7 +939,7 @@ mod tests {
         let data_dir = project.path().join(".kernel");
         let store = data_dir.join("store");
         std::fs::create_dir_all(&store).expect("store dir");
-        std::fs::write(store.join("kernel.redb"), b"store").expect("store marker");
+        std::fs::write(store.join("retired-layout.bin"), b"store").expect("store marker");
         let resolved = ResolvedDataDir::Project(data_dir);
 
         let finding = committed_bundle_finding(&resolved).expect("project finding");

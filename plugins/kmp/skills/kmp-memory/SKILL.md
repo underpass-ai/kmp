@@ -355,7 +355,7 @@ A replaced entry comes back **marked**. `kmp_wake` and `kmp_ask` carry
 ```json
 "superseded": [
   {
-    "ref": "project:kmp:decision:usar-redb",
+    "ref": "project:kmp:decision:usar-almacen-anterior",
     "superseded_by": "project:kmp:decision:usar-sqlite",
     "why": "two agent hosts need to share the store"
   }
@@ -446,11 +446,11 @@ For a lifecycle change:
 
 ```json
 {
-  "ref": "project:kmp:decision:redb",
+  "ref": "project:kmp:decision:single-writer-store",
   "rel": "supersedes",
   "class": "evidential",
-  "why": "SQLite WAL replaces redb because the architecture now requires multi-process access to one store.",
-  "evidence": "The shared-store test failed at redb's process lock and passed under SQLite WAL.",
+  "why": "SQLite WAL replaces the single-writer layout because the architecture now requires multi-process access to one store.",
+  "evidence": "The shared-store test failed at the previous process lock and passed under SQLite WAL.",
   "confidence": "high"
 }
 ```

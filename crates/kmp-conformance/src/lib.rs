@@ -7,7 +7,7 @@
 //!
 //! - the in-memory kernel store (`kmp-testkit::InMemoryKernelStore`),
 //! - the containerized Neo4j/Valkey adapters (via `kmp-tests-shared`),
-//! - future adapter sets (the embedded edition's redb stores).
+//! - future adapter sets (including embedded storage).
 //!
 //! A backend passes conformance when every scenario completes without
 //! panicking. Scenario isolation is per [`ConformanceBackendFactory::fresh`]

@@ -952,12 +952,12 @@ mod superseded_tests {
         let superseded = superseded_from_relations(&[relation(
             "supersedes",
             "decision:sqlite",
-            "decision:redb",
+            "decision:old-store",
             "two hosts need to share the store",
         )]);
 
         assert_eq!(superseded.len(), 1);
-        assert_eq!(superseded[0].r#ref, "decision:redb");
+        assert_eq!(superseded[0].r#ref, "decision:old-store");
         assert_eq!(superseded[0].superseded_by, "decision:sqlite");
         assert_eq!(superseded[0].why, "two hosts need to share the store");
     }

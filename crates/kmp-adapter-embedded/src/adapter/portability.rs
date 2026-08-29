@@ -31,8 +31,8 @@ pub struct BundleEventRange {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BundleHeader {
     pub bundle_format: u32,
-    /// Format of the portable event payload, not the on-disk redb/SQLite
-    /// layout. `store_format` is accepted from format-1 bundles because that
+    /// Format of the portable event payload, not the on-disk SQLite layout.
+    /// `store_format` is accepted from format-1 bundles because that
     /// older name described the field ambiguously.
     #[serde(rename = "event_format", alias = "store_format")]
     pub event_format: u32,
@@ -272,8 +272,8 @@ fn encode_bundle(
     let snapshot_id = snapshot_id
         .map(str::to_string)
         .unwrap_or_else(|| format!("content-{}", &digest[7..23]));
-    // Content-addressed head exports must be byte-identical across redb,
-    // SQLite, repeated exports and migrations. Their creation coordinate is
+    // Content-addressed head exports must be byte-identical across storage
+    // layouts and repeated exports. Their creation coordinate is
     // therefore the newest event time. A named recovery point records when
     // the operator created that point.
     let created_at = if named {

@@ -4,8 +4,8 @@
 //! — the one *this shell* would open under one of the three rules — and every
 //! other store was invisible to every command that ships. On one machine that
 //! was one of five, and two of the five were reachable by no rule at all:
-//! a pre-migration redb backup and retired migration work directories, 1.4 MB
-//! of memory that nothing would ever mention again.
+//! retired work directories holding 1.4 MB of memory that nothing would ever
+//! mention again.
 //!
 //! The per-store startup log cannot serve as a registry, because the record of
 //! what happened to a store lives inside it: reading it requires already
@@ -54,7 +54,7 @@ pub struct Memory {
     pub path: PathBuf,
     pub reach: Reach,
     pub format: String,
-    pub engine: Option<String>,
+    pub storage: Option<String>,
     pub bytes: u64,
     /// When a session last started against it, from the store's own log.
     pub last_opened: Option<String>,
@@ -103,7 +103,7 @@ pub fn list(data_home: &Path, indexed: &[PathBuf]) -> Vec<Memory> {
         .into_iter()
         .map(|(path, reach)| Memory {
             format: read_trimmed(&path.join("FORMAT_VERSION")).unwrap_or_else(|| "?".to_string()),
-            engine: engine_name(&path),
+            storage: storage_label(&path),
             bytes: directory_size(&path),
             last_opened: last_startup(&path),
             path,
@@ -216,13 +216,24 @@ fn read_trimmed(path: &Path) -> Option<String> {
         .map(|text| text.trim().to_string())
 }
 
-fn engine_name(store: &Path) -> Option<String> {
+fn storage_label(store: &Path) -> Option<String> {
+    let format = read_trimmed(&store.join("FORMAT_VERSION"));
+    if format.as_deref() != Some("2") {
+        return Some(match format {
+            Some(format) if format.chars().all(|character| character.is_ascii_digit()) => {
+                format!("unsupported format-{format} artifact")
+            }
+            _ => "unsupported format artifact".to_string(),
+        });
+    }
     let store_dir = store.join("store");
     if store_dir.join("kernel.sqlite3").is_file() {
         return Some("sqlite".to_string());
     }
-    if store_dir.join("kernel.redb").is_file() {
-        return Some("redb".to_string());
+    if std::fs::read_dir(store_dir)
+        .is_ok_and(|entries| entries.flatten().any(|entry| entry.path().is_file()))
+    {
+        return Some("unsupported storage artifact".to_string());
     }
     None
 }
@@ -305,7 +316,7 @@ mod tests {
         let base = tempfile::tempdir().expect("temp");
         let data_home = base.path();
         store_at(&data_home.join("kmp/default"), "2", "sqlite3");
-        store_at(&data_home.join("kmp/default-redb-2026-08-17"), "1", "redb");
+        store_at(&data_home.join("kmp/retired-2026-08-17"), "1", "bin");
         store_at(&data_home.join("kmp/shared"), "2", "sqlite3");
 
         let memories = list(data_home, &[]);
@@ -319,7 +330,7 @@ mod tests {
         // whatever a retired migration workflow left behind.
         assert_eq!(unreachable.len(), 2, "{unreachable:?}");
         assert!(memories.iter().any(
-            |memory| memory.reach == Reach::User && memory.engine.as_deref() == Some("sqlite")
+            |memory| memory.reach == Reach::User && memory.storage.as_deref() == Some("sqlite")
         ));
     }
 
@@ -329,7 +340,7 @@ mod tests {
         let base = base.path();
         let data_home = base.join("data");
         let project = base.join("repo/.kernel");
-        store_at(&project, "1", "redb");
+        store_at(&project, "1", "bin");
 
         // Nothing knows about it yet: it is not under the data home.
         assert!(list(&data_home, &[]).is_empty());
@@ -341,7 +352,10 @@ mod tests {
         );
         assert_eq!(memories.len(), 1);
         assert_eq!(memories[0].reach, Reach::Project);
-        assert_eq!(memories[0].engine.as_deref(), Some("redb"));
+        assert_eq!(
+            memories[0].storage.as_deref(),
+            Some("unsupported format-1 artifact")
+        );
     }
 
     #[test]
@@ -349,7 +363,7 @@ mod tests {
         let base = tempfile::tempdir().expect("temp");
         let data_home = base.path().join("data");
         let project = base.path().join("repo/.kernel");
-        store_at(&project, "1", "redb");
+        store_at(&project, "1", "bin");
 
         remember(&data_home, &project);
         remember(&data_home, &project);
@@ -366,7 +380,7 @@ mod tests {
         let base = tempfile::tempdir().expect("temp");
         let data_home = base.path().join("data");
         let project = base.path().join("repo/.kernel");
-        store_at(&project, "1", "redb");
+        store_at(&project, "1", "bin");
         remember(&data_home, &project);
 
         std::fs::remove_dir_all(&project).expect("the repository was deleted");
@@ -386,7 +400,7 @@ mod tests {
         let data_home = base.join("data");
         let gone = base.join("deleted/.kernel");
         let kept = base.join("kept/.kernel");
-        store_at(&gone, "1", "redb");
+        store_at(&gone, "1", "bin");
         store_at(&kept, "2", "sqlite3");
 
         remember(&data_home, &gone);

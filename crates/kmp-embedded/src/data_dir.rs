@@ -266,11 +266,10 @@ fn prepare_data_dir(resolved: &ResolvedDataDir) -> Result<(), PortError> {
 
 /// Creates the non-store part of a KMP data directory.
 ///
-/// Fresh startup and `migrate` both call this function. The
-/// self-ignore file is deliberately installed even for an explicit path: an
+/// Fresh startup calls this function. The self-ignore file is deliberately
+/// installed even for an explicit path: an
 /// operator can put such a path inside a repository, and the store must not
-/// start appearing in `git status` merely because it arrived through a
-/// migration rather than first startup. Existing files are never replaced.
+/// start appearing in `git status`. Existing files are never replaced.
 pub fn ensure_data_dir_skeleton(path: &Path) -> Result<(), PortError> {
     fs::create_dir_all(path).map_err(|error| {
         PortError::Unavailable(format!(
@@ -395,7 +394,8 @@ mod tests {
         let project_store = project.path().join(".kernel");
         std::fs::create_dir_all(project_store.join("store")).expect("legacy store dir");
         std::fs::write(project_store.join("FORMAT_VERSION"), "1\n").expect("legacy stamp");
-        std::fs::write(project_store.join("store/kernel.redb"), b"legacy").expect("legacy store");
+        std::fs::write(project_store.join("store/retired-layout.bin"), b"legacy")
+            .expect("legacy store");
         let bundle = project.path().join(PROJECT_BUNDLE_PATH);
         std::fs::create_dir_all(bundle.parent().expect("bundle parent")).expect("bundle dir");
         std::fs::write(&bundle, "maintained memory\n").expect("bundle");
@@ -411,7 +411,11 @@ mod tests {
         assert_eq!(orphaned.bundle_path, bundle);
         assert_eq!(orphaned.project_store_path, project_store);
         assert_eq!(orphaned.selected_store_path, selected.path());
-        assert!(orphaned.reason.contains("format 1"), "{}", orphaned.reason);
+        assert!(
+            orphaned.reason.contains("format version 1"),
+            "{}",
+            orphaned.reason
+        );
         assert_eq!(project_bundle_path(&selected), None);
     }
 
@@ -476,7 +480,7 @@ mod tests {
     }
 
     #[test]
-    fn explicit_and_migrated_dirs_get_the_same_non_destructive_skeleton() {
+    fn explicit_dirs_get_the_same_non_destructive_skeleton() {
         let temp = tempfile::tempdir().expect("tempdir");
         let data_dir = temp.path().join("destination");
 

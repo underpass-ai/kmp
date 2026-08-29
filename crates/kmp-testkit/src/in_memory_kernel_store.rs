@@ -33,7 +33,7 @@ const PLACEHOLDER_STATUS: &str = "UNMATERIALIZED";
 ///   outgoing `has_dimension` relations to `memory_dimension` nodes.
 ///
 /// It is the reference implementation the conformance suite runs against and
-/// the behavioral template for the embedded (redb) adapters.
+/// the behavioral template for embedded adapters.
 #[derive(Debug, Default, Clone)]
 pub struct InMemoryKernelStore {
     state: Arc<Mutex<KernelStoreState>>,

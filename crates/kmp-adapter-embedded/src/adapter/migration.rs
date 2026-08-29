@@ -1,10 +1,10 @@
-//! Migration receipt compatibility and fail-safe handling for retired store
-//! layouts.
+//! Compatibility API for store-layout migration receipts.
 //!
-//! Current binaries contain only SQLite. They can still read receipts left by
-//! older successful migrations, but they never open format-1 redb bytes. A
-//! migration request against that layout fails before creating a destination
-//! and tells the operator to export with the last compatible KMP release.
+//! Current KMP has one supported layout, SQLite format 2, so there is no live
+//! in-process migration path. These APIs remain available to avoid breaking
+//! downstream Rust callers: a current source reports that migration is
+//! unnecessary, and an unsupported source is preserved with the same generic
+//! external export/import recovery contract as the open gate.
 
 use std::fs;
 use std::path::Path;
@@ -13,10 +13,10 @@ use kmp_domain::{ContextUpdatedEvent, PortError, ProjectionMutation};
 use serde::{Deserialize, Serialize};
 
 use super::engine::{Key, Table};
-use super::format_version::{self, LEGACY_REDB_FORMAT_VERSION, StorageEngine};
+use super::format_version::{self, StorageEngine};
 use super::store::EmbeddedKernelStore;
 
-/// What a migration did, kept in the store it produced.
+/// What a completed historical store migration recorded in its destination.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StoreMigrationReceipt {
     pub source_format: u32,
@@ -28,16 +28,12 @@ pub struct StoreMigrationReceipt {
 }
 
 impl StoreMigrationReceipt {
-    /// Single key: a store is the product of one migration, or of none.
+    /// Single key used by historical migration receipts.
     pub const MIGRATION_ID: &'static str = "store-format-migration";
 }
 
 impl EmbeddedKernelStore {
-    /// Migrates `source_dir` into `destination_dir` and opens the result.
-    /// The destination is created with the default engine.
-    ///
-    /// `derive` is retained in the API for source compatibility. It will be
-    /// used again when a migration between supported SQLite layouts exists.
+    /// Compatibility entry point. No current layout requires migration.
     pub async fn migrate_data_dir<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -49,10 +45,7 @@ impl EmbeddedKernelStore {
         Self::migrate_data_dir_to(source_dir, destination_dir, StorageEngine::Sqlite, derive).await
     }
 
-    /// [`migrate_data_dir`](Self::migrate_data_dir) with the destination
-    /// engine chosen. There is currently no supported source layout that
-    /// needs migration: format 2 opens directly, while format 1 requires an
-    /// export made with KMP 0.3.2 because this crate has no redb dependency.
+    /// Compatibility entry point with an explicit destination engine.
     pub async fn migrate_data_dir_to<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -76,14 +69,6 @@ impl EmbeddedKernelStore {
                 StorageEngine::NEWEST_KNOWN_FORMAT_VERSION
             )));
         }
-        if source_format == LEGACY_REDB_FORMAT_VERSION {
-            return Err(PortError::InvalidState(format!(
-                "migration source `{}` uses retired format 1 (redb); this binary contains no \
-                 redb reader and left the source untouched. Use KMP 0.3.2 to export \
-                 `.kmp/memory.jsonl`, then import that bundle with the current KMP",
-                source_dir.display()
-            )));
-        }
         if source_format == StorageEngine::Sqlite.format_version() {
             return Err(PortError::Unavailable(format!(
                 "migration from a SQLite format-2 store is unnecessary and unsupported; the \
@@ -93,17 +78,15 @@ impl EmbeddedKernelStore {
         }
         let _ = destination_engine;
         Err(PortError::InvalidState(format!(
-            "migration source `{}` uses unsupported format version {source_format}; this \
-             binary left it untouched",
+            "migration source `{}` uses unsupported format version {source_format}; current \
+             KMP left it untouched. Preserve the source, use an explicitly archived compatible \
+             exporter to create `.kmp/memory.jsonl`, then import that bundle into an empty \
+             current store",
             source_dir.display()
         )))
     }
 
-    /// Migrate once, reopen afterwards: safe to call on every start.
-    ///
-    /// A destination that already holds a store is opened as it is — the
-    /// migration is not repeated, and the receipt (when there is one) says
-    /// where that memory came from.
+    /// Reopen a completed destination or apply the compatibility migration.
     pub async fn open_or_migrate_data_dir<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -121,10 +104,7 @@ impl EmbeddedKernelStore {
         .await
     }
 
-    /// [`open_or_migrate_data_dir`](Self::open_or_migrate_data_dir) with the
-    /// destination engine chosen. The engine only matters on the call that
-    /// migrates; a destination that already holds a store opens as whatever
-    /// it is.
+    /// Reopen a completed destination or apply the compatibility migration.
     pub async fn open_or_migrate_data_dir_to<F>(
         source_dir: &Path,
         destination_dir: &Path,
@@ -145,12 +125,10 @@ impl EmbeddedKernelStore {
         Ok((store, Some(receipt)))
     }
 
-    /// The receipt of the migration that produced this store, if any.
+    /// A historical receipt stored by the migration that produced this store.
     pub async fn migration_receipt(&self) -> Result<Option<StoreMigrationReceipt>, PortError> {
         self.run(|store| {
             let tx = store.begin_read()?;
-            // A store nobody migrated has no such table; the seam reads a
-            // never-written table as empty.
             let Some(raw) = tx.get(
                 Table::Migrations,
                 Key::Str(StoreMigrationReceipt::MIGRATION_ID),
@@ -170,8 +148,6 @@ impl EmbeddedKernelStore {
 fn same_file(left: &Path, right: &Path) -> bool {
     match (fs::canonicalize(left), fs::canonicalize(right)) {
         (Ok(left), Ok(right)) => left == right,
-        // Unresolvable paths (a destination that does not exist yet) fall
-        // back to the literal comparison, which is what the caller wrote.
         _ => left == right,
     }
 }
