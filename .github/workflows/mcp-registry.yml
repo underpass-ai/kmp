@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
 
       - name: Check repository-owned Registry contracts
         run: bash scripts/ci/mcp-registry.sh
@@ -61,10 +63,18 @@ jobs:
         run: |
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             version="${GITHUB_REF_NAME#v}"
+            message="$(git for-each-ref --format='%(contents)' "refs/tags/${GITHUB_REF_NAME}")"
+            marketplace_commit="$(sed -n 's/^marketplace-commit: \([0-9a-f][0-9a-f]*\)$/\1/p' <<<"${message}")"
+            [[ "${marketplace_commit}" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "annotated tag ${GITHUB_REF_NAME} does not name a marketplace commit" >&2
+              exit 1
+            }
+            python3 scripts/release/verify-marketplace.py "${version}" \
+              --marketplace-commit "${marketplace_commit}"
           else
             version="$(jq -r '.version' server.json)"
+            python3 scripts/release/verify-marketplace.py "${version}"
           fi
-          python3 scripts/release/verify-marketplace.py "${version}"
 
       - name: Install the checksummed official publisher
         run: bash scripts/ci/install-mcp-publisher.sh "${RUNNER_TEMP}/mcp-publisher"

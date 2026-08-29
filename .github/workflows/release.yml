@@ -294,15 +294,24 @@ jobs:
           }
           MESSAGE="$(git for-each-ref --format='%(contents)' "refs/tags/${GITHUB_REF_NAME}")"
           RUN_ID="$(sed -n 's/^candidate-run: \([0-9][0-9]*\)$/\1/p' <<<"${MESSAGE}")"
+          MARKETPLACE_COMMIT="$(sed -n 's/^marketplace-commit: \([0-9a-f][0-9a-f]*\)$/\1/p' <<<"${MESSAGE}")"
           [[ -n "${RUN_ID}" ]] || {
             echo "annotated tag ${GITHUB_REF_NAME} does not name candidate-run" >&2
             exit 1
           }
+          [[ "${MARKETPLACE_COMMIT}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "annotated tag ${GITHUB_REF_NAME} does not name a marketplace commit" >&2
+            exit 1
+          }
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "run_id=${RUN_ID}" >> "${GITHUB_OUTPUT}"
+          echo "marketplace_commit=${MARKETPLACE_COMMIT}" >> "${GITHUB_OUTPUT}"
 
-      - name: Verify public plugin marketplace parity
-        run: python3 scripts/release/verify-marketplace.py "${{ steps.candidate.outputs.version }}"
+      - name: Verify reviewed plugin marketplace parity
+        run: >-
+          python3 scripts/release/verify-marketplace.py
+          "${{ steps.candidate.outputs.version }}"
+          --marketplace-commit "${{ steps.candidate.outputs.marketplace_commit }}"
 
       - name: Verify versioned changelog
         run: python3 scripts/release/changelog.py check "${{ steps.candidate.outputs.version }}"

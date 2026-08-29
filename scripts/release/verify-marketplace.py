@@ -140,7 +140,7 @@ def pin_public_marketplace(args: argparse.Namespace) -> str | None:
     }
     if not any(getattr(args, name) == value for name, value in defaults.items()):
         return None
-    sha = github_commit_sha("underpass-ai/plugins")
+    sha = args.marketplace_commit or github_commit_sha("underpass-ai/plugins")
     raw = f"https://raw.githubusercontent.com/underpass-ai/plugins/{sha}"
     replacements = {
         "root": f"{raw}/plugins/kmp",
@@ -455,6 +455,13 @@ def main() -> None:
         help="pre-tag release mode: require the expected commit at remote main when the tag is not published yet",
     )
     parser.add_argument(
+        "--marketplace-commit",
+        help=(
+            "immutable underpass-ai/plugins commit to verify instead of public main; "
+            "used to review the catalog before it is made public"
+        ),
+    )
+    parser.add_argument(
         "--source-root",
         type=pathlib.Path,
         help="override the local KMP plugin source used for byte-parity tests",
@@ -463,6 +470,10 @@ def main() -> None:
 
     if args.expected_commit is not None and not COMMIT_SHA.fullmatch(args.expected_commit):
         parser.error("--expected-commit must be a lowercase 40-character commit SHA")
+    if args.marketplace_commit is not None and not COMMIT_SHA.fullmatch(
+        args.marketplace_commit
+    ):
+        parser.error("--marketplace-commit must be a lowercase 40-character commit SHA")
     if args.allow_unpublished_tag and args.expected_commit is None:
         parser.error("--allow-unpublished-tag requires --expected-commit")
 

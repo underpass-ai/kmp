@@ -48,28 +48,36 @@ bash scripts/ci/quality-gate.sh
 bash scripts/ci/helm-lint.sh
 ```
 
-Merge the reviewed version change and update local `main`. Before tagging,
-mirror `plugins/kmp/` into the `underpass-ai/plugins` repository, excluding the
-gitignored `bin/`, and merge that marketplace PR. Its Codex manifest must carry
-the same SemVer core; build metadata may be used as a cachebuster.
+Merge the reviewed version change and update local `main`. Mirror
+`plugins/kmp/` into a PR in `underpass-ai/plugins`, excluding the gitignored
+`bin/`, but keep that PR unmerged. Its Codex manifest must carry the same SemVer
+core; build metadata may be used as a cachebuster. The marketplace check proves
+the unpublished tag would name KMP `main` and that the Codex mirror is the same
+tree. Record the green marketplace PR's exact commit.
 
-This ordering matters: once GitHub exposes the new KMP release as `latest`, the
-installed updater asks Codex for that version. Publishing the marketplace first
-keeps the plugin, skills and launcher available before the matching engine.
-The updater refreshes Git-backed marketplace snapshots and refuses to change
-the engine if Codex still returns an older plugin.
+This ordering keeps every advertised version installable. Public marketplace
+`main` continues to serve the previous release while the new annotated tag and
+its checksummed assets become available. Publishing the catalog first would
+make Claude Code run `git clone --branch` against a tag that does not exist and
+would make the updater request engine assets that are not public yet.
 
-Then let the release script create and push the tag:
+Let the release script create and push the tag, binding the reviewed marketplace
+commit into its provenance:
 
 ```bash
-bash scripts/release.sh release X.Y.Z
+bash scripts/release.sh release X.Y.Z MARKETPLACE_COMMIT
 ```
 
-The release command checks the public `underpass-ai/plugins` manifest and
-refuses to tag while its version is stale. It also locates the newest
-successful candidate whose version and release-input digest match `main`,
-verifies all twenty files and records that workflow run in the annotated tag.
-If no candidate matches, tagging fails closed.
+The release command checks that commit's successful `kmp-contract`, verifies
+its catalogs and both plugin trees, and refuses to use a different snapshot.
+It also locates the newest successful candidate whose version and release-input
+digest match `main`, verifies all twenty files and records both reviewed commits
+in the annotated tag. If no candidate matches, tagging fails closed.
+
+Wait until the GitHub release and its checksummed engine and plugin assets are
+public. Only then merge the already-reviewed marketplace PR. The marketplace
+`main` check repeats the literal Claude `git clone --branch vX.Y.Z` operation
+against the now-published annotated tag.
 
 ## Published artifacts
 
@@ -81,8 +89,8 @@ If no candidate matches, tagging fails closed.
   publishes the server image, Helm chart and crates.io dependency chain;
 - `mcp-registry.yml` validates registry metadata and only publishes when the
   repository variable enables it.
-- `underpass-ai/plugins` is the reviewed Codex marketplace mirror and is
-  published before the tag rather than by a tag workflow.
+- `underpass-ai/plugins` is the reviewed Codex marketplace mirror and is made
+  public only after the tag and matching release assets are reachable.
 
 [`scripts/ci/publish-crates.sh`](../../scripts/ci/publish-crates.sh) owns the
 crate publication order and skips versions already present. If a publication
