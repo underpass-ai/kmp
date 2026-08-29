@@ -1,11 +1,11 @@
 {
   "campaign_id": "kmp-embedded-first-launch",
   "concept": "KMP Embedded — memory, with receipts",
-  "product_commit": "b97a9497b16c31ea6e080e081f239c60ec4bb2c2",
+  "product_commit": "d0034f31bc290a94dd6baf0b5be6fc48204ee15a",
   "binary": {
     "path": "target/debug/kmp-mcp",
-    "sha256": "0f67b9cff3f68aee0a10a4f79f4cd69a24b83b7008acebc1d0b1848acea39b65",
-    "version": "kmp-mcp 0.4.2 (store format 2 (sqlite))"
+    "sha256": "3494aacce7ff0024832a6a4d243cc4a815631409e73f33568c1c5894cd011f4c",
+    "version": "kmp-mcp 0.5.0 (store format 2 (sqlite))"
   },
   "masters": [
     {
