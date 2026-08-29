@@ -11,6 +11,10 @@ export const TERMINAL_VIEWPORT_RESET_SHA256 = crypto
   .digest("hex");
 export const TERMINAL_COLUMNS = 32;
 export const TERMINAL_ROW_BUDGET = 24;
+export const TERMINAL_GUARDED_SCENES = Object.freeze([
+  "KMP/TerminalFocus",
+  "KMP/CTAFocus",
+]);
 
 // GNOME Terminal's title chrome ends above y=40 in the isolated X11 screen.
 // Semantic beats are reset to row 1, so focus scenes must follow that origin
@@ -76,6 +80,25 @@ export function validateSemanticSceneAlignment(steps, schedule) {
     }
   }
   return errors;
+}
+
+export function sceneAt(schedule, atMs) {
+  if (!Array.isArray(schedule) || schedule.length === 0) {
+    throw new Error("OBS schedule must contain at least one scene");
+  }
+  if (!Number.isInteger(atMs) || atMs < 0) {
+    throw new Error("scene timestamp must be a non-negative integer");
+  }
+  let current = schedule[0].scene;
+  for (const event of schedule) {
+    if (event.at_ms > atMs) break;
+    current = event.scene;
+  }
+  return current;
+}
+
+export function guardsTerminalRows(scene) {
+  return TERMINAL_GUARDED_SCENES.includes(scene);
 }
 
 function sha256(value) {

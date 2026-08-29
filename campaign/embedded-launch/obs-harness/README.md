@@ -87,11 +87,14 @@ frame while the unmodified PTY transcript retains the complete sequence.
 `verify-run.py` rejects a missing, reordered or altered reset and rejects an
 OBS terminal crop that does not follow the same origin.
 
-The real terminal remains 32 columns wide. Each composition has a fail-closed
-24-row presentation budget: selected real tool fields must fit below the
-opening question without forcing GNOME Terminal to scroll it away. Full MCP
-responses remain byte-bound in `tool-calls.jsonl`; exceeding the visual budget
-fails the take instead of clipping or silently replacing evidence.
+The real terminal remains 32 columns wide. While `TerminalFocus` or `CTAFocus`
+owns the primary pixels, each composition has a fail-closed 24-row presentation
+budget: selected real tool fields must fit below the opening question without
+forcing GNOME Terminal to scroll it away. Browser-primary scenes may continue
+the real MCP sequence in the terminal inset; the next terminal-primary scene
+must open with another audited reset. Full MCP responses remain byte-bound in
+`tool-calls.jsonl`; exceeding a protected visual budget fails the take instead
+of clipping or silently replacing evidence.
 
 Secret-shaped keys and the ChronoLoom `k` capability are replaced with a
 redaction object that includes the SHA-256 of the original value. The raw wire

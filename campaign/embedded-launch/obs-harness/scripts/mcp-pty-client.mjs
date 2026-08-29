@@ -9,8 +9,10 @@ import { spawn, spawnSync } from "node:child_process";
 
 import {
   consumeTerminalRows,
+  guardsTerminalRows,
   opensSemanticViewport,
   resetSemanticViewport,
+  sceneAt,
 } from "./terminal-presentation-contract.mjs";
 
 const [scenarioPath, runDir, binary, repoRoot] = process.argv.slice(2);
@@ -19,6 +21,9 @@ if (!scenarioPath || !runDir || !binary || !repoRoot) {
 }
 
 const scenario = JSON.parse(fs.readFileSync(scenarioPath, "utf8"));
+const capturedEdl = JSON.parse(fs.readFileSync(path.join(runDir, "edl.json"), "utf8"));
+const master = capturedEdl.masters?.find((item) => item.id === scenario.id);
+const obsSchedule = master?.obs_schedule || [{ at_ms: 0, scene: "KMP/Wide" }];
 const controlDir = path.join(runDir, "control");
 const wireFile = path.join(runDir, "tool-calls.jsonl");
 const terminalFile = path.join(runDir, "terminal-events.jsonl");
@@ -83,6 +88,8 @@ function logWire(processId, direction, line) {
 
 let semanticViewportActive = false;
 let semanticRowsUsed = 0;
+let presentationScene = "KMP/Wide";
+let presentationAtMs = 0;
 
 function terminal(speaker, text, style = "") {
   const palettes = {
@@ -94,7 +101,8 @@ function terminal(speaker, text, style = "") {
   };
   const color = palettes[style || speaker] || palettes.neutral;
   const prefix = speaker ? `${speaker.toUpperCase()}  ` : "";
-  const viewport = semanticViewportActive
+  const guarded = semanticViewportActive && guardsTerminalRows(presentationScene);
+  const viewport = guarded
     ? consumeTerminalRows(semanticRowsUsed, speaker, text)
     : null;
   if (viewport) semanticRowsUsed = viewport.used;
@@ -104,6 +112,11 @@ function terminal(speaker, text, style = "") {
     speaker,
     text,
     style: style || speaker,
+    ...(semanticViewportActive ? {
+      presentation_scene: presentationScene,
+      scheduled_at_ms: presentationAtMs,
+      viewport_guarded: guarded,
+    } : {}),
     ...(viewport ? {
       viewport_rows: viewport.rows,
       viewport_rows_used: viewport.used,
@@ -446,6 +459,8 @@ try {
 
   for (const step of scenario.steps) {
     await waitUntil(baseNs + BigInt(step.at_ms) * 1000000n);
+    presentationAtMs = step.at_ms;
+    presentationScene = sceneAt(obsSchedule, step.at_ms);
     if (opensSemanticViewport(step)) {
       resetSemanticViewport(step, {
         write: (value) => process.stdout.write(value),

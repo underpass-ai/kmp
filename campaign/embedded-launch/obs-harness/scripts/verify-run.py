@@ -127,14 +127,39 @@ check(
 )
 semantic_terminal_lines = [
     row for row in terminal_events
-    if row.get("event_type") == "line" and "viewport_row_budget" in row
+    if row.get("event_type") == "line" and "presentation_scene" in row
 ]
+master = next((item for item in edl.get("masters", []) if item.get("id") == scenario["id"]), None)
+presentation_schedule = (master or {}).get("obs_schedule") or [{"at_ms": 0, "scene": "KMP/Wide"}]
+
+
+def presentation_scene_at(at_ms: int) -> str:
+    current = presentation_schedule[0]["scene"]
+    for event in presentation_schedule:
+        if event["at_ms"] > at_ms:
+            break
+        current = event["scene"]
+    return current
+
+
+guarded_scenes = {"KMP/TerminalFocus", "KMP/CTAFocus"}
+guarded_terminal_lines = [row for row in semantic_terminal_lines if row.get("viewport_guarded") is True]
+expects_guarded_terminal = any(event["scene"] in guarded_scenes for event in presentation_schedule)
 check(
     "terminal_semantic_row_budget",
-    bool(semantic_terminal_lines)
+    (bool(guarded_terminal_lines) if expects_guarded_terminal else True)
     and all(
-        row.get("viewport_row_budget") == 24
-        and 0 < row.get("viewport_rows", 0) <= row.get("viewport_rows_used", 0) <= 24
+        isinstance(row.get("scheduled_at_ms"), int)
+        and row.get("scheduled_at_ms") >= 0
+        and row.get("presentation_scene") == presentation_scene_at(row["scheduled_at_ms"])
+        and (row.get("presentation_scene") in guarded_scenes) == (row.get("viewport_guarded") is True)
+        and (
+            row.get("viewport_guarded") is not True
+            or (
+                row.get("viewport_row_budget") == 24
+                and 0 < row.get("viewport_rows", 0) <= row.get("viewport_rows_used", 0) <= 24
+            )
+        )
         for row in semantic_terminal_lines
     ),
     [
@@ -143,6 +168,9 @@ check(
             "text_sha256": hashlib.sha256(row.get("text", "").encode()).hexdigest(),
             "rows": row.get("viewport_rows"),
             "rows_used": row.get("viewport_rows_used"),
+            "scene": row.get("presentation_scene"),
+            "scheduled_at_ms": row.get("scheduled_at_ms"),
+            "guarded": row.get("viewport_guarded"),
         }
         for row in semantic_terminal_lines
     ],

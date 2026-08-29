@@ -15,9 +15,11 @@ import {
   TERMINAL_VIEWPORT_RESET_SHA256,
   captureSceneDefinitions,
   consumeTerminalRows,
+  guardsTerminalRows,
   opensSemanticViewport,
   resetSemanticViewport,
   semanticViewportAudit,
+  sceneAt,
   validateSemanticSceneAlignment,
   validateTerminalSceneContract,
   validateSemanticViewportAudit,
@@ -42,6 +44,19 @@ for (const step of steps.filter(opensSemanticViewport)) {
 assert.deepEqual(TERMINAL_SEMANTIC_CROP, [0, 40, 672, 378]);
 assert.equal(TERMINAL_COLUMNS, 32);
 assert.equal(TERMINAL_ROW_BUDGET, 24);
+assert.equal(sceneAt([
+  { at_ms: 0, scene: "KMP/TerminalFocus" },
+  { at_ms: 1000, scene: "KMP/ChronoFocus" },
+], 999), "KMP/TerminalFocus");
+assert.equal(sceneAt([
+  { at_ms: 0, scene: "KMP/TerminalFocus" },
+  { at_ms: 1000, scene: "KMP/ChronoFocus" },
+], 1000), "KMP/ChronoFocus");
+assert.equal(guardsTerminalRows("KMP/TerminalFocus"), true);
+assert.equal(guardsTerminalRows("KMP/CTAFocus"), true);
+assert.equal(guardsTerminalRows("KMP/ProofFocus"), false);
+assert.throws(() => sceneAt([], 0), /at least one scene/);
+assert.throws(() => sceneAt([{ at_ms: 0, scene: "KMP\/Wide" }], -1), /non-negative integer/);
 const terminalSources = captureSceneDefinitions()
   .flatMap((scene) => scene.sources.map((source) => ({ scene: scene.name, ...source })))
   .filter((source) => ["primary-terminal", "secondary-terminal", "primary-cta"].includes(source.role));
