@@ -11,13 +11,13 @@
 //! default `BINARY` collation compares text bytewise, which is what Rust's
 //! `str` ordering does, and integers are integers.
 //!
-//! What makes this engine different from redb, and the reason it exists:
+//! What makes this engine suitable for the product contract:
 //! WAL mode. Readers never block the writer, and a second process wanting to
 //! write waits for the commit lock instead of being refused. Two agent hosts
 //! open the same store and both work.
 //!
 //! Durability is `synchronous=FULL`: every commit reaches the disk before it
-//! returns, matching the crash contract the redb engine gives — no loss
+//! returns, matching the crash contract KMP requires — no loss
 //! beyond the in-flight event.
 
 use std::path::{Path, PathBuf};

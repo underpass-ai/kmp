@@ -359,11 +359,9 @@ fn user_state_home() -> std::path::PathBuf {
 }
 
 /// Non-MCP maintenance surface (everything is a process — no library):
-/// `export <file>` and `import <file>` move the append-only event log
-/// between embedded stores, `migrate <source-dir> <destination-dir>` applies
-/// supported layout migrations (and fails closed for retired layouts), and
-/// `viewer [addr]` serves the local web viewer over the store; stdout carries
-/// the command result only.
+/// `export <file>` and `import <file>` move the append-only event log between
+/// embedded stores, and `viewer [addr]` serves the local web viewer over the
+/// store; stdout carries the command result only.
 async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
     if is_cli_subcommand(command) && help_requested(args) {
         print_subcommand_help(command);
@@ -376,7 +374,6 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "snapshot" => return run_snapshot_command(args).await,
         "config" => return run_config_command(args),
         "uninstall" => return run_uninstall_command(args).await,
-        "migrate" => return run_migrate_command(args).await,
         "share-memory" => {
             eprintln!("kmp-mcp: share-memory was retired; stores already use SQLite.");
             return 2;
@@ -413,7 +410,6 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `config [ask-fallback-languages <tags>]` / \
                  `uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
-                 `migrate <source-dir> <destination-dir>` / \
                  `viewer [addr]` / `--version` / `--help`"
             );
             return 2;
@@ -670,7 +666,6 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "uninstall"
             | "export"
             | "import"
-            | "migrate"
             | "viewer"
     )
 }
@@ -709,7 +704,6 @@ fn subcommand_usage(command: &str) -> &'static str {
         }
         "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
         "import" => "kmp-mcp import [file]",
-        "migrate" => "kmp-mcp migrate <source-dir> <destination-dir>",
         "viewer" => "kmp-mcp viewer [addr]",
         _ => "kmp-mcp --help",
     }
@@ -740,7 +734,6 @@ kmp-mcp uninstall [--store <absolute-path>] [--apply]\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \
-kmp-mcp migrate <src> <dst>     Apply a supported store-format migration\n  \
 kmp-mcp viewer [addr]           Serve the local memory viewer\n  \
 kmp-mcp --version               Print binary and store formats\n  \
 kmp-mcp --help                  Print this help",
@@ -1041,13 +1034,6 @@ fn snapshot_result(
     })
 }
 
-/// `migrate <source-dir> <destination-dir>`: applies a supported store-format
-/// migration. Retired format 1 is rejected with the 0.3.2 export bridge.
-///
-/// Both directories are explicit on purpose. This command runs precisely
-/// when the environment-resolved store is the one that will not open, and
-/// asking an operator to fix that by exporting an environment variable is
-/// how the wrong directory gets migrated over the right one.
 /// `uninstall` — what `/kmp:setup` never had an inverse for.
 ///
 /// The dry run is the default and `--apply` is how someone says to go ahead.
@@ -1392,53 +1378,6 @@ async fn run_document_command(args: &[&str]) -> i32 {
         None => print!("{document}"),
     }
     0
-}
-
-async fn run_migrate_command(args: &[&str]) -> i32 {
-    if let Some(option) = args.iter().find(|argument| looks_like_option(argument)) {
-        return unknown_option("migrate", option);
-    }
-    let (Some(source), Some(destination)) = (args.first(), args.get(1)) else {
-        eprintln!("kmp-mcp: migrate requires <source-dir> <destination-dir>");
-        return 2;
-    };
-    if let Some(unexpected) = args.get(2) {
-        eprintln!(
-            "kmp-mcp: migrate has no engine option; SQLite is the only destination \
-             engine (unexpected argument `{unexpected}`)"
-        );
-        return 2;
-    }
-    let pulse = kmp_mcp::pulse::Pulse::start("checking store migration…");
-    let migrated = kmp_embedded::migrate_data_dir_to(
-        std::path::Path::new(source),
-        std::path::Path::new(destination),
-        kmp_embedded::StorageEngine::Sqlite,
-    )
-    .await;
-    pulse.clear();
-    match migrated {
-        Ok(receipt) => {
-            kmp_mcp::pulse::mark_done(&match receipt.events_migrated {
-                0 => "moved — nothing to replay yet".to_string(),
-                count => format!("moved — {} replayed", events(count)),
-            });
-            match serde_json::to_string(&receipt) {
-                Ok(json) => println!("{json}"),
-                Err(error) => {
-                    eprintln!(
-                        "kmp-mcp: migration succeeded but its receipt is unprintable: {error}"
-                    );
-                    return 2;
-                }
-            }
-            0
-        }
-        Err(error) => {
-            eprintln!("kmp-mcp: migration failed: {error}");
-            2
-        }
-    }
 }
 
 /// Standalone viewer over the env-resolved data dir (same resolution as

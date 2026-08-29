@@ -124,7 +124,7 @@ flowchart LR
     B -->|embedded or unset| E[Embedded kernel]
     E --> D{Existing FORMAT_VERSION?}
     D -->|SQLite| X[Open SQLite]
-    D -->|legacy redb| L[Reject untouched; export with 0.3.2]
+    D -->|unsupported format| L[Reject untouched; use an archived exporter]
     D -->|no| Q[Fresh SQLite in shipped binary]
 ```
 

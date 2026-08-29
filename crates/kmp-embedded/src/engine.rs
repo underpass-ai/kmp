@@ -19,9 +19,6 @@ pub const ENGINE_ENV: &str = "KMP_MCP_ENGINE";
 pub fn parse_engine(value: &str) -> Result<StorageEngine, PortError> {
     match value.trim().to_ascii_lowercase().as_str() {
         "sqlite" => Ok(StorageEngine::Sqlite),
-        "redb" => Err(PortError::InvalidState(format!(
-            "the redb engine is retired; unset {ENGINE_ENV} or use `sqlite`"
-        ))),
         other => Err(PortError::InvalidState(format!(
             "unknown storage engine `{other}`; {ENGINE_ENV} only accepts `sqlite`"
         ))),
@@ -73,9 +70,9 @@ mod tests {
     }
 
     #[test]
-    fn redb_can_no_longer_be_selected_for_a_new_store() {
-        let error = parse_engine("redb").expect_err("redb is legacy-only");
-        assert!(error.to_string().contains("redb engine is retired"));
+    fn a_retired_engine_name_is_just_an_unknown_selector() {
+        let error = parse_engine("redb").expect_err("the retired engine is unavailable");
+        assert!(error.to_string().contains("unknown storage engine"));
     }
 
     #[test]

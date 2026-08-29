@@ -14,9 +14,8 @@ mod store;
 mod telemetry;
 
 pub use format_version::{
-    EVENT_FORMAT_VERSION, LEGACY_REDB_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine,
-    format_version_path, legacy_redb_store_path, read_stamped_version, store_file_path_for,
-    validate_store_layout,
+    EVENT_FORMAT_VERSION, SUPPORTED_FORMAT_VERSION, StorageEngine, format_version_path,
+    read_stamped_version, store_file_path_for, validate_store_layout,
 };
 pub use migration::StoreMigrationReceipt;
 pub use portability::{
@@ -27,5 +26,5 @@ pub use replay::ProjectionRebuildReport;
 pub use store::EmbeddedKernelStore;
 pub use telemetry::{
     QualityTelemetryRetention, SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter,
-    legacy_quality_telemetry_path, quality_telemetry_path,
+    quality_telemetry_path,
 };

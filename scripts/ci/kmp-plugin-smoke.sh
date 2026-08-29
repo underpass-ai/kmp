@@ -368,23 +368,23 @@ LEGACY_STORE="${SMOKE_DATA_DIR}/doctor-store-format-1"
 mkdir -p "$LEGACY_STORE/store" "$LEGACY_STORE/logs"
 printf '*\n' > "$LEGACY_STORE/.gitignore"
 printf '1\n' > "$LEGACY_STORE/FORMAT_VERSION"
-printf 'truncated legacy bytes\n' > "$LEGACY_STORE/store/kernel.redb"
-cp "$LEGACY_STORE/store/kernel.redb" "$LEGACY_STORE/source.before"
+printf 'truncated legacy bytes\n' > "$LEGACY_STORE/store/retired-layout.bin"
+cp "$LEGACY_STORE/store/retired-layout.bin" "$LEGACY_STORE/source.before"
 set +e
 legacy_output="$(run_doctor_for_store "$LEGACY_STORE" 2>&1)"
 legacy_status=$?
 set -e
 [ "$legacy_status" -eq 1 ] || fail "doctor accepted retired format 1"
-grep -Fq 'this binary contains no reader' <<<"$legacy_output" \
-  || fail "doctor did not explain the removed redb reader"
-grep -Fq 'KMP 0.3.2 export bridge' <<<"$legacy_output" \
+grep -Fq 'store format 1 is unsupported' <<<"$legacy_output" \
+  || fail "doctor did not explain the unsupported format"
+grep -Fq 'archived compatible exporter' <<<"$legacy_output" \
   || fail "doctor omitted the format-1 export bridge"
 grep -Fq 'inventory only; Doctor did not open or probe' <<<"$legacy_output" \
   || fail "doctor treated legacy bytes as a live engine"
 if grep -Fq 'store is free' <<<"$legacy_output"; then
   fail "doctor presented retired format 1 as usable"
 fi
-cmp "$LEGACY_STORE/source.before" "$LEGACY_STORE/store/kernel.redb" \
+cmp "$LEGACY_STORE/source.before" "$LEGACY_STORE/store/retired-layout.bin" \
   || fail "doctor changed the retired source"
 
 doctor_output="$(

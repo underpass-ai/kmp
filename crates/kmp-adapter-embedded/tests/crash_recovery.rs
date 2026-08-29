@@ -18,7 +18,7 @@ async fn kill_nine_mid_write_loses_at_most_the_inflight_event_and_replays_cleanl
 }
 
 /// The same contract on the SQLite engine (ADR-018): WAL with
-/// `synchronous=FULL` must give the redb crash guarantee, not something
+/// `synchronous=FULL` must give KMP's crash guarantee, not something
 /// weaker. The directory is stamped for SQLite before the writer starts, so
 /// the writer's plain `open` picks that engine.
 #[cfg(feature = "sqlite")]

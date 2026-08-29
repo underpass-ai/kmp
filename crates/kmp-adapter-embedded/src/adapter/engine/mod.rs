@@ -11,8 +11,8 @@
 //! point get, insert, remove, a full ordered scan, a scan of one first key
 //! component, the last row of a `u64`-keyed table, a row count, and a table
 //! clear. Rows come back in ascending key order, compared component by
-//! component and byte-wise within a component; both engines can promise that
-//! and the neighborhood output depends on it.
+//! component and byte-wise within a component; the neighborhood output
+//! depends on it.
 //!
 //! Scans return `Vec` rather than an iterator. Every caller collected before
 //! this seam existed, so nothing is lost, and it keeps the trait object-safe
@@ -50,9 +50,7 @@ pub(crate) enum Table {
     Checkpoints,
     /// Snapshot audit records: `(root, role) -> snapshot summary`.
     Snapshots,
-    /// Migration receipts: `migration_id -> StoreMigrationReceipt`. Created
-    /// lazily by the first migration; a store nobody migrated has none, and
-    /// reads it as empty.
+    /// Historical migration receipts retained for data-file compatibility.
     Migrations,
 }
 

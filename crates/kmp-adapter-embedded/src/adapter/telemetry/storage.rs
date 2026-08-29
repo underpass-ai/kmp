@@ -14,10 +14,6 @@ pub fn quality_telemetry_path(data_dir: &Path) -> PathBuf {
     data_dir.join("telemetry").join("quality.sqlite3")
 }
 
-pub fn legacy_quality_telemetry_path(data_dir: &Path) -> PathBuf {
-    data_dir.join("telemetry").join("quality.redb")
-}
-
 pub(super) fn open_quality_connection(data_dir: &Path) -> Result<Connection, PortError> {
     let path = quality_telemetry_path(data_dir);
     let parent = path.parent().expect("quality telemetry path has a parent");

@@ -61,18 +61,17 @@ The data directory is selected in this order:
    `~/.local/share/kmp/default` on Unix, and `%LOCALAPPDATA%\kmp\default`
    on Windows (with `APPDATA` and `USERPROFILE` fallbacks).
 
-KMP creates and opens SQLite format-2 stores only. Existing format-1 redb
-stores are detected and rejected before their bytes are opened, so an upgrade
-never substitutes empty SQLite memory for an older store.
+KMP creates and opens SQLite format-2 stores only. Unsupported store formats
+are detected and rejected before their bytes are opened, so an upgrade never
+substitutes empty SQLite memory for an older store.
 
-Do not create a new redb store. To change the store used by a project, point
-`KMP_MCP_DATA_DIR` at the intended directory and verify the selection with
-`kmp-mcp info` before writing.
+To change the store used by a project, point `KMP_MCP_DATA_DIR` at the intended
+directory and verify the selection with `kmp-mcp info` before writing.
 
 SQLite permits multiple local agent hosts to share one store. To recover a
-format-1 store, stop its writers, export it with KMP 0.3.2, then import the
-portable bundle into an empty current store. The recovery runbook has the
-exact commands.
+format-1 store, stop its writers and preserve the directory. Use an explicitly
+archived compatible exporter to create a portable bundle, then import it into
+an empty current store. The recovery runbook defines that external contract.
 
 ## Durability and recovery
 
@@ -102,10 +101,8 @@ to disable it.
 
 Logs and the bounded quality journal live inside the data directory. Quality
 observations use `telemetry/quality.sqlite3` in WAL mode, so every local host
-keeps its Observability Pulse. Historical `telemetry/quality.redb` files stay
-in place as source evidence but current binaries do not read them. These are
-local diagnostics, not remote telemetry; KMP does not upload memory to
-Underpass.
+keeps its Observability Pulse. These are local diagnostics, not remote
+telemetry; KMP does not upload memory to Underpass.
 
 ## Maintenance commands
 
@@ -117,7 +114,6 @@ Run `kmp-mcp --help` for the live command contract.
 | `export [file] [--about <about>]...`, `import` | Checkpoint all events or exact opaque abouts, then restore a bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
-| `migrate <src> <dst>` | Reserved for supported format migrations; retired format 1 fails with recovery instructions. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
 | `uninstall [--store <absolute-path>] [--apply]` | Preview the whole installation or one exact store; apply refuses live owners and runs only when explicitly requested. |
 

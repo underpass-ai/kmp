@@ -364,7 +364,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                 {
                     "id": "decision:sqlite-wal:outcome:migration-replay",
                     "kind": "outcome",
-                    "text": "Migration replay preserves existing redb stores while fresh stores use SQLite.",
+                    "text": "Portable replay preserves existing event history while fresh stores use SQLite.",
                     "coordinates": [{
                         "dimension": "work",
                         "scope_id": "work:graph-reranker",
@@ -412,7 +412,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     "to": "decision:sqlite-wal:constraint:shared-process-store",
                     "rel": "chosen_because",
                     "class": "motivational",
-                    "why": "SQLite WAL replaced redb because concurrent processes need one shareable embedded store.",
+                    "why": "SQLite WAL replaced the single-writer layout because concurrent processes need one shareable embedded store.",
                     "evidence": "The multi-process architecture decision records the engine comparison and concurrency requirement.",
                     "confidence": "high"
                 },
@@ -421,7 +421,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                     "to": "decision:sqlite-wal:entry:decision:sqlite-wal",
                     "rel": "depends_on",
                     "class": "causal",
-                    "why": "Replay preserves legacy redb data while the SQLite decision governs fresh shared stores.",
+                    "why": "Replay preserves legacy event data while the SQLite decision governs fresh shared stores.",
                     "evidence": "Migration compatibility and the current engine decision were verified together.",
                     "confidence": "high"
                 }
@@ -442,7 +442,7 @@ fn graph_reranker_ingest_arguments() -> Value {
                 {
                     "id": "evidence:decision:sqlite-wal:migration-replay",
                     "supports": ["decision:sqlite-wal:outcome:migration-replay"],
-                    "text": "Existing redb stores remain readable during migration; new stores select SQLite.",
+                    "text": "Portable event history remains readable during recovery; new stores select SQLite.",
                     "source": "migration fixture"
                 },
                 {
@@ -478,7 +478,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                 {
                     "id": "decision:fresh-store-default:decision:two-engine-architecture",
                     "kind": "decision",
-                    "text": "KMP keeps redb compatibility and SQLite as two embedded storage engines.",
+                    "text": "KMP keeps a single-writer compatibility layout and SQLite as two embedded storage modes.",
                     "coordinates": [{
                         "dimension": "work",
                         "scope_id": "work:fresh-store-default",
@@ -489,7 +489,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                 {
                     "id": "decision:fresh-store-default:decision:historical-fresh-store-default",
                     "kind": "decision",
-                    "text": "Redb was the distribution default for a fresh KMP data directory.",
+                    "text": "A single-writer layout was the distribution default for a fresh KMP data directory.",
                     "coordinates": [{
                         "dimension": "work",
                         "scope_id": "work:fresh-store-default",
@@ -500,7 +500,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                 {
                     "id": "decision:fresh-store-default:decision:current-fresh-store-default",
                     "kind": "decision",
-                    "text": "Shipped KMP builds create fresh SQLite stores while preserving existing redb stores.",
+                    "text": "Shipped KMP builds create fresh SQLite stores while preserving existing legacy stores.",
                     "coordinates": [{
                         "dimension": "work",
                         "scope_id": "work:fresh-store-default",
@@ -516,7 +516,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                     "rel": "updates_state",
                     "class": "causal",
                     "why": "The shipped fresh-store policy changes only the distribution default, not the two-engine architecture.",
-                    "evidence": "A fresh data directory now selects SQLite while existing redb stores remain readable.",
+                    "evidence": "A fresh data directory now selects SQLite while existing legacy stores remain readable.",
                     "confidence": "high"
                 },
                 {
@@ -525,7 +525,7 @@ fn partial_default_update_ingest_arguments() -> Value {
                     "rel": "uses_background",
                     "class": "evidential",
                     "why": "The new default operates inside the existing two-engine compatibility architecture.",
-                    "evidence": "Existing redb stores remain readable while fresh stores select SQLite.",
+                    "evidence": "Existing legacy stores remain readable while fresh stores select SQLite.",
                     "confidence": "high"
                 }
             ],
@@ -533,21 +533,21 @@ fn partial_default_update_ingest_arguments() -> Value {
                 {
                     "id": "evidence:decision:fresh-store-default:historical-fresh-store-default",
                     "supports": ["decision:fresh-store-default:decision:historical-fresh-store-default"],
-                    "text": "Before the distribution change, fresh KMP data directories defaulted to redb.",
+                    "text": "Before the distribution change, fresh KMP data directories defaulted to a single-writer layout.",
                     "source": "historical release fixture",
                     "time": "2026-08-17T11:38:00Z"
                 },
                 {
                     "id": "evidence:decision:fresh-store-default:current-fresh-store-default",
                     "supports": ["decision:fresh-store-default:decision:current-fresh-store-default"],
-                    "text": "Existing redb stores remain readable; a new KMP installation creates a fresh SQLite store by default.",
+                    "text": "Existing legacy stores remain readable; a new KMP installation creates a fresh SQLite store by default.",
                     "source": "current release fixture",
                     "time": "2026-08-17T11:39:00Z"
                 },
                 {
                     "id": "evidence:decision:fresh-store-default:two-engine-architecture",
                     "supports": ["decision:fresh-store-default:decision:two-engine-architecture"],
-                    "text": "The architecture retains both the redb compatibility path and the SQLite engine.",
+                    "text": "The architecture retains both a compatibility path and the SQLite engine.",
                     "source": "architecture fixture",
                     "time": "2026-08-17T11:37:00Z"
                 }
@@ -592,9 +592,9 @@ fn language_fallback_seed_arguments() -> Value {
             "dimensions": [{"id": "work:language-fallback", "kind": "work"}],
             "entries": [
                 {
-                    "id": "project:language-fallback:decision:embedded-redb",
+                    "id": "project:language-fallback:decision:embedded-single-writer",
                     "kind": "decision",
-                    "text": "The embedded store uses redb.",
+                    "text": "The embedded store uses a single-writer layout.",
                     "coordinates": [{
                         "dimension": "work",
                         "scope_id": "work:language-fallback",
@@ -615,18 +615,18 @@ fn language_fallback_seed_arguments() -> Value {
                 }
             ],
             "relations": [{
-                "from": "project:language-fallback:decision:embedded-redb",
+                "from": "project:language-fallback:decision:embedded-single-writer",
                 "to": "project:language-fallback:constraint:single-writer-ownership",
                 "rel": "uses_background",
                 "class": "evidential",
                 "why": "The single-writer model matches the product's per-project agent ownership.",
-                "evidence": "ADR-011 records one writer per redb store.",
+                "evidence": "ADR-011 records one writer per embedded store.",
                 "confidence": "high"
             }],
             "evidence": [{
-                "id": "evidence:project:language-fallback:embedded-redb-choice",
-                "supports": ["project:language-fallback:decision:embedded-redb"],
-                "text": "We chose redb because one writer matched one agent per project.",
+                "id": "evidence:project:language-fallback:embedded-single-writer-choice",
+                "supports": ["project:language-fallback:decision:embedded-single-writer"],
+                "text": "We chose a single-writer store because one writer matched one agent per project.",
                 "source": "https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-011-embedded-concurrency-model.md#L42",
                 "metadata": {"language": "en", "digest": "sha256:language-fixture"}
             }]
@@ -697,7 +697,8 @@ fn diacritic_recall_seed_arguments() -> Value {
 
 #[tokio::test]
 async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it() {
-    const TEXT: &str = "We chose redb because one writer matched one agent per project.";
+    const TEXT: &str =
+        "We chose a single-writer store because one writer matched one agent per project.";
     const WHY: &str = "The single-writer model matches the product's per-project agent ownership.";
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
@@ -735,7 +736,8 @@ async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it(
         .expect("English retry carries evidence")
         .iter()
         .find(|evidence| {
-            evidence["id"] == "detail:evidence:project:language-fallback:embedded-redb-choice"
+            evidence["id"]
+                == "detail:evidence:project:language-fallback:embedded-single-writer-choice"
         })
         .expect("English retry cites the stored evidence");
     assert_eq!(evidence["text"], TEXT);
@@ -1332,12 +1334,17 @@ async fn current_default_recall_survives_a_partial_decision_update() {
     )
     .await;
     assert!(
-        after["entries"]
+        after["proof"]["evidence"]
             .as_array()
-            .expect("goto entries")
+            .expect("goto proof evidence")
             .iter()
-            .any(|entry| {
-                entry["ref"] == "decision:fresh-store-default:decision:current-fresh-store-default"
+            .any(|evidence| {
+                evidence["supports"].as_array().is_some_and(|refs| {
+                    refs.iter().any(|reference| {
+                        reference
+                            == "decision:fresh-store-default:decision:current-fresh-store-default"
+                    })
+                })
             }),
         "{after}"
     );
@@ -1372,7 +1379,7 @@ async fn current_default_recall_survives_a_partial_decision_update() {
 #[tokio::test]
 async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     const WHY: &str = "SQLite WAL was chosen because independent KMP agents must concurrently share one embedded store.";
-    const RELATION_EVIDENCE: &str = "The two-process integration test passed concurrent reads and writes under SQLite WAL and failed at redb's single-writer process lock.";
+    const RELATION_EVIDENCE: &str = "The two-process integration test passed concurrent reads and writes under SQLite WAL and failed at the previous single-writer process lock.";
 
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
@@ -1403,8 +1410,8 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
             "current": {
                 "ref": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
                 "kind": "decision",
-                "summary": "Use SQLite WAL instead of redb for shared embedded storage.",
-                "evidence": "The architecture comparison selected SQLite WAL over redb after exercising two independent processes."
+                "summary": "Use SQLite WAL instead of a single-writer layout for shared embedded storage.",
+                "evidence": "The architecture comparison selected SQLite WAL after exercising two independent processes."
             },
             "connect_to": [{
                 "ref": "project:relation-why-conformance:constraint:share-embedded-store",
@@ -1455,7 +1462,7 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
         "kmp_ask",
         json!({
             "about": "project:relation-why-conformance",
-            "question": "Which embedded storage engine should independent KMP processes sharing one store use, and why was redb replaced?",
+            "question": "Which embedded storage engine should independent KMP processes sharing one store use, and why was the single-writer layout replaced?",
             "answer_policy": "evidence_or_unknown",
             "depth": 3,
             "budget": {"detail": "full", "max_bytes": 10_000}

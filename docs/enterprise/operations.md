@@ -75,10 +75,10 @@ The chart's values and templates are authoritative. Archived runbooks are not.
 
 ## Data movement
 
-Do not copy local SQLite or legacy redb files into enterprise storage. Export the local
-event bundle, plan canonical ingest, verify about coverage, temporal ordering,
-relations and evidence in the deployed kernel, and retain the source until the
-migration is accepted.
+Do not copy local embedded-store files into enterprise storage. Export the
+local event bundle, plan canonical ingest, verify about coverage, temporal
+ordering, relations and evidence in the deployed kernel, and retain the source
+until the migration is accepted.
 
 ## Upgrades and rollback
 

@@ -9,6 +9,14 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- Embedded KMP now presents SQLite WAL only. Runtime diagnostics, store
+  inventory, plugin guidance and active documentation no longer carry the
+  retired engine identity, and the nonfunctional store-migration command has
+  been removed. Unsupported formats remain fail-closed and untouched behind a
+  generic external export/import recovery contract.
+
 ### Fixed
 
 - `kmp-mcp uninstall --store <absolute-path>` now scopes preview and apply to
@@ -91,7 +99,7 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
-- Embedded KMP now contains SQLite alone: the redb dependency, canonical
+- Embedded KMP now contains SQLite alone: the retired dependency, canonical
   engine, conformance target and legacy quality-journal importer are removed.
   Format-1 stores are detected and rejected without opening or changing their
   bytes; KMP 0.3.2 remains the export bridge into a portable bundle.
@@ -164,11 +172,11 @@ Detailed notes from the early release cycle remain available in the
 ### Changed
 
 - Fresh embedded memory and its bounded quality telemetry now use shareable
-  SQLite unconditionally. `KMP_MCP_ENGINE=redb`, redb migration destinations
-  and `share-memory` are retired; format-1 memory remains readable and
+  SQLite unconditionally. Retired engine selectors, obsolete migration
+  destinations and `share-memory` are retired; format-1 memory remains readable and
   migratable through an isolated compatibility path for the 0.3 upgrade.
   The quality journal moves to `telemetry/quality.sqlite3`, preserves retention
-  and imports an existing `quality.redb` exactly once while leaving that source
+  and imports an existing legacy journal exactly once while leaving that source
   file intact.
 
 ### Fixed
@@ -395,7 +403,7 @@ Detailed notes from the early release cycle remain available in the
 - The root project metadata, MCP Registry listing, MCPB manifest, published
   crate pages and rustdocs now describe the same product: local-first agent
   memory that preserves what happened, when and why.
-- SQLite is documented as the fresh-store path. Existing redb stores remain
+- SQLite is documented as the fresh-store path. Existing legacy stores remain
   readable through their explicitly stamped compatibility path.
 - Enterprise deployment remains free and open source, but is deliberately a
   secondary path behind the local embedded experience.
@@ -462,7 +470,7 @@ Detailed notes from the early release cycle remain available in the
 
 - Recall projection became transport-neutral and pageable across embedded,
   gRPC, stdio and HTTP paths.
-- Project memory gained explicit SQLite/redb engine selection and portable
+- Project memory gained explicit embedded-engine selection and portable
   recovery semantics.
 
 ### Fixed
@@ -555,7 +563,7 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
-- A storage seam, opt-in SQLite engine, redb-to-SQLite migration, project-local
+- A storage seam, opt-in SQLite engine, embedded-store migration, project-local
   memory, demo/catch-up/revert workflows and commit-by-default writes.
 
 ## [0.1.3] - 2026-08-16

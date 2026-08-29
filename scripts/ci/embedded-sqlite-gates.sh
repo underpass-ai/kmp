@@ -25,6 +25,17 @@ if cargo tree -p kmp-mcp --locked | grep -Eq '(^| )redb v[0-9]'; then
   exit 1
 fi
 
+echo "sqlite-gates: retired engine identity is absent from the public surface"
+if rg -n -i 'redb' README.md crates/*/README.md plugins/kmp docs; then
+  echo "sqlite-gates: retired engine identity leaked into public product material" >&2
+  exit 1
+fi
+if rg -n 'kmp-mcp migrate|migrate <src>|migrate <source' \
+    README.md crates/*/README.md plugins/kmp docs; then
+  echo "sqlite-gates: obsolete store-migration command leaked into public product material" >&2
+  exit 1
+fi
+
 echo "sqlite-gates: kmp-embedded and kmp-mcp still build and pass with the engine in"
 cargo test -p kmp-embedded -p kmp-mcp --features sqlite --locked
 
@@ -117,7 +128,7 @@ redb_status=$?
   >"${RETIRED_DIR}/share.out" 2>"${RETIRED_DIR}/share.err"
 share_status=$?
 set -e
-[ "${redb_status}" -ne 0 ] && grep -q "redb engine is retired" "${RETIRED_DIR}/redb.err" \
+[ "${redb_status}" -ne 0 ] && grep -q "unknown storage engine" "${RETIRED_DIR}/redb.err" \
   || { echo "sqlite-gates: KMP_MCP_ENGINE=redb was not rejected" >&2; exit 1; }
 [ "${share_status}" -eq 2 ] && grep -q "share-memory was retired" "${RETIRED_DIR}/share.err" \
   || { echo "sqlite-gates: retired share-memory did not explain the replacement" >&2; exit 1; }
