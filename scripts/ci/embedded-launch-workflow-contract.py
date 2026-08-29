@@ -22,6 +22,7 @@ WORKFLOW_CLAUSES = (
     '      - ".github/workflows/embedded-launch-campaign.yml"',
     "runs-on: ubuntu-24.04",
     "permissions:\n      contents: read",
+    "      - name: Install pinned campaign toolchain\n        timeout-minutes: 16",
     "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
     'FFMPEG_DEB_VERSION: "7:6.1.1-3ubuntu5"',
     'CSOUND_DEB_VERSION: "1:6.18.1+dfsg-1ubuntu4"',
@@ -88,6 +89,10 @@ def prove_mutation_guards(workflow: str, gate: str) -> None:
                 "actions/checkout@v4",
                 1,
             ),
+            gate,
+        ),
+        "missing toolchain step timeout": (
+            workflow.replace("        timeout-minutes: 16\n", "", 1),
             gate,
         ),
         "unscoped pull requests": (
@@ -192,7 +197,7 @@ def main() -> None:
     prove_mutation_guards(workflow, gate)
     print(
         "embedded launch workflow contract passed: path scope, immutable tools, "
-        "source/final split, deterministic hook, portable roles/schemas, 9 mutation guards"
+        "source/final split, deterministic hook, portable roles/schemas, 10 mutation guards"
     )
 
 
