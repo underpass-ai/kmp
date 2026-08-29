@@ -13,9 +13,9 @@ function appendJsonl(file, value) {
 }
 
 class ObsConnection {
-  constructor({ port, password, trace }) {
+  constructor({ port, credential, trace }) {
     this.port = port;
-    this.password = password;
+    this.credential = credential;
     this.trace = trace;
     this.pending = new Map();
     this.requestNumber = 0;
@@ -32,7 +32,7 @@ class ObsConnection {
           const identify = { rpcVersion: 1, eventSubscriptions: 64 };
           if (packet.d.authentication) {
             identify.authentication = obsWebSocketAuthentication(
-              this.password,
+              this.credential,
               packet.d.authentication.salt,
               packet.d.authentication.challenge,
             );
@@ -126,12 +126,12 @@ async function connectWithRetry(options) {
   throw new Error(`OBS WebSocket did not become ready: ${last}`);
 }
 
-const [command, portText, passwordFile, traceFile] = process.argv.slice(2);
-if (!command || !portText || !passwordFile || !traceFile) {
+const [command, portText, credentialFile, traceFile] = process.argv.slice(2);
+if (!command || !portText || !credentialFile || !traceFile) {
   throw new Error("usage: obs-control.mjs arm|stop|status PORT PASSWORD_FILE TRACE_JSONL");
 }
-const password = fs.readFileSync(passwordFile, "utf8").trim();
-const obs = await connectWithRetry({ port: Number(portText), password, trace: traceFile });
+const credential = fs.readFileSync(credentialFile, "utf8").trim();
+const obs = await connectWithRetry({ port: Number(portText), credential, trace: traceFile });
 async function requestWhenObsReady(requestType, requestData = {}) {
   const deadline = Date.now() + 30000;
   let last;

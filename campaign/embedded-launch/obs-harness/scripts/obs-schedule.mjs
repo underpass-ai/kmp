@@ -5,8 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { obsWebSocketAuthentication } from "./obs-websocket-auth.mjs";
 
-const [edlPath, scenarioId, durationText, portText, passwordFile, traceFile, runDir] = process.argv.slice(2);
-if (!edlPath || !scenarioId || !durationText || !portText || !passwordFile || !traceFile || !runDir) {
+const [edlPath, scenarioId, durationText, portText, credentialFile, traceFile, runDir] = process.argv.slice(2);
+if (!edlPath || !scenarioId || !durationText || !portText || !credentialFile || !traceFile || !runDir) {
   throw new Error("usage: obs-schedule.mjs EDL SCENARIO_ID DURATION_MS PORT PASSWORD_FILE OBS_TRACE RUN_DIR");
 }
 
@@ -49,7 +49,7 @@ for (let index = 0; index < schedule.length; index += 1) {
   if (index > 0 && event.at_ms <= schedule[index - 1].at_ms) throw new Error("obs_schedule must be strictly ordered");
 }
 
-const password = fs.readFileSync(passwordFile, "utf8").trim();
+const credential = fs.readFileSync(credentialFile, "utf8").trim();
 const ws = new WebSocket(`ws://127.0.0.1:${Number(portText)}`);
 const pending = new Map();
 let requestNumber = 0;
@@ -70,7 +70,7 @@ const ready = new Promise((resolve, reject) => {
     const packet = JSON.parse(String(event.data));
     if (packet.op === 0) {
       const authentication = obsWebSocketAuthentication(
-        password,
+        credential,
         packet.d.authentication.salt,
         packet.d.authentication.challenge,
       );
