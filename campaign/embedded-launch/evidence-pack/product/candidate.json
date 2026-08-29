@@ -1,10 +1,10 @@
 {
   "contract": "kmp.release-candidate.v1",
   "version": "0.5.0",
-  "input_sha256": "742e90d453ad17107cb3958414fe9dff99e593cc705742ef11fd008a4ad2cd95",
-  "source_sha": "11942b9ae0599557f73b037140f4266f2cbfa901",
+  "input_sha256": "d1d1e6fb2cd28d7ebb8f90e1e1674006f0c1b31cddd71b7428837fd62d8cf446",
+  "source_sha": "af452279507d8575d308ffdb9ab7ee01205b9c60",
   "source_ref": "feat/embedded-launch",
-  "run_id": "33225071981",
+  "run_id": "33234243966",
   "assets": [
     {
       "name": "kmp-mcp-v0.5.0-aarch64-apple-darwin",
@@ -38,23 +38,23 @@
     },
     {
       "name": "kmp-plugin-0.5.0-linux-arm64.tar.gz",
-      "sha256": "1a16000cae61048b2aceabaa60dfcbba093b8cda61449c0b2e31a5440db91900",
-      "size": 7357392
+      "sha256": "e51f680253e1e1fc5c2a1d1445a1f7939688e5722326219489debfd204738237",
+      "size": 7357447
     },
     {
       "name": "kmp-plugin-0.5.0-linux-x86_64.tar.gz",
-      "sha256": "87bac300b3bf781fa470d1baacecd727bae7198fd9857e9090c7fe2b42012663",
-      "size": 7820997
+      "sha256": "f4864b3f64194bc0f1a86ea2cb825badfc9cb8e3721e2a0d96b3b488e40d07e5",
+      "size": 7820943
     },
     {
       "name": "kmp-plugin-0.5.0-macos-arm64.tar.gz",
-      "sha256": "61b87cf9892b58f940f0f8f08edda5cd8afb4fc3a31914f15494797998316ab2",
-      "size": 7150537
+      "sha256": "c5c28ddc25986195394e660880010b5245b16aac322c3a84206bd69045973318",
+      "size": 7150536
     },
     {
       "name": "kmp-plugin-0.5.0-windows-x86_64.tar.gz",
-      "sha256": "aedea38efe5b3ca19b42fe036275898bcb28ff977596cf2cfec51718b95fe8b7",
-      "size": 7571165
+      "sha256": "4c54d46e85fa1a533434eb3be2ecca4e78facacfcf576546e56c95f1396a7871",
+      "size": 7571174
     }
   ]
 }

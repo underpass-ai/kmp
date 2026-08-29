@@ -1,7 +1,7 @@
 {
   "campaign_id": "kmp-embedded-first-launch",
   "concept": "KMP Embedded — memory, with receipts",
-  "product_commit": "11942b9ae0599557f73b037140f4266f2cbfa901",
+  "product_commit": "af452279507d8575d308ffdb9ab7ee01205b9c60",
   "binary": {
     "path": "tmp/release-candidate-0.5.0/assets/kmp-mcp-v0.5.0-aarch64-unknown-linux-gnu",
     "sha256": "b7e3f654266094c2e691dd3d963612f29c389be1171642143a24f58706fb4fcf",
