@@ -1,0 +1,235 @@
+{
+  "audio": {
+    "evidence": {
+      "SHA256SUMS": {
+        "bytes": 1237,
+        "path": "campaign/embedded-launch/evidence-pack/audio/SHA256SUMS",
+        "sha256": "1e5cdab8bed56ad1721fcbaad87c0e1036025ca5e4645d8bdbf3abccb154a278"
+      },
+      "cues.tsv": {
+        "bytes": 328,
+        "path": "campaign/embedded-launch/evidence-pack/audio/cues.tsv",
+        "sha256": "436f7e743fe995bf684778676b37b5f1b9751e376b95e8c7a25c4f8083dc5210"
+      },
+      "provenance.json": {
+        "bytes": 6054,
+        "path": "campaign/embedded-launch/evidence-pack/audio/provenance.json",
+        "sha256": "7cd4ad6f64fdcbf2721c4bf6171a30254b144436d890e43c39ff6b6642fcfaef"
+      }
+    },
+    "premix_canonical_pcm": {
+      "fresh-process-same-why": {
+        "mix": {
+          "bytes": 12672000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2112000,
+          "sha256": "6813c419d727a1f1c3de43a13c2e647cd8371ea58266a111c51157e8ce8128be"
+        },
+        "precontrolled": {
+          "bytes": 12672000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2112000,
+          "sha256": "89de374a81a8a5caa535d9a5692fdd905e04d42b9ff9a2c29850c6b878e60ffe"
+        }
+      },
+      "keep-the-wrong-turn": {
+        "mix": {
+          "bytes": 15552000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2592000,
+          "sha256": "5b1b53b5f7c917448d1c0dd8af3f90c96774a99024b335a57148fe965b141ea1"
+        },
+        "precontrolled": {
+          "bytes": 15552000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2592000,
+          "sha256": "e01dd8881cae85a6a6c509d8b7e9132401ba5d1811577dcd31ae0efeb70bf655"
+        }
+      },
+      "two-processes-one-memory": {
+        "mix": {
+          "bytes": 13248000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2208000,
+          "sha256": "bf551ace538bfed587b7c51f902f223d69710be67302acb97584e0d39d210fbe"
+        },
+        "precontrolled": {
+          "bytes": 13248000,
+          "format": "s24le-48000hz-stereo-interleaved",
+          "frames": 2208000,
+          "sha256": "787e80ac04e6f3ea06d7d4bc58c510d6c9d31be1f64b5832b481556fa9123b56"
+        }
+      }
+    }
+  },
+  "campaign_id": "kmp-embedded-first-launch",
+  "contract": "kmp.embedded-launch.clean-render-comparison.v1",
+  "masters": {
+    "fresh-process-same-why": {
+      "anchors_sha256": "98703256b22d859780d1bd3ade2ac3da105da60e56cf41a4b5ddf885f292fe2f",
+      "bytes": 13969983,
+      "cue_resolution_sha256": "900af12cdb60c01698d3c826ec0a91077c1bbf1389d46738feaaa568a5e5dab6",
+      "distribution_audio_pcm": {
+        "bytes": 12675072,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 2112512,
+        "sha256": "1578b6cef116ee0abdf8301c73315135a8b845bbea0c7a9c802cfdc8047d685a"
+      },
+      "path": "docs/assets/campaign/kmp-embedded/fresh-process-same-why.mp4",
+      "picture_source_sha256": "e26c01e08f08924deadda998033abf3743f60604be5b256481f10bdabcf85e00",
+      "sha256": "b569375245330bd280eaa67a25400b54e6ad3047484d7557a109762e3e1e706d"
+    },
+    "keep-the-wrong-turn": {
+      "anchors_sha256": "2d2aa2bf94669cbcd99fee93ca007073a825530f6d4ab829a7205891940f4650",
+      "bytes": 17188925,
+      "cue_resolution_sha256": "39bd887f1579a4a9ce0aa0bad41434a5f372a6356cfc8e7b35772eefc6be6cbc",
+      "distribution_audio_pcm": {
+        "bytes": 15556608,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 2592768,
+        "sha256": "dd2ecd4c0547e9cd5e75c1c7b671db18fb5e3324fec711ca3eaa2f49dafe32c2"
+      },
+      "path": "docs/assets/campaign/kmp-embedded/keep-the-wrong-turn.mp4",
+      "picture_source_sha256": "65bbdc9b8e9d25326b7eb0593fba342e7c98352b2ee483bb6d394f53f83e4036",
+      "sha256": "ea2a46fce0cd16422397ab71d89ac1d4b494ba6777a0d4d3b66d0bfdd45021a8"
+    },
+    "two-processes-one-memory": {
+      "anchors_sha256": "ec7e9b5a8081884efa51e4268b0173773f6b0a55d049313dc5058d9998aa2175",
+      "bytes": 14703013,
+      "cue_resolution_sha256": "8e7b4e42d6f05da4c9e2a787ba2912f9afb7ced8b2c6b39c0ce623b813347e9e",
+      "distribution_audio_pcm": {
+        "bytes": 13252608,
+        "format": "s24le-48000hz-stereo-interleaved",
+        "frames": 2208768,
+        "sha256": "154b0ea7cc7464d1488643ba690be74bdae31d348a46d8895002f5a04dbc53da"
+      },
+      "path": "docs/assets/campaign/kmp-embedded/two-processes-one-memory.mp4",
+      "picture_source_sha256": "3897ad5491cafb469cfe8df9b424c49ab9389035cd2c2d54db823c243177559b",
+      "sha256": "c5f7d377571d1a8080d34db32bcfbbd4035cfff501213c03ed04a705ca6dc7fd"
+    }
+  },
+  "passed": true,
+  "renderer_manifest_projection_sha256": "3627accb738ddafa1f1dbecda2607071e824295ffae327d79792c9bad99cd4bc",
+  "source_bindings": {
+    "campaign/embedded-launch/audio/contract.json": {
+      "bytes": 5080,
+      "path": "campaign/embedded-launch/audio/contract.json",
+      "sha256": "24e41f02b860c64bbc688faa1f0cfb4d622874578dbc052ac3cda065a86ac174"
+    },
+    "campaign/embedded-launch/audio/cues.tsv": {
+      "bytes": 328,
+      "path": "campaign/embedded-launch/audio/cues.tsv",
+      "sha256": "436f7e743fe995bf684778676b37b5f1b9751e376b95e8c7a25c4f8083dc5210"
+    },
+    "campaign/embedded-launch/audio/evidence-knot.csd": {
+      "bytes": 2477,
+      "path": "campaign/embedded-launch/audio/evidence-knot.csd",
+      "sha256": "16801ce4c2c48b814de56f11c54f03624b543d4f293566713da8f12fd0b0d6c7"
+    },
+    "campaign/embedded-launch/audio/mix-levels.json": {
+      "bytes": 500,
+      "path": "campaign/embedded-launch/audio/mix-levels.json",
+      "sha256": "3f27cfab5d68f43ccba6e6aa2e131d63fdea23e84e807cbade0fafe9725bfcbe"
+    },
+    "campaign/embedded-launch/campaign.json": {
+      "bytes": 7325,
+      "path": "campaign/embedded-launch/campaign.json",
+      "sha256": "6999a12808d0e9513a1dc5c2d15b2bb531bab8939495f6090eeea0f1a3eeff2d"
+    },
+    "campaign/embedded-launch/captions/fresh-process-same-why.vtt": {
+      "bytes": 512,
+      "path": "campaign/embedded-launch/captions/fresh-process-same-why.vtt",
+      "sha256": "1b795ca52b3b7f9821ac66d30478662a1a658dd8d06ff957e461c5177026dd70"
+    },
+    "campaign/embedded-launch/captions/keep-the-wrong-turn.vtt": {
+      "bytes": 542,
+      "path": "campaign/embedded-launch/captions/keep-the-wrong-turn.vtt",
+      "sha256": "7b24e02b2320cf6edc9a869bd4d6873ddb99899ebbe823a1dcc044e4c3bd10f7"
+    },
+    "campaign/embedded-launch/captions/two-processes-one-memory.vtt": {
+      "bytes": 467,
+      "path": "campaign/embedded-launch/captions/two-processes-one-memory.vtt",
+      "sha256": "24d9282e204e832c5de55623212d497fd3d6a43bdb8e1dbb5bef3d7c3976e55d"
+    },
+    "campaign/embedded-launch/edl.json": {
+      "bytes": 9424,
+      "path": "campaign/embedded-launch/edl.json",
+      "sha256": "d1234ff23de06a322867960e2d0b6532492413750fd023957de5a7d0d16e0192"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/promoted/fresh-process-same-why.json": {
+      "bytes": 15250,
+      "path": "campaign/embedded-launch/evidence-pack/capture/promoted/fresh-process-same-why.json",
+      "sha256": "00ecefe9e37b72970cac632bdb897c8162a4a7fd30486f5394fede6ba9883b7a"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/promoted/keep-the-wrong-turn.json": {
+      "bytes": 14962,
+      "path": "campaign/embedded-launch/evidence-pack/capture/promoted/keep-the-wrong-turn.json",
+      "sha256": "bb81bd7afbe323e94497c237081515b9f5a110f5b2d3ed5b752850d2f3956d9f"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/promoted/two-processes-one-memory.json": {
+      "bytes": 16151,
+      "path": "campaign/embedded-launch/evidence-pack/capture/promoted/two-processes-one-memory.json",
+      "sha256": "fb079dcf23b29ad4018b789edebe633d91895988fcdf6e96d3b4b00f05cce5f0"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/fresh-process-same-why.mkv": {
+      "bytes": 13766329,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/fresh-process-same-why.mkv",
+      "sha256": "e26c01e08f08924deadda998033abf3743f60604be5b256481f10bdabcf85e00"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/fresh-process-same-why.mkv.sha256": {
+      "bytes": 144,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/fresh-process-same-why.mkv.sha256",
+      "sha256": "ab3c9d66393c5e68f1e0c4dc2d0e2244f254fedfaf0c6db68ab5da7e0fb4547f"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/keep-the-wrong-turn.mkv": {
+      "bytes": 16914628,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/keep-the-wrong-turn.mkv",
+      "sha256": "65bbdc9b8e9d25326b7eb0593fba342e7c98352b2ee483bb6d394f53f83e4036"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/keep-the-wrong-turn.mkv.sha256": {
+      "bytes": 141,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/keep-the-wrong-turn.mkv.sha256",
+      "sha256": "63dcb370da3198e594b21ca801de2ec462abe9ad7ceb08141a5c4122b092cf94"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/two-processes-one-memory.mkv": {
+      "bytes": 14404400,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/two-processes-one-memory.mkv",
+      "sha256": "3897ad5491cafb469cfe8df9b424c49ab9389035cd2c2d54db823c243177559b"
+    },
+    "campaign/embedded-launch/evidence-pack/capture/raw/two-processes-one-memory.mkv.sha256": {
+      "bytes": 146,
+      "path": "campaign/embedded-launch/evidence-pack/capture/raw/two-processes-one-memory.mkv.sha256",
+      "sha256": "db5505ce63ff8761dbe1d4507f9f72e60e0bbd2c199c841dc7407e79b96f1ce2"
+    },
+    "campaign/embedded-launch/scripts/audio_contract.py": {
+      "bytes": 13894,
+      "path": "campaign/embedded-launch/scripts/audio_contract.py",
+      "sha256": "c46a6865bdaf91937f3e3b1c5869d7819af3ea9d89fec3712fb012931c954ee4"
+    },
+    "campaign/embedded-launch/scripts/capture_contract.py": {
+      "bytes": 6210,
+      "path": "campaign/embedded-launch/scripts/capture_contract.py",
+      "sha256": "7696d296f35c9389b7ca1c2b13ddad2740a3d2c96ae74cbabb020accfd43e39c"
+    },
+    "campaign/embedded-launch/scripts/final-regeneration-gate.sh": {
+      "bytes": 493,
+      "path": "campaign/embedded-launch/scripts/final-regeneration-gate.sh",
+      "sha256": "3e218526f7f0383a077409fedfdaae3629b331bed347737825f5533e1e4e8650"
+    },
+    "campaign/embedded-launch/scripts/final_regeneration_gate.py": {
+      "bytes": 21001,
+      "path": "campaign/embedded-launch/scripts/final_regeneration_gate.py",
+      "sha256": "bdb346215252309f752a315202271b6f4d80f02335efa37afa74e5204c8c5ac0"
+    },
+    "campaign/embedded-launch/scripts/render-audio.sh": {
+      "bytes": 1102,
+      "path": "campaign/embedded-launch/scripts/render-audio.sh",
+      "sha256": "533b298a017cd3596751719a8f5c68146f2d42330070ba3f0d1232d67f17fa3f"
+    },
+    "campaign/embedded-launch/scripts/render-campaign.py": {
+      "bytes": 26018,
+      "path": "campaign/embedded-launch/scripts/render-campaign.py",
+      "sha256": "4bf7a4a98c7e399dd837a08e079e81d50da64203085ed1d70ef5f966163f00df"
+    }
+  }
+}
