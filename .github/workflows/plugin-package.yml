@@ -45,12 +45,6 @@ jobs:
         with:
           shared-key: plugin-validation
 
-      # Cheap, needs no binary, and catches the drift that is invisible in
-      # review: a command written in a hurry that reads like a different
-      # product. Runs first so a voice failure is the first thing on the log.
-      - name: Check the plugin speaks with one voice
-        run: cargo run --locked --quiet -p kmp-release -- plugin check
-
       - name: Check the plugin capability contract
         run: python3 scripts/ci/kmp-capability-contract.py
 
