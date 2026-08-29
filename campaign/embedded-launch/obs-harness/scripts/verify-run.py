@@ -80,6 +80,73 @@ check(
 )
 
 wire = json_lines(run / "tool-calls.jsonl")
+terminal_events = json_lines(run / "terminal-events.jsonl")
+viewport_resets = [row for row in terminal_events if row.get("event_type") == "viewport_reset"]
+reset_sha256 = hashlib.sha256(b"\x1b[2J\x1b[H").hexdigest()
+
+
+def semantic_step_identity(step: dict) -> dict:
+    identity = {"at_ms": step["at_ms"], "type": step["type"]}
+    if step["type"] == "say":
+        return {
+            **identity,
+            "speaker": step["speaker"],
+            "text_sha256": hashlib.sha256(step["text"].encode()).hexdigest(),
+        }
+    if step["type"] == "process":
+        return {
+            **identity,
+            "action": step["action"],
+            "process_id": step["process_id"],
+        }
+    raise ValueError(f"not a semantic terminal step: {step['type']}")
+
+
+expected_viewport_steps = [
+    semantic_step_identity(step)
+    for step in scenario["steps"]
+    if step["type"] in {"say", "process"}
+]
+observed_viewport_steps = [row.get("step") for row in viewport_resets]
+check(
+    "terminal_semantic_viewport_resets",
+    observed_viewport_steps == expected_viewport_steps
+    and all(
+        row.get("contract") == "kmp.terminal-semantic-viewport.v1"
+        and row.get("mechanism") == "ansi_clear_display_2_home"
+        and row.get("reset_sequence_sha256") == reset_sha256
+        and row.get("terminal_columns") == 32
+        and row.get("row_budget") == 24
+        for row in viewport_resets
+    ),
+    {
+        "expected": expected_viewport_steps,
+        "observed": observed_viewport_steps,
+        "reset_sequence_sha256": reset_sha256,
+    },
+)
+semantic_terminal_lines = [
+    row for row in terminal_events
+    if row.get("event_type") == "line" and "viewport_row_budget" in row
+]
+check(
+    "terminal_semantic_row_budget",
+    bool(semantic_terminal_lines)
+    and all(
+        row.get("viewport_row_budget") == 24
+        and 0 < row.get("viewport_rows", 0) <= row.get("viewport_rows_used", 0) <= 24
+        for row in semantic_terminal_lines
+    ),
+    [
+        {
+            "speaker": row.get("speaker"),
+            "text_sha256": hashlib.sha256(row.get("text", "").encode()).hexdigest(),
+            "rows": row.get("viewport_rows"),
+            "rows_used": row.get("viewport_rows_used"),
+        }
+        for row in semantic_terminal_lines
+    ],
+)
 tool_requests = [
     row for row in wire
     if row["direction"] == "client_to_server"
@@ -241,6 +308,21 @@ check(
         for scene in focus_scenes
     ),
     {scene: [item.get("inputName") for item in by_scene.get(scene, [])] for scene in focus_scenes},
+)
+obs_arm = json.loads((run / "obs-arm.json").read_text())
+terminal_focus_sources = [
+    {"scene": scene["name"], "role": source["role"], "crop": source["crop"]}
+    for scene in obs_arm.get("scenes", [])
+    for source in scene.get("sources", [])
+    if source.get("role") in {
+        "primary-terminal", "secondary-terminal", "primary-cta",
+    }
+]
+check(
+    "terminal_focus_crop_tracks_semantic_origin",
+    len(terminal_focus_sources) == 4
+    and all(item["crop"] == [0, 40, 672, 378] for item in terminal_focus_sources),
+    terminal_focus_sources,
 )
 check("obs_start_stop_verified", any("StartRecord" in json.dumps(row) for row in obs_wire) and any("StopRecord" in json.dumps(row) for row in obs_wire), "obs-websocket.jsonl")
 obs_stop = json.loads((run / "obs-stop.json").read_text())

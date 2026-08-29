@@ -139,6 +139,17 @@ if contracts_path.is_file() and edl_path.is_file():
             fail("scenario duration differs from EDL")
         if any(item["at_ms"] >= data["duration_ms"] for item in master["obs_schedule"]):
             fail("EDL scene change falls outside scenario duration")
+        for event in master["obs_schedule"]:
+            if event["scene"] not in {"KMP/TerminalFocus", "KMP/CTAFocus"}:
+                continue
+            if not any(
+                step["at_ms"] == event["at_ms"] and step["type"] in {"say", "process"}
+                for step in data["steps"]
+            ):
+                fail(
+                    f"{event['scene']} at {event['at_ms']}ms needs an exact say/process "
+                    "beat to reset the semantic terminal viewport"
+                )
         print(f"campaign contract valid: {data['id']}")
 
 print(f"scenario valid: {data['id']}")

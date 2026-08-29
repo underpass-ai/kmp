@@ -7,6 +7,12 @@ import path from "node:path";
 import readline from "node:readline";
 import { spawn, spawnSync } from "node:child_process";
 
+import {
+  consumeTerminalRows,
+  opensSemanticViewport,
+  resetSemanticViewport,
+} from "./terminal-presentation-contract.mjs";
+
 const [scenarioPath, runDir, binary, repoRoot] = process.argv.slice(2);
 if (!scenarioPath || !runDir || !binary || !repoRoot) {
   throw new Error("usage: mcp-pty-client.mjs SCENARIO RUN_DIR KMP_MCP_BIN REPO_ROOT");
@@ -75,6 +81,9 @@ function logWire(processId, direction, line) {
   });
 }
 
+let semanticViewportActive = false;
+let semanticRowsUsed = 0;
+
 function terminal(speaker, text, style = "") {
   const palettes = {
     user: "\x1b[38;5;117m",
@@ -85,8 +94,22 @@ function terminal(speaker, text, style = "") {
   };
   const color = palettes[style || speaker] || palettes.neutral;
   const prefix = speaker ? `${speaker.toUpperCase()}  ` : "";
+  const viewport = semanticViewportActive
+    ? consumeTerminalRows(semanticRowsUsed, speaker, text)
+    : null;
+  if (viewport) semanticRowsUsed = viewport.used;
   process.stdout.write(`${color}\x1b[1m${prefix}\x1b[0m${color}${text}\x1b[0m\n\n`);
-  appendJsonl(terminalFile, { speaker, text, style: style || speaker });
+  appendJsonl(terminalFile, {
+    event_type: "line",
+    speaker,
+    text,
+    style: style || speaker,
+    ...(viewport ? {
+      viewport_rows: viewport.rows,
+      viewport_rows_used: viewport.used,
+      viewport_row_budget: viewport.budget,
+    } : {}),
+  });
 }
 
 function getPath(value, dotted) {
@@ -423,6 +446,14 @@ try {
 
   for (const step of scenario.steps) {
     await waitUntil(baseNs + BigInt(step.at_ms) * 1000000n);
+    if (opensSemanticViewport(step)) {
+      resetSemanticViewport(step, {
+        write: (value) => process.stdout.write(value),
+        audit: (value) => appendJsonl(terminalFile, value),
+      });
+      semanticViewportActive = true;
+      semanticRowsUsed = 0;
+    }
     if (step.type === "say") {
       terminal(step.speaker, step.text);
     } else if (step.type === "process") {
@@ -465,6 +496,7 @@ try {
 } catch (error) {
   failure = { message: error.message, stack: error.stack };
   fs.writeFileSync(path.join(controlDir, "client-failed"), `${JSON.stringify({ ...stamp(), failure }, null, 2)}\n`, { mode: 0o600 });
+  semanticViewportActive = false;
   terminal("process", `CAPTURE FAILED · ${error.message}`, "neutral");
 } finally {
   for (const processId of [...activeClients.keys()]) {

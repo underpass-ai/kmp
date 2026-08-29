@@ -78,6 +78,21 @@ verification.json            executable gates and result
 evidence-manifest.json       SHA-256 closure over the evidence pack
 ```
 
+Every scheduled `say` and `process` beat that opens a new composition emits an
+audited ANSI clear-display/home reset before its visible terminal output. Tool
+calls and their real responses append below the question inside that same
+composition. Focus scenes crop from the semantic origin rather than from a
+fixed scrollback band. This keeps the current question, response or CTA in
+frame while the unmodified PTY transcript retains the complete sequence.
+`verify-run.py` rejects a missing, reordered or altered reset and rejects an
+OBS terminal crop that does not follow the same origin.
+
+The real terminal remains 32 columns wide. Each composition has a fail-closed
+24-row presentation budget: selected real tool fields must fit below the
+opening question without forcing GNOME Terminal to scroll it away. Full MCP
+responses remain byte-bound in `tool-calls.jsonl`; exceeding the visual budget
+fails the take instead of clipping or silently replacing evidence.
+
 Secret-shaped keys and the ChronoLoom `k` capability are replaced with a
 redaction object that includes the SHA-256 of the original value. The raw wire
 line hash remains, so a reviewer can distinguish an exact payload from an

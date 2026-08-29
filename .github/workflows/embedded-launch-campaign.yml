@@ -51,11 +51,11 @@ jobs:
 
       - name: Install pinned campaign toolchain
         run: |
-          timeout 300 sudo apt-get update \
+          sudo timeout --kill-after=15s 300 apt-get update \
             -o Acquire::Retries=3 \
             -o Acquire::http::Timeout=30 \
             -o Acquire::https::Timeout=30
-          timeout 600 sudo env DEBIAN_FRONTEND=noninteractive \
+          sudo timeout --kill-after=15s 600 env DEBIAN_FRONTEND=noninteractive \
             apt-get install --yes --no-install-recommends \
             "ffmpeg=${FFMPEG_DEB_VERSION}" \
             "csound=${CSOUND_DEB_VERSION}" \

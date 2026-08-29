@@ -94,7 +94,8 @@
         "budget": { "detail": "full", "max_bytes": 12000 }
       },
       "display_paths": [
-        { "label": "answer", "path": "structuredContent.answer" }
+        { "label": "decision", "path": "structuredContent.proof.evidence.0.text" },
+        { "label": "evidence", "path": "structuredContent.proof.evidence.1.text" }
       ]
     },
     {
@@ -109,9 +110,7 @@
         "budget": { "max_bytes": 12000 }
       },
       "display_paths": [
-        { "label": "ref", "path": "structuredContent.object.ref" },
-        { "label": "decision", "path": "structuredContent.object.text" },
-        { "label": "evidence", "path": "structuredContent.evidence.0.text" }
+        { "label": "ref", "path": "structuredContent.object.ref" }
       ]
     },
     { "at_ms": 28000, "type": "say", "speaker": "process", "text": "No export. No import. One local SQLite WAL store." },

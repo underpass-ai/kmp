@@ -22,6 +22,7 @@ cd "${root}"
 "${python}" campaign/embedded-launch/scripts/test_final_media_contract.py
 node campaign/embedded-launch/obs-harness/scripts/test-obs-websocket-auth.mjs
 node campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs
+node campaign/embedded-launch/obs-harness/scripts/test-terminal-presentation.mjs
 "${python}" campaign/embedded-launch/scripts/freeze-product-evidence.py check
 
 for scenario in campaign/embedded-launch/obs-harness/scenarios/*.json; do

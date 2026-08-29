@@ -2,6 +2,8 @@
 "use strict";
 
 import fs from "node:fs";
+
+import { captureSceneDefinitions } from "./terminal-presentation-contract.mjs";
 import { obsWebSocketAuthentication } from "./obs-websocket-auth.mjs";
 
 function now() {
@@ -74,40 +76,7 @@ class ObsConnection {
   }
 }
 
-const sceneDefinitions = [
-  {
-    name: "KMP/Wide",
-    sources: [{ role: "wide", crop: [0, 0, 1920, 1080], target: [0, 0, 1920, 1080] }],
-  },
-  {
-    name: "KMP/TerminalFocus",
-    sources: [
-      { role: "primary-terminal", crop: [0, 160, 672, 378], target: [0, 0, 1920, 1080] },
-      { role: "secondary-chronoloom", crop: [672, 189, 1248, 702], target: [1390, 748, 500, 281] },
-    ],
-  },
-  {
-    name: "KMP/ChronoFocus",
-    sources: [
-      { role: "primary-chronoloom", crop: [1350, 160, 570, 321], target: [0, 0, 1920, 1080] },
-      { role: "secondary-terminal", crop: [0, 160, 672, 378], target: [40, 748, 520, 292] },
-    ],
-  },
-  {
-    name: "KMP/ProofFocus",
-    sources: [
-      { role: "primary-proof", crop: [1350, 430, 570, 321], target: [0, 0, 1920, 1080] },
-      { role: "secondary-terminal", crop: [0, 160, 672, 378], target: [40, 748, 520, 292] },
-    ],
-  },
-  {
-    name: "KMP/CTAFocus",
-    sources: [
-      { role: "primary-cta", crop: [0, 160, 672, 378], target: [0, 0, 1920, 1080] },
-      { role: "secondary-chronoloom", crop: [672, 189, 1248, 702], target: [1390, 748, 500, 281] },
-    ],
-  },
-];
+const sceneDefinitions = captureSceneDefinitions();
 
 async function connectWithRetry(options) {
   const deadline = Date.now() + 30000;
