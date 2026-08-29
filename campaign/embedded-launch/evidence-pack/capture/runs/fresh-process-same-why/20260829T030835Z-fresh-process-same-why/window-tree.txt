@@ -1,0 +1,22 @@
+
+xwininfo: Window id: 0x3db (the root window) (has no name)
+
+  Root window id: 0x3db (the root window) (has no name)
+  Parent window id: 0x0 (none)
+     11 children:
+     0xa00003 "KMP ChronoLoom - Google Chrome": ("google-chrome (/home/gx10a/Documents/ai/tmp/kmp-guide/campaign/embedded-launch/evidence-pack/capture/runs/fresh-process-same-why/20260829T030835Z-fresh-process-same-why/browser-profile.private)" "Google-chrome")  1248x1080+672+0  +672+0
+     0xa00005 (has no name): ()  1x1+0+0  +0+0
+     0xc00002 "google-chrome": ("google-chrome" "Google-chrome")  10x10+10+10  +10+10
+     0xa00000 "Chromium clipboard": ()  10x10+-100+-100  +-100+-100
+     0x20000c "KMP_CAPTURE_TERMINAL": ("gnome-terminal-server" "Gnome-terminal")  632x1176+-5+-5  +-5+-5
+        1 child:
+        0x20000d (has no name): ()  1x1+-1+-1  +-6+-6
+     0x200007 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x800002 "gnome-terminal": ("gnome-terminal" "Gnome-terminal")  10x10+10+10  +10+10
+     0x200003 "Terminal": ()  10x10+-100+-100  +-100+-100
+     0x600002 "xdg-desktop-portal-gtk": ("xdg-desktop-portal-gtk" "Xdg-desktop-portal-gtk")  10x10+10+10  +10+10
+     0x400003 "xdg-desktop-portal-gnome": ("xdg-desktop-portal-gnome" "xdg-desktop-portal-gnome")  1x1+0+0  +0+0
+        1 child:
+        0x400004 (has no name): ()  1x1+-1+-1  +-1+-1
+     0x200002 "Terminal": ("gnome-terminal-server" "Gnome-terminal-server")  10x10+10+10  +10+10
+

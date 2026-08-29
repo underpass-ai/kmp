@@ -1,0 +1,9 @@
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+libDeckLinkAPI.so: cannot open shared object file: No such file or directory
+error: window manager does not support Extended Window Manager Hints (EWMH).
+XComposite capture disabled.
+error: VAAPI: Failed to initialize display in vaapi_device_h264_supported
+error: VAAPI: Failed to initialize display in vaapi_device_hevc_supported
+[aac @ 0xc22ed8af6080] Qavg: 65536.000
+[aac @ 0xc22ed8af6080] 2 frames left in the queue on closing

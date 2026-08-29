@@ -1,158 +1,158 @@
 {
   "contract": "kmp.obs-promoted-capture.v1",
   "scenario_id": "keep-the-wrong-turn",
-  "run_dir": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn",
+  "run_dir": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn",
   "raw": {
     "path": "campaign/embedded-launch/evidence-pack/capture/raw/keep-the-wrong-turn.mkv",
-    "bytes": 16914628,
-    "sha256": "65bbdc9b8e9d25326b7eb0593fba342e7c98352b2ee483bb6d394f53f83e4036"
+    "bytes": 16914630,
+    "sha256": "69efd0199e0134e392a2ed29fbe31cde9a69cbe33ae9ce4762d31d89a63791d7"
   },
   "run_evidence_manifest": {
-    "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/evidence-manifest.json",
-    "sha256": "da40c6ab55fd3f78bf4d1f59c40f4ab13b489ae5bedb5bd618ed61de709702d5"
+    "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/evidence-manifest.json",
+    "sha256": "e19e9bdd55eab195e803e9779266be9a1cc234a0662c86035cc8b9558f2616bd"
   },
   "evidence": {
     "pty.typescript": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/pty.typescript",
-      "bytes": 3039,
-      "sha256": "3fa1c4341fbe8202b382a9dc2f47cdce122f6e69d5145851ed99c85cc0735b14"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/pty.typescript",
+      "bytes": 3070,
+      "sha256": "203814b689b5fae5249768ccc3661a46bd5f7141dfae9466edc2aab2af4a1904"
     },
     "pty.timing": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/pty.timing",
-      "bytes": 360,
-      "sha256": "b3a02f55dfd06ad0115aebc53120d834ce934bb895af6c4b9ce878115ca78b61"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/pty.timing",
+      "bytes": 317,
+      "sha256": "bf1ee17414b761170d86a8c1d3ba7c1004f4e132c6ef1b4218f36b5a4f8ec195"
     },
     "tool-calls.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/tool-calls.jsonl",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/tool-calls.jsonl",
       "bytes": 47507,
-      "sha256": "078dfe301f3460cf8a13d357adeb430cc46181b5490df9c71d05022888b834d1"
+      "sha256": "dcd265da38747d29236c10b58db832571c14da67966e4e4893f698ad53d77539"
     },
     "process-lifecycle.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/process-lifecycle.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/process-lifecycle.json",
       "bytes": 3084,
-      "sha256": "184d03775cc4f809ccbf54e3533e81fd572f47536d51adac6e02af69ae5794be"
+      "sha256": "6323cd4f8068a732629f693dcb51c01232bc74e78ab7c0de44aec035db7eaedc"
     },
     "stores.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/stores.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/stores.json",
       "bytes": 2386,
-      "sha256": "98f91c6fa0913175e3b574a2cf62a478c7e0b11b8731117d1ea89d560b425dcf"
+      "sha256": "5dcb149d7f0e232ad8a98230239beba7451a66077d3846f61e8471bf5a1e0da5"
     },
     "viewer-revisions.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/viewer-revisions.jsonl",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/viewer-revisions.jsonl",
       "bytes": 2617,
-      "sha256": "74a2b7b64b1f7735190a02e56b22107cf722e47b0b580b7bc7310dc4409f21e4"
+      "sha256": "06b26ad31dc17f73581d262fb10d28e4772e77a6d708c3828a584318d829018b"
     },
     "browser-network.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/browser-network.jsonl",
-      "bytes": 72174,
-      "sha256": "24b5a75b92e85eb370b2b9a8c9b467a61a1fa8679731f988b454b5e026f3f579"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/browser-network.jsonl",
+      "bytes": 72182,
+      "sha256": "4ce17692fb208adba20c897c7379736ee313b34fca0d3a3d9255c7676fb5335c"
     },
     "obs-websocket.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-websocket.jsonl",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-websocket.jsonl",
       "bytes": 41891,
-      "sha256": "edba0c91be7f5601e3143ee9888f0affe0b5d8e4a583e52488904c5e0dda34b2"
+      "sha256": "fab040251ce2b26102a015adb13687ef45182600a5b8d220863782d9ecbf6c48"
     },
     "obs-scene-schedule.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-scene-schedule.jsonl",
-      "bytes": 2133,
-      "sha256": "4f031dc402d2675f2e72b2676a43e1b86923ff648b993773861d4e21fc891ffc"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-scene-schedule.jsonl",
+      "bytes": 2136,
+      "sha256": "ec8005eea1e83520db5e955b70adfbda2f8211ab1f602896383b703087db7337"
     },
     "edl.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/edl.json",
-      "bytes": 9424,
-      "sha256": "d1234ff23de06a322867960e2d0b6532492413750fd023957de5a7d0d16e0192"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/edl.json",
+      "bytes": 9349,
+      "sha256": "9932a80b11331d0ffff913ade6a6e1b3159e93fe34850a5396efce458157cb5d"
     },
     "edl.sha256": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/edl.sha256",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/edl.sha256",
       "bytes": 139,
-      "sha256": "fda342f70b31968569833ab9eb16378f658650743e6be9065aa56a00f43346fe"
+      "sha256": "e367bcedc0b8051db14831ca18746bb05c2d90092de9faf88242e65c3d597958"
     },
     "audio-contract.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/audio-contract.json",
-      "bytes": 5037,
-      "sha256": "0221a9c6198a2da74047a2fab584783b64bd35eeb27d0b1d9133e089f31420de"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/audio-contract.json",
+      "bytes": 5080,
+      "sha256": "24e41f02b860c64bbc688faa1f0cfb4d622874578dbc052ac3cda065a86ac174"
     },
     "audio-cues.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/audio-cues.json",
-      "bytes": 4933,
-      "sha256": "39bd887f1579a4a9ce0aa0bad41434a5f372a6356cfc8e7b35772eefc6be6cbc"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/audio-cues.json",
+      "bytes": 4935,
+      "sha256": "9a5b5e7f406e9d72c904dd13781f8b04aa4ff8d9c05d3ff0d1b964b672cd4ee0"
     },
     "anchors.jsonl": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/anchors.jsonl",
-      "bytes": 4924,
-      "sha256": "2d2aa2bf94669cbcd99fee93ca007073a825530f6d4ab829a7205891940f4650"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/anchors.jsonl",
+      "bytes": 4925,
+      "sha256": "1cd87cd42d686dbc6b6ae933d7ed2b9417dc86445d4e4d2422153bc38cb1f138"
     },
     "anchors-manifest.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/anchors-manifest.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/anchors-manifest.json",
       "bytes": 295,
-      "sha256": "4f91d02e49fb7310054cffd77d4c88916632e4ba1fe3537ec89052146af13303"
+      "sha256": "eed8e9e5fb52c6d71afc5c9ec76da919393b38578d1b6d79e20cdef8c80de294"
     },
     "clock-map.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/clock-map.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/clock-map.json",
       "bytes": 928,
-      "sha256": "d48c795ec4bf24c4457e1e748c994571185a8b9091ad27c22013856977115deb"
+      "sha256": "ada5d4e9055b5a8ded94ebc57ace841c25d845835b81550cac69820b368a3241"
     },
     "readability-preflight.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/readability-preflight.json",
-      "bytes": 6767,
-      "sha256": "92fddb7702bae1f40e45936213b3f430ab476f9d139f03bdea3e1ec645804968"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/readability-preflight.json",
+      "bytes": 6791,
+      "sha256": "5640bb697b9054da62aeb59ef38a59c3ded1c462c8c779fb51abefa5a78d792a"
     },
     "ffprobe.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/ffprobe.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/ffprobe.json",
       "bytes": 3242,
-      "sha256": "b81d732f54e3490e7270652f7e32c308d4d0d15a3cfb7d0ca8081132aea3d0aa"
+      "sha256": "dd62ee548f13cc519b9daa4ac9ed23950a30cb6f8b9720cd52e614016e4d604f"
     },
     "verification.json": {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/verification.json",
-      "bytes": 32333,
-      "sha256": "959c0630aa7ec187f79d4154199f49cac5fcc10474819acf47d4865847e9d6e7"
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/verification.json",
+      "bytes": 32330,
+      "sha256": "01d7b4c0385f11b1455bc3865fe2fae6ad84fce339171c0e5e5c85bccd902a44"
     }
   },
   "obs_config": [
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/basic/profiles/KMPCapture/basic.ini",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/basic/profiles/KMPCapture/basic.ini",
       "relative_path": "obs-config/obs-studio/basic/profiles/KMPCapture/basic.ini",
       "bytes": 852,
-      "sha256": "33fb6f392620c26daeda05ae734f1696a8760dd5205a81e6c3241bd16d2b03d8"
+      "sha256": "6bc36c6bf763d20869149357c021aa0754cc574d214c13f5d98cd9821551a9af"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/basic/profiles/KMPCapture/recordEncoder.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/basic/profiles/KMPCapture/recordEncoder.json",
       "relative_path": "obs-config/obs-studio/basic/profiles/KMPCapture/recordEncoder.json",
       "bytes": 216,
       "sha256": "3a244dccc4f9a3f5ee004d16df96fb003ec0ce8168dd0e78aabd530d2d99d393"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/basic/scenes/KMPCapture.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/basic/scenes/KMPCapture.json",
       "relative_path": "obs-config/obs-studio/basic/scenes/KMPCapture.json",
       "bytes": 14097,
-      "sha256": "1c9bd7b781de04db1225174608a681e3d9a53016661facecd4eb8495d9d3d7d5"
+      "sha256": "8b4c1921274b52cdc49236c9528d473b508be8a81f927b8eddaf1efb8dd2432d"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/basic/scenes/KMPCapture.json.bak",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/basic/scenes/KMPCapture.json.bak",
       "relative_path": "obs-config/obs-studio/basic/scenes/KMPCapture.json.bak",
       "bytes": 14089,
-      "sha256": "6dba899de40dd5aed3a131fb66fd039b18edb42b398d48d8e7049fd0b8365fd5"
+      "sha256": "2ba80786f1282e8e21fd49616e9984cfb7acc6c53408c6559939e4f57661c343"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/global.ini",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/global.ini",
       "relative_path": "obs-config/obs-studio/global.ini",
       "bytes": 722,
       "sha256": "775b579279bdf0eae7499826de14447b142e30c284ee6d62a6deeb60be160a9b"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/logs/2026-08-29 04-29-15.txt",
-      "relative_path": "obs-config/obs-studio/logs/2026-08-29 04-29-15.txt",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/logs/2026-08-29 05-14-28.txt",
+      "relative_path": "obs-config/obs-studio/logs/2026-08-29 05-14-28.txt",
       "bytes": 10459,
-      "sha256": "934afca2cd23a545d3c9f1e646a3b9d7794a3f9126ab85a87396ceef00eaf19e"
+      "sha256": "2f36bbe354c407199316c0d5d619c8858b9498272f5a36579675367e0e3c5977"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/plugin_config/rtmp-services/package.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/plugin_config/rtmp-services/package.json",
       "relative_path": "obs-config/obs-studio/plugin_config/rtmp-services/package.json",
       "bytes": 164,
       "sha256": "8cdcbd02b968ad09c36d96a8c015ae6926d5c2699d310576db873f0dcb618a22"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs-config/obs-studio/plugin_config/rtmp-services/services.json",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs-config/obs-studio/plugin_config/rtmp-services/services.json",
       "relative_path": "obs-config/obs-studio/plugin_config/rtmp-services/services.json",
       "bytes": 63241,
       "sha256": "520963790d9b74fe602adb5956ec9b17d6d0ad7a3f77ee1e950a5018787f30d8"
@@ -160,100 +160,100 @@
   ],
   "review_frames": [
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/01-terminalfocus-002000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/01-terminalfocus-002000ms.png",
       "relative_path": "review-frames/full-1920x1080/01-terminalfocus-002000ms.png",
-      "bytes": 245576,
-      "sha256": "6f71bcef2eb1f09563413c1014cb0e06898dc944634c9ca930ecf58f99a8f4d2"
+      "bytes": 401769,
+      "sha256": "5f98979e2b44b3206fe7c0f78ad9a147c93064fcea745afa14f60ef8497c87f1"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/02-chronofocus-013000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/02-chronofocus-013000ms.png",
       "relative_path": "review-frames/full-1920x1080/02-chronofocus-013000ms.png",
-      "bytes": 565147,
-      "sha256": "4919d649960dd3738ca10bc033069888c91fe74d4cbdddba367a655d31c0dddd"
+      "bytes": 565253,
+      "sha256": "b497a9a888b584cdbf4ac732a597560ee448bfc5bb6ba760842ae3f7085e7416"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/03-terminalfocus-021000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/03-terminalfocus-021000ms.png",
       "relative_path": "review-frames/full-1920x1080/03-terminalfocus-021000ms.png",
-      "bytes": 207483,
-      "sha256": "e24da4d56328d67cb1306dba04038cce28b07229f14bc0f85b7634956e39539b"
+      "bytes": 207272,
+      "sha256": "58c1a0e1f8dc055e9bc7243bfeebec4ea0bb87b2066fb2cb6dd3cc8a6faecb12"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/04-prooffocus-035200ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/04-prooffocus-035200ms.png",
       "relative_path": "review-frames/full-1920x1080/04-prooffocus-035200ms.png",
-      "bytes": 658829,
-      "sha256": "28bf04bf294560b8cca32fc5c52a884c3795abe74cc7c8412e831d88ba06c93b"
+      "bytes": 659162,
+      "sha256": "1be31e8cd08d7c9dabd77f65be35f7ff340196d6fd762ee5dab44d6fc9b7a950"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/05-chronofocus-045300ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/05-chronofocus-045300ms.png",
       "relative_path": "review-frames/full-1920x1080/05-chronofocus-045300ms.png",
-      "bytes": 792197,
-      "sha256": "cb4ba2adc8be67a5baa95c34d80a7789e41b7ad0afbaea4e628142a5620c8dd8"
+      "bytes": 788737,
+      "sha256": "128b3e0758d6788fce7de205f2e4cfd648a844bb99230a31e404f1b11fac6660"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/06-wide-048200ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/06-wide-048200ms.png",
       "relative_path": "review-frames/full-1920x1080/06-wide-048200ms.png",
-      "bytes": 383722,
-      "sha256": "b7f01be61d2c2042581f578153968b5b424f3c2049fb02c36dc346b0bbf62c05"
+      "bytes": 379160,
+      "sha256": "143388428a870ea37f4ba8f53f46b177207f4139d9c34503a501c626b2c5f55c"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/full-1920x1080/07-ctafocus-051400ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/full-1920x1080/07-ctafocus-051400ms.png",
       "relative_path": "review-frames/full-1920x1080/07-ctafocus-051400ms.png",
-      "bytes": 356351,
-      "sha256": "7491f3b2c9221d65398f0b502196aed5c5a84c93b9e8490e346b962eed421be1"
+      "bytes": 355656,
+      "sha256": "dbc533b8911987e41ad4994a829759cc117922546efd235c329e44aaacf00b23"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/01-terminalfocus-002000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/01-terminalfocus-002000ms.png",
       "relative_path": "review-frames/mobile-390/01-terminalfocus-002000ms.png",
-      "bytes": 21048,
-      "sha256": "cadc395d12079fdd81b65f43439fe0ac8bd65ec217d990777d5842dad2267fbb"
+      "bytes": 33606,
+      "sha256": "eb330421b6bf9dd5fd520dda0a41b602ed70569f267278c9a918da0257e9f2be"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/02-chronofocus-013000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/02-chronofocus-013000ms.png",
       "relative_path": "review-frames/mobile-390/02-chronofocus-013000ms.png",
-      "bytes": 47057,
-      "sha256": "93835961d2cfcee3ef6f9529731a2bb299a946baa527f84f7988b31c17d09701"
+      "bytes": 46970,
+      "sha256": "d2e68fe56de5d7962927e65b34a649e2ad5c372880ec7f13df6186f97be2a773"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/03-terminalfocus-021000ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/03-terminalfocus-021000ms.png",
       "relative_path": "review-frames/mobile-390/03-terminalfocus-021000ms.png",
-      "bytes": 21631,
-      "sha256": "01622b68ba553a59aa75502c849eef1bb19c17e4e48e80d3be646bb50c6f1e5c"
+      "bytes": 21626,
+      "sha256": "5566f977c9a930b66862ef5a408000d26f97b47e371588073e9ad78cef553837"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/04-prooffocus-035200ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/04-prooffocus-035200ms.png",
       "relative_path": "review-frames/mobile-390/04-prooffocus-035200ms.png",
-      "bytes": 55444,
-      "sha256": "f2c1758b281a2a44f7dc9df1483259336417161c0693ee5938c75a78225106ce"
+      "bytes": 55354,
+      "sha256": "0654a2b31faf3c04afe3f71c07cacb425d538bc2116f6164a85bcdfe631fd14e"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/05-chronofocus-045300ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/05-chronofocus-045300ms.png",
       "relative_path": "review-frames/mobile-390/05-chronofocus-045300ms.png",
-      "bytes": 63695,
-      "sha256": "c174ae2e8b3076ceb318ba6d44e274bdd52e6d15b60d95bf01cd093f72d77480"
+      "bytes": 63649,
+      "sha256": "7977f4cd003d5e00e8f038569d369e8070a311a1045ae02cb69064e77922dbed"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/06-wide-048200ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/06-wide-048200ms.png",
       "relative_path": "review-frames/mobile-390/06-wide-048200ms.png",
-      "bytes": 42538,
-      "sha256": "fccabcb755c6fe77db84bcf8093120588daf1d108bf5672ad235ed2e006b60db"
+      "bytes": 42487,
+      "sha256": "9ca1edba9e8528f684c2e8a932b383d0c6071e561463773d0d5e2f71b2ffa619"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/review-frames/mobile-390/07-ctafocus-051400ms.png",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/review-frames/mobile-390/07-ctafocus-051400ms.png",
       "relative_path": "review-frames/mobile-390/07-ctafocus-051400ms.png",
-      "bytes": 33439,
-      "sha256": "eda2ba258ee937b48c1613bf12cabc42e4c1614e7c22237f2ee9ccbd1f63c40b"
+      "bytes": 33446,
+      "sha256": "72bf3e89a404596dbdf1a64792e8127e99215f8d6351dc01e4328d228532e023"
     }
   ],
   "obs_logs": [
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs.stderr.log",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs.stderr.log",
       "bytes": 565,
-      "sha256": "47146d09e3b9a71e44b02c578cb9ae7d24ee6f77c729ac5fb1b97f645ebd2d51"
+      "sha256": "74db6ead870d3df7322475abfe8d93228d61d88f4bfea97389b62d8543b24ed5"
     },
     {
-      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T022847Z-keep-the-wrong-turn/obs.stdout.log",
+      "path": "campaign/embedded-launch/evidence-pack/capture/runs/keep-the-wrong-turn/20260829T031400Z-keep-the-wrong-turn/obs.stdout.log",
       "bytes": 9117,
-      "sha256": "419bba11f8695227e5140a89ff1f13500477dc17d9cfa62edbc2a299a4227431"
+      "sha256": "4bfd3dcd10e4cdf4cea12c545751c3d833e541a006e8acb35c402ac4e12539af"
     }
   ]
 }

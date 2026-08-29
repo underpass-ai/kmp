@@ -1,0 +1,27 @@
+{
+  "contract": "kmp.capture.monotonic-frame-map.v1",
+  "video_id": "two-processes-one-memory",
+  "timebase": "CLOCK_MONOTONIC nanoseconds",
+  "video_timebase": "nanoseconds from first encoded frame PTS",
+  "points": [
+    {
+      "monotonic_ns": "133782320538156",
+      "video_pts_ns": "0",
+      "source": "OBS RecordStateChanged/STARTED receipt",
+      "evidence": {
+        "obs_websocket_line_sha256": "1a40b5a5e182c8ca9a7bfc314ae18ba6dfd29626db111d67294d292aefa41973"
+      }
+    },
+    {
+      "monotonic_ns": "133828290946512",
+      "video_pts_ns": "45966000000",
+      "source": "OBS StopRecord response + ffprobe duration",
+      "evidence": {
+        "obs_stop_sha256": "4a4ca022c490e064d7215ee54359dc385225ef27c0b8708f7a574607e3432d12",
+        "ffprobe_sha256": "6c52f0a9513e2c8dc27499d8fd644a1ca4bacb193afcbe66421715294b6f0d82"
+      }
+    }
+  ],
+  "mapping": "piecewise_linear_between_points",
+  "monotonic": true
+}
