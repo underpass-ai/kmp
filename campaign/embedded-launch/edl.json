@@ -69,22 +69,20 @@
       "caption_file": "captions/two-processes-one-memory.vtt",
       "claim_ids": ["C02", "C04"],
       "obs_schedule": [
-        {"at_ms": 0, "scene": "KMP/Wide"},
-        {"at_ms": 4000, "scene": "KMP/TerminalFocus"},
+        {"at_ms": 0, "scene": "KMP/TerminalFocus"},
         {"at_ms": 9600, "scene": "KMP/ChronoFocus"},
         {"at_ms": 15000, "scene": "KMP/Wide"},
         {"at_ms": 20000, "scene": "KMP/TerminalFocus"},
-        {"at_ms": 28000, "scene": "KMP/Wide"},
         {"at_ms": 34300, "scene": "KMP/ChronoFocus"},
         {"at_ms": 39300, "scene": "KMP/CTAFocus"}
       ],
       "timeline": [
-        {"start": 0.0, "end": 4.0, "scene": "KMP/Wide", "copy": "Process A writes it. Process B recovers the why.", "evidence": null},
+        {"start": 0.0, "end": 4.0, "scene": "KMP/TerminalFocus", "copy": "Process A writes it. Process B recovers the why.", "evidence": null},
         {"start": 4.0, "end": 9.6, "scene": "KMP/TerminalFocus", "copy": "Restore max_connections to 200. The pool ceiling caused saturation.", "evidence": "two-processes/process-a/write"},
         {"start": 9.6, "end": 15.0, "scene": "KMP/ChronoFocus", "copy": "Process A committed the decision with evidence.", "evidence": "two-processes/process-a/write-response"},
         {"start": 15.0, "end": 20.0, "scene": "KMP/Wide", "copy": "Two processes. Same local store.", "evidence": "two-processes/process-lifecycle"},
         {"start": 20.0, "end": 28.0, "scene": "KMP/TerminalFocus", "copy": "Why is max_connections back at 200?", "evidence": "two-processes/process-b/ask"},
-        {"start": 28.0, "end": 34.3, "scene": "KMP/Wide", "copy": "No export. No import. One local SQLite WAL store.", "evidence": "two-processes/process-b/inspect-response"},
+        {"start": 28.0, "end": 34.3, "scene": "KMP/TerminalFocus", "copy": "No export. No import. One local SQLite WAL store.", "evidence": "two-processes/process-b/inspect-response"},
         {"start": 34.3, "end": 39.3, "scene": "KMP/ChronoFocus", "copy": "Process B recovered what Process A wrote.", "evidence": "two-processes/process-b/view"},
         {"start": 39.3, "end": 46.0, "scene": "KMP/CTAFocus", "copy": "See KMP Embedded → github.com/underpass-ai/kmp", "evidence": null}
       ],
@@ -112,7 +110,7 @@
         {"at_ms": 49400, "scene": "KMP/CTAFocus"}
       ],
       "timeline": [
-        {"start": 0.0, "end": 4.0, "scene": "KMP/TerminalFocus", "copy": "Delete the wrong turn. Lose the why. · DETERMINISTIC PRODUCT FIXTURE", "evidence": null},
+        {"start": 0.0, "end": 4.0, "scene": "KMP/TerminalFocus", "copy": "DETERMINISTIC PRODUCT FIXTURE · Delete the wrong turn. Lose the why.", "evidence": null},
         {"start": 4.0, "end": 11.0, "scene": "KMP/TerminalFocus", "copy": "Show me the memory behind the pool-limit decision.", "evidence": "wrong-turn/select/request"},
         {"start": 11.0, "end": 19.0, "scene": "KMP/ChronoFocus", "copy": "One decision. Three recorded times.", "evidence": "wrong-turn/select/response"},
         {"start": 19.0, "end": 33.2, "scene": "KMP/TerminalFocus", "copy": "Great! Can you light up the proof path?", "evidence": "wrong-turn/trace/request"},

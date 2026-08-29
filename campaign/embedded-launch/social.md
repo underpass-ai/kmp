@@ -9,21 +9,17 @@ Attachment: `docs/assets/campaign/kmp-embedded/fresh-process-same-why.mp4`
 
 Post 1:
 
-> End the session. Keep the why.
+> A fresh process shouldn't have to rediscover the last one's decision.
 >
-> KMP Embedded keeps decisions, evidence and time in local SQLite. A fresh
-> process opens the same store and recovers the same decision—with its evidence
-> still attached.
->
-> No account. No transcript dump.
+> Process 1 commits and exits. Process 2 opens the same local SQLite store and
+> recovers the exact decision—with its evidence attached.
 >
 > github.com/underpass-ai/kmp
 
 Reply:
 
-> What you're seeing is a real two-process test: Process 1 commits and exits.
-> Process 2 starts with a different PID, opens the same local store and inspects
-> the same ref.
+> The video is a real two-process test: distinct PIDs, same store fingerprint,
+> same ref. No export or import between sessions.
 >
 > Local-first here means one machine and one store—not cloud sync.
 
@@ -40,12 +36,11 @@ Attachment: `docs/assets/campaign/kmp-embedded/two-processes-one-memory.mp4`
 
 Post 1:
 
-> Process A writes it. Process B recovers the why.
+> Two live processes. Zero handoff.
 >
-> Two independent KMP MCP processes. One local SQLite WAL store. No export. No
-> import.
->
-> The second process reads the decision and evidence the first committed.
+> In a deterministic product fixture, Process A commits a decision to local
+> SQLite WAL. Process B, already running against the same store, recovers why it
+> changed. No export. No import.
 >
 > github.com/underpass-ai/kmp
 
@@ -55,9 +50,10 @@ Reply:
 > request/response, and ChronoLoom revisions observed in Chromium. The capture
 > is OBS, not a terminal mockup.
 
-Alt text: “Process A commits a pool-limit decision in a real terminal. Process
-B, with a different PID and the same local SQLite WAL store fingerprint,
-recovers it as ChronoLoom opens the same evidence.”
+Alt text: “In a deterministic product fixture, Process A commits a pool-limit
+decision in a real terminal. Process B, with a different PID and the same local
+SQLite WAL store fingerprint, recovers it as ChronoLoom opens the same
+evidence.”
 
 Evidence note: `Process A` and `Process B` are the only permitted identities.
 Codex or Claude can replace them only after a new raw capture proves both real
@@ -69,12 +65,13 @@ Attachment: `docs/assets/campaign/kmp-embedded/keep-the-wrong-turn.mp4`
 
 Post 1:
 
-> Delete the wrong turn. Lose the why.
+> The wrong hypothesis is part of the proof.
 >
-> In this deterministic product fixture, KMP keeps the traffic-spike hypothesis,
-> the evidence that contradicted it and the decision that replaced it.
+> In this deterministic product fixture, KMP retains the traffic-spike
+> hypothesis, the evidence that contradicted it and the decision that replaced
+> it.
 >
-> ChronoLoom lights the proof path.
+> Ask for the proof path. ChronoLoom lights all four hops.
 >
 > github.com/underpass-ai/kmp
 
@@ -83,8 +80,8 @@ Reply:
 > The four hops in the video are stored relations: verified_by → supersedes →
 > chosen_because → depends_on.
 >
-> No query language. No hunting through node IDs. The agent asks; the real
-> browser follows over long-poll.
+> The request is semantic; the real browser follows over long-poll. No query
+> language or node-ID hunt.
 
 Alt text: “In a deterministic pool-saturation fixture, a real agent-directed
 ChronoLoom view selects the configuration decision, shows its three recorded

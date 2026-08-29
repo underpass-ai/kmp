@@ -46,7 +46,7 @@
       "picture_source": "evidence-pack/capture/raw/keep-the-wrong-turn.mkv",
       "captions": "captions/keep-the-wrong-turn.vtt",
       "beats": [
-        {"start": 0.0, "end": 4.0, "visual_action": "OBS terminal-focus scene visibly identifies the incident as a deterministic product fixture.", "product_action": null, "copy": "Delete the wrong turn. Lose the why."},
+        {"start": 0.0, "end": 4.0, "visual_action": "OBS terminal-focus scene visibly identifies the incident as a deterministic product fixture.", "product_action": null, "copy": "DETERMINISTIC PRODUCT FIXTURE · Delete the wrong turn. Lose the why."},
         {"start": 4.0, "end": 11.0, "visual_action": "The real PTY shows the semantic request; the real browser remains visible.", "product_action": null, "copy": "Show me the memory behind the pool-limit decision."},
         {"start": 11.0, "end": 19.0, "visual_action": "ChronoLoom prism focus makes reality, perception and persistence readable at 390 px.", "product_action": "kmp_view_apply_intent selects the pool-limit ref and the browser reacts through long-poll.", "copy": "One decision. Three recorded times."},
         {"start": 19.0, "end": 33.2, "visual_action": "The real PTY shows the second semantic request with the selected decision still visible.", "product_action": null, "copy": "Great! Can you light up the proof path?"},

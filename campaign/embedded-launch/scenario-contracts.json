@@ -92,7 +92,7 @@
         "kmp_view_open incident:pool-saturation"
       ],
       "required_events": [
-        {"at_ms": 0, "type": "say", "speaker": "process", "text": "Delete the wrong turn. Lose the why."},
+        {"at_ms": 0, "type": "say", "speaker": "process", "text": "DETERMINISTIC PRODUCT FIXTURE\nDelete the wrong turn. Lose the why."},
         {"at_ms": 4000, "type": "say", "speaker": "user", "text": "Show me the memory behind the pool-limit decision."},
         {"window_ms": [7000, 11000], "type": "tool", "process_id": "process", "name": "kmp_view_apply_intent", "proof": "select cfg-change and expose the three recorded times through long-poll"},
         {"at_ms": 19000, "type": "say", "speaker": "user", "text": "Great! Can you light up the proof path?"},

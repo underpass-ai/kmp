@@ -117,7 +117,7 @@
     }
   ],
   "steps": [
-    { "at_ms": 0, "type": "say", "speaker": "process", "text": "Delete the wrong turn. Lose the why." },
+    { "at_ms": 0, "type": "say", "speaker": "process", "text": "DETERMINISTIC PRODUCT FIXTURE\nDelete the wrong turn. Lose the why." },
     { "at_ms": 4000, "type": "say", "speaker": "user", "text": "Show me the memory behind the pool-limit decision." },
     {
       "at_ms": 7000,
