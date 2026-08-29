@@ -76,6 +76,10 @@ class PanelContractTest(unittest.TestCase):
             "schema_version": "1",
             "campaign_id": CAMPAIGN_ID,
             "result": "PASS",
+            "material_manifest": {
+                "path": self.material.relative_to(panel_contract.ROOT).as_posix(),
+                "sha256": sha256(self.material),
+            },
             "reviewer": {
                 "reviewer_id": "audio-human-1",
                 "reviewer_kind": "human",
@@ -118,6 +122,7 @@ class PanelContractTest(unittest.TestCase):
             self.audio_path,
             campaign_id=CAMPAIGN_ID,
             master_hashes=MASTER_HASHES,
+            material=self.material,
         )
 
     def test_valid_human_panels_pass(self) -> None:
@@ -147,6 +152,14 @@ class PanelContractTest(unittest.TestCase):
         early = copy.deepcopy(self.audio)
         early["masters"][0]["semantic_cues_follow_picture"] = False
         self.assertTrue(self.audio_errors(early))
+
+    def test_audio_panel_with_stale_or_wrong_material_fails(self) -> None:
+        stale = copy.deepcopy(self.audio)
+        stale["material_manifest"]["sha256"] = "0" * 64
+        self.assertTrue(self.audio_errors(stale))
+        wrong = copy.deepcopy(self.audio)
+        wrong["material_manifest"]["path"] = "tmp/not-the-review-material.json"
+        self.assertTrue(self.audio_errors(wrong))
 
 
 if __name__ == "__main__":

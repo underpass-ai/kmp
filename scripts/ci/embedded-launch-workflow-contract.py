@@ -43,6 +43,7 @@ WORKFLOW_CLAUSES = (
 GATE_CLAUSES = (
     "campaign/embedded-launch/scripts/validate-campaign.py",
     "campaign/embedded-launch/scripts/test_panel_contract.py",
+    "campaign/embedded-launch/scripts/test_prepare_audio_panel.py",
     "campaign/embedded-launch/scripts/test_capture_portability.py",
     "campaign/embedded-launch/scripts/test_final_media_contract.py",
     "campaign/embedded-launch/scripts/test_final_regeneration_gate.py",
@@ -103,6 +104,14 @@ def prove_mutation_guards(workflow: str, gate: str) -> None:
             workflow,
             gate.replace(
                 '"${python}" campaign/embedded-launch/scripts/test_capture_portability.py\n',
+                "",
+                1,
+            ),
+        ),
+        "missing audio-panel preparer test": (
+            workflow,
+            gate.replace(
+                '"${python}" campaign/embedded-launch/scripts/test_prepare_audio_panel.py\n',
                 "",
                 1,
             ),
@@ -197,7 +206,7 @@ def main() -> None:
     prove_mutation_guards(workflow, gate)
     print(
         "embedded launch workflow contract passed: path scope, immutable tools, "
-        "source/final split, deterministic hook, portable roles/schemas, 10 mutation guards"
+        "source/final split, deterministic hook, portable roles/schemas, 11 mutation guards"
     )
 
 

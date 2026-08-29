@@ -70,6 +70,7 @@ Validation:
 python3 campaign/embedded-launch/scripts/validate-campaign.py
 python3 campaign/embedded-launch/scripts/build-critic-input.py
 python3 campaign/embedded-launch/scripts/prepare-mobile-muted-panel.py
+python3 campaign/embedded-launch/scripts/prepare-audio-panel.py
 python3 campaign/embedded-launch/scripts/build-evidence-manifest.py build
 python3 campaign/embedded-launch/scripts/build-evidence-manifest.py check
 ```
@@ -80,3 +81,10 @@ non-zero until OBS capture, release, audio evidence and the required human
 panels all exist. The independent critic audits that immutable manifest. Only a
 clean `GO` whose input hash still matches may unlock the README GIF and the
 post-audit publication manifest.
+
+The audio handoff references the canonical MP4s directly; it creates no WAV
+copies. One independent trained human reviews every full video once on
+headphones and once on a phone or comparable small mono speaker. The generated
+response remains `PENDING` until that person supplies their qualification,
+per-master decisions and notes; agents and automated measurements cannot fill
+it.

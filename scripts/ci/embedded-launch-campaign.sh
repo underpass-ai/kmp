@@ -18,6 +18,7 @@ cd "${root}"
 
 "${python}" campaign/embedded-launch/scripts/validate-campaign.py
 "${python}" campaign/embedded-launch/scripts/test_panel_contract.py
+"${python}" campaign/embedded-launch/scripts/test_prepare_audio_panel.py
 "${python}" campaign/embedded-launch/scripts/test_capture_portability.py
 "${python}" campaign/embedded-launch/scripts/test_final_media_contract.py
 "${python}" campaign/embedded-launch/scripts/test_final_regeneration_gate.py

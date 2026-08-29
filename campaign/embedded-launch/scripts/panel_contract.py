@@ -15,6 +15,7 @@ PACK = CAMPAIGN / "evidence-pack"
 MOBILE = PACK / "qa/mobile-muted-panel.json"
 AUDIO = PACK / "qa/audio-panel.json"
 MATERIAL = PACK / "qa/mobile-muted-material/material-manifest.json"
+AUDIO_MATERIAL = PACK / "qa/audio-panel-material/material-manifest.json"
 
 
 def sha256(path: pathlib.Path) -> str:
@@ -120,6 +121,7 @@ def validate_audio(
     *,
     campaign_id: str,
     master_hashes: dict[str, str],
+    material: pathlib.Path,
 ) -> list[str]:
     errors: list[str] = []
     body = load_object(path, "audio panel", errors)
@@ -129,6 +131,12 @@ def validate_audio(
         errors.append("audio panel schema or campaign identity differs")
     if body.get("result") != "PASS":
         errors.append("audio panel did not pass")
+    binding = body.get("material_manifest")
+    expected_material = material.relative_to(ROOT).as_posix()
+    if not isinstance(binding, dict) or binding.get("path") != expected_material:
+        errors.append("audio panel does not bind the canonical review material")
+    elif not material.is_file() or binding.get("sha256") != sha256(material):
+        errors.append("audio panel material hash is missing or stale")
     reviewer = body.get("reviewer")
     if not isinstance(reviewer, dict):
         errors.append("audio panel has no reviewer")
@@ -197,7 +205,14 @@ def main() -> None:
             material=MATERIAL,
         )
     )
-    errors.extend(validate_audio(AUDIO, campaign_id=campaign_id, master_hashes=master_hashes))
+    errors.extend(
+        validate_audio(
+            AUDIO,
+            campaign_id=campaign_id,
+            master_hashes=master_hashes,
+            material=AUDIO_MATERIAL,
+        )
+    )
     if errors:
         raise SystemExit("human panel contract failed:\n" + "\n".join(f"- {item}" for item in errors))
     print("human panel contract: five muted-mobile humans and one trained audio human passed")

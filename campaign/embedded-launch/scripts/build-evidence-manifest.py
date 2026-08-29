@@ -58,6 +58,8 @@ REQUIRED = [
     "campaign/embedded-launch/evidence-pack/masters/ffprobe/keep-the-wrong-turn.json",
     "campaign/embedded-launch/evidence-pack/masters/SHA256SUMS",
     "campaign/embedded-launch/evidence-pack/qa/automated.json",
+    "campaign/embedded-launch/evidence-pack/qa/audio-panel-material/material-manifest.json",
+    "campaign/embedded-launch/evidence-pack/qa/audio-panel-material/human-response-template.json",
     "campaign/embedded-launch/evidence-pack/qa/mobile-muted-panel.json",
     "campaign/embedded-launch/evidence-pack/qa/audio-panel.json",
     "campaign/embedded-launch/evidence-pack/reproduction/commands.txt",
@@ -413,6 +415,7 @@ def build() -> dict[str, object]:
                 audio_panel,
                 campaign_id=str(brief["campaign_id"]),
                 master_hashes=master_hashes,
+                material=PACK / "qa/audio-panel-material/material-manifest.json",
             )
         )
 
