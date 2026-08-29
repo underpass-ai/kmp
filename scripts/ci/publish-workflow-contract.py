@@ -82,6 +82,8 @@ if 'changelog.py check "${version}"' not in publish_text:
     raise SystemExit("publish-distribution can publish a tag without versioned notes")
 if "sync-public-readme.py check" not in publish_text:
     raise SystemExit("publish-distribution can publish divergent public READMEs")
+if 'guide.py check "${version}"' not in publish_text:
+    raise SystemExit("publish-distribution can publish a stale guide envelope")
 if publish_text.count("needs: verify-release") != 3:
     raise SystemExit("every distribution publisher must depend on release readiness")
 
@@ -101,6 +103,8 @@ release_clauses = (
     'verify-marketplace.py "${{ steps.candidate.outputs.version }}"',
     'changelog.py check "${{ steps.candidate.outputs.version }}"',
     "sync-public-readme.py check",
+    'guide.py check "${{ steps.candidate.outputs.version }}"',
+    "build-guide.py check --binary",
     "dist/candidate/assets/* --clobber",
 )
 for clause in release_clauses:
@@ -120,6 +124,8 @@ for clause in (
     'changelog.py check "${version}"',
     "sync-public-readme.py sync",
     "sync-public-readme.py check",
+    'guide.py sync "${version}" --binary target/debug/kmp-mcp',
+    'guide.py check "${version}"',
 ):
     if clause not in release_script:
         raise SystemExit(f"release helper lost candidate approval clause: {clause}")
@@ -207,6 +213,64 @@ with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
     stale_copy = subprocess.run(verify, check=False, capture_output=True, text=True)
     if stale_copy.returncode == 0 or "ChronoLoom" not in stale_copy.stderr:
         raise SystemExit("marketplace verifier accepted stale whole-surface copy")
+
+guide_verifier = ROOT / "scripts/release/guide.py"
+with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:
+    fixture = pathlib.Path(raw_fixture)
+    (fixture / "Cargo.toml").write_text(
+        '[workspace.package]\nversion = "0.4.2"\n', encoding="utf-8"
+    )
+    guide = fixture / "plugins/kmp/guide"
+    guide.mkdir(parents=True)
+    for relative in (".claude-plugin/plugin.json", ".codex-plugin/plugin.json"):
+        manifest = fixture / "plugins/kmp" / relative
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text(json.dumps({"version": "0.4.2"}), encoding="utf-8")
+    (guide / "editorial.json").write_text(
+        json.dumps({"guide_version": "1"}), encoding="utf-8"
+    )
+    requests = [
+        {
+            "about": about,
+            "idempotency_key": f"ingest:guide-sync:1:{audience}:fixture",
+            "memory": {
+                "entries": [
+                    {"metadata": {"guide_version": "1"}}
+                ]
+            },
+        }
+        for about, audience in (("guide:kmp-agent", "agent"), ("guide:kmp", "person"))
+    ]
+    (guide / "guide.requests.json").write_text(
+        json.dumps(requests), encoding="utf-8"
+    )
+    bundle_header = {
+        "bundle_format": 2,
+        "event_count": 2,
+        "kernel_version": "0.4.2",
+        "abouts": ["guide:kmp", "guide:kmp-agent"],
+    }
+    (guide / "memory.jsonl").write_text(
+        json.dumps(bundle_header) + "\n", encoding="utf-8"
+    )
+    check_guide = [
+        sys.executable,
+        guide_verifier,
+        "check",
+        "0.4.2",
+        "--root",
+        fixture,
+    ]
+    subprocess.run(check_guide, check=True, stdout=subprocess.DEVNULL)
+    bundle_header["kernel_version"] = "0.4.1"
+    (guide / "memory.jsonl").write_text(
+        json.dumps(bundle_header) + "\n", encoding="utf-8"
+    )
+    stale_guide = subprocess.run(
+        check_guide, check=False, capture_output=True, text=True
+    )
+    if stale_guide.returncode == 0 or "not release '0.4.2'" not in stale_guide.stderr:
+        raise SystemExit("release guide verifier accepted a stale engine envelope")
 
 changelog_helper = ROOT / "scripts/release/changelog.py"
 with tempfile.TemporaryDirectory(dir=scratch_root) as raw_fixture:

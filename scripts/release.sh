@@ -183,9 +183,18 @@ PY
     # Cargo.lock records the workspace members' own versions.
     cargo metadata --format-version 1 >/dev/null
 
+    # The guide bundle carries the engine version in its format-2 envelope,
+    # and the agent guide derives its exact tool entries from tools/list. Build
+    # the just-bumped engine once and regenerate both audiences from that
+    # binary. This makes guide alignment an operation of `version`, not a
+    # release-day reminder.
+    cargo build --locked -p kmp-mcp
+    python3 scripts/release/guide.py sync "${version}" --binary target/debug/kmp-mcp
+
     # Surface what changed — the caller reviews before committing.
     git --no-pager diff --stat -- CHANGELOG.md Cargo.toml Cargo.lock distribution/charts/kmp/Chart.yaml \
         plugins/kmp/.claude-plugin/plugin.json plugins/kmp/.codex-plugin/plugin.json \
+        plugins/kmp/guide/guide.requests.json plugins/kmp/guide/memory.jsonl \
         server.json distribution/mcpb/manifest.json
 
     echo "next: commit and push this version branch, then run:" >&2
@@ -203,6 +212,7 @@ cmd_candidate() {
     require_workspace_version "${version}"
     python3 scripts/release/sync-public-readme.py check
     python3 scripts/release/changelog.py check "${version}"
+    python3 scripts/release/guide.py check "${version}"
 
     # The helper must stamp one known tree. Uncommitted release inputs could
     # otherwise produce bytes which no commit — and therefore no tag — names.
@@ -292,6 +302,7 @@ cmd_release() {
 
     python3 scripts/release/sync-public-readme.py check
     python3 scripts/release/changelog.py check "${version}"
+    python3 scripts/release/guide.py check "${version}"
 
     # A dirty tree would tag a commit that does not contain what was built.
     if [ -n "$(git status --porcelain)" ]; then
