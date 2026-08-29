@@ -21,12 +21,14 @@ DEFAULT_ROOT = "https://raw.githubusercontent.com/underpass-ai/plugins/main/plug
 DEFAULT_LISTING = "https://raw.githubusercontent.com/underpass-ai/plugins/main/.claude-plugin/marketplace.json"
 DEFAULT_CODEX_LISTING = "https://raw.githubusercontent.com/underpass-ai/plugins/main/.agents/plugins/marketplace.json"
 DEFAULT_README = "https://raw.githubusercontent.com/underpass-ai/plugins/main/README.md"
+DEFAULT_CLAUDE_REPOSITORY = "https://github.com/underpass-ai/kmp.git"
 CLAUDE_SOURCE = {
     "source": "git-subdir",
     "url": "https://github.com/underpass-ai/kmp.git",
     "path": "plugins/kmp",
 }
 CODEX_SOURCE = {"source": "local", "path": "./plugins/kmp"}
+COMMIT_SHA = re.compile(r"[0-9a-f]{40}")
 
 
 def github_commit_sha(repository: str, ref: str = "main") -> str:
@@ -43,6 +45,90 @@ def github_commit_sha(repository: str, ref: str = "main") -> str:
         detail = result.stderr.strip() or "ref was not found"
         raise SystemExit(f"could not resolve {repository}@{ref}: {detail}")
     return sha
+
+
+def local_release_commit(version: str) -> str:
+    repository = pathlib.Path(__file__).resolve().parents[2]
+    tag = f"v{version}"
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}"],
+        cwd=repository,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    commit = result.stdout.strip()
+    if result.returncode != 0 or not COMMIT_SHA.fullmatch(commit):
+        detail = result.stderr.strip() or "tag was not found"
+        raise SystemExit(
+            f"could not resolve local release tag {tag}: {detail}; "
+            "pre-tag verification must pass --expected-commit and --allow-unpublished-tag"
+        )
+    return commit
+
+
+def remote_release_commit(
+    repository: str,
+    ref: str,
+    expected_commit: str,
+    allow_unpublished_tag: bool,
+) -> str:
+    result = subprocess.run(
+        [
+            "git",
+            "ls-remote",
+            "--tags",
+            repository,
+            f"refs/tags/{ref}",
+            f"refs/tags/{ref}^{{}}",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or "tag lookup failed"
+        raise SystemExit(f"could not resolve Claude source tag {ref}: {detail}")
+
+    refs = {}
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) == 2 and COMMIT_SHA.fullmatch(fields[0]):
+            refs[fields[1]] = fields[0]
+
+    tag_ref = f"refs/tags/{ref}"
+    peeled_ref = f"{tag_ref}^{{}}"
+    tag_object = refs.get(tag_ref)
+    peeled_commit = refs.get(peeled_ref)
+    if tag_object is None and peeled_commit is None and allow_unpublished_tag:
+        if repository == DEFAULT_CLAUDE_REPOSITORY:
+            main_commit = github_commit_sha("underpass-ai/kmp")
+        else:
+            head = subprocess.run(
+                ["git", "ls-remote", repository, "refs/heads/main"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            fields = head.stdout.split()
+            main_commit = fields[0] if head.returncode == 0 and fields else ""
+        if main_commit != expected_commit:
+            raise SystemExit(
+                f"unpublished Claude source tag {ref} would not name remote main: "
+                f"expected {expected_commit}, found {main_commit or 'no main ref'}"
+            )
+        return expected_commit
+    if tag_object is None:
+        raise SystemExit(f"Claude source tag {ref} does not exist in {repository}")
+    if peeled_commit is None:
+        raise SystemExit(
+            f"Claude source tag {ref} must be annotated so its peeled commit is auditable"
+        )
+    if peeled_commit != expected_commit:
+        raise SystemExit(
+            f"Claude source tag {ref} peels to {peeled_commit}, not expected commit {expected_commit}"
+        )
+    return peeled_commit
 
 
 def pin_public_marketplace(args: argparse.Namespace) -> str | None:
@@ -255,7 +341,13 @@ def kmp_entry(source: str) -> dict[str, object]:
     return kmp
 
 
-def verify_claude_listing(source: str) -> tuple[str, str]:
+def verify_claude_listing(
+    expected: str,
+    source: str,
+    repository: str,
+    expected_commit: str,
+    allow_unpublished_tag: bool,
+) -> tuple[str, str]:
     kmp = kmp_entry(source)
     verify_description("public marketplace kmp entry", kmp.get("description"))
     plugin_source = kmp.get("source")
@@ -265,9 +357,18 @@ def verify_claude_listing(source: str) -> tuple[str, str]:
     if stable != CLAUDE_SOURCE:
         raise SystemExit("Claude marketplace kmp entry no longer resolves underpass-ai/kmp/plugins/kmp")
     ref = plugin_source.get("ref")
-    if not isinstance(ref, str) or not re.fullmatch(r"[0-9a-f]{40}", ref):
-        raise SystemExit("Claude marketplace kmp entry must pin an immutable 40-character commit SHA")
-    return f"https://raw.githubusercontent.com/underpass-ai/kmp/{ref}/plugins/kmp", ref
+    release_ref = f"v{expected}"
+    if ref != release_ref:
+        raise SystemExit(
+            f"Claude marketplace kmp entry must pin clonable immutable release tag {release_ref}"
+        )
+    commit = remote_release_commit(
+        repository,
+        release_ref,
+        expected_commit,
+        allow_unpublished_tag,
+    )
+    return f"https://raw.githubusercontent.com/underpass-ai/kmp/{commit}/plugins/kmp", commit
 
 
 def verify_codex_listing(source: str) -> None:
@@ -340,14 +441,40 @@ def main() -> None:
         help="override the Claude source root derived from the public listing (contract tests only)",
     )
     parser.add_argument(
+        "--claude-repository",
+        default=DEFAULT_CLAUDE_REPOSITORY,
+        help="override the Git remote used to audit the Claude release tag (contract tests only)",
+    )
+    parser.add_argument(
+        "--expected-commit",
+        help="expected peeled release commit; defaults to the local annotated version tag",
+    )
+    parser.add_argument(
+        "--allow-unpublished-tag",
+        action="store_true",
+        help="pre-tag release mode: require the expected commit at remote main when the tag is not published yet",
+    )
+    parser.add_argument(
         "--source-root",
         type=pathlib.Path,
         help="override the local KMP plugin source used for byte-parity tests",
     )
     args = parser.parse_args()
 
+    if args.expected_commit is not None and not COMMIT_SHA.fullmatch(args.expected_commit):
+        parser.error("--expected-commit must be a lowercase 40-character commit SHA")
+    if args.allow_unpublished_tag and args.expected_commit is None:
+        parser.error("--allow-unpublished-tag requires --expected-commit")
+
     marketplace_sha = pin_public_marketplace(args)
-    claude_root, claude_sha = verify_claude_listing(args.listing)
+    expected_commit = args.expected_commit or local_release_commit(args.version)
+    claude_root, claude_sha = verify_claude_listing(
+        args.version,
+        args.listing,
+        args.claude_repository,
+        expected_commit,
+        args.allow_unpublished_tag,
+    )
     verify_codex_listing(args.codex_listing)
     verify_readme(args.readme)
     claude = verify_manifest(
