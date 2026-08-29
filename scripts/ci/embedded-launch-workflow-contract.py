@@ -26,6 +26,11 @@ WORKFLOW_CLAUSES = (
     'FFMPEG_DEB_VERSION: "7:6.1.1-3ubuntu5"',
     'CSOUND_DEB_VERSION: "1:6.18.1+dfsg-1ubuntu4"',
     'JSONSCHEMA_DEB_VERSION: "4.10.3-2ubuntu1"',
+    "timeout 300 sudo apt-get update",
+    "-o Acquire::Retries=3",
+    "-o Acquire::http::Timeout=30",
+    "-o Acquire::https::Timeout=30",
+    "timeout 600 sudo env DEBIAN_FRONTEND=noninteractive",
     '"ffmpeg=${FFMPEG_DEB_VERSION}"',
     '"csound=${CSOUND_DEB_VERSION}"',
     '"python3-jsonschema=${JSONSCHEMA_DEB_VERSION}"',
@@ -40,6 +45,7 @@ GATE_CLAUSES = (
     "campaign/embedded-launch/scripts/test_capture_portability.py",
     "campaign/embedded-launch/scripts/test_final_media_contract.py",
     "campaign/embedded-launch/obs-harness/scripts/test-obs-websocket-auth.mjs",
+    "campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs",
     "campaign/embedded-launch/scripts/freeze-product-evidence.py check",
     "campaign/embedded-launch/obs-harness/scripts/validate-scenario.py",
     "campaign/embedded-launch/scripts/render-campaign.py --audio-only",
@@ -91,6 +97,14 @@ def prove_mutation_guards(workflow: str, gate: str) -> None:
             workflow,
             gate.replace(
                 '"${python}" campaign/embedded-launch/scripts/test_capture_portability.py\n',
+                "",
+                1,
+            ),
+        ),
+        "missing OBS schedule contract": (
+            workflow,
+            gate.replace(
+                "node campaign/embedded-launch/obs-harness/scripts/test-obs-schedule.mjs\n",
                 "",
                 1,
             ),
@@ -169,7 +183,7 @@ def main() -> None:
     prove_mutation_guards(workflow, gate)
     print(
         "embedded launch workflow contract passed: path scope, immutable tools, "
-        "source/final split, deterministic hook, portable roles/schemas, 7 mutation guards"
+        "source/final split, deterministic hook, portable roles/schemas, 8 mutation guards"
     )
 
 

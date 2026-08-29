@@ -45,4 +45,5 @@ python3 -c 'from PIL import Image' || {
 }
 printf 'ok      %-20s %s\n' Pillow "$(python3 -c 'import PIL; print(PIL.__version__)')"
 node "$(dirname "${BASH_SOURCE[0]}")/test-obs-websocket-auth.mjs"
+node "$(dirname "${BASH_SOURCE[0]}")/test-obs-schedule.mjs"
 echo 'KMP OBS capture harness: ready'

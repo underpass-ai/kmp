@@ -62,17 +62,21 @@ probe = subprocess.run(
 probe_data = json.loads(probe.stdout)
 (run / "ffprobe.json").write_text(json.dumps(probe_data, indent=2) + "\n")
 video = next((stream for stream in probe_data["streams"] if stream["codec_type"] == "video"), None)
+picture_fps = float(edl["picture_contract"]["canvas"]["fps"])
+duration_tolerance = 1 / picture_fps + 0.001
+rate_parts = (video or {}).get("r_frame_rate", "0/1").split("/")
+observed_fps = float(rate_parts[0]) / float(rate_parts[1]) if len(rate_parts) == 2 and float(rate_parts[1]) else 0
 check("obs_raw_exists", recording.is_file() and recording.stat().st_size > 0, recording.stat().st_size)
 check("video_codec_h264", video and video["codec_name"] == "h264", video and video["codec_name"])
 check("video_zero_latency_encoder", video and int(video.get("has_b_frames", -1)) == 0, video and {"has_b_frames": video.get("has_b_frames")})
 check("video_resolution", video and video["width"] == 1920 and video["height"] == 1080, video and [video["width"], video["height"]])
-check("video_rate", video and video.get("r_frame_rate") == "30/1", video and video.get("r_frame_rate"))
+check("video_rate", video and observed_fps == picture_fps, video and video.get("r_frame_rate"))
 duration = float(probe_data["format"].get("duration", 0))
-check("duration_covers_scenario", duration >= scenario["duration_ms"] / 1000 - (1 / 30 + 0.001), duration)
+check("duration_covers_scenario", duration >= scenario["duration_ms"] / 1000 - duration_tolerance, duration)
 check(
     "duration_within_one_frame",
-    abs(duration - scenario["duration_ms"] / 1000) <= (1 / 30 + 0.001),
-    {"actual": duration, "target": scenario["duration_ms"] / 1000, "tolerance_seconds": 1 / 30 + 0.001},
+    abs(duration - scenario["duration_ms"] / 1000) <= duration_tolerance,
+    {"actual": duration, "target": scenario["duration_ms"] / 1000, "tolerance_seconds": duration_tolerance},
 )
 
 wire = json_lines(run / "tool-calls.jsonl")
@@ -239,6 +243,28 @@ check(
     {scene: [item.get("inputName") for item in by_scene.get(scene, [])] for scene in focus_scenes},
 )
 check("obs_start_stop_verified", any("StartRecord" in json.dumps(row) for row in obs_wire) and any("StopRecord" in json.dumps(row) for row in obs_wire), "obs-websocket.jsonl")
+obs_stop = json.loads((run / "obs-stop.json").read_text())
+expected_advance_ns = round(1_000_000_000 / picture_fps)
+record_start_ns = int(obs_stop.get("record_start_monotonic_ns", "0"))
+nominal_target_ns = int(obs_stop.get("nominal_target_monotonic_ns", "0"))
+stop_target_ns = int(obs_stop.get("target_monotonic_ns", "0"))
+check(
+    "obs_stop_one_frame_advance",
+    obs_stop.get("scheduled_stop_advance_frames") == 1
+    and float(obs_stop.get("picture_contract_fps", 0)) == picture_fps
+    and int(obs_stop.get("scheduled_stop_advance_ns", "0")) == expected_advance_ns
+    and abs(float(obs_stop.get("scheduled_stop_advance_ms", 0)) - expected_advance_ns / 1_000_000) <= 0.000001
+    and nominal_target_ns == record_start_ns + int(scenario["duration_ms"]) * 1_000_000
+    and stop_target_ns == nominal_target_ns - expected_advance_ns,
+    {
+        "picture_contract_fps": obs_stop.get("picture_contract_fps"),
+        "advance_frames": obs_stop.get("scheduled_stop_advance_frames"),
+        "advance_ms": obs_stop.get("scheduled_stop_advance_ms"),
+        "advance_ns": obs_stop.get("scheduled_stop_advance_ns"),
+        "target_monotonic_ns": obs_stop.get("target_monotonic_ns"),
+        "nominal_target_monotonic_ns": obs_stop.get("nominal_target_monotonic_ns"),
+    },
+)
 
 master = next((item for item in edl.get("masters", []) if item.get("id") == scenario["id"]), None)
 expected_schedule = (master or {}).get("obs_schedule") or [{"at_ms": 0, "scene": "KMP/Wide"}]

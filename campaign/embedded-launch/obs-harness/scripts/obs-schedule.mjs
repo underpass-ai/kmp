@@ -3,6 +3,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { scheduledStopPlan } from "./obs-schedule-contract.mjs";
 import { obsWebSocketAuthentication } from "./obs-websocket-auth.mjs";
 
 const [edlPath, scenarioId, durationText, portText, credentialFile, traceFile, runDir] = process.argv.slice(2);
@@ -40,6 +41,7 @@ if (!Number.isInteger(durationMs) || durationMs <= 0) throw new Error(`missing p
 if (master && Math.round(Number(master.duration_seconds) * 1000) !== durationMs) {
   throw new Error(`scenario/EDL duration mismatch for ${scenarioId}`);
 }
+const stopPlan = scheduledStopPlan(edl, durationMs);
 const allowedScenes = new Set(["KMP/Wide", "KMP/TerminalFocus", "KMP/ChronoFocus", "KMP/ProofFocus", "KMP/CTAFocus"]);
 for (let index = 0; index < schedule.length; index += 1) {
   const event = schedule[index];
@@ -120,10 +122,12 @@ for (const event of schedule) {
     lateness_ms: Number(after - (baseNs + BigInt(event.at_ms) * 1000000n)) / 1e6,
   });
 }
-// Recording duration is a picture contract, not MCP-client cleanup time.
-// The pinned x264 zerolatency profile has no reordered/look-ahead frames, so
-// StopRecord is scheduled directly against the observed OBS STARTED clock.
-const stopTargetNs = recordStartNs + BigInt(durationMs) * 1000000n;
+// Recording duration is a picture contract, not MCP-client cleanup time. OBS
+// closes the mux after StopRecord, and repeated real captures measured a tail
+// of roughly one frame even with zerolatency/no B-frames. Schedule the request
+// one contract frame early; the raw gate remains target ± one frame.
+const nominalStopTargetNs = recordStartNs + stopPlan.nominalDurationNs;
+const stopTargetNs = recordStartNs + stopPlan.stopAfterStartNs;
 await waitUntil(stopTargetNs);
 const beforeStop = await request("GetRecordStatus");
 const stopped = beforeStop.outputActive ? await request("StopRecord") : { outputPath: beforeStop.outputPath };
@@ -131,9 +135,13 @@ fs.writeFileSync(path.join(runDir, "obs-stop.json"), `${JSON.stringify({
   ...stamp(),
   command: "scheduled-stop",
   target_monotonic_ns: stopTargetNs.toString(),
+  nominal_target_monotonic_ns: nominalStopTargetNs.toString(),
   record_start_monotonic_ns: recordStartNs.toString(),
   duration_ms: durationMs,
-  encoder_tail_compensation_ms: 0,
+  picture_contract_fps: stopPlan.pictureContractFps,
+  scheduled_stop_advance_frames: stopPlan.scheduledStopAdvanceFrames,
+  scheduled_stop_advance_ms: stopPlan.scheduledStopAdvanceMs,
+  scheduled_stop_advance_ns: stopPlan.scheduledStopAdvanceNs.toString(),
   before: beforeStop,
   stopped,
 })}\n`);
