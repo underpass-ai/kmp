@@ -140,6 +140,43 @@ if table_names != ids:
 if "For you — ten commands" not in readme:
     fail("README does not state the ten-command contract")
 
+# The seeded guide replaced the user-facing checkout-latency specimen. Keep
+# the retired surface gone as one unit, while protecting the unrelated demo
+# journeys that still prove product and capture behavior.
+retired_demo_assets = [
+    PLUGIN / "skills" / "kmp-demo" / "SKILL.md",
+    PLUGIN / "scripts" / "kmp-demo.sh",
+    PLUGIN / "claude" / "commands" / "demo.md",
+    PLUGIN / "codex" / "prompts" / "kmp-demo.md",
+    PLUGIN / "demo" / "README.md",
+    PLUGIN / "demo" / "checkout-latency.jsonl",
+    ROOT / "crates" / "kmp-adapter-embedded" / "tests" / "demo_bundle.rs",
+    ROOT / "docs" / "assets" / "kmp-demo.gif",
+]
+for asset in retired_demo_assets:
+    if asset.exists():
+        fail(f"retired user demo asset returned: {asset.relative_to(ROOT)}")
+
+protected_demo_assets = [
+    ROOT / "scripts" / "demo" / "embedded_two_sessions.sh",
+    ROOT / "scripts" / "demo" / "record-chronoloom-gifs.sh",
+    ROOT / "archive" / "docs" / "research" / "demos",
+]
+for asset in protected_demo_assets:
+    if not asset.exists():
+        fail(f"unrelated demo asset was removed: {asset.relative_to(ROOT)}")
+
+retired_bundle = "plugins/kmp/demo/checkout-latency.jsonl"
+for pitch in (ROOT / "scripts" / "demo" / "pitch").glob("*.sh"):
+    if retired_bundle in pitch.read_text(encoding="utf-8"):
+        fail(f"pitch script references the retired demo bundle: {pitch.relative_to(ROOT)}")
+
+root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+if "docs/assets/kmp-demo.gif" in root_readme:
+    fail("root README still embeds the retired demo GIF")
+if "docs/assets/kmp-agent-loom.gif" not in root_readme:
+    fail("root README lost the selected ChronoLoom opening capture")
+
 # Public setup docs must agree on ownership. A bare `--codex` installer was
 # the former global-wiring path; prescribing it beside the native plugin
 # recreates the duplicate MCP owner that setup now refuses.
