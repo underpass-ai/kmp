@@ -83,7 +83,8 @@ shape after production code establishes it.
 - Visual projection stays on the application facade and calls the typed
   temporal use case before projecting; it does not add a storage-specific read
   (`crates/kmp-application/src/memory/service.rs:165-177`). This preserves the
-  ADR-017 same-facade rule (`archive/docs/adr/ADR-017-embedded-memory-viewer.md:32-37`).
+  historical ADR-017 same-facade rule
+  ([`v0.5.0`](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-017-embedded-memory-viewer.md#L32-L37)).
 
 ### What needs work
 
@@ -255,7 +256,7 @@ and gestures only after the new module boundary runs in both the loopback page
 and self-contained MCP App. Do not add a bundler, npm install or runtime fetch;
 those contradict the vendored path
 (`crates/kmp-viewer/ui/vendor/VENDOR.md:1-18`) and ADR-017's dependency decision
-(`archive/docs/adr/ADR-017-embedded-memory-viewer.md:21-28`).
+([historical ADR-017](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-017-embedded-memory-viewer.md#L21-L28)).
 
 ## Ordered PR plan
 
@@ -297,5 +298,5 @@ Each PR preserves the temporal answers fixed by #268, #274, #276, #280 and
 a page boundary inside one multi-dimensional entry; PR 5 must not start until
 that regression shield passes on both graph adapters. Viewer PRs also preserve
 the loopback, capability and read-only boundary
-recorded in `docs/embedded/README.md:94-101` and
-`archive/docs/adr/ADR-017-embedded-memory-viewer.md:30-59`.
+recorded in `docs/embedded/README.md:94-101` and the
+[historical ADR-017](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-017-embedded-memory-viewer.md#L30-L59).

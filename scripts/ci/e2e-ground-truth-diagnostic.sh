@@ -41,7 +41,7 @@ cargo test -p kmp-tests-paper --features container-tests \
   --test llm_judge_prompt_evaluation -- --nocapture --test-threads=1
 
 # Find the latest run directory
-LATEST_RUN=$(ls -td "${ROOT_DIR}/archive/artifacts/e2e-runs/"*/ 2>/dev/null | head -1)
+LATEST_RUN=$(ls -td "${ROOT_DIR}/artifacts/e2e-runs/"*/ 2>/dev/null | head -1)
 
 if [[ -z "${LATEST_RUN}" ]]; then
   echo "No run directory found"

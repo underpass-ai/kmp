@@ -1,7 +1,7 @@
 # status<TAB>path-glob<TAB>why
 # Every maintained docs/**/*.md file must match exactly one row.
 current	docs/index.md	Documentation entry point.
-current	docs/documentation-catalog.md	Maintained authority and archive boundary.
+current	docs/documentation-catalog.md	Maintained authority and Git-history boundary.
 current	docs/embedded/*.md	Local private KMP documentation.
 current	docs/enterprise/*.md	Shared self-operated KMP documentation.
 current	docs/architecture/*.md	Technical component, flow and trust-boundary documentation.

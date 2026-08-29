@@ -1,5 +1,5 @@
 //! Which storage engine a fresh data directory gets
-//! ([ADR-018](../../../archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
+//! ([historical ADR-018](https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-018-multi-process-embedded-store.md)).
 //!
 //! The choice is made once, when a directory is created, and recorded in its
 //! `FORMAT_VERSION`. `KMP_MCP_ENGINE` says what a *fresh* directory should

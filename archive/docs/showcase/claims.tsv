@@ -1,4 +1,0 @@
-# claim_id<TAB>recording<TAB>tape<TAB>scenario<TAB>required_observation
-one-binary	archive/docs/showcase/recordings/one-binary.gif	archive/docs/showcase/tapes/one-binary.tape	scripts/demo/pitch/one-binary.sh	10 tools on the MCP surface
-fresh-session	archive/docs/showcase/recordings/fresh-session.gif	archive/docs/showcase/tapes/fresh-session.tape	scripts/demo/pitch/fresh-session.sh	evidence:spike
-wrong-turn	archive/docs/showcase/recordings/wrong-turn.gif	archive/docs/showcase/tapes/wrong-turn.tape	scripts/demo/pitch/wrong-turn.sh	The pool size was not the cause.

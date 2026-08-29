@@ -125,7 +125,7 @@ def full_plan(packages: dict[str, pathlib.Path], reason: str) -> dict[str, objec
 
 def is_markdown_or_docs(path: str) -> bool:
     return (
-        path.startswith(("docs/", "archive/"))
+        path.startswith("docs/")
         or path.endswith(".md")
         or path in {"README.md", "CHANGELOG.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "SECURITY.md"}
     )

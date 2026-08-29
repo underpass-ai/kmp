@@ -26,13 +26,13 @@ Current questions include:
 
 The first KMP paper is not published yet. It is the first complete expression
 of the graph-temporal memory model behind the project, and we are proud of it.
-Its draft, ACL sources and experimental material moved with the complete
-former documentation tree to
-[`archive/docs/audit-2026-08-26/research/paper`](../../archive/docs/audit-2026-08-26/research/paper/README.md).
-That move preserves one working version; it does not pause the research. The
-paper will return to this section as a living research artifact and evolve
-with the implementation and new evidence until it is ready to publish.
+Its draft, ACL sources and experimental material remain available in the
+[`v0.5.0` Git tree](https://github.com/underpass-ai/kmp/tree/v0.5.0/archive/docs/audit-2026-08-26/research/paper).
+That retained revision preserves one working version; it does not pause the
+research. The paper will return to this section as a living research artifact
+and evolve with the implementation and new evidence until it is ready to
+publish.
 
 The separate Operator investigation and earlier benchmark material are also
-retained in the same audit archive. None of those documents defines current
+retained in the same Git revision. None of those documents defines current
 product behavior.

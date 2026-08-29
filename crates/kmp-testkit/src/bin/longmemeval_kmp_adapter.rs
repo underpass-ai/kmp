@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let manifest = Manifest {
         benchmark: "LongMemEval",
-        methodology: "archive/docs/research/benchmark-methodology-v1.md",
+        methodology: "https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/research/benchmark-methodology-v1.md",
         source_path: args.input.display().to_string(),
         generated_at_unix_seconds: SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs(),
         adapter: "longmemeval-kmp-adapter-v1",

@@ -90,8 +90,8 @@
       "Why does one writer correspond to one agent per project?"
     ],
     "answer_language": "es",
-    "stored_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"archive/docs/adr/ADR-011.md\",\"line\":42}}",
-    "fallback_returned_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"archive/docs/adr/ADR-011.md\",\"line\":42}}",
+    "stored_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-011-embedded-concurrency-model.md\",\"line\":42}}",
+    "fallback_returned_evidence_json": "{\"ref\":\"project:kmp:decision:embedded-store\",\"text\":\"We chose redb because one writer matched one agent per project.\",\"relation\":{\"why\":\"The single-writer model matches the product's per-project agent ownership.\",\"evidence\":\"ADR-011 records one writer per redb store.\"},\"source\":{\"uri\":\"https://github.com/underpass-ai/kmp/blob/v0.5.0/archive/docs/adr/ADR-011-embedded-concurrency-model.md\",\"line\":42}}",
     "tool_trace": [
       "kmp_ask:es",
       "kmp_ask:en"

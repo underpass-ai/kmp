@@ -139,9 +139,9 @@ extraEnv:
     value: /var/run/kmp/otel-tls/tls.key
 
 # --- Optional in-cluster LLM endpoints ---
-# Apply archive/k8s/llm-client-config.example.yaml first, then load the config and
-# secret through envFrom. This keeps the primary model, repair judge, and
-# semantic reranker outside the chart's static values.
+# Create the model client ConfigMap and Secret first, then load them through
+# envFrom. This keeps the primary model, repair judge, and semantic reranker
+# outside the chart's static values.
 extraEnvFrom:
   - configMapRef:
       name: kmp-llm-client

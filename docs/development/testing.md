@@ -102,4 +102,4 @@ specific deployment authority and credentials supplied for that environment.
 
 Keep disposable test output under the repository's ignored `tmp/` directory
 and remove it after the run. `target/` and `tmp/` are not evidence. Persist
-only deliberate, reviewable artifacts under `artifacts/` or its archive.
+only deliberate, reviewable artifacts under `artifacts/`.

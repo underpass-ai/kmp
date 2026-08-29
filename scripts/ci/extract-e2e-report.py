@@ -5,7 +5,7 @@ Extract exhaustive E2E evaluation report from a run directory.
 Usage:
   python3 scripts/ci/extract-e2e-report.py [run_dir]
 
-  run_dir defaults to the latest archive/artifacts/e2e-runs/*/ directory.
+  run_dir defaults to the latest artifacts/e2e-runs/*/ directory.
 
 Reads:
   - results/*.json     (per-evaluation structured data)
@@ -74,7 +74,7 @@ def find_latest_run():
     base = Path(__file__).resolve().parent.parent.parent / "artifacts" / "e2e-runs"
     runs = sorted(base.glob("*/"), key=lambda p: p.name, reverse=True)
     if not runs:
-        print("No run directories found in archive/artifacts/e2e-runs/", file=sys.stderr)
+        print("No run directories found in artifacts/e2e-runs/", file=sys.stderr)
         sys.exit(1)
     return runs[0]
 

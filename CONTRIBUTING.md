@@ -92,8 +92,8 @@ Update current docs when your change affects:
 - enterprise deployment
 - operational behavior
 
-Historical material under `archive/` is evidence. Do not rewrite it to make a
-new implementation look older than it is.
+Historical material remains available in Git history. Do not rewrite history
+to make a new implementation look older than it is.
 
 ## Reporting Problems
 
