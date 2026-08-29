@@ -25,6 +25,9 @@ Detailed notes from the early release cycle remain available in the
   exactly one memory, exports it before removal, and refuses while an owning
   MCP host is live without stopping that host or disturbing other stores,
   engines, plugins or wiring.
+- Release tags now bind the exact green marketplace review and publish their
+  checksummed assets before that catalog becomes public, so Claude never sees
+  an unclonable tag and the updater never sees a version without engine assets.
 
 ## [0.5.0] - 2026-08-29
 
