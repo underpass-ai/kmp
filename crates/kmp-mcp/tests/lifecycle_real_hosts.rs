@@ -6,6 +6,7 @@ use std::process::{Command, Output};
 use serde_json::{Value, json};
 
 const BASELINE_VERSION: &str = "0.4.2";
+const BASELINE_REPOSITORY: &str = "https://github.com/underpass-ai/kmp.git";
 
 struct RealHostLifecycleHarness {
     root: tempfile::TempDir,
@@ -38,13 +39,15 @@ impl RealHostLifecycleHarness {
         self.create_directories();
 
         let old_product = self.root.path().join("old-product");
+        let baseline_tag = format!("v{BASELINE_VERSION}");
         self.git(&[
             "clone",
-            "--no-hardlinks",
-            self.repository.to_str().expect("repository path"),
+            "--branch",
+            &baseline_tag,
+            "--single-branch",
+            BASELINE_REPOSITORY,
             old_product.to_str().expect("old product path"),
         ]);
-        self.git_in(&old_product, &["checkout", "--detach", "v0.4.2"]);
 
         let candidate_product = self.root.path().join("candidate-product");
         self.materialize_candidate(&candidate_product);

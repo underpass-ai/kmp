@@ -98,11 +98,12 @@ jobs:
         shell: bash
         run: cargo build --release --locked -p kmp-mcp --features sqlite
 
-      - name: Stage the prebuilt engine for the launcher
+      - name: Package the prebuilt engine for the launcher
         shell: bash
         run: |
           KMP_PLUGIN_PREBUILT_BINARY=target/release/kmp-mcp.exe \
-            bash scripts/plugin/build-local-kmp-plugin.sh
+            KMP_PLUGIN_PACKAGE_RELEASE=1 \
+            bash scripts/plugin/package-kmp-plugin.sh
 
       - name: Smoke-test Windows launcher version selection
         shell: pwsh
