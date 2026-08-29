@@ -7,8 +7,8 @@
   "human_audio_panel": "PENDING",
   "basis": "Two byte-identical picture-locked renders passed stereo and mono loudness, true-peak, LRA, decoded-silence, caption, faststart and visible-anchor gates.",
   "master_sha256": {
-    "fresh-process-same-why": "b569375245330bd280eaa67a25400b54e6ad3047484d7557a109762e3e1e706d",
-    "two-processes-one-memory": "c5f7d377571d1a8080d34db32bcfbbd4035cfff501213c03ed04a705ca6dc7fd",
-    "keep-the-wrong-turn": "ea2a46fce0cd16422397ab71d89ac1d4b494ba6777a0d4d3b66d0bfdd45021a8"
+    "fresh-process-same-why": "a8423e5be6343f3f9df21046573195e87e8977a7bb1f6ee1e55821a017eb138c",
+    "two-processes-one-memory": "cdd63994659b3aa1f4f59e4d942caa827f315bfb26429baaf9162702d12afea3",
+    "keep-the-wrong-turn": "def66da83510ec5e613b90d4ac6bf34c58a7094d591862124bf7c02346c033c5"
   }
 }

@@ -4,7 +4,7 @@
   "result": "PASS",
   "editorial_go": false,
   "human_panels": "PENDING",
-  "capture_commit": "1bb522c",
+  "capture_commit": "20570a3",
   "checks": {
     "source_mkv_hashes_match_promotion": true,
     "masters_byte_identical_across_two_clean_working_tree_renders": true,
@@ -21,36 +21,36 @@
   "masters": [
     {
       "id": "fresh-process-same-why",
-      "sha256": "b569375245330bd280eaa67a25400b54e6ad3047484d7557a109762e3e1e706d",
-      "bytes": 13969983,
+      "sha256": "a8423e5be6343f3f9df21046573195e87e8977a7bb1f6ee1e55821a017eb138c",
+      "bytes": 13976413,
       "duration_seconds": 44.0,
       "integrated_lufs": -18.03,
-      "lra_lu": 5.5,
-      "true_peak_dbtp": -5.81,
+      "lra_lu": 5.6,
+      "true_peak_dbtp": -5.84,
       "mono_integrated_lufs": -21.04,
-      "mono_lra_lu": 5.5,
-      "mono_true_peak_dbtp": -6.14,
+      "mono_lra_lu": 5.6,
+      "mono_true_peak_dbtp": -6.16,
       "decoded_silence_max_abs_sample": 0,
       "caption_cues": 5
     },
     {
       "id": "two-processes-one-memory",
-      "sha256": "c5f7d377571d1a8080d34db32bcfbbd4035cfff501213c03ed04a705ca6dc7fd",
-      "bytes": 14703013,
+      "sha256": "cdd63994659b3aa1f4f59e4d942caa827f315bfb26429baaf9162702d12afea3",
+      "bytes": 14692159,
       "duration_seconds": 46.0,
       "integrated_lufs": -18.06,
-      "lra_lu": 7.7,
-      "true_peak_dbtp": -5.89,
+      "lra_lu": 8.0,
+      "true_peak_dbtp": -5.68,
       "mono_integrated_lufs": -21.11,
-      "mono_lra_lu": 7.8,
-      "mono_true_peak_dbtp": -6.0,
+      "mono_lra_lu": 8.0,
+      "mono_true_peak_dbtp": -5.99,
       "decoded_silence_max_abs_sample": 0,
       "caption_cues": 5
     },
     {
       "id": "keep-the-wrong-turn",
-      "sha256": "ea2a46fce0cd16422397ab71d89ac1d4b494ba6777a0d4d3b66d0bfdd45021a8",
-      "bytes": 17188925,
+      "sha256": "def66da83510ec5e613b90d4ac6bf34c58a7094d591862124bf7c02346c033c5",
+      "bytes": 17188941,
       "duration_seconds": 54.0,
       "integrated_lufs": -18.02,
       "lra_lu": 6.3,
@@ -60,7 +60,7 @@
       "mono_true_peak_dbtp": -2.35,
       "decoded_silence_max_abs_sample": 0,
       "caption_cues": 6,
-      "proof_hop_lag_frames": [0.362783, 0.222484, 0.209431, 0.993901]
+      "proof_hop_lag_frames": [0.214123, 0.312055, 0.282261, 0.99564]
     }
   ]
 }
