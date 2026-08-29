@@ -187,17 +187,20 @@ pub(crate) fn temporal_from_response(response: TemporalMoveResponse) -> Value {
 }
 
 fn temporal_next_action(response: &TemporalMoveResponse) -> Value {
-    let Some(page) = response
-        .page
-        .as_ref()
-        .filter(|page| page.has_more && !page.next_cursor.trim().is_empty())
-    else {
+    let Some(page) = response.page.as_ref().filter(|page| page.has_more) else {
         return Value::Null;
     };
     let direction = response
         .temporal
         .as_ref()
         .and_then(|state| TemporalDirection::try_from(state.direction).ok());
+    // `Near` names its continuation with the entries it returned, because it is
+    // an anchor rather than a self-paginator and carries no cursor of its own.
+    // Demanding one here would silence the single direction designed without it.
+    let cursor_bound = !matches!(direction, Some(TemporalDirection::Near));
+    if cursor_bound && page.next_cursor.trim().is_empty() {
+        return Value::Null;
+    }
     let unchanged = "Keep about, axis, dimensions, include, depth, budget, and limit unchanged.";
     let action = match direction {
         Some(TemporalDirection::Goto) => format!(
@@ -205,16 +208,13 @@ fn temporal_next_action(response: &TemporalMoveResponse) -> Value {
             page.next_cursor
         ),
         Some(TemporalDirection::Near) => {
-            let first = response
-                .entries
-                .first()
-                .map(|entry| entry.r#ref.as_str())
-                .unwrap_or(page.next_cursor.as_str());
-            let last = response
-                .entries
-                .last()
-                .map(|entry| entry.r#ref.as_str())
-                .unwrap_or(page.next_cursor.as_str());
+            let (Some(first), Some(last)) = (
+                response.entries.first().map(|entry| entry.r#ref.as_str()),
+                response.entries.last().map(|entry| entry.r#ref.as_str()),
+            ) else {
+                // Nothing to anchor on, and near has no cursor to fall back to.
+                return Value::Null;
+            };
             format!(
                 "kmp_near is an anchor, not a self-paginator. Continue earlier with kmp_rewind using from.ref=\"{first}\" and later with kmp_forward using from.ref=\"{last}\". {unchanged} Do not pass page.next_cursor back to kmp_near."
             )
@@ -764,9 +764,17 @@ pub(crate) fn enforce_temporal_output_budget(
     }
     truncate_entries(&mut value, &entries, low, total);
 
+    if low == 0 && total > 0 {
+        // Zero entries plus `has_more` is not a page the caller can walk, and
+        // there is no boundary entry to continue from. Say which number to
+        // raise rather than returning something unusable.
+        return Err(ToolError::invalid_argument(format!(
+            "this temporal response does not fit budget.max_bytes={limit} with even one entry; \
+             raise budget.max_bytes"
+        )));
+    }
     if low == 0 && serialized_len(&value) > limit {
-        // The envelope alone is over. Say which number to raise rather than
-        // returning something the caller cannot use.
+        // The envelope alone is over.
         return Err(ToolError::invalid_argument(format!(
             "this temporal response does not fit budget.max_bytes={limit} even with no entries; \
              raise budget.max_bytes"
@@ -1103,6 +1111,49 @@ fn truncate_entries(value: &mut Value, entries: &[Value], keep: usize, total: us
         json!(total.max(value["page"]["total"].as_u64().unwrap_or_default() as usize));
     if keep < total {
         value["page"]["has_more"] = json!(true);
+        restate_trimmed_page(value, entries, keep);
+    }
+}
+
+/// `summary` and `next_action` were written for the untrimmed response. Left
+/// alone they describe entries this page no longer carries, so a partial read
+/// announces itself as complete and offers nothing to continue with.
+fn restate_trimmed_page(value: &mut Value, entries: &[Value], keep: usize) {
+    value["summary"] = json!(format!(
+        "Returned {keep} temporal {}, trimmed to fit budget.max_bytes.",
+        if keep == 1 { "entry" } else { "entries" }
+    ));
+
+    // A trim always drops the tail of the array, whichever verb produced it, so
+    // the boundary is the last entry kept — not the cursor the kernel would
+    // have handed out for its own pagination.
+    let Some(boundary) = keep
+        .checked_sub(1)
+        .and_then(|index| entries.get(index))
+        .and_then(|entry| entry["ref"].as_str())
+        .filter(|reference| !reference.trim().is_empty())
+    else {
+        return;
+    };
+    let boundary = boundary.to_string();
+
+    // `rewind` walks newest to oldest, so its dropped tail is the older end.
+    let (dropped, verb) = match value["temporal"]["direction"].as_str() {
+        Some("rewind") => ("before", "kmp_rewind"),
+        _ => ("after", "kmp_forward"),
+    };
+    value["page"]["next_cursor"] = json!(boundary);
+    value["next_action"] = json!(format!(
+        "This page was trimmed to fit budget.max_bytes, dropping the entries {dropped} \
+         `{boundary}`. Continue with {verb} using from.ref=\"{boundary}\", or repeat the call \
+         with a larger budget.max_bytes. Keep about, axis, dimensions, include and depth \
+         unchanged."
+    ));
+    if let Some(warnings) = value["warnings"].as_array_mut() {
+        warnings.push(json!(
+            "temporal response trimmed to budget.max_bytes; page.next_cursor and next_action \
+             continue from the last entry on this page"
+        ));
     }
 }
 
@@ -1117,8 +1168,14 @@ mod tests {
     use super::{enforce_inspect_output_budget, enforce_temporal_output_budget};
 
     fn temporal_value(entries: usize, text_len: usize) -> serde_json::Value {
+        temporal_value_for("forward", entries, text_len)
+    }
+
+    fn temporal_value_for(direction: &str, entries: usize, text_len: usize) -> serde_json::Value {
         serde_json::json!({
-            "summary": "walked backward",
+            "summary": format!("Returned {entries} temporal entries."),
+            "next_action": serde_json::Value::Null,
+            "temporal": {"direction": direction, "axis": "occurred"},
             "entries": (0..entries)
                 .map(|index| serde_json::json!({
                     "ref": format!("project:t:entry:{index}"),
@@ -1170,6 +1227,72 @@ mod tests {
         let arguments = serde_json::json!({"budget": {"max_bytes": 9000}});
         let bounded = enforce_temporal_output_budget(value.clone(), &arguments).expect("fits");
         assert_eq!(bounded, value);
+    }
+
+    #[test]
+    fn a_trimmed_response_counts_only_the_entries_it_carries() {
+        let bounded = enforce_temporal_output_budget(
+            temporal_value(6, 200),
+            &serde_json::json!({"budget": {"max_bytes": 900}}),
+        )
+        .expect("a trimmed page is still a page");
+
+        let returned = bounded["entries"].as_array().expect("entries").len();
+        assert!(returned < 6, "the budget should have trimmed: {bounded}");
+        assert_eq!(bounded["page"]["returned"], returned);
+        assert_eq!(bounded["page"]["has_more"], true);
+        assert!(
+            bounded["summary"]
+                .as_str()
+                .expect("summary")
+                .starts_with(&format!("Returned {returned} temporal")),
+            "summary must count what the page carries: {bounded}"
+        );
+    }
+
+    #[test]
+    fn a_trimmed_response_always_offers_a_way_to_continue() {
+        for direction in ["goto", "near", "rewind", "forward"] {
+            let bounded = enforce_temporal_output_budget(
+                temporal_value_for(direction, 6, 200),
+                &serde_json::json!({"budget": {"max_bytes": 900}}),
+            )
+            .expect("a trimmed page is still a page");
+
+            assert_eq!(bounded["page"]["has_more"], true, "{direction}: {bounded}");
+            let last = bounded["entries"]
+                .as_array()
+                .expect("entries")
+                .last()
+                .expect("a trimmed page keeps at least one entry")["ref"]
+                .as_str()
+                .expect("ref")
+                .to_string();
+            assert_eq!(bounded["page"]["next_cursor"], last, "{direction}");
+            let action = bounded["next_action"].as_str().unwrap_or_default();
+            assert!(action.contains(&last), "{direction}: {bounded}");
+            // rewind walks newest to oldest, so its dropped tail is the older end.
+            let verb = if direction == "rewind" {
+                "kmp_rewind"
+            } else {
+                "kmp_forward"
+            };
+            assert!(action.contains(verb), "{direction}: {bounded}");
+        }
+    }
+
+    #[test]
+    fn a_budget_that_cannot_hold_one_entry_names_the_number_to_raise() {
+        let error = enforce_temporal_output_budget(
+            temporal_value(6, 4_000),
+            &serde_json::json!({"budget": {"max_bytes": 600}}),
+        )
+        .expect_err("no entry fits, so there is no page to walk");
+
+        assert!(
+            format!("{error:?}").contains("raise budget.max_bytes"),
+            "{error:?}"
+        );
     }
 
     #[test]

@@ -28,6 +28,19 @@ impl MemoryDimensionIdentity {
         Self::new(about, dimension_id).ok()
     }
 
+    /// Resolve `value` against `about`, whether it arrives bare or already
+    /// namespaced. Reads hand out the namespaced form, so both forms reach
+    /// writers; wrapping an already-namespaced id a second time would name a
+    /// different dimension that reads back as the intended one. An id
+    /// namespaced for another about is not this about's to reinterpret.
+    pub fn resolve(about: &str, value: &str) -> Option<Self> {
+        match Self::parse(value) {
+            Some(identity) if identity.about() == about => Some(identity),
+            Some(_) => None,
+            None => Self::new(about, value).ok(),
+        }
+    }
+
     pub fn node_id(&self) -> String {
         format!("{PREFIX}{}{SEPARATOR}{}", self.about, self.dimension_id)
     }
@@ -66,6 +79,25 @@ mod tests {
         let parsed = MemoryDimensionIdentity::parse(&identity.node_id()).expect("should parse");
         assert_eq!(parsed.about(), "question:830ce83f");
         assert_eq!(parsed.dimension_id(), "timeline");
+    }
+
+    #[test]
+    fn resolve_is_idempotent_for_this_about() {
+        let bare = MemoryDimensionIdentity::resolve("project:x", "run").expect("bare id resolves");
+        assert_eq!(bare.node_id(), "about:project:x:dimension:run");
+
+        let namespaced = MemoryDimensionIdentity::resolve("project:x", &bare.node_id())
+            .expect("namespaced id resolves");
+        assert_eq!(namespaced.node_id(), bare.node_id());
+        assert_eq!(namespaced.dimension_id(), "run");
+    }
+
+    #[test]
+    fn resolve_refuses_a_dimension_owned_by_another_about() {
+        assert!(
+            MemoryDimensionIdentity::resolve("project:x", "about:project:y:dimension:run")
+                .is_none()
+        );
     }
 
     #[test]

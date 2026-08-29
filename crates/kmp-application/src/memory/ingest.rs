@@ -367,8 +367,12 @@ fn dimension_identity(
     about: &str,
     dimension_id: &str,
 ) -> Result<MemoryDimensionIdentity, ApplicationError> {
-    MemoryDimensionIdentity::new(about, dimension_id)
-        .map_err(|error| ApplicationError::Validation(error.to_string()))
+    MemoryDimensionIdentity::resolve(about, dimension_id).ok_or_else(|| {
+        ApplicationError::Validation(format!(
+            "memory dimension `{dimension_id}` belongs to another about; declare it bare or \
+             namespaced for `{about}`"
+        ))
+    })
 }
 
 fn normalize_ref(value: &str, dimension_aliases: &BTreeMap<String, String>) -> String {
@@ -648,6 +652,38 @@ mod tests {
             entry_payload["coordinates"][0]["ingested_at"],
             "2026-04-12T15:01:00Z"
         );
+    }
+
+    #[test]
+    fn translate_memory_ingest_accepts_an_already_namespaced_dimension_id() {
+        // Reads hand out the namespaced form, and the agent contract says to
+        // copy identifiers back byte-for-byte. Wrapping it again would name a
+        // second lane that reads back as the intended one.
+        let namespaced = "about:question:830ce83f:dimension:conversation:rachel-2026-04-12";
+        let mut command = sample_command();
+        command.memory.dimensions[0].id = namespaced.to_string();
+        command.memory.entries[0].coordinates[0].scope_id = namespaced.to_string();
+        command.memory.relations[0].source_ref = namespaced.to_string();
+
+        let (update, _) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect("a namespaced dimension id belongs to this about");
+
+        assert_eq!(update.changes[0].entity_id, namespaced);
+        let entry_payload: serde_json::Value =
+            serde_json::from_str(&update.changes[1].payload_json).expect("entry payload json");
+        assert_eq!(entry_payload["coordinates"][0]["scope_id"], namespaced);
+    }
+
+    #[test]
+    fn translate_memory_ingest_rejects_a_dimension_owned_by_another_about() {
+        let mut command = sample_command();
+        command.memory.dimensions[0].id =
+            "about:question:other:dimension:conversation:rachel-2026-04-12".to_string();
+
+        let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect_err("a foreign about's dimension is not ours to write");
+
+        assert_validation_contains(error, "belongs to another about");
     }
 
     #[test]
