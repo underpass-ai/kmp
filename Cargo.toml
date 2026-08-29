@@ -30,7 +30,8 @@ members = [
 resolver = "3"
 
 [profile.release]
-lto = "thin"
+codegen-units = 1
+lto = "fat"
 strip = "symbols"
 
 [workspace.package]
