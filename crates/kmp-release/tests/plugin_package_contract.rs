@@ -60,6 +60,26 @@ fn plugin_package_contains_one_canonical_tree_and_is_deterministic() {
             PluginPackageKind::Release,
         )
         .expect("second package");
+    let archive_name = second
+        .archive
+        .file_name()
+        .and_then(|name| name.to_str())
+        .expect("portable archive name");
+    let checksum = second
+        .archive
+        .with_file_name(format!("{archive_name}.sha256"));
+    assert!(
+        checksum.is_file(),
+        "release checksum must suffix the archive"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&checksum).expect("checksum receipt"),
+        format!("{}  {archive_name}\n", second.digest)
+    );
+    assert!(
+        !second.archive.with_extension("tar.gz.sha256").exists(),
+        "the checksum must not duplicate the tar extension"
+    );
     assert_eq!(
         first_bytes,
         std::fs::read(&second.archive).expect("second archive")

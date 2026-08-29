@@ -113,11 +113,11 @@ where
         self.archives.write(&archive, &entries)?;
         let digest =
             McpbDigest::from_bytes(Sha256::digest(self.file_system.read_bytes(&archive)?).into());
-        let checksum = archive.with_extension("tar.gz.sha256");
         let archive_name = archive
             .file_name()
             .and_then(|name| name.to_str())
             .ok_or_else(|| ReleaseError::invalid("plugin archive has no portable file name"))?;
+        let checksum = archive.with_file_name(format!("{archive_name}.sha256"));
         self.file_system
             .write_text(&checksum, &format!("{digest}  {archive_name}\n"))?;
         Ok(PluginPackageReceiptDto {
