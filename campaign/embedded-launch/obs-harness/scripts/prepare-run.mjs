@@ -120,6 +120,23 @@ ChannelSetup=Stereo
 `;
 fs.writeFileSync(path.join(profile, "basic.ini"), basicIni);
 
+// Pin a true low-latency software encoder. OBS otherwise inherits x264's
+// reorder/look-ahead defaults, making final PTS drift after StopRecord.
+const recordEncoder = {
+  rate_control: "CBR",
+  bitrate: 2500,
+  use_bufsize: true,
+  buffer_size: 2500,
+  keyint_sec: 0,
+  crf: 23,
+  preset: "veryfast",
+  profile: "",
+  tune: "zerolatency",
+  x264opts: "bframes=0 rc-lookahead=0 sync-lookahead=0",
+  bf: 0,
+};
+fs.writeFileSync(path.join(profile, "recordEncoder.json"), `${JSON.stringify(recordEncoder)}\n`);
+
 const sceneUuid = crypto.randomUUID();
 const scene = {
   current_scene: "KMP Capture",
@@ -169,4 +186,4 @@ const scene = {
 };
 fs.writeFileSync(path.join(scenes, "KMPCapture.json"), `${JSON.stringify(scene)}\n`);
 
-console.log(JSON.stringify({ obsRoot, profile, scenes, control, raw, chrome, port }));
+console.log(JSON.stringify({ obsRoot, profile, scenes, control, raw, chrome, port, recordEncoder }));

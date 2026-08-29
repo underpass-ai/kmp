@@ -97,10 +97,11 @@ cleanliness. It discloses `repository.worktree_dirty`, the status/path list and
 a stable path-list hash. A dirty campaign worktree is evidence, not a failure,
 when the commit and binary SHA-256 still match the reviewed build.
 
-The OBS scheduler owns both scene changes and the picture boundary. It stops
-against the observed `RecordStateChanged/STARTED` monotonic clock (with the
-pinned x264 profile's measured three-frame tail compensation), and verification
-rejects a raw duration more than one 30 fps frame away from the EDL.
+The OBS scheduler owns both scene changes and the picture boundary. The
+isolated profile pins x264 `zerolatency`, disables B-frames and look-ahead, and
+stops directly against the observed `RecordStateChanged/STARTED` monotonic
+clock. Verification checks those encoder settings and rejects a raw duration
+more than one 30 fps frame away from the EDL.
 
 OBS desktop audio is disabled. Product sound and campaign music consume only
 `anchors.jsonl`, `audio-cues.json` plus `clock-map.json`; nominal cues are

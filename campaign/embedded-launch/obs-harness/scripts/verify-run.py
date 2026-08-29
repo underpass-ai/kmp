@@ -53,6 +53,7 @@ probe_data = json.loads(probe.stdout)
 video = next((stream for stream in probe_data["streams"] if stream["codec_type"] == "video"), None)
 check("obs_raw_exists", recording.is_file() and recording.stat().st_size > 0, recording.stat().st_size)
 check("video_codec_h264", video and video["codec_name"] == "h264", video and video["codec_name"])
+check("video_zero_latency_encoder", video and int(video.get("has_b_frames", -1)) == 0, video and {"has_b_frames": video.get("has_b_frames")})
 check("video_resolution", video and video["width"] == 1920 and video["height"] == 1080, video and [video["width"], video["height"]])
 check("video_rate", video and video.get("r_frame_rate") == "30/1", video and video.get("r_frame_rate"))
 duration = float(probe_data["format"].get("duration", 0))
@@ -336,6 +337,14 @@ check("pty_transcript", (run / "pty.typescript").stat().st_size > 0 and (run / "
 
 obs_logs = "\n".join(path.read_text(errors="replace") for path in (run / "obs-config" / "obs-studio" / "logs").glob("*.txt"))
 check("obs_30_and_websocket", "OBS 30.0.2" in obs_logs and "obs-websocket" in obs_logs, "obs-studio/logs")
+check(
+    "obs_x264_zerolatency_profile",
+    "tune: zerolatency" in obs_logs
+    and "bframes = 0" in obs_logs
+    and "rc-lookahead = 0" in obs_logs
+    and "sync-lookahead = 0" in obs_logs,
+    "obs-studio/logs",
+)
 check("no_desktop_audio_source", "source: 'Desktop Audio'" not in obs_logs, "OBS scene has no desktop audio source")
 
 result = {

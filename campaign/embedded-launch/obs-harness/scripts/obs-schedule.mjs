@@ -118,11 +118,9 @@ for (const event of schedule) {
   });
 }
 // Recording duration is a picture contract, not MCP-client cleanup time.
-// OBS/x264 writes three buffered 30 fps frames after StopRecord on this pinned
-// capture profile. Compensate those encoded frames at the scheduler boundary;
-// ffprobe's ±1-frame gate below is the authority for every run.
-const encoderTailCompensationMs = 100;
-const stopTargetNs = recordStartNs + BigInt(durationMs - encoderTailCompensationMs) * 1000000n;
+// The pinned x264 zerolatency profile has no reordered/look-ahead frames, so
+// StopRecord is scheduled directly against the observed OBS STARTED clock.
+const stopTargetNs = recordStartNs + BigInt(durationMs) * 1000000n;
 await waitUntil(stopTargetNs);
 const beforeStop = await request("GetRecordStatus");
 const stopped = beforeStop.outputActive ? await request("StopRecord") : { outputPath: beforeStop.outputPath };
@@ -132,7 +130,7 @@ fs.writeFileSync(path.join(runDir, "obs-stop.json"), `${JSON.stringify({
   target_monotonic_ns: stopTargetNs.toString(),
   record_start_monotonic_ns: recordStartNs.toString(),
   duration_ms: durationMs,
-  encoder_tail_compensation_ms: encoderTailCompensationMs,
+  encoder_tail_compensation_ms: 0,
   before: beforeStop,
   stopped,
 })}\n`);
