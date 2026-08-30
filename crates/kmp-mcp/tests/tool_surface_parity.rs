@@ -174,8 +174,35 @@ fn calls() -> Vec<(&'static str, Value)> {
         // `visual_projection_from_response` is their sole mapper and lives in
         // the file this refactor splits, so leaving them unpinned would leave
         // that mapper unguarded.
+        // All three levels of detail, because each fills a different part of
+        // `visual_projection_from_response` and leaves the rest empty:
+        // `atlas` bins only, `episode` is the sole producer of `clusters`
+        // (kmp-application/src/memory/visual_projection.rs:279), and `moment`
+        // is the sole producer of `entries` and `relations` (:286, :305).
+        // Pinning one level would leave most of that mapper asserted by an
+        // empty array.
         (
             "kmp_view_read_projection",
+            json!({
+                "about": ABOUT,
+                "axis": "occurred",
+                "lod": "moment",
+                "from": "2026-04-12T00:00:00Z",
+                "to": "2026-04-13T00:00:00Z"
+            }),
+        ),
+        (
+            "kmp_view_read_projection:episode",
+            json!({
+                "about": ABOUT,
+                "axis": "occurred",
+                "lod": "episode",
+                "from": "2026-04-12T00:00:00Z",
+                "to": "2026-04-13T00:00:00Z"
+            }),
+        ),
+        (
+            "kmp_view_read_projection:atlas",
             json!({
                 "about": ABOUT,
                 "axis": "occurred",

@@ -60,8 +60,52 @@
       ],
       "missing": []
     },
-    "entries": [],
-    "level_of_detail": "atlas",
+    "entries": [
+      {
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:00:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 1
+          }
+        ],
+        "kind": "claim",
+        "ref_id": "question:parity:claim:denver",
+        "text": "Rachel said she was moving to Denver."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:05:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 2
+          }
+        ],
+        "kind": "claim",
+        "ref_id": "question:parity:claim:denver-detail",
+        "text": "She starts the new job in Denver in June."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z",
+            "occurred_at": "2026-04-12T16:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 1
+          }
+        ],
+        "kind": "decision",
+        "ref_id": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "text": "Pin the answered surface, not only the advertised one."
+      }
+    ],
+    "level_of_detail": "moment",
     "metrics": [
       {
         "name": "entry_count",
@@ -73,7 +117,7 @@
         "name": "relation_count",
         "scope": "selected_subgraph",
         "unit": "relations",
-        "value": 0.0
+        "value": 6.0
       },
       {
         "name": "causal_density",
@@ -93,7 +137,62 @@
       "from": "2026-04-12T00:00:00Z",
       "to": "2026-04-13T00:00:00Z"
     },
-    "relations": [],
+    "relations": [
+      {
+        "class": "evidential",
+        "confidence": "medium",
+        "evidence": "The claim is the store's only prior entry.",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "rel": "uses_background",
+        "to": "question:parity:claim:denver",
+        "why": "The decision was taken while reading this claim back."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Rachel named Denver twice in the same conversation.",
+        "from": "evidence:question:parity:denver",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "A refactor that preserves schemas can still change answers.",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current",
+        "rel": "supports",
+        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "The claim is the store's only prior entry.",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "The claim is the store's only prior entry.",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+        "rel": "supports",
+        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "high",
+        "evidence": "Both statements came from the same conversation.",
+        "from": "question:parity:claim:denver-detail",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "The start date is what makes the move concrete."
+      }
+    ],
     "revision": 1,
     "truncated": false
   }

@@ -29,7 +29,21 @@
       "claim": "integer",
       "decision": "integer"
     },
-    "clusters": [],
+    "clusters": [
+      {
+        "by_kind": {
+          "decision": "integer"
+        },
+        "dimension": "string",
+        "from": "string",
+        "id": "string",
+        "refs": [
+          "string"
+        ],
+        "to": "string",
+        "total": "integer"
+      }
+    ],
     "content_hash": "string",
     "contract": "string",
     "coverage": {
@@ -45,22 +59,7 @@
       ],
       "missing": []
     },
-    "entries": [
-      {
-        "coordinates": [
-          {
-            "dimension": "string",
-            "ingested_at": "string",
-            "occurred_at": "string",
-            "scope_id": "string",
-            "sequence": "integer"
-          }
-        ],
-        "kind": "string",
-        "ref_id": "string",
-        "text": "string"
-      }
-    ],
+    "entries": [],
     "level_of_detail": "string",
     "metrics": [
       {
@@ -81,17 +80,7 @@
       "from": "string",
       "to": "string"
     },
-    "relations": [
-      {
-        "class": "string",
-        "confidence": "string",
-        "evidence": "string",
-        "from": "string",
-        "rel": "string",
-        "to": "string",
-        "why": "string"
-      }
-    ],
+    "relations": [],
     "revision": "integer",
     "truncated": "boolean"
   }
