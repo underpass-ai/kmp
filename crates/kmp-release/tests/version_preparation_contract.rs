@@ -15,6 +15,7 @@ impl VersionPreparationHarness {
     fn new() -> Self {
         let root = tempfile::tempdir().expect("version fixture");
         for directory in [
+            ".claude-plugin",
             "distribution/charts/kmp",
             "distribution/mcpb",
             "plugins/kmp/.claude-plugin",
@@ -56,6 +57,26 @@ impl VersionPreparationHarness {
             "{\n  \"name\": \"kmp\",\n  \"version\": \"0.4.2\"\n}\n",
         )
         .expect("MCPB fixture");
+        fs::write(
+            root.path().join(".claude-plugin/marketplace.json"),
+            r#"{
+  "name": "underpass",
+  "plugins": [
+    {
+      "name": "kmp",
+      "description": "Local-first agent memory with a shared ChronoLoom view.",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/underpass-ai/kmp.git",
+        "path": "plugins/kmp",
+        "ref": "v0.4.2"
+      }
+    }
+  ]
+}
+"#,
+        )
+        .expect("Claude catalog fixture");
         Self { root }
     }
 
@@ -67,6 +88,7 @@ impl VersionPreparationHarness {
             .expect("version preparation");
         assert_eq!(receipt.internal_dependencies(), 1);
         assert!(receipt.mcpb_hash_was_reset());
+        assert_eq!(receipt.catalog_ref(), "v0.5.2");
 
         let cargo = self.read("Cargo.toml");
         assert!(cargo.contains("version = \"0.5.2\""));
@@ -90,6 +112,14 @@ impl VersionPreparationHarness {
         assert_eq!(server["version"], "0.5.2");
         assert_eq!(server["packages"][0]["fileSha256"], "0".repeat(64));
         assert_eq!(server["packages"][1]["version"], "0.5.2");
+
+        // The catalog ref pins the tag Claude Code clones and is itself a
+        // candidate input, so the version change has to own it.
+        let catalog = self.read(".claude-plugin/marketplace.json");
+        assert!(catalog.contains("\"ref\": \"v0.5.2\""));
+        let catalog: Value = serde_json::from_str(&catalog).expect("catalog JSON");
+        assert_eq!(catalog["plugins"][0]["source"]["ref"], "v0.5.2");
+        assert_eq!(catalog["plugins"][0]["source"]["path"], "plugins/kmp");
     }
 
     fn read(&self, relative: impl AsRef<Path>) -> String {

@@ -1,5 +1,6 @@
 use serde_json::Value;
 
+use crate::application::dto::claude_marketplace_dto::ClaudeMarketplaceDto;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::release_version::ReleaseVersion;
 use crate::domain::repository_root::RepositoryRoot;
@@ -49,6 +50,8 @@ impl<'a, F: ReleaseFileSystem> PrepareReleaseVersion<'a, F> {
             version,
             "MCPB manifest",
         )?;
+        let catalog_path = root.join(".claude-plugin/marketplace.json");
+        let catalog = Self::claude_catalog(&self.file_system.read_text(&catalog_path)?, version)?;
 
         // No file changes until every input has parsed and validated.
         self.file_system.write_text(&cargo_path, &cargo)?;
@@ -58,7 +61,59 @@ impl<'a, F: ReleaseFileSystem> PrepareReleaseVersion<'a, F> {
         }
         self.file_system.write_text(&server_path, &server)?;
         self.file_system.write_text(&mcpb_path, &mcpb)?;
-        Ok(VersionPreparation::new(dependency_count, hash_reset))
+        self.file_system.write_text(&catalog_path, &catalog)?;
+        Ok(VersionPreparation::new(
+            dependency_count,
+            hash_reset,
+            version.tag(),
+        ))
+    }
+
+    /// The Claude catalog pins the immutable tag Claude Code clones, so it is a
+    /// version source like any other. It is also a candidate input, which is why
+    /// it has to move here and not in a later commit: bumping it after a
+    /// candidate is built invalidates that candidate.
+    fn claude_catalog(text: &str, version: &ReleaseVersion) -> Result<String, ReleaseError> {
+        let catalog: ClaudeMarketplaceDto = serde_json::from_str(text).map_err(|error| {
+            ReleaseError::invalid(format!(
+                ".claude-plugin/marketplace.json is invalid: {error}"
+            ))
+        })?;
+        let plugins = catalog
+            .plugins
+            .iter()
+            .filter(|plugin| plugin.name == "kmp")
+            .count();
+        if plugins != 1 {
+            return Err(ReleaseError::invalid(format!(
+                ".claude-plugin/marketplace.json must contain exactly one kmp entry, found {plugins}"
+            )));
+        }
+        let mut lines = Vec::new();
+        let mut replaced = 0;
+        for line in text.lines() {
+            if line.trim_start().starts_with("\"ref\"") {
+                let indentation = &line[..line.len() - line.trim_start().len()];
+                let comma = if line.trim_end().ends_with(',') {
+                    ","
+                } else {
+                    ""
+                };
+                lines.push(format!(
+                    "{indentation}\"ref\": \"{}\"{comma}",
+                    version.tag()
+                ));
+                replaced += 1;
+            } else {
+                lines.push(line.to_string());
+            }
+        }
+        if replaced != 1 {
+            return Err(ReleaseError::invalid(format!(
+                ".claude-plugin/marketplace.json must pin exactly one `ref`, found {replaced}"
+            )));
+        }
+        Ok(format!("{}\n", lines.join("\n")))
     }
 
     fn cargo_manifest(

@@ -4,6 +4,7 @@ use crate::application::dto::release_command_dto::ReleaseCommandDto;
 use crate::domain::calendar_date::CalendarDate;
 use crate::domain::candidate_input_digest::CandidateInputDigest;
 use crate::domain::plugin_package_kind::PluginPackageKind;
+use crate::domain::plugin_repository::PluginRepository;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::release_version::ReleaseVersion;
 use crate::domain::repository_root::RepositoryRoot;
@@ -312,7 +313,7 @@ impl ReleaseCommandMapper {
                     .ok_or_else(|| ReleaseError::invalid("marketplace verify needs a version"))
                     .and_then(|value| ReleaseVersion::parse(value.clone()))?;
                 let mut selected_root = root;
-                let mut repository = "https://github.com/underpass-ai/kmp.git".to_string();
+                let mut repository = PluginRepository::URL.to_string();
                 let mut expected_commit = None;
                 let mut allow_unpublished_tag = false;
                 let mut index = 3;

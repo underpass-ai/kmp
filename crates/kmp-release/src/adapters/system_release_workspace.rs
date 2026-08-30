@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::{Command, Output, Stdio};
 
 use crate::domain::branch_name::BranchName;
@@ -57,6 +58,23 @@ impl SystemReleaseWorkspace {
                 arguments.join(" ")
             )))
         }
+    }
+
+    /// Runs a gate script for its verdict rather than its console output, so a
+    /// failure can be collected into a readiness report instead of scrolling
+    /// past.
+    fn reported(&self, script: &str) -> Result<(), ReleaseError> {
+        let output = self.output("bash", &[script])?;
+        if output.status.success() {
+            return Ok(());
+        }
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let detail = if stderr.is_empty() {
+            String::from_utf8_lossy(&output.stdout).trim().to_string()
+        } else {
+            stderr
+        };
+        Err(ReleaseError::invalid(format!("{script} failed: {detail}")))
     }
 
     fn git_text(&self, arguments: &[&str]) -> Result<String, ReleaseError> {
@@ -126,6 +144,19 @@ impl ReleaseWorkspace for SystemReleaseWorkspace {
 
     fn verify_registry(&self) -> Result<(), ReleaseError> {
         self.inherited("bash", &["scripts/ci/mcp-registry.sh"])
+    }
+
+    fn verify_vendored_contract(&self) -> Result<(), ReleaseError> {
+        self.reported("scripts/ci/check-vendored-contract.sh")
+    }
+
+    fn verify_publish_chain(&self) -> Result<(), ReleaseError> {
+        self.reported("scripts/ci/check-publish-chain.sh")
+    }
+
+    fn changed_files_since(&self, commit: &SourceCommit) -> Result<Vec<PathBuf>, ReleaseError> {
+        let paths = self.git_text(&["diff", "--name-only", commit.as_str(), "--"])?;
+        Ok(paths.lines().map(PathBuf::from).collect())
     }
 
     fn tag_exists(&self, version: &ReleaseVersion) -> Result<bool, ReleaseError> {
