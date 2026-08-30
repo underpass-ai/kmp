@@ -235,7 +235,9 @@ impl KernelMcpServer {
                 // nothing that shipped could find one you were not standing
                 // next to.
                 if let Some(data_home) = kmp_embedded::user_data_home() {
-                    crate::memories::remember(&data_home, resolved.path());
+                    let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&data_home);
+                    let index = crate::lifecycle::JsonlStoreIndex::new(&data_home);
+                    crate::lifecycle::RememberStore::new(&catalog, &index).execute(resolved.path());
                 }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
                 let server = Self::with_retrying_embedded_backend(

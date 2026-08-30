@@ -34,7 +34,9 @@ impl LifecycleFailureMapper {
             LifecycleError::InvalidReleaseVersion(_)
             | LifecycleError::Network(_)
             | LifecycleError::UnsupportedPlatform(_) => "release",
-            LifecycleError::Io { .. } | LifecycleError::UnsafePath(_) => "filesystem",
+            LifecycleError::Io { .. }
+            | LifecycleError::StoreIndex(_)
+            | LifecycleError::UnsafePath(_) => "filesystem",
             LifecycleError::SurfaceMismatch(_) => "engine_surface",
             LifecycleError::TreeMismatch(_) => "plugin_tree",
         }

@@ -26,6 +26,8 @@
 use std::fs::{File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 
+use crate::lifecycle::StoreIndex;
+
 use sha2::{Digest, Sha256};
 
 const STORE_LEASES_DIR: &str = "store-leases";
@@ -314,10 +316,7 @@ pub fn survey(roots: &Roots) -> Vec<Piece> {
 
     // KMP's own note of where memory has been. Small, and leaving it behind
     // means a fresh install starts with a list of stores that are gone.
-    let index = roots
-        .data_home
-        .join("kmp")
-        .join(crate::memories::INDEX_FILE);
+    let index = crate::lifecycle::JsonlStoreIndex::new(&roots.data_home).location();
     if index.is_file() {
         pieces.push(Piece {
             kind: PieceKind::HostFiles,
@@ -589,15 +588,13 @@ fn stores(roots: &Roots) -> Vec<PathBuf> {
     // remove a set the operator was never shown — including the stores no
     // resolution rule reaches, which are the strongest candidates for removal
     // and the ones nothing would otherwise mention.
-    let index = roots
-        .data_home
-        .join("kmp")
-        .join(crate::memories::INDEX_FILE);
-    let mut found: Vec<PathBuf> =
-        crate::memories::list(&roots.data_home, &crate::memories::read_index(&index))
-            .into_iter()
-            .map(|memory| memory.path)
-            .collect();
+    let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&roots.data_home);
+    let index = crate::lifecycle::JsonlStoreIndex::new(&roots.data_home);
+    let mut found: Vec<PathBuf> = crate::lifecycle::SurveyMemories::new(&catalog, &index)
+        .execute()
+        .into_iter()
+        .map(|memory| memory.path)
+        .collect();
 
     // Plus the one under this directory, which may never have been opened.
     let project = roots.working_dir.join(".kernel");
@@ -867,8 +864,11 @@ mod tests {
         store_at(&first, "2");
         store_at(&second, "2");
         let roots = roots(base);
-        crate::memories::remember(&roots.data_home, &first);
-        crate::memories::remember(&roots.data_home, &second);
+        let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&roots.data_home);
+        let index = crate::lifecycle::JsonlStoreIndex::new(&roots.data_home);
+        let remember = crate::lifecycle::RememberStore::new(&catalog, &index);
+        remember.execute(&first);
+        remember.execute(&second);
 
         let workspace = base.join("project");
         let rescues = survey(&roots)

@@ -13,6 +13,7 @@ pub enum LifecycleError {
     Io { path: PathBuf, detail: String },
     Network(String),
     NoInstalledHost,
+    StoreIndex(String),
     SurfaceMismatch(String),
     TreeMismatch(String),
     UnsafePath(PathBuf),
@@ -30,6 +31,7 @@ impl fmt::Display for LifecycleError {
             | Self::InvalidCommand(detail)
             | Self::InvalidHostResponse(detail)
             | Self::Network(detail)
+            | Self::StoreIndex(detail)
             | Self::SurfaceMismatch(detail)
             | Self::TreeMismatch(detail)
             | Self::UnsupportedPlatform(detail) => formatter.write_str(detail),

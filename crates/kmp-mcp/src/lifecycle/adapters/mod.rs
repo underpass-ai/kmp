@@ -1,7 +1,9 @@
 pub(crate) mod bounded_child;
 pub mod codex_plugin_cache;
 pub mod filesystem_engine_store;
+pub mod filesystem_store_catalog;
 pub mod github_release_repository;
+pub mod jsonl_store_index;
 pub mod lifecycle_cli_parser;
 pub mod mappers;
 pub mod native_host_gateway;
