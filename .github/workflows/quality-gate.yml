@@ -2,6 +2,10 @@ name: quality-gate
 
 on:
   pull_request:
+    # The defaults plus ready_for_review: a draft leaving draft state is the
+    # moment the full gate takes over from the dev loop, and without this
+    # type the handover would wait for the next push.
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches:
       - main
@@ -51,9 +55,16 @@ jobs:
   # independent documentation, adapter, container, chart and publication
   # contracts. Unknown paths and changes to this router fail closed to the
   # full matrix. workflow_dispatch is also deliberately full.
+  # Draft pull requests are development mode: the dev-loop workflow answers
+  # them in minutes, and the full gate stands down by skipping this router —
+  # every downstream job needs one of its outputs, so they all stand down
+  # with it. Marking the pull request ready for review runs everything, and
+  # branch protection still requires the full gate before a merge.
   impact:
     needs: tree-proof
-    if: needs.tree-proof.outputs.skip != 'true'
+    if: >-
+      needs.tree-proof.outputs.skip != 'true'
+      && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
