@@ -9,6 +9,37 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-30
+
+### Fixed
+
+- `kmp_ingest` no longer wraps an already-namespaced `memory.dimensions[].id` a
+  second time. Reads hand out the namespaced form and the agent contract says to
+  copy identifiers back byte-for-byte, so doing exactly that used to open a
+  parallel dimension lane with no error and no warning. The read path already
+  resolved this correctly; the decision now lives once, in the identity value
+  object, and a dimension owned by another about is refused instead of
+  reinterpreted.
+- A temporal page trimmed to fit `budget.max_bytes` no longer announces itself as
+  complete. `summary` and `next_action` were computed before the trim, so a
+  shortened page kept the untrimmed count and flipped `has_more` without leaving
+  any cursor. The trim now restates the count, names the entry it stopped at and
+  says which verb continues from there. `kmp_near` is no longer silenced by a
+  guard that demanded a cursor it is designed not to have, and a budget too small
+  for a single entry names the number to raise instead of returning an unwalkable
+  page.
+
+### Changed
+
+- The MCP adapter's largest files are being split into explicit hexagonal slices.
+  This release moves JSON-RPC framing, tool-result envelopes, JSON-Schema
+  primitives, shared request and response shapes and the relation vocabulary out
+  of `protocol.rs`; proto-to-JSON rendering and the inspect byte budget out of
+  `kmp.rs`; and relation-quality policy out of `write.rs`. No advertised contract
+  and no answer changed — checked-in fixtures pin every tool definition and every
+  tool's answer, and an architecture gate now ratchets the remaining debt so it
+  can be paid down but not grown.
+
 ## [0.5.2] - 2026-08-29
 
 ### Changed
@@ -629,7 +660,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/underpass-ai/kmp/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/underpass-ai/kmp/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/underpass-ai/kmp/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/underpass-ai/kmp/compare/v0.4.2...v0.5.0
