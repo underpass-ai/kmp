@@ -1809,27 +1809,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn tool_results_are_mcp_content_blocks() {
-        let success = tool_success_result(json!({"answer": "Austin"}));
-        assert_eq!(success["isError"], false);
-        assert_eq!(success["structuredContent"]["answer"], "Austin");
-        assert!(
-            success["content"][0]["text"]
-                .as_str()
-                .expect("content text should be present")
-                .contains("Austin")
-        );
-
-        let error = tool_error_result(&ToolError::backend("no evidence"));
-        assert_eq!(error["isError"], true);
-        assert_eq!(error["content"][0]["text"], "no evidence");
-        assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
-
-        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
-        assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
-    }
-
     /// The property the substring matcher could not have. Same words, two
     /// codes, because the producer chose and the words were never consulted.
     #[test]
@@ -1864,20 +1843,5 @@ mod tests {
             );
         }
         assert_eq!(listed.len(), ToolErrorCode::ALL.len());
-    }
-
-    #[test]
-    fn jsonrpc_helpers_wrap_results_and_errors() {
-        let result = serde_json::from_str::<Value>(&jsonrpc_result(json!(7), json!({"ok": true})))
-            .expect("result should be JSON");
-        assert_eq!(result["jsonrpc"], "2.0");
-        assert_eq!(result["id"], 7);
-        assert_eq!(result["result"]["ok"], true);
-
-        let error = serde_json::from_str::<Value>(&jsonrpc_error(json!(8), -32601, "missing"))
-            .expect("error should be JSON");
-        assert_eq!(error["id"], 8);
-        assert_eq!(error["error"]["code"], -32601);
-        assert_eq!(error["error"]["message"], "missing");
     }
 }

@@ -84,7 +84,7 @@ pub(super) fn proof_output_schema(confidence_description: &str) -> Value {
     }))
 }
 /// `projection`, the budget envelope on a recall.
-pub(super) fn projection_output_schema() -> Value {
+fn projection_output_schema() -> Value {
     let mut page = page_output_schema(
         "eligible expansion items",
         "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
@@ -112,7 +112,7 @@ pub(super) fn projection_output_schema() -> Value {
         "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes.")
     }))
 }
-pub(super) fn truncation_output_schema() -> Value {
+fn truncation_output_schema() -> Value {
     output_object(json!({
         "truncated": described("boolean", "Always true when this optional object is present."),
         "token_limit": described("integer", "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent."),

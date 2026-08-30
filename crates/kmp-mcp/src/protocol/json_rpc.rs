@@ -26,3 +26,24 @@ pub(crate) fn jsonrpc_error(id: Value, code: i64, message: &str) -> String {
     })
     .to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn jsonrpc_helpers_wrap_results_and_errors() {
+        let result = serde_json::from_str::<Value>(&jsonrpc_result(json!(7), json!({"ok": true})))
+            .expect("result should be JSON");
+        assert_eq!(result["jsonrpc"], "2.0");
+        assert_eq!(result["id"], 7);
+        assert_eq!(result["result"]["ok"], true);
+
+        let error = serde_json::from_str::<Value>(&jsonrpc_error(json!(8), -32601, "missing"))
+            .expect("error should be JSON");
+        assert_eq!(error["id"], 8);
+        assert_eq!(error["error"]["code"], -32601);
+        assert_eq!(error["error"]["message"], "missing");
+    }
+}

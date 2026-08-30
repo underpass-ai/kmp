@@ -47,7 +47,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
         }],
         "structuredContent": structured_content,
         "_meta": {
-            "ui": {"resourceUri": "ui://kmp/chronoloom.html"},
+            "ui": {"resourceUri": super::CHRONOLOOM_APP_URI},
             "kmp/modelContext": "receipt-only"
         }
     })
@@ -69,4 +69,31 @@ pub(crate) fn tool_error_result(error: &ToolError) -> Value {
         },
         "isError": true
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn tool_results_are_mcp_content_blocks() {
+        let success = tool_success_result(json!({"answer": "Austin"}));
+        assert_eq!(success["isError"], false);
+        assert_eq!(success["structuredContent"]["answer"], "Austin");
+        assert!(
+            success["content"][0]["text"]
+                .as_str()
+                .expect("content text should be present")
+                .contains("Austin")
+        );
+
+        let error = tool_error_result(&ToolError::backend("no evidence"));
+        assert_eq!(error["isError"], true);
+        assert_eq!(error["content"][0]["text"], "no evidence");
+        assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
+
+        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
+        assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
+    }
 }
