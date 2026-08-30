@@ -12,7 +12,7 @@ pub mod viewer;
 
 mod contract;
 mod ingest;
-mod kmp;
+mod projection;
 mod serving;
 mod write;
 
