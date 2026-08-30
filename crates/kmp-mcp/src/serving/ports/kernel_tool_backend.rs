@@ -6,7 +6,6 @@ use crate::serving::ports::kernel_tool_future::KernelMcpToolFuture;
 
 /// Inbound port between the MCP transport and whichever kernel answers:
 /// every backend — embedded, gRPC, fixture — implements exactly this.
-
 pub trait KernelMcpToolBackend: Send + Sync {
     fn backend_name(&self) -> &'static str;
 
