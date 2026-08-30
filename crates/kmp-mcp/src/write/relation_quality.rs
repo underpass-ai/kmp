@@ -14,7 +14,8 @@ use std::collections::BTreeSet;
 
 use serde_json::{Value, json};
 
-use super::{NON_STRUCTURAL_RELATION_CLASSES, ReadContext, ResolvedRelationSpec};
+use super::read_context::ReadContext;
+use super::relations::{NON_STRUCTURAL_RELATION_CLASSES, ResolvedRelationSpec};
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct RelationQualityInput<'a> {
@@ -112,7 +113,7 @@ pub(super) fn relation_quality_diagnostic(
     }))
 }
 
-fn relation_spec(rel: &str, strict: bool) -> Result<ResolvedRelationSpec, String> {
+pub(crate) fn relation_spec(rel: &str, strict: bool) -> Result<ResolvedRelationSpec, String> {
     let relation_type = MemoryRelationType::new(rel)
         .map_err(|error| format!("kmp_write_memory relation type is invalid: {error}"))?;
     if let Some(spec) = relation_type.writer_spec() {
@@ -130,7 +131,10 @@ fn relation_spec(rel: &str, strict: bool) -> Result<ResolvedRelationSpec, String
     ))
 }
 
-fn relation_quality_reason(quality: MemoryRelationQuality, default_reason: &str) -> &str {
+pub(crate) fn relation_quality_reason(
+    quality: MemoryRelationQuality,
+    default_reason: &str,
+) -> &str {
     match quality {
         MemoryRelationQuality::Rich => {
             "non-structural relation has target ref, why, evidence, and supported semantic class"
@@ -142,7 +146,7 @@ fn relation_quality_reason(quality: MemoryRelationQuality, default_reason: &str)
     }
 }
 
-fn class_names(classes: &[RelationSemanticClass]) -> Vec<&'static str> {
+pub(crate) fn class_names(classes: &[RelationSemanticClass]) -> Vec<&'static str> {
     classes.iter().map(RelationSemanticClass::as_str).collect()
 }
 
@@ -209,14 +213,14 @@ pub(super) fn relation_quality_metrics(relation_quality: &[Value]) -> Value {
     })
 }
 
-fn quality_count(relation_quality: &[Value], quality: &str) -> usize {
+pub(crate) fn quality_count(relation_quality: &[Value], quality: &str) -> usize {
     relation_quality
         .iter()
         .filter(|relation| relation["quality"].as_str() == Some(quality))
         .count()
 }
 
-fn ratio(numerator: usize, denominator: usize) -> f64 {
+pub(crate) fn ratio(numerator: usize, denominator: usize) -> f64 {
     if denominator == 0 {
         0.0
     } else {

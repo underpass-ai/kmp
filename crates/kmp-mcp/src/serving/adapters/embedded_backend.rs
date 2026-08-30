@@ -12,7 +12,6 @@ use kmp_proto_mapping::v1beta1::{
 };
 use serde_json::Value;
 
-use crate::ingest::build_ingest_plan;
 use crate::projection::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
@@ -28,6 +27,7 @@ use crate::serving::adapters::grpc::requests::{
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
+use crate::write::build_ingest_plan;
 
 use super::embedded_errors::{kernel_error, mapping_error, temporal_error};
 
