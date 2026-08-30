@@ -9,7 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-30
+
 ### Added
+
+- A development mode for contributors: a draft pull request stands the full
+  quality gate down and a `dev-loop` workflow answers in about three minutes —
+  format, lint, the tests of the crates under refactor, the architecture
+  ratchet, and a `kmp-mcp` linux-arm64 binary as a downloadable artifact.
+  Marking the pull request ready for review runs everything, and a required
+  `gate` check makes the stood-down draft conclusions unable to satisfy branch
+  protection.
 
 - `scripts/release.sh preflight X.Y.Z` answers "is this tree ready to release
   X.Y.Z?" without building anything, and reports every failure at once instead
@@ -19,7 +29,35 @@ Detailed notes from the early release cycle remain available in the
   doing anything expensive, so a fifteen-minute candidate build cannot start
   against a tree that could never be tagged.
 
+### Changed
+
+- A `budget.max_bytes` below a response's stable floor no longer errors on
+  `kmp_ask`, `kmp_wake`, the temporal verbs or `kmp_inspect`: the floor — the
+  minimal envelope, the zero-entry page, the always-returned inspect object —
+  comes back with a warning naming the requested ceiling and the floor's size.
+  One call, never an error, spend no larger than the floor. Absurd budgets
+  below 512 bytes remain the caller's to fix, and the advertised `max_bytes`
+  description now states the behavior.
+- Budget messages speak one grammar — always `raise budget.max_bytes`, always
+  naming the numbers — and live-kernel gRPC errors carry their message without
+  repeating the code that already travels typed.
+- `crates/kmp-mcp` is reorganized into explicit hexagonal bounded contexts —
+  contract, serving, projection, write, lifecycle, document, and a thin CLI
+  composition root — with no behavior or wire change; the advertised tool
+  surface is byte-identical, and the architecture debt ratchet reads zero
+  across 284 tracked sources. Coverage floors are now judged only for the
+  crates a change's test plan selected, so a small pull request is no longer
+  measured against numbers only the full matrix can produce.
+
 ### Fixed
+
+- ChronoLoom renders an explicit empty state when the selected about has no
+  entries on the active clock — the previous about's lanes, navigator and
+  counters no longer stand in for it — and switching clocks from that state
+  re-probes the about so entries it does hold appear.
+- `info` and `doctor` observe the machine once per run and render from that
+  observation, so a live session writing between two renders can no longer
+  make styled and plain output disagree.
 
 - `scripts/release.sh version` now bumps the `ref` in
   `.claude-plugin/marketplace.json` beside the manifests it already owns. That
@@ -684,7 +722,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/underpass-ai/kmp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/underpass-ai/kmp/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/underpass-ai/kmp/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/underpass-ai/kmp/compare/v0.5.0...v0.5.1
