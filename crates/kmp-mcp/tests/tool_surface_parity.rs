@@ -388,7 +388,14 @@ fn blessing() -> bool {
 ///
 /// Rendered answers embed their structured content as a JSON string, so the
 /// same values are replaced in there too.
-const VOLATILE_KEYS: [&str; 3] = ["at", "ingested_at", "content_hash"];
+/// `required_bytes` is the serialized length of the whole answer, and that
+/// answer contains `ingested_at` — whose `Display` emits 0, 3, 6 or 9
+/// fractional digits depending on the nanoseconds it happens to carry. So the
+/// number moves by ten bytes at random, roughly one run in three hundred.
+/// Masking the value keeps the key pinned: a rename still fails, only the
+/// count stops being asserted. A flaky red would be worse than that, and a
+/// bless taken under the flake would pin a number every later run rejects.
+const VOLATILE_KEYS: [&str; 4] = ["at", "ingested_at", "content_hash", "required_bytes"];
 const REDACTED: &str = "<stamped at call time>";
 
 /// An inspect cursor is `kmpi1:<offset>:<sha256>`, and the digest covers the
@@ -406,7 +413,7 @@ fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
             for (key, child) in fields.iter_mut() {
-                if VOLATILE_KEYS.contains(&key.as_str()) && child.is_string() {
+                if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
                     *child = json!(REDACTED);
                 } else if let Some(text) = child.as_str()
                     && let Some(masked) = redact_inspect_digest(text)
@@ -424,7 +431,10 @@ fn redact(value: &mut Value) {
         // content puts into model context, and a change to how that block is
         // rendered — the compact-versus-pretty regression `protocol::result`
         // warns about — would then pin identically either way.
-        Value::String(text) => redact_embedded_text(text),
+        Value::String(text) => {
+            redact_embedded_text(text);
+            redact_interpolated_byte_count(text);
+        }
         _ => {}
     }
 }
@@ -468,6 +478,21 @@ fn shape(value: &Value) -> Value {
 
 /// Replace `"<key>": "<value>"` in raw JSON text, leaving every other byte —
 /// spacing, escaping, key order — exactly as the server wrote it.
+/// The inspect guidance interpolates `required_bytes` into its prose, so the
+/// same wall-clock wobble reaches the sentence as well as the field. Mask the
+/// digits and keep every other word, so the wording itself stays pinned.
+fn redact_interpolated_byte_count(text: &mut String) {
+    let needle = "requires ";
+    let Some(found) = text.find(needle) else {
+        return;
+    };
+    let start = found + needle.len();
+    let digits = text[start..].bytes().take_while(u8::is_ascii_digit).count();
+    if digits > 0 {
+        text.replace_range(start..start + digits, REDACTED);
+    }
+}
+
 fn redact_embedded_text(text: &mut String) {
     if !matches!(serde_json::from_str::<Value>(text), Ok(value) if value.is_object()) {
         return;

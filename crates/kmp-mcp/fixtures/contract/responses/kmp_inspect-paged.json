@@ -58,7 +58,7 @@
       "text": "Rachel said she was moving to Denver."
     },
     "page": {
-      "guidance": "Inspect is partial. Repeat the same bound arguments with page.cursor set to the returned next_cursor. The full response requires 4746 bytes; narrow include.details/include.outgoing/include.incoming/include.raw or raise budget.max_bytes to restart with more context.",
+      "guidance": "Inspect is partial. Repeat the same bound arguments with page.cursor set to the returned next_cursor. The full response requires <stamped at call time> bytes; narrow include.details/include.outgoing/include.incoming/include.raw or raise budget.max_bytes to restart with more context.",
       "has_more": true,
       "next_cursor": "kmpi1:3:<stamped at call time>",
       "offset": 0,
@@ -69,7 +69,7 @@
         "outgoing": 0,
         "raw": 0
       },
-      "required_bytes": 4746,
+      "required_bytes": "<stamped at call time>",
       "returned": 3,
       "sections": {
         "evidence": {

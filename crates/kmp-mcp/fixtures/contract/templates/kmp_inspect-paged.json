@@ -43,7 +43,7 @@
         "outgoing": "integer",
         "raw": "integer"
       },
-      "required_bytes": "integer",
+      "required_bytes": "string",
       "returned": "integer",
       "sections": {
         "evidence": {

@@ -160,7 +160,7 @@
         "outgoing": 0,
         "raw": 0
       },
-      "required_bytes": 5226,
+      "required_bytes": "<stamped at call time>",
       "returned": 13,
       "sections": {
         "evidence": {
