@@ -47,6 +47,24 @@ integration job uploads its LCOV fragment; the final `coverage` job only merges
 those artifacts and enforces the line threshold. It does not compile code,
 start containers or execute a second test suite.
 
+The threshold is per crate, not per run. A single aggregate percentage is only
+meaningful over a fixed denominator, and the router deliberately narrows the
+plan — so the aggregate silently became "whatever the router selected", and a
+plan narrowed to one crate held that crate to a bar calibrated on the whole
+workspace. Holding every crate to the bar on its own is strictly stronger: an
+under-tested crate can no longer hide behind a well-tested one. A crate cannot
+lose coverage this way either, because the plan that reaches a crate always
+includes every package whose tests can reach it.
+
+Crates already under the bar carry a recorded floor in
+[`coverage-floors.tsv`](./coverage-floors.tsv). A floor may rise freely and the
+gate says when one can; lowering one is a reviewed change that says why. Refresh
+the record deliberately, never to make a red build green:
+
+```bash
+COVERAGE_FLOOR_BASELINE=write bash scripts/ci/rust-coverage.sh dist/coverage
+```
+
 `Cargo.toml`, `Cargo.lock`, the toolchain, the quality workflow and the router
 itself deliberately select the full matrix. An unclassified path does the
 same: optimization may skip proven-unrelated work, but uncertainty never does.
