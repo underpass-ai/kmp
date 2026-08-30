@@ -176,7 +176,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         .map_err(|error| StartupFailure::after_the_backend_was_chosen(error.to_string()))?;
     let lease = kmp_embedded::user_data_home()
         .map(|data_home| {
-            kmp_mcp::uninstall::StoreSessionLease::acquire(&data_home, resolved.path())
+            kmp_mcp::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())
         })
         .transpose()
         .map_err(StartupFailure::after_the_backend_was_chosen)?;
@@ -1215,7 +1215,7 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         .unwrap_or_else(|| PathBuf::from("."));
     let data_home =
         kmp_embedded::user_data_home().unwrap_or_else(|| home.join(".local").join("share"));
-    let roots = kmp_mcp::uninstall::Roots {
+    let roots = kmp_mcp::lifecycle::SurveyRoots {
         home,
         data_home,
         working_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
@@ -1226,8 +1226,12 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
 
     let workspace = roots.working_dir.clone();
     let selective = selected_store.is_some();
+    let installation = kmp_mcp::lifecycle::NativeInstallationCatalog;
+    let store_catalog = kmp_mcp::lifecycle::FilesystemStoreCatalog::new(&roots.data_home);
+    let store_index = kmp_mcp::lifecycle::JsonlStoreIndex::new(&roots.data_home);
+    let remove = kmp_mcp::lifecycle::RemovePiece::new(&installation);
     let pieces: Vec<_> = if let Some(store) = selected_store.as_deref() {
-        match kmp_mcp::uninstall::selected_store(store) {
+        match kmp_mcp::lifecycle::SelectStore::new(&installation).execute(store) {
             Ok(piece) => vec![piece],
             Err(reason) => {
                 eprintln!("kmp-mcp uninstall: {reason}");
@@ -1235,14 +1239,15 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
             }
         }
     } else {
-        kmp_mcp::uninstall::survey(&roots)
+        kmp_mcp::lifecycle::SurveyInstallation::new(&installation, &store_catalog, &store_index)
+            .execute(&roots)
             .into_iter()
-            .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::uninstall::PieceKind::Store))
+            .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::lifecycle::PieceKind::Store))
             .collect()
     };
     print!(
         "{}",
-        kmp_mcp::uninstall::report(
+        kmp_mcp::lifecycle::uninstall_report(
             &pieces,
             &workspace,
             purge,
@@ -1265,9 +1270,9 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     let mut store_guards = Vec::new();
     for piece in pieces
         .iter()
-        .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+        .filter(|piece| piece.kind == kmp_mcp::lifecycle::PieceKind::Store)
     {
-        match kmp_mcp::uninstall::StoreRemovalGuard::acquire(&roots.data_home, &piece.path) {
+        match kmp_mcp::lifecycle::StoreRemovalGuard::acquire(&roots.data_home, &piece.path) {
             Ok(guard) => store_guards.push(guard),
             Err(reason) => {
                 println!("kept     {}\n         {reason}", piece.path.display());
@@ -1283,9 +1288,10 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     if !purge {
         for piece in pieces
             .iter()
-            .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+            .filter(|piece| piece.kind == kmp_mcp::lifecycle::PieceKind::Store)
         {
-            let destination = kmp_mcp::uninstall::rescue_path(piece, &workspace)
+            let destination = piece
+                .rescue_path(&workspace)
                 .expect("a store always has a rescue path");
             match save_store(&piece.path, &destination).await {
                 Ok(events) => println!(
@@ -1309,9 +1315,9 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     // retired, preserve every engine and host integration for a clean retry.
     for piece in pieces
         .iter()
-        .filter(|piece| piece.kind == kmp_mcp::uninstall::PieceKind::Store)
+        .filter(|piece| piece.kind == kmp_mcp::lifecycle::PieceKind::Store)
     {
-        if let Err(reason) = kmp_mcp::uninstall::remove(piece) {
+        if let Err(reason) = remove.execute(piece) {
             println!("kept     {}\n         {reason}", piece.path.display());
             println!("\nThe store could not be removed; engines and hosts were left in place.");
             return 1;
@@ -1328,13 +1334,13 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
         }
     }
 
-    let leases = kmp_mcp::uninstall::store_leases_dir(&roots.data_home);
+    let leases = kmp_mcp::lifecycle::store_leases_dir(&roots.data_home);
     let mut kept = 0;
     for piece in pieces
         .iter()
-        .filter(|piece| piece.kind != kmp_mcp::uninstall::PieceKind::Store && piece.path != leases)
+        .filter(|piece| piece.kind != kmp_mcp::lifecycle::PieceKind::Store && piece.path != leases)
     {
-        match kmp_mcp::uninstall::remove(piece) {
+        match remove.execute(piece) {
             Ok(()) => println!("removed  {}", piece.path.display()),
             Err(reason) => {
                 kept += 1;
@@ -1348,7 +1354,7 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
     // keeps it so future hosts and retries coordinate on the same identity.
     drop(store_guards);
     for piece in pieces.iter().filter(|piece| piece.path == leases) {
-        match kmp_mcp::uninstall::remove(piece) {
+        match remove.execute(piece) {
             Ok(()) => println!("removed  {}", piece.path.display()),
             Err(reason) => {
                 kept += 1;
