@@ -1,0 +1,14 @@
+# Line-coverage floors for crates below the repository bar.
+# A crate with no entry here must reach the bar on its own.
+# A floor may be raised freely. Lowering one is a reviewed change that says why.
+crate	floor
+kmp-adapter-nats	43
+kmp-adapter-neo4j	31
+kmp-adapter-valkey	71
+kmp-mcp-http	71
+kmp-observability	74
+kmp-release	45
+kmp-server	37
+kmp-testkit	56
+kmp-tests-shared	0
+kmp-transport-grpc	62
