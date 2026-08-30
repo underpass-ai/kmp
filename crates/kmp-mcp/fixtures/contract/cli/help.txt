@@ -1,0 +1,29 @@
+ ██╗  ██╗███╗   ███╗██████╗
+ ██║ ██╔╝████╗ ████║██╔══██╗   Kernel Memory Protocol
+ █████╔╝ ██╔████╔██║██████╔╝   time travel over a graph, proofs attached
+ ██╔═██╗ ██║╚██╔╝██║██╔═══╝    temporal · multidimensional · auditable
+ ██║  ██╗██║ ╚═╝ ██║██║        embedded database + event store
+ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝        no external services
+
+Usage:
+  kmp-mcp                         Serve MCP over stdio
+  kmp-mcp info                    What this binary is and which memory it opens
+  kmp-mcp doctor                  Diagnose the setup and name the one thing to fix
+  kmp-mcp setup                   Align installed native plugins and engines
+  kmp-mcp update                  Update every installed KMP host as one convergence
+  kmp-mcp config                  Show the agent orchestration policy
+  kmp-mcp config ask-fallback-languages <tags|none>
+  kmp-mcp guide sync --plugin-root DIR
+  Converge the two immutable shipped guides
+  kmp-mcp plugin resolve-engine  Select the engine matching both host manifests
+  kmp-mcp plugin notice          Report version drift without changing the machine
+  kmp-mcp document <about>        Render one about as a Markdown document
+  kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots
+  kmp-mcp uninstall [--store <absolute-path>] [--apply]
+  Remove one store, or preview the whole installation
+  kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log
+  kmp-mcp export --repair-pending Acknowledge recovery after stopping writers
+  kmp-mcp import [file]           Import an event-log bundle
+  kmp-mcp viewer [addr]           Serve the local memory viewer
+  kmp-mcp --version               Print binary and store formats
+  kmp-mcp --help                  Print this help

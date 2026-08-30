@@ -1,0 +1,3 @@
+Usage: kmp-mcp export [file] [--about <about>]... [--repair-pending]
+
+--about matches an opaque about exactly and may be repeated. Filtered bundles preserve aggregate revisions and use bundle-local event positions starting at 1.

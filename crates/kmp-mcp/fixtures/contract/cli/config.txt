@@ -1,0 +1,1 @@
+Usage: kmp-mcp config [ask-fallback-languages <tags|none>]

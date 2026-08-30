@@ -8,7 +8,6 @@ crates/kmp-mcp/src/document.rs	lines=687
 crates/kmp-mcp/src/embedded.rs	types=2,lines=658
 crates/kmp-mcp/src/ingest.rs	types=3,lines=664
 crates/kmp-mcp/src/kmp.rs	lines=1782
-crates/kmp-mcp/src/main.rs	lines=1561
 crates/kmp-mcp/src/memories.rs	types=2
 crates/kmp-mcp/src/observability.rs	types=3
 crates/kmp-mcp/src/server.rs	lines=773
