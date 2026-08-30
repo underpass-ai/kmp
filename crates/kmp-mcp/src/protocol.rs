@@ -1,8 +1,13 @@
 mod json_rpc;
 mod result;
+mod schema;
 
 pub(crate) use json_rpc::{jsonrpc_error, jsonrpc_result};
 pub(crate) use result::{app_data_success_result, tool_error_result, tool_success_result};
+use schema::{
+    described, integer_schema, nullable_described, nullable_output_schema, output_object,
+    string_array, string_map_schema, string_schema,
+};
 
 use kmp_domain::KnownMemoryRelationType;
 use serde_json::{Value, json};
@@ -993,15 +998,6 @@ fn temporal_coordinate_schema() -> Value {
     })
 }
 
-fn string_map_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": {
-            "type": "string"
-        }
-    })
-}
-
 /// A tool, with the shape of what it answers.
 ///
 /// Inputs were described field by field and the response — the half the agent
@@ -1031,40 +1027,6 @@ fn tool_definition_with_output(
         definition["outputSchema"] = output_schema;
     }
     definition
-}
-
-/// An object schema whose public fields are complete. A response mapper that
-/// grows without this schema growing with it is a protocol drift, not a
-/// compatible extension: the whole point of `outputSchema` is that a caller
-/// no longer has to guess what an unexplained field means.
-fn output_object(properties: Value) -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": properties
-    })
-}
-
-fn described(kind: &str, description: &str) -> Value {
-    json!({"type": kind, "description": description})
-}
-
-fn nullable_described(kind: &str, description: &str) -> Value {
-    json!({"type": [kind, "null"], "description": description})
-}
-
-fn nullable_output_schema(mut schema: Value, description: &str) -> Value {
-    schema["type"] = json!(["object", "null"]);
-    schema["description"] = json!(description);
-    schema
-}
-
-fn string_array(description: &str) -> Value {
-    json!({
-        "type": "array",
-        "description": description,
-        "items": {"type": "string"}
-    })
 }
 
 fn warnings_output_schema() -> Value {
@@ -1338,22 +1300,6 @@ fn quality_output_schema() -> Value {
         "detail_coverage": described("number", "Share of returned nodes that carry stored detail."),
         "truncated": described("boolean", "Whether the rendering dropped anything.")
     }))
-}
-
-fn string_schema(description: &str) -> Value {
-    json!({
-        "type": "string",
-        "minLength": 1,
-        "description": description
-    })
-}
-
-fn integer_schema(description: &str) -> Value {
-    json!({
-        "type": "integer",
-        "minimum": 1,
-        "description": description
-    })
 }
 
 fn writer_relation_names() -> Vec<&'static str> {
