@@ -165,21 +165,27 @@ mod tests {
         assert_eq!(raw, ["hub"]);
     }
     #[test]
-    fn inspect_errors_only_when_the_stable_object_floor_cannot_fit() {
+    fn an_inspect_floor_over_the_ceiling_is_returned_and_says_so() {
         let mut value = inspect_value();
         value["object"]["text"] = serde_json::json!("core".repeat(600));
-        let error = enforce_inspect_output_budget(
+        let bounded = enforce_inspect_output_budget(
             value,
             &serde_json::json!({"budget": {"max_bytes": 512}}),
         )
-        .expect_err("the stable object itself is larger than the ceiling");
+        .expect("the stable object floor is returned, not an error");
 
-        assert_eq!(
-            error.code,
-            crate::serving::tool_error_code::ToolErrorCode::InvalidArgument
+        assert!(bounded["object"]["text"].as_str().is_some());
+        let warnings = bounded["warnings"].as_array().expect("warnings");
+        assert!(
+            warnings
+                .iter()
+                .any(|warning| warning.as_str().is_some_and(|text| {
+                    text.contains("stable floor")
+                        && text.contains("512")
+                        && text.contains("full response requires")
+                })),
+            "{warnings:?}"
         );
-        assert!(error.message.contains("object floor"), "{error}");
-        assert!(error.message.contains("full response requires"), "{error}");
     }
     #[test]
     fn inspect_cursor_is_bound_to_the_selection_but_not_the_byte_ceiling() {

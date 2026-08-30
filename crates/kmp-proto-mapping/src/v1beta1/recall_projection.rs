@@ -72,7 +72,7 @@ impl std::fmt::Display for RecallProjectionError {
             Self::Cursor { message, .. } => formatter.write_str(message),
             Self::CoreTooLarge => formatter.write_str(
                 "recall projection byte budget is smaller than the stable citation core; \
-                 increase budget.max_bytes",
+                 raise budget.max_bytes",
             ),
         }
     }

@@ -26,6 +26,9 @@ use crate::write::build_ingest_plan;
 /// gRPC already carries a status code, so this boundary reads that instead of
 /// the sentence it produced. The server said what kind of failure it was; the
 /// only way to lose that was to throw it away and guess later.
+/// Frames a live-kernel failure the way the embedded path frames its own:
+/// the operation and the subject in front, the code from the producer. Any
+/// future backend should copy this shape so an agent reads one grammar.
 fn grpc_error(operation: &str, subject: &str) -> impl FnOnce(tonic::Status) -> ToolError {
     let context = format!("KernelMemoryService.{operation} failed for `{subject}`");
     move |status| {
@@ -38,7 +41,9 @@ fn grpc_error(operation: &str, subject: &str) -> impl FnOnce(tonic::Status) -> T
             tonic::Code::Unavailable | tonic::Code::DeadlineExceeded => ToolErrorCode::Unavailable,
             _ => ToolErrorCode::BackendError,
         };
-        ToolError::new(code, format!("{context}: {status}"))
+        // `status` Display repeats the code this error already carries in
+        // its typed field; the message alone is what a person reads.
+        ToolError::new(code, format!("{context}: {}", status.message()))
     }
 }
 

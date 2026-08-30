@@ -60,7 +60,7 @@ fn try_enforce_recall_output_budget_with_estimator(
     match project_recall_output(value, arguments, default_tokens, estimator)? {
         ProjectionOutcome::Projected(value) => Ok(value),
         ProjectionOutcome::CoreTooLarge => Err(ToolError::invalid_argument(
-            "recall projection byte budget is smaller than the stable citation core; increase \
+            "recall projection byte budget is smaller than the stable citation core; raise \
              budget.max_bytes",
         )),
     }

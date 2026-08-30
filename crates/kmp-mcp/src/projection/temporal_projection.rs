@@ -132,21 +132,19 @@ pub(crate) fn enforce_temporal_output_budget(
     }
     truncate_entries(&mut value, &entries, low, total);
 
-    if low == 0 && total > 0 {
-        // Zero entries plus `has_more` is not a page the caller can walk, and
-        // there is no boundary entry to continue from. Say which number to
-        // raise rather than returning something unusable.
-        return Err(ToolError::invalid_argument(format!(
-            "this temporal response does not fit budget.max_bytes={limit} with even one entry; \
-             raise budget.max_bytes"
-        )));
-    }
-    if low == 0 && serialized_len(&value) > limit {
-        // The envelope alone is over.
-        return Err(ToolError::invalid_argument(format!(
-            "this temporal response does not fit budget.max_bytes={limit} even with no entries; \
-             raise budget.max_bytes"
-        )));
+    if low == 0 && (total > 0 || serialized_len(&value) > limit) {
+        // A ceiling below this response's floor stopped being an error in
+        // #441, the same contract recall adopted in #439: the envelope goes
+        // out with zero entries and the warning names the number to raise.
+        // `page` already says nothing was returned, so the floor cannot be
+        // mistaken for a complete read.
+        let floor_bytes = serialized_len(&value);
+        if let Some(warnings) = value["warnings"].as_array_mut() {
+            warnings.push(serde_json::json!(format!(
+                "budget.max_bytes {limit} is below this response's stable floor; returned \
+                 the {floor_bytes}-byte floor instead — raise max_bytes past it to see more"
+            )));
+        }
     }
     Ok(value)
 }
@@ -292,16 +290,21 @@ mod tests {
         }
     }
     #[test]
-    fn a_budget_that_cannot_hold_one_entry_names_the_number_to_raise() {
-        let error = enforce_temporal_output_budget(
+    fn a_budget_that_cannot_hold_one_entry_returns_the_floor_and_says_so() {
+        let bounded = enforce_temporal_output_budget(
             temporal_value(6, 4_000),
             &serde_json::json!({"budget": {"max_bytes": 600}}),
         )
-        .expect_err("no entry fits, so there is no page to walk");
+        .expect("the floor is returned, not an error");
 
+        assert_eq!(bounded["entries"].as_array().expect("entries").len(), 0);
+        assert_eq!(bounded["page"]["returned"], 0);
+        let warnings = bounded["warnings"].as_array().expect("warnings");
         assert!(
-            format!("{error:?}").contains("raise budget.max_bytes"),
-            "{error:?}"
+            warnings.iter().any(|warning| warning
+                .as_str()
+                .is_some_and(|text| { text.contains("stable floor") && text.contains("600") })),
+            "the floor names the number to raise: {warnings:?}"
         );
     }
     #[test]
@@ -498,17 +501,19 @@ mod tests {
         }
     }
     #[test]
-    fn an_envelope_that_cannot_fit_says_which_number_to_raise() {
+    fn an_envelope_below_the_floor_returns_the_floor_and_says_so() {
         let mut value = temporal_value(0, 0);
         value["summary"] = serde_json::json!("x".repeat(2_000));
         let arguments = serde_json::json!({"budget": {"max_bytes": 512}});
 
-        let error = enforce_temporal_output_budget(value, &arguments)
-            .expect_err("nothing can be dropped to make this fit");
-        assert!(error.message.contains("budget.max_bytes"), "{error}");
-        assert_eq!(
-            error.code,
-            crate::serving::tool_error_code::ToolErrorCode::InvalidArgument
+        let bounded = enforce_temporal_output_budget(value, &arguments)
+            .expect("even an oversized envelope is returned as the floor");
+        let warnings = bounded["warnings"].as_array().expect("warnings");
+        assert!(
+            warnings.iter().any(|warning| warning
+                .as_str()
+                .is_some_and(|text| { text.contains("stable floor") && text.contains("512") })),
+            "{warnings:?}"
         );
     }
 }
