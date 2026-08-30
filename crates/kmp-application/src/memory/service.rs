@@ -801,13 +801,7 @@ fn resolve_dimension_scope_id(about: &str, scope_id: &str) -> Option<String> {
     if scope_id.is_empty() {
         return None;
     }
-    if let Some(identity) = MemoryDimensionIdentity::parse(scope_id) {
-        if identity.about() == about {
-            return Some(identity.node_id());
-        }
-        return None;
-    }
-    namespaced_dimension_id(about, scope_id)
+    MemoryDimensionIdentity::resolve(about, scope_id).map(|identity| identity.node_id())
 }
 
 #[cfg(test)]
