@@ -1,6 +1,5 @@
 use serde_json::Value;
 
-use crate::backend::KernelMcpGrpcTlsConfig;
 use crate::grpc::channel::connect_memory_client;
 use crate::grpc::requests::{
     ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
@@ -20,8 +19,9 @@ use crate::kmp::{
     temporal_from_response, trace_from_response, visual_projection_from_response,
     wake_from_response,
 };
+use crate::serving::KernelMcpGrpcTlsConfig;
+use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
-use crate::tool_error::{ToolError, ToolErrorCode};
 
 /// gRPC already carries a status code, so this boundary reads that instead of
 /// the sentence it produced. The server said what kind of failure it was; the

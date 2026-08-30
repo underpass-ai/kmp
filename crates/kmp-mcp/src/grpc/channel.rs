@@ -4,7 +4,7 @@ use std::sync::Once;
 use kmp_proto::v1beta1::kernel_memory_service_client::KernelMemoryServiceClient;
 use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Identity};
 
-use crate::backend::{
+use crate::serving::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_KEY_PATH_ENV,
     GRPC_TLS_MODE_ENV, KernelMcpGrpcTlsConfig, KernelMcpGrpcTlsMode, endpoint_uri_for_tls_mode,
 };

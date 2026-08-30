@@ -2,7 +2,7 @@ use serde_json::Value;
 
 use crate::contract::registry::tools_list_result;
 use crate::contract::tools::{app_view_undo, app_visual_projection};
-use crate::tool_error::ToolError;
+use crate::serving::ToolError;
 
 pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
     let Some(schema) = tool_input_schema(tool) else {
