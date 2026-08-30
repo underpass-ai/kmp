@@ -6,7 +6,9 @@ archived product plans.
 
 The current [architecture conformance audit](conformance-audit-2026-08-28.md)
 checks SOLID, domain types, dependency direction and module ownership, then
-orders the findings into small behaviour-preserving PRs.
+orders the findings into small behaviour-preserving PRs. The
+[kmp-mcp layer map](kmp-mcp-layer-map.md) executes its `kmp-mcp` findings for
+#404: every file's target context and layer, and the slice order.
 
 ## System map
 
