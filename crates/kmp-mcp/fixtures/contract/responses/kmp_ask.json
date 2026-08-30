@@ -1,0 +1,165 @@
+{
+  "content": [
+    {
+      "text": "Retrieved 2 memory items for: Where is Rachel moving?",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:claim:denver [entry:question:parity:claim:denver]\n- question:parity:claim:denver [detail:evidence:question:parity:denver]",
+    "because": [
+      {
+        "claim": "question:parity:claim:denver",
+        "ref": "entry:question:parity:claim:denver"
+      },
+      {
+        "claim": "question:parity:claim:denver",
+        "ref": "detail:evidence:question:parity:denver"
+      }
+    ],
+    "projection": {
+      "budget": {
+        "max_bytes": 10000,
+        "tokens_advisory": 2400,
+        "used_bytes": 3457
+      },
+      "contract": "kmp.recall.projection.v1",
+      "core_text_shortened": false,
+      "detail": "balanced",
+      "excluded_by_detail": 3,
+      "next_action": null,
+      "page": {
+        "has_more": false,
+        "next_cursor": null,
+        "offset": 0,
+        "returned": 4,
+        "total": 4
+      },
+      "sections": {
+        "proof.evidence": {
+          "core": 2,
+          "eligible": 2,
+          "returned_on_page": 0,
+          "total": 2
+        },
+        "proof.path": {
+          "core": 0,
+          "eligible": 4,
+          "returned_on_page": 4,
+          "total": 7
+        }
+      },
+      "selection_omitted": 0
+    },
+    "proof": {
+      "confidence": "high",
+      "conflicts": [],
+      "evidence": [
+        {
+          "id": "entry:question:parity:claim:denver",
+          "metadata": {
+            "proof_role": "entry_text"
+          },
+          "source": "question:parity:claim:denver",
+          "supports": [
+            "question:parity:claim:denver"
+          ],
+          "text": "Rachel said she was moving to Denver."
+        },
+        {
+          "id": "detail:evidence:question:parity:denver",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "parity fixture",
+          "supports": [
+            "question:parity:claim:denver"
+          ],
+          "text": "Rachel named Denver twice in the same conversation.",
+          "time": "2026-04-12T15:00:00Z"
+        }
+      ],
+      "expired": [],
+      "frontier_size": 0,
+      "matched_relations": [],
+      "matched_terms": [
+        "moving",
+        "rachel"
+      ],
+      "missing": [],
+      "path": [
+        {
+          "class": "evidential",
+          "confidence": "medium",
+          "evidence": "The claim is the store's only prior entry.",
+          "evidence_refs": [
+            "detail:evidence:question:parity:denver",
+            "entry:question:parity:claim:denver"
+          ],
+          "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "rel": "uses_background",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The decision was taken while reading this claim back."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "Both statements came from the same conversation.",
+          "evidence_refs": [
+            "detail:evidence:question:parity:denver",
+            "entry:question:parity:claim:denver"
+          ],
+          "from": "question:parity:claim:denver-detail",
+          "rel": "supports",
+          "to": "question:parity:claim:denver",
+          "why": "The start date is what makes the move concrete."
+        },
+        {
+          "class": "evidential",
+          "confidence": "unknown",
+          "evidence": "The claim is the store's only prior entry.",
+          "evidence_refs": [
+            "detail:evidence:question:parity:denver",
+            "entry:question:parity:claim:denver"
+          ],
+          "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+          "rel": "supports",
+          "to": "question:parity:claim:denver",
+          "why": "Evidence supports this memory entry."
+        },
+        {
+          "class": "evidential",
+          "confidence": "unknown",
+          "evidence_refs": [
+            "detail:evidence:question:parity:denver",
+            "entry:question:parity:claim:denver"
+          ],
+          "from": "evidence:question:parity:denver",
+          "rel": "supports",
+          "to": "question:parity:claim:denver",
+          "why": "Evidence supports this memory entry."
+        }
+      ],
+      "superseded": []
+    },
+    "summary": "Retrieved 2 memory items for: Where is Rachel moving?",
+    "truncation": {
+      "byte_limit": 10000,
+      "omitted": {
+        "core_text_shortened": false,
+        "excluded_by_detail": 3,
+        "page_items": 0,
+        "prior_page_items": 0,
+        "remaining_page_items": 0,
+        "selection_items": 0
+      },
+      "token_limit": 2400,
+      "truncated": true
+    },
+    "warnings": [
+      "recall detail excludes expansion items; start a fresh recall with a richer budget.detail to include them"
+    ]
+  }
+}

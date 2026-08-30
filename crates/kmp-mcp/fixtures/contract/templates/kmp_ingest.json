@@ -1,0 +1,23 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "memory": {
+      "about": "string",
+      "accepted": {
+        "entries": "integer",
+        "evidence": "integer",
+        "relations": "integer"
+      },
+      "memory_id": "string",
+      "read_after_write_ready": "boolean"
+    },
+    "summary": "string",
+    "warnings": []
+  }
+}

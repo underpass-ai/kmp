@@ -1,0 +1,133 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "projection": {
+      "budget": {
+        "max_bytes": "integer",
+        "tokens_advisory": "integer",
+        "used_bytes": "integer"
+      },
+      "contract": "string",
+      "core_text_shortened": "boolean",
+      "detail": "string",
+      "excluded_by_detail": "integer",
+      "next_action": "string",
+      "page": {
+        "has_more": "boolean",
+        "next_cursor": "string",
+        "offset": "integer",
+        "returned": "integer",
+        "total": "integer"
+      },
+      "sections": {
+        "proof.evidence": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.path": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "wake.causal_spine": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "wake.current_state": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        }
+      },
+      "selection_omitted": "integer"
+    },
+    "proof": {
+      "confidence": "string",
+      "conflicts": [],
+      "evidence": [
+        {
+          "id": "string",
+          "metadata": {
+            "proof_role": "string"
+          },
+          "source": "string",
+          "supports": [
+            "string"
+          ],
+          "text": "string",
+          "time": "string"
+        }
+      ],
+      "expired": [],
+      "frontier_size": "integer",
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "path": [
+        {
+          "class": "string",
+          "confidence": "string",
+          "evidence_refs": [
+            "string"
+          ],
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
+      "superseded": []
+    },
+    "resume_cursor": {
+      "ref": "string",
+      "sequence": "integer",
+      "time": "string"
+    },
+    "summary": "string",
+    "truncation": {
+      "byte_limit": "integer",
+      "omitted": {
+        "core_text_shortened": "boolean",
+        "excluded_by_detail": "integer",
+        "page_items": "integer",
+        "prior_page_items": "integer",
+        "remaining_page_items": "integer",
+        "selection_items": "integer"
+      },
+      "token_limit": "integer",
+      "truncated": "boolean"
+    },
+    "wake": {
+      "causal_spine": [
+        {
+          "because": "string",
+          "claim": "string",
+          "evidence_ref": "string"
+        }
+      ],
+      "current_state": [
+        "string"
+      ],
+      "guardrails": [],
+      "next_actions": [],
+      "objective": "string",
+      "open_loops": []
+    },
+    "warnings": [
+      "string"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "content": [
+    {
+      "text": "{\"observability\":\"projection.overlays are queried for the current range and drawn on the shared temporal axis\",\"reads\":\"the semantic state of the view, not its pixels\",\"state\":{\"about\":\"question:parity\",\"can_undo\":true,\"clock\":\"occurred\",\"focus\":{},\"last_change\":{\"actor\":\"agent\",\"at\":\"<stamped at call time>\",\"explanation\":\"parity test frames the claim\",\"idempotency_key\":\"parity:view:1\"},\"projection\":{\"semantic_zoom\":\"atlas\"},\"selection\":\"question:parity:claim:denver\",\"view_id\":\"default\",\"view_revision\":2},\"view_id\":\"default\",\"view_revision\":2,\"viewer_available\":false}",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "observability": "projection.overlays are queried for the current range and drawn on the shared temporal axis",
+    "reads": "the semantic state of the view, not its pixels",
+    "state": {
+      "about": "question:parity",
+      "can_undo": true,
+      "clock": "occurred",
+      "focus": {},
+      "last_change": {
+        "actor": "agent",
+        "at": "<stamped at call time>",
+        "explanation": "parity test frames the claim",
+        "idempotency_key": "parity:view:1"
+      },
+      "projection": {
+        "semantic_zoom": "atlas"
+      },
+      "selection": "question:parity:claim:denver",
+      "view_id": "default",
+      "view_revision": 2
+    },
+    "view_id": "default",
+    "view_revision": 2,
+    "viewer_available": false
+  }
+}

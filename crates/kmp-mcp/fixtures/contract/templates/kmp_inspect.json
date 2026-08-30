@@ -1,0 +1,119 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "evidence": [
+      {
+        "id": "string",
+        "metadata": {
+          "proof_role": "string"
+        },
+        "source": "string",
+        "supports": [
+          "string"
+        ],
+        "text": "string",
+        "time": "string"
+      }
+    ],
+    "links": {
+      "incoming": [
+        {
+          "class": "string",
+          "confidence": "string",
+          "coordinate": {
+            "dimension": "string",
+            "ingested_at": "string",
+            "occurred_at": "string",
+            "scope_id": "string",
+            "sequence": "integer"
+          },
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
+      "outgoing": []
+    },
+    "object": {
+      "kind": "string",
+      "metadata": {},
+      "ref": "string",
+      "text": "string"
+    },
+    "page": {
+      "guidance": "null",
+      "has_more": "boolean",
+      "next_cursor": "null",
+      "offset": "integer",
+      "omitted": {
+        "details": "integer",
+        "evidence": "integer",
+        "incoming": "integer",
+        "outgoing": "integer",
+        "raw": "integer"
+      },
+      "required_bytes": "integer",
+      "returned": "integer",
+      "sections": {
+        "evidence": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "incoming": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "outgoing": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "raw": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        }
+      },
+      "total": "integer"
+    },
+    "quality": {
+      "causal_density": "number",
+      "detail_coverage": "number",
+      "details": "integer",
+      "nodes": "integer",
+      "relationships": "integer",
+      "truncated": "boolean"
+    },
+    "raw": [
+      {
+        "content_hash": "string",
+        "coordinates": [
+          {
+            "dimension": "string",
+            "ingested_at": "string",
+            "occurred_at": "string",
+            "scope_id": "string",
+            "sequence": "integer"
+          }
+        ],
+        "detail": "string",
+        "kind": "string",
+        "ref": "string",
+        "revision": "integer",
+        "text": "string"
+      }
+    ],
+    "summary": "string",
+    "warnings": []
+  }
+}

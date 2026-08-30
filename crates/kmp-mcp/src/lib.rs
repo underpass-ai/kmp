@@ -58,6 +58,16 @@ pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
     protocol::tools_list_result()
 }
 
+/// The surface a host that negotiated MCP Apps is offered: the same tools plus
+/// the app-only ones, and the ChronoLoom `_meta.ui` block on `kmp_view_open`.
+///
+/// Exposed so the advertised contract can be pinned on both paths. Pinning
+/// only `apps = false` would leave the app surface — and the argument
+/// rejection that reads its schemas — free to drift unnoticed.
+pub fn kmp_mcp_tools_list_result_with_apps(apps: bool) -> serde_json::Value {
+    protocol::tools_list_result_with_apps(apps)
+}
+
 pub fn kmp_mcp_tool_names() -> Vec<String> {
     kmp_mcp_tools_list_result()
         .get("tools")

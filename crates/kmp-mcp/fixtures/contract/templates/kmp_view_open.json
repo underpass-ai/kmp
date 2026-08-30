@@ -1,0 +1,56 @@
+{
+  "content": [
+    {
+      "text": {
+        "clocks": [
+          "string"
+        ],
+        "opened": "boolean",
+        "semantic_zoom_ladder": [
+          "string"
+        ],
+        "state": {
+          "about": "string",
+          "can_undo": "boolean",
+          "clock": "string",
+          "focus": {},
+          "projection": {},
+          "view_id": "string",
+          "view_revision": "integer"
+        },
+        "unhonored": [
+          "string"
+        ],
+        "view_id": "string",
+        "view_revision": "integer",
+        "viewer_available": "boolean"
+      },
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "clocks": [
+      "string"
+    ],
+    "opened": "boolean",
+    "semantic_zoom_ladder": [
+      "string"
+    ],
+    "state": {
+      "about": "string",
+      "can_undo": "boolean",
+      "clock": "string",
+      "focus": {},
+      "projection": {},
+      "view_id": "string",
+      "view_revision": "integer"
+    },
+    "unhonored": [
+      "string"
+    ],
+    "view_id": "string",
+    "view_revision": "integer",
+    "viewer_available": "boolean"
+  }
+}

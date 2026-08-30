@@ -1,0 +1,125 @@
+{
+  "content": [
+    {
+      "text": "Returned 3 temporal entries.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "coverage": {
+      "dimensions": [
+        {
+          "dimension": "agentic_process",
+          "present": true,
+          "returned": 1
+        },
+        {
+          "dimension": "conversation",
+          "present": true,
+          "returned": 2
+        }
+      ],
+      "included": [
+        "agentic_process",
+        "conversation"
+      ],
+      "missing": [],
+      "requested": {
+        "mode": "all",
+        "scope": "current_about"
+      }
+    },
+    "entries": [
+      {
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:00:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 1
+          }
+        ],
+        "kind": "claim",
+        "metadata": {},
+        "ref": "question:parity:claim:denver",
+        "text": "Rachel said she was moving to Denver."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:05:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 2
+          }
+        ],
+        "kind": "claim",
+        "metadata": {},
+        "ref": "question:parity:claim:denver-detail",
+        "text": "She starts the new job in Denver in June."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z",
+            "occurred_at": "2026-04-12T16:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 1
+          }
+        ],
+        "kind": "decision",
+        "metadata": {
+          "writer_actor": "parity-test",
+          "writer_intent": "record_decision"
+        },
+        "ref": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "text": "Pin the answered surface, not only the advertised one."
+      }
+    ],
+    "next_action": null,
+    "page": {
+      "has_more": false,
+      "next_cursor": null,
+      "returned": 3,
+      "total": 3
+    },
+    "proof": {
+      "confidence": "medium",
+      "conflicts": [],
+      "evidence": [],
+      "expired": [],
+      "frontier_size": 0,
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "path": [],
+      "superseded": []
+    },
+    "quality": {
+      "causal_density": 0.0,
+      "detail_coverage": 1.0,
+      "details": 3,
+      "nodes": 3,
+      "relationships": 0,
+      "truncated": false
+    },
+    "raw_refs": [],
+    "summary": "Returned 3 temporal entries.",
+    "temporal": {
+      "axis": "occurred",
+      "direction": "near",
+      "requested": {
+        "time": "2026-04-12T15:00:00Z"
+      },
+      "resolved": {
+        "occurred_at": "2026-04-12T15:00:00Z"
+      }
+    },
+    "warnings": []
+  }
+}

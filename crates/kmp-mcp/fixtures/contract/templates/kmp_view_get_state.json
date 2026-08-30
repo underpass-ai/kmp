@@ -1,0 +1,58 @@
+{
+  "content": [
+    {
+      "text": {
+        "observability": "string",
+        "reads": "string",
+        "state": {
+          "about": "string",
+          "can_undo": "boolean",
+          "clock": "string",
+          "focus": {},
+          "last_change": {
+            "actor": "string",
+            "at": "string",
+            "explanation": "string",
+            "idempotency_key": "string"
+          },
+          "projection": {
+            "semantic_zoom": "string"
+          },
+          "selection": "string",
+          "view_id": "string",
+          "view_revision": "integer"
+        },
+        "view_id": "string",
+        "view_revision": "integer",
+        "viewer_available": "boolean"
+      },
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "observability": "string",
+    "reads": "string",
+    "state": {
+      "about": "string",
+      "can_undo": "boolean",
+      "clock": "string",
+      "focus": {},
+      "last_change": {
+        "actor": "string",
+        "at": "string",
+        "explanation": "string",
+        "idempotency_key": "string"
+      },
+      "projection": {
+        "semantic_zoom": "string"
+      },
+      "selection": "string",
+      "view_id": "string",
+      "view_revision": "integer"
+    },
+    "view_id": "string",
+    "view_revision": "integer",
+    "viewer_available": "boolean"
+  }
+}
