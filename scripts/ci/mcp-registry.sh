@@ -78,13 +78,18 @@ visible = [line for line in readme.splitlines() if marker in line and "<!--" not
 if len(visible) != 1:
     sys.exit("MCP Registry gate: crate README needs one visible, exact mcp-name marker")
 
-protocol = (root / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
-tool_names = set(re.findall(r'tool_definition(?:_with_output)?\(\s*"(kmp_[a-z0-9_]+)"', protocol))
+# The reviewed surface, not the source that builds it: `tools_list.json` is
+# pinned against the running binary by `tool_surface_parity`, so a manifest
+# checked against it is checked against what a host is actually served.
+surface = json.loads(
+    (root / "crates/kmp-mcp/fixtures/contract/tools_list.json").read_text(encoding="utf-8")
+)
+tool_names = {tool["name"] for tool in surface["tools"]}
 manifest_tools = {tool.get("name") for tool in manifest.get("tools", [])}
 if manifest_tools != tool_names:
     sys.exit(
         "MCP Registry gate: MCPB tool list drifted: "
-        f"manifest={sorted(manifest_tools)}, protocol={sorted(tool_names)}"
+        f"manifest={sorted(manifest_tools)}, surface={sorted(tool_names)}"
     )
 
 print(

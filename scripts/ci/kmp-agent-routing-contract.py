@@ -271,11 +271,23 @@ invitation = "show me the memory behind this decision"
 if invitation not in public_readme or invitation not in memory_skill.casefold():
     fail("the public ChronoLoom invitation is not routed by kmp-memory")
 
-protocol = (ROOT / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
-if "Normal writes are one call: omit `options.dry_run` or set it to false" not in protocol:
-    fail("live MCP schema does not document the dry_run=false write default")
-if "Set it to true only for an explicitly requested preview" not in protocol:
-    fail("live MCP schema lost the explicit dry-run preview path")
+# Read from the reviewed surface rather than the Rust that builds it. What an
+# agent is routed by is the description a host serves, and `tools_list.json` is
+# that document, pinned against the running binary by `tool_surface_parity`.
+surface = json.loads(
+    (ROOT / "crates/kmp-mcp/fixtures/contract/tools_list.json").read_text(encoding="utf-8")
+)
+writer = next(
+    (tool for tool in surface["tools"] if tool["name"] == "kmp_write_memory"), None
+)
+if writer is None:
+    fail("the advertised surface no longer offers kmp_write_memory")
+else:
+    description = writer["description"]
+    if "Normal writes are one call: omit `options.dry_run` or set it to false" not in description:
+        fail("live MCP schema does not document the dry_run=false write default")
+    if "Set it to true only for an explicitly requested preview" not in description:
+        fail("live MCP schema lost the explicit dry-run preview path")
 
 print(
     "KMP agent routing contract passed: two languages, complete temporal pages, "

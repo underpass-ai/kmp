@@ -82,17 +82,22 @@ if unreachable:
         print(f"  {document}", file=sys.stderr)
     sys.exit(1)
 
-protocol = (root / "crates/kmp-mcp/src/protocol.rs").read_text(encoding="utf-8")
-tool_names = set(
-    re.findall(r'tool_definition(?:_with_output)?\(\s*"(kmp_[a-z0-9_]+)"', protocol)
+# The reviewed surface, not the source that builds it. This used to scrape one
+# Rust file with a regex, which tied a documentation gate to where a tool
+# definition happened to live — and #404 moved them. `tools_list.json` is the
+# advertised document, pinned byte for byte against the running binary by
+# `tool_surface_parity`, so it cannot drift from what a host is served.
+surface = json.loads(
+    (root / "crates/kmp-mcp/fixtures/contract/tools_list.json").read_text(encoding="utf-8")
 )
+tool_names = {tool["name"] for tool in surface["tools"]}
 # Ten moves over memory and three over the view. The count is pinned so a
 # tool cannot appear on the surface without the documentation that explains
 # it appearing too.
 EXPECTED_TOOLS = 13
 if len(tool_names) != EXPECTED_TOOLS:
     sys.exit(
-        f"documentation contract: expected {EXPECTED_TOOLS} tools in protocol.rs, "
+        f"documentation contract: expected {EXPECTED_TOOLS} tools on the reviewed surface, "
         f"found {len(tool_names)}: {sorted(tool_names)}"
     )
 
