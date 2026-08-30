@@ -1,9 +1,17 @@
 mod json_rpc;
+mod relation_vocabulary;
+mod request_shape;
 mod response_shape;
 mod result;
 mod schema;
 
 pub(crate) use json_rpc::{jsonrpc_error, jsonrpc_result};
+use relation_vocabulary::{
+    relation_vocabulary_description, semantic_class_schema, writer_relation_names,
+};
+use request_shape::{
+    budget_schema, dimensions_schema, recall_page_schema, temporal_coordinate_schema,
+};
 use response_shape::{
     page_output_schema, proof_output_schema, quality_output_schema, recall_envelope_properties,
     warnings_output_schema,
@@ -14,7 +22,6 @@ use schema::{
     string_array, string_map_schema, string_schema,
 };
 
-use kmp_domain::KnownMemoryRelationType;
 use serde_json::{Value, json};
 
 use crate::tool_error::{ToolError, ToolErrorCode};
@@ -942,67 +949,6 @@ fn page_schema() -> Value {
     })
 }
 
-fn dimensions_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "mode": {
-                "type": "string",
-                "enum": ["all", "only", "except"]
-            },
-            "include": {
-                "type": "array",
-                "items": string_schema("Dimension kind to include.")
-            },
-            "exclude": {
-                "type": "array",
-                "items": string_schema("Dimension kind to exclude.")
-            },
-            "scope_ids": {
-                "type": "array",
-                "items": string_schema("Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.")
-            },
-            "scope": {
-                "type": "string",
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
-                "enum": ["current_about", "abouts", "all_abouts"]
-            },
-            "abouts": {
-                "type": "array",
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
-                "items": string_schema("Memory about id.")
-            }
-        }
-    })
-}
-
-fn temporal_coordinate_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": true,
-        "required": ["dimension", "scope_id"],
-        "properties": {
-            "dimension": string_schema("Dimension kind for this coordinate."),
-            "scope_id": string_schema("Dimension scope id."),
-            "occurred_at": string_schema("Optional RFC3339 occurrence timestamp."),
-            "observed_at": string_schema("Optional RFC3339 observation timestamp, in UTC."),
-            "ingested_at": string_schema("Optional RFC3339 ingest timestamp."),
-            "valid_from": string_schema("Optional RFC3339 validity start."),
-            "valid_until": string_schema("Optional RFC3339 validity end."),
-            "sequence": {
-                "type": "integer",
-                "minimum": 1
-            },
-            "rank": {
-                "type": "integer",
-                "minimum": 1
-            },
-            "metadata": string_map_schema()
-        }
-    })
-}
-
 /// A tool, with the shape of what it answers.
 ///
 /// Inputs were described field by field and the response — the half the agent
@@ -1177,96 +1123,6 @@ fn inspect_output_schema() -> Value {
     }))
 }
 
-fn writer_relation_names() -> Vec<&'static str> {
-    KnownMemoryRelationType::writer_relation_types()
-        .iter()
-        .map(|relation_type| relation_type.as_str())
-        .collect()
-}
-
-/// The relation vocabulary, projected from the kernel's own writer spec so
-/// this documentation can never drift from what the kernel validates. The
-/// relation is where KMP carries the why; a model that only sees a bare enum
-/// writes connected-but-unexplained memory, which is the failure mode the
-/// spec exists to prevent.
-fn relation_vocabulary_description(header: &str) -> String {
-    let mut description = format!(
-        "{header} The relation carries the explanation: non-structural classes require why, \
-         evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
-         when no richer semantic dependency can be proven, never a default. Vocabulary \
-         (quality; allowed classes; when to use):"
-    );
-    for spec in KnownMemoryRelationType::writer_relation_types()
-        .iter()
-        .filter_map(|relation_type| relation_type.writer_spec())
-    {
-        let classes = spec
-            .allowed_classes()
-            .iter()
-            .map(|class| class.as_str())
-            .collect::<Vec<_>>()
-            .join("|");
-        description.push_str(&format!(
-            " {} ({}; {}; {}).",
-            spec.relation_type().as_str(),
-            spec.quality().as_str(),
-            classes,
-            spec.reason()
-        ));
-    }
-    description
-}
-
-fn semantic_class_schema() -> Value {
-    json!({
-        "type": "string",
-        "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"],
-        "description": "What the link explains: structural = containment/membership, no proof \
-                        required; causal = one memory triggered or produced another; \
-                        motivational = one memory justifies or authorizes another; procedural = \
-                        how something was executed, or plain succession; evidential = validates, \
-                        proves, contradicts or verifies; constraint = limits or shapes another \
-                        memory."
-    })
-}
-
-fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "tokens": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_tokens,
-                "description": format!("Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
-            },
-            "max_bytes": {
-                "type": "integer",
-                "minimum": 512,
-                "default": 10_000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile."
-            },
-            "detail": {
-                "type": "string",
-                "enum": ["compact", "balanced", "full"],
-                "default": "balanced",
-                "description": "How much expansion detail is eligible before byte or entry caps are applied."
-            },
-            "depth": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_depth,
-                "description": format!("Graph traversal depth; defaults to {default_depth} for this verb in both embedded and live gRPC modes.")
-            },
-            "max_entries": {
-                "type": "integer",
-                "minimum": 1
-            }
-        }
-    })
-}
-
 fn inspect_budget_schema() -> Value {
     json!({
         "type": "object",
@@ -1291,25 +1147,6 @@ fn inspect_page_schema() -> Value {
                 "type": "string",
                 "minLength": 1,
                 "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change."
-            }
-        }
-    })
-}
-
-fn recall_page_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "entries": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
-            },
-            "cursor": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
             }
         }
     })
@@ -1408,6 +1245,8 @@ fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(),
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use kmp_domain::KnownMemoryRelationType;
 
     #[test]
     fn former_tool_names_resolve_to_the_advertised_kmp_surface() {
