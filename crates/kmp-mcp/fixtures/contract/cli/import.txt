@@ -1,0 +1,1 @@
+Usage: kmp-mcp import [file]

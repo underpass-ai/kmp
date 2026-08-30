@@ -1,0 +1,1 @@
+Usage: kmp-mcp plugin resolve-engine|notice --plugin-root DIR
