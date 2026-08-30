@@ -1960,7 +1960,7 @@ async fn embedded_backend_returns_structured_not_found_errors() {
 }
 
 #[tokio::test]
-async fn inspect_negotiates_an_oversized_result_and_only_errors_below_the_object_floor() {
+async fn inspect_negotiates_an_oversized_result_and_floors_below_the_object_floor() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
     let evidence = (0..18)
@@ -2064,15 +2064,19 @@ async fn inspect_negotiates_an_oversized_result_and_only_errors_below_the_object
         .await
         .expect("floor response");
     let floor: Value = serde_json::from_str(&floor).expect("floor JSON");
-    assert_eq!(floor["result"]["isError"], true, "{floor}");
-    assert_eq!(
-        floor["result"]["structuredContent"]["error"]["code"],
-        "invalid_argument"
-    );
+    // A ceiling below the object floor returns the floor and says so (#441),
+    // the same contract recall adopted in #439 — never an error.
+    assert_eq!(floor["result"]["isError"], false, "{floor}");
+    let page = &floor["result"]["structuredContent"];
+    assert_eq!(page["object"]["ref"], "project:inspect-budget:decision:hub");
     assert!(
-        floor["result"]["structuredContent"]["error"]["message"]
-            .as_str()
-            .is_some_and(|message| message.contains("object floor")),
+        page["warnings"]
+            .as_array()
+            .expect("warnings channel")
+            .iter()
+            .any(|warning| warning
+                .as_str()
+                .is_some_and(|text| { text.contains("stable floor") && text.contains("512") })),
         "{floor}"
     );
 }

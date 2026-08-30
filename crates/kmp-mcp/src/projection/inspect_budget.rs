@@ -121,15 +121,25 @@ pub(crate) fn enforce_inspect_output_budget(
         }
     }
 
-    best.ok_or_else(|| {
-        let floor = render_inspect_page(&value, &items, offset, 0, &selection_hash, required_bytes);
-        ToolError::invalid_argument(format!(
-            "the inspect object floor is {} bytes and does not fit budget.max_bytes={limit}; \
-             the object cannot be paged, so raise budget.max_bytes (the full response requires \
-             {required_bytes} bytes)",
-            serialized_len(&floor)
-        ))
-    })
+    match best {
+        Some(page) => Ok(page),
+        None => {
+            // The stable object is always returned by design, so when even
+            // its floor exceeds the ceiling, return the floor and say so —
+            // the contract recall adopted in #439 and temporal in #441.
+            let mut floor =
+                render_inspect_page(&value, &items, offset, 0, &selection_hash, required_bytes);
+            let floor_bytes = serialized_len(&floor);
+            if let Some(warnings) = floor["warnings"].as_array_mut() {
+                warnings.push(serde_json::json!(format!(
+                    "budget.max_bytes {limit} is below this response's stable floor; returned \
+                     the {floor_bytes}-byte floor instead — raise max_bytes past it to see \
+                     more (the full response requires {required_bytes} bytes)"
+                )));
+            }
+            Ok(floor)
+        }
+    }
 }
 
 fn inspect_page_items(value: &Value) -> Vec<InspectPageItem> {
