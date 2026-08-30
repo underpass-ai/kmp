@@ -12,6 +12,5 @@ crates/kmp-mcp/src/memories.rs	types=2
 crates/kmp-mcp/src/observability.rs	types=3
 crates/kmp-mcp/src/server.rs	lines=773
 crates/kmp-mcp/src/tool_error.rs	types=2
-crates/kmp-mcp/src/uninstall.rs	types=5,lines=1147
 crates/kmp-mcp/src/view_tools.rs	types=2
 crates/kmp-mcp/src/write.rs	lines=1601
