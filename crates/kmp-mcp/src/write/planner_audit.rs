@@ -1,0 +1,425 @@
+//! The write planner, audited end to end: strict-mode policy, generated
+//! refs, canonical coordinates, idempotency, and every refusal a caller
+//! can fix.
+#![cfg(test)]
+
+mod tests {
+    #[allow(unused_imports)]
+    use crate::write::generated_ref::{GENERATED_REF_HASH_LEN, GENERATED_REF_SEGMENT_MAX};
+    #[allow(unused_imports)]
+    use crate::write::plan::KernelWritePlan;
+    #[allow(unused_imports)]
+    use crate::write::planner::*;
+    #[allow(unused_imports)]
+    use crate::write::results::{write_commit_result, write_dry_run_result};
+    #[allow(unused_imports)]
+    use serde_json::{Map, Value, json};
+
+    #[test]
+    fn write_commits_unless_a_preview_is_requested() {
+        // No `options` at all is the shape a caller reaches for first, and it
+        // must commit: previewing by default meant `isError: false` on a call
+        // that wrote nothing.
+        let mut request = sample_write_request();
+        request.as_object_mut().expect("object").remove("options");
+        let plan = build_write_plan(&request).expect("write should plan");
+        assert!(
+            !plan.dry_run,
+            "write_memory must commit by default; previewing is opt-in"
+        );
+
+        let mut strict_only = sample_write_request();
+        strict_only["options"] = json!({ "strict": true });
+        let plan = build_write_plan(&strict_only).expect("write should plan");
+        assert!(
+            !plan.dry_run,
+            "setting an unrelated option must not turn a write into a preview"
+        );
+    }
+
+    #[test]
+    fn dry_run_generates_canonical_ingest_preview() {
+        let plan = build_write_plan(&sample_write_request()).expect("write should plan");
+
+        assert!(plan.dry_run);
+        assert_eq!(plan.generated_refs.len(), 2);
+        assert_eq!(
+            plan.relations,
+            vec!["chosen_because", "updates_state", "semantic_delta_from"]
+        );
+        assert_eq!(plan.relation_quality.len(), 3);
+        assert_eq!(
+            plan.relation_quality_metrics["relation_rich_count"],
+            json!(3)
+        );
+        assert_eq!(
+            plan.relation_quality_metrics["relation_anemic_count"],
+            json!(0)
+        );
+        assert_eq!(
+            plan.relation_quality_metrics["relation_prior_context_required_count"],
+            json!(2)
+        );
+        assert_eq!(
+            plan.relation_quality_metrics["relation_prior_context_coverage"],
+            json!(1.0)
+        );
+        assert_eq!(plan.relation_quality[0]["quality"], json!("rich"));
+        assert_eq!(
+            plan.relation_quality[0]["prior_context_sources"],
+            json!(["kmp_inspect"])
+        );
+        assert_eq!(plan.ingest_arguments["about"], "incident:mobile-login");
+        assert_eq!(
+            plan.ingest_arguments["memory"]["dimensions"][0]["kind"],
+            "task"
+        );
+        assert_eq!(
+            plan.ingest_arguments["memory"]["dimensions"][1]["kind"],
+            "agentic_process"
+        );
+        assert_eq!(
+            plan.ingest_arguments["memory"]["entries"][1]["kind"],
+            "semantic_delta"
+        );
+        assert_eq!(
+            plan.ingest_arguments["memory"]["relations"][0]["rel"],
+            "chosen_because"
+        );
+        assert_eq!(
+            plan.ingest_arguments["memory"]["relations"][2]["rel"],
+            "semantic_delta_from"
+        );
+        assert_eq!(
+            plan.ingest_arguments["provenance"]["source_agent"],
+            "agent:backend"
+        );
+    }
+
+    #[test]
+    fn writer_carries_every_known_clock_into_canonical_coordinates() {
+        let mut request = sample_write_request();
+        request["occurred_at"] = json!("2026-05-06T09:58:00Z");
+        request["valid_from"] = json!("2026-05-06T10:00:00Z");
+        request["valid_until"] = json!("2026-05-07T10:00:00Z");
+        request["rank"] = json!(7);
+
+        let plan = build_write_plan(&request).expect("polytemporal write should plan");
+        let coordinates = plan.ingest_arguments["memory"]["entries"][0]["coordinates"]
+            .as_array()
+            .expect("entry coordinates");
+
+        assert!(!coordinates.is_empty());
+        for coordinate in coordinates {
+            assert_eq!(coordinate["occurred_at"], "2026-05-06T09:58:00Z");
+            assert_eq!(coordinate["observed_at"], "2026-05-06T10:00:00Z");
+            assert_eq!(coordinate["valid_from"], "2026-05-06T10:00:00Z");
+            assert_eq!(coordinate["valid_until"], "2026-05-07T10:00:00Z");
+            assert_eq!(coordinate["rank"], 7);
+        }
+
+        let shifted = plan.ingest_arguments["memory"]["entries"][1]["coordinates"]
+            .as_array()
+            .expect("semantic delta coordinates");
+        assert_eq!(shifted[0]["occurred_at"], "2026-05-06T09:58:00Z");
+        assert_eq!(shifted[0]["rank"], 7);
+    }
+
+    #[test]
+    fn structural_links_compile_without_an_empty_rationale() {
+        // The first memory in a store is often a plain `scoped_to` into its
+        // own about, with no rationale to give — structural links are exempt
+        // from why and evidence by this tool's own contract. Compiling that
+        // exemption to `"why": ""` made the canonical ingest mapper reject the
+        // write as a malformed argument, so the exemption existed on paper
+        // only.
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("semantic_delta");
+        request["connect_to"] = json!([{
+            "ref": "incident:mobile-login",
+            "rel": "scoped_to",
+            "class": "structural"
+        }]);
+
+        let plan = build_write_plan(&request).expect("a structural link needs no rationale");
+
+        let relation = &plan.ingest_arguments["memory"]["relations"][0];
+        assert_eq!(relation["rel"], "scoped_to");
+        assert!(
+            relation.get("why").is_none(),
+            "an absent why must stay absent, not become an empty string: {relation}"
+        );
+        assert!(
+            relation.get("evidence").is_none(),
+            "an absent evidence must stay absent, not become an empty string: {relation}"
+        );
+
+        let evidence = plan.ingest_arguments["memory"]["evidence"]
+            .as_array()
+            .expect("evidence should be an array");
+        assert_eq!(
+            evidence.len(),
+            1,
+            "only the entry's own evidence survives; a structural link contributes none: {evidence:?}"
+        );
+        assert_eq!(
+            evidence[0]["text"],
+            "Logs show 401 immediately after token refresh."
+        );
+    }
+
+    #[test]
+    fn rejects_missing_process_scope() {
+        let mut request = sample_write_request();
+        request["scope"]
+            .as_object_mut()
+            .expect("sample scope should be an object")
+            .remove("process");
+
+        let error = build_write_plan(&request).expect_err("process scope is required");
+
+        assert_eq!(error, "missing required argument `scope.process`");
+    }
+
+    #[test]
+    fn rejects_scope_ids_reused_across_dimensions_before_ingest() {
+        let mut request = sample_write_request();
+        request["scope"]["task"] = json!("incident:mobile-login:resolution");
+
+        let error = build_write_plan(&request).expect_err("scope ids must be distinct");
+
+        assert_eq!(
+            error,
+            "scope.process and scope.task reuse `incident:mobile-login:resolution`; every scope dimension must use a distinct id"
+        );
+    }
+
+    #[test]
+    fn omitted_writer_sequence_stays_absent_for_kernel_assignment() {
+        let plan = build_write_plan(&sample_write_request()).expect("write should plan");
+        let entries = plan.ingest_arguments["memory"]["entries"]
+            .as_array()
+            .expect("entries");
+
+        assert!(entries.iter().all(|entry| {
+            entry["coordinates"]
+                .as_array()
+                .expect("coordinates")
+                .iter()
+                .all(|coordinate| coordinate.get("sequence").is_none())
+        }));
+    }
+
+    #[test]
+    fn rejects_relation_without_evidence_in_strict_shape() {
+        let mut request = sample_write_request();
+        request["connect_to"][0]
+            .as_object_mut()
+            .expect("sample relation should be an object")
+            .remove("evidence");
+
+        let error = build_write_plan(&request).expect_err("relation evidence is required");
+
+        assert_eq!(error, "missing required argument `connect_to[0].evidence`");
+    }
+
+    #[test]
+    fn rejects_strict_write_without_any_relation_after_the_about_exists() {
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("connect_to");
+
+        let error = build_write_plan(&request).expect_err("strict write requires a relation");
+
+        assert_eq!(
+            error,
+            "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+        );
+    }
+
+    #[test]
+    fn accepts_the_first_strict_write_as_an_unlinked_about_root() {
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("connect_to");
+
+        let plan = build_write_plan_with_root(&request, true)
+            .expect("a server-proven new about may form its root");
+        assert!(
+            !plan
+                .relations
+                .iter()
+                .any(|relation| relation == "chosen_because"),
+            "the plan succeeds without inventing a link from the root"
+        );
+    }
+
+    #[test]
+    fn rejects_rich_relation_without_read_context_in_strict_mode() {
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("read_context");
+
+        let error = build_write_plan(&request).expect_err("rich relation requires prior read");
+
+        assert_eq!(
+            error,
+            "strict kmp_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
+        );
+    }
+
+    #[test]
+    fn rejects_self_loop_relations() {
+        let mut request = sample_write_request();
+        let current_ref = "incident:mobile-login:entry:decision:self";
+        request["current"]["ref"] = json!(current_ref);
+        request["connect_to"][0]["ref"] = json!(current_ref);
+
+        let error = build_write_plan(&request).expect_err("self-loop should fail");
+
+        assert_eq!(
+            error,
+            "kmp_write_memory relation `chosen_because` cannot point from and to the same ref `incident:mobile-login:entry:decision:self`"
+        );
+    }
+
+    #[test]
+    fn classifies_explicit_anemic_fallback_relations() {
+        let mut request = sample_write_request();
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("semantic_delta");
+        request
+            .as_object_mut()
+            .expect("sample request should be an object")
+            .remove("read_context");
+        request["connect_to"][0]["rel"] = json!("follows");
+        request["connect_to"][0]["class"] = json!("procedural");
+        request["connect_to"][0]["why"] =
+            json!("The new turn follows this prior process turn in sequence.");
+        request["connect_to"][0]["evidence"] =
+            json!("The writer only knows process succession for this memory.");
+
+        let plan = build_write_plan(&request).expect("anemic fallback should be explicit");
+
+        assert_eq!(plan.relation_quality.len(), 1);
+        assert_eq!(plan.relation_quality[0]["quality"], "anemic");
+        assert_eq!(plan.relation_quality[0]["fallback"], true);
+        assert_eq!(
+            plan.relation_quality_metrics["relation_anemic_count"],
+            json!(1)
+        );
+    }
+
+    #[test]
+    fn accepts_core_operand_modeling_relations() {
+        let mut request = sample_write_request();
+        request["connect_to"][0]["rel"] = json!("matches_question_item");
+        request["connect_to"][0]["class"] = json!("constraint");
+        request["connect_to"][0]["why"] =
+            json!("The prior memory satisfies the current requirement predicate.");
+        request["connect_to"][0]["evidence"] =
+            json!("The writer observed the target ref before linking it.");
+
+        let plan = build_write_plan(&request).expect("operand relation should be accepted");
+
+        assert_eq!(plan.relation_quality[0]["quality"], "rich");
+        assert_eq!(
+            plan.ingest_arguments["memory"]["relations"][0]["rel"],
+            "matches_requirement"
+        );
+    }
+
+    #[test]
+    fn rejects_unsupported_relations_in_strict_mode() {
+        let mut request = sample_write_request();
+        request["connect_to"][0]["rel"] = json!("related_to");
+
+        let error = build_write_plan(&request).expect_err("vague relation should fail");
+
+        assert_eq!(
+            error,
+            "unsupported or vague kmp_write_memory relation `related_to`"
+        );
+    }
+
+    /// A mutation probe showed nothing pinned the non-strict demotion:
+    /// a rich relation written without read-context evidence must arrive
+    /// as `suspect`, or lax mode silently launders unaudited certainty.
+    #[test]
+    fn a_rich_relation_without_read_context_is_suspect_when_strict_is_off() {
+        let mut request = sample_write_request();
+        request["options"] = json!({"strict": false});
+        request
+            .as_object_mut()
+            .expect("request object")
+            .remove("read_context");
+
+        let plan = build_write_plan(&request).expect("non-strict write is accepted");
+        let quality = plan.relation_quality[0]["quality"]
+            .as_str()
+            .expect("relation quality");
+        assert_eq!(quality, "suspect");
+        assert!(
+            plan.relation_quality[0]["quality_reason"]
+                .as_str()
+                .expect("reason")
+                .contains("must be audited"),
+            "{:?}",
+            plan.relation_quality[0]
+        );
+    }
+
+    fn sample_write_request() -> Value {
+        json!({
+            "about": "incident:mobile-login",
+            "intent": "record_decision",
+            "actor": "agent:backend",
+            "observed_at": "2026-05-06T10:00:00Z",
+            "scope": {
+                "task": "incident:mobile-login",
+                "process": "incident:mobile-login:resolution",
+                "episode": "incident:mobile-login:episode:backend"
+            },
+            "current": {
+                "kind": "decision",
+                "summary": "Use token refresh retry instead of widening timeout.",
+                "evidence": "Logs show 401 immediately after token refresh."
+            },
+            "semantic_delta": {
+                "from": "The team suspected network timeout.",
+                "to": "The evidence points to token refresh race.",
+                "why": "The failing requests return 401 immediately after refresh.",
+                "evidence": "Auth logs show refresh success followed by 401 on the next request."
+            },
+            "connect_to": [
+                {
+                    "ref": "incident:mobile-login:observation:401-refresh-race",
+                    "rel": "chosen_because",
+                    "class": "causal",
+                    "why": "The decision addresses the observed token refresh race.",
+                    "evidence": "The chosen retry targets the refresh race seen in auth logs."
+                }
+            ],
+            "read_context": {
+                "inspected_refs": [
+                    "incident:mobile-login:observation:401-refresh-race"
+                ]
+            },
+            "options": {
+                "dry_run": true,
+                "strict": true
+            }
+        })
+    }
+}

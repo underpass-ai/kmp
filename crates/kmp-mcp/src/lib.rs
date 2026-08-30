@@ -11,7 +11,6 @@ pub mod style;
 pub mod viewer;
 
 mod contract;
-mod ingest;
 mod projection;
 mod serving;
 mod write;

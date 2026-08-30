@@ -4,7 +4,7 @@ use kmp_proto::v1beta1::IngestResponse;
 
 use super::wording::plural;
 
-use crate::ingest::KmpIngestPlan;
+use crate::write::KmpIngestPlan;
 
 pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
     let memory = response.memory.as_ref();
