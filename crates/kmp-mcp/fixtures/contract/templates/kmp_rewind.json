@@ -31,8 +31,11 @@
             "dimension": "string",
             "ingested_at": "string",
             "occurred_at": "string",
+            "rank": "integer",
             "scope_id": "string",
-            "sequence": "integer"
+            "sequence": "integer",
+            "valid_from": "string",
+            "valid_until": "string"
           }
         ],
         "kind": "string",
@@ -41,10 +44,10 @@
         "text": "string"
       }
     ],
-    "next_action": "null",
+    "next_action": "string",
     "page": {
       "has_more": "boolean",
-      "next_cursor": "null",
+      "next_cursor": "string",
       "returned": "integer",
       "total": "integer"
     },
@@ -80,6 +83,8 @@
         "occurred_at": "string"
       }
     },
-    "warnings": []
+    "warnings": [
+      "string"
+    ]
   }
 }

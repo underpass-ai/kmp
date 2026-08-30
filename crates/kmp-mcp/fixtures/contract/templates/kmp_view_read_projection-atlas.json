@@ -27,7 +27,8 @@
     ],
     "by_kind": {
       "claim": "integer",
-      "decision": "integer"
+      "decision": "integer",
+      "semantic_delta": "integer"
     },
     "clusters": [],
     "content_hash": "string",

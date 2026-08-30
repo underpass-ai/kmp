@@ -20,8 +20,14 @@
       ],
       "missing": [],
       "requested": {
+        "exclude": [
+          "string"
+        ],
         "mode": "string",
-        "scope": "string"
+        "scope": "string",
+        "scope_ids": [
+          "string"
+        ]
       }
     },
     "entries": [
@@ -31,8 +37,11 @@
             "dimension": "string",
             "ingested_at": "string",
             "occurred_at": "string",
+            "rank": "integer",
             "scope_id": "string",
-            "sequence": "integer"
+            "sequence": "integer",
+            "valid_from": "string",
+            "valid_until": "string"
           }
         ],
         "kind": "string",

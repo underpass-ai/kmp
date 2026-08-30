@@ -41,10 +41,10 @@
         "text": "string"
       }
     ],
-    "next_action": "null",
+    "next_action": "string",
     "page": {
       "has_more": "boolean",
-      "next_cursor": "null",
+      "next_cursor": "string",
       "returned": "integer",
       "total": "integer"
     },
@@ -58,7 +58,13 @@
       "matched_terms": [],
       "missing": [],
       "path": [],
-      "superseded": []
+      "superseded": [
+        {
+          "ref": "string",
+          "superseded_by": "string",
+          "why": "string"
+        }
+      ]
     },
     "quality": {
       "causal_density": "number",
@@ -80,6 +86,8 @@
         "occurred_at": "string"
       }
     },
-    "warnings": []
+    "warnings": [
+      "string"
+    ]
   }
 }

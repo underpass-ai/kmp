@@ -64,11 +64,19 @@ fn calls() -> Vec<(&'static str, Value)> {
                             "id": DETAIL,
                             "kind": "claim",
                             "text": "She starts the new job in Denver in June.",
+                            // The optional half of the coordinate mapper —
+                            // valid_from, valid_until and rank — is emitted
+                            // for every coordinate in every temporal, inspect
+                            // and projection answer, so leave none of it
+                            // unwritten here.
                             "coordinates": [{
                                 "dimension": "conversation",
                                 "scope_id": "conversation:rachel",
                                 "occurred_at": "2026-04-12T15:05:00Z",
-                                "sequence": 2
+                                "sequence": 2,
+                                "valid_from": "2026-04-12T15:05:00Z",
+                                "valid_until": "2026-04-12T18:00:00Z",
+                                "rank": 2
                             }]
                         }
                     ],
@@ -117,6 +125,44 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "read_context": {"inspected_refs": [CLAIM]}
             }),
         ),
+        // `proof.superseded` and `proof.expired` are pinned empty by every
+        // other call, so their element mappers — `superseded_by`, and the
+        // expired `valid_until` — would have no assertion anywhere.
+        // `superseded_by` is a published field: six advertised output schemas
+        // name it. This write puts a real one in the store.
+        (
+            "kmp_write_memory:supersedes",
+            json!({
+                "about": ABOUT,
+                "intent": "record_delta",
+                "actor": "parity-test",
+                "source_kind": "agent",
+                "observed_at": "2026-04-12T17:00:00Z",
+                "occurred_at": "2026-04-12T17:00:00Z",
+                "scope": {"process": "parity"},
+                "current": {
+                    "kind": "semantic_delta",
+                    "summary": "Rachel is moving to Boulder, not Denver.",
+                    "evidence": "She corrected the city in the same conversation."
+                },
+                "semantic_delta": {
+                    "from": "Rachel said she was moving to Denver.",
+                    "to": "Rachel is moving to Boulder.",
+                    "why": "The later statement corrects the earlier one.",
+                    "evidence": "Both statements are hers, minutes apart."
+                },
+                "connect_to": [{
+                    "ref": CLAIM,
+                    "rel": "supersedes",
+                    "class": "evidential",
+                    "confidence": "high",
+                    "why": "The corrected city replaces the first one while the \
+            first stays readable as history.",
+                    "evidence": "She named Boulder after naming Denver."
+                }],
+                "read_context": {"inspected_refs": [CLAIM]}
+            }),
+        ),
         ("kmp_wake", json!({"about": ABOUT})),
         (
             "kmp_ask",
@@ -127,12 +173,28 @@ fn calls() -> Vec<(&'static str, Value)> {
             json!({
                 "about": ABOUT,
                 "question": "Where is Rachel moving?",
-                "budget": {"detail": "compact", "max_bytes": 4000}
+                "budget": {"detail": "compact", "max_bytes": 6000}
             }),
         ),
         (
             "kmp_goto",
-            json!({"about": ABOUT, "at": {"time": "2026-04-12T15:05:00Z"}, "axis": "occurred"}),
+            // `limit` forces a partial page, so the continuation guidance is
+            // a real string rather than the null every unbounded read pins.
+            // Each direction words it differently, so each needs its own call.
+            json!({
+                "about": ABOUT,
+                "at": {"time": "2026-04-12T15:05:00Z"},
+                "axis": "occurred",
+                "limit": {"entries": 1},
+                // A non-default dimension selection, so `coverage.requested`
+                // carries more than its two default keys.
+                "dimensions": {
+                    "mode": "only",
+                    "scope": "abouts",
+                    "abouts": [ABOUT],
+                    "include": ["conversation"]
+                }
+            }),
         ),
         (
             "kmp_near",
@@ -145,11 +207,29 @@ fn calls() -> Vec<(&'static str, Value)> {
         ),
         (
             "kmp_rewind",
-            json!({"about": ABOUT, "from": {"time": "2026-04-12T16:00:00Z"}, "axis": "occurred"}),
+            json!({
+                "about": ABOUT,
+                "from": {"time": "2026-04-12T16:00:00Z"},
+                "axis": "occurred",
+                "limit": {"entries": 1}
+            }),
         ),
         (
             "kmp_forward",
-            json!({"about": ABOUT, "from": {"time": "2026-04-12T15:00:00Z"}, "axis": "occurred"}),
+            json!({
+                "about": ABOUT,
+                "from": {"time": "2026-04-12T15:00:00Z"},
+                "axis": "occurred",
+                "limit": {"entries": 1},
+                // `except` is the one selection mode no other call reaches.
+                // `except` is the one selection mode no other call reaches,
+                // and `scope_ids` the one selection key no other call fills.
+                "dimensions": {
+                    "mode": "except",
+                    "exclude": ["task"],
+                    "scope_ids": ["about:question:parity:dimension:conversation:rachel"]
+                }
+            }),
         ),
         (
             "kmp_inspect",

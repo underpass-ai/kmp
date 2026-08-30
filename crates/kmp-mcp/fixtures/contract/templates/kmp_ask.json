@@ -24,10 +24,10 @@
       "core_text_shortened": "boolean",
       "detail": "string",
       "excluded_by_detail": "integer",
-      "next_action": "null",
+      "next_action": "string",
       "page": {
         "has_more": "boolean",
-        "next_cursor": "null",
+        "next_cursor": "string",
         "offset": "integer",
         "returned": "integer",
         "total": "integer"
@@ -55,7 +55,11 @@
         {
           "id": "string",
           "metadata": {
-            "proof_role": "string"
+            "delta_from": "string",
+            "delta_to": "string",
+            "proof_role": "string",
+            "writer_actor": "string",
+            "writer_intent": "string"
           },
           "source": "string",
           "supports": [
@@ -66,7 +70,9 @@
       ],
       "expired": [],
       "frontier_size": "integer",
-      "matched_relations": [],
+      "matched_relations": [
+        "string"
+      ],
       "matched_terms": [
         "string"
       ],
@@ -75,7 +81,6 @@
         {
           "class": "string",
           "confidence": "string",
-          "evidence": "string",
           "evidence_refs": [
             "string"
           ],
@@ -86,7 +91,13 @@
           "why": "string"
         }
       ],
-      "superseded": []
+      "superseded": [
+        {
+          "ref": "string",
+          "superseded_by": "string",
+          "why": "string"
+        }
+      ]
     },
     "summary": "string",
     "truncation": {

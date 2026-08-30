@@ -49,6 +49,12 @@
           "eligible": "integer",
           "returned_on_page": "integer",
           "total": "integer"
+        },
+        "wake.next_actions": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
         }
       },
       "selection_omitted": "integer"
@@ -89,7 +95,13 @@
           "why": "string"
         }
       ],
-      "superseded": []
+      "superseded": [
+        {
+          "ref": "string",
+          "superseded_by": "string",
+          "why": "string"
+        }
+      ]
     },
     "resume_cursor": {
       "ref": "string",
@@ -122,7 +134,9 @@
         "string"
       ],
       "guardrails": [],
-      "next_actions": [],
+      "next_actions": [
+        "string"
+      ],
       "objective": "string",
       "open_loops": []
     },

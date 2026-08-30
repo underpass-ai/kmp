@@ -52,8 +52,11 @@
             "dimension": "conversation",
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:05:00Z",
+            "rank": 2,
             "scope_id": "about:question:parity:dimension:conversation:rachel",
-            "sequence": 2
+            "sequence": 2,
+            "valid_from": "2026-04-12T15:05:00Z",
+            "valid_until": "2026-04-12T18:00:00Z"
           }
         ],
         "kind": "claim",
@@ -81,12 +84,12 @@
         "text": "Pin the answered surface, not only the advertised one."
       }
     ],
-    "next_action": null,
+    "next_action": "kmp_near is an anchor, not a self-paginator. Continue earlier with kmp_rewind using from.ref=\"question:parity:claim:denver\" and later with kmp_forward using from.ref=\"question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged. Do not pass page.next_cursor back to kmp_near.",
     "page": {
-      "has_more": false,
-      "next_cursor": null,
+      "has_more": true,
+      "next_cursor": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
       "returned": 3,
-      "total": 3
+      "total": 5
     },
     "proof": {
       "confidence": "medium",
@@ -98,7 +101,13 @@
       "matched_terms": [],
       "missing": [],
       "path": [],
-      "superseded": []
+      "superseded": [
+        {
+          "ref": "question:parity:claim:denver",
+          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
+        }
+      ]
     },
     "quality": {
       "causal_density": 0.0,
@@ -106,7 +115,7 @@
       "details": 3,
       "nodes": 3,
       "relationships": 0,
-      "truncated": false
+      "truncated": true
     },
     "raw_refs": [],
     "summary": "Returned 3 temporal entries.",
@@ -120,6 +129,8 @@
         "occurred_at": "2026-04-12T15:00:00Z"
       }
     },
-    "warnings": []
+    "warnings": [
+      "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+    ]
   }
 }

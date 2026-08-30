@@ -7,7 +7,7 @@
   },
   "content": [
     {
-      "text": "ChronoLoom visual data chunk ready (3 detailed entries).",
+      "text": "ChronoLoom visual data chunk ready (5 detailed entries).",
       "type": "text"
     }
   ],
@@ -26,6 +26,15 @@
       },
       {
         "by_kind": {
+          "semantic_delta": 2
+        },
+        "dimension": "agentic_process",
+        "from": "2026-04-12T16:52:30Z",
+        "to": "2026-04-12T17:15:00Z",
+        "total": 2
+      },
+      {
+        "by_kind": {
           "claim": 2
         },
         "dimension": "conversation",
@@ -36,7 +45,8 @@
     ],
     "by_kind": {
       "claim": 2,
-      "decision": 1
+      "decision": 1,
+      "semantic_delta": 2
     },
     "clusters": [
       {
@@ -54,11 +64,25 @@
       },
       {
         "by_kind": {
+          "semantic_delta": 2
+        },
+        "dimension": "agentic_process",
+        "from": "2026-04-12T17:00:00Z",
+        "id": "visual-cluster-1",
+        "refs": [
+          "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+        ],
+        "to": "2026-04-12T17:00:00Z",
+        "total": 2
+      },
+      {
+        "by_kind": {
           "claim": 2
         },
         "dimension": "conversation",
         "from": "2026-04-12T15:00:00Z",
-        "id": "visual-cluster-1",
+        "id": "visual-cluster-2",
         "refs": [
           "question:parity:claim:denver",
           "question:parity:claim:denver-detail"
@@ -74,7 +98,7 @@
         {
           "dimension": "agentic_process",
           "present": true,
-          "returned": 1
+          "returned": 3
         },
         {
           "dimension": "conversation",
@@ -95,7 +119,7 @@
         "name": "entry_count",
         "scope": "selected_range",
         "unit": "entries",
-        "value": 3.0
+        "value": 5.0
       },
       {
         "name": "relation_count",
@@ -114,8 +138,8 @@
     "page": {
       "has_more": false,
       "next_cursor": null,
-      "returned": 3,
-      "total": 3
+      "returned": 5,
+      "total": 5
     },
     "range": {
       "from": "2026-04-12T00:00:00Z",

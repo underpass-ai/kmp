@@ -7,7 +7,7 @@
   },
   "content": [
     {
-      "text": "ChronoLoom visual data chunk ready (3 detailed entries).",
+      "text": "ChronoLoom visual data chunk ready (5 detailed entries).",
       "type": "text"
     }
   ],
@@ -26,6 +26,15 @@
       },
       {
         "by_kind": {
+          "semantic_delta": 2
+        },
+        "dimension": "agentic_process",
+        "from": "2026-04-12T16:52:30Z",
+        "to": "2026-04-12T17:15:00Z",
+        "total": 2
+      },
+      {
+        "by_kind": {
           "claim": 2
         },
         "dimension": "conversation",
@@ -36,7 +45,8 @@
     ],
     "by_kind": {
       "claim": 2,
-      "decision": 1
+      "decision": 1,
+      "semantic_delta": 2
     },
     "clusters": [],
     "content_hash": "<stamped at call time>",
@@ -46,7 +56,7 @@
         {
           "dimension": "agentic_process",
           "present": true,
-          "returned": 1
+          "returned": 3
         },
         {
           "dimension": "conversation",
@@ -81,8 +91,11 @@
             "dimension": "conversation",
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:05:00Z",
+            "rank": 2,
             "scope_id": "about:question:parity:dimension:conversation:rachel",
-            "sequence": 2
+            "sequence": 2,
+            "valid_from": "2026-04-12T15:05:00Z",
+            "valid_until": "2026-04-12T18:00:00Z"
           }
         ],
         "kind": "claim",
@@ -103,6 +116,36 @@
         "kind": "decision",
         "ref_id": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
         "text": "Pin the answered surface, not only the advertised one."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z",
+            "occurred_at": "2026-04-12T17:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 3
+          }
+        ],
+        "kind": "semantic_delta",
+        "ref_id": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
+      },
+      {
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z",
+            "occurred_at": "2026-04-12T17:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 2
+          }
+        ],
+        "kind": "semantic_delta",
+        "ref_id": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "text": "Rachel is moving to Boulder, not Denver."
       }
     ],
     "level_of_detail": "moment",
@@ -111,27 +154,27 @@
         "name": "entry_count",
         "scope": "selected_range",
         "unit": "entries",
-        "value": 3.0
+        "value": 5.0
       },
       {
         "name": "relation_count",
         "scope": "selected_subgraph",
         "unit": "relations",
-        "value": 6.0
+        "value": 14.0
       },
       {
         "name": "causal_density",
         "scope": "selected_subgraph",
         "unit": "ratio",
-        "value": 0.0
+        "value": 0.14285714285714285
       }
     ],
     "missing": [],
     "page": {
       "has_more": false,
       "next_cursor": null,
-      "returned": 3,
-      "total": 3
+      "returned": 5,
+      "total": 5
     },
     "range": {
       "from": "2026-04-12T00:00:00Z",
@@ -146,6 +189,33 @@
         "rel": "uses_background",
         "to": "question:parity:claim:denver",
         "why": "The decision was taken while reading this claim back."
+      },
+      {
+        "class": "evidential",
+        "confidence": "high",
+        "evidence": "She named Boulder after naming Denver.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "rel": "supersedes",
+        "to": "question:parity:claim:denver",
+        "why": "The corrected city replaces the first one while the first stays readable as history."
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "rel": "semantic_delta_from",
+        "to": "question:parity:claim:denver",
+        "why": "The later statement corrects the earlier one."
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "rel": "updates_state",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "why": "The later statement corrects the earlier one."
       },
       {
         "class": "evidential",
@@ -181,6 +251,51 @@
         "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
         "rel": "supports",
         "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "She corrected the city in the same conversation.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:current",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "She named Boulder after naming Denver.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "She named Boulder after naming Denver.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
         "why": "Evidence supports this memory entry."
       },
       {

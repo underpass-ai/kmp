@@ -32,6 +32,19 @@
         ],
         "text": "The claim is the store's only prior entry.",
         "time": "2026-04-12T16:00:00Z"
+      },
+      {
+        "id": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "metadata": {
+          "proof_role": "stored_evidence"
+        },
+        "source": "kmp_write_memory:parity-test:relation:supersedes",
+        "supports": [
+          "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "question:parity:claim:denver"
+        ],
+        "text": "She named Boulder after naming Denver.",
+        "time": "2026-04-12T17:00:00Z"
       }
     ],
     "links": {
@@ -71,6 +84,15 @@
           "why": "Evidence supports this memory entry."
         },
         {
+          "class": "evidential",
+          "confidence": "unknown",
+          "evidence": "She named Boulder after naming Denver.",
+          "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+          "rel": "supports",
+          "to": "question:parity:claim:denver",
+          "why": "Evidence supports this memory entry."
+        },
+        {
           "class": "structural",
           "confidence": "unknown",
           "from": "question:parity",
@@ -96,6 +118,26 @@
           "sequence": 1,
           "to": "question:parity:claim:denver",
           "why": "The decision was taken while reading this claim back."
+        },
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence": "Both statements are hers, minutes apart.",
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "rel": "semantic_delta_from",
+          "sequence": 2,
+          "to": "question:parity:claim:denver",
+          "why": "The later statement corrects the earlier one."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "She named Boulder after naming Denver.",
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "rel": "supersedes",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ],
       "outgoing": []
@@ -118,18 +160,18 @@
         "outgoing": 0,
         "raw": 0
       },
-      "required_bytes": 3775,
-      "returned": 9,
+      "required_bytes": 5226,
+      "returned": 13,
       "sections": {
         "evidence": {
           "remaining": 0,
-          "returned_on_page": 2,
-          "total": 2
+          "returned_on_page": 3,
+          "total": 3
         },
         "incoming": {
           "remaining": 0,
-          "returned_on_page": 6,
-          "total": 6
+          "returned_on_page": 9,
+          "total": 9
         },
         "outgoing": {
           "remaining": 0,
@@ -142,14 +184,14 @@
           "total": 1
         }
       },
-      "total": 9
+      "total": 13
     },
     "quality": {
-      "causal_density": 0.0,
+      "causal_density": 0.1111111111111111,
       "detail_coverage": 1.0,
       "details": 1,
       "nodes": 1,
-      "relationships": 6,
+      "relationships": 9,
       "truncated": false
     },
     "raw": [
