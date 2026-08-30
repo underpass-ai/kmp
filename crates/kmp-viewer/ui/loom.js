@@ -364,15 +364,19 @@ async function loadAbout(about, announce = true) {
     );
     if (generation !== model.loadGeneration) return;
     const extent = projectionExtent(probe);
-    if (!extent) throw new Error("no entry carries any clock — the loom has no axis to weave on");
+    // The clicked about becomes the current about even when this clock is
+    // empty: keeping the previous about's picture on screen presented stale
+    // data as if it belonged to the one the user selected (#421).
     model.about = about;
     model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(probe);
     model.overviewBins = probe.bins || [];
-    const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
-    view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
-    view.t0 = view.full.t0;
-    view.t1 = view.full.t1;
-    view.windowStack = [];
+    if (extent) {
+      const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
+      view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
+      view.t0 = view.full.t0;
+      view.t1 = view.full.t1;
+      view.windowStack = [];
+    }
     model.observability = { series: [], exemplars: [] };
     view.selectedRef = null;
     view.trace = null;
@@ -386,6 +390,21 @@ async function loadAbout(about, announce = true) {
     renderDiffPanel();
     $("trace-box").hidden = true;
     renderDetailEmpty();
+    if (!extent) {
+      // An explicit empty state for the active clock: zero entries, lanes
+      // and relations, a cleared canvas and navigator, and the empty-clock
+      // explanation — nothing announced, because there is no range to share.
+      view.full = null;
+      view.windowStack = [];
+      applyProjection({ entries: [], page: { total: 0 }, bins: [], clusters: [], relations: [] }, "atlas");
+      setClock(view.clock, true, false);
+      renderAbouts();
+      renderRail();
+      renderStats();
+      requestDraw();
+      drawNavigator();
+      return;
+    }
     setClock(view.clock, true, false);
     await loadProjection();
     renderAbouts();
@@ -401,11 +420,19 @@ async function loadAbout(about, announce = true) {
 /* ---------------- clock & window ---------------- */
 
 function setClock(clock, reset, refresh = true) {
+  const changed = view.clock !== clock;
   view.clock = clock;
   for (const chip of document.querySelectorAll("#clock-chips .chip")) {
     chip.classList.toggle("active", chip.dataset.clock === clock);
   }
   if (!view.full) {
+    if (changed && model.about) {
+      // The empty state must not be a trap: an about with nothing on this
+      // clock may hold entries on the one just selected, so a clock change
+      // re-probes the about instead of repeating the message (#421).
+      loadAbout(model.about, false);
+      return;
+    }
     showError("no entry carries any clock — the loom has no axis to weave on");
     return;
   }
@@ -791,7 +818,18 @@ function entryAlpha(m) {
 }
 
 function renderLoom() {
-  if (!app || !view.full) return;
+  if (!app) return;
+  if (!view.full) {
+    // An empty clock still owns the canvas: the previous about's lanes,
+    // marks and labels must not stand in for the one the user selected
+    // (#421). Clear everything and let the empty-clock message speak.
+    for (const layer of [laneGfx, validityGfx, arcsGfx, braidGfx, marksGfx, selectGfx, overlayGfx]) {
+      if (layer) layer.clear();
+    }
+    hitList = [];
+    resetTextPools();
+    return;
+  }
   const p = palette();
   const width = canvas.clientWidth;
   const geometry = laneGeometry();
@@ -1288,7 +1326,11 @@ function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
 
 function drawNavigator() {
   const strip = $("nav-canvas");
-  if (!view.full) return;
+  if (!view.full) {
+    const pen = strip.getContext("2d");
+    if (pen) pen.clearRect(0, 0, strip.width, strip.height);
+    return;
+  }
   const width = strip.clientWidth || 1;
   const height = 42;
   const dpr = devicePixelRatio || 1;
@@ -1996,7 +2038,7 @@ function renderStats() {
   const clocked = model.entries.filter((m) => KMP_LOOM.strictMs(m, view.clock) !== null).length;
   $("s-clocked").textContent =
     model.currentLod === "moment" ? `${clocked}/${model.total}` : `—/${model.total}`;
-  if (view.full) $("s-window").textContent = `${fmtMs(view.t0)} → ${fmtMs(view.t1)}`;
+  $("s-window").textContent = view.full ? `${fmtMs(view.t0)} → ${fmtMs(view.t1)}` : "—";
 }
 
 
