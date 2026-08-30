@@ -659,6 +659,8 @@ jobs:
       # run their tests once with LLVM instrumentation and upload LCOV. This
       # job only merges those reports and enforces the repository threshold.
       - name: Merge coverage and enforce threshold
+        env:
+          COVERAGE_ENFORCED_CRATES: ${{ needs.impact.outputs.cargo_packages }}
         run: bash scripts/ci/rust-coverage.sh dist/coverage
 
   # Branch protection counts a skipped required job as satisfied, so the

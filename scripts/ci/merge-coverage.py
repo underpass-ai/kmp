@@ -147,6 +147,24 @@ def self_test() -> None:
 
         # A crate with no entry is held to the bar, and one with an entry is
         # held to its floor — both on their own numbers, not on the aggregate.
+        # Enforcement follows the plan: a crate covered only incidentally
+        # by another crate's tests is measured but never judged, and a blank
+        # plan judges everything.
+        incidental: LineCounts = {
+            "/repo/crates/kmp-domain/src/a.rs": {1: 1, 2: 1, 3: 1, 4: 1},
+            "/repo/crates/kmp-config/src/lib.rs": {1: 1, 2: 0, 3: 0, 4: 0},
+        }
+        sideways = crate_coverage(incidental)
+        if enforce_floors(sideways, {}, 80.0, enforce={"kmp-domain"}):
+            raise SystemExit("a crate outside the plan must not be judged")
+        if not enforce_floors(sideways, {}, 80.0, enforce=None):
+            raise SystemExit("a blank plan judges every measured crate")
+        if not enforce_floors(sideways, {}, 80.0, enforce={"kmp-config"}):
+            raise SystemExit("a crate inside the plan is judged on its own numbers")
+        if enforced_crates("-p kmp-a -p kmp-b") != {"kmp-a", "kmp-b"}:
+            raise SystemExit("plan parsing must read `-p name` pairs")
+        if enforced_crates("") is not None:
+            raise SystemExit("a blank plan spec must judge everything")
         if enforce_floors(measured, {"kmp-release": 25.0}, 80.0):
             raise SystemExit("a crate at its recorded floor must pass")
         if not enforce_floors(measured, {"kmp-release": 50.0}, 80.0):
@@ -183,6 +201,17 @@ def crate_coverage(records: LineCounts) -> CrateCoverage:
             total + len(lines),
         )
     return totals
+
+
+def enforced_crates(spec: str) -> set[str] | None:
+    """The crates the plan selected, parsed from its `-p name` list.
+
+    `None` means judge every measured crate: an absent or blank spec is a
+    full run or an older caller, and silence must never weaken the gate.
+    """
+    tokens = spec.split()
+    names = {name for flag, name in zip(tokens, tokens[1:]) if flag == "-p"}
+    return names or None
 
 
 def read_floors(path: pathlib.Path) -> dict[str, float]:
@@ -231,13 +260,27 @@ def write_floors(
 
 
 def enforce_floors(
-    measured: CrateCoverage, floors: dict[str, float], bar: float
+    measured: CrateCoverage,
+    floors: dict[str, float],
+    bar: float,
+    enforce: set[str] | None = None,
 ) -> list[str]:
+    """Judges each crate the plan selected against its floor.
+
+    A crate outside the plan is measured but not judged: its lines were
+    covered only incidentally, by tests that never claimed to prove it, and
+    holding it to a floor calibrated on the full run makes every narrowed
+    plan red for reasons the change cannot reach.
+    """
     failures = []
     recorded = 0
+    judged = 0
     for crate, (covered, total) in sorted(measured.items()):
         if not total:
             continue
+        if enforce is not None and crate not in enforce:
+            continue
+        judged += 1
         percentage = covered * 100.0 / total
         floor = floors.get(crate, bar)
         if crate in floors:
@@ -252,9 +295,9 @@ def enforce_floors(
                 f"above its {floor:.2f}% floor"
             )
     print(
-        f"per-crate floors: {len(measured)} measured · "
+        f"per-crate floors: {judged} judged of {len(measured)} measured · "
         f"{recorded} with a recorded floor · "
-        f"{len(measured) - recorded} held to {bar:.2f}%"
+        f"{judged - recorded} held to {bar:.2f}%"
     )
     return failures
 
@@ -266,6 +309,11 @@ def main() -> int:
     parser.add_argument("--fail-under-lines", type=float, default=80.0)
     parser.add_argument("--floors", type=pathlib.Path)
     parser.add_argument("--write-floors", action="store_true")
+    parser.add_argument(
+        "--enforce-only",
+        default="",
+        help="the plan's `-p name` list; blank judges every measured crate",
+    )
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -306,13 +354,21 @@ def main() -> int:
             return 1
         return 0
 
+    enforce = enforced_crates(args.enforce_only)
     floors = read_floors(args.floors)
     if args.write_floors:
-        floors = write_floors(args.floors, floors, measured, args.fail_under_lines)
+        # The ratchet follows the plan too: a narrowed run must not record
+        # an incidental crate's low number as if it were that crate's truth.
+        ratchet = {
+            crate: coverage
+            for crate, coverage in measured.items()
+            if enforce is None or crate in enforce
+        }
+        floors = write_floors(args.floors, floors, ratchet, args.fail_under_lines)
         print(f"wrote {args.floors} with {len(floors)} recorded floors")
         return 0
 
-    failures = enforce_floors(measured, floors, args.fail_under_lines)
+    failures = enforce_floors(measured, floors, args.fail_under_lines, enforce)
     if failures:
         print(file=sys.stderr)
         for failure in failures:
