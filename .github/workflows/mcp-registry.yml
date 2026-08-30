@@ -11,7 +11,7 @@ on:
       - "server.json"
       - "distribution/mcpb/**"
       - "crates/kmp-mcp/README.md"
-      - "crates/kmp-mcp/src/protocol.rs"
+      - "crates/kmp-mcp/fixtures/contract/tools_list.json"
       - "scripts/ci/mcp-registry.sh"
       - "scripts/ci/install-mcp-publisher.sh"
       - "crates/kmp-release/**"

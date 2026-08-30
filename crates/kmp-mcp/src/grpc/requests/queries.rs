@@ -3,7 +3,7 @@ use kmp_proto::v1beta1::{
 };
 use serde_json::Value;
 
-use crate::args::{optional_string, required_string, validate_required_arguments};
+use crate::contract::validator::{optional_string, required_string, validate_required_arguments};
 
 use super::common::{answer_policy_from_object, memory_budget_from_arguments, object};
 use super::dimensions::dimension_selection_from_arguments;

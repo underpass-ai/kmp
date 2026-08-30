@@ -8,9 +8,9 @@
 
 use serde_json::{Value, json};
 
-use super::schema::{string_map_schema, string_schema};
+use super::primitives::{string_map_schema, string_schema};
 
-pub(super) fn dimensions_schema() -> Value {
+pub(crate) fn dimensions_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
@@ -44,7 +44,7 @@ pub(super) fn dimensions_schema() -> Value {
         }
     })
 }
-pub(super) fn temporal_coordinate_schema() -> Value {
+pub(crate) fn temporal_coordinate_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": true,
@@ -69,7 +69,7 @@ pub(super) fn temporal_coordinate_schema() -> Value {
         }
     })
 }
-pub(super) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
+pub(crate) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
@@ -105,7 +105,7 @@ pub(super) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
         }
     })
 }
-pub(super) fn recall_page_schema() -> Value {
+pub(crate) fn recall_page_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,

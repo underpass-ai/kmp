@@ -10,14 +10,14 @@ use crate::backend::{
     GRPC_ENDPOINT_ENV, KernelMcpGrpcTlsConfig, KernelMcpToolBackend, KernelMcpToolFuture,
     MCP_BACKEND_ENV,
 };
+use crate::contract::{
+    canonical_tool_name, initialize_result_with_apps, reject_unknown_arguments,
+    resource_read_result, resources_list_result, tools_list_result_with_apps,
+};
 use crate::fixture::FixtureKernelMcpBackend;
 use crate::grpc::GrpcKernelMcpBackend;
 use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
-use crate::protocol::{
-    canonical_tool_name, initialize_result_with_apps, jsonrpc_error, jsonrpc_result,
-    reject_unknown_arguments, resource_read_result, resources_list_result, tool_error_result,
-    tool_success_result, tools_list_result_with_apps,
-};
+use crate::serving::{jsonrpc_error, jsonrpc_result, tool_error_result, tool_success_result};
 use crate::tool_error::ToolError;
 use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
 
@@ -28,7 +28,7 @@ fn client_supports_apps(request: &Value) -> bool {
         .is_some_and(|types| {
             types
                 .iter()
-                .any(|value| value.as_str() == Some(crate::protocol::MCP_APP_MIME))
+                .any(|value| value.as_str() == Some(crate::contract::MCP_APP_MIME))
         })
 }
 

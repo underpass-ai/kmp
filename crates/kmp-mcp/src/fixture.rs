@@ -1,11 +1,11 @@
 use serde_json::Value;
 
-use crate::args::validate_required_arguments;
 use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
+use crate::contract::validate_required_arguments;
 use crate::grpc::requests::visual_projection_request_from_arguments;
 use crate::ingest::build_ingest_plan;
 use crate::kmp::try_enforce_recall_output_budget;
-use crate::protocol::{app_data_success_result, tool_success_result};
+use crate::serving::{app_data_success_result, tool_success_result};
 use crate::tool_error::ToolError;
 
 // The fixture backend answers with the reference examples from the contract.

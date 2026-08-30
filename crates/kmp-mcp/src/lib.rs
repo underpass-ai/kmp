@@ -12,16 +12,16 @@ pub mod tool_error;
 mod view_tools;
 pub mod viewer;
 
-mod args;
 mod backend;
+mod contract;
 mod embedded;
 mod fixture;
 mod grpc;
 mod ingest;
 mod kmp;
 mod observability;
-mod protocol;
 mod server;
+mod serving;
 mod write;
 
 pub use backend::{
@@ -34,7 +34,7 @@ pub use backend::{
 /// Exposed so a diagnostic can answer "is the surface there" from inside the
 /// process, instead of spawning the binary to ask it.
 pub fn tool_names() -> Vec<String> {
-    protocol::tools_list_result()["tools"]
+    contract::tools_list_result()["tools"]
         .as_array()
         .map(|tools| {
             tools
@@ -52,7 +52,7 @@ pub use server::KernelMcpServer;
 pub use tool_error::{ToolError, ToolErrorCode};
 
 pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
-    protocol::tools_list_result()
+    contract::tools_list_result()
 }
 
 /// The surface a host that negotiated MCP Apps is offered: the same tools plus
@@ -62,7 +62,7 @@ pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
 /// only `apps = false` would leave the app surface — and the argument
 /// rejection that reads its schemas — free to drift unnoticed.
 pub fn kmp_mcp_tools_list_result_with_apps(apps: bool) -> serde_json::Value {
-    protocol::tools_list_result_with_apps(apps)
+    contract::tools_list_result_with_apps(apps)
 }
 
 pub fn kmp_mcp_tool_names() -> Vec<String> {
