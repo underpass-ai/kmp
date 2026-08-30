@@ -3,6 +3,7 @@ use std::fmt::Write as _;
 use crate::banner;
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
+use crate::lifecycle::domain::report_section::ReportSection;
 use crate::style::Style;
 
 use super::agent_policy_probe::agent_policy_finding;
@@ -19,10 +20,55 @@ use super::viewer_probe::viewer_finding;
 /// would open here. Styled for whatever stdout is: a pipe gets the pinned
 /// plain bytes, a terminal gets ink.
 pub fn info() -> String {
-    info_styled(Style::for_stdout())
+    render_info(Style::for_stdout(), &observe_info())
 }
 
-pub(crate) fn info_styled(style: Style) -> String {
+/// One look at the machine. Everything a render says comes from here, so
+/// two renders of the same observation say the same thing whatever a live
+/// session writes in between (#416).
+pub(crate) fn observe_info() -> Vec<ReportSection> {
+    let mut sections = Vec::new();
+
+    sections.push(ReportSection::single("Backend", backend_finding()));
+    let (data_dir, resolved) = data_dir_finding();
+    sections.push(ReportSection::single("Memory", data_dir));
+    if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {
+        sections.push(ReportSection::single("Durability", durability));
+    }
+
+    let names = crate::tool_names();
+    let surface = LifecycleFinding::new(
+        DiagnosticSeverity::Ok,
+        format!("{} tools on the MCP surface", names.len()),
+    )
+    .with_detail(names.join(" "));
+    sections.push(ReportSection::single("Tools", surface));
+    sections.push(ReportSection::single("Agent", agent_policy_finding()));
+    sections.push(ReportSection::single("Viewer", viewer_finding()));
+    if let Some(resolved) = resolved.as_ref() {
+        sections.push(ReportSection::single(
+            "Telemetry",
+            telemetry_finding(resolved),
+        ));
+    }
+    sections.push(ReportSection::new("Memories", memories_finding()));
+
+    if let Some(resolved) = resolved {
+        let history = startup_history(resolved.path(), 3);
+        if !history.is_empty() {
+            let mut recent = LifecycleFinding::new(DiagnosticSeverity::Ok, "recent startups");
+            for line in history {
+                recent = recent.with_detail(line);
+            }
+            sections.push(ReportSection::single("History", recent));
+        }
+    }
+    sections
+}
+
+/// Presentation only: the banner and the sections, in the observation's
+/// words and order.
+pub(crate) fn render_info(style: Style, sections: &[ReportSection]) -> String {
     let mut out = String::new();
     let _ = writeln!(
         out,
@@ -37,37 +83,8 @@ pub(crate) fn info_styled(style: Style) -> String {
             )
         )
     );
-
-    section(&mut out, style, "Backend", &[backend_finding()]);
-    let (data_dir, resolved) = data_dir_finding();
-    section(&mut out, style, "Memory", &[data_dir]);
-    if let Some(durability) = resolved.as_ref().and_then(committed_bundle_finding) {
-        section(&mut out, style, "Durability", &[durability]);
-    }
-
-    let names = crate::tool_names();
-    let surface = LifecycleFinding::new(
-        DiagnosticSeverity::Ok,
-        format!("{} tools on the MCP surface", names.len()),
-    )
-    .with_detail(names.join(" "));
-    section(&mut out, style, "Tools", &[surface]);
-    section(&mut out, style, "Agent", &[agent_policy_finding()]);
-    section(&mut out, style, "Viewer", &[viewer_finding()]);
-    if let Some(resolved) = resolved.as_ref() {
-        section(&mut out, style, "Telemetry", &[telemetry_finding(resolved)]);
-    }
-    section(&mut out, style, "Memories", &memories_finding());
-
-    if let Some(resolved) = resolved {
-        let history = startup_history(resolved.path(), 3);
-        if !history.is_empty() {
-            let mut recent = LifecycleFinding::new(DiagnosticSeverity::Ok, "recent startups");
-            for line in history {
-                recent = recent.with_detail(line);
-            }
-            section(&mut out, style, "History", &[recent]);
-        }
+    for block in sections {
+        section(&mut out, style, block.title, &block.findings);
     }
     out
 }
