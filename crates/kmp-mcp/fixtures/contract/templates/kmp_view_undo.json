@@ -1,0 +1,46 @@
+{
+  "content": [
+    {
+      "text": {
+        "state": {
+          "about": "string",
+          "can_undo": "boolean",
+          "clock": "string",
+          "focus": {},
+          "last_change": {
+            "actor": "string",
+            "at": "string",
+            "explanation": "string"
+          },
+          "projection": {},
+          "view_id": "string",
+          "view_revision": "integer"
+        },
+        "undone": "boolean",
+        "view_id": "string",
+        "view_revision": "integer"
+      },
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "state": {
+      "about": "string",
+      "can_undo": "boolean",
+      "clock": "string",
+      "focus": {},
+      "last_change": {
+        "actor": "string",
+        "at": "string",
+        "explanation": "string"
+      },
+      "projection": {},
+      "view_id": "string",
+      "view_revision": "integer"
+    },
+    "undone": "boolean",
+    "view_id": "string",
+    "view_revision": "integer"
+  }
+}

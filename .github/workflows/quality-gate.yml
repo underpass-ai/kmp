@@ -249,6 +249,9 @@ jobs:
         if: needs.impact.outputs.docs == 'true'
         run: bash scripts/ci/documentation-spine.sh
 
+      - name: kmp-mcp architecture gate
+        run: bash scripts/ci/kmp-mcp-architecture-gate.sh
+
   integration-valkey:
     needs: [tree-proof, impact]
     if: needs.tree-proof.outputs.skip != 'true' && needs.impact.outputs.valkey == 'true'

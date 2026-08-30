@@ -24,6 +24,7 @@ use serde_json::{Value, json};
 
 const BLESS: &str = "KMP_BLESS_TOOL_SURFACE";
 const ABOUT: &str = "question:parity";
+const APP_MIME: &str = "text/html;profile=mcp-app";
 const CLAIM: &str = "question:parity:claim:denver";
 const DETAIL: &str = "question:parity:claim:denver-detail";
 
@@ -169,6 +170,21 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         ("kmp_view_get_state", json!({})),
+        // App-only, and reachable only after `initialize` negotiates MCP Apps.
+        // `visual_projection_from_response` is their sole mapper and lives in
+        // the file this refactor splits, so leaving them unpinned would leave
+        // that mapper unguarded.
+        (
+            "kmp_view_read_projection",
+            json!({
+                "about": ABOUT,
+                "axis": "occurred",
+                "lod": "atlas",
+                "from": "2026-04-12T00:00:00Z",
+                "to": "2026-04-13T00:00:00Z"
+            }),
+        ),
+        ("kmp_view_undo", json!({})),
     ]
 }
 
@@ -216,14 +232,13 @@ fn redact(value: &mut Value) {
             }
         }
         Value::Array(items) => items.iter_mut().for_each(redact),
-        Value::String(text) => {
-            if let Ok(mut embedded) = serde_json::from_str::<Value>(text)
-                && embedded.is_object()
-            {
-                redact(&mut embedded);
-                *text = serde_json::to_string(&embedded).expect("re-embeds");
-            }
-        }
+        // The rendered text block embeds structured content as a JSON string.
+        // Redact inside it *textually*: re-serializing would normalize the
+        // formatting and key order of the one field a host without structured
+        // content puts into model context, and a change to how that block is
+        // rendered — the compact-versus-pretty regression `protocol::result`
+        // warns about — would then pin identically either way.
+        Value::String(text) => redact_embedded_text(text),
         _ => {}
     }
 }
@@ -262,6 +277,34 @@ fn shape(value: &Value) -> Value {
         }),
         Value::Bool(_) => json!("boolean"),
         Value::Null => json!("null"),
+    }
+}
+
+/// Replace `"<key>": "<value>"` in raw JSON text, leaving every other byte —
+/// spacing, escaping, key order — exactly as the server wrote it.
+fn redact_embedded_text(text: &mut String) {
+    if !matches!(serde_json::from_str::<Value>(text), Ok(value) if value.is_object()) {
+        return;
+    }
+    for key in VOLATILE_KEYS {
+        let needle = format!("\"{key}\":");
+        let mut from = 0;
+        while let Some(found) = text[from..].find(&needle) {
+            let after_key = from + found + needle.len();
+            let rest = &text[after_key..];
+            let value_start = after_key + rest.len() - rest.trim_start().len();
+            if !text[value_start..].starts_with('"') {
+                from = after_key;
+                continue;
+            }
+            let Some(closing) = text[value_start + 1..].find('"') else {
+                return;
+            };
+            let value_end = value_start + 1 + closing + 1;
+            let replacement = format!("\"{REDACTED}\"");
+            text.replace_range(value_start..value_end, &replacement);
+            from = value_start + replacement.len();
+        }
     }
 }
 
@@ -317,6 +360,24 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let backend = EmbeddedKernelMcpBackend::open(store.path()).expect("embedded backend");
     let server = KernelMcpServer::with_embedded_backend(backend);
 
+    // Negotiate MCP Apps, so the two app-only tools are callable and the
+    // surface under test is the full fifteen rather than the thirteen a plain
+    // host sees.
+    server
+        .handle_json_line(
+            &json!({
+                "jsonrpc": "2.0",
+                "id": 0,
+                "method": "initialize",
+                "params": {"capabilities": {"extensions": {
+                    "io.modelcontextprotocol/ui": {"mimeTypes": [APP_MIME]}
+                }}}
+            })
+            .to_string(),
+        )
+        .await
+        .expect("initialize answers");
+
     for (label, arguments) in calls() {
         let tool = label.split(':').next().expect("tool name");
         let raw = server
@@ -359,8 +420,16 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
 /// forever after.
 #[test]
 fn the_pinned_calls_cover_every_advertised_tool() {
-    let advertised = kmp_mcp::kmp_mcp_tool_names();
-    assert_eq!(advertised.len(), 13, "advertised tools: {advertised:?}");
+    // The apps surface, not the plain one: comparing against the smaller list
+    // is how the two app-only tools went unpinned while this guard passed.
+    let surface = kmp_mcp::kmp_mcp_tools_list_result_with_apps(true);
+    let advertised = surface["tools"]
+        .as_array()
+        .expect("tools")
+        .iter()
+        .map(|tool| tool["name"].as_str().expect("name").to_string())
+        .collect::<Vec<_>>();
+    assert_eq!(advertised.len(), 15, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         assert!(

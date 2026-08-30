@@ -32,10 +32,12 @@ baseline_path = root / "docs/architecture/kmp-mcp-conformance.tsv"
 # A file this long is doing more than one thing, whatever its name says.
 MONOLITH_LINES = 600
 
+# Indented `pub` counts: a type nested one `mod` deep is still a public type.
+# `pub type` counts too — an alias is a name this file owns.
 PRIMARY_TYPE = re.compile(
-    r"^pub(?:\([^)]*\))?\s+(?:struct|enum|trait|union)\s+([A-Za-z_][A-Za-z0-9_]*)"
+    r"^\s*pub(?:\([^)]*\))?\s+(?:struct|enum|trait|union|type)\s+([A-Za-z_][A-Za-z0-9_]*)"
 )
-TODO = "TODO(#404)"
+MIGRATING = "TODO(#404)"
 
 
 def tracked_sources() -> list[Path]:
@@ -59,7 +61,7 @@ def measure(path: Path) -> tuple[int, list[str], bool]:
         for line in lines
         if (match := PRIMARY_TYPE.match(line)) is not None
     ]
-    return len(lines), types, TODO in text
+    return len(lines), types, MIGRATING in text
 
 
 def relative(path: Path) -> str:
@@ -69,11 +71,12 @@ def relative(path: Path) -> str:
 measured = {relative(path): measure(path) for path in tracked_sources()}
 
 violations: dict[str, str] = {}
-pending = 0
-for name, (lines, types, todo) in sorted(measured.items()):
-    if todo:
-        pending += 1
-        continue
+migrating: list[str] = []
+for name, (lines, types, migrating_now) in sorted(measured.items()):
+    # A file mid-migration is still measured. Marking it only records that its
+    # debt is expected to move, never that it may grow.
+    if migrating_now:
+        migrating.append(name)
     reasons = []
     if len(types) > 1:
         reasons.append(f"types={len(types)}")
@@ -129,7 +132,8 @@ paid = sorted(set(baseline) - set(violations))
 
 print(f"kmp-mcp architecture gate: {len(measured)} tracked sources")
 print(f"  debt carried:  {len(violations)} of {len(baseline)} baselined files")
-print(f"  templates open: {pending} awaiting migration")
+if migrating:
+    print(f"  migrating:     {len(migrating)} marked {MIGRATING}")
 if paid:
     print(f"  paid down:     {len(paid)}")
     for name in paid:
