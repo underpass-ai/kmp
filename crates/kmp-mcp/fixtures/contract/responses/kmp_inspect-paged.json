@@ -1,0 +1,110 @@
+{
+  "content": [
+    {
+      "text": "Found live kernel node `question:parity:claim:denver`.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "evidence": [
+      {
+        "id": "evidence:question:parity:denver",
+        "metadata": {
+          "proof_role": "stored_evidence"
+        },
+        "source": "parity fixture",
+        "supports": [
+          "question:parity:claim:denver"
+        ],
+        "text": "Rachel named Denver twice in the same conversation.",
+        "time": "2026-04-12T15:00:00Z"
+      },
+      {
+        "id": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+        "metadata": {
+          "proof_role": "stored_evidence"
+        },
+        "source": "kmp_write_memory:parity-test:relation:uses_background",
+        "supports": [
+          "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "question:parity:claim:denver"
+        ],
+        "text": "The claim is the store's only prior entry.",
+        "time": "2026-04-12T16:00:00Z"
+      },
+      {
+        "id": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "metadata": {
+          "proof_role": "stored_evidence"
+        },
+        "source": "kmp_write_memory:parity-test:relation:supersedes",
+        "supports": [
+          "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "question:parity:claim:denver"
+        ],
+        "text": "She named Boulder after naming Denver.",
+        "time": "2026-04-12T17:00:00Z"
+      }
+    ],
+    "links": {
+      "incoming": [],
+      "outgoing": []
+    },
+    "object": {
+      "kind": "claim",
+      "metadata": {},
+      "ref": "question:parity:claim:denver",
+      "text": "Rachel said she was moving to Denver."
+    },
+    "page": {
+      "guidance": "Inspect is partial. Repeat the same bound arguments with page.cursor set to the returned next_cursor. The full response requires <stamped at call time> bytes; narrow include.details/include.outgoing/include.incoming/include.raw or raise budget.max_bytes to restart with more context.",
+      "has_more": true,
+      "next_cursor": "kmpi1:3:<stamped at call time>",
+      "offset": 0,
+      "omitted": {
+        "details": 0,
+        "evidence": 0,
+        "incoming": 9,
+        "outgoing": 0,
+        "raw": 0
+      },
+      "required_bytes": "<stamped at call time>",
+      "returned": 3,
+      "sections": {
+        "evidence": {
+          "remaining": 0,
+          "returned_on_page": 3,
+          "total": 3
+        },
+        "incoming": {
+          "remaining": 9,
+          "returned_on_page": 0,
+          "total": 9
+        },
+        "outgoing": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "raw": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        }
+      },
+      "total": 12
+    },
+    "quality": {
+      "causal_density": 0.1111111111111111,
+      "detail_coverage": 1.0,
+      "details": 1,
+      "nodes": 1,
+      "relationships": 0,
+      "truncated": true
+    },
+    "raw": [],
+    "summary": "Found live kernel node `question:parity:claim:denver`.",
+    "warnings": []
+  }
+}

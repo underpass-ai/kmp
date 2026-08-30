@@ -1,0 +1,33 @@
+{
+  "content": [
+    {
+      "text": "{\"applied\":true,\"state\":{\"about\":\"question:parity\",\"can_undo\":true,\"clock\":\"occurred\",\"focus\":{},\"last_change\":{\"actor\":\"agent\",\"at\":\"<stamped at call time>\",\"explanation\":\"parity test frames the claim\",\"idempotency_key\":\"parity:view:1\"},\"projection\":{\"semantic_zoom\":\"atlas\"},\"selection\":\"question:parity:claim:denver\",\"view_id\":\"default\",\"view_revision\":2},\"unhonored\":[],\"view_id\":\"default\",\"view_revision\":2}",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "applied": true,
+    "state": {
+      "about": "question:parity",
+      "can_undo": true,
+      "clock": "occurred",
+      "focus": {},
+      "last_change": {
+        "actor": "agent",
+        "at": "<stamped at call time>",
+        "explanation": "parity test frames the claim",
+        "idempotency_key": "parity:view:1"
+      },
+      "projection": {
+        "semantic_zoom": "atlas"
+      },
+      "selection": "question:parity:claim:denver",
+      "view_id": "default",
+      "view_revision": 2
+    },
+    "unhonored": [],
+    "view_id": "default",
+    "view_revision": 2
+  }
+}

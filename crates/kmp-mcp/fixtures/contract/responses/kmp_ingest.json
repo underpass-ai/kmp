@@ -1,0 +1,23 @@
+{
+  "content": [
+    {
+      "text": "Ingested 3 entries, 1 relation, and 1 evidence item for question:parity.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "memory": {
+      "about": "question:parity",
+      "accepted": {
+        "entries": 3,
+        "evidence": 1,
+        "relations": 1
+      },
+      "memory_id": "memory:parity:ingest:1",
+      "read_after_write_ready": true
+    },
+    "summary": "Ingested 3 entries, 1 relation, and 1 evidence item for question:parity.",
+    "warnings": []
+  }
+}

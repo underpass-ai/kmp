@@ -1,0 +1,120 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "answer": "string",
+    "because": [
+      {
+        "claim": "string",
+        "ref": "string"
+      }
+    ],
+    "projection": {
+      "budget": {
+        "max_bytes": "integer",
+        "tokens_advisory": "integer",
+        "used_bytes": "integer"
+      },
+      "contract": "string",
+      "core_text_shortened": "boolean",
+      "detail": "string",
+      "excluded_by_detail": "integer",
+      "next_action": "string",
+      "page": {
+        "has_more": "boolean",
+        "next_cursor": "string",
+        "offset": "integer",
+        "returned": "integer",
+        "total": "integer"
+      },
+      "sections": {
+        "proof.evidence": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.path": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        }
+      },
+      "selection_omitted": "integer"
+    },
+    "proof": {
+      "confidence": "string",
+      "conflicts": [],
+      "evidence": [
+        {
+          "id": "string",
+          "metadata": {
+            "delta_from": "string",
+            "delta_to": "string",
+            "proof_role": "string",
+            "writer_actor": "string",
+            "writer_intent": "string"
+          },
+          "source": "string",
+          "supports": [
+            "string"
+          ],
+          "text": "string"
+        }
+      ],
+      "expired": [],
+      "frontier_size": "integer",
+      "matched_relations": [
+        "string"
+      ],
+      "matched_terms": [
+        "string"
+      ],
+      "missing": [],
+      "path": [
+        {
+          "class": "string",
+          "confidence": "string",
+          "evidence_refs": [
+            "string"
+          ],
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
+      "superseded": [
+        {
+          "ref": "string",
+          "superseded_by": "string",
+          "why": "string"
+        }
+      ]
+    },
+    "summary": "string",
+    "truncation": {
+      "byte_limit": "integer",
+      "omitted": {
+        "core_text_shortened": "boolean",
+        "excluded_by_detail": "integer",
+        "page_items": "integer",
+        "prior_page_items": "integer",
+        "remaining_page_items": "integer",
+        "selection_items": "integer"
+      },
+      "token_limit": "integer",
+      "truncated": "boolean"
+    },
+    "warnings": [
+      "string"
+    ]
+  }
+}

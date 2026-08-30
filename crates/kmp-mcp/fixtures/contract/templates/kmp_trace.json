@@ -1,0 +1,38 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "page": {
+      "has_more": "boolean",
+      "next_cursor": "null",
+      "returned": "integer",
+      "total": "integer"
+    },
+    "quality": {
+      "causal_density": "number",
+      "detail_coverage": "number",
+      "details": "integer",
+      "nodes": "integer",
+      "relationships": "integer",
+      "truncated": "boolean"
+    },
+    "summary": "string",
+    "trace": [
+      {
+        "class": "string",
+        "confidence": "string",
+        "evidence": "string",
+        "from": "string",
+        "rel": "string",
+        "to": "string",
+        "why": "string"
+      }
+    ],
+    "warnings": []
+  }
+}

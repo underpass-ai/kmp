@@ -1,0 +1,114 @@
+{
+  "content": [
+    {
+      "text": "Prepared 2 entries, 3 relations, and 3 evidence items for question:parity.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "accepted": true,
+    "diagnostics": [],
+    "dry_run": false,
+    "generated_refs": [
+      "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+      "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+    ],
+    "ingest_result": {
+      "memory": {
+        "about": "question:parity",
+        "accepted": {
+          "entries": 2,
+          "evidence": 3,
+          "relations": 3
+        },
+        "memory_id": "memory:write:756d82ab906b9c4d",
+        "read_after_write_ready": true
+      },
+      "summary": "Ingested 2 entries, 3 relations, and 3 evidence items for question:parity.",
+      "warnings": []
+    },
+    "next_suggested_reads": [
+      {
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "to": "question:parity:claim:denver",
+        "tool": "kmp_trace"
+      }
+    ],
+    "relation_quality": [
+      {
+        "class": "evidential",
+        "confidence": "high",
+        "fallback": false,
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "prior_context_observed": true,
+        "prior_context_sources": [
+          "kmp_inspect"
+        ],
+        "proof_complete": true,
+        "quality": "rich",
+        "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+        "rel": "supersedes",
+        "requires_prior_context": true,
+        "target_present": true,
+        "to": "question:parity:claim:denver"
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "fallback": false,
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "prior_context_observed": true,
+        "prior_context_sources": [
+          "current_request"
+        ],
+        "proof_complete": true,
+        "quality": "rich",
+        "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+        "rel": "updates_state",
+        "requires_prior_context": false,
+        "target_present": true,
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "fallback": false,
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "prior_context_observed": true,
+        "prior_context_sources": [
+          "kmp_inspect"
+        ],
+        "proof_complete": true,
+        "quality": "rich",
+        "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+        "rel": "semantic_delta_from",
+        "requires_prior_context": true,
+        "target_present": true,
+        "to": "question:parity:claim:denver"
+      }
+    ],
+    "relation_quality_metrics": {
+      "relation_anemic_count": 0,
+      "relation_anemic_ratio": 0.0,
+      "relation_explanatory_ratio": 1.0,
+      "relation_invalid_rejected_count": 0,
+      "relation_prior_context_coverage": 1.0,
+      "relation_prior_context_observed_count": 2,
+      "relation_prior_context_required_count": 2,
+      "relation_proof_coverage": 1.0,
+      "relation_rich_count": 3,
+      "relation_rich_ratio": 1.0,
+      "relation_structural_count": 0,
+      "relation_suspect_count": 0,
+      "relation_target_coverage": 1.0,
+      "relation_total": 3
+    },
+    "relations": [
+      "supersedes",
+      "updates_state",
+      "semantic_delta_from"
+    ],
+    "summary": "Prepared 2 entries, 3 relations, and 3 evidence items for question:parity."
+  }
+}

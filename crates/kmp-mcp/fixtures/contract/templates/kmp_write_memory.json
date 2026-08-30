@@ -1,0 +1,77 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "accepted": "boolean",
+    "diagnostics": [],
+    "dry_run": "boolean",
+    "generated_refs": [
+      "string"
+    ],
+    "ingest_result": {
+      "memory": {
+        "about": "string",
+        "accepted": {
+          "entries": "integer",
+          "evidence": "integer",
+          "relations": "integer"
+        },
+        "memory_id": "string",
+        "read_after_write_ready": "boolean"
+      },
+      "summary": "string",
+      "warnings": []
+    },
+    "next_suggested_reads": [
+      {
+        "from": "string",
+        "to": "string",
+        "tool": "string"
+      }
+    ],
+    "relation_quality": [
+      {
+        "class": "string",
+        "confidence": "string",
+        "fallback": "boolean",
+        "from": "string",
+        "prior_context_observed": "boolean",
+        "prior_context_sources": [
+          "string"
+        ],
+        "proof_complete": "boolean",
+        "quality": "string",
+        "quality_reason": "string",
+        "rel": "string",
+        "requires_prior_context": "boolean",
+        "target_present": "boolean",
+        "to": "string"
+      }
+    ],
+    "relation_quality_metrics": {
+      "relation_anemic_count": "integer",
+      "relation_anemic_ratio": "number",
+      "relation_explanatory_ratio": "number",
+      "relation_invalid_rejected_count": "integer",
+      "relation_prior_context_coverage": "number",
+      "relation_prior_context_observed_count": "integer",
+      "relation_prior_context_required_count": "integer",
+      "relation_proof_coverage": "number",
+      "relation_rich_count": "integer",
+      "relation_rich_ratio": "number",
+      "relation_structural_count": "integer",
+      "relation_suspect_count": "integer",
+      "relation_target_coverage": "number",
+      "relation_total": "integer"
+    },
+    "relations": [
+      "string"
+    ],
+    "summary": "string"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "_meta": {
+    "kmp/modelContext": "string",
+    "ui": {
+      "resourceUri": "string"
+    }
+  },
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "structuredContent": {
+    "about": "string",
+    "axis": "string",
+    "bins": [
+      {
+        "by_kind": {
+          "decision": "integer"
+        },
+        "dimension": "string",
+        "from": "string",
+        "to": "string",
+        "total": "integer"
+      }
+    ],
+    "by_kind": {
+      "claim": "integer",
+      "decision": "integer",
+      "semantic_delta": "integer"
+    },
+    "clusters": [],
+    "content_hash": "string",
+    "contract": "string",
+    "coverage": {
+      "dimensions": [
+        {
+          "dimension": "string",
+          "present": "boolean",
+          "returned": "integer"
+        }
+      ],
+      "included": [
+        "string"
+      ],
+      "missing": []
+    },
+    "entries": [],
+    "level_of_detail": "string",
+    "metrics": [
+      {
+        "name": "string",
+        "scope": "string",
+        "unit": "string",
+        "value": "number"
+      }
+    ],
+    "missing": [],
+    "page": {
+      "has_more": "boolean",
+      "next_cursor": "null",
+      "returned": "integer",
+      "total": "integer"
+    },
+    "range": {
+      "from": "string",
+      "to": "string"
+    },
+    "relations": [],
+    "revision": "integer",
+    "truncated": "boolean"
+  }
+}

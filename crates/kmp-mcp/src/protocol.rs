@@ -1,4 +1,27 @@
-use kmp_domain::KnownMemoryRelationType;
+mod json_rpc;
+mod relation_vocabulary;
+mod request_shape;
+mod response_shape;
+mod result;
+mod schema;
+
+pub(crate) use json_rpc::{jsonrpc_error, jsonrpc_result};
+use relation_vocabulary::{
+    relation_vocabulary_description, semantic_class_schema, writer_relation_names,
+};
+use request_shape::{
+    budget_schema, dimensions_schema, recall_page_schema, temporal_coordinate_schema,
+};
+use response_shape::{
+    page_output_schema, proof_output_schema, quality_output_schema, recall_envelope_properties,
+    warnings_output_schema,
+};
+pub(crate) use result::{app_data_success_result, tool_error_result, tool_success_result};
+use schema::{
+    described, integer_schema, nullable_described, nullable_output_schema, output_object,
+    string_array, string_map_schema, string_schema,
+};
+
 use serde_json::{Value, json};
 
 use crate::tool_error::{ToolError, ToolErrorCode};
@@ -926,76 +949,6 @@ fn page_schema() -> Value {
     })
 }
 
-fn dimensions_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "mode": {
-                "type": "string",
-                "enum": ["all", "only", "except"]
-            },
-            "include": {
-                "type": "array",
-                "items": string_schema("Dimension kind to include.")
-            },
-            "exclude": {
-                "type": "array",
-                "items": string_schema("Dimension kind to exclude.")
-            },
-            "scope_ids": {
-                "type": "array",
-                "items": string_schema("Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.")
-            },
-            "scope": {
-                "type": "string",
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
-                "enum": ["current_about", "abouts", "all_abouts"]
-            },
-            "abouts": {
-                "type": "array",
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
-                "items": string_schema("Memory about id.")
-            }
-        }
-    })
-}
-
-fn temporal_coordinate_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": true,
-        "required": ["dimension", "scope_id"],
-        "properties": {
-            "dimension": string_schema("Dimension kind for this coordinate."),
-            "scope_id": string_schema("Dimension scope id."),
-            "occurred_at": string_schema("Optional RFC3339 occurrence timestamp."),
-            "observed_at": string_schema("Optional RFC3339 observation timestamp, in UTC."),
-            "ingested_at": string_schema("Optional RFC3339 ingest timestamp."),
-            "valid_from": string_schema("Optional RFC3339 validity start."),
-            "valid_until": string_schema("Optional RFC3339 validity end."),
-            "sequence": {
-                "type": "integer",
-                "minimum": 1
-            },
-            "rank": {
-                "type": "integer",
-                "minimum": 1
-            },
-            "metadata": string_map_schema()
-        }
-    })
-}
-
-fn string_map_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": {
-            "type": "string"
-        }
-    })
-}
-
 /// A tool, with the shape of what it answers.
 ///
 /// Inputs were described field by field and the response — the half the agent
@@ -1025,46 +978,6 @@ fn tool_definition_with_output(
         definition["outputSchema"] = output_schema;
     }
     definition
-}
-
-/// An object schema whose public fields are complete. A response mapper that
-/// grows without this schema growing with it is a protocol drift, not a
-/// compatible extension: the whole point of `outputSchema` is that a caller
-/// no longer has to guess what an unexplained field means.
-fn output_object(properties: Value) -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": properties
-    })
-}
-
-fn described(kind: &str, description: &str) -> Value {
-    json!({"type": kind, "description": description})
-}
-
-fn nullable_described(kind: &str, description: &str) -> Value {
-    json!({"type": [kind, "null"], "description": description})
-}
-
-fn nullable_output_schema(mut schema: Value, description: &str) -> Value {
-    schema["type"] = json!(["object", "null"]);
-    schema["description"] = json!(description);
-    schema
-}
-
-fn string_array(description: &str) -> Value {
-    json!({
-        "type": "array",
-        "description": description,
-        "items": {"type": "string"}
-    })
-}
-
-fn warnings_output_schema() -> Value {
-    string_array(
-        "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
-    )
 }
 
 fn ingest_output_schema() -> Value {
@@ -1102,14 +1015,6 @@ fn write_memory_output_schema() -> Value {
             "tell_the_user": described("string", "One-time handoff text for the human; it is not another kernel instruction.")
         }))
     }))
-}
-
-fn recall_envelope_properties() -> Value {
-    json!({
-        "projection": projection_output_schema(),
-        "truncation": truncation_output_schema(),
-        "warnings": warnings_output_schema()
-    })
 }
 
 fn wake_output_schema() -> Value {
@@ -1218,228 +1123,6 @@ fn inspect_output_schema() -> Value {
     }))
 }
 
-/// `page`, with what `total` counts said out loud.
-///
-/// It counts different things in different verbs — expansion items in a
-/// recall, temporal entries in a move — and nothing in the surface said the
-/// unit changed. A number whose meaning the receiver has to guess is worse
-/// than no number, because it will be acted on.
-fn page_output_schema(unit: &str, cursor_description: &str) -> Value {
-    output_object(json!({
-        "returned": described("integer", "How many items this response carries."),
-        "total": described("integer", &format!("How many {unit} the selection holds in total.")),
-        "has_more": described(
-            "boolean",
-            "Whether the slice was cut. A partial answer reported as a whole one is the failure \
-             this field exists to prevent."
-        ),
-        "next_cursor": nullable_described("string", cursor_description)
-    }))
-}
-
-/// `proof`, which is where a caller decides whether to believe the answer.
-fn proof_output_schema(confidence_description: &str) -> Value {
-    output_object(json!({
-        "confidence": described("string", confidence_description),
-        "evidence": described(
-            "array",
-            "Stored entry text or evidence, verbatim. `text` is the canonical body and \
-             `metadata.proof_role` distinguishes the claim from its evidence."
-        ),
-        "missing": described(
-            "array",
-            "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which \
-             kind: nothing retrieved at all, or nothing that bears on the question."
-        ),
-        "superseded": described(
-            "array",
-            "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, \
-             not a disagreement: read the older entry as what was true then, not as advice."
-        ),
-        "expired": described(
-            "array",
-            "Historical entries whose exclusive `valid_until` is at or before the temporal \
-             cursor. Expiry needs no replacement, so this is separate from `superseded`."
-        ),
-        "conflicts": described(
-            "array",
-            "Entries that explicitly contradict each other and are both still live. The tension \
-             is the information — this is deliberately not the same field as `superseded`."
-        ),
-        "matched_relations": described(
-            "array",
-            "Which typed relations contributed to the ordering. Relation prose can improve a \
-             match and can never promote unrelated evidence into an answer."
-        ),
-        "matched_terms": described("array", "Question terms that matched retrieved evidence."),
-        "path": described("array", "The traversal that connects the cited evidence."),
-        "frontier_size": described(
-            "integer",
-            "How much was reachable and not returned, which is the signal to expand."
-        )
-    }))
-}
-
-/// `projection`, the budget envelope on a recall.
-fn projection_output_schema() -> Value {
-    let mut page = page_output_schema(
-        "eligible expansion items",
-        "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
-    );
-    page["properties"]["offset"] = described(
-        "integer",
-        "Number of eligible expansion items reconstructed by earlier pages.",
-    );
-    output_object(json!({
-        "contract": described("string", "The projection contract version, e.g. kmp.recall.projection.v1."),
-        "budget": described("object", "The normative byte ceiling, bytes actually used, and retained token-planning hint."),
-        "detail": described("string", "compact | balanced | full — the detail tier that was served."),
-        "excluded_by_detail": described(
-            "integer",
-            "Items a richer `budget.detail` would have included. Not a truncation: they were \
-             never eligible at this tier."
-        ),
-        "next_action": nullable_described(
-            "string",
-            "The exact call that continues this page, or null when there is nothing after it."
-        ),
-        "page": page,
-        "sections": described("object", "Per-section core, returned, eligible, and total counts for reconstructing the full proof."),
-        "selection_omitted": described("integer", "Items excluded by budget.max_entries before paging."),
-        "core_text_shortened": described("boolean", "Whether stable core prose had to be shortened to fit max_bytes.")
-    }))
-}
-
-fn truncation_output_schema() -> Value {
-    output_object(json!({
-        "truncated": described("boolean", "Always true when this optional object is present."),
-        "token_limit": described("integer", "Advisory token-planning hint retained for compatibility; it does not filter the canonical structuredContent."),
-        "byte_limit": described("integer", "Normative serialized-byte ceiling applied."),
-        "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
-    }))
-}
-
-fn quality_output_schema() -> Value {
-    output_object(json!({
-        "nodes": described("integer", "Returned node count."),
-        "relationships": described("integer", "Returned relation count."),
-        "details": described("integer", "Returned node-detail count."),
-        "causal_density": described(
-            "number",
-            "Share of returned relations that explain rather than merely connect. Low means the \
-             memory is a list; it is a property of what was written, not of this call."
-        ),
-        "detail_coverage": described("number", "Share of returned nodes that carry stored detail."),
-        "truncated": described("boolean", "Whether the rendering dropped anything.")
-    }))
-}
-
-fn string_schema(description: &str) -> Value {
-    json!({
-        "type": "string",
-        "minLength": 1,
-        "description": description
-    })
-}
-
-fn integer_schema(description: &str) -> Value {
-    json!({
-        "type": "integer",
-        "minimum": 1,
-        "description": description
-    })
-}
-
-fn writer_relation_names() -> Vec<&'static str> {
-    KnownMemoryRelationType::writer_relation_types()
-        .iter()
-        .map(|relation_type| relation_type.as_str())
-        .collect()
-}
-
-/// The relation vocabulary, projected from the kernel's own writer spec so
-/// this documentation can never drift from what the kernel validates. The
-/// relation is where KMP carries the why; a model that only sees a bare enum
-/// writes connected-but-unexplained memory, which is the failure mode the
-/// spec exists to prevent.
-fn relation_vocabulary_description(header: &str) -> String {
-    let mut description = format!(
-        "{header} The relation carries the explanation: non-structural classes require why, \
-         evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
-         when no richer semantic dependency can be proven, never a default. Vocabulary \
-         (quality; allowed classes; when to use):"
-    );
-    for spec in KnownMemoryRelationType::writer_relation_types()
-        .iter()
-        .filter_map(|relation_type| relation_type.writer_spec())
-    {
-        let classes = spec
-            .allowed_classes()
-            .iter()
-            .map(|class| class.as_str())
-            .collect::<Vec<_>>()
-            .join("|");
-        description.push_str(&format!(
-            " {} ({}; {}; {}).",
-            spec.relation_type().as_str(),
-            spec.quality().as_str(),
-            classes,
-            spec.reason()
-        ));
-    }
-    description
-}
-
-fn semantic_class_schema() -> Value {
-    json!({
-        "type": "string",
-        "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"],
-        "description": "What the link explains: structural = containment/membership, no proof \
-                        required; causal = one memory triggered or produced another; \
-                        motivational = one memory justifies or authorizes another; procedural = \
-                        how something was executed, or plain succession; evidential = validates, \
-                        proves, contradicts or verifies; constraint = limits or shapes another \
-                        memory."
-    })
-}
-
-fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "tokens": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_tokens,
-                "description": format!("Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
-            },
-            "max_bytes": {
-                "type": "integer",
-                "minimum": 512,
-                "default": 10_000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile."
-            },
-            "detail": {
-                "type": "string",
-                "enum": ["compact", "balanced", "full"],
-                "default": "balanced",
-                "description": "How much expansion detail is eligible before byte or entry caps are applied."
-            },
-            "depth": {
-                "type": "integer",
-                "minimum": 1,
-                "default": default_depth,
-                "description": format!("Graph traversal depth; defaults to {default_depth} for this verb in both embedded and live gRPC modes.")
-            },
-            "max_entries": {
-                "type": "integer",
-                "minimum": 1
-            }
-        }
-    })
-}
-
 fn inspect_budget_schema() -> Value {
     json!({
         "type": "object",
@@ -1465,70 +1148,6 @@ fn inspect_page_schema() -> Value {
                 "minLength": 1,
                 "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change."
             }
-        }
-    })
-}
-
-fn recall_page_schema() -> Value {
-    json!({
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-            "entries": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Optional maximum expansion items on this page; the normative byte ceiling still applies."
-            },
-            "cursor": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Opaque projection.page.next_cursor. Repeat all bound recall arguments unchanged; only page.entries, budget.tokens, and budget.max_bytes may vary."
-            }
-        }
-    })
-}
-
-pub(crate) fn tool_success_result(structured_content: Value) -> Value {
-    // `structuredContent` is the canonical response. Repeating the entire
-    // pretty-printed JSON in the text block doubled every tool result and was
-    // enough to overflow hosts even after the structured packet was budgeted.
-    let text = structured_content
-        .get("summary")
-        .and_then(Value::as_str)
-        .or_else(|| structured_content.get("answer").and_then(Value::as_str))
-        .map(ToString::to_string)
-        .unwrap_or_else(|| {
-            serde_json::to_string(&structured_content)
-                .expect("fixture JSON should serialize as compact text")
-        });
-    json!({
-        "content": [
-            {
-                "type": "text",
-                "text": text
-            }
-        ],
-        "structuredContent": structured_content,
-        "isError": false
-    })
-}
-
-/// UI data remains in `structuredContent`, which MCP Apps delivers to the
-/// sandbox without copying it into model context. The text fallback stays a
-/// constant-size receipt for hosts that expose tool logs to a model.
-pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
-    let returned = structured_content["page"]["returned"]
-        .as_u64()
-        .unwrap_or_default();
-    json!({
-        "content": [{
-            "type": "text",
-            "text": format!("ChronoLoom visual data chunk ready ({returned} detailed entries).")
-        }],
-        "structuredContent": structured_content,
-        "_meta": {
-            "ui": {"resourceUri": "ui://kmp/chronoloom.html"},
-            "kmp/modelContext": "receipt-only"
         }
     })
 }
@@ -1623,48 +1242,11 @@ fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(),
     Ok(())
 }
 
-pub(crate) fn tool_error_result(error: &ToolError) -> Value {
-    json!({
-        "content": [
-            {
-                "type": "text",
-                "text": error.message
-            }
-        ],
-        "structuredContent": {
-            "error": {
-                "code": error.code.as_str(),
-                "message": error.message
-            }
-        },
-        "isError": true
-    })
-}
-
-pub(crate) fn jsonrpc_result(id: Value, result: Value) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "result": result
-    })
-    .to_string()
-}
-
-pub(crate) fn jsonrpc_error(id: Value, code: i64, message: &str) -> String {
-    json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "error": {
-            "code": code,
-            "message": message
-        }
-    })
-    .to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use kmp_domain::KnownMemoryRelationType;
 
     #[test]
     fn former_tool_names_resolve_to_the_advertised_kmp_surface() {
@@ -2227,27 +1809,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn tool_results_are_mcp_content_blocks() {
-        let success = tool_success_result(json!({"answer": "Austin"}));
-        assert_eq!(success["isError"], false);
-        assert_eq!(success["structuredContent"]["answer"], "Austin");
-        assert!(
-            success["content"][0]["text"]
-                .as_str()
-                .expect("content text should be present")
-                .contains("Austin")
-        );
-
-        let error = tool_error_result(&ToolError::backend("no evidence"));
-        assert_eq!(error["isError"], true);
-        assert_eq!(error["content"][0]["text"], "no evidence");
-        assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
-
-        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
-        assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
-    }
-
     /// The property the substring matcher could not have. Same words, two
     /// codes, because the producer chose and the words were never consulted.
     #[test]
@@ -2282,20 +1843,5 @@ mod tests {
             );
         }
         assert_eq!(listed.len(), ToolErrorCode::ALL.len());
-    }
-
-    #[test]
-    fn jsonrpc_helpers_wrap_results_and_errors() {
-        let result = serde_json::from_str::<Value>(&jsonrpc_result(json!(7), json!({"ok": true})))
-            .expect("result should be JSON");
-        assert_eq!(result["jsonrpc"], "2.0");
-        assert_eq!(result["id"], 7);
-        assert_eq!(result["result"]["ok"], true);
-
-        let error = serde_json::from_str::<Value>(&jsonrpc_error(json!(8), -32601, "missing"))
-            .expect("error should be JSON");
-        assert_eq!(error["id"], 8);
-        assert_eq!(error["error"]["code"], -32601);
-        assert_eq!(error["error"]["message"], "missing");
     }
 }

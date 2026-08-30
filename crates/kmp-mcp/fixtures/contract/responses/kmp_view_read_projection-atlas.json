@@ -1,0 +1,119 @@
+{
+  "_meta": {
+    "kmp/modelContext": "receipt-only",
+    "ui": {
+      "resourceUri": "ui://kmp/chronoloom.html"
+    }
+  },
+  "content": [
+    {
+      "text": "ChronoLoom visual data chunk ready (6 detailed entries).",
+      "type": "text"
+    }
+  ],
+  "structuredContent": {
+    "about": "question:parity",
+    "axis": "occurred",
+    "bins": [
+      {
+        "by_kind": {
+          "decision": 1
+        },
+        "dimension": "agentic_process",
+        "from": "2026-04-12T15:45:00Z",
+        "to": "2026-04-12T16:07:30Z",
+        "total": 1
+      },
+      {
+        "by_kind": {
+          "semantic_delta": 2
+        },
+        "dimension": "agentic_process",
+        "from": "2026-04-12T16:52:30Z",
+        "to": "2026-04-12T17:15:00Z",
+        "total": 2
+      },
+      {
+        "by_kind": {
+          "claim": 2
+        },
+        "dimension": "conversation",
+        "from": "2026-04-12T15:00:00Z",
+        "to": "2026-04-12T15:22:30Z",
+        "total": 2
+      },
+      {
+        "by_kind": {
+          "claim": 1
+        },
+        "dimension": "conversation",
+        "from": "2026-04-12T18:00:00Z",
+        "to": "2026-04-12T18:22:30Z",
+        "total": 1
+      }
+    ],
+    "by_kind": {
+      "claim": 3,
+      "decision": 1,
+      "semantic_delta": 2
+    },
+    "clusters": [],
+    "content_hash": "<stamped at call time>",
+    "contract": "kmp.visual.projection.v1",
+    "coverage": {
+      "dimensions": [
+        {
+          "dimension": "agentic_process",
+          "present": true,
+          "returned": 3
+        },
+        {
+          "dimension": "conversation",
+          "present": true,
+          "returned": 3
+        }
+      ],
+      "included": [
+        "agentic_process",
+        "conversation"
+      ],
+      "missing": []
+    },
+    "entries": [],
+    "level_of_detail": "atlas",
+    "metrics": [
+      {
+        "name": "entry_count",
+        "scope": "selected_range",
+        "unit": "entries",
+        "value": 6.0
+      },
+      {
+        "name": "relation_count",
+        "scope": "selected_subgraph",
+        "unit": "relations",
+        "value": 0.0
+      },
+      {
+        "name": "causal_density",
+        "scope": "selected_subgraph",
+        "unit": "ratio",
+        "value": 0.0
+      }
+    ],
+    "missing": [],
+    "page": {
+      "has_more": false,
+      "next_cursor": null,
+      "returned": 6,
+      "total": 6
+    },
+    "range": {
+      "from": "2026-04-12T00:00:00Z",
+      "to": "2026-04-13T00:00:00Z"
+    },
+    "relations": [],
+    "revision": 1,
+    "truncated": false
+  }
+}

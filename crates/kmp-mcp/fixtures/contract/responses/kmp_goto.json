@@ -1,0 +1,96 @@
+{
+  "content": [
+    {
+      "text": "Returned 1 temporal entry.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "coverage": {
+      "dimensions": [
+        {
+          "dimension": "conversation",
+          "present": true,
+          "returned": 1
+        }
+      ],
+      "included": [
+        "conversation"
+      ],
+      "missing": [],
+      "requested": {
+        "abouts": [
+          "question:parity"
+        ],
+        "include": [
+          "conversation"
+        ],
+        "mode": "only",
+        "scope": "abouts"
+      }
+    },
+    "entries": [
+      {
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:05:00Z",
+            "rank": 2,
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 2,
+            "valid_from": "2026-04-12T15:05:00Z",
+            "valid_until": "2026-04-12T18:00:00Z"
+          }
+        ],
+        "kind": "claim",
+        "metadata": {},
+        "ref": "question:parity:claim:denver-detail",
+        "text": "She starts the new job in Denver in June."
+      }
+    ],
+    "next_action": "Continue the earlier history with kmp_rewind using from.ref=\"question:parity:claim:denver-detail\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged. Do not pass this cursor back to kmp_goto.",
+    "page": {
+      "has_more": true,
+      "next_cursor": "question:parity:claim:denver-detail",
+      "returned": 1,
+      "total": 2
+    },
+    "proof": {
+      "confidence": "medium",
+      "conflicts": [],
+      "evidence": [],
+      "expired": [],
+      "frontier_size": 0,
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "path": [],
+      "superseded": []
+    },
+    "quality": {
+      "causal_density": 0.0,
+      "detail_coverage": 1.0,
+      "details": 1,
+      "nodes": 1,
+      "relationships": 0,
+      "truncated": true
+    },
+    "raw_refs": [],
+    "summary": "Returned 1 temporal entry.",
+    "temporal": {
+      "axis": "occurred",
+      "direction": "goto",
+      "requested": {
+        "time": "2026-04-12T15:05:00Z"
+      },
+      "resolved": {
+        "occurred_at": "2026-04-12T15:05:00Z"
+      }
+    },
+    "warnings": [
+      "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "content": [
+    {
+      "text": "Prepared 1 entry, 1 relation, and 2 evidence items for question:parity.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "accepted": true,
+    "diagnostics": [],
+    "dry_run": false,
+    "generated_refs": [
+      "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
+    ],
+    "ingest_result": {
+      "memory": {
+        "about": "question:parity",
+        "accepted": {
+          "entries": 1,
+          "evidence": 2,
+          "relations": 1
+        },
+        "memory_id": "memory:write:f44bcf5cd628fba5",
+        "read_after_write_ready": true
+      },
+      "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
+      "warnings": []
+    },
+    "next_suggested_reads": [
+      {
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "to": "question:parity:claim:denver",
+        "tool": "kmp_trace"
+      }
+    ],
+    "relation_quality": [
+      {
+        "class": "evidential",
+        "confidence": "medium",
+        "fallback": true,
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "prior_context_observed": true,
+        "prior_context_sources": [
+          "kmp_inspect"
+        ],
+        "proof_complete": true,
+        "quality": "anemic",
+        "quality_reason": "writer scoped the node to background without claiming causal semantics",
+        "rel": "uses_background",
+        "requires_prior_context": false,
+        "target_present": true,
+        "to": "question:parity:claim:denver"
+      }
+    ],
+    "relation_quality_metrics": {
+      "relation_anemic_count": 1,
+      "relation_anemic_ratio": 1.0,
+      "relation_explanatory_ratio": 1.0,
+      "relation_invalid_rejected_count": 0,
+      "relation_prior_context_coverage": 0.0,
+      "relation_prior_context_observed_count": 0,
+      "relation_prior_context_required_count": 0,
+      "relation_proof_coverage": 1.0,
+      "relation_rich_count": 0,
+      "relation_rich_ratio": 0.0,
+      "relation_structural_count": 0,
+      "relation_suspect_count": 0,
+      "relation_target_coverage": 1.0,
+      "relation_total": 1
+    },
+    "relations": [
+      "uses_background"
+    ],
+    "summary": "Prepared 1 entry, 1 relation, and 2 evidence items for question:parity."
+  }
+}

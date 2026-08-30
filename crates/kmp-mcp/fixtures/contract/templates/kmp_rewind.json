@@ -1,0 +1,90 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "coverage": {
+      "dimensions": [
+        {
+          "dimension": "string",
+          "present": "boolean",
+          "returned": "integer"
+        }
+      ],
+      "included": [
+        "string"
+      ],
+      "missing": [],
+      "requested": {
+        "mode": "string",
+        "scope": "string"
+      }
+    },
+    "entries": [
+      {
+        "coordinates": [
+          {
+            "dimension": "string",
+            "ingested_at": "string",
+            "occurred_at": "string",
+            "rank": "integer",
+            "scope_id": "string",
+            "sequence": "integer",
+            "valid_from": "string",
+            "valid_until": "string"
+          }
+        ],
+        "kind": "string",
+        "metadata": {},
+        "ref": "string",
+        "text": "string"
+      }
+    ],
+    "next_action": "string",
+    "page": {
+      "has_more": "boolean",
+      "next_cursor": "string",
+      "returned": "integer",
+      "total": "integer"
+    },
+    "proof": {
+      "confidence": "string",
+      "conflicts": [],
+      "evidence": [],
+      "expired": [],
+      "frontier_size": "integer",
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "path": [],
+      "superseded": []
+    },
+    "quality": {
+      "causal_density": "number",
+      "detail_coverage": "number",
+      "details": "integer",
+      "nodes": "integer",
+      "relationships": "integer",
+      "truncated": "boolean"
+    },
+    "raw_refs": [],
+    "summary": "string",
+    "temporal": {
+      "axis": "string",
+      "direction": "string",
+      "requested": {
+        "time": "string"
+      },
+      "resolved": {
+        "occurred_at": "string"
+      }
+    },
+    "warnings": [
+      "string"
+    ]
+  }
+}

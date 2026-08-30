@@ -1,0 +1,84 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "evidence": [
+      {
+        "id": "string",
+        "metadata": {
+          "proof_role": "string"
+        },
+        "source": "string",
+        "supports": [
+          "string"
+        ],
+        "text": "string",
+        "time": "string"
+      }
+    ],
+    "links": {
+      "incoming": [],
+      "outgoing": []
+    },
+    "object": {
+      "kind": "string",
+      "metadata": {},
+      "ref": "string",
+      "text": "string"
+    },
+    "page": {
+      "guidance": "string",
+      "has_more": "boolean",
+      "next_cursor": "string",
+      "offset": "integer",
+      "omitted": {
+        "details": "integer",
+        "evidence": "integer",
+        "incoming": "integer",
+        "outgoing": "integer",
+        "raw": "integer"
+      },
+      "required_bytes": "string",
+      "returned": "integer",
+      "sections": {
+        "evidence": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "incoming": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "outgoing": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "raw": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        }
+      },
+      "total": "integer"
+    },
+    "quality": {
+      "causal_density": "number",
+      "detail_coverage": "number",
+      "details": "integer",
+      "nodes": "integer",
+      "relationships": "integer",
+      "truncated": "boolean"
+    },
+    "raw": [],
+    "summary": "string",
+    "warnings": []
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "content": [
+    {
+      "text": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "projection": {
+      "budget": {
+        "max_bytes": 10000,
+        "tokens_advisory": 1600,
+        "used_bytes": 9819
+      },
+      "contract": "kmp.recall.projection.v1",
+      "core_text_shortened": false,
+      "detail": "balanced",
+      "excluded_by_detail": 20,
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:19:a6e74c5b5765c0959fdd3cdb9f268a90f94d4cc9b95c1fb1de6913acdcef0476\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "page": {
+        "has_more": true,
+        "next_cursor": "kmp1:19:a6e74c5b5765c0959fdd3cdb9f268a90f94d4cc9b95c1fb1de6913acdcef0476",
+        "offset": 0,
+        "returned": 19,
+        "total": 37
+      },
+      "sections": {
+        "proof.evidence": {
+          "core": 0,
+          "eligible": 12,
+          "returned_on_page": 4,
+          "total": 12
+        },
+        "proof.path": {
+          "core": 0,
+          "eligible": 14,
+          "returned_on_page": 4,
+          "total": 34
+        },
+        "wake.causal_spine": {
+          "core": 1,
+          "eligible": 8,
+          "returned_on_page": 7,
+          "total": 8
+        },
+        "wake.current_state": {
+          "core": 1,
+          "eligible": 5,
+          "returned_on_page": 4,
+          "total": 5
+        },
+        "wake.next_actions": {
+          "core": 1,
+          "eligible": 1,
+          "returned_on_page": 0,
+          "total": 1
+        }
+      },
+      "selection_omitted": 0
+    },
+    "proof": {
+      "confidence": "medium",
+      "conflicts": [],
+      "evidence": [
+        {
+          "id": "detail:evidence:question:parity:denver",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "parity fixture",
+          "supports": [
+            "evidence:question:parity:denver"
+          ],
+          "text": "Rachel named Denver twice in the same conversation.",
+          "time": "2026-04-12T15:00:00Z"
+        },
+        {
+          "id": "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "kmp_write_memory:parity-test",
+          "supports": [
+            "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current"
+          ],
+          "text": "A refactor that preserves schemas can still change answers.",
+          "time": "2026-04-12T16:00:00Z"
+        },
+        {
+          "id": "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "kmp_write_memory:parity-test:relation:uses_background",
+          "supports": [
+            "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1"
+          ],
+          "text": "The claim is the store's only prior entry.",
+          "time": "2026-04-12T16:00:00Z"
+        },
+        {
+          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "kmp_write_memory:parity-test:semantic_delta",
+          "supports": [
+            "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta"
+          ],
+          "text": "Both statements are hers, minutes apart.",
+          "time": "2026-04-12T17:00:00Z"
+        }
+      ],
+      "expired": [],
+      "frontier_size": 0,
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "path": [
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+            "detail:question:parity:claim:denver",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+          ],
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "rel": "semantic_delta_from",
+          "sequence": 2,
+          "to": "question:parity:claim:denver",
+          "why": "The later statement corrects the earlier one."
+        },
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+          ],
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "rel": "updates_state",
+          "sequence": 2,
+          "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "why": "The later statement corrects the earlier one."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+            "detail:question:parity:claim:denver",
+            "detail:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+          ],
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "rel": "supersedes",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
+        },
+        {
+          "class": "evidential",
+          "confidence": "medium",
+          "evidence_refs": [
+            "detail:evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+            "detail:question:parity:claim:denver",
+            "detail:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
+          ],
+          "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "rel": "uses_background",
+          "sequence": 1,
+          "to": "question:parity:claim:denver",
+          "why": "The decision was taken while reading this claim back."
+        }
+      ],
+      "superseded": [
+        {
+          "ref": "question:parity:claim:denver",
+          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
+        }
+      ]
+    },
+    "resume_cursor": {
+      "ref": "question:parity:claim:boulder-current",
+      "sequence": 3,
+      "time": "2026-04-12T18:00:00Z"
+    },
+    "summary": "Objective: question:parity — Memory anchor for `question:parity`.\nStatus: ACTIVE\nBlocker: none identified\nNext: semantic_delta_from → question:parity:claim:denver",
+    "truncation": {
+      "byte_limit": 10000,
+      "omitted": {
+        "core_text_shortened": false,
+        "excluded_by_detail": 20,
+        "page_items": 18,
+        "prior_page_items": 0,
+        "remaining_page_items": 18,
+        "selection_items": 0
+      },
+      "token_limit": 1600,
+      "truncated": true
+    },
+    "wake": {
+      "causal_spine": [
+        {
+          "because": "The later statement corrects the earlier one.",
+          "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe -> question:parity:claim:denver",
+          "evidence_ref": "Both statements are hers, minutes apart."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:denver -> question:parity:claim:denver",
+          "evidence_ref": "Rachel named Denver twice in the same conversation."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current -> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "evidence_ref": "A refactor that preserves schemas can still change answers."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1 -> question:parity:claim:denver",
+          "evidence_ref": "The claim is the store's only prior entry."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1 -> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+          "evidence_ref": "The claim is the store's only prior entry."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "evidence_ref": "Both statements are hers, minutes apart."
+        },
+        {
+          "because": "Evidence supports this memory entry.",
+          "claim": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "evidence_ref": "Both statements are hers, minutes apart."
+        },
+        {
+          "because": "The later statement corrects the earlier one.",
+          "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "evidence_ref": "Both statements are hers, minutes apart."
+        }
+      ],
+      "current_state": [
+        "Relationship evidence:question:parity:denver --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
+        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current --supports--> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b [evidential] because Evidence supports this memory entry.",
+        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1 --supports--> question:parity:claim:denver [evidential] because Evidence supports this memory entry.",
+        "Relationship evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1 --supports--> question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b [evidential] because Evidence supports this memory entry.",
+        "Relationship evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta --supports--> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [evidential] because Evidence supports this memory entry."
+      ],
+      "guardrails": [],
+      "next_actions": [
+        "semantic_delta_from → question:parity:claim:denver"
+      ],
+      "objective": "continue from live kernel memory `question:parity`",
+      "open_loops": []
+    },
+    "warnings": [
+      "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
+    ]
+  }
+}
