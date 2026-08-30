@@ -24,7 +24,7 @@
           "placeholder": "https://kmp.example.com"
         }
       ],
-      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "fileSha256": "b959fd964a473a327ed175e27313797399747b455eac5211b894ef1e70c9db14",
       "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.6.1/kmp-mcp-v0.6.1.mcpb",
       "registryType": "mcpb",
       "transport": {
