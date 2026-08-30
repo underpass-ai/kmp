@@ -25,7 +25,10 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # Draft pull requests are development mode: the dev-loop workflow answers
+  # them, and this validation joins in when the pull request is ready.
   validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     permissions:
@@ -71,6 +74,7 @@ jobs:
         run: cargo test -p kmp-mcp --test lifecycle_real_hosts -- --ignored
 
   windows-launcher:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: windows-2022
     timeout-minutes: 30
     permissions:

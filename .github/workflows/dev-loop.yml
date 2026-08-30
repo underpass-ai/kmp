@@ -1,0 +1,122 @@
+name: dev-loop
+
+# Development mode for the #404 refactor: while a pull request is a draft,
+# the full quality gate stands down and this loop is the answer — format,
+# lint, the tests of the crates under refactor, the architecture ratchet,
+# and a kmp-mcp binary built for the maintainer's linux-arm64 machine.
+#
+# Nothing merges on this loop's word. Marking the pull request ready for
+# review wakes the full gate, and branch protection keeps every required
+# check — the 80% per-crate coverage bar included — between a ready pull
+# request and main.
+#
+# The same jobs run on pushes to main only to keep the caches warm, so a
+# draft's first iteration starts hot instead of paying a cold build.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: dev-loop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # The crates the current refactor iterates on. Widen or narrow per phase;
+  # the full gate on ready-for-review still proves the whole workspace.
+  DEV_PACKAGES: -p kmp-mcp
+
+jobs:
+  dev-lint:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+        with:
+          components: rustfmt, clippy
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: dev-lint
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy on the crates under refactor
+        run: cargo clippy ${DEV_PACKAGES} --all-targets --locked -- -D warnings
+
+  dev-test:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: dev-test
+
+      - name: Run the tests of the crates under refactor
+        run: cargo test ${DEV_PACKAGES} --locked
+
+      - name: kmp-mcp architecture ratchet
+        run: bash scripts/ci/kmp-mcp-architecture-gate.sh
+
+  dev-binary:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == true
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install Rust toolchain
+        uses: ./.github/actions/install-rust
+
+      - name: Install protoc
+        run: bash scripts/ci/install-protoc.sh
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          shared-key: dev-binary-arm64
+
+      # The same invocation the release build uses, minus the target matrix:
+      # this runner is the target.
+      - name: Build kmp-mcp for linux-arm64
+        run: cargo build --release -p kmp-mcp --locked --features sqlite
+
+      - name: Upload linux-arm64 binary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: kmp-mcp-dev-linux-arm64
+          path: target/release/kmp-mcp
+          if-no-files-found: error
