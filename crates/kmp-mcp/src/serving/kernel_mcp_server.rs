@@ -8,7 +8,7 @@ use crate::serving::environment::{GRPC_ENDPOINT_ENV, MCP_BACKEND_ENV};
 use crate::serving::grpc_tls_config::KernelMcpGrpcTlsConfig;
 use crate::serving::ports::kernel_tool_backend::KernelMcpToolBackend;
 
-use crate::grpc::GrpcKernelMcpBackend;
+use crate::serving::GrpcKernelMcpBackend;
 use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 pub struct KernelMcpServer {
@@ -65,8 +65,7 @@ impl KernelMcpServer {
         data_dir: &std::path::Path,
         engine: Option<kmp_embedded::StorageEngine>,
     ) -> Result<Self, String> {
-        let backend =
-            crate::embedded::EmbeddedKernelMcpBackend::open_with_engine(data_dir, engine)?;
+        let backend = crate::serving::EmbeddedKernelMcpBackend::open_with_engine(data_dir, engine)?;
         let opened_engine = backend.engine();
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(opened_engine);
@@ -92,7 +91,7 @@ impl KernelMcpServer {
 
     /// A server over an embedded backend that the caller already opened —
     /// the viewer path, which needs the kernel handle before wrapping it.
-    pub fn with_embedded_backend(backend: crate::embedded::EmbeddedKernelMcpBackend) -> Self {
+    pub fn with_embedded_backend(backend: crate::serving::EmbeddedKernelMcpBackend) -> Self {
         let engine = backend.engine();
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(engine);
@@ -100,7 +99,7 @@ impl KernelMcpServer {
     }
 
     fn with_retrying_embedded_backend(
-        backend: crate::embedded::RetryingEmbeddedKernelMcpBackend,
+        backend: crate::serving::RetryingEmbeddedKernelMcpBackend,
     ) -> Self {
         let engine = backend.declared_engine();
         let mut server = Self::with_backend(backend);
@@ -220,7 +219,7 @@ impl KernelMcpServer {
                 }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
                 let server = Self::with_retrying_embedded_backend(
-                    crate::embedded::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
+                    crate::serving::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
                         resolved.path(),
                         engine,
                         commit_native,

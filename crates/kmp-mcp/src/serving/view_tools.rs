@@ -11,6 +11,8 @@
 //! reachable from a view action, by construction: these handlers hold a view
 //! registry and a read-only validator, and nothing else.
 
+pub(crate) use crate::serving::projection_names::ProjectionNames;
+pub(crate) use crate::serving::unhonored_projection::UnhonoredProjection;
 use serde_json::{Value, json};
 
 use kmp_viewer::{
@@ -254,18 +256,6 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
         });
     }
     Ok((patch, refs))
-}
-
-#[derive(Debug, Default)]
-pub(crate) struct ProjectionNames {
-    pub(crate) dimensions: Vec<String>,
-    pub(crate) overlays: Vec<String>,
-}
-
-#[derive(Debug, Default)]
-pub(crate) struct UnhonoredProjection {
-    pub(crate) dimensions: Vec<String>,
-    pub(crate) overlays: Vec<String>,
 }
 
 pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {

@@ -10,9 +10,9 @@ use crate::contract::{
     canonical_tool_name, initialize_result_with_apps, reject_unknown_arguments,
     resource_read_result, resources_list_result, tools_list_result_with_apps,
 };
-use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::json_rpc::{jsonrpc_error, jsonrpc_result};
 use crate::serving::kernel_mcp_server::KernelMcpServer;
+use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::tool_error_result;
 
@@ -156,7 +156,7 @@ impl KernelMcpServer {
 
         // The view tools never reach the backend's write path — they hold a
         // view registry and a read-only existence check, and nothing else.
-        if crate::view_tools::is_view_tool(name) {
+        if crate::serving::view_tools::is_view_tool(name) {
             return self.handle_view_tool(id, name, arguments, start).await;
         }
 

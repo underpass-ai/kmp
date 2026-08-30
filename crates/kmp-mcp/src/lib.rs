@@ -8,15 +8,11 @@ pub mod plugin_notice;
 pub mod pulse;
 pub mod snapshot;
 pub mod style;
-mod view_tools;
 pub mod viewer;
 
 mod contract;
-mod embedded;
-mod grpc;
 mod ingest;
 mod kmp;
-mod observability;
 mod serving;
 mod write;
 
@@ -42,10 +38,10 @@ pub fn tool_names() -> Vec<String> {
         .unwrap_or_default()
 }
 
-pub use embedded::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
-pub use grpc::GrpcKernelMcpBackend;
 pub use serving::FixtureKernelMcpBackend;
+pub use serving::GrpcKernelMcpBackend;
 pub use serving::KernelMcpServer;
+pub use serving::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
 pub use serving::{ToolError, ToolErrorCode};
 
 pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
