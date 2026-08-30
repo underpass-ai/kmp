@@ -1,7 +1,6 @@
 pub mod agent_policy;
 pub mod banner;
 pub mod clock;
-pub mod diagnostics;
 pub mod document;
 pub mod guide;
 pub mod lifecycle;
