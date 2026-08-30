@@ -27,6 +27,7 @@ const ABOUT: &str = "question:parity";
 const APP_MIME: &str = "text/html;profile=mcp-app";
 const CLAIM: &str = "question:parity:claim:denver";
 const DETAIL: &str = "question:parity:claim:denver-detail";
+const CURRENT: &str = "question:parity:claim:boulder-current";
 
 /// One call per advertised tool, in an order that leaves the store able to
 /// answer the reads: the writes come first, then the recalls, then the views.
@@ -77,6 +78,22 @@ fn calls() -> Vec<(&'static str, Value)> {
                                 "valid_from": "2026-04-12T15:05:00Z",
                                 "valid_until": "2026-04-12T18:00:00Z",
                                 "rank": 2
+                            }]
+                        },
+                        {
+                            // A window that is still open where DETAIL's has
+                            // closed. Rewinding the validity clock from here
+                            // is what makes DETAIL expired rather than absent,
+                            // and `expired_json` is reachable no other way.
+                            "id": CURRENT,
+                            "kind": "claim",
+                            "text": "The Boulder start date is the one that stands.",
+                            "coordinates": [{
+                                "dimension": "conversation",
+                                "scope_id": "conversation:rachel",
+                                "occurred_at": "2026-04-12T18:00:00Z",
+                                "sequence": 3,
+                                "valid_from": "2026-04-12T18:00:00Z"
                             }]
                         }
                     ],
@@ -202,7 +219,19 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "about": ABOUT,
                 "around": {"time": "2026-04-12T15:00:00Z"},
                 "axis": "occurred",
-                "window": {"before_entries": 2, "after_entries": 2}
+                "window": {"before_entries": 2, "after_entries": 2},
+                // `scope_ids` is the one selection key no other call fills,
+                // and near takes no `limit`, so naming it here cannot hide a
+                // continuation the way it did on forward.
+                // Supersession is derived from the relations among the
+                // *selected* entries, so this call deliberately spans every
+                // dimension: filtering to one would drop the delta that
+                // supersedes the first claim. The temporal path's element
+                // mapper is a separate function from the recall path's, and
+                // nothing else reaches it.
+                "include": {"relations": true, "evidence": true},
+                // Relations and evidence do not fit the 10,000-byte default.
+                "budget": {"max_bytes": 40000}
             }),
         ),
         (
@@ -222,11 +251,29 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "axis": "occurred",
                 "limit": {"entries": 1},
                 // `except` is the one selection mode no other call reaches.
-                // `except` is the one selection mode no other call reaches,
-                // and `scope_ids` the one selection key no other call fills.
+                // `except` is the one selection mode no other call reaches.
+                // `scope_ids` deliberately lives on kmp_near instead: a filter
+                // narrow enough to fill it here would leave one entry, cancel
+                // the partial page and take the continuation guidance with it.
+                "dimensions": {"mode": "except", "exclude": ["task"]}
+            }),
+        ),
+        // `proof.expired` stays empty on every other axis, so `expired_json`
+        // — the mapper for an entry whose applicability ended — has no
+        // assertion anywhere. The ingest above writes a valid_until; reading
+        // the validity clock is what surfaces it.
+        (
+            "kmp_rewind:validity",
+            json!({
+                "about": ABOUT,
+                "from": {"ref": CURRENT},
+                "axis": "validity",
+                // `scope_ids` is the one selection key no other call fills.
+                // It lives here because this call needs no partial page and
+                // no cross-dimension selection, so narrowing costs nothing.
                 "dimensions": {
-                    "mode": "except",
-                    "exclude": ["task"],
+                    "mode": "only",
+                    "include": ["conversation"],
                     "scope_ids": ["about:question:parity:dimension:conversation:rachel"]
                 }
             }),
@@ -234,6 +281,23 @@ fn calls() -> Vec<(&'static str, Value)> {
         (
             "kmp_inspect",
             json!({"about": ABOUT, "ref": CLAIM, "include": {"raw": true}}),
+        ),
+        // A second inspect under a ceiling small enough to page. Without it
+        // the inspect budget — a whole file this refactor lifted out — is
+        // reached only on its everything-fits branch, leaving its guidance,
+        // its cursor and the `quality.truncated` it recomputes unasserted.
+        (
+            "kmp_inspect:paged",
+            json!({
+                "about": ABOUT,
+                "ref": CLAIM,
+                // Deliberately without `raw`. The cursor is a hash over the
+                // items it pages, and a raw record carries `content_hash`,
+                // which embeds the ingest clock — including it would make the
+                // cursor differ on every run. The unpaged call above pins the
+                // raw record instead.
+                "budget": {"max_bytes": 2500}
+            }),
         ),
         (
             "kmp_trace",
@@ -327,12 +391,27 @@ fn blessing() -> bool {
 const VOLATILE_KEYS: [&str; 3] = ["at", "ingested_at", "content_hash"];
 const REDACTED: &str = "<stamped at call time>";
 
+/// An inspect cursor is `kmpi1:<offset>:<sha256>`, and the digest covers the
+/// links it pages — whose coordinates carry `ingested_at`. The version and the
+/// offset are contract and stay pinned; only the digest is dropped. A temporal
+/// `next_cursor` is an entry ref and is left alone.
+fn redact_inspect_digest(text: &str) -> Option<String> {
+    let (head, digest) = text.rsplit_once(':')?;
+    let looks_like_a_digest =
+        digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit());
+    (head.starts_with("kmpi") && looks_like_a_digest).then(|| format!("{head}:{REDACTED}"))
+}
+
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
             for (key, child) in fields.iter_mut() {
                 if VOLATILE_KEYS.contains(&key.as_str()) && child.is_string() {
                     *child = json!(REDACTED);
+                } else if let Some(text) = child.as_str()
+                    && let Some(masked) = redact_inspect_digest(text)
+                {
+                    *child = json!(masked);
                 } else {
                     redact(child);
                 }

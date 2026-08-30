@@ -20,11 +20,14 @@
       ],
       "missing": [],
       "requested": {
-        "exclude": [
+        "include": [
           "string"
         ],
         "mode": "string",
-        "scope": "string"
+        "scope": "string",
+        "scope_ids": [
+          "string"
+        ]
       }
     },
     "entries": [
@@ -47,10 +50,10 @@
         "text": "string"
       }
     ],
-    "next_action": "string",
+    "next_action": "null",
     "page": {
       "has_more": "boolean",
-      "next_cursor": "string",
+      "next_cursor": "null",
       "returned": "integer",
       "total": "integer"
     },
@@ -58,7 +61,12 @@
       "confidence": "string",
       "conflicts": [],
       "evidence": [],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "string",
+          "valid_until": "string"
+        }
+      ],
       "frontier_size": "integer",
       "matched_relations": [],
       "matched_terms": [],
@@ -80,14 +88,17 @@
       "axis": "string",
       "direction": "string",
       "requested": {
-        "time": "string"
+        "ref": "string"
       },
       "resolved": {
-        "occurred_at": "string"
+        "dimension": "string",
+        "ingested_at": "string",
+        "occurred_at": "string",
+        "scope_id": "string",
+        "sequence": "integer",
+        "valid_from": "string"
       }
     },
-    "warnings": [
-      "string"
-    ]
+    "warnings": []
   }
 }

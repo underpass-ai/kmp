@@ -20,11 +20,14 @@
       ],
       "missing": [],
       "requested": {
-        "exclude": [
-          "task"
+        "include": [
+          "conversation"
         ],
-        "mode": "except",
-        "scope": "current_about"
+        "mode": "only",
+        "scope": "current_about",
+        "scope_ids": [
+          "about:question:parity:dimension:conversation:rachel"
+        ]
       }
     },
     "entries": [
@@ -47,18 +50,23 @@
         "text": "She starts the new job in Denver in June."
       }
     ],
-    "next_action": "Continue with kmp_forward using from.ref=\"question:parity:claim:denver-detail\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged.",
+    "next_action": null,
     "page": {
-      "has_more": true,
-      "next_cursor": "question:parity:claim:denver-detail",
+      "has_more": false,
+      "next_cursor": null,
       "returned": 1,
-      "total": 5
+      "total": 1
     },
     "proof": {
       "confidence": "medium",
       "conflicts": [],
       "evidence": [],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "question:parity:claim:denver-detail",
+          "valid_until": "2026-04-12T18:00:00Z"
+        }
+      ],
       "frontier_size": 0,
       "matched_relations": [],
       "matched_terms": [],
@@ -72,22 +80,25 @@
       "details": 1,
       "nodes": 1,
       "relationships": 0,
-      "truncated": true
+      "truncated": false
     },
     "raw_refs": [],
     "summary": "Returned 1 temporal entry.",
     "temporal": {
-      "axis": "occurred",
-      "direction": "forward",
+      "axis": "validity",
+      "direction": "rewind",
       "requested": {
-        "time": "2026-04-12T15:00:00Z"
+        "ref": "question:parity:claim:boulder-current"
       },
       "resolved": {
-        "occurred_at": "2026-04-12T15:00:00Z"
+        "dimension": "conversation",
+        "ingested_at": "<stamped at call time>",
+        "occurred_at": "2026-04-12T18:00:00Z",
+        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "sequence": 3,
+        "valid_from": "2026-04-12T18:00:00Z"
       }
     },
-    "warnings": [
-      "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
-    ]
+    "warnings": []
   }
 }

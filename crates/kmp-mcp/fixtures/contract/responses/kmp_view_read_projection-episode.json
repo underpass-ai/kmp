@@ -7,7 +7,7 @@
   },
   "content": [
     {
-      "text": "ChronoLoom visual data chunk ready (5 detailed entries).",
+      "text": "ChronoLoom visual data chunk ready (6 detailed entries).",
       "type": "text"
     }
   ],
@@ -41,10 +41,19 @@
         "from": "2026-04-12T15:00:00Z",
         "to": "2026-04-12T15:22:30Z",
         "total": 2
+      },
+      {
+        "by_kind": {
+          "claim": 1
+        },
+        "dimension": "conversation",
+        "from": "2026-04-12T18:00:00Z",
+        "to": "2026-04-12T18:22:30Z",
+        "total": 1
       }
     ],
     "by_kind": {
-      "claim": 2,
+      "claim": 3,
       "decision": 1,
       "semantic_delta": 2
     },
@@ -89,6 +98,19 @@
         ],
         "to": "2026-04-12T15:05:00Z",
         "total": 2
+      },
+      {
+        "by_kind": {
+          "claim": 1
+        },
+        "dimension": "conversation",
+        "from": "2026-04-12T18:00:00Z",
+        "id": "visual-cluster-3",
+        "refs": [
+          "question:parity:claim:boulder-current"
+        ],
+        "to": "2026-04-12T18:00:00Z",
+        "total": 1
       }
     ],
     "content_hash": "<stamped at call time>",
@@ -103,7 +125,7 @@
         {
           "dimension": "conversation",
           "present": true,
-          "returned": 2
+          "returned": 3
         }
       ],
       "included": [
@@ -119,7 +141,7 @@
         "name": "entry_count",
         "scope": "selected_range",
         "unit": "entries",
-        "value": 5.0
+        "value": 6.0
       },
       {
         "name": "relation_count",
@@ -138,8 +160,8 @@
     "page": {
       "has_more": false,
       "next_cursor": null,
-      "returned": 5,
-      "total": 5
+      "returned": 6,
+      "total": 6
     },
     "range": {
       "from": "2026-04-12T00:00:00Z",

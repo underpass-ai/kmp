@@ -51,13 +51,46 @@
     "proof": {
       "confidence": "string",
       "conflicts": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "id": "string",
+          "metadata": {
+            "proof_role": "string"
+          },
+          "source": "string",
+          "supports": [
+            "string"
+          ],
+          "text": "string",
+          "time": "string"
+        }
+      ],
       "expired": [],
       "frontier_size": "integer",
       "matched_relations": [],
       "matched_terms": [],
       "missing": [],
-      "path": [],
+      "path": [
+        {
+          "class": "string",
+          "confidence": "string",
+          "coordinate": {
+            "dimension": "string",
+            "ingested_at": "string",
+            "occurred_at": "string",
+            "scope_id": "string",
+            "sequence": "integer"
+          },
+          "evidence_refs": [
+            "string"
+          ],
+          "from": "string",
+          "rel": "string",
+          "sequence": "integer",
+          "to": "string",
+          "why": "string"
+        }
+      ],
       "superseded": [
         {
           "ref": "string",
