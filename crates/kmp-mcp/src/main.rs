@@ -1317,7 +1317,11 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
             return 1;
         }
         println!("removed  {}", piece.path.display());
-        if let Err(reason) = kmp_mcp::memories::forget(&roots.data_home, &piece.path) {
+        let catalog = kmp_mcp::lifecycle::FilesystemStoreCatalog::new(&roots.data_home);
+        let index = kmp_mcp::lifecycle::JsonlStoreIndex::new(&roots.data_home);
+        if let Err(reason) =
+            kmp_mcp::lifecycle::ForgetStore::new(&catalog, &index).execute(&piece.path)
+        {
             println!("kept     store index\n         {reason}");
             println!("\nThe store is gone, but its machine-local index could not be updated.");
             return 1;
@@ -1372,7 +1376,9 @@ async fn run_uninstall_command(args: &[&str]) -> i32 {
 /// and pruned on read when the path is gone.
 fn remember_this_memory(path: &std::path::Path) {
     if let Some(data_home) = kmp_embedded::user_data_home() {
-        kmp_mcp::memories::remember(&data_home, path);
+        let catalog = kmp_mcp::lifecycle::FilesystemStoreCatalog::new(&data_home);
+        let index = kmp_mcp::lifecycle::JsonlStoreIndex::new(&data_home);
+        kmp_mcp::lifecycle::RememberStore::new(&catalog, &index).execute(path);
     }
 }
 

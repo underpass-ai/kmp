@@ -500,8 +500,9 @@ fn memories_finding() -> Vec<Finding> {
             ),
         ];
     };
-    let index = data_home.join("kmp").join(crate::memories::INDEX_FILE);
-    let memories = crate::memories::list(&data_home, &crate::memories::read_index(&index));
+    let catalog = crate::lifecycle::FilesystemStoreCatalog::new(&data_home);
+    let index = crate::lifecycle::JsonlStoreIndex::new(&data_home);
+    let memories = crate::lifecycle::SurveyMemories::new(&catalog, &index).execute();
     if memories.is_empty() {
         return vec![
             Finding::new(Level::Ok, "no memory on this machine yet")
@@ -514,7 +515,7 @@ fn memories_finding() -> Vec<Finding> {
         .map(|resolved| resolved.path().to_path_buf());
     let unreachable = memories
         .iter()
-        .filter(|memory| memory.reach == crate::memories::Reach::Unreachable)
+        .filter(|memory| memory.reach == crate::lifecycle::StoreReach::Unreachable)
         .count();
 
     let mut finding = Finding::new(
@@ -544,12 +545,12 @@ fn memories_finding() -> Vec<Finding> {
             "{} {} · {} · {}{}{}",
             if here { "→" } else { " " },
             memory.path.display(),
-            crate::memories::human_size(memory.bytes),
+            memory.size.human(),
             memory.reach.as_str(),
             memory
                 .storage
-                .as_deref()
-                .map(|storage| format!(" · {storage}"))
+                .as_ref()
+                .map(|storage| format!(" · {}", storage.label()))
                 .unwrap_or_default(),
             memory
                 .last_opened

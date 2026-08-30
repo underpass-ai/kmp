@@ -3,6 +3,7 @@ use std::process::{Child, ChildStdout, Command, Stdio};
 use std::sync::mpsc;
 use std::time::Duration;
 
+use kmp_mcp::lifecycle::StoreIndex;
 use serde_json::Value;
 
 const TLS_ENV_VARS: &[&str] = &[
@@ -226,7 +227,9 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
         .count();
     assert_eq!(rescues, 1, "the removed store has one recoverable export");
     assert_eq!(
-        kmp_mcp::memories::read_index(&data_home.join("kmp").join(kmp_mcp::memories::INDEX_FILE)),
+        kmp_mcp::lifecycle::JsonlStoreIndex::new(&data_home)
+            .remembered()
+            .unwrap_or_default(),
         vec![std::fs::canonicalize(&second_store).expect("second store path")]
     );
     second.stop();

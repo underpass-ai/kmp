@@ -5,7 +5,6 @@ pub mod diagnostics;
 pub mod document;
 pub mod guide;
 pub mod lifecycle;
-pub mod memories;
 pub mod plugin_notice;
 pub mod pulse;
 pub mod snapshot;
