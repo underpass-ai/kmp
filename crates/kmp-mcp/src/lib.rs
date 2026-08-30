@@ -10,7 +10,6 @@ pub mod pulse;
 pub mod snapshot;
 pub mod style;
 pub mod tool_error;
-pub mod uninstall;
 mod view_tools;
 pub mod viewer;
 

@@ -37,7 +37,7 @@ pub struct KernelMcpServer {
     /// Shared store-use claim held until this MCP transport exits. Selective
     /// uninstall must acquire the exclusive counterpart before it can remove
     /// the directory.
-    store_session_lease: Option<crate::uninstall::StoreSessionLease>,
+    store_session_lease: Option<crate::lifecycle::StoreSessionLease>,
     /// The storage engine under an embedded backend, for the startup line
     /// and the doctor. `None` for the other backends.
     embedded_engine: Option<kmp_embedded::StorageEngine>,
@@ -143,7 +143,7 @@ impl KernelMcpServer {
         self
     }
 
-    pub fn with_store_session_lease(mut self, lease: crate::uninstall::StoreSessionLease) -> Self {
+    pub fn with_store_session_lease(mut self, lease: crate::lifecycle::StoreSessionLease) -> Self {
         self.store_session_lease = Some(lease);
         self
     }
@@ -221,7 +221,7 @@ impl KernelMcpServer {
                     .map_err(|error| error.to_string())?;
                 let lease = kmp_embedded::user_data_home()
                     .map(|data_home| {
-                        crate::uninstall::StoreSessionLease::acquire(&data_home, resolved.path())
+                        crate::lifecycle::StoreSessionLease::acquire(&data_home, resolved.path())
                     })
                     .transpose()?;
                 tracing::info!(
