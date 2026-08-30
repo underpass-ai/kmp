@@ -84,7 +84,7 @@ pub(crate) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
                 "type": "integer",
                 "minimum": 512,
                 "default": 10_000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile."
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error."
             },
             "detail": {
                 "type": "string",

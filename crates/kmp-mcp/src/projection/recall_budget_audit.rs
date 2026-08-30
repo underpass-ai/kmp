@@ -12,6 +12,40 @@ mod tests {
     #[allow(unused_imports)]
     use serde_json::{Value, json};
 
+    /// #439: a ceiling below the stable floor returns the floor and says
+    /// so, instead of an error whose only answer was to over-budget. One
+    /// call, never fails, spend = the floor — and the caller is told the
+    /// number to raise.
+    #[test]
+    fn a_budget_below_the_stable_floor_returns_the_floor_and_says_so() {
+        for (value, default_tokens) in [
+            (recall_budget_fixture(), 2_400u32),
+            (wake_budget_fixture(), 1_600u32),
+        ] {
+            for byte_limit in [512usize, 640, 768] {
+                let bounded = enforce_recall_output_budget(
+                    value.clone(),
+                    &json!({"budget": {"max_bytes": byte_limit, "detail": "balanced"}}),
+                    default_tokens,
+                );
+                let warnings = bounded["warnings"].as_array().expect("warnings channel");
+                assert!(
+                    warnings
+                        .iter()
+                        .any(|warning| warning.as_str().is_some_and(|text| {
+                            text.contains("stable floor") && text.contains(&byte_limit.to_string())
+                        })),
+                    "the floor must say why it exceeds max_bytes {byte_limit}: {warnings:?}"
+                );
+                let size = serde_json::to_vec(&bounded).expect("serialize").len();
+                assert!(
+                    size < 4_000,
+                    "the floor is minimal, not a budget escape hatch: {size} bytes"
+                );
+            }
+        }
+    }
+
     #[test]
     fn compact_output_filters_structure_and_honours_the_serialized_byte_limit() {
         let path = (0..40)

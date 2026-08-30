@@ -151,7 +151,10 @@ fn project_recall_output_typed(
         page_entries: usize::MAX,
         ..budget
     };
-    let (core, core_text_shortened) = match fit_core(
+    // A ceiling below the stable floor is not an error any more (#439): the
+    // caller gets the floor — the zero-text core — with a warning naming it,
+    // which costs one call instead of training every caller to over-budget.
+    let (core, core_text_shortened, floor_mode) = match fit_core(
         &plan,
         &plan.items,
         0,
@@ -159,8 +162,12 @@ fn project_recall_output_typed(
         &selection_hash,
         &core_budget,
     ) {
-        Some(core) => core,
-        None => return Ok(ProjectionOutcome::CoreTooLarge),
+        Some((core, shortened)) => (core, shortened, false),
+        None => {
+            let mut zero = plan.core.clone();
+            truncate_json_text(&mut zero, 0);
+            (zero, true, true)
+        }
     };
     plan.core = core;
     plan.core_lengths = section_lengths(&plan.core);
@@ -202,10 +209,12 @@ fn project_recall_output_typed(
         selected.push(item.clone());
     }
 
-    if selected.is_empty() && offset < eligible.len() {
+    if selected.is_empty() && offset < eligible.len() && !floor_mode {
         // Never manufacture a continuation that cannot advance. `fit_core`
         // reserves one item, so reaching this branch means the hard byte
-        // ceiling cannot carry both the stable core and any expansion.
+        // ceiling cannot carry both the stable core and any expansion. In
+        // floor mode the response says exactly why it cannot advance, so the
+        // caller is never left retrying the same cursor blind.
         return Ok(ProjectionOutcome::CoreTooLarge);
     }
 
@@ -234,6 +243,23 @@ fn project_recall_output_typed(
             return Ok(ProjectionOutcome::Projected(projected));
         }
         if selected.pop().is_none() {
+            if floor_mode {
+                // The floor exceeds the requested ceiling by definition.
+                // Return it anyway, saying so: min(content, floor) beats an
+                // error the caller can only answer by over-budgeting.
+                let floor_bytes = serialized_bytes(&projected);
+                append_warning(
+                    &mut projected,
+                    &format!(
+                        "budget.max_bytes {} is below this response's stable floor; returned \
+                         the {floor_bytes}-byte floor instead — raise max_bytes past it to \
+                         see more",
+                        budget.byte_limit
+                    ),
+                );
+                stabilize_used_bytes(&mut projected);
+                return Ok(ProjectionOutcome::Projected(projected));
+            }
             return Ok(ProjectionOutcome::CoreTooLarge);
         }
     }
