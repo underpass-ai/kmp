@@ -56,6 +56,10 @@ under-tested crate can no longer hide behind a well-tested one. A crate cannot
 lose coverage this way either, because the plan that reaches a crate always
 includes every package whose tests can reach it.
 
+Enforcement follows the plan: a crate the router did not select is measured
+but not judged, because its lines were covered only incidentally by tests
+that never claimed to prove it. The full matrix judges every crate.
+
 Crates already under the bar carry a recorded floor in
 [`coverage-floors.tsv`](./coverage-floors.tsv). A floor may rise freely and the
 gate says when one can; lowering one is a reviewed change that says why. Refresh
