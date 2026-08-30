@@ -5,6 +5,7 @@ use crate::lifecycle::application::use_cases::diagnose_tool_surface::diagnose_to
 use crate::lifecycle::domain::diagnosis_verdict::worst_severity;
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
+use crate::lifecycle::domain::report_section::ReportSection;
 use crate::style::Style;
 
 use super::agent_policy_probe::agent_policy_finding;
@@ -15,6 +16,13 @@ use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::startup_log_probe::startup_history;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
+
+/// Everything one doctor run found, and the verdict it earned. Rendering
+/// consumes this and never looks at the machine again (#416).
+pub(crate) struct DoctorObservation {
+    sections: Vec<ReportSection>,
+    worst: DiagnosticSeverity,
+}
 
 /// `doctor` — the same facts, judged, ending in the one thing to fix.
 ///
@@ -39,50 +47,52 @@ pub(crate) fn doctor_styled_with_lifecycle(
     style: Style,
     lifecycle: Vec<LifecycleFinding>,
 ) -> (String, i32) {
-    let mut out = String::new();
-    let _ = writeln!(
-        out,
-        "{}\n",
-        banner::large_with(style, "  doctor — agent memory, end to end")
-    );
+    render_doctor(style, &observe_doctor(lifecycle))
+}
+
+/// One look at the machine. Which sections count toward the verdict is
+/// unchanged: Binary, Viewer and Memories inform, they do not judge.
+pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservation {
+    let mut sections = Vec::new();
 
     let binary = LifecycleFinding::new(
         DiagnosticSeverity::Ok,
         format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")),
     )
     .with_detail(format!("store formats: {}", compiled_formats()));
-    section(&mut out, style, "Binary", &[binary]);
+    sections.push(ReportSection::single("Binary", binary));
 
     let backend = backend_finding();
-    section(&mut out, style, "Backend", std::slice::from_ref(&backend));
+    let backend_level = backend.severity();
+    sections.push(ReportSection::single("Backend", backend));
 
     let (data_dir, resolved) = data_dir_finding();
     let data_dir_level = data_dir.severity();
-    section(&mut out, style, "Memory", &[data_dir]);
+    sections.push(ReportSection::single("Memory", data_dir));
     let durability = resolved.as_ref().and_then(committed_bundle_finding);
     let durability_level = durability
         .as_ref()
         .map_or(DiagnosticSeverity::Ok, |finding| finding.severity());
     if let Some(durability) = durability {
-        section(&mut out, style, "Durability", &[durability]);
+        sections.push(ReportSection::single("Durability", durability));
     }
 
     let tools = crate::tool_names();
     let surface = diagnose_tool_surface(&tools, &crate::contract::declared_tool_names());
     let surface_level = surface.severity();
-    section(&mut out, style, "Tools", &[surface]);
+    sections.push(ReportSection::single("Tools", surface));
     let lifecycle_level = worst_severity(lifecycle.iter().map(|finding| finding.severity()));
-    section(&mut out, style, "Hosts", &lifecycle);
+    sections.push(ReportSection::new("Hosts", lifecycle));
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.severity();
-    section(&mut out, style, "Agent", &[agent_policy]);
-    section(&mut out, style, "Viewer", &[viewer_finding()]);
+    sections.push(ReportSection::single("Agent", agent_policy));
+    sections.push(ReportSection::single("Viewer", viewer_finding()));
     let telemetry = resolved.as_ref().map(telemetry_finding);
     let telemetry_level = telemetry
         .as_ref()
         .map_or(DiagnosticSeverity::Ok, |finding| finding.severity());
     if let Some(telemetry) = telemetry {
-        section(&mut out, style, "Telemetry", &[telemetry]);
+        sections.push(ReportSection::single("Telemetry", telemetry));
     }
 
     let mut history_level = DiagnosticSeverity::Ok;
@@ -102,25 +112,38 @@ pub(crate) fn doctor_styled_with_lifecycle(
             }
             recent
         };
-        section(&mut out, style, "History", &[finding]);
+        sections.push(ReportSection::single("History", finding));
     }
 
-    let worst = [
+    let worst = worst_severity([
         data_dir_level,
         durability_level,
         surface_level,
         lifecycle_level,
-        backend.severity(),
+        backend_level,
         history_level,
         agent_policy_level,
         telemetry_level,
-    ]
-    .into_iter();
-    let worst = worst_severity(worst);
+    ]);
 
-    // The verdict wears the worst finding's ink: the one line a reader
-    // scrolls to is the one line that should be findable at a glance.
-    match worst {
+    DoctorObservation { sections, worst }
+}
+
+/// Presentation only: the banner, the sections, and the verdict wearing the
+/// worst finding's ink — the one line a reader scrolls to should be findable
+/// at a glance.
+pub(crate) fn render_doctor(style: Style, observation: &DoctorObservation) -> (String, i32) {
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "{}\n",
+        banner::large_with(style, "  doctor — agent memory, end to end")
+    );
+    for block in &observation.sections {
+        section(&mut out, style, block.title, &block.findings);
+    }
+
+    match observation.worst {
         DiagnosticSeverity::Fail => {
             let _ = writeln!(
                 out,
@@ -156,9 +179,9 @@ pub(crate) fn doctor_styled_with_lifecycle(
 
 #[cfg(test)]
 mod tests {
-    use super::doctor_styled_with_lifecycle;
+    use super::{doctor_styled_with_lifecycle, observe_doctor, render_doctor};
     use crate::banner;
-    use crate::lifecycle::adapters::info_report::{info, info_styled};
+    use crate::lifecycle::adapters::info_report::{info, observe_info, render_info};
     use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
     use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
     use crate::style::Style;
@@ -190,19 +213,26 @@ mod tests {
             );
         }
     }
+
     /// A terminal gets ink; a pipe gets the pinned bytes. Both must say the
     /// same thing, or the human and the plugin host are reading different
-    /// products.
+    /// products. Both renders consume one observation, so a live session
+    /// writing to a store between them cannot fake a styling difference
+    /// (#416).
     #[test]
     fn styled_reports_say_exactly_what_plain_reports_say() {
+        let observed = observe_info();
         assert_eq!(
-            crate::style::stripped(&info_styled(Style::Ansi)),
-            info_styled(Style::Plain)
+            crate::style::stripped(&render_info(Style::Ansi, &observed)),
+            render_info(Style::Plain, &observed)
         );
-        let (styled, _) = doctor_styled_with_lifecycle(Style::Ansi, lifecycle_fixture());
-        let (plain, _) = doctor_styled_with_lifecycle(Style::Plain, lifecycle_fixture());
+        let observation = observe_doctor(lifecycle_fixture());
+        let (styled, styled_code) = render_doctor(Style::Ansi, &observation);
+        let (plain, plain_code) = render_doctor(Style::Plain, &observation);
         assert_eq!(crate::style::stripped(&styled), plain);
+        assert_eq!(styled_code, plain_code, "ink cannot change the verdict");
     }
+
     /// A failing host finding must reach the verdict and the exit code —
     /// this is the line a script gates on, and a mutation probe showed
     /// nothing else pinned it.

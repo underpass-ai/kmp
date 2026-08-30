@@ -27,6 +27,7 @@ pub mod plugin_engine_role;
 pub mod plugin_root;
 pub mod process_timeout;
 pub mod release_version;
+pub mod report_section;
 pub mod store_facts;
 pub mod store_leases_dir;
 pub mod store_reach;
