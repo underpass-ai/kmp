@@ -1,3 +1,4 @@
+use crate::application::use_cases::check_release_readiness::CheckReleaseReadiness;
 use crate::domain::candidate_workspace::CandidateWorkspace;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::release_version::ReleaseVersion;
@@ -6,6 +7,7 @@ use crate::domain::workflow_run_id::WorkflowRunId;
 use crate::ports::candidate_automation::CandidateAutomation;
 use crate::ports::candidate_file_system::CandidateFileSystem;
 use crate::ports::release_contracts::ReleaseContracts;
+use crate::ports::release_file_system::ReleaseFileSystem;
 use crate::ports::release_workspace::ReleaseWorkspace;
 
 pub struct SealReleaseCandidate<'a, F, C, W, A> {
@@ -18,7 +20,7 @@ pub struct SealReleaseCandidate<'a, F, C, W, A> {
 
 impl<'a, F, C, W, A> SealReleaseCandidate<'a, F, C, W, A>
 where
-    F: CandidateFileSystem,
+    F: CandidateFileSystem + ReleaseFileSystem,
     C: ReleaseContracts,
     W: ReleaseWorkspace,
     A: CandidateAutomation,
@@ -44,18 +46,19 @@ where
         version: &ReleaseVersion,
         supplied_run: Option<WorkflowRunId>,
     ) -> Result<String, ReleaseError> {
-        self.require_contracts(version)?;
-        self.workspace.require_clean()?;
-        let branch = self.workspace.current_branch()?;
-        let head = self.workspace.head_commit()?;
+        // Everything knowable from the tree is answered before a fifteen-minute
+        // build starts against a tree that could never be tagged.
+        println!(
+            "{}",
+            CheckReleaseReadiness::new(self.file_system, self.contracts, self.workspace, self.root)
+                .execute(version)
+                .into_result()?
+        );
         let run_id = match supplied_run {
             Some(run_id) => run_id,
             None => {
-                if self.workspace.upstream_commit()?.as_ref() != Some(&head) {
-                    return Err(ReleaseError::invalid(format!(
-                        "push {branch} before building its candidate"
-                    )));
-                }
+                let branch = self.workspace.current_branch()?;
+                let head = self.workspace.head_commit()?;
                 self.candidates.dispatch(&branch, &head)?
             }
         };
@@ -71,17 +74,6 @@ where
         Ok(format!(
             "candidate {run_id} verified and server.json stamped; review, commit and push server.json"
         ))
-    }
-
-    fn require_contracts(&self, version: &ReleaseVersion) -> Result<(), ReleaseError> {
-        let actual = self.contracts.workspace_version()?;
-        if actual != *version {
-            return Err(ReleaseError::invalid(format!(
-                "workspace version {actual} does not match target {version}"
-            )));
-        }
-        self.contracts.check_changelog(version)?;
-        Ok(())
     }
 
     fn verify_and_stamp(

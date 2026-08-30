@@ -133,7 +133,11 @@ impl CandidateAutomation for GhCandidateAutomation {
         destination: &Path,
     ) -> Result<(), ReleaseError> {
         let artifact = format!("kmp-release-candidate-{version}");
-        self.inherited(&[
+        // Captured, not inherited: looking for the matching candidate walks
+        // every successful run, and most of them never built this version. Their
+        // "no artifact matches" is an answer to the search, not an error the
+        // operator has to read.
+        self.checked_text(&[
             "run",
             "download",
             run_id.as_str(),
@@ -142,6 +146,7 @@ impl CandidateAutomation for GhCandidateAutomation {
             "--dir",
             &destination.to_string_lossy(),
         ])
+        .map(|_| ())
     }
 
     fn successful_runs(&self) -> Result<Vec<WorkflowRunId>, ReleaseError> {

@@ -1,6 +1,7 @@
 use sha2::{Digest, Sha256};
 
 use crate::domain::candidate_input_digest::CandidateInputDigest;
+use crate::domain::candidate_input_selector::CandidateInputSelector;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::repository_root::RepositoryRoot;
 use crate::ports::candidate_file_system::CandidateFileSystem;
@@ -20,38 +21,7 @@ impl<'a, F: CandidateFileSystem, R: ReleaseRepository> CalculateCandidateInputs<
     }
 
     pub fn execute(&self, root: &RepositoryRoot) -> Result<CandidateInputDigest, ReleaseError> {
-        let exact = [
-            "Cargo.toml",
-            "Cargo.lock",
-            "rust-toolchain.toml",
-            "LICENSE",
-            "NOTICE",
-            "THIRD_PARTY_NOTICES.md",
-            ".github/workflows/release.yml",
-            ".agents/plugins/marketplace.json",
-            ".claude-plugin/marketplace.json",
-            "scripts/ci/install-protoc.sh",
-            "scripts/ci/install-rust-toolchain.sh",
-        ];
-        let prefixes = [
-            "crates/",
-            "api/",
-            ".github/actions/install-rust/",
-            "distribution/mcpb/",
-            "plugins/kmp/",
-            "scripts/plugin/",
-        ];
-        let mut selected = self
-            .repository
-            .tracked_files(root)?
-            .into_iter()
-            .filter(|path| {
-                let relative = path.to_string_lossy();
-                exact.contains(&relative.as_ref())
-                    || prefixes.iter().any(|prefix| relative.starts_with(prefix))
-            })
-            .collect::<Vec<_>>();
-        selected.sort();
+        let selected = CandidateInputSelector::new().select(self.repository.tracked_files(root)?);
         let mut digest = Sha256::new();
         for relative in selected {
             let path_bytes = relative.to_string_lossy().as_bytes().to_vec();

@@ -248,8 +248,9 @@ where
                 let receipt =
                     PrepareReleaseVersion::new(&self.file_system).execute(&root, &version)?;
                 Ok(format!(
-                    "prepared {version}: {} internal dependency pins; MCPB hash {}",
+                    "prepared {version}: {} internal dependency pins; Claude catalog ref {}; MCPB hash {}",
                     receipt.internal_dependencies(),
+                    receipt.catalog_ref(),
                     if receipt.mcpb_hash_was_reset() {
                         "reset"
                     } else {

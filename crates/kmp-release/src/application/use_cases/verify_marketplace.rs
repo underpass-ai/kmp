@@ -1,11 +1,8 @@
 use std::path::Path;
 
-use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
 
-use crate::application::dto::claude_marketplace_dto::ClaudeMarketplaceDto;
-use crate::application::dto::codex_marketplace_dto::CodexMarketplaceDto;
-use crate::application::dto::plugin_manifest_dto::PluginManifestDto;
+use crate::application::use_cases::check_marketplace_contracts::CheckMarketplaceContracts;
 use crate::domain::plugin_tree_digest::PluginTreeDigest;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::release_version::ReleaseVersion;
@@ -15,6 +12,10 @@ use crate::ports::candidate_file_system::CandidateFileSystem;
 use crate::ports::marketplace_repository::MarketplaceRepository;
 use crate::ports::release_file_system::ReleaseFileSystem;
 
+/// Proves that the tag both catalogs advertise resolves to the reviewed commit
+/// and that Codex and Claude Code install byte-identical plugin trees. The
+/// answers that need no network are settled first, by
+/// [`CheckMarketplaceContracts`], so a stale catalog fails before a clone.
 pub struct VerifyMarketplace<'a, F, R> {
     file_system: &'a F,
     repository: &'a R,
@@ -40,43 +41,9 @@ where
         expected_commit: Option<&SourceCommit>,
         allow_unpublished_tag: bool,
     ) -> Result<SourceCommit, ReleaseError> {
-        let claude: ClaudeMarketplaceDto =
-            self.read_json(&root.join(".claude-plugin/marketplace.json"))?;
-        let codex: CodexMarketplaceDto =
-            self.read_json(&root.join(".agents/plugins/marketplace.json"))?;
-        let claude_plugin = Self::one_claude_plugin(&claude)?;
-        let codex_plugin = Self::one_codex_plugin(&codex)?;
+        CheckMarketplaceContracts::new(self.file_system).execute(root, version, repository_url)?;
         let release_ref = version.tag();
-        if claude_plugin.source.source != "git-subdir"
-            || claude_plugin.source.url != repository_url
-            || claude_plugin.source.path != "plugins/kmp"
-            || claude_plugin.source.reference != release_ref
-        {
-            return Err(ReleaseError::invalid(format!(
-                "Claude marketplace must resolve {repository_url}/plugins/kmp through clonable immutable tag {release_ref}"
-            )));
-        }
-        if codex_plugin.source.source != "local" || codex_plugin.source.path != "./plugins/kmp" {
-            return Err(ReleaseError::invalid(
-                "Codex marketplace must resolve the reviewed ./plugins/kmp snapshot",
-            ));
-        }
-        Self::verify_description("Claude marketplace kmp entry", &claude_plugin.description)?;
         let plugin_root = root.join("plugins/kmp");
-        for relative in [".claude-plugin/plugin.json", ".codex-plugin/plugin.json"] {
-            let manifest: PluginManifestDto = self.read_json(&plugin_root.join(relative))?;
-            if manifest
-                .version
-                .split_once('+')
-                .map_or(manifest.version.as_str(), |pair| pair.0)
-                != version.as_str()
-            {
-                return Err(ReleaseError::invalid(format!(
-                    "{relative} is {}, not {version}",
-                    manifest.version
-                )));
-            }
-        }
         let expected = match expected_commit {
             Some(commit) => commit.clone(),
             None => self
@@ -131,64 +98,6 @@ where
         result
     }
 
-    fn one_claude_plugin(
-        catalog: &ClaudeMarketplaceDto,
-    ) -> Result<
-        &crate::application::dto::claude_marketplace_plugin_dto::ClaudeMarketplacePluginDto,
-        ReleaseError,
-    > {
-        let matches = catalog
-            .plugins
-            .iter()
-            .filter(|plugin| plugin.name == "kmp")
-            .collect::<Vec<_>>();
-        if matches.len() != 1 {
-            return Err(ReleaseError::invalid(format!(
-                "Claude marketplace must contain exactly one kmp entry, found {}",
-                matches.len()
-            )));
-        }
-        Ok(matches[0])
-    }
-
-    fn one_codex_plugin(
-        catalog: &CodexMarketplaceDto,
-    ) -> Result<
-        &crate::application::dto::codex_marketplace_plugin_dto::CodexMarketplacePluginDto,
-        ReleaseError,
-    > {
-        let matches = catalog
-            .plugins
-            .iter()
-            .filter(|plugin| plugin.name == "kmp")
-            .collect::<Vec<_>>();
-        if matches.len() != 1 {
-            return Err(ReleaseError::invalid(format!(
-                "Codex marketplace must contain exactly one kmp entry, found {}",
-                matches.len()
-            )));
-        }
-        Ok(matches[0])
-    }
-
-    fn verify_description(source: &str, description: &str) -> Result<(), ReleaseError> {
-        let lower = description.to_lowercase();
-        if !description.contains("ChronoLoom") {
-            return Err(ReleaseError::invalid(format!(
-                "{source} must describe the ChronoLoom view"
-            )));
-        }
-        if ["ten tools", "10 tools", "ten moves", "10 moves"]
-            .iter()
-            .any(|retired| lower.contains(retired))
-        {
-            return Err(ReleaseError::invalid(format!(
-                "{source} advertises a retired whole-surface count"
-            )));
-        }
-        Ok(())
-    }
-
     fn tree_digest(&self, root: &Path) -> Result<PluginTreeDigest, ReleaseError> {
         let mut entries = self.file_system.walk_files(root)?;
         entries.sort();
@@ -222,11 +131,5 @@ where
             digest.update(content);
         }
         Ok(PluginTreeDigest::from_bytes(digest.finalize().into()))
-    }
-
-    fn read_json<T: DeserializeOwned>(&self, path: &Path) -> Result<T, ReleaseError> {
-        serde_json::from_str(&self.file_system.read_text(path)?).map_err(|error| {
-            ReleaseError::invalid(format!("cannot read {}: {error}", path.display()))
-        })
     }
 }

@@ -6,7 +6,7 @@ use crate::domain::workflow_run_id::WorkflowRunId;
 pub struct ReleaseWorkflowCommandMapper;
 
 impl ReleaseWorkflowCommandMapper {
-    pub const USAGE: &'static str = "usage: kmp-release workflow version VERSION\n       kmp-release workflow candidate VERSION [RUN_ID]\n       kmp-release workflow release VERSION";
+    pub const USAGE: &'static str = "usage: kmp-release workflow preflight VERSION\n       kmp-release workflow version VERSION\n       kmp-release workflow candidate VERSION [RUN_ID]\n       kmp-release workflow release VERSION";
 
     pub fn map(arguments: &[String]) -> Result<ReleaseWorkflowCommandDto, ReleaseError> {
         let action = arguments.first().map(String::as_str).unwrap_or_default();
@@ -15,6 +15,7 @@ impl ReleaseWorkflowCommandMapper {
             .ok_or_else(|| ReleaseError::invalid(Self::USAGE))
             .and_then(|value| ReleaseVersion::parse(value.clone()))?;
         match (action, arguments.len()) {
+            ("preflight", 2) => Ok(ReleaseWorkflowCommandDto::Preflight { version }),
             ("version", 2) => Ok(ReleaseWorkflowCommandDto::Version { version }),
             ("candidate", 2) => Ok(ReleaseWorkflowCommandDto::Candidate {
                 version,
@@ -50,6 +51,26 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn preflight_takes_only_a_version() {
+        let command =
+            ReleaseWorkflowCommandMapper::map(&["preflight".to_string(), "0.6.1".to_string()])
+                .expect("preflight command");
+
+        assert!(matches!(
+            command,
+            ReleaseWorkflowCommandDto::Preflight { .. }
+        ));
+        assert!(
+            ReleaseWorkflowCommandMapper::map(&[
+                "preflight".to_string(),
+                "0.6.1".to_string(),
+                "33234243966".to_string(),
+            ])
+            .is_err()
+        );
     }
 
     #[test]

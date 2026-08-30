@@ -1,4 +1,5 @@
 use crate::application::dto::release_workflow_command_dto::ReleaseWorkflowCommandDto;
+use crate::application::use_cases::check_release_readiness::CheckReleaseReadiness;
 use crate::application::use_cases::prepare_release_workflow::PrepareReleaseWorkflow;
 use crate::application::use_cases::publish_release_workflow::PublishReleaseWorkflow;
 use crate::application::use_cases::seal_release_candidate::SealReleaseCandidate;
@@ -7,6 +8,7 @@ use crate::domain::repository_root::RepositoryRoot;
 use crate::ports::candidate_automation::CandidateAutomation;
 use crate::ports::candidate_file_system::CandidateFileSystem;
 use crate::ports::release_contracts::ReleaseContracts;
+use crate::ports::release_file_system::ReleaseFileSystem;
 use crate::ports::release_workspace::ReleaseWorkspace;
 
 pub struct ReleaseWorkflowApplication<'a, F, C, W, A> {
@@ -19,7 +21,7 @@ pub struct ReleaseWorkflowApplication<'a, F, C, W, A> {
 
 impl<'a, F, C, W, A> ReleaseWorkflowApplication<'a, F, C, W, A>
 where
-    F: CandidateFileSystem,
+    F: CandidateFileSystem + ReleaseFileSystem,
     C: ReleaseContracts,
     W: ReleaseWorkspace,
     A: CandidateAutomation,
@@ -42,6 +44,14 @@ where
 
     pub fn execute(&self, command: ReleaseWorkflowCommandDto) -> Result<String, ReleaseError> {
         match command {
+            ReleaseWorkflowCommandDto::Preflight { version } => CheckReleaseReadiness::new(
+                self.file_system,
+                self.contracts,
+                self.workspace,
+                self.root,
+            )
+            .execute(&version)
+            .into_result(),
             ReleaseWorkflowCommandDto::Version { version } => {
                 PrepareReleaseWorkflow::new(self.contracts, self.workspace, self.root)
                     .execute(&version)

@@ -9,6 +9,30 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/release.sh preflight X.Y.Z` answers "is this tree ready to release
+  X.Y.Z?" without building anything, and reports every failure at once instead
+  of the first. It checks the changelog section, every version source, both
+  marketplace catalogs, the working tree and pushed branch, and the vendored
+  contract and publish chain gates. `candidate` and `release` now run it before
+  doing anything expensive, so a fifteen-minute candidate build cannot start
+  against a tree that could never be tagged.
+
+### Fixed
+
+- `scripts/release.sh version` now bumps the `ref` in
+  `.claude-plugin/marketplace.json` beside the manifests it already owns. That
+  ref pins the tag Claude Code clones and is also one of the candidate's input
+  files, so leaving it to a later commit invalidated the candidate that had
+  just been built — the failure was documented nowhere and cost two builds to
+  release 0.6.0.
+- A tag that finds no matching candidate now names the release inputs that
+  moved since that candidate was built and the command that rebuilds it,
+  instead of a digest the reader cannot compute. Searching the successful runs
+  no longer prints one `no artifact matches` line per run that built a
+  different version.
+
 ## [0.6.0] - 2026-08-30
 
 ### Fixed

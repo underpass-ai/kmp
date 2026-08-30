@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::domain::branch_name::BranchName;
 use crate::domain::candidate_input_digest::CandidateInputDigest;
 use crate::domain::release_error::ReleaseError;
@@ -14,6 +16,11 @@ pub trait ReleaseWorkspace {
     fn head_commit(&self) -> Result<SourceCommit, ReleaseError>;
     fn upstream_commit(&self) -> Result<Option<SourceCommit>, ReleaseError>;
     fn verify_registry(&self) -> Result<(), ReleaseError>;
+    fn verify_vendored_contract(&self) -> Result<(), ReleaseError>;
+    fn verify_publish_chain(&self) -> Result<(), ReleaseError>;
+    /// Tracked paths that differ between `commit` and the working tree, used to
+    /// name what moved under a candidate that no longer matches.
+    fn changed_files_since(&self, commit: &SourceCommit) -> Result<Vec<PathBuf>, ReleaseError>;
     fn tag_exists(&self, version: &ReleaseVersion) -> Result<bool, ReleaseError>;
     fn create_and_push_tag(
         &self,
