@@ -661,6 +661,65 @@ jobs:
       - name: Merge coverage and enforce threshold
         run: bash scripts/ci/rust-coverage.sh dist/coverage
 
+  # Branch protection counts a skipped required job as satisfied, so the
+  # draft standdown above leaves stale green conclusions on the head commit —
+  # and a merge right after ready-for-review could sail through before the
+  # real run reports. This is the one required context the standdown cannot
+  # satisfy: on a draft it fails on purpose, and on a ready run it succeeds
+  # only when every required job either passed or was legitimately routed
+  # out by the impact planner.
+  gate:
+    needs:
+      - tree-proof
+      - impact
+      - vendored-contract
+      - publish-chain
+      - rustfmt
+      - clippy
+      - test
+      - integration-valkey
+      - integration-neo4j
+      - integration-conformance
+      - integration-agentic-context
+      - integration-agentic-event-context
+      - integration-mcp-real-kernel
+      - embedded-binary-gates
+      - container-image
+      - helm-chart
+      - coverage
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: The full gate ran and nothing required failed
+        env:
+          DRAFT: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft }}
+          TREE_PROVED: ${{ needs.tree-proof.outputs.skip }}
+          IMPACT: ${{ needs.impact.result }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          if [[ "${DRAFT}" == "true" ]]; then
+            echo "draft: the full gate stands down; mark ready for review to run it" >&2
+            exit 1
+          fi
+          if [[ "${TREE_PROVED}" == "true" ]]; then
+            echo "tree already proved green; nothing to re-run"
+            exit 0
+          fi
+          if [[ "${IMPACT}" != "success" ]]; then
+            echo "impact router finished '${IMPACT}', so nothing downstream is trustworthy" >&2
+            exit 1
+          fi
+          for result in ${RESULTS}; do
+            if [[ "${result}" == "failure" || "${result}" == "cancelled" ]]; then
+              echo "a required job failed or was cancelled: ${RESULTS}" >&2
+              exit 1
+            fi
+          done
+          echo "every required job passed or was routed out: ${RESULTS}"
+
   wait-codeql-checks:
     needs: [tree-proof, impact]
     runs-on: ubuntu-24.04
