@@ -1,5 +1,6 @@
 mod converge_lifecycle;
 pub mod diagnose_lifecycle;
+pub mod diagnose_tool_surface;
 pub mod forget_store;
 pub mod remember_store;
 pub mod remove_piece;

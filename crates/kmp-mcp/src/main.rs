@@ -393,11 +393,11 @@ async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
             return 0;
         }
         "info" => {
-            print!("{}", kmp_mcp::diagnostics::info());
+            print!("{}", kmp_mcp::lifecycle::info());
             return 0;
         }
         "doctor" => {
-            let (report, code) = kmp_mcp::diagnostics::doctor();
+            let (report, code) = kmp_mcp::lifecycle::doctor();
             print!("{report}");
             return code;
         }

@@ -9,9 +9,11 @@ pub mod application;
 pub mod domain;
 pub mod ports;
 
+pub use adapters::doctor_report::doctor;
 pub use adapters::filesystem_engine_store::FilesystemEngineStore;
 pub use adapters::filesystem_store_catalog::FilesystemStoreCatalog;
 pub use adapters::github_release_repository::GithubReleaseRepository;
+pub use adapters::info_report::info;
 pub use adapters::jsonl_store_index::JsonlStoreIndex;
 pub use adapters::lifecycle_cli_parser::LifecycleCliParser;
 pub use adapters::native_host_gateway::NativeHostGateway;

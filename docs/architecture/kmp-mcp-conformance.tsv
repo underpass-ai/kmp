@@ -3,7 +3,6 @@
 # This baseline may shrink freely. It may only grow through a reviewed change.
 path	debt
 crates/kmp-mcp/src/backend.rs	types=5
-crates/kmp-mcp/src/diagnostics.rs	types=2,lines=1221
 crates/kmp-mcp/src/document.rs	lines=687
 crates/kmp-mcp/src/embedded.rs	types=2,lines=658
 crates/kmp-mcp/src/ingest.rs	types=3,lines=664

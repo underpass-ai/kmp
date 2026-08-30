@@ -1,4 +1,5 @@
 pub mod convergence_status;
+pub mod diagnosis_verdict;
 pub mod diagnostic_severity;
 pub mod engine_artifact;
 pub mod engine_executable;
