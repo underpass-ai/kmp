@@ -18,7 +18,7 @@ use kmp_viewer::{
     ViewRegistry, ViewState,
 };
 
-use crate::tool_error::ToolError;
+use crate::serving::ToolError;
 
 pub(crate) const VIEW_TOOLS: [&str; 3] = [
     "kmp_view_open",

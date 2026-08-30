@@ -5,7 +5,7 @@ use crate::contract::tools::{
     app_view_undo, app_visual_projection, ask, forward, goto, ingest, inspect, near, rewind, trace,
     view_apply_intent, view_get_state, view_open, wake, write_memory,
 };
-use crate::tool_error::ToolErrorCode;
+use crate::serving::tool_error_code::ToolErrorCode;
 
 pub(crate) fn tools_list_result() -> Value {
     tools_list_result_with_apps(false)

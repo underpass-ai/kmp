@@ -1,41 +1,12 @@
-use std::future::Future;
 use std::path::PathBuf;
-use std::pin::Pin;
 
-use serde_json::Value;
+use crate::serving::environment::{
+    GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,
+    GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, optional_env_path, optional_env_string,
+};
+use crate::serving::grpc_tls_mode::KernelMcpGrpcTlsMode;
 
-use crate::tool_error::ToolError;
-
-pub const GRPC_ENDPOINT_ENV: &str = "KMP_KERNEL_GRPC_ENDPOINT";
-pub const MCP_BACKEND_ENV: &str = "KMP_MCP_BACKEND";
-pub const GRPC_TLS_MODE_ENV: &str = "KMP_KERNEL_GRPC_TLS_MODE";
-pub const GRPC_TLS_CA_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_CA_PATH";
-pub const GRPC_TLS_CERT_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_CERT_PATH";
-pub const GRPC_TLS_KEY_PATH_ENV: &str = "KMP_KERNEL_GRPC_TLS_KEY_PATH";
-pub const GRPC_TLS_DOMAIN_NAME_ENV: &str = "KMP_KERNEL_GRPC_TLS_DOMAIN_NAME";
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum KernelMcpBackend {
-    Fixture,
-    Grpc {
-        endpoint: String,
-        tls: KernelMcpGrpcTlsConfig,
-    },
-}
-
-pub type KernelMcpToolFuture<'a> =
-    Pin<Box<dyn Future<Output = Result<Value, ToolError>> + Send + 'a>>;
-
-pub trait KernelMcpToolBackend: Send + Sync {
-    fn backend_name(&self) -> &'static str;
-
-    fn grpc_tls_mode_name(&self) -> &'static str {
-        "disabled"
-    }
-
-    fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a>;
-}
-
+/// The TLS material and mode one gRPC channel is built with.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct KernelMcpGrpcTlsConfig {
     pub(crate) mode: KernelMcpGrpcTlsMode,
@@ -43,23 +14,6 @@ pub struct KernelMcpGrpcTlsConfig {
     pub(crate) cert_path: Option<PathBuf>,
     pub(crate) key_path: Option<PathBuf>,
     pub(crate) domain_name: Option<String>,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum KernelMcpGrpcTlsMode {
-    Disabled,
-    Server,
-    Mutual,
-}
-
-impl KernelMcpGrpcTlsMode {
-    pub(crate) fn as_str(self) -> &'static str {
-        match self {
-            Self::Disabled => "disabled",
-            Self::Server => "server",
-            Self::Mutual => "mutual",
-        }
-    }
 }
 
 impl KernelMcpGrpcTlsConfig {
@@ -163,27 +117,9 @@ fn parse_tls_mode(value: &str) -> Option<KernelMcpGrpcTlsMode> {
     }
 }
 
-fn optional_env_path(name: &str) -> Option<PathBuf> {
-    optional_env_string(name).map(PathBuf::from)
-}
-
-fn optional_env_string(name: &str) -> Option<String> {
-    std::env::var(name)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn tls_mode_names_are_stable_for_logs_and_metadata() {
-        assert_eq!(KernelMcpGrpcTlsMode::Disabled.as_str(), "disabled");
-        assert_eq!(KernelMcpGrpcTlsMode::Server.as_str(), "server");
-        assert_eq!(KernelMcpGrpcTlsMode::Mutual.as_str(), "mutual");
-    }
 
     #[test]
     fn tls_endpoint_uri_upgrades_http_when_tls_is_enabled() {

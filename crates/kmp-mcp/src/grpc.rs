@@ -5,7 +5,7 @@ mod tools;
 
 use serde_json::Value;
 
-use crate::backend::{KernelMcpGrpcTlsConfig, KernelMcpToolBackend, KernelMcpToolFuture};
+use crate::serving::{KernelMcpGrpcTlsConfig, KernelMcpToolBackend, KernelMcpToolFuture};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GrpcKernelMcpBackend {

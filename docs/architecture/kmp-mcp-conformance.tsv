@@ -2,14 +2,11 @@
 # A file is over budget at more than one primary public type or 600 lines.
 # This baseline may shrink freely. It may only grow through a reviewed change.
 path	debt
-crates/kmp-mcp/src/backend.rs	types=5
 crates/kmp-mcp/src/document.rs	lines=687
 crates/kmp-mcp/src/embedded.rs	types=2,lines=658
 crates/kmp-mcp/src/ingest.rs	types=3,lines=664
 crates/kmp-mcp/src/kmp.rs	lines=1782
 crates/kmp-mcp/src/main.rs	lines=1573
 crates/kmp-mcp/src/observability.rs	types=3
-crates/kmp-mcp/src/server.rs	lines=775
-crates/kmp-mcp/src/tool_error.rs	types=2
 crates/kmp-mcp/src/view_tools.rs	types=2
 crates/kmp-mcp/src/write.rs	lines=1601

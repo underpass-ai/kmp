@@ -20,7 +20,7 @@ use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
 
 use crate::ingest::KmpIngestPlan;
-use crate::tool_error::ToolError;
+use crate::serving::tool_error::ToolError;
 use kmp_proto_mapping::v1beta1::recall_projection::{
     ProjectionOutcome, project_recall_output, requested_byte_limit,
 };
@@ -715,7 +715,7 @@ mod tests {
 
         assert_eq!(
             error.code,
-            crate::tool_error::ToolErrorCode::InvalidArgument
+            crate::serving::tool_error_code::ToolErrorCode::InvalidArgument
         );
         assert!(error.message.contains("object floor"), "{error}");
         assert!(error.message.contains("full response requires"), "{error}");
@@ -813,7 +813,7 @@ mod tests {
                 .expect_err("a budget below the floor is not a budget");
             assert_eq!(
                 error.code,
-                crate::tool_error::ToolErrorCode::InvalidArgument,
+                crate::serving::tool_error_code::ToolErrorCode::InvalidArgument,
                 "a bad max_bytes is the caller's, not the kernel's"
             );
         }
@@ -830,7 +830,7 @@ mod tests {
         assert!(error.message.contains("budget.max_bytes"), "{error}");
         assert_eq!(
             error.code,
-            crate::tool_error::ToolErrorCode::InvalidArgument
+            crate::serving::tool_error_code::ToolErrorCode::InvalidArgument
         );
     }
 

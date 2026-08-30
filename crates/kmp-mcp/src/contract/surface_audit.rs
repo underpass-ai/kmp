@@ -17,7 +17,7 @@ mod tests {
     #[allow(unused_imports)]
     use super::*;
     use crate::serving::tool_result::tool_error_result;
-    use crate::tool_error::{ToolError, ToolErrorCode};
+    use crate::serving::{ToolError, ToolErrorCode};
     use serde_json::json;
 
     #[test]

@@ -1,9 +1,34 @@
-//! The serving bounded context's first residents: JSON-RPC framing and
-//! tool result envelopes. The transport and backend dispatch join them
-//! in their own slice.
+//! The serving bounded context: the MCP boundary itself. JSON-RPC framing,
+//! the transport server and its dispatch, the backend port and its
+//! adapters, the tool error vocabulary, and result envelopes.
 
+pub(crate) mod adapters;
+pub(crate) mod backend_choice;
+pub(crate) mod environment;
+pub(crate) mod grpc_tls_config;
+pub(crate) mod grpc_tls_mode;
 pub(crate) mod json_rpc;
+pub(crate) mod kernel_mcp_server;
+pub(crate) mod ports;
+mod rpc_dispatch;
+pub mod tool_error;
+pub(crate) mod tool_error_code;
 pub(crate) mod tool_result;
+mod view_dispatch;
+mod write_dispatch;
 
-pub(crate) use json_rpc::{jsonrpc_error, jsonrpc_result};
-pub(crate) use tool_result::{app_data_success_result, tool_error_result, tool_success_result};
+pub use adapters::fixture_backend::FixtureKernelMcpBackend;
+pub use backend_choice::KernelMcpBackend;
+pub use environment::{
+    GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,
+    GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, MCP_BACKEND_ENV,
+};
+pub use grpc_tls_config::KernelMcpGrpcTlsConfig;
+pub(crate) use grpc_tls_config::endpoint_uri_for_tls_mode;
+pub use grpc_tls_mode::KernelMcpGrpcTlsMode;
+pub use kernel_mcp_server::KernelMcpServer;
+pub use ports::kernel_tool_backend::KernelMcpToolBackend;
+pub use ports::kernel_tool_future::KernelMcpToolFuture;
+pub use tool_error::ToolError;
+pub use tool_error_code::ToolErrorCode;
+pub(crate) use tool_result::{app_data_success_result, tool_success_result};

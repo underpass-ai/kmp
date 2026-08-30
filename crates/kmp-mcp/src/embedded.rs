@@ -13,7 +13,6 @@ use kmp_proto_mapping::v1beta1::{
 };
 use serde_json::Value;
 
-use crate::backend::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::grpc::requests::{
     ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
     temporal_move_request_from_arguments, temporal_near_request_from_arguments,
@@ -27,8 +26,9 @@ use crate::kmp::{
     temporal_from_response, trace_from_response, visual_projection_from_response,
     wake_from_response,
 };
+use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
+use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
-use crate::tool_error::{ToolError, ToolErrorCode};
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead

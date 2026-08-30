@@ -6,7 +6,7 @@
 
 use serde_json::{Value, json};
 
-use crate::tool_error::ToolError;
+use crate::serving::ToolError;
 
 pub(crate) fn tool_success_result(structured_content: Value) -> Value {
     // `structuredContent` is the canonical response. Repeating the entire

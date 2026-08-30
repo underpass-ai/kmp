@@ -8,23 +8,20 @@ pub mod plugin_notice;
 pub mod pulse;
 pub mod snapshot;
 pub mod style;
-pub mod tool_error;
 mod view_tools;
 pub mod viewer;
 
-mod backend;
 mod contract;
 mod embedded;
-mod fixture;
 mod grpc;
 mod ingest;
 mod kmp;
 mod observability;
-mod server;
 mod serving;
 mod write;
 
-pub use backend::{
+pub use serving::tool_error;
+pub use serving::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,
     GRPC_TLS_KEY_PATH_ENV, GRPC_TLS_MODE_ENV, KernelMcpBackend, KernelMcpGrpcTlsConfig,
     KernelMcpGrpcTlsMode, KernelMcpToolBackend, KernelMcpToolFuture, MCP_BACKEND_ENV,
@@ -46,10 +43,10 @@ pub fn tool_names() -> Vec<String> {
 }
 
 pub use embedded::{EmbeddedKernelMcpBackend, RetryingEmbeddedKernelMcpBackend};
-pub use fixture::FixtureKernelMcpBackend;
 pub use grpc::GrpcKernelMcpBackend;
-pub use server::KernelMcpServer;
-pub use tool_error::{ToolError, ToolErrorCode};
+pub use serving::FixtureKernelMcpBackend;
+pub use serving::KernelMcpServer;
+pub use serving::{ToolError, ToolErrorCode};
 
 pub fn kmp_mcp_tools_list_result() -> serde_json::Value {
     contract::tools_list_result()
