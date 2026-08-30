@@ -61,3 +61,49 @@ pub(super) fn semantic_class_schema() -> Value {
                         memory."
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::protocol::registry::tools_list_result;
+
+    /// The tool documentation is generated from the writer spec; this pins
+    /// that every cataloged type appears with its quality tier, in both the
+    /// writer's and the batch surface, so a model reading `tools/list` learns
+    /// the vocabulary the kernel will actually validate.
+    #[test]
+    fn relation_vocabulary_documentation_matches_the_writer_spec() {
+        let tools = tools_list_result();
+        let writer_doc = tools["tools"][1]["inputSchema"]["properties"]["connect_to"]["items"]
+            ["properties"]["rel"]["description"]
+            .as_str()
+            .expect("writer rel carries generated documentation")
+            .to_string();
+        let ingest_doc = tools["tools"][0]["inputSchema"]["properties"]["memory"]["properties"]
+            ["relations"]["items"]["properties"]["rel"]["description"]
+            .as_str()
+            .expect("ingest rel carries generated documentation")
+            .to_string();
+
+        for relation_type in KnownMemoryRelationType::writer_relation_types() {
+            let spec = relation_type
+                .writer_spec()
+                .expect("writer relation types carry a spec");
+            for doc in [&writer_doc, &ingest_doc] {
+                assert!(
+                    doc.contains(&format!(
+                        "{} ({};",
+                        spec.relation_type().as_str(),
+                        spec.quality().as_str()
+                    )),
+                    "documentation names `{}` with its quality tier",
+                    spec.relation_type().as_str()
+                );
+            }
+        }
+        assert!(
+            writer_doc.contains("anemic types are an honest fallback"),
+            "documentation states the anemic-fallback doctrine"
+        );
+    }
+}

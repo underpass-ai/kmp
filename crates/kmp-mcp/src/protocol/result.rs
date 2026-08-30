@@ -74,6 +74,24 @@ pub(crate) fn tool_error_result(error: &ToolError) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The property the substring matcher could not have. Same words, two
+    /// codes, because the producer chose and the words were never consulted.
+    #[test]
+    fn the_code_comes_from_the_producer_and_not_from_the_message() {
+        let phrased_like_a_bad_argument =
+            "the store must be migrated before it can be opened; this is invalid";
+        assert_eq!(
+            tool_error_result(&ToolError::backend(phrased_like_a_bad_argument))["structuredContent"]
+                ["error"]["code"],
+            "backend_error"
+        );
+        assert_eq!(
+            tool_error_result(&ToolError::invalid_argument(phrased_like_a_bad_argument))["structuredContent"]
+                ["error"]["code"],
+            "invalid_argument"
+        );
+    }
     use serde_json::json;
 
     #[test]
