@@ -111,3 +111,41 @@ read `protocol.rs` as text today and switch to
 The debt ratchet in [kmp-mcp-conformance.tsv](kmp-mcp-conformance.tsv) may
 only shrink while this map executes; refresh with
 `KMP_ARCHITECTURE_BASELINE=write` only when debt has genuinely been paid.
+
+## After — the migration's landing (2026-08-30)
+
+Ten slices later the debt baseline in
+[kmp-mcp-conformance.tsv](kmp-mcp-conformance.tsv) is **empty**: no tracked
+source exceeds one primary type or 600 lines. The contexts landed as:
+
+- **`contract/`** — handshake, one definition per tool, schema families,
+  registry, validator; audited by `surface_audit` and `writer_audit`.
+- **`serving/`** — the port and its future, TLS and environment, the server
+  and its dispatch by concern, the embedded/gRPC/fixture adapters, telemetry
+  that counts without reading, the view tools, tool errors.
+- **`projection/`** — one mapper per response family, budgets beside the
+  family they trim, shared `test_support`, the recall budget audit.
+- **`write/`** — plan, read context, relations and their quality policy,
+  writer coordinates and clock, generated-ref identity, arguments, results,
+  the planner; the ingest side mirrored; audited by `planner_audit` and
+  `writer_identity_audit`.
+- **`lifecycle/`** — setup, update, inventory, removal, doctor and info in
+  one context, one vocabulary, over narrow ports.
+- **`document/`** — the reader's renderer: model, markdown discipline,
+  composition, `render` as its only door.
+- **`cli/` under the binary** — a fifteen-line composition root, the verb
+  modules, and the stdio serve path; pinned by `cli_surface_parity`.
+
+Audit outcomes for the crate-root files that stayed put: `banner`, `style`
+and `pulse` are presentation kit used by lifecycle reports and the CLI both,
+so neither context may own them; `clock`, `viewer`, `snapshot` and
+`agent_policy` are single-concern, single-type files within budget whose
+placement can follow the first change that needs them moved. `guide/`,
+`plugin_notice/` and the pre-existing `lifecycle/` slices were spot-audited
+against the same rules while absorbing their neighbors.
+
+The nets that made this safe remain the contract for what comes next:
+`tool_surface_parity`, `cli_surface_parity`, `stdio_binary`, the context
+audits — and the rule that a mutation probe runs after the final bless,
+because three of them found real holes on the way and each hole became a
+test before the probe was re-run red.
