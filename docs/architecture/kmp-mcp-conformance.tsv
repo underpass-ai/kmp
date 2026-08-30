@@ -2,4 +2,3 @@
 # A file is over budget at more than one primary public type or 600 lines.
 # This baseline may shrink freely. It may only grow through a reviewed change.
 path	debt
-crates/kmp-mcp/src/document.rs	lines=687
