@@ -9,7 +9,6 @@ crates/kmp-mcp/src/ingest.rs	types=3,lines=664
 crates/kmp-mcp/src/kmp.rs	lines=1782
 crates/kmp-mcp/src/main.rs	lines=1573
 crates/kmp-mcp/src/observability.rs	types=3
-crates/kmp-mcp/src/protocol.rs	lines=1847
 crates/kmp-mcp/src/server.rs	lines=775
 crates/kmp-mcp/src/tool_error.rs	types=2
 crates/kmp-mcp/src/view_tools.rs	types=2

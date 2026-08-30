@@ -9,14 +9,14 @@
 
 use serde_json::{Value, json};
 
-use super::schema::{described, nullable_described, output_object, string_array};
+use super::primitives::{described, nullable_described, output_object, string_array};
 
-pub(super) fn warnings_output_schema() -> Value {
+pub(crate) fn warnings_output_schema() -> Value {
     string_array(
         "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
     )
 }
-pub(super) fn recall_envelope_properties() -> Value {
+pub(crate) fn recall_envelope_properties() -> Value {
     json!({
         "projection": projection_output_schema(),
         "truncation": truncation_output_schema(),
@@ -29,7 +29,7 @@ pub(super) fn recall_envelope_properties() -> Value {
 /// recall, temporal entries in a move — and nothing in the surface said the
 /// unit changed. A number whose meaning the receiver has to guess is worse
 /// than no number, because it will be acted on.
-pub(super) fn page_output_schema(unit: &str, cursor_description: &str) -> Value {
+pub(crate) fn page_output_schema(unit: &str, cursor_description: &str) -> Value {
     output_object(json!({
         "returned": described("integer", "How many items this response carries."),
         "total": described("integer", &format!("How many {unit} the selection holds in total.")),
@@ -42,7 +42,7 @@ pub(super) fn page_output_schema(unit: &str, cursor_description: &str) -> Value 
     }))
 }
 /// `proof`, which is where a caller decides whether to believe the answer.
-pub(super) fn proof_output_schema(confidence_description: &str) -> Value {
+pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
     output_object(json!({
         "confidence": described("string", confidence_description),
         "evidence": described(
@@ -120,7 +120,7 @@ fn truncation_output_schema() -> Value {
         "omitted": described("object", "Exact counts by cause: page, prior page, remaining page, detail tier, selection cap, and shortened core text.")
     }))
 }
-pub(super) fn quality_output_schema() -> Value {
+pub(crate) fn quality_output_schema() -> Value {
     output_object(json!({
         "nodes": described("integer", "Returned node count."),
         "relationships": described("integer", "Returned relation count."),

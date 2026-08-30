@@ -47,7 +47,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
         }],
         "structuredContent": structured_content,
         "_meta": {
-            "ui": {"resourceUri": super::CHRONOLOOM_APP_URI},
+            "ui": {"resourceUri": crate::contract::CHRONOLOOM_APP_URI},
             "kmp/modelContext": "receipt-only"
         }
     })

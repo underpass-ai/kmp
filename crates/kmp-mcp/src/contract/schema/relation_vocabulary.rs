@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 
 use kmp_domain::KnownMemoryRelationType;
 
-pub(super) fn writer_relation_names() -> Vec<&'static str> {
+pub(crate) fn writer_relation_names() -> Vec<&'static str> {
     KnownMemoryRelationType::writer_relation_types()
         .iter()
         .map(|relation_type| relation_type.as_str())
@@ -22,7 +22,7 @@ pub(super) fn writer_relation_names() -> Vec<&'static str> {
 /// relation is where KMP carries the why; a model that only sees a bare enum
 /// writes connected-but-unexplained memory, which is the failure mode the
 /// spec exists to prevent.
-pub(super) fn relation_vocabulary_description(header: &str) -> String {
+pub(crate) fn relation_vocabulary_description(header: &str) -> String {
     let mut description = format!(
         "{header} The relation carries the explanation: non-structural classes require why, \
          evidence and confidence. Prefer rich types — anemic types are an honest fallback for \
@@ -49,7 +49,7 @@ pub(super) fn relation_vocabulary_description(header: &str) -> String {
     }
     description
 }
-pub(super) fn semantic_class_schema() -> Value {
+pub(crate) fn semantic_class_schema() -> Value {
     json!({
         "type": "string",
         "enum": ["structural", "causal", "motivational", "procedural", "evidential", "constraint"],

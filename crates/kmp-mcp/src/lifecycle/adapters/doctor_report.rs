@@ -68,7 +68,7 @@ pub(crate) fn doctor_styled_with_lifecycle(
     }
 
     let tools = crate::tool_names();
-    let surface = diagnose_tool_surface(&tools, &crate::protocol::declared_tool_names());
+    let surface = diagnose_tool_surface(&tools, &crate::contract::declared_tool_names());
     let surface_level = surface.severity();
     section(&mut out, style, "Tools", &[surface]);
     let lifecycle_level = worst_severity(lifecycle.iter().map(|finding| finding.severity()));

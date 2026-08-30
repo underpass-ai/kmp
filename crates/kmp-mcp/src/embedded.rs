@@ -27,7 +27,7 @@ use crate::kmp::{
     temporal_from_response, trace_from_response, visual_projection_from_response,
     wake_from_response,
 };
-use crate::protocol::{app_data_success_result, tool_success_result};
+use crate::serving::{app_data_success_result, tool_success_result};
 use crate::tool_error::{ToolError, ToolErrorCode};
 
 /// In-process kernel backend: the same JSON argument builders and response
