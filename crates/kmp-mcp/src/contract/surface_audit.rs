@@ -407,35 +407,35 @@ mod tests {
         let samples = [
             (
                 "kmp_ingest",
-                crate::kmp::ingest_from_response(IngestResponse::default()),
+                crate::projection::ingest_from_response(IngestResponse::default()),
             ),
             (
                 "kmp_wake",
-                crate::kmp::enforce_recall_output_budget(
-                    crate::kmp::wake_from_response(WakeResponse::default()),
+                crate::projection::enforce_recall_output_budget(
+                    crate::projection::wake_from_response(WakeResponse::default()),
                     &recall_arguments,
                     1_600,
                 ),
             ),
             (
                 "kmp_ask",
-                crate::kmp::enforce_recall_output_budget(
-                    crate::kmp::ask_from_response(AskResponse::default()),
+                crate::projection::enforce_recall_output_budget(
+                    crate::projection::ask_from_response(AskResponse::default()),
                     &recall_arguments,
                     2_400,
                 ),
             ),
             (
                 "kmp_goto",
-                crate::kmp::temporal_from_response(TemporalMoveResponse::default()),
+                crate::projection::temporal_from_response(TemporalMoveResponse::default()),
             ),
             (
                 "kmp_trace",
-                crate::kmp::trace_from_response(TraceResponse::default()),
+                crate::projection::trace_from_response(TraceResponse::default()),
             ),
             (
                 "kmp_inspect",
-                crate::kmp::inspect_from_response(InspectResponse::default()),
+                crate::projection::inspect_from_response(InspectResponse::default()),
             ),
         ];
 

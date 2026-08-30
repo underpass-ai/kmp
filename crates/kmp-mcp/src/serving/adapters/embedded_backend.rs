@@ -13,7 +13,7 @@ use kmp_proto_mapping::v1beta1::{
 use serde_json::Value;
 
 use crate::ingest::build_ingest_plan;
-use crate::kmp::{
+use crate::projection::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
     temporal_from_response, trace_from_response, visual_projection_from_response,

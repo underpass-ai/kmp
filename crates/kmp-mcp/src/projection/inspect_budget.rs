@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 
 use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
 
-use super::serialized_len;
+use super::serialized_size::serialized_len;
 use crate::serving::ToolError;
 
 const INSPECT_CURSOR_VERSION: &str = "kmpi1";
