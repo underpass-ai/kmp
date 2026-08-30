@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
-"""Merge LCOV line records and enforce KMP's line-coverage threshold."""
+"""Merge LCOV line records and enforce KMP's line-coverage floors.
+
+The bar is per crate, not per run. A single aggregate percentage is only
+meaningful over a fixed denominator, and this repository deliberately narrows
+the test plan to the crates a change can reach — so the aggregate silently
+became "whatever the router selected", and a plan narrowed to one crate held
+that crate to a bar calibrated on the whole workspace.
+
+Every crate is now held to the repository bar on its own, which is strictly
+stronger: an under-tested crate can no longer hide behind a well-tested one.
+The crates already below it carry a recorded floor that may rise freely and can
+only be lowered by a reviewed change that says why."""
 
 from __future__ import annotations
 
 import argparse
+import math
 import pathlib
 import sys
 import tempfile
@@ -11,6 +23,14 @@ from collections import defaultdict
 
 
 LineCounts = dict[str, dict[int, int]]
+CrateCoverage = dict[str, tuple[int, int]]
+
+FLOOR_PREAMBLE = """\
+# Line-coverage floors for crates below the repository bar.
+# A crate with no entry here must reach the bar on its own.
+# A floor may be raised freely. Lowering one is a reviewed change that says why.
+crate\tfloor
+"""
 
 
 def read_fragment(path: pathlib.Path) -> LineCounts:
@@ -99,7 +119,144 @@ def self_test() -> None:
                 raise SystemExit(
                     f"coverage merge self-test missing {required!r}: {rendered}"
                 )
-    print("coverage merge self-test passed: union and max-hit semantics")
+        floors_path = root / "coverage-floors.tsv"
+        # Two crates, one comfortably above the bar and one far below it.
+        crate_records: LineCounts = {
+            "/repo/crates/kmp-domain/src/a.rs": {1: 1, 2: 1, 3: 1, 4: 1, 5: 0},
+            "/repo/crates/kmp-release/src/b.rs": {1: 1, 2: 0, 3: 0, 4: 0},
+            "/repo/e2e/harness.rs": {1: 0},
+        }
+        measured = crate_coverage(crate_records)
+        if measured != {"kmp-domain": (4, 5), "kmp-release": (1, 4)}:
+            raise SystemExit(f"crate grouping self-test mismatch: {measured!r}")
+
+        floors = write_floors(floors_path, {}, measured, 80.0)
+        if floors != {"kmp-release": 25.0}:
+            raise SystemExit(f"floor baseline self-test mismatch: {floors!r}")
+        if read_floors(floors_path) != {"kmp-release": 25.0}:
+            raise SystemExit("recorded floors must round-trip")
+        # A floor is a whole percent: 3 of 4 lines records 75, not 75.0000001.
+        if write_floors(floors_path, {}, {"kmp-x": (3, 4)}, 80.0)["kmp-x"] != 75.0:
+            raise SystemExit("floors are whole percents")
+
+        # The ratchet only turns one way: a later run that measures less than
+        # the record must not be able to write the bar down.
+        weaker = {"kmp-release": (0, 4)}
+        if write_floors(floors_path, floors, weaker, 80.0).get("kmp-release") != 25.0:
+            raise SystemExit("a weaker run must not lower a recorded floor")
+
+        # A crate with no entry is held to the bar, and one with an entry is
+        # held to its floor — both on their own numbers, not on the aggregate.
+        if enforce_floors(measured, {"kmp-release": 25.0}, 80.0):
+            raise SystemExit("a crate at its recorded floor must pass")
+        if not enforce_floors(measured, {"kmp-release": 50.0}, 80.0):
+            raise SystemExit("a crate below its recorded floor must fail")
+        if not enforce_floors(measured, {}, 80.0):
+            raise SystemExit("an unrecorded crate below the bar must fail")
+        if enforce_floors({"kmp-domain": (4, 5)}, {}, 80.0):
+            raise SystemExit("a crate at the bar must pass with no entry")
+    print(
+        "coverage merge self-test passed: union and max-hit semantics, "
+        "per-crate floors, one-way ratchet"
+    )
+
+
+def crate_of(source: str) -> str | None:
+    """The workspace crate a source path belongs to, or None for anything
+    outside `crates/` — a build script, a generated file, a vendored path."""
+    parts = pathlib.PurePosixPath(source.replace("\\", "/")).parts
+    if "crates" not in parts:
+        return None
+    index = len(parts) - 1 - parts[::-1].index("crates")
+    return parts[index + 1] if index + 1 < len(parts) else None
+
+
+def crate_coverage(records: LineCounts) -> CrateCoverage:
+    totals: CrateCoverage = {}
+    for source, lines in records.items():
+        crate = crate_of(source)
+        if crate is None:
+            continue
+        covered, total = totals.get(crate, (0, 0))
+        totals[crate] = (
+            covered + sum(count > 0 for count in lines.values()),
+            total + len(lines),
+        )
+    return totals
+
+
+def read_floors(path: pathlib.Path) -> dict[str, float]:
+    floors: dict[str, float] = {}
+    if not path.is_file():
+        return floors
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#") or line.startswith("crate\t"):
+            continue
+        name, _, floor = line.partition("\t")
+        floors[name.strip()] = float(floor)
+    return floors
+
+
+def write_floors(
+    path: pathlib.Path,
+    floors: dict[str, float],
+    measured: CrateCoverage,
+    bar: float,
+) -> dict[str, float]:
+    """Ratchets the recorded floors up to what this run measured.
+
+    Floors are whole percents, rounded down. Two honest runs of the same tree
+    disagree in the last decimal — a different LLVM version counts a few lines
+    differently — and a ratchet that trips on that noise teaches people to
+    refresh it reflexively, which is the one thing it must not become.
+
+    It never writes a floor down. A run that measured less than the record — a
+    narrower plan, a skipped container job — must not be able to relax the bar
+    by being run with the baseline flag set.
+    """
+    updated = dict(floors)
+    for crate, (covered, total) in sorted(measured.items()):
+        if not total:
+            continue
+        percentage = covered * 100.0 / total
+        if percentage + 1e-9 >= bar:
+            continue
+        updated[crate] = max(updated.get(crate, 0.0), float(math.floor(percentage)))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        handle.write(FLOOR_PREAMBLE)
+        for crate, floor in sorted(updated.items()):
+            handle.write(f"{crate}\t{floor:g}\n")
+    return updated
+
+
+def enforce_floors(
+    measured: CrateCoverage, floors: dict[str, float], bar: float
+) -> list[str]:
+    failures = []
+    recorded = 0
+    for crate, (covered, total) in sorted(measured.items()):
+        if not total:
+            continue
+        percentage = covered * 100.0 / total
+        floor = floors.get(crate, bar)
+        if crate in floors:
+            recorded += 1
+        if percentage + 1e-9 < floor:
+            failures.append(
+                f"{crate}: {percentage:.2f}% is below its {floor:.2f}% floor"
+            )
+        elif crate in floors and percentage > floor + 1.0:
+            print(
+                f"  paid down: {crate} reached {percentage:.2f}%, "
+                f"above its {floor:.2f}% floor"
+            )
+    print(
+        f"per-crate floors: {len(measured)} measured · "
+        f"{recorded} with a recorded floor · "
+        f"{len(measured) - recorded} held to {bar:.2f}%"
+    )
+    return failures
 
 
 def main() -> int:
@@ -107,6 +264,8 @@ def main() -> int:
     parser.add_argument("fragments", nargs="*", type=pathlib.Path)
     parser.add_argument("--output", type=pathlib.Path)
     parser.add_argument("--fail-under-lines", type=float, default=80.0)
+    parser.add_argument("--floors", type=pathlib.Path)
+    parser.add_argument("--write-floors", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
 
@@ -136,9 +295,31 @@ def main() -> int:
         f"line coverage: {percentage:.2f}% ({covered}/{total}) "
         f"from {len(args.fragments)} test artifacts"
     )
-    if percentage + 1e-9 < args.fail_under_lines:
+
+    measured = crate_coverage(records)
+    if args.floors is None:
+        if percentage + 1e-9 < args.fail_under_lines:
+            print(
+                f"line coverage is below {args.fail_under_lines:.2f}%",
+                file=sys.stderr,
+            )
+            return 1
+        return 0
+
+    floors = read_floors(args.floors)
+    if args.write_floors:
+        floors = write_floors(args.floors, floors, measured, args.fail_under_lines)
+        print(f"wrote {args.floors} with {len(floors)} recorded floors")
+        return 0
+
+    failures = enforce_floors(measured, floors, args.fail_under_lines)
+    if failures:
+        print(file=sys.stderr)
+        for failure in failures:
+            print(f"  {failure}", file=sys.stderr)
         print(
-            f"line coverage is below {args.fail_under_lines:.2f}%",
+            "\nraise the crate's coverage, or record a reviewed floor in "
+            f"{args.floors}",
             file=sys.stderr,
         )
         return 1
