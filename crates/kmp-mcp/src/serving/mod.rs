@@ -10,14 +10,21 @@ pub(crate) mod grpc_tls_mode;
 pub(crate) mod json_rpc;
 pub(crate) mod kernel_mcp_server;
 pub(crate) mod ports;
+pub(crate) mod projection_names;
 mod rpc_dispatch;
+pub(crate) mod telemetry;
 pub mod tool_error;
 pub(crate) mod tool_error_code;
 pub(crate) mod tool_result;
+pub(crate) mod unhonored_projection;
 mod view_dispatch;
+pub(crate) mod view_tools;
 mod write_dispatch;
 
+pub use adapters::embedded_backend::EmbeddedKernelMcpBackend;
 pub use adapters::fixture_backend::FixtureKernelMcpBackend;
+pub use adapters::grpc::GrpcKernelMcpBackend;
+pub use adapters::retrying_embedded_backend::RetryingEmbeddedKernelMcpBackend;
 pub use backend_choice::KernelMcpBackend;
 pub use environment::{
     GRPC_ENDPOINT_ENV, GRPC_TLS_CA_PATH_ENV, GRPC_TLS_CERT_PATH_ENV, GRPC_TLS_DOMAIN_NAME_ENV,

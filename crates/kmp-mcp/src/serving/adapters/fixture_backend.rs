@@ -1,10 +1,10 @@
 use serde_json::Value;
 
 use crate::contract::validate_required_arguments;
-use crate::grpc::requests::visual_projection_request_from_arguments;
 use crate::ingest::build_ingest_plan;
 use crate::kmp::try_enforce_recall_output_budget;
 use crate::serving::ToolError;
+use crate::serving::adapters::grpc::requests::visual_projection_request_from_arguments;
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{app_data_success_result, tool_success_result};
 

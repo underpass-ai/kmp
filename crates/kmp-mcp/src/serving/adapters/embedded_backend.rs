@@ -1,5 +1,4 @@
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::path::Path;
 
 use kmp_domain::{PortError, QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
@@ -13,12 +12,6 @@ use kmp_proto_mapping::v1beta1::{
 };
 use serde_json::Value;
 
-use crate::grpc::requests::{
-    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
-    trace_request_from_arguments, visual_projection_request_from_arguments,
-    wake_request_from_arguments,
-};
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
@@ -26,9 +19,17 @@ use crate::kmp::{
     temporal_from_response, trace_from_response, visual_projection_from_response,
     wake_from_response,
 };
+use crate::serving::adapters::grpc::requests::{
+    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
+    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
+    trace_request_from_arguments, visual_projection_request_from_arguments,
+    wake_request_from_arguments,
+};
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
+
+use super::embedded_errors::{kernel_error, mapping_error, temporal_error};
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -37,76 +38,6 @@ pub struct EmbeddedKernelMcpBackend {
     kernel: EmbeddedKernel,
     data_dir: String,
     commit_native: Option<CommitNativeBundle>,
-}
-
-/// Embedded backend that opens the SQLite store on the first memory call.
-///
-/// MCP discovery (`initialize` and `tools/list`) does not need the database.
-/// Keeping that surface alive lets diagnostics and discovery remain available
-/// even when the store layout itself is invalid or unsupported.
-pub struct RetryingEmbeddedKernelMcpBackend {
-    data_dir: PathBuf,
-    engine: Option<kmp_embedded::StorageEngine>,
-    commit_native: Option<CommitNativeBundle>,
-    opened: Mutex<Option<Arc<EmbeddedKernelMcpBackend>>>,
-}
-
-impl RetryingEmbeddedKernelMcpBackend {
-    pub fn new(data_dir: &Path, engine: Option<kmp_embedded::StorageEngine>) -> Self {
-        Self::new_with_commit_native(data_dir, engine, None)
-    }
-
-    pub fn new_with_commit_native(
-        data_dir: &Path,
-        engine: Option<kmp_embedded::StorageEngine>,
-        commit_native: Option<CommitNativeBundle>,
-    ) -> Self {
-        Self {
-            data_dir: data_dir.to_path_buf(),
-            engine,
-            commit_native,
-            opened: Mutex::new(None),
-        }
-    }
-
-    /// Best engine label available without opening or stamping the store.
-    pub fn declared_engine(&self) -> Option<kmp_embedded::StorageEngine> {
-        let stamp = std::fs::read_to_string(self.data_dir.join("FORMAT_VERSION"))
-            .ok()
-            .and_then(|value| value.trim().parse::<u32>().ok())
-            .and_then(|version| {
-                (version == kmp_embedded::StorageEngine::Sqlite.format_version())
-                    .then_some(kmp_embedded::StorageEngine::Sqlite)
-            });
-        stamp.or(self.engine)
-    }
-
-    fn opened_backend(&self) -> Result<Arc<EmbeddedKernelMcpBackend>, String> {
-        if let Some(backend) = self
-            .opened
-            .lock()
-            .map_err(|_| "embedded backend state lock is poisoned".to_string())?
-            .as_ref()
-            .cloned()
-        {
-            return Ok(backend);
-        }
-
-        let backend = Arc::new(
-            EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
-                &self.data_dir,
-                self.engine,
-                self.commit_native.clone(),
-            )
-            .map_err(|error| format!("embedded store is unavailable: {error}"))?,
-        );
-        let mut opened = self
-            .opened
-            .lock()
-            .map_err(|_| "embedded backend state lock is poisoned".to_string())?;
-        let winner = opened.get_or_insert_with(|| Arc::clone(&backend));
-        Ok(Arc::clone(winner))
-    }
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -237,96 +168,6 @@ fn commit_native_preflight_error(error: PortError) -> ToolError {
         PortError::Conflict(_) => ToolError::conflict(message),
         PortError::Unavailable(_) => ToolError::unavailable(message),
         PortError::InvalidState(_) => ToolError::backend(message),
-    }
-}
-
-impl KernelMcpToolBackend for RetryingEmbeddedKernelMcpBackend {
-    fn backend_name(&self) -> &'static str {
-        "embedded"
-    }
-
-    fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
-        Box::pin(async move {
-            let backend = self.opened_backend()?;
-            backend.call_tool(name, arguments).await
-        })
-    }
-}
-
-fn mapping_error(status: &tonic::Status) -> ToolError {
-    ToolError::invalid_argument(status.message())
-}
-
-/// Carries the kernel's own classification out to the caller.
-///
-/// The kernel already knows what went wrong — `ApplicationError` and
-/// `PortError` are typed — and that knowledge used to be thrown away at this
-/// boundary and reconstructed by matching English words further downstream.
-/// Nothing here reads the message.
-fn kernel_error<'a>(
-    operation: &'a str,
-    about: &'a str,
-) -> impl FnOnce(kmp_application::ApplicationError) -> ToolError + 'a {
-    use kmp_application::ApplicationError;
-    use kmp_domain::{DomainError, PortError};
-
-    move |error| {
-        let code = match &error {
-            ApplicationError::RetryableConflict(reason) => {
-                return ToolError::conflict(format!(
-                    "embedded kernel {operation} write conflict for `{about}`: the store moved \
-                     while this write was being prepared, so this attempt was not applied. It \
-                     is safe to retry the same logical write with the same `idempotency_key`; \
-                     if an earlier attempt landed, idempotency returns that success instead of \
-                     duplicating memory. Kernel detail: {reason}"
-                ));
-            }
-            ApplicationError::NotFound(_) => ToolErrorCode::NotFound,
-            ApplicationError::Validation(_) => ToolErrorCode::InvalidArgument,
-            // A domain error is an invariant the payload broke, so the caller
-            // can fix it. `EmptyValue` naming a field is the clearest case.
-            ApplicationError::Domain(DomainError::EmptyValue(_)) => ToolErrorCode::InvalidArgument,
-            // `InvalidState` is the ambiguous one: it covers both a payload
-            // the model rejects and a store that cannot serve the request.
-            // It stays a backend error, because telling an agent to fix its
-            // arguments when nothing about them is wrong is the failure this
-            // whole change exists to remove.
-            ApplicationError::Domain(DomainError::InvalidState(_)) => ToolErrorCode::BackendError,
-            ApplicationError::Ports(PortError::Conflict(_)) => ToolErrorCode::Conflict,
-            ApplicationError::Ports(PortError::Unavailable(_)) => ToolErrorCode::Unavailable,
-            ApplicationError::Ports(PortError::InvalidState(_)) => ToolErrorCode::BackendError,
-        };
-        let outcome = if code == ToolErrorCode::Conflict {
-            "conflict"
-        } else {
-            "failed"
-        };
-        ToolError::new(
-            code,
-            format!("embedded kernel {operation} {outcome} for `{about}`: {error}"),
-        )
-    }
-}
-
-/// Temporal selection turns a domain `InvalidState` into a caller error: the
-/// temporal domain uses that variant for an unresolved/invalid cursor, and the
-/// gRPC service exposes the same condition as `INVALID_ARGUMENT`. This is
-/// operation-specific classification, not message matching; port/store
-/// `InvalidState` remains a backend failure through `kernel_error`.
-fn temporal_error<'a>(
-    operation: &'a str,
-    about: &'a str,
-) -> impl FnOnce(kmp_application::ApplicationError) -> ToolError + 'a {
-    move |error| {
-        if matches!(
-            error,
-            kmp_application::ApplicationError::Domain(kmp_domain::DomainError::InvalidState(_))
-        ) {
-            return ToolError::invalid_argument(format!(
-                "embedded kernel {operation} failed for `{about}`: {error}"
-            ));
-        }
-        kernel_error(operation, about)(error)
     }
 }
 
@@ -608,51 +449,4 @@ async fn embedded_inspect(
         inspect_from_response(inspect_response_from_result(result)),
         arguments,
     )?))
-}
-
-#[cfg(test)]
-mod retry_tests {
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn optimistic_write_conflicts_name_the_safe_retry_contract() {
-        let error = kernel_error("ingest", "incident:pool-saturation")(
-            kmp_application::ApplicationError::RetryableConflict(
-                "expected revision 16, current is 17".to_string(),
-            ),
-        );
-
-        assert_eq!(error.code, ToolErrorCode::Conflict);
-        assert!(error.message.contains("write conflict"), "{error}");
-        assert!(error.message.contains("attempt was not applied"), "{error}");
-        assert!(error.message.contains("safe to retry"), "{error}");
-        assert!(error.message.contains("same `idempotency_key`"), "{error}");
-        assert!(error.message.contains("expected revision 16"), "{error}");
-    }
-    #[tokio::test]
-    async fn a_permanent_layout_error_never_promises_that_retry_will_fix_it() {
-        let data_dir = tempfile::tempdir().expect("temp data dir");
-        let store =
-            kmp_embedded::store_file_path_for(data_dir.path(), kmp_embedded::StorageEngine::Sqlite);
-        std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
-        std::fs::write(store, b"memory remains on disk").expect("store marker");
-        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "3\n").expect("newer format stamp");
-        let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
-
-        let error = backend
-            .call_tool(
-                "kmp_inspect",
-                &json!({"about": "incident:format", "ref": "incident:format"}),
-            )
-            .await
-            .expect_err("a newer layout cannot open");
-        assert!(error.message.contains("upgrade the binary"), "{error}");
-        assert!(!error.message.contains("temporarily"), "{error}");
-        assert!(
-            !error.message.contains("next tool call will retry"),
-            "{error}"
-        );
-    }
 }

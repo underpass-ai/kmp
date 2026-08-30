@@ -5,9 +5,9 @@ use std::time::Instant;
 
 use serde_json::Value;
 
-use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
+use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};

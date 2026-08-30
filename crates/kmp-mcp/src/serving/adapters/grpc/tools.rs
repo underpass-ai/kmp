@@ -1,17 +1,5 @@
 use serde_json::Value;
 
-use crate::grpc::channel::connect_memory_client;
-use crate::grpc::requests::{
-    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
-    trace_request_from_arguments, visual_projection_request_from_arguments,
-    wake_request_from_arguments,
-};
-use crate::grpc::temporal::{
-    forward_request_from_temporal, goto_request_from_temporal, method_name,
-    near_request_from_temporal, rewind_request_from_temporal, temporal_response_from_forward,
-    temporal_response_from_goto, temporal_response_from_near, temporal_response_from_rewind,
-};
 use crate::ingest::build_ingest_plan;
 use crate::kmp::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
@@ -20,6 +8,18 @@ use crate::kmp::{
     wake_from_response,
 };
 use crate::serving::KernelMcpGrpcTlsConfig;
+use crate::serving::adapters::grpc::channel::connect_memory_client;
+use crate::serving::adapters::grpc::requests::{
+    ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
+    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
+    trace_request_from_arguments, visual_projection_request_from_arguments,
+    wake_request_from_arguments,
+};
+use crate::serving::adapters::grpc::temporal::{
+    forward_request_from_temporal, goto_request_from_temporal, method_name,
+    near_request_from_temporal, rewind_request_from_temporal, temporal_response_from_forward,
+    temporal_response_from_goto, temporal_response_from_near, temporal_response_from_rewind,
+};
 use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
 

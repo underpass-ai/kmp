@@ -7,9 +7,9 @@ use std::time::Instant;
 use kmp_viewer::ViewRegistry;
 use serde_json::Value;
 
-use crate::observability::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::json_rpc::jsonrpc_result;
 use crate::serving::kernel_mcp_server::KernelMcpServer;
+use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
 
@@ -26,23 +26,25 @@ impl KernelMcpServer {
     ) -> String {
         let outcome = match name {
             "kmp_view_get_state" => {
-                crate::view_tools::get_state(arguments, self.viewer_url.as_deref())
+                crate::serving::view_tools::get_state(arguments, self.viewer_url.as_deref())
             }
-            "kmp_view_undo" => crate::view_tools::undo(arguments),
+            "kmp_view_undo" => crate::serving::view_tools::undo(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
                 match self.memory_ref_exists(about, about).await {
-                    Ok(exists) => {
-                        crate::view_tools::open(arguments, exists, self.viewer_url.as_deref())
-                    }
+                    Ok(exists) => crate::serving::view_tools::open(
+                        arguments,
+                        exists,
+                        self.viewer_url.as_deref(),
+                    ),
                     Err(error) => Err(error),
                 }
             }
             "kmp_view_apply_intent" => {
                 let mut missing = Vec::new();
                 let mut failure = None;
-                let about = crate::view_tools::about_for_intent(arguments);
-                for reference in crate::view_tools::refs_named(arguments) {
+                let about = crate::serving::view_tools::about_for_intent(arguments);
+                for reference in crate::serving::view_tools::refs_named(arguments) {
                     let Some(about) = about.as_deref() else {
                         break;
                     };
@@ -59,7 +61,7 @@ impl KernelMcpServer {
                     Some(error) => Err(error),
                     None => match self.unhonored_projection(arguments).await {
                         Ok(unhonored) => {
-                            crate::view_tools::apply_intent(arguments, &missing, unhonored)
+                            crate::serving::view_tools::apply_intent(arguments, &missing, unhonored)
                         }
                         Err(error) => Err(error),
                     },
@@ -136,10 +138,10 @@ impl KernelMcpServer {
     async fn unhonored_projection(
         &self,
         arguments: &Value,
-    ) -> Result<crate::view_tools::UnhonoredProjection, ToolError> {
-        let requested = crate::view_tools::projection_names(arguments);
-        let mut unhonored = crate::view_tools::UnhonoredProjection::default();
-        let about = crate::view_tools::about_for_intent(arguments);
+    ) -> Result<crate::serving::view_tools::UnhonoredProjection, ToolError> {
+        let requested = crate::serving::view_tools::projection_names(arguments);
+        let mut unhonored = crate::serving::view_tools::UnhonoredProjection::default();
+        let about = crate::serving::view_tools::about_for_intent(arguments);
 
         if !requested.dimensions.is_empty() {
             let Some(about) = about else {
