@@ -102,10 +102,25 @@ mod tests {
         std::fs::write(path.join("store/kernel.sqlite3"), vec![0u8; 2_048]).expect("store file");
     }
 
+    struct NoEngines;
+
+    impl crate::lifecycle::ports::plugin_engine_probe::PluginEngineProbe for NoEngines {
+        fn version(
+            &self,
+            _: &crate::lifecycle::domain::engine_executable::EngineExecutable,
+        ) -> Result<
+            Option<crate::lifecycle::domain::release_version::ReleaseVersion>,
+            crate::lifecycle::domain::lifecycle_error::LifecycleError,
+        > {
+            Ok(None)
+        }
+    }
+
     fn survey(roots: &SurveyRoots) -> Vec<Piece> {
         let stores = FilesystemStoreCatalog::new(&roots.data_home);
         let index = JsonlStoreIndex::new(&roots.data_home);
-        SurveyInstallation::new(&NativeInstallationCatalog, &stores, &index).execute(roots)
+        SurveyInstallation::new(&NativeInstallationCatalog, &NoEngines, &stores, &index)
+            .execute(roots)
     }
 
     #[test]

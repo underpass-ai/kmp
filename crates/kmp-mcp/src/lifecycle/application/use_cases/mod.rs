@@ -1,4 +1,5 @@
 mod converge_lifecycle;
+pub mod diagnose_engines;
 pub mod diagnose_lifecycle;
 pub mod diagnose_tool_surface;
 pub mod forget_store;
@@ -7,6 +8,7 @@ pub mod remove_piece;
 pub mod resolve_plugin_engine;
 pub mod select_store;
 pub mod setup_kmp;
+pub mod survey_engines;
 pub mod survey_installation;
 pub mod survey_memories;
 pub mod update_kmp;

@@ -1,6 +1,6 @@
 ---
 name: kmp-doctor
-description: Diagnose KMP binary, backend, selected store, tool surface, and host wiring. Use when memory or KMP setup is missing, stale, duplicated, or failing.
+description: Diagnose KMP binary, backend, selected store, tool surface, host wiring, and every kmp-mcp engine on this machine. Use when memory or KMP setup is missing, stale, duplicated, or failing.
 ---
 
 # KMP doctor

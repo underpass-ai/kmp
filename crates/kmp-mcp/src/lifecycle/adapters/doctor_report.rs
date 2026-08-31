@@ -13,6 +13,7 @@ use super::backend_probe::backend_finding;
 use super::diagnosis_render::{section, sgr};
 use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
+use super::engines_probe::engines_findings;
 use super::startup_log_probe::startup_history;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
@@ -83,6 +84,12 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     sections.push(ReportSection::single("Tools", surface));
     let lifecycle_level = worst_severity(lifecycle.iter().map(|finding| finding.severity()));
     sections.push(ReportSection::new("Hosts", lifecycle));
+    // The Hosts section reports each host's *effective* engine, so it stayed
+    // green with a twenty-releases-old copy one PATH entry away (#450). This
+    // one names every kmp-mcp the machine carries.
+    let engines = engines_findings();
+    let engines_level = worst_severity(engines.iter().map(|finding| finding.severity()));
+    sections.push(ReportSection::new("Engines", engines));
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.severity();
     sections.push(ReportSection::single("Agent", agent_policy));
@@ -120,6 +127,7 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
         durability_level,
         surface_level,
         lifecycle_level,
+        engines_level,
         backend_level,
         history_level,
         agent_policy_level,
