@@ -227,20 +227,6 @@ function scheduleObservability() {
   scheduleObservability.timer = setTimeout(() => loadObservability(), 120);
 }
 
-function projectionExtent(projection) {
-  const exact = (projection.clusters || [])
-    .flatMap((cluster) => [Date.parse(cluster.from), Date.parse(cluster.to)])
-    .filter(Number.isFinite);
-  const coarse = (projection.bins || [])
-    .flatMap((bin) => [Date.parse(bin.from), Date.parse(bin.to)])
-    .filter(Number.isFinite);
-  const values = exact.length ? exact : coarse;
-  if (!values.length) return null;
-  const t0 = Math.min(...values);
-  const t1 = Math.max(...values);
-  return { t0, t1: t1 > t0 ? t1 : t0 + 1 };
-}
-
 function lanesFromProjection(projection, entries) {
   if (entries.length) return KMP_LOOM.buildLanes(entries);
   const counts = new Map();
@@ -363,7 +349,7 @@ async function loadAbout(about, announce = true) {
       128
     );
     if (generation !== model.loadGeneration) return;
-    const extent = projectionExtent(probe);
+    const extent = KMP_LOOM.projectionExtent(probe);
     // The clicked about becomes the current about even when this clock is
     // empty: keeping the previous about's picture on screen presented stale
     // data as if it belonged to the one the user selected (#421).

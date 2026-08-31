@@ -9,6 +9,15 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- ChronoLoom draws abouts whose entries share a second. Times crossing the
+  HTTP projection boundary kept only whole seconds, so the moment window the
+  viewer derives from a cluster's endpoints could close before the entry that
+  produced them and a populated about rendered `0/0`. The boundary now carries
+  the sub-second component, and an extent widens by its endpoints' own
+  resolution rather than trusting a label to name an exact instant.
+
 ## [0.6.1] - 2026-08-30
 
 ### Added
