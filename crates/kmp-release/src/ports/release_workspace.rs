@@ -22,6 +22,20 @@ pub trait ReleaseWorkspace {
     /// name what moved under a candidate that no longer matches.
     fn changed_files_since(&self, commit: &SourceCommit) -> Result<Vec<PathBuf>, ReleaseError>;
     fn tag_exists(&self, version: &ReleaseVersion) -> Result<bool, ReleaseError>;
+    /// Stage every tracked change and commit them.
+    ///
+    /// `false` when there was nothing to commit, which is what a rerun of a
+    /// step that already landed looks like — the chain has to tell those two
+    /// apart to be resumable (#446).
+    fn commit_tracked(&self, message: &str) -> Result<bool, ReleaseError>;
+    /// Push the current branch, giving it an upstream when it has none.
+    fn push_current_branch(&self) -> Result<(), ReleaseError>;
+    /// Move a branch to exactly this commit, without checking it out.
+    fn advance_branch(
+        &self,
+        branch: &BranchName,
+        commit: &SourceCommit,
+    ) -> Result<(), ReleaseError>;
     fn create_and_push_tag(
         &self,
         version: &ReleaseVersion,

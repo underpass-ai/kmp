@@ -16,4 +16,15 @@ pub enum ReleaseWorkflowCommandDto {
     Release {
         version: ReleaseVersion,
     },
+    /// Notes are written; chain every mechanical step up to an armed pull
+    /// request.
+    Prepare {
+        version: ReleaseVersion,
+        run_id: Option<WorkflowRunId>,
+    },
+    /// The pull request merged; tag, wait for the public assets, and advance
+    /// the catalog.
+    Publish {
+        version: ReleaseVersion,
+    },
 }

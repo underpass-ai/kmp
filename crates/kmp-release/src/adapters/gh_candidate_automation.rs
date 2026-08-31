@@ -6,6 +6,7 @@ use std::time::Duration;
 
 use crate::application::mappers::github_run_mapper::GithubRunMapper;
 use crate::domain::branch_name::BranchName;
+use crate::domain::pull_request_url::PullRequestUrl;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::release_version::ReleaseVersion;
 use crate::domain::repository_root::RepositoryRoot;
@@ -167,5 +168,74 @@ impl CandidateAutomation for GhCandidateAutomation {
         .into_iter()
         .map(|run| WorkflowRunId::parse(run.database_id.to_string()))
         .collect()
+    }
+
+    fn pull_request_for(
+        &self,
+        branch: &BranchName,
+        title: &str,
+        body: &str,
+    ) -> Result<PullRequestUrl, ReleaseError> {
+        // The open one first: a preparation that failed after opening the pull
+        // request has to find it again, not open a second one.
+        let existing = self
+            .checked_text(&[
+                "pr",
+                "list",
+                "--head",
+                branch.as_str(),
+                "--state",
+                "open",
+                "--limit",
+                "1",
+                "--json",
+                "url",
+                "--jq",
+                ".[0].url // empty",
+            ])?
+            .trim()
+            .to_string();
+        if !existing.is_empty() {
+            return PullRequestUrl::parse(existing);
+        }
+        PullRequestUrl::parse(self.checked_text(&[
+            "pr",
+            "create",
+            "--base",
+            "main",
+            "--head",
+            branch.as_str(),
+            "--title",
+            title,
+            "--body",
+            body,
+        ])?)
+    }
+
+    fn arm_auto_merge(&self, pull_request: &PullRequestUrl) -> Result<(), ReleaseError> {
+        self.inherited(&["pr", "merge", pull_request.as_str(), "--squash", "--auto"])
+    }
+
+    fn published_assets(&self, version: &ReleaseVersion) -> Result<Vec<String>, ReleaseError> {
+        // A release that is not public yet is not a failure to report; it is
+        // the answer "not yet", which is what the caller is polling for.
+        let output = self.output(&[
+            "release",
+            "view",
+            &version.tag(),
+            "--json",
+            "isDraft,assets",
+            "--jq",
+            "if .isDraft then empty else .assets[].name end",
+        ])?;
+        if !output.status.success() {
+            return Ok(Vec::new());
+        }
+        Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(str::trim)
+            .filter(|name| !name.is_empty())
+            .map(str::to_string)
+            .collect())
     }
 }

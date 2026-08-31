@@ -1,3 +1,4 @@
+pub mod asset_wait;
 pub mod branch_name;
 pub mod calendar_date;
 pub mod candidate_asset_set;
@@ -12,6 +13,7 @@ pub mod plugin_package_version;
 pub mod plugin_repository;
 pub mod plugin_tree_digest;
 pub mod public_overview;
+pub mod pull_request_url;
 pub mod readiness_check;
 pub mod readiness_outcome;
 pub mod release_archive_path;

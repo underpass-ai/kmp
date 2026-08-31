@@ -20,6 +20,19 @@ Detailed notes from the early release cycle remain available in the
   release this machine will not let go of is reported as kept rather than
   raised: housekeeping never decides whether a convergence succeeded.
 
+### Added
+
+- Two orchestrating release verbs. `scripts/release.sh prepare X.Y.Z` chains
+  every mechanical step between reviewed release notes and a pull request the
+  gate can merge — version, commit, push, candidate, seal, push, open the pull
+  request with auto-merge armed — and `scripts/release.sh publish X.Y.Z` tags
+  the reviewed candidate, waits until the GitHub release and all twenty of its
+  checksummed assets are public, and only then advances the protected
+  `marketplace` branch. Three decisions stay deliberate: writing the notes,
+  merging the pull request, and saying `publish`. `prepare` refuses `main` and
+  a dirty tree, does not re-bump a version whose sources already agree, and
+  skips a commit that already landed, so a rerun resumes instead of repeating.
+
 ### Fixed
 
 - ChronoLoom draws abouts whose entries share a second. Times crossing the

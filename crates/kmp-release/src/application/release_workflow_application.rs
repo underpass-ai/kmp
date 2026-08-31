@@ -2,6 +2,8 @@ use crate::application::dto::release_workflow_command_dto::ReleaseWorkflowComman
 use crate::application::use_cases::check_release_readiness::CheckReleaseReadiness;
 use crate::application::use_cases::prepare_release_workflow::PrepareReleaseWorkflow;
 use crate::application::use_cases::publish_release_workflow::PublishReleaseWorkflow;
+use crate::application::use_cases::run_release_preparation::RunReleasePreparation;
+use crate::application::use_cases::run_release_publication::RunReleasePublication;
 use crate::application::use_cases::seal_release_candidate::SealReleaseCandidate;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::repository_root::RepositoryRoot;
@@ -65,6 +67,22 @@ where
             )
             .execute(&version, run_id),
             ReleaseWorkflowCommandDto::Release { version } => PublishReleaseWorkflow::new(
+                self.file_system,
+                self.contracts,
+                self.workspace,
+                self.candidates,
+                self.root,
+            )
+            .execute(&version),
+            ReleaseWorkflowCommandDto::Prepare { version, run_id } => RunReleasePreparation::new(
+                self.file_system,
+                self.contracts,
+                self.workspace,
+                self.candidates,
+                self.root,
+            )
+            .execute(&version, run_id),
+            ReleaseWorkflowCommandDto::Publish { version } => RunReleasePublication::new(
                 self.file_system,
                 self.contracts,
                 self.workspace,
