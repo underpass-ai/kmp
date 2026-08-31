@@ -1,6 +1,7 @@
 pub mod engine_store;
 pub mod host_gateway;
 pub mod installation_catalog;
+pub mod plugin_cache;
 pub mod plugin_engine_probe;
 pub mod process_executor;
 pub mod process_output;

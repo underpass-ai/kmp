@@ -1,3 +1,4 @@
+use crate::lifecycle::application::dto::lifecycle_cache_dto::LifecycleCacheDto;
 use crate::lifecycle::application::dto::lifecycle_engine_dto::LifecycleEngineDto;
 use crate::lifecycle::application::dto::lifecycle_host_dto::LifecycleHostDto;
 use crate::lifecycle::application::dto::lifecycle_receipt_dto::LifecycleReceiptDto;
@@ -63,6 +64,15 @@ impl LifecycleReceiptMapper {
                 })
                 .collect(),
             plugin_tree_digest: receipt.plugin_tree().map(ToString::to_string),
+            plugin_caches: receipt
+                .pruned_caches()
+                .iter()
+                .map(|(host, pruning)| LifecycleCacheDto {
+                    host: host.to_string(),
+                    removed: pruning.removed().iter().map(ToString::to_string).collect(),
+                    kept: pruning.kept().iter().map(ToString::to_string).collect(),
+                })
+                .collect(),
         }
     }
 }

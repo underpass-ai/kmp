@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::lifecycle_cache_dto::LifecycleCacheDto;
 use super::lifecycle_engine_dto::LifecycleEngineDto;
 use super::lifecycle_host_dto::LifecycleHostDto;
 
@@ -14,4 +15,6 @@ pub struct LifecycleReceiptDto {
     pub hosts: Vec<LifecycleHostDto>,
     pub engines: Vec<LifecycleEngineDto>,
     pub plugin_tree_digest: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plugin_caches: Vec<LifecycleCacheDto>,
 }

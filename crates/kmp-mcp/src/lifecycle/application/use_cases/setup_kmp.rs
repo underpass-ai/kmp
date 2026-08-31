@@ -4,6 +4,7 @@ use crate::lifecycle::domain::lifecycle_receipt::LifecycleReceipt;
 use crate::lifecycle::domain::lifecycle_request::LifecycleRequest;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
+use crate::lifecycle::ports::plugin_cache::PluginCache;
 use crate::lifecycle::ports::release_repository::ReleaseRepository;
 
 /// Use case: make already-installed native plugins runnable without changing
@@ -17,9 +18,10 @@ impl<'a> SetupKmp<'a> {
         hosts: &'a dyn HostGateway,
         releases: &'a dyn ReleaseRepository,
         engines: &'a dyn EngineStore,
+        caches: &'a dyn PluginCache,
     ) -> Self {
         Self {
-            convergence: ConvergeLifecycle::new(hosts, releases, engines),
+            convergence: ConvergeLifecycle::new(hosts, releases, engines, caches),
         }
     }
 

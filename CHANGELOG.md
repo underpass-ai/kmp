@@ -9,6 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- `setup` and `update` prune the plugin cache once the convergence is proved:
+  after the new release is installed, its tools answered and every host points
+  at it, the superseded version directories go, keeping the installed release
+  and the one before it for rollback. Twenty releases in, a cache held twenty
+  version directories and 69M because nothing shipped ever removed — or even
+  mentioned — them. The receipt names what went under `plugin_caches`, and a
+  release this machine will not let go of is reported as kept rather than
+  raised: housekeeping never decides whether a convergence succeeded.
+
 ### Fixed
 
 - ChronoLoom draws abouts whose entries share a second. Times crossing the
