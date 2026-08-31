@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::domain::release_error::ReleaseError;
@@ -12,9 +12,13 @@ pub struct GitCli;
 
 impl GitCli {
     fn output(root: &RepositoryRoot, arguments: &[&str]) -> Result<Vec<u8>, ReleaseError> {
+        Self::output_in(root.as_path(), arguments)
+    }
+
+    fn output_in(directory: &Path, arguments: &[&str]) -> Result<Vec<u8>, ReleaseError> {
         let output = Command::new("git")
             .args(arguments)
-            .current_dir(root.as_path())
+            .current_dir(directory)
             .output()
             .map_err(|error| ReleaseError::invalid(format!("could not execute git: {error}")))?;
         if !output.status.success() {
@@ -27,6 +31,19 @@ impl GitCli {
         Ok(output.stdout)
     }
 
+    fn nul_separated_paths(raw: &[u8]) -> Result<Vec<PathBuf>, ReleaseError> {
+        raw.split(|byte| *byte == 0)
+            .filter(|entry| !entry.is_empty())
+            .map(|entry| {
+                std::str::from_utf8(entry)
+                    .map(PathBuf::from)
+                    .map_err(|error| {
+                        ReleaseError::invalid(format!("git returned a non-UTF-8 path: {error}"))
+                    })
+            })
+            .collect()
+    }
+
     fn remote_output(arguments: &[&str]) -> Result<std::process::Output, ReleaseError> {
         Command::new("git")
             .args(arguments)
@@ -37,18 +54,7 @@ impl GitCli {
 
 impl ReleaseRepository for GitCli {
     fn tracked_files(&self, root: &RepositoryRoot) -> Result<Vec<PathBuf>, ReleaseError> {
-        let output = Self::output(root, &["ls-files", "-z"])?;
-        output
-            .split(|byte| *byte == 0)
-            .filter(|raw| !raw.is_empty())
-            .map(|raw| {
-                std::str::from_utf8(raw)
-                    .map(PathBuf::from)
-                    .map_err(|error| {
-                        ReleaseError::invalid(format!("git returned a non-UTF-8 path: {error}"))
-                    })
-            })
-            .collect()
+        Self::nul_separated_paths(&Self::output(root, &["ls-files", "-z"])?)
     }
 
     fn head_commit(&self, root: &RepositoryRoot) -> Result<SourceCommit, ReleaseError> {
@@ -140,11 +146,19 @@ impl MarketplaceRepository for GitCli {
         commit.map(SourceCommit::parse).transpose()
     }
 
+    fn tracked_files_under(
+        &self,
+        root: &Path,
+        relative: &str,
+    ) -> Result<Vec<PathBuf>, ReleaseError> {
+        Self::nul_separated_paths(&Self::output_in(root, &["ls-files", "-z", "--", relative])?)
+    }
+
     fn clone_reference(
         &self,
         repository: &str,
         reference: &str,
-        destination: &std::path::Path,
+        destination: &Path,
     ) -> Result<(), ReleaseError> {
         let destination = destination.to_string_lossy();
         let output = Self::remote_output(&[
