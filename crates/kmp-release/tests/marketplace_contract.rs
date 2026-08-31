@@ -133,6 +133,65 @@ fn claude_uses_a_cloneable_annotated_tag_and_codex_resolves_the_same_tree() {
         String::from_utf8_lossy(&verified.stderr)
     );
 
+    // #448: the engine the plugin installs on every machine that uses KMP
+    // lives at `plugins/kmp/bin/kmp-mcp` and is gitignored, so the tag's clone
+    // rightly has no `bin/`. Digesting the working directory let that file
+    // decide the parity claim, and `marketplace verify` failed on a release
+    // that was in fact perfectly consistent.
+    std::fs::create_dir_all(root.join("plugins/kmp/bin")).expect("engine directory");
+    std::fs::write(root.join("plugins/kmp/bin/kmp-mcp"), b"an installed engine")
+        .expect("installed engine");
+    std::fs::write(root.join("plugins/kmp/.gitignore"), "/bin/kmp-mcp\n").expect("plugin ignores");
+    let with_installed_engine = Command::new(binary())
+        .args([
+            "marketplace",
+            "verify",
+            "0.4.2",
+            "--root",
+            root.to_str().expect("root"),
+            "--repository",
+            &repository_url,
+        ])
+        .output()
+        .expect("verify marketplace beside an installed engine");
+    assert!(
+        with_installed_engine.status.success(),
+        "an untracked engine is not part of the published plugin: {}",
+        String::from_utf8_lossy(&with_installed_engine.stderr)
+    );
+
+    // What git does carry still decides. An edit to a tracked file is a real
+    // difference between this tree and the tag's, and must still be caught.
+    std::fs::write(
+        root.join("plugins/kmp/skills/kmp-memory/SKILL.md"),
+        "Recover before re-deriving, differently.\n",
+    )
+    .expect("edited skill");
+    let with_edited_skill = Command::new(binary())
+        .args([
+            "marketplace",
+            "verify",
+            "0.4.2",
+            "--root",
+            root.to_str().expect("root"),
+            "--repository",
+            &repository_url,
+        ])
+        .output()
+        .expect("verify marketplace against an edited tracked file");
+    assert!(!with_edited_skill.status.success());
+    assert!(
+        String::from_utf8_lossy(&with_edited_skill.stderr)
+            .contains("do not resolve the exact same plugin tree"),
+        "{}",
+        String::from_utf8_lossy(&with_edited_skill.stderr)
+    );
+    std::fs::write(
+        root.join("plugins/kmp/skills/kmp-memory/SKILL.md"),
+        "Recover before re-deriving.\n",
+    )
+    .expect("restored skill");
+
     let impossible = Command::new("git")
         .args([
             "clone",

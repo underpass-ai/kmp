@@ -18,6 +18,14 @@ Detailed notes from the early release cycle remain available in the
   the sub-second component, and an extent widens by its endpoints' own
   resolution rather than trusting a label to name an exact instant.
 
+- `marketplace verify` compares the plugin tree git carries, not whatever the
+  working directory happens to hold. The gitignored engine the plugin installs
+  on every machine that uses KMP polluted the local digest while the tag's
+  clone rightly had no `bin/`, so the parity check failed on a release that was
+  in fact consistent — and only ever after tagging, on precisely the machines
+  that run the product. An uncommitted edit to a tracked file is still a real
+  difference and still fails.
+
 ## [0.6.1] - 2026-08-30
 
 ### Added
