@@ -93,6 +93,13 @@
           "evidence": "Every bounded live read reports its own page unit, continuation and byte-budget guidance."
         },
         {
+          "id": "advanced:budgets",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed.",
+          "evidence": "The live read schemas and projections guarantee one stable response floor plus an explicit warning when a valid max_bytes ceiling cannot contain a smaller honest response."
+        },
+        {
           "id": "advanced:lifecycle",
           "kind": "instruction",
           "depth": "advanced",
@@ -190,6 +197,14 @@
           "evidence": "The live read responses expose has_more and an opaque next_cursor."
         },
         {
+          "from": "advanced:budgets",
+          "to": "advanced:pagination",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "The stable response floor constrains byte-budget handling so a small valid ceiling cannot turn a bounded read into an error or silently erase its canonical object.",
+          "evidence": "The live projections return the stable floor with a warning and reserve invalid_argument for max_bytes values below 512."
+        },
+        {
           "from": "advanced:lifecycle",
           "to": "verb:ask",
           "rel": "uses_background",
@@ -245,6 +260,13 @@
           "depth": "advanced",
           "text": "The difference between occurred and observed time is the event boundary versus the knowledge boundary. KMP keeps four clocks because they answer different questions. Occurred time is when the event happened. Observed time is when a source or agent learned it. Ingested time is when the kernel committed it. Validity is the interval in which a state applies.",
           "evidence": "The memory coordinate contract stores occurred_at, observed_at, ingested_at, valid_from and exclusive valid_until separately."
+        },
+        {
+          "id": "advanced:budgets",
+          "kind": "concept",
+          "depth": "advanced",
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail.",
+          "evidence": "The shipped read contracts preserve a stable response floor and make every byte-budget exception visible as a warning."
         },
         {
           "id": "advanced:supersession",
@@ -329,6 +351,14 @@
           "class": "evidential",
           "why": "The four clocks add temporal precision to the basic definition of durable memory.",
           "evidence": "Memory entries carry distinct occurrence, observation, ingestion and validity coordinates."
+        },
+        {
+          "from": "advanced:budgets",
+          "to": "basic:memory",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "The byte-budget floor constrains how durable memory can be shortened without hiding the minimal canonical response from the person or host.",
+          "evidence": "Valid ceilings below the stable floor return that floor with an explicit warning; only values below 512 are rejected."
         },
         {
           "from": "advanced:supersession",
