@@ -9,17 +9,6 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
-### Changed
-
-- `setup` and `update` prune the plugin cache once the convergence is proved:
-  after the new release is installed, its tools answered and every host points
-  at it, the superseded version directories go, keeping the installed release
-  and the one before it for rollback. Twenty releases in, a cache held twenty
-  version directories and 69M because nothing shipped ever removed — or even
-  mentioned — them. The receipt names what went under `plugin_caches`, and a
-  release this machine will not let go of is reported as kept rather than
-  raised: housekeeping never decides whether a convergence succeeded.
-
 ### Added
 
 - Two orchestrating release verbs. `scripts/release.sh prepare X.Y.Z` chains
@@ -32,7 +21,32 @@ Detailed notes from the early release cycle remain available in the
   merging the pull request, and saying `publish`. `prepare` refuses `main` and
   a dirty tree, does not re-bump a version whose sources already agree, and
   skips a commit that already landed, so a rerun resumes instead of repeating.
+- `doctor` gains an **Engines** section: every `kmp-mcp` on `PATH` and in the
+  conventional install directories, each with the release it answers and
+  whether `PATH` order makes it the one a bare `kmp-mcp` runs. The Hosts
+  section only ever reported each host's *effective* engine, so a machine could
+  be fully green with a twenty-releases-old copy one `PATH` entry away — the
+  hazard the uninstall survey already named and the diagnosis never reached.
 
+### Changed
+
+- `setup` and `update` prune the plugin cache once the convergence is proved:
+  after the new release is installed, its tools answered and every host points
+  at it, the superseded version directories go, keeping the installed release
+  and the one before it for rollback. Twenty releases in, a cache held twenty
+  version directories and 69M because nothing shipped ever removed — or even
+  mentioned — them. The receipt names what went under `plugin_caches`, and a
+  release this machine will not let go of is reported as kept rather than
+  raised: housekeeping never decides whether a convergence succeeded.
+- `uninstall`'s engine lines say the release beside the size, so "remove it
+  yourself if you meant to" is an informed sentence rather than a guess about
+  `14.8M`.
+- The `dev-loop` warm-up on `main` is scoped to the inputs that actually feed
+  the Rust caches. A docs-only or catalog-pointer merge now skips it instead of
+  running a development loop beside the release machinery, which is what
+  muddied the run list during v0.6.1 at the moment it should have read
+  cleanest. A version bump still touches `Cargo.toml`, so the merge that most
+  needs a warm cache still gets one.
 - CodeQL moves from default setup to a checked-in `codeql.yml` scoped to `main`
   and pull requests. Default setup scans the default branch *and every
   protected branch*, so the release's last step — advancing the protected
@@ -50,7 +64,6 @@ Detailed notes from the early release cycle remain available in the
   produced them and a populated about rendered `0/0`. The boundary now carries
   the sub-second component, and an extent widens by its endpoints' own
   resolution rather than trusting a label to name an exact instant.
-
 - `marketplace verify` compares the plugin tree git carries, not whatever the
   working directory happens to hold. The gitignored engine the plugin installs
   on every machine that uses KMP polluted the local digest while the tag's
@@ -58,30 +71,6 @@ Detailed notes from the early release cycle remain available in the
   in fact consistent — and only ever after tagging, on precisely the machines
   that run the product. An uncommitted edit to a tracked file is still a real
   difference and still fails.
-
-### Changed
-
-- The `dev-loop` warm-up on `main` is scoped to the inputs that actually feed
-  the Rust caches. A docs-only or catalog-pointer merge now skips it instead of
-  running a development loop beside the release machinery, which is what
-  muddied the run list during v0.6.1 at the moment it should have read
-  cleanest. A version bump still touches `Cargo.toml`, so the merge that most
-  needs a warm cache still gets one.
-
-### Added
-
-- `doctor` gains an **Engines** section: every `kmp-mcp` on `PATH` and in the
-  conventional install directories, each with the release it answers and
-  whether `PATH` order makes it the one a bare `kmp-mcp` runs. The Hosts
-  section only ever reported each host's *effective* engine, so a machine could
-  be fully green with a twenty-releases-old copy one `PATH` entry away — the
-  hazard the uninstall survey already named and the diagnosis never reached.
-
-### Changed
-
-- `uninstall`'s engine lines say the release beside the size, so "remove it
-  yourself if you meant to" is an informed sentence rather than a guess about
-  `14.8M`.
 
 ## [0.6.1] - 2026-08-30
 
