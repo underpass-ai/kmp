@@ -35,6 +35,21 @@ Detailed notes from the early release cycle remain available in the
   cleanest. A version bump still touches `Cargo.toml`, so the merge that most
   needs a warm cache still gets one.
 
+### Added
+
+- `doctor` gains an **Engines** section: every `kmp-mcp` on `PATH` and in the
+  conventional install directories, each with the release it answers and
+  whether `PATH` order makes it the one a bare `kmp-mcp` runs. The Hosts
+  section only ever reported each host's *effective* engine, so a machine could
+  be fully green with a twenty-releases-old copy one `PATH` entry away — the
+  hazard the uninstall survey already named and the diagnosis never reached.
+
+### Changed
+
+- `uninstall`'s engine lines say the release beside the size, so "remove it
+  yourself if you meant to" is an informed sentence rather than a guess about
+  `14.8M`.
+
 ## [0.6.1] - 2026-08-30
 
 ### Added

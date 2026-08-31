@@ -1,11 +1,13 @@
 use std::path::{Path, PathBuf};
 
+use crate::lifecycle::application::use_cases::survey_engines::SurveyEngines;
 use crate::lifecycle::application::use_cases::survey_memories::SurveyMemories;
 use crate::lifecycle::domain::piece::Piece;
 use crate::lifecycle::domain::piece_kind::PieceKind;
 use crate::lifecycle::domain::store_leases_dir::store_leases_dir;
 use crate::lifecycle::domain::survey_roots::SurveyRoots;
 use crate::lifecycle::ports::installation_catalog::InstallationCatalog;
+use crate::lifecycle::ports::plugin_engine_probe::PluginEngineProbe;
 use crate::lifecycle::ports::store_catalog::StoreCatalog;
 use crate::lifecycle::ports::store_index::StoreIndex;
 
@@ -17,6 +19,7 @@ use crate::lifecycle::ports::store_index::StoreIndex;
 /// disk itself goes through the ports.
 pub struct SurveyInstallation<'a> {
     installation: &'a dyn InstallationCatalog,
+    engines: &'a dyn PluginEngineProbe,
     stores: &'a dyn StoreCatalog,
     index: &'a dyn StoreIndex,
 }
@@ -24,11 +27,13 @@ pub struct SurveyInstallation<'a> {
 impl<'a> SurveyInstallation<'a> {
     pub fn new(
         installation: &'a dyn InstallationCatalog,
+        engines: &'a dyn PluginEngineProbe,
         stores: &'a dyn StoreCatalog,
         index: &'a dyn StoreIndex,
     ) -> Self {
         Self {
             installation,
+            engines,
             stores,
             index,
         }
@@ -37,25 +42,25 @@ impl<'a> SurveyInstallation<'a> {
     pub fn execute(&self, roots: &SurveyRoots) -> Vec<Piece> {
         let mut pieces = Vec::new();
 
-        for directory in engine_directories(roots) {
-            let engine = directory.join(engine_file_name());
-            if !self.installation.is_file(&engine) {
-                continue;
-            }
+        for engine in SurveyEngines::new(self.installation, self.engines).execute(roots) {
+            let path = engine.executable().as_path().to_path_buf();
             // An engine on `PATH` but outside this home may be a package
             // manager's, or another user's. It is worth naming — a second
             // copy is how a live session ends up older than the merged fix
             // (#80) — and it is not this verb's to delete.
-            let ours = engine.starts_with(&roots.home);
-            let size = self.installation.size_of(&engine).human();
+            let ours = path.starts_with(&roots.home);
+            // The size never said which copy was ancient, which is the only
+            // thing that makes a second engine worth acting on (#450).
+            let size = self.installation.size_of(&path).human();
+            let identity = format!("{} · {size}", engine.described_version());
             pieces.push(Piece {
                 kind: PieceKind::Engine,
                 detail: if ours {
-                    size
+                    identity
                 } else {
-                    format!("{size} — outside your home; remove it yourself if you meant to")
+                    format!("{identity} — outside your home; remove it yourself if you meant to")
                 },
-                path: engine,
+                path,
                 bundled_events: None,
                 ours_to_remove: ours,
             });
@@ -246,26 +251,6 @@ impl<'a> SurveyInstallation<'a> {
     }
 }
 
-fn engine_file_name() -> &'static str {
-    if cfg!(windows) {
-        "kmp-mcp.exe"
-    } else {
-        "kmp-mcp"
-    }
-}
-
-fn engine_directories(roots: &SurveyRoots) -> Vec<PathBuf> {
-    let mut directories = vec![
-        roots.home.join(".local/bin"),
-        roots.home.join(".cargo/bin"),
-        roots.data_home.join("kmp/bin"),
-    ];
-    directories.extend(roots.path_entries.iter().cloned());
-    directories.sort();
-    directories.dedup();
-    directories
-}
-
 /// Only a project store has a bundle. An explicit data dir or the per-user
 /// default belongs to no repository, so there is no conventional place a
 /// copy of it would be — the same reason `export` refuses to guess one.
@@ -280,7 +265,7 @@ fn bundle_beside(store: &Path) -> Option<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use super::*;
     use crate::lifecycle::adapters::filesystem_store_catalog::FilesystemStoreCatalog;
@@ -308,10 +293,40 @@ mod tests {
         std::fs::write(path, format!("{{\"event_count\":{events}}}\n")).expect("bundle");
     }
 
+    /// Engines are asked their release by running them; the fixtures here are
+    /// not executable, so the survey is given a probe that answers instead.
+    struct FakeProbe {
+        versions: std::collections::BTreeMap<PathBuf, &'static str>,
+    }
+
+    impl crate::lifecycle::ports::plugin_engine_probe::PluginEngineProbe for FakeProbe {
+        fn version(
+            &self,
+            executable: &crate::lifecycle::domain::engine_executable::EngineExecutable,
+        ) -> Result<
+            Option<crate::lifecycle::domain::release_version::ReleaseVersion>,
+            crate::lifecycle::domain::lifecycle_error::LifecycleError,
+        > {
+            self.versions
+                .get(executable.as_path())
+                .map(|raw| crate::lifecycle::domain::release_version::ReleaseVersion::parse(raw))
+                .transpose()
+        }
+    }
+
     fn survey(roots: &SurveyRoots) -> Vec<Piece> {
+        survey_with(
+            roots,
+            FakeProbe {
+                versions: Default::default(),
+            },
+        )
+    }
+
+    fn survey_with(roots: &SurveyRoots, probe: FakeProbe) -> Vec<Piece> {
         let stores = FilesystemStoreCatalog::new(&roots.data_home);
         let index = JsonlStoreIndex::new(&roots.data_home);
-        SurveyInstallation::new(&NativeInstallationCatalog, &stores, &index).execute(roots)
+        SurveyInstallation::new(&NativeInstallationCatalog, &probe, &stores, &index).execute(roots)
     }
 
     fn remove(piece: &Piece) -> Result<(), String> {
@@ -506,6 +521,32 @@ mod tests {
             .find(|piece| piece.path.starts_with(base.join("home")))
             .expect("the one in this home");
         assert!(ours.ours_to_remove);
+    }
+
+    #[test]
+    fn an_engine_line_says_which_release_it_is_beside_its_size() {
+        // The dry run listed the stale engine by size (`14.8M`), so nothing
+        // told the reader it was twenty releases old — the one fact that
+        // makes a second copy worth acting on (#450).
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let local_bin = base.join("home/.local/bin");
+        std::fs::create_dir_all(&local_bin).expect("bin dir");
+        let engine = local_bin.join("kmp-mcp");
+        std::fs::write(&engine, b"an engine").expect("engine");
+
+        let pieces = survey_with(
+            &roots(base),
+            FakeProbe {
+                versions: std::collections::BTreeMap::from([(engine, "0.1.13")]),
+            },
+        );
+
+        let listed = pieces
+            .iter()
+            .find(|piece| piece.kind == PieceKind::Engine)
+            .expect("the engine is part of the picture");
+        assert!(listed.detail.starts_with("0.1.13 · "), "{listed:?}");
     }
 
     #[test]

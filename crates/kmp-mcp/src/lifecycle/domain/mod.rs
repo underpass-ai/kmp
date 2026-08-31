@@ -5,6 +5,7 @@ pub mod engine_artifact;
 pub mod engine_executable;
 pub mod engine_install_dir;
 pub mod engine_proof;
+pub mod found_engine;
 pub mod host;
 pub mod host_convergence;
 pub mod host_engine_proof;

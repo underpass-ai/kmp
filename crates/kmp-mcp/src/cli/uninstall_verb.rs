@@ -70,11 +70,16 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
             }
         }
     } else {
-        kmp_mcp::lifecycle::SurveyInstallation::new(&installation, &store_catalog, &store_index)
-            .execute(&roots)
-            .into_iter()
-            .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::lifecycle::PieceKind::Store))
-            .collect()
+        kmp_mcp::lifecycle::SurveyInstallation::new(
+            &installation,
+            &kmp_mcp::lifecycle::NativePluginEngineProbe,
+            &store_catalog,
+            &store_index,
+        )
+        .execute(&roots)
+        .into_iter()
+        .filter(|piece| !(keep_memory && piece.kind == kmp_mcp::lifecycle::PieceKind::Store))
+        .collect()
     };
     print!(
         "{}",
