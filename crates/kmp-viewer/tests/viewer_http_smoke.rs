@@ -387,6 +387,177 @@ async fn projection_compares_rfc3339_ranges_with_persisted_sortable_clocks() {
     assert_eq!(projection["page"]["total"], 2);
 }
 
+/// ChronoLoom asks for the wide `episode` extent first and derives the moment
+/// window it then draws from that answer's cluster endpoints. When those
+/// endpoints were serialized at whole-second precision the derived window
+/// closed before the entry it described: a populated about rendered `0/0`
+/// while its own episode projection reported one entry (#454).
+#[tokio::test(flavor = "multi_thread")]
+async fn a_sub_second_entry_survives_the_extent_to_moment_round_trip() {
+    const OCCURRED_ABOUT: &str = "project:subsecond-occurred";
+    const OBSERVED_ABOUT: &str = "project:subsecond-observed";
+    // The spelling a real store hands back: sortable, and carrying the
+    // nanoseconds the reported entries differed by.
+    const OCCURRED_AT: &str = "unix:101788145953:731471000";
+    const OBSERVED_AT: &str = "unix:101788145953:731475000";
+    const OCCURRED_READABLE: &str = "2026-08-31T03:12:33.731471Z";
+    const OBSERVED_READABLE: &str = "2026-08-31T03:12:33.731475Z";
+
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    // About A carries both clocks; about B carries only the observed one, so
+    // its occurred axis stays legitimately empty (#421).
+    kernel
+        .service()
+        .ingest(sub_second_corpus(
+            OCCURRED_ABOUT,
+            Some(OCCURRED_AT),
+            OCCURRED_AT,
+        ))
+        .await
+        .expect("about A ingests");
+    kernel
+        .service()
+        .ingest(sub_second_corpus(OBSERVED_ABOUT, None, OBSERVED_AT))
+        .await
+        .expect("about B ingests");
+
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+    tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
+
+    for (about, axis, expected) in [
+        (OCCURRED_ABOUT, "occurred", OCCURRED_READABLE),
+        (OBSERVED_ABOUT, "observed", OBSERVED_READABLE),
+    ] {
+        let extent = episode_extent(port, about, axis).await;
+        assert_eq!(
+            extent["page"]["total"], 1,
+            "{about}/{axis} episode: {extent}"
+        );
+
+        let cluster = &extent["clusters"][0];
+        let (from, to) = (
+            cluster["from"].as_str().expect("cluster from"),
+            cluster["to"].as_str().expect("cluster to"),
+        );
+        assert_eq!(from, expected, "{about}/{axis} keeps its fraction");
+        assert_eq!(to, expected, "{about}/{axis} keeps its fraction");
+
+        let (status, moment) = get(
+            port,
+            &format!(
+                "/api/projection?about={}&axis={axis}&from={}&to={}&lod=moment&bins=8&limit=8",
+                urlencode(about),
+                urlencode(from),
+                urlencode(&one_millisecond_past(to))
+            ),
+        )
+        .await;
+        assert_eq!(status, 200, "{about}/{axis} moment failed: {moment}");
+        assert_eq!(
+            moment["page"]["total"], 1,
+            "a non-empty extent must produce a window that holds its entry: {moment}"
+        );
+        assert_eq!(moment["entries"].as_array().map(Vec::len), Some(1));
+    }
+
+    // The clock that carries nothing keeps saying so, plainly.
+    let empty = episode_extent(port, OBSERVED_ABOUT, "occurred").await;
+    assert_eq!(empty["page"]["total"], 0, "empty occurred clock: {empty}");
+    assert!(
+        empty["clusters"].as_array().is_some_and(Vec::is_empty),
+        "an empty clock projects no cluster: {empty}"
+    );
+}
+
+fn sub_second_corpus(
+    about: &str,
+    occurred_at: Option<&str>,
+    observed_at: &str,
+) -> MemoryIngestCommand {
+    MemoryIngestCommand {
+        about: about.to_string(),
+        memory: MemoryData {
+            dimensions: vec![MemoryDimensionData {
+                id: "timeline:work".to_string(),
+                kind: "timeline".to_string(),
+                title: None,
+                metadata: Default::default(),
+            }],
+            entries: vec![MemoryEntryData {
+                id: format!("{about}:decision:only"),
+                kind: "decision".to_string(),
+                text: "One entry, written inside a single second.".to_string(),
+                coordinates: vec![MemoryCoordinateData {
+                    dimension: "timeline".to_string(),
+                    scope_id: "timeline:work".to_string(),
+                    occurred_at: occurred_at.map(str::to_string),
+                    observed_at: Some(observed_at.to_string()),
+                    ingested_at: None,
+                    valid_from: None,
+                    valid_until: None,
+                    sequence: Some(1),
+                    rank: None,
+                    metadata: Default::default(),
+                }],
+                metadata: Default::default(),
+            }],
+            relations: Vec::new(),
+            evidence: Vec::new(),
+        },
+        provenance: None,
+        idempotency_key: format!("{about}-1"),
+        dry_run: false,
+    }
+}
+
+/// The wide probe ChronoLoom issues before it knows where memory lives.
+async fn episode_extent(port: u16, about: &str, axis: &str) -> serde_json::Value {
+    let (status, projection) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis={axis}&from={}&to={}&lod=episode&bins=128&limit=2048",
+            urlencode(about),
+            urlencode("1900-01-01T00:00:00Z"),
+            urlencode("2100-01-01T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "episode probe failed: {projection}");
+    projection
+}
+
+/// The browser's rule, in the one line this test needs: a moment window ends
+/// one millisecond past the extent's last endpoint, because the projection
+/// range is half-open and `Date.parse` floors anything below the millisecond.
+/// The rule itself lives in `KMP_LOOM.projectionExtent`, with its own tests in
+/// `crates/kmp-viewer/ui/loom-core.test.js`.
+fn one_millisecond_past(instant: &str) -> String {
+    let (head, fraction) = instant
+        .trim_end_matches('Z')
+        .split_once('.')
+        .expect("the endpoint carries a fraction");
+    let nanos: u32 = format!("{fraction:0<9}")
+        .parse()
+        .expect("a nanosecond fraction");
+    let widened = nanos + 1_000_000;
+    assert!(
+        widened < 1_000_000_000,
+        "this fixture never carries into the next second"
+    );
+    format!("{head}.{widened:09}Z")
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn coarse_kind_totals_count_entries_once_across_multiple_lanes() {
     let data_dir = tempfile::tempdir().expect("temp data dir");

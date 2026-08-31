@@ -223,10 +223,17 @@ impl CoordinateView {
 /// timeline's time column, where `unix:101786903200:000000000` sat exactly
 /// where a date belongs. Anything that is not that form is passed through
 /// untouched: times ingested as RFC3339 are already readable.
+///
+/// The sub-second component survives the translation. It used to be dropped,
+/// which made this function lossy for the one caller that cannot afford loss:
+/// `visual_projection_view` serializes cluster endpoints through it, and
+/// ChronoLoom builds its moment window from those endpoints. A whole-second
+/// endpoint placed the window before the entry it described, so a populated
+/// about rendered `0/0` (#454).
 pub fn readable_time(value: impl AsRef<str>) -> String {
     let value = value.as_ref();
-    match parse_sortable_seconds(value) {
-        Some(seconds) => rfc3339_utc(seconds),
+    match parse_sortable_instant(value) {
+        Some((seconds, nanos)) => rfc3339_utc_nanos(seconds, nanos),
         None => value.to_string(),
     }
 }
@@ -274,12 +281,16 @@ fn real_hash(value: &str) -> Option<String> {
 /// The offset the sortable form adds so pre-epoch times stay non-negative.
 const UNIX_SORT_OFFSET: i64 = 100_000_000_000;
 
-fn parse_sortable_seconds(value: &str) -> Option<i64> {
+fn parse_sortable_instant(value: &str) -> Option<(i64, u32)> {
     let (seconds, nanos) = value.strip_prefix("unix:")?.split_once(':')?;
-    if !nanos.bytes().all(|byte| byte.is_ascii_digit()) {
+    if nanos.is_empty() || !nanos.bytes().all(|byte| byte.is_ascii_digit()) {
         return None;
     }
-    Some(seconds.parse::<i64>().ok()? - UNIX_SORT_OFFSET)
+    let nanos = nanos.parse::<u32>().ok()?;
+    if nanos >= 1_000_000_000 {
+        return None;
+    }
+    Some((seconds.parse::<i64>().ok()? - UNIX_SORT_OFFSET, nanos))
 }
 
 /// Epoch seconds to `YYYY-MM-DDTHH:MM:SSZ`, without a date library.
@@ -312,6 +323,24 @@ pub(crate) fn rfc3339_utc(seconds: i64) -> String {
     let year = year_of_era + era * 400 + i64::from(month <= 2);
 
     format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z")
+}
+
+/// The same instant, keeping whatever sub-second precision it carries.
+///
+/// A whole second renders exactly as before, so every time that has no
+/// fraction reads the way it always did. A fraction is written with its
+/// trailing zeros trimmed — `.731471`, not `.731471000` — which is valid
+/// RFC3339 and what `Date.parse` in the browser expects.
+pub(crate) fn rfc3339_utc_nanos(seconds: i64, nanos: u32) -> String {
+    let whole = rfc3339_utc(seconds);
+    if nanos == 0 {
+        return whole;
+    }
+    let mut fraction = format!("{nanos:09}");
+    while fraction.ends_with('0') {
+        fraction.pop();
+    }
+    format!("{}.{fraction}Z", whole.trim_end_matches('Z'))
 }
 
 /// One recalled neighborhood, ready to draw: nodes, typed edges, details, and
@@ -546,7 +575,7 @@ pub struct InfoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{readable_time, rfc3339_utc};
+    use super::{readable_time, rfc3339_utc, rfc3339_utc_nanos};
 
     #[test]
     fn a_sortable_time_becomes_a_date_a_reader_can_read() {
@@ -563,10 +592,41 @@ mod tests {
             "2026-07-01T10:00:00Z",
             "unix:not-a-number:000000000",
             "unix:101786903200",
+            // A sortable form always carries its zero-padded nanoseconds;
+            // one without them is not that form.
+            "unix:101786903200:",
             "",
         ] {
             assert_eq!(readable_time(value), value, "mangled {value}");
         }
+    }
+
+    #[test]
+    fn a_sub_second_time_keeps_its_fraction() {
+        // #454: the entry ChronoLoom could not find. Its cluster endpoint was
+        // serialized as the whole second before it, so the moment window the
+        // browser derived ended 730ms too early.
+        assert_eq!(
+            readable_time("unix:101788145953:731471000"),
+            "2026-08-31T03:12:33.731471Z"
+        );
+        // The neighbouring entry of the same report, four hundred nanoseconds
+        // later: the fraction is what tells them apart.
+        assert_eq!(
+            readable_time("unix:101788145953:731475000"),
+            "2026-08-31T03:12:33.731475Z"
+        );
+    }
+
+    #[test]
+    fn a_fraction_is_written_without_its_trailing_zeros() {
+        assert_eq!(rfc3339_utc_nanos(0, 0), "1970-01-01T00:00:00Z");
+        assert_eq!(rfc3339_utc_nanos(0, 500_000_000), "1970-01-01T00:00:00.5Z");
+        assert_eq!(rfc3339_utc_nanos(0, 1), "1970-01-01T00:00:00.000000001Z");
+        assert_eq!(
+            rfc3339_utc_nanos(-1, 250_000_000),
+            "1969-12-31T23:59:59.25Z"
+        );
     }
 
     #[test]

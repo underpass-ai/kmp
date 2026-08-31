@@ -123,6 +123,42 @@ const KMP_LOOM = (() => {
     return { t0, t1 };
   }
 
+  /* The window a projection's own aggregates describe.
+     Cluster endpoints are exact and preferred; bins are the coarse fallback.
+
+     An endpoint is a *label* for an instant, and a label can be less precise
+     than what it names: a whole-second endpoint stands for anything inside
+     that second, and even a fractional one loses everything below the
+     millisecond Date.parse can hold. Reading such a label as an exact instant
+     built a moment window that ended before the entry it described, and a
+     populated about rendered 0/0 (#454). So each endpoint contributes its
+     resolution: the window ends where the last instant the label can name
+     ends, never where the label itself begins. */
+  const RESOLUTION_MS = 1_000;
+
+  function endpointResolutionMs(value) {
+    if (typeof value !== "string") return RESOLUTION_MS;
+    // `2026-08-31T03:12:33.731471Z` — a fraction is present, so the only
+    // uncertainty left is what Date.parse truncates below the millisecond.
+    return /\.\d+Z?$/.test(value.trim()) ? 1 : RESOLUTION_MS;
+  }
+
+  function projectionExtent(projection) {
+    const endpoints = (source) =>
+      (source || []).flatMap((item) => [
+        { ms: Date.parse(item.from), slack: 0 },
+        { ms: Date.parse(item.to), slack: endpointResolutionMs(item.to) },
+      ]);
+    const exact = endpoints(projection.clusters).filter((e) => Number.isFinite(e.ms));
+    const values = exact.length
+      ? exact
+      : endpoints(projection.bins).filter((e) => Number.isFinite(e.ms));
+    if (!values.length) return null;
+    const t0 = Math.min(...values.map((e) => e.ms));
+    const t1 = Math.max(...values.map((e) => e.ms + e.slack));
+    return { t0, t1: t1 > t0 ? t1 : t0 + 1 };
+  }
+
   /* ---------------- semantic zoom ladder ----------------
      The zoom changes representation, not just size. Time chooses how much
      detail is useful; actual marks per lane prevent dense memories from
@@ -542,6 +578,7 @@ const KMP_LOOM = (() => {
     compareModels,
     buildLanes,
     extent,
+    projectionExtent,
     maxMarksPerLane,
     lodFor,
     alignObservabilitySeries,

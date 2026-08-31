@@ -51,3 +51,54 @@ test("page totals provide a safe density estimate for a body-only page", () => {
 
   assert.equal(loom.maxMarksPerLane(projection), 400);
 });
+
+test("a whole-second cluster endpoint still covers the entry inside that second", () => {
+  // #454: one entry at 03:12:33.731471Z. The episode projection reported it,
+  // the endpoint was serialized as the second that contains it, and the
+  // moment window derived from that endpoint ended at .002Z — before the
+  // entry — so a populated about rendered 0/0.
+  const extent = loom.projectionExtent({
+    clusters: [
+      { dimension: "agentic_episode", from: "2026-08-31T03:12:33Z", to: "2026-08-31T03:12:33Z", total: 1 },
+    ],
+    page: { total: 1 },
+  });
+
+  const entry = Date.parse("2026-08-31T03:12:33.731Z");
+  assert.ok(extent.t0 <= entry, `window starts at ${extent.t0}, entry at ${entry}`);
+  assert.ok(extent.t1 >= entry, `window ends at ${extent.t1}, entry at ${entry}`);
+});
+
+test("a fractional cluster endpoint covers what Date.parse truncates below the millisecond", () => {
+  const extent = loom.projectionExtent({
+    clusters: [
+      {
+        dimension: "agentic_episode",
+        from: "2026-08-31T03:12:33.731471Z",
+        to: "2026-08-31T03:12:33.731471Z",
+        total: 1,
+      },
+    ],
+  });
+
+  assert.ok(extent.t0 <= Date.parse("2026-08-31T03:12:33.731Z"));
+  assert.ok(extent.t1 >= Date.parse("2026-08-31T03:12:33.732Z"));
+});
+
+test("bins are the coarse fallback and clusters win when both are present", () => {
+  const projection = {
+    bins: [{ from: "2020-01-01T00:00:00Z", to: "2030-01-01T00:00:00Z" }],
+    clusters: [{ from: "2026-08-31T03:12:33Z", to: "2026-08-31T03:12:34Z" }],
+  };
+  const withClusters = loom.projectionExtent(projection);
+  assert.equal(withClusters.t0, Date.parse("2026-08-31T03:12:33Z"));
+
+  const binsOnly = loom.projectionExtent({ bins: projection.bins });
+  assert.equal(binsOnly.t0, Date.parse("2020-01-01T00:00:00Z"));
+  assert.ok(binsOnly.t1 >= Date.parse("2030-01-01T00:00:00Z"));
+});
+
+test("a projection with no aggregates has no extent", () => {
+  assert.equal(loom.projectionExtent({}), null);
+  assert.equal(loom.projectionExtent({ clusters: [], bins: [] }), null);
+});
