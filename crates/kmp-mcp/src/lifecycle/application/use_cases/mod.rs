@@ -3,6 +3,7 @@ pub mod diagnose_engines;
 pub mod diagnose_lifecycle;
 pub mod diagnose_tool_surface;
 pub mod forget_store;
+pub mod prune_plugin_cache;
 pub mod remember_store;
 pub mod remove_piece;
 pub mod resolve_plugin_engine;

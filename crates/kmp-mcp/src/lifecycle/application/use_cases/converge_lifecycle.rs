@@ -1,4 +1,7 @@
+use crate::lifecycle::application::use_cases::prune_plugin_cache::PrunePluginCache;
+use crate::lifecycle::domain::cache_pruning::CachePruning;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
+use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::host_convergence::HostConvergence;
 use crate::lifecycle::domain::host_engine_proof::HostEngineProof;
 use crate::lifecycle::domain::host_installation::HostInstallation;
@@ -10,6 +13,7 @@ use crate::lifecycle::domain::lifecycle_request::LifecycleRequest;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
+use crate::lifecycle::ports::plugin_cache::PluginCache;
 use crate::lifecycle::ports::release_repository::ReleaseRepository;
 
 /// Shared application orchestration behind the setup and update use cases.
@@ -17,6 +21,7 @@ pub(super) struct ConvergeLifecycle<'a> {
     hosts: &'a dyn HostGateway,
     releases: &'a dyn ReleaseRepository,
     engines: &'a dyn EngineStore,
+    caches: &'a dyn PluginCache,
 }
 
 impl<'a> ConvergeLifecycle<'a> {
@@ -24,11 +29,13 @@ impl<'a> ConvergeLifecycle<'a> {
         hosts: &'a dyn HostGateway,
         releases: &'a dyn ReleaseRepository,
         engines: &'a dyn EngineStore,
+        caches: &'a dyn PluginCache,
     ) -> Self {
         Self {
             hosts,
             releases,
             engines,
+            caches,
         }
     }
 
@@ -102,6 +109,10 @@ impl<'a> ConvergeLifecycle<'a> {
         }
 
         let plugin_tree = self.require_equal_plugin_trees(&converged)?;
+        // Only now: the release is installed, its tools answered, every host
+        // points at it, and both trees agree. Before that moment a superseded
+        // version is still a rollback (#451).
+        let pruning = self.prune_superseded(&converged, plan.target());
 
         // PATH is the final mutation only when a converged host actually
         // consumes it. If a prior gate failed, the previous shared engine is
@@ -123,7 +134,25 @@ impl<'a> ConvergeLifecycle<'a> {
             host_results,
             proofs,
             plugin_tree,
+            pruning,
         ))
+    }
+
+    /// Housekeeping, never a gate: a cache that will not tidy up does not
+    /// undo a convergence that is already proved.
+    fn prune_superseded(
+        &self,
+        converged: &[HostInstallation],
+        target: &ReleaseVersion,
+    ) -> Vec<(Host, CachePruning)> {
+        let prune = PrunePluginCache::new(self.caches);
+        converged
+            .iter()
+            .filter_map(|installation| {
+                let pruning = prune.execute(installation.root(), target);
+                (!pruning.is_empty()).then(|| (installation.host(), pruning))
+            })
+            .collect()
     }
 
     fn target_for(&self, request: &LifecycleRequest) -> Result<ReleaseVersion, LifecycleError> {

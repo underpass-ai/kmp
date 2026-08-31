@@ -15,6 +15,12 @@ When a session notice or version comparison says a newer release exists, run
 updates every installed KMP plugin, and installs the checksummed engine from
 the same release. Do not update only one host or one half.
 
+Once the release is proved and every host points at it, the update removes the
+superseded versions each host's plugin cache had kept, leaving the installed
+release and the one before it for rollback. The receipt names what went under
+`plugin_caches`; report it rather than letting sixty megabytes disappear
+quietly.
+
 For an enabled Codex plugin, the plugin owns MCP. Install or update the engine
 with `<plugin-root>/scripts/kmp-install-binary.sh`, but do not add a global
 `mcp_servers.kmp` registration, copied prompts, or an AGENTS snippet. If a

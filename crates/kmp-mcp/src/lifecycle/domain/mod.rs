@@ -1,3 +1,4 @@
+pub mod cache_pruning;
 pub mod convergence_status;
 pub mod diagnosis_verdict;
 pub mod diagnostic_severity;

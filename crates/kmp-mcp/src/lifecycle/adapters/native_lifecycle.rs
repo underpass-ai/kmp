@@ -1,4 +1,5 @@
 use crate::lifecycle::adapters::filesystem_engine_store::FilesystemEngineStore;
+use crate::lifecycle::adapters::filesystem_plugin_cache::FilesystemPluginCache;
 use crate::lifecycle::adapters::github_release_repository::GithubReleaseRepository;
 use crate::lifecycle::adapters::lifecycle_cli_parser::LifecycleCliParser;
 use crate::lifecycle::adapters::native_host_gateway::NativeHostGateway;
@@ -29,12 +30,13 @@ impl NativeLifecycle {
         let hosts = NativeHostGateway::new(&processes);
         let releases = GithubReleaseRepository::new()?;
         let engines = FilesystemEngineStore;
+        let caches = FilesystemPluginCache;
         let receipt = match action {
             LifecycleAction::Setup => {
-                SetupKmp::new(&hosts, &releases, &engines).execute(request)?
+                SetupKmp::new(&hosts, &releases, &engines, &caches).execute(request)?
             }
             LifecycleAction::Update => {
-                UpdateKmp::new(&hosts, &releases, &engines).execute(request)?
+                UpdateKmp::new(&hosts, &releases, &engines, &caches).execute(request)?
             }
         };
         Ok(LifecycleReceiptMapper::to_dto(&receipt))

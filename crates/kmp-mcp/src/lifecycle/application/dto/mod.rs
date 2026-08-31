@@ -1,3 +1,4 @@
+pub mod lifecycle_cache_dto;
 pub mod lifecycle_command_dto;
 pub mod lifecycle_engine_dto;
 pub mod lifecycle_failure_dto;

@@ -8,6 +8,7 @@ pub(crate) mod durability_probe;
 pub(crate) mod embedded_memory_probe;
 pub(crate) mod engines_probe;
 pub mod filesystem_engine_store;
+pub mod filesystem_plugin_cache;
 pub mod filesystem_store_catalog;
 pub mod github_release_repository;
 pub mod info_report;
