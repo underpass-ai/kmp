@@ -11,15 +11,32 @@ name: dev-loop
 # request and main.
 #
 # The same jobs run on pushes to main only to keep the caches warm, so a
-# draft's first iteration starts hot instead of paying a cold build.
+# draft's first iteration starts hot instead of paying a cold build. That is
+# the whole reason for the main trigger, so it is scoped to what actually
+# feeds those caches: a docs-only or catalog-pointer merge warms nothing and
+# skips, while a version bump still touches Cargo.toml and still warms. The
+# release day that prompted this ran a development loop beside the release
+# machinery and muddied the run list at the moment it should read cleanest
+# (#447).
 
 on:
   pull_request:
   push:
     branches:
       - main
+    paths:
+      - crates/**
+      - Cargo.toml
+      - Cargo.lock
+      - rust-toolchain.toml
+      # A warm-up that never runs on main is broken invisibly until the next
+      # draft pays for it, so the loop's own definition counts as an input.
+      - .github/workflows/dev-loop.yml
   workflow_dispatch:
 
+# One lane per ref: a burst of merges — the shape of a release day — leaves
+# one warm-up standing, not one per merge, because every push to main shares
+# refs/heads/main.
 concurrency:
   group: dev-loop-${{ github.ref }}
   cancel-in-progress: true

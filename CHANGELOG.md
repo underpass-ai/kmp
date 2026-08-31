@@ -26,6 +26,15 @@ Detailed notes from the early release cycle remain available in the
   that run the product. An uncommitted edit to a tracked file is still a real
   difference and still fails.
 
+### Changed
+
+- The `dev-loop` warm-up on `main` is scoped to the inputs that actually feed
+  the Rust caches. A docs-only or catalog-pointer merge now skips it instead of
+  running a development loop beside the release machinery, which is what
+  muddied the run list during v0.6.1 at the moment it should have read
+  cleanest. A version bump still touches `Cargo.toml`, so the merge that most
+  needs a warm cache still gets one.
+
 ## [0.6.1] - 2026-08-30
 
 ### Added
