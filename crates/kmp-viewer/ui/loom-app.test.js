@@ -226,12 +226,12 @@ test("an agent snapshot moves clock, frames refs and applies the trace", async (
   assert.ok(view.t1 >= Date.parse("2026-08-31T18:02:14Z"));
 });
 
-/* Today's #463 behavior, pinned on purpose: the browser treats the full
-   snapshot as a patch. A snapshot with no `search` key leaves the stale
-   input alone, and a ref-only focus does not clear a previous explicit
-   focus range. The fix will flip both assertions — nothing else. */
-test("a snapshot without cleared facets leaves stale browser filters (pinned for #463)", async () => {
-  const { app, core, searchBox } = loom();
+/* #463's regression: the browser reconciles the full snapshot instead of
+   treating it as a patch. An agent-cleared search empties the input, and a
+   ref-only focus clears a previous explicit focus range — the revision-42
+   provenance banner and the rendered filters can no longer split. */
+test("a snapshot with cleared facets clears the stale browser filters (#463)", async () => {
+  const { app, core, calls, searchBox } = loom();
   const { model, view } = app.state;
   model.about = "project:x";
   view.full = { t0: 0, t1: Date.parse("2026-09-01T00:00:00Z") };
@@ -245,13 +245,47 @@ test("a snapshot without cleared facets leaves stale browser filters (pinned for
     view_revision: 42,
     about: "project:x",
     clock: "occurred",
-    focus: { refs: ["decision:new"] },
+    focus: { time_range: null, refs: ["decision:new"] },
     projection: {},
+    search: null,
     can_undo: true,
   });
 
-  assert.equal(searchBox.value, "attempt-000005", "pinned: an omitted search survives");
-  assert.equal(JSON.stringify(view.focusRange), JSON.stringify({ from: 1, to: 2 }), "pinned: the stale range survives");
+  assert.equal(searchBox.value, "", "an agent-cleared search empties the input");
+  assert.equal(view.focusRange, null, "a ref-only focus clears the stale explicit range");
+  assert.ok(
+    calls.some((call) => call.name === "panels.syncFocusButton"),
+    "the focus button reflects the cleared range"
+  );
+});
+
+/* #463's second half: the cached extent probe may predate the refs an
+   intent names. Framing must grow the known extent before the window is
+   clamped, or the newer endpoint never enters a projection. */
+test("frameRefs reaches refs ingested after the cached extent probe", async () => {
+  const { app, core } = loom();
+  const { model, view, sync } = app.state;
+  model.about = "project:x";
+  const oldStamp = Date.parse("2026-08-31T16:50:00Z");
+  const newStamp = Date.parse("2026-08-31T18:02:14Z");
+  // The probe ended before the bridge entry was ingested.
+  view.full = { t0: oldStamp - 3600e3, t1: oldStamp + 600e3 };
+  view.t0 = view.full.t0;
+  view.t1 = view.full.t1;
+  sync.applying = true; // reportView stays quiet, as during a real intent
+  model.byRef = new Map([
+    ["success:old", entryAt(core, "success:old", "2026-08-31T16:50:00Z")],
+    ["decision:new", entryAt(core, "decision:new", "2026-08-31T18:02:14Z")],
+  ]);
+  app.data.loadProjection = async () => {};
+  app.data.cancelScheduledProjection = () => {};
+
+  const framed = await app.sync.frameRefs(["decision:new", "success:old"]);
+
+  assert.equal(framed, true);
+  assert.ok(view.full.t1 > newStamp, "the known extent grew past the stale probe");
+  assert.ok(view.t1 >= newStamp, "the window reaches the newer endpoint");
+  assert.ok(view.t0 <= oldStamp, "and still holds the older one");
 });
 
 test("an explicit agent search lands in the input and re-runs it", async () => {

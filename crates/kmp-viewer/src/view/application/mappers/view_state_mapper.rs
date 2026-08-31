@@ -9,8 +9,8 @@ use crate::view::domain::{
 
 /// Renders one view state as the wire snapshot both faces receive. This is
 /// the only place domain state becomes JSON-shaped, so the whole wire
-/// contract — including which cleared facets are still omitted, the behavior
-/// pinned for [#463](https://github.com/underpass-ai/kmp/issues/463) — is
+/// contract — including the explicit nulls for cleared search and window
+/// that [#463](https://github.com/underpass-ai/kmp/issues/463) demanded — is
 /// reviewable here.
 pub fn view_state_dto(state: &ViewState) -> ViewStateDto {
     ViewStateDto {
@@ -176,21 +176,29 @@ mod tests {
         );
     }
 
-    /// Today's wire bytes, pinned: a cleared search and an absent window are
-    /// *omitted* from the snapshot. This is the exact serialization #463
-    /// diagnoses; the fix will flip this test to demand explicit nulls, and
-    /// nothing else in the crate should need to move.
+    /// #463's contract: a cleared search and a cleared window are explicit
+    /// `null`s in the snapshot, never omissions — a full snapshot must tell
+    /// the browser what to clear. Selection and trace stay omitted (the
+    /// browser never held local state for them that an omission could
+    /// strand), and empty refs stay omitted because absence already reads
+    /// as emptiness there.
     #[test]
-    fn cleared_optional_facets_are_omitted_from_the_snapshot_today() {
+    fn cleared_search_and_window_are_explicit_nulls_in_the_snapshot() {
         let state = ViewState::opened(ViewId::from("t"), Some(AboutId::new("about:x")));
         let wire = serde_json::to_value(view_state_dto(&state)).expect("state serializes");
         let object = wire.as_object().expect("a snapshot is an object");
-        assert!(!object.contains_key("search"), "pinned by #463: {wire}");
+        assert!(
+            object.contains_key("search") && wire["search"].is_null(),
+            "a cleared search must be present as null (#463): {wire}"
+        );
+        let focus = wire["focus"].as_object().expect("focus is an object");
+        assert!(
+            focus.contains_key("time_range") && wire["focus"]["time_range"].is_null(),
+            "a cleared window must be present as null (#463): {wire}"
+        );
+        assert!(!focus.contains_key("refs"), "empty refs stay omitted");
         assert!(!object.contains_key("selection"));
         assert!(!object.contains_key("trace"));
-        let focus = wire["focus"].as_object().expect("focus is an object");
-        assert!(!focus.contains_key("time_range"), "pinned by #463: {wire}");
-        assert!(!focus.contains_key("refs"), "empty refs are omitted today");
         assert_eq!(wire["view_id"], "t");
         assert_eq!(wire["view_revision"], 1);
         assert_eq!(wire["about"], "about:x");

@@ -159,6 +159,20 @@ const KMP_LOOM = (() => {
     return { t0, t1: t1 > t0 ? t1 : t0 + 1 };
   }
 
+/* A ref-focused intent may name entries ingested after this browser last
+     probed the about. Grow the known extent before the UI clamps its window,
+     otherwise the new endpoint and its trace edge never enter a projection. */
+  function extentIncluding(current, from, to) {
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return current;
+    const t0 = Math.min(from, to);
+    const t1 = Math.max(from, to);
+    if (!current) return { t0, t1: t1 > t0 ? t1 : t0 + 1 };
+    return {
+      t0: Math.min(current.t0, t0),
+      t1: Math.max(current.t1, t1 > t0 ? t1 : t0 + 1),
+    };
+  }
+
   /* ---------------- semantic zoom ladder ----------------
      The zoom changes representation, not just size. Time chooses how much
      detail is useful; actual marks per lane prevent dense memories from
@@ -569,6 +583,20 @@ const KMP_LOOM = (() => {
     return true;
   }
 
+  /* View responses are complete snapshots, not patches. Normalize cleared
+     optional facets so local browser state cannot survive a newer revision. */
+  function agentStateFacets(state) {
+    const focus = state.focus || {};
+    const range = focus.time_range || null;
+    const refs = Array.isArray(focus.refs) ? focus.refs : [];
+    return {
+      search: typeof state.search === "string" ? state.search : "",
+      range,
+      refs,
+      explicitRange: Boolean(range && range.from && range.to),
+    };
+  }
+
   return {
     CLOCKS,
     entryModel,
@@ -579,6 +607,7 @@ const KMP_LOOM = (() => {
     buildLanes,
     extent,
     projectionExtent,
+    extentIncluding,
     maxMarksPerLane,
     lodFor,
     alignObservabilitySeries,
@@ -594,5 +623,6 @@ const KMP_LOOM = (() => {
     prism,
     parseQuery,
     matchesQuery,
+    agentStateFacets,
   };
 })();

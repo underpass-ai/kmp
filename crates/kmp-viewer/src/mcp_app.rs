@@ -81,10 +81,24 @@ mod tests {
             "const inspect = await api(\"/api/node\", { about: model.about, id: ref, raw: \"1\" })"
         ));
         assert!(html.contains("await KMP_APP.data.loadProjection()"));
+        assert!(
+            html.contains("view.full = KMP_LOOM.extentIncluding(view.full, lo - pad, hi + pad)")
+        );
         assert!(html.contains("await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id))"));
         assert!(
             html.contains("runTrace({ framePath: !explicitRange, preserveWindow: explicitRange })")
         );
+    }
+
+    /// #463: the shared loom's browser half reconciles a full snapshot — it
+    /// normalizes the cleared facets, drops a stale explicit range on a
+    /// ref-only focus, and always applies the snapshot's search.
+    #[test]
+    fn a_new_agent_snapshot_replaces_stale_browser_filters() {
+        let html = mcp_app_html();
+        assert!(html.contains("const facets = KMP_LOOM.agentStateFacets(state)"));
+        assert!(html.contains("view.focusRange = null"));
+        assert!(html.contains("KMP_APP.panels.setSearch(facets.search)"));
     }
 
     #[test]

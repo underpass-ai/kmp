@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "{\"clocks\":[\"occurred\",\"observed\",\"ingested\",\"validity\"],\"opened\":true,\"semantic_zoom_ladder\":[\"atlas\",\"episode\",\"moment\"],\"state\":{\"about\":\"question:parity\",\"can_undo\":false,\"clock\":\"occurred\",\"focus\":{},\"projection\":{},\"view_id\":\"default\",\"view_revision\":1},\"unhonored\":[\"ChronoLoom is unavailable in this session; the semantic view was recorded but no browser can render it\"],\"view_id\":\"default\",\"view_revision\":1,\"viewer_available\":false}",
+      "text": "{\"clocks\":[\"occurred\",\"observed\",\"ingested\",\"validity\"],\"opened\":true,\"semantic_zoom_ladder\":[\"atlas\",\"episode\",\"moment\"],\"state\":{\"about\":\"question:parity\",\"can_undo\":false,\"clock\":\"occurred\",\"focus\":{\"time_range\":null},\"projection\":{},\"search\":null,\"view_id\":\"default\",\"view_revision\":1},\"unhonored\":[\"ChronoLoom is unavailable in this session; the semantic view was recorded but no browser can render it\"],\"view_id\":\"default\",\"view_revision\":1,\"viewer_available\":false}",
       "type": "text"
     }
   ],
@@ -23,8 +23,11 @@
       "about": "question:parity",
       "can_undo": false,
       "clock": "occurred",
-      "focus": {},
+      "focus": {
+        "time_range": null
+      },
       "projection": {},
+      "search": null,
       "view_id": "default",
       "view_revision": 1
     },

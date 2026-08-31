@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "{\"state\":{\"about\":\"question:parity\",\"can_undo\":false,\"clock\":\"occurred\",\"focus\":{},\"last_change\":{\"actor\":\"human\",\"at\":\"<stamped at call time>\",\"explanation\":\"undo\"},\"projection\":{},\"view_id\":\"default\",\"view_revision\":3},\"undone\":true,\"view_id\":\"default\",\"view_revision\":3}",
+      "text": "{\"state\":{\"about\":\"question:parity\",\"can_undo\":false,\"clock\":\"occurred\",\"focus\":{\"time_range\":null},\"last_change\":{\"actor\":\"human\",\"at\":\"<stamped at call time>\",\"explanation\":\"undo\"},\"projection\":{},\"search\":null,\"view_id\":\"default\",\"view_revision\":3},\"undone\":true,\"view_id\":\"default\",\"view_revision\":3}",
       "type": "text"
     }
   ],
@@ -11,13 +11,16 @@
       "about": "question:parity",
       "can_undo": false,
       "clock": "occurred",
-      "focus": {},
+      "focus": {
+        "time_range": null
+      },
       "last_change": {
         "actor": "human",
         "at": "<stamped at call time>",
         "explanation": "undo"
       },
       "projection": {},
+      "search": null,
       "view_id": "default",
       "view_revision": 3
     },
