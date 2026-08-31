@@ -3,6 +3,40 @@
 KMP uses semantic versions. A `vX.Y.Z` tag triggers the release and publishing
 workflows; released tags and registry artifacts are immutable.
 
+## Two commands and a gate
+
+A release is one editorial act and two words. Write the `[Unreleased]` notes,
+then, on a version branch:
+
+```bash
+bash scripts/release.sh prepare X.Y.Z
+```
+
+That chains every mechanical step: `version`, commit `chore: prepare vX.Y.Z`,
+push, `candidate` (dispatch, watch, verify, stamp), commit
+`chore(release): seal X.Y.Z MCPB`, push, and open the pull request with
+auto-merge armed. It refuses to run on `main`, does not bump a version whose
+sources already read `X.Y.Z`, and skips a commit that already landed — so a
+rerun after a failed step resumes rather than repeats. Pass an existing
+workflow run ID as an optional second argument to reuse a build that was
+already dispatched, exactly as `candidate` does.
+
+Then merge — that is the full gate's decision, not this script's — update local
+`main`, and say the last word:
+
+```bash
+bash scripts/release.sh publish X.Y.Z
+```
+
+That tags the reviewed candidate, waits until the GitHub release and all twenty
+of its checksummed assets are public, and only then advances the protected
+`marketplace` branch to that exact commit. It does not re-tag a version already
+tagged, so a publication interrupted at the branch advance can finish.
+
+Three decisions stay deliberate: writing the notes, merging the pull request,
+and invoking `publish`. Everything below documents the individual verbs those
+two compose, which remain available and unchanged.
+
 ## Preflight
 
 Every gate in the release path fails closed, which is right, but each one runs

@@ -6,7 +6,7 @@ use crate::domain::workflow_run_id::WorkflowRunId;
 pub struct ReleaseWorkflowCommandMapper;
 
 impl ReleaseWorkflowCommandMapper {
-    pub const USAGE: &'static str = "usage: kmp-release workflow preflight VERSION\n       kmp-release workflow version VERSION\n       kmp-release workflow candidate VERSION [RUN_ID]\n       kmp-release workflow release VERSION";
+    pub const USAGE: &'static str = "usage: kmp-release workflow preflight VERSION\n       kmp-release workflow version VERSION\n       kmp-release workflow candidate VERSION [RUN_ID]\n       kmp-release workflow release VERSION\n       kmp-release workflow prepare VERSION [RUN_ID]\n       kmp-release workflow publish VERSION";
 
     pub fn map(arguments: &[String]) -> Result<ReleaseWorkflowCommandDto, ReleaseError> {
         let action = arguments.first().map(String::as_str).unwrap_or_default();
@@ -26,6 +26,15 @@ impl ReleaseWorkflowCommandMapper {
                 run_id: Some(WorkflowRunId::parse(arguments[2].clone())?),
             }),
             ("release", 2) => Ok(ReleaseWorkflowCommandDto::Release { version }),
+            ("prepare", 2) => Ok(ReleaseWorkflowCommandDto::Prepare {
+                version,
+                run_id: None,
+            }),
+            ("prepare", 3) => Ok(ReleaseWorkflowCommandDto::Prepare {
+                version,
+                run_id: Some(WorkflowRunId::parse(arguments[2].clone())?),
+            }),
+            ("publish", 2) => Ok(ReleaseWorkflowCommandDto::Publish { version }),
             _ => Err(ReleaseError::invalid(Self::USAGE)),
         }
     }
@@ -68,6 +77,41 @@ mod tests {
                 "preflight".to_string(),
                 "0.6.1".to_string(),
                 "33234243966".to_string(),
+            ])
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn prepare_resumes_from_a_run_that_was_already_dispatched() {
+        let command = ReleaseWorkflowCommandMapper::map(&[
+            "prepare".to_string(),
+            "0.6.2".to_string(),
+            "33234243966".to_string(),
+        ])
+        .expect("prepare command");
+
+        assert!(matches!(
+            command,
+            ReleaseWorkflowCommandDto::Prepare {
+                run_id: Some(_),
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn publish_is_one_word_and_a_version() {
+        assert!(matches!(
+            ReleaseWorkflowCommandMapper::map(&["publish".to_string(), "0.6.2".to_string()])
+                .expect("publish command"),
+            ReleaseWorkflowCommandDto::Publish { .. }
+        ));
+        assert!(
+            ReleaseWorkflowCommandMapper::map(&[
+                "publish".to_string(),
+                "0.6.2".to_string(),
+                "--yes".to_string(),
             ])
             .is_err()
         );

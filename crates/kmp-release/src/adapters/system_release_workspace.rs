@@ -197,4 +197,37 @@ impl ReleaseWorkspace for SystemReleaseWorkspace {
         )?;
         self.inherited("git", &["push", "origin", &tag])
     }
+
+    fn commit_tracked(&self, message: &str) -> Result<bool, ReleaseError> {
+        // Tracked changes only: a release chain commits what the release
+        // steps wrote, never whatever else the working directory holds.
+        self.checked_output("git", &["add", "--update"])?;
+        if self
+            .git_text(&["diff", "--cached", "--name-only"])?
+            .is_empty()
+        {
+            return Ok(false);
+        }
+        self.inherited("git", &["commit", "-m", message])
+            .map(|()| true)
+    }
+
+    fn push_current_branch(&self) -> Result<(), ReleaseError> {
+        let branch = self.current_branch()?;
+        self.inherited(
+            "git",
+            &["push", "--set-upstream", "origin", branch.as_str()],
+        )
+    }
+
+    fn advance_branch(
+        &self,
+        branch: &BranchName,
+        commit: &SourceCommit,
+    ) -> Result<(), ReleaseError> {
+        // No force and no checkout: the branch is protected, its gate has to
+        // speak, and a fast-forward is the only move a release may make.
+        let refspec = format!("{}:refs/heads/{branch}", commit.as_str());
+        self.inherited("git", &["push", "origin", &refspec])
+    }
 }

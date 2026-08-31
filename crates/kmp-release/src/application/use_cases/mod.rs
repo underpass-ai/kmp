@@ -13,6 +13,8 @@ pub mod prepare_release_version;
 pub mod prepare_release_workflow;
 pub mod publish_release_workflow;
 pub mod read_workspace_version;
+pub mod run_release_preparation;
+pub mod run_release_publication;
 pub mod seal_release_candidate;
 pub mod stamp_server_mcpb;
 pub mod sync_public_readme;

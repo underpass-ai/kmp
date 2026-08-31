@@ -78,6 +78,22 @@ impl ReleaseWorkspace for ReadyWorkspace {
     ) -> Result<(), ReleaseError> {
         Ok(())
     }
+
+    fn commit_tracked(&self, _message: &str) -> Result<bool, ReleaseError> {
+        Ok(true)
+    }
+
+    fn push_current_branch(&self) -> Result<(), ReleaseError> {
+        Ok(())
+    }
+
+    fn advance_branch(
+        &self,
+        _branch: &BranchName,
+        _commit: &SourceCommit,
+    ) -> Result<(), ReleaseError> {
+        Ok(())
+    }
 }
 
 struct StubContracts;
