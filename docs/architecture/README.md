@@ -8,7 +8,9 @@ The current [architecture conformance audit](conformance-audit-2026-08-28.md)
 checks SOLID, domain types, dependency direction and module ownership, then
 orders the findings into small behaviour-preserving PRs. The
 [kmp-mcp layer map](kmp-mcp-layer-map.md) executes its `kmp-mcp` findings for
-#404: every file's target context and layer, and the slice order.
+#404: every file's target context and layer, and the slice order. The
+[ChronoLoom layer map](chronoloom-layer-map.md) gives the viewer's view
+aggregate and browser application the same treatment ahead of the #463 fix.
 
 ## System map
 

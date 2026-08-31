@@ -8,16 +8,17 @@
 //! evidential relations" — and the loom decides what that looks like.
 //!
 //! They never write memory. `kmp_write_memory` and `kmp_ingest` are not
-//! reachable from a view action, by construction: these handlers hold a view
-//! registry and a read-only validator, and nothing else.
+//! reachable from a view action, by construction: these handlers map tool
+//! calls onto the view context's commands and DTOs, and nothing else.
 
 pub(crate) use crate::serving::projection_names::ProjectionNames;
 pub(crate) use crate::serving::unhonored_projection::UnhonoredProjection;
 use serde_json::{Value, json};
 
 use kmp_viewer::{
-    DEFAULT_VIEW_ID, Focus, Projection, TimeRange, TraceSelection, ViewError, ViewPatch,
-    ViewRegistry, ViewState,
+    ApplyIntentCommand, Clock, DEFAULT_VIEW_ID, FocusDto, OpenViewCommand, ProjectionDto,
+    SemanticZoom, TimeRangeDto, TraceSelectionDto, ViewError, ViewIntentDto, ViewRegistry,
+    ViewState, logical_digest, view_state_dto,
 };
 
 use crate::serving::ToolError;
@@ -41,10 +42,11 @@ fn view_id_of(arguments: &Value) -> String {
 }
 
 fn state_result(state: &ViewState, extra: Value, viewer_url: Option<&str>) -> Value {
+    let snapshot = view_state_dto(state);
     let mut result = json!({
-        "view_id": state.view_id,
-        "view_revision": state.view_revision,
-        "state": state,
+        "view_id": snapshot.view_id,
+        "view_revision": snapshot.view_revision,
+        "state": snapshot,
     });
     if let (Some(result), Some(extra)) = (result.as_object_mut(), extra.as_object()) {
         for (key, value) in extra {
@@ -55,6 +57,22 @@ fn state_result(state: &ViewState, extra: Value, viewer_url: Option<&str>) -> Va
         result.insert("url".to_string(), Value::String(url.to_string()));
     }
     result
+}
+
+fn view_error(error: ViewError) -> ToolError {
+    match error {
+        ViewError::Conflict {
+            expected, actual, ..
+        } => ToolError::conflict(format!(
+            "the view moved before it could be opened: expected revision {expected}, it is at {actual}"
+        )),
+        ViewError::UnknownView(id) => ToolError::not_found(format!("no view under `{id}`")),
+        ViewError::IdempotencyConflict { key } => ToolError::conflict(format!(
+            "idempotency key '{}' was already accepted with different content",
+            key.as_str()
+        )),
+        ViewError::Invalid(message) => ToolError::invalid_argument(message),
+    }
 }
 
 /// Opens or rehydrates a view. The `about` must exist: a view onto memory
@@ -75,38 +93,24 @@ pub(crate) fn open(
              empty loom that looks like an answer"
         )));
     }
-    let view_id = arguments.get("view_id").and_then(Value::as_str);
-    let expected = arguments.get("expected_revision").and_then(Value::as_u64);
-    let state = match ViewRegistry::shared().open_checked(
-        view_id,
-        Some(about.to_string()),
-        expected,
-        "agent",
-        Some("opened a different about"),
-    ) {
-        Ok(state) => state,
-        Err(ViewError::Conflict {
-            expected, actual, ..
-        }) => {
-            return Err(ToolError::conflict(format!(
-                "the view moved before it could be opened: expected revision {expected}, it is at {actual}"
-            )));
-        }
-        Err(ViewError::UnknownView(id)) => {
-            return Err(ToolError::not_found(format!("no view under `{id}`")));
-        }
-        Err(ViewError::IdempotencyConflict { key }) => {
-            return Err(ToolError::conflict(format!(
-                "idempotency key '{key}' was already accepted with different content"
-            )));
-        }
-        Err(ViewError::Invalid(message)) => return Err(ToolError::invalid_argument(message)),
+    let command = OpenViewCommand {
+        view_id: arguments
+            .get("view_id")
+            .and_then(Value::as_str)
+            .map(str::to_string),
+        about: Some(about.to_string()),
+        expected_revision: arguments.get("expected_revision").and_then(Value::as_u64),
+        actor: "agent".to_string(),
+        explanation: Some("opened a different about".to_string()),
     };
+    let state = ViewRegistry::shared()
+        .open_view(command)
+        .map_err(view_error)?;
     let mut extra = json!({
         "opened": true,
         "viewer_available": viewer_url.is_some(),
-        "clocks": kmp_viewer::view_state::CLOCKS,
-        "semantic_zoom_ladder": kmp_viewer::view_state::ZOOMS,
+        "clocks": Clock::NAMES,
+        "semantic_zoom_ladder": SemanticZoom::NAMES,
     });
     if viewer_url.is_none() {
         extra["unhonored"] = json!([
@@ -119,7 +123,7 @@ pub(crate) fn open(
 /// Reads the view without changing it — semantic state, never pixels.
 pub(crate) fn get_state(arguments: &Value, viewer_url: Option<&str>) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
-    let Some(state) = ViewRegistry::shared().get(&view_id) else {
+    let Some(state) = ViewRegistry::shared().view_state(Some(&view_id)) else {
         return Err(ToolError::not_found(format!(
             "no view under `{view_id}` — open one with kmp_view_open first"
         )));
@@ -139,24 +143,23 @@ pub(crate) fn get_state(arguments: &Value, viewer_url: Option<&str>) -> Result<V
 /// is never advertised to the model-facing tool surface.
 pub(crate) fn undo(arguments: &Value) -> Result<Value, ToolError> {
     let view_id = view_id_of(arguments);
-    match ViewRegistry::shared().undo(&view_id, "human") {
+    match ViewRegistry::shared().undo(Some(&view_id), "human") {
         Ok(state) => Ok(state_result(&state, json!({"undone": true}), None)),
         Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
             "no view under `{id}` — open one with kmp_view_open first"
         ))),
-        Err(ViewError::IdempotencyConflict { key }) => Err(ToolError::conflict(format!(
-            "idempotency key '{key}' was already accepted with different content"
-        ))),
-        Err(ViewError::Invalid(message)) => Err(ToolError::invalid_argument(message)),
         Err(ViewError::Conflict { .. }) => Err(ToolError::conflict(
             "the view moved before undo could be applied".to_string(),
         )),
+        Err(error) => Err(view_error(error)),
     }
 }
 
-/// Builds the patch an intent describes, refusing shapes it does not mean.
-fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> {
-    let mut patch = ViewPatch::default();
+/// Builds the intent a tool call describes, refusing shapes it does not
+/// mean. Vocabulary (clocks, rungs, classes) is the view context's to
+/// refuse; shapes are this boundary's.
+fn intent_from(arguments: &Value) -> Result<(ViewIntentDto, Vec<String>), ToolError> {
+    let mut intent = ViewIntentDto::default();
     let mut refs = Vec::new();
 
     if let Some(target) = arguments.get("target")
@@ -165,15 +168,15 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
         // Checked like every other reference an intent names: kmp_view_open
         // refuses an absent about, and this is the same door.
         refs.push(about.to_string());
-        patch.about = Some(about.to_string());
+        intent.about = Some(about.to_string());
     }
     if let Some(focus) = arguments.get("focus") {
-        let mut built = Focus::default();
+        let mut built = FocusDto::default();
         if let Some(range) = focus.get("time_range") {
             if let Some(axis) = range.get("axis").and_then(Value::as_str) {
-                patch.clock = Some(axis.to_string());
+                intent.clock = Some(axis.to_string());
             }
-            built.time_range = Some(TimeRange {
+            built.time_range = Some(TimeRangeDto {
                 from: range
                     .get("from")
                     .and_then(Value::as_str)
@@ -192,7 +195,7 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
             }
             built.refs = refs.clone();
         }
-        patch.focus = Some(built);
+        intent.focus = Some(built);
     }
     if let Some(projection) = arguments.get("projection") {
         let strings = |key: &str| {
@@ -203,7 +206,7 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
                     .collect::<Vec<_>>()
             })
         };
-        patch.projection = Some(Projection {
+        intent.projection = Some(ProjectionDto {
             semantic_zoom: projection
                 .get("semantic_zoom")
                 .and_then(Value::as_str)
@@ -214,7 +217,7 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
         });
     }
     if let Some(selection) = arguments.get("selection") {
-        patch.selection = Some(match selection {
+        intent.selection = Some(match selection {
             Value::Null => None,
             Value::String(reference) => {
                 refs.push(reference.clone());
@@ -228,7 +231,7 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
         });
     }
     if let Some(trace) = arguments.get("trace") {
-        patch.trace = Some(match trace {
+        intent.trace = Some(match trace {
             Value::Null => None,
             _ => {
                 let (Some(from), Some(to)) = (
@@ -241,7 +244,7 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
                 };
                 refs.push(from.to_string());
                 refs.push(to.to_string());
-                Some(TraceSelection {
+                Some(TraceSelectionDto {
                     from: from.to_string(),
                     to: to.to_string(),
                 })
@@ -249,13 +252,13 @@ fn patch_from(arguments: &Value) -> Result<(ViewPatch, Vec<String>), ToolError> 
         });
     }
     if let Some(search) = arguments.get("search") {
-        patch.search = Some(match search {
+        intent.search = Some(match search {
             Value::Null => None,
             Value::String(text) => Some(text.clone()),
             _ => return Err(ToolError::invalid_argument("search is text or null")),
         });
     }
-    Ok((patch, refs))
+    Ok((intent, refs))
 }
 
 pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {
@@ -282,13 +285,14 @@ pub(crate) fn about_for_intent(arguments: &Value) -> Option<String> {
         .map(str::to_string)
         .or_else(|| {
             ViewRegistry::shared()
-                .get(&view_id_of(arguments))
+                .view_state(Some(&view_id_of(arguments)))
                 .and_then(|state| state.about)
+                .map(|about| about.as_str().to_string())
         })
 }
 
-fn omit_unhonored_projection(patch: &mut ViewPatch, unavailable: &UnhonoredProjection) {
-    let Some(projection) = patch.projection.as_mut() else {
+fn omit_unhonored_projection(intent: &mut ViewIntentDto, unavailable: &UnhonoredProjection) {
+    let Some(projection) = intent.projection.as_mut() else {
         return;
     };
     if let Some(dimensions) = projection.dimensions.as_mut() {
@@ -315,7 +319,7 @@ fn has_explicit_time_range(arguments: &Value) -> bool {
 /// The refs an intent names, so the caller can check they exist before the
 /// view points at them.
 pub(crate) fn refs_named(arguments: &Value) -> Vec<String> {
-    patch_from(arguments)
+    intent_from(arguments)
         .map(|(_, refs)| refs)
         .unwrap_or_default()
 }
@@ -345,9 +349,11 @@ pub(crate) fn apply_intent(
             missing_refs.join(", ")
         )));
     }
-    let (mut patch, _) = patch_from(arguments)?;
-    let intent_digest = patch.logical_digest();
-    omit_unhonored_projection(&mut patch, &unavailable);
+    let (mut intent, _) = intent_from(arguments)?;
+    // The digest is taken before store-local names are omitted, so a retry
+    // remains the same intent even if the mounted catalog changed.
+    let intent_digest = logical_digest(&intent);
+    omit_unhonored_projection(&mut intent, &unavailable);
     let mut unhonored: Vec<String> = unavailable
         .dimensions
         .into_iter()
@@ -358,23 +364,25 @@ pub(crate) fn apply_intent(
     {
         unhonored.push("trace framing (explicit focus.time_range has priority)".to_string());
     }
-    let expected = arguments.get("expected_revision").and_then(Value::as_u64);
-    let explanation = arguments.get("explanation").and_then(Value::as_str);
-    let actor = arguments
-        .get("actor")
-        .and_then(Value::as_str)
-        .unwrap_or("agent");
-
-    match ViewRegistry::shared().apply_with_unhonored(
-        &view_id,
-        expected,
-        Some(idempotency_key),
-        Some(&intent_digest),
-        patch,
-        actor,
-        explanation,
+    let command = ApplyIntentCommand {
+        view_id: Some(view_id),
+        expected_revision: arguments.get("expected_revision").and_then(Value::as_u64),
+        idempotency_key: Some(idempotency_key.to_string()),
+        intent_digest: Some(intent_digest.as_str().to_string()),
+        intent,
+        actor: arguments
+            .get("actor")
+            .and_then(Value::as_str)
+            .unwrap_or("agent")
+            .to_string(),
+        explanation: arguments
+            .get("explanation")
+            .and_then(Value::as_str)
+            .map(str::to_string),
         unhonored,
-    ) {
+    };
+
+    match ViewRegistry::shared().apply_intent(command) {
         Ok(applied) => Ok(state_result(
             &applied.state,
             json!({
@@ -392,19 +400,16 @@ pub(crate) fn apply_intent(
              {expected} and the view is at {actual}. Rebase on the state in \
              kmp_view_get_state and apply again — the person at the loom has right of way. \
              Their clock is `{}`, their selection is {}.",
-            current.clock,
+            current.clock.as_str(),
             current
                 .selection
-                .as_deref()
-                .map(|reference| format!("`{reference}`"))
+                .as_ref()
+                .map(|reference| format!("`{}`", reference.as_str()))
                 .unwrap_or_else(|| "nothing".to_string())
         ))),
         Err(ViewError::UnknownView(id)) => Err(ToolError::not_found(format!(
             "no view under `{id}` — open one with kmp_view_open first"
         ))),
-        Err(ViewError::IdempotencyConflict { key }) => Err(ToolError::conflict(format!(
-            "idempotency key '{key}' was already accepted with different content"
-        ))),
-        Err(ViewError::Invalid(message)) => Err(ToolError::invalid_argument(message)),
+        Err(error) => Err(view_error(error)),
     }
 }

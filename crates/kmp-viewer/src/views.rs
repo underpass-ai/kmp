@@ -293,38 +293,6 @@ fn parse_sortable_instant(value: &str) -> Option<(i64, u32)> {
     Some((seconds.parse::<i64>().ok()? - UNIX_SORT_OFFSET, nanos))
 }
 
-/// Epoch seconds to `YYYY-MM-DDTHH:MM:SSZ`, without a date library.
-///
-/// Howard Hinnant's civil-from-days, which is exact for every day this store
-/// can hold. The crate ships no dependency the embedded edition does not
-/// already carry, and a viewer is not the place to start.
-pub(crate) fn rfc3339_utc(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let time_of_day = seconds.rem_euclid(86_400);
-    let (hour, minute, second) = (
-        time_of_day / 3_600,
-        (time_of_day % 3_600) / 60,
-        time_of_day % 60,
-    );
-
-    let shifted = days + 719_468;
-    let era = shifted.div_euclid(146_097);
-    let day_of_era = shifted.rem_euclid(146_097);
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_position = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_position + 2) / 5 + 1;
-    let month = if month_position < 10 {
-        month_position + 3
-    } else {
-        month_position - 9
-    };
-    let year = year_of_era + era * 400 + i64::from(month <= 2);
-
-    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z")
-}
-
 /// The same instant, keeping whatever sub-second precision it carries.
 ///
 /// A whole second renders exactly as before, so every time that has no
@@ -332,7 +300,7 @@ pub(crate) fn rfc3339_utc(seconds: i64) -> String {
 /// trailing zeros trimmed — `.731471`, not `.731471000` — which is valid
 /// RFC3339 and what `Date.parse` in the browser expects.
 pub(crate) fn rfc3339_utc_nanos(seconds: i64, nanos: u32) -> String {
-    let whole = rfc3339_utc(seconds);
+    let whole = crate::time_format::rfc3339_utc(seconds);
     if nanos == 0 {
         return whole;
     }
@@ -575,7 +543,7 @@ pub struct InfoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{readable_time, rfc3339_utc, rfc3339_utc_nanos};
+    use super::{readable_time, rfc3339_utc_nanos};
 
     #[test]
     fn a_sortable_time_becomes_a_date_a_reader_can_read() {
@@ -627,14 +595,5 @@ mod tests {
             rfc3339_utc_nanos(-1, 250_000_000),
             "1969-12-31T23:59:59.25Z"
         );
-    }
-
-    #[test]
-    fn the_calendar_holds_at_the_edges() {
-        assert_eq!(rfc3339_utc(0), "1970-01-01T00:00:00Z");
-        assert_eq!(rfc3339_utc(-1), "1969-12-31T23:59:59Z");
-        // A leap day, and the century rule that trips naive implementations.
-        assert_eq!(rfc3339_utc(951_782_400), "2000-02-29T00:00:00Z");
-        assert_eq!(rfc3339_utc(4_107_542_400), "2100-03-01T00:00:00Z");
     }
 }

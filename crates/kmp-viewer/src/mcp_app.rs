@@ -1,11 +1,15 @@
 use std::sync::OnceLock;
 
-use crate::routes::{INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, PIXI_JS, PIXI_UNSAFE_EVAL_JS};
+use crate::routes::{
+    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_MODULES, PIXI_JS, PIXI_UNSAFE_EVAL_JS,
+};
 
 const MCP_APP_BRIDGE: &str = include_str!("../ui/mcp-app-bridge.js");
 
 /// Self-contained MCP App resource: identical renderer and view semantics to
-/// the loopback adapter, with host-proxied tool calls instead of HTTP fetches.
+/// the loopback adapter, with host-proxied tool calls instead of HTTP
+/// fetches. The script-tag modules are inlined in the exact order
+/// `index.html` loads them, so both faces run the same composition.
 pub fn mcp_app_html() -> &'static str {
     static HTML: OnceLock<String> = OnceLock::new();
     HTML.get_or_init(|| {
@@ -15,7 +19,7 @@ pub fn mcp_app_html() -> &'static str {
                 source.replace("</script", "<\\/script")
             )
         };
-        INDEX_HTML
+        let mut html = INDEX_HTML
             .replace(
                 "<link rel=\"stylesheet\" href=\"/assets/loom.css\">",
                 &format!("<style>{LOOM_CSS}</style>"),
@@ -35,7 +39,14 @@ pub fn mcp_app_html() -> &'static str {
             .replace(
                 "<script src=\"/assets/loom.js\" defer></script>",
                 &script(LOOM_JS),
-            )
+            );
+        for (name, source) in LOOM_MODULES {
+            html = html.replace(
+                &format!("<script src=\"/assets/{name}\" defer></script>"),
+                &script(source),
+            );
+        }
+        html
     })
 }
 
@@ -69,8 +80,8 @@ mod tests {
         assert!(html.contains(
             "const inspect = await api(\"/api/node\", { about: model.about, id: ref, raw: \"1\" })"
         ));
-        assert!(html.contains("await loadProjection()"));
-        assert!(html.contains("await frameRefs(trace.nodes.map((node) => node.id))"));
+        assert!(html.contains("await KMP_APP.data.loadProjection()"));
+        assert!(html.contains("await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id))"));
         assert!(
             html.contains("runTrace({ framePath: !explicitRange, preserveWindow: explicitRange })")
         );
@@ -80,12 +91,12 @@ mod tests {
     fn every_projection_query_uses_the_clock_visible_on_the_loom() {
         let html = mcp_app_html();
         assert_eq!(
-            html.matches("fetchProjection(\n      model.about,\n      view.clock,")
+            html.matches("fetchProjection(\n        model.about,\n        view.clock,")
                 .count(),
             1
         );
         assert_eq!(
-            html.matches("fetchProjection(\n      about,\n      view.clock,")
+            html.matches("fetchProjection(\n        about,\n        view.clock,")
                 .count(),
             1
         );

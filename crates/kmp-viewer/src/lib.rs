@@ -15,8 +15,10 @@
 
 mod http;
 mod mcp_app;
+mod query_params;
 mod routes;
-pub mod view_state;
+mod time_format;
+pub mod view;
 pub mod views;
 
 use std::io;
@@ -32,10 +34,14 @@ use kmp_domain::{
 use tokio::net::{TcpListener, TcpStream};
 
 use crate::http::{HttpResponse, host_is_local, read_request, write_response};
-pub use crate::view_state::{
-    Applied, DEFAULT_VIEW_ID, Focus, Projection, Provenance, TimeRange, TraceSelection, ViewError,
-    ViewPatch, ViewRegistry, ViewState,
+pub use crate::view::ViewRegistry;
+pub use crate::view::application::Applied;
+pub use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
+pub use crate::view::application::dto::{
+    FocusDto, ProjectionDto, TimeRangeDto, TraceSelectionDto, ViewIntentDto, ViewStateDto,
 };
+pub use crate::view::application::mappers::{logical_digest, view_state_dto};
+pub use crate::view::domain::{Clock, DEFAULT_VIEW_ID, SemanticZoom, ViewError, ViewState};
 pub use mcp_app::mcp_app_html;
 
 /// Environment variable that, when set on an embedded MCP session, mounts the

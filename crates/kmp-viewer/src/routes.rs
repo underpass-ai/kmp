@@ -8,15 +8,17 @@ use kmp_application::{
     TracePageRequest, VisualLevelOfDetail, VisualProjectionQuery, WakeMemoryQuery,
 };
 use kmp_domain::{
-    ContextEventStore, DimensionSelection, DomainError, GraphNeighborhoodReader,
-    MemoryAboutIndexReader, NodeDetailReader, NodeRelationshipReader, PortError, ProjectionWriter,
-    ResolutionTier, SnapshotStore, TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow,
+    ContextEventStore, DomainError, GraphNeighborhoodReader, MemoryAboutIndexReader,
+    NodeDetailReader, NodeRelationshipReader, PortError, ProjectionWriter, SnapshotStore,
+    TemporalWindow,
 };
 
-use crate::MemoryViewerServer;
 use crate::http::{HttpRequest, HttpResponse};
-use crate::view_state::{DEFAULT_VIEW_ID, TimeRange, TraceSelection, ViewPatch, ViewRegistry};
-use crate::views;
+use crate::query_params::{
+    axis_param, budget_param, cursor_param, depth_param, dimension_selection, direction_param,
+    numeric_param, tier_param, window_param,
+};
+use crate::{MemoryViewerServer, view, views};
 
 /// Unwraps a parameter, or returns its refusal from the enclosing handler.
 ///
@@ -35,22 +37,31 @@ macro_rules! param_or_refuse {
 /// triggers is attributed and explainable in telemetry.
 const VIEWER_ROLE: &str = "viewer";
 
-const DEFAULT_GRAPH_DEPTH: u32 = 2;
-const MAX_GRAPH_DEPTH: u32 = 6;
-const DEFAULT_TOKEN_BUDGET: u32 = 16_384;
-const MAX_TOKEN_BUDGET: u32 = 262_144;
-const DEFAULT_WINDOW_ENTRIES: usize = 8;
-const MAX_WINDOW_ENTRIES: usize = 256;
 const MAX_BATCH_IDS: usize = 64;
 const DEFAULT_VISUAL_FROM: &str = "1900-01-01T00:00:00Z";
 const DEFAULT_VISUAL_TO: &str = "2100-01-01T00:00:00Z";
 
 pub(crate) const INDEX_HTML: &str = include_str!("../ui/index.html");
 pub(crate) const LOOM_CSS: &str = include_str!("../ui/loom.css");
+/// The composition root: wires the loom's modules and starts it.
 pub(crate) const LOOM_JS: &str = include_str!("../ui/loom.js");
 /// The loom's pure algorithmic half — clocks, lanes, bins, prisms, axes —
 /// kept free of DOM and renderer so it can be reasoned about alone.
 pub(crate) const LOOM_CORE_JS: &str = include_str!("../ui/loom-core.js");
+/// The script-tag modules of the browser application, in the exact order
+/// `index.html` loads them and `mcp_app` inlines them: state, the backend
+/// port, the use cases, then the adapters, with the composition root last.
+pub(crate) const LOOM_MODULES: [(&str, &str); 9] = [
+    ("loom-state.js", include_str!("../ui/loom-state.js")),
+    ("loom-api.js", include_str!("../ui/loom-api.js")),
+    ("loom-panels.js", include_str!("../ui/loom-panels.js")),
+    ("loom-viewport.js", include_str!("../ui/loom-viewport.js")),
+    ("loom-data.js", include_str!("../ui/loom-data.js")),
+    ("loom-selection.js", include_str!("../ui/loom-selection.js")),
+    ("loom-sync.js", include_str!("../ui/loom-sync.js")),
+    ("loom-scene.js", include_str!("../ui/loom-scene.js")),
+    ("loom-gestures.js", include_str!("../ui/loom-gestures.js")),
+];
 /// Vendored render engine, pinned and hash-verified in `ui/vendor/VENDOR.md`.
 pub(crate) const PIXI_JS: &str = include_str!("../ui/vendor/pixi.min.js");
 /// Pixi's no-eval shader path, required because the viewer's CSP forbids
@@ -106,6 +117,11 @@ where
     }
 
     async fn answer(&self, request: &HttpRequest) -> HttpResponse {
+        if let Some(name) = request.path.strip_prefix("/assets/")
+            && let Some((_, source)) = LOOM_MODULES.iter().find(|(module, _)| *module == name)
+        {
+            return HttpResponse::javascript(source);
+        }
         match request.path.as_str() {
             "/" | "/index.html" => HttpResponse::html(INDEX_HTML),
             "/assets/loom.css" => HttpResponse::css(LOOM_CSS),
@@ -122,10 +138,10 @@ where
             "/api/projection" => self.visual_projection(request).await,
             "/api/observability" => self.observability(request).await,
             "/api/trace" => self.trace(request).await,
-            "/api/view" => self.view_get(request).await,
-            "/api/view/open" => self.view_open(request),
-            "/api/view/report" => self.view_report(request),
-            "/api/view/undo" => self.view_undo(request),
+            "/api/view" => view::adapters::view_get(request).await,
+            "/api/view/open" => view::adapters::view_open(request),
+            "/api/view/report" => view::adapters::view_report(request),
+            "/api/view/undo" => view::adapters::view_undo(request),
             _ => HttpResponse::error(404, "unknown path"),
         }
     }
@@ -135,96 +151,6 @@ where
             kernel_version: env!("CARGO_PKG_VERSION").to_string(),
             data_dir: self.data_dir.clone(),
         })
-    }
-
-    /// The view state, or — with `since` — the next one: a long poll, so an
-    /// agent's intent reaches the screen without the browser spinning.
-    async fn view_get(&self, request: &HttpRequest) -> HttpResponse {
-        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID).to_string();
-        let registry = ViewRegistry::shared();
-        let state = match request
-            .param("since")
-            .and_then(|since| since.parse::<u64>().ok())
-        {
-            Some(since) => registry.changed_since(&id, since, VIEW_POLL_PATIENCE).await,
-            None => registry.get(&id),
-        };
-        match state {
-            Some(state) => HttpResponse::json(&state),
-            None => HttpResponse::error(404, "no view under that id — open one first"),
-        }
-    }
-
-    fn view_open(&self, request: &HttpRequest) -> HttpResponse {
-        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID);
-        let about = request.param("about").map(str::to_string);
-        let expected = match request.param("expected_revision") {
-            Some(value) => match value.parse::<u64>() {
-                Ok(revision) => Some(revision),
-                Err(_) => {
-                    return HttpResponse::error(
-                        400,
-                        "parameter `expected_revision` must be an unsigned integer",
-                    );
-                }
-            },
-            None => None,
-        };
-        match ViewRegistry::shared().open_checked(
-            Some(id),
-            about,
-            expected,
-            "human",
-            Some("opened a different about"),
-        ) {
-            Ok(state) => HttpResponse::json(&state),
-            Err(error) => view_error_response(&error),
-        }
-    }
-
-    /// Where the human is looking now. Reported by the browser so the agent's
-    /// `kmp_view_get_state` answers with the truth rather than with whatever
-    /// it last asked for.
-    fn view_report(&self, request: &HttpRequest) -> HttpResponse {
-        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID).to_string();
-        let registry = ViewRegistry::shared();
-        if registry.get(&id).is_none() {
-            registry.open(Some(&id), request.param("about").map(str::to_string));
-        }
-        let trace = match (request.param("trace_from"), request.param("trace_to")) {
-            (Some(from), Some(to)) => Some(Some(TraceSelection {
-                from: from.to_string(),
-                to: to.to_string(),
-            })),
-            _ => Some(None),
-        };
-        let patch = ViewPatch {
-            about: request.param("about").map(str::to_string),
-            clock: request.param("clock").map(str::to_string),
-            // Only the window: the refs an agent asked to frame are its
-            // intent, and a person panning does not retract it.
-            focus_window: Some(TimeRange {
-                from: request.param("from").map(str::to_string),
-                to: request.param("to").map(str::to_string),
-            }),
-            focus: None,
-            selection: Some(request.param("selection").map(str::to_string)),
-            trace,
-            search: Some(request.param("search").map(str::to_string)),
-            projection: None,
-        };
-        match registry.apply(&id, None, None, patch, "human", None) {
-            Ok(applied) => HttpResponse::json(&applied.state),
-            Err(error) => view_error_response(&error),
-        }
-    }
-
-    fn view_undo(&self, request: &HttpRequest) -> HttpResponse {
-        let id = request.param("id").unwrap_or(DEFAULT_VIEW_ID);
-        match ViewRegistry::shared().undo(id, "human") {
-            Ok(state) => HttpResponse::json(&state),
-            Err(error) => view_error_response(&error),
-        }
     }
 
     async fn abouts(&self) -> HttpResponse {
@@ -480,142 +406,6 @@ where
     }
 }
 
-/// A number a caller sent, or a refusal naming what was wrong with it.
-///
-/// Absent means "use the default"; present and unparseable means the caller
-/// believes they asked for something. Answering 200 to `depth=abc` as though
-/// it read `depth=2` is the one thing every other refusal in this codebase is
-/// written not to do — `scope` and `dims` next door already say so by name.
-/// Out of range is still clamped: a bound is a policy, not a mistake.
-fn numeric_param<T>(request: &HttpRequest, key: &str, default: T) -> Result<T, HttpResponse>
-where
-    T: std::str::FromStr,
-{
-    match request.param(key) {
-        None => Ok(default),
-        Some(value) => value.parse::<T>().map_err(|_| {
-            HttpResponse::error(
-                400,
-                &format!("parameter `{key}` is not a number: `{value}`"),
-            )
-        }),
-    }
-}
-
-fn depth_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
-    Ok(numeric_param(request, "depth", DEFAULT_GRAPH_DEPTH)?.clamp(1, MAX_GRAPH_DEPTH))
-}
-
-fn budget_param(request: &HttpRequest) -> Result<u32, HttpResponse> {
-    Ok(numeric_param(request, "budget", DEFAULT_TOKEN_BUDGET)?.clamp(256, MAX_TOKEN_BUDGET))
-}
-
-fn window_param(request: &HttpRequest, key: &str) -> Result<usize, HttpResponse> {
-    Ok(numeric_param(request, key, DEFAULT_WINDOW_ENTRIES)?.min(MAX_WINDOW_ENTRIES))
-}
-
-/// `scope=all` widens recall to every about the kernel indexes — the global
-/// graph. `dims=a,b` restricts to those dimension kinds. Defaults mirror
-/// `kmp_wake`: the current about, all dimensions.
-fn dimension_selection(request: &HttpRequest) -> Result<DimensionSelection, HttpResponse> {
-    let selection = match request.param("dims") {
-        Some(dims) => {
-            let kinds: Vec<String> = dims
-                .split(',')
-                .map(str::trim)
-                .filter(|kind| !kind.is_empty())
-                .map(ToString::to_string)
-                .collect();
-            if kinds.is_empty() {
-                return Err(HttpResponse::error(400, "parameter `dims` holds no kinds"));
-            }
-            DimensionSelection::only(kinds)
-        }
-        None => DimensionSelection::all(),
-    };
-    Ok(match request.param("scope") {
-        Some("all") => selection.with_all_about_scope(),
-        Some("current") | None => selection,
-        Some(other) => {
-            return Err(HttpResponse::error(
-                400,
-                &format!("unknown scope `{other}`; expected `current` or `all`"),
-            ));
-        }
-    })
-}
-
-fn tier_param(request: &HttpRequest) -> Result<Option<ResolutionTier>, HttpResponse> {
-    match request.param("tier") {
-        None => Ok(None),
-        Some("summary") => Ok(Some(ResolutionTier::L0Summary)),
-        Some("spine") => Ok(Some(ResolutionTier::L1CausalSpine)),
-        Some("evidence") => Ok(Some(ResolutionTier::L2EvidencePack)),
-        Some(other) => Err(HttpResponse::error(
-            400,
-            &format!("unknown tier `{other}`; expected `summary`, `spine` or `evidence`"),
-        )),
-    }
-}
-
-/// Exactly one of `ref`, `time`, `seq` — the same contract the MCP temporal
-/// tools enforce.
-fn cursor_param(request: &HttpRequest) -> Result<TemporalCursor, HttpResponse> {
-    let cursor = match (
-        request.param("ref"),
-        request.param("time"),
-        request.param("seq"),
-    ) {
-        (Some(ref_id), None, None) => TemporalCursor::ref_id(ref_id),
-        (None, Some(time), None) => TemporalCursor::time(time),
-        (None, None, Some(seq)) => match seq.parse::<u32>() {
-            Ok(seq) => TemporalCursor::sequence(seq),
-            Err(_) => {
-                return Err(HttpResponse::error(
-                    400,
-                    "parameter `seq` must be a positive integer",
-                ));
-            }
-        },
-        _ => {
-            return Err(HttpResponse::error(
-                400,
-                "the temporal cursor requires exactly one of `ref`, `time`, or `seq`",
-            ));
-        }
-    };
-    cursor.map_err(|error| HttpResponse::error(400, &error.to_string()))
-}
-
-fn direction_param(request: &HttpRequest) -> Result<TemporalDirection, HttpResponse> {
-    match request.param("direction") {
-        None | Some("near") => Ok(TemporalDirection::Near),
-        Some("goto") => Ok(TemporalDirection::Goto),
-        Some("rewind") => Ok(TemporalDirection::Rewind),
-        Some("forward") => Ok(TemporalDirection::Forward),
-        Some(other) => Err(HttpResponse::error(
-            400,
-            &format!("unknown direction `{other}`; expected `goto`, `near`, `rewind` or `forward`"),
-        )),
-    }
-}
-
-fn axis_param(request: &HttpRequest) -> Result<TemporalAxis, HttpResponse> {
-    match request.param("axis").or_else(|| request.param("clock")) {
-        None => Ok(TemporalAxis::Default),
-        Some("occurred") => Ok(TemporalAxis::Occurred),
-        Some("observed") => Ok(TemporalAxis::Observed),
-        Some("ingested") => Ok(TemporalAxis::Ingested),
-        Some("validity") => Ok(TemporalAxis::Validity),
-        Some(other) => Err(HttpResponse::error(
-            400,
-            &format!(
-                "unknown temporal axis `{other}`; expected `occurred`, `observed`, `ingested` or `validity`"
-            ),
-        )),
-    }
-}
-
 /// The kernel's error vocabulary, translated to status codes without leaking
 /// anything the message itself does not already say.
 fn application_error_response(error: &ApplicationError) -> HttpResponse {
@@ -631,27 +421,4 @@ fn application_error_response(error: &ApplicationError) -> HttpResponse {
         ApplicationError::Ports(PortError::InvalidState(_)) => 500,
     };
     HttpResponse::error(status, &message)
-}
-
-/// How long a browser's long poll waits before answering with the state it
-/// already had. Comfortably inside the request timeout, so a poll never looks
-/// like a stuck client.
-const VIEW_POLL_PATIENCE: std::time::Duration = std::time::Duration::from_secs(20);
-
-fn view_error_response(error: &crate::view_state::ViewError) -> HttpResponse {
-    use crate::view_state::ViewError;
-    match error {
-        ViewError::UnknownView(id) => HttpResponse::error(404, &format!("no view under `{id}`")),
-        ViewError::Conflict {
-            expected, actual, ..
-        } => HttpResponse::error(
-            409,
-            &format!("the view moved on: expected revision {expected}, it is at {actual}"),
-        ),
-        ViewError::IdempotencyConflict { key } => HttpResponse::error(
-            409,
-            &format!("idempotency key '{key}' was already accepted with different content"),
-        ),
-        ViewError::Invalid(message) => HttpResponse::error(400, message),
-    }
 }
