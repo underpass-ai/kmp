@@ -1,0 +1,67 @@
+name: CodeQL
+
+# Advanced setup, so this repository decides which commits CodeQL analyzes.
+#
+# Default setup scans the default branch *and every protected branch*, and
+# `marketplace` is protected on purpose: it is the public catalog and carries
+# the advance gate. So the release's last step — advancing that branch to the
+# exact commit main already carries — asked CodeQL to analyze the identical
+# tree a second time, for eight to ten minutes of duplicated compute every
+# release (#449).
+#
+# This repository already lives by "skip when this tree was already proved" —
+# that is what quality-gate's `tree-proof` job is. Advanced setup is where the
+# same principle finally reaches CodeQL: `marketplace` never receives a commit
+# main has not already carried, so `main` and pull requests are the whole of
+# what needs analyzing.
+#
+# Unprotecting `marketplace` was never an option; protection is the point.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Weekly, matching the cadence default setup ran, so a dormant branch
+    # still meets new queries.
+    - cron: "27 5 * * 1"
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    # The name `quality-gate`'s wait-codeql-checks discovers by prefix.
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        # The exact set default setup analyzed. `javascript-typescript` covers
+        # both languages; naming them separately would analyze each file twice.
+        language:
+          - actions
+          - javascript-typescript
+          - python
+          - rust
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
+        with:
+          category: /language:${{ matrix.language }}

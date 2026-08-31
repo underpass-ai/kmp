@@ -33,6 +33,15 @@ Detailed notes from the early release cycle remain available in the
   a dirty tree, does not re-bump a version whose sources already agree, and
   skips a commit that already landed, so a rerun resumes instead of repeating.
 
+- CodeQL moves from default setup to a checked-in `codeql.yml` scoped to `main`
+  and pull requests. Default setup scans the default branch *and every
+  protected branch*, so the release's last step — advancing the protected
+  `marketplace` branch to the exact commit `main` already carries — asked
+  CodeQL to analyze an identical tree a second time, every release. The four
+  analyses, their languages and the `Analyze (…)` check names are unchanged, so
+  `wait-codeql-checks` keeps working, and `github/codeql-action` joins the
+  reviewed immutable pins.
+
 ### Fixed
 
 - ChronoLoom draws abouts whose entries share a second. Times crossing the

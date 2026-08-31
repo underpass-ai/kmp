@@ -159,6 +159,9 @@ parity before the branch can move.
   repository variable enables it.
 - KMP's protected `marketplace` branch is the single public catalog for Codex
   and Claude Code and advances only after the matching tag and assets exist.
+  CodeQL does not re-analyze that advance: `codeql.yml` is scoped to `main` and
+  pull requests, and `marketplace` never receives a commit `main` has not
+  already carried.
 
 [`scripts/ci/publish-crates.sh`](../../scripts/ci/publish-crates.sh) owns the
 crate publication order and skips versions already present. If a publication

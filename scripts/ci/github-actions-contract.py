@@ -15,6 +15,10 @@ APPROVED = {
     "actions/download-artifact": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
     "actions/github-script": "3a2844b7e9c422d3c10d287c895573f7108da1b3",
     "actions/dependency-review-action": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+    # github/codeql-action v4.37.9. Two entries because the contract keys on
+    # the action path, and init and analyze are two of them.
+    "github/codeql-action/init": "cdf488f595d80d6e07e03d4674febd5ab45fa938",
+    "github/codeql-action/analyze": "cdf488f595d80d6e07e03d4674febd5ab45fa938",
     "Swatinem/rust-cache": "6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
     "docker/setup-buildx-action": "37fe631027851001ddb9b187196cc803df7f5f0e",
     "docker/login-action": "dbcb813823bdd20940b903addbd779551569679f",
