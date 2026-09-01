@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- ChronoLoom's two halves are reorganized into explicit hexagonal boundaries
+  ahead of the [#463](https://github.com/underpass-ai/kmp/issues/463) fix,
+  per the checked-in
+  [layer map](docs/architecture/chronoloom-layer-map.md). In `kmp-viewer`,
+  the 1,200-line `view_state.rs` becomes a `view/` bounded context — value
+  objects and the `ViewSession` aggregate in `domain/`, ports for the store,
+  bell, wall clock and overlay catalog, one use case per operation, wire DTOs
+  with explicit mappers, in-process adapters and a thin registry — and the
+  browser application leaves the 2,300-line `loom.js` for script-tag modules
+  (state, backend port, viewport, data, selection, sync, scene, panels,
+  gestures) with `loom.js` as the composition root. No behavior or wire
+  change: today's snapshot serialization, #463's bug included, is pinned by
+  tests until the fix lands on the new seams.
+
 ## [0.6.2] - 2026-08-31
 
 ### Added
