@@ -504,6 +504,7 @@ pub fn temporal_response_from_result(
     let traversal = result.traversal;
     let expired = expired_at_cursor(
         traversal.entries(),
+        &result.source_bundle,
         traversal.axis(),
         traversal.resolved_cursor(),
     );
@@ -649,32 +650,66 @@ pub fn temporal_response_from_result(
     }
 }
 
+/// What had already stopped applying when this read was positioned.
+///
+/// Expiry is history, so a temporal move reports it and never hides it.
+///
+/// On the occurred, observed and ingested clocks a move returns recorded
+/// positions, so a constraint that stopped applying comes back as it was
+/// written — and came back with nothing beside it saying so. Those entries
+/// are named here and still returned: a history reader that silently dropped
+/// them would be answering a different question.
+///
+/// On the validity clock the read is about what held when, so it also names
+/// what an as-of view left out for having ended. That filter runs inside the
+/// traversal, before this ever sees the entries, which is why the one read
+/// where expiry is the whole subject used to report none of it.
 fn expired_at_cursor(
     entries: &[kmp_domain::TemporalEntry],
+    bundle: &KmpBundle,
     axis: TemporalAxis,
     cursor: &TemporalCoordinate,
 ) -> Vec<ExpiredMemory> {
-    if axis != TemporalAxis::Validity {
-        return Vec::new();
-    }
-    let Some(instant) = cursor.valid_from().or(cursor.valid_until()) else {
+    let Some(instant) = cursor_instant(cursor, axis) else {
         return Vec::new();
     };
 
-    entries
-        .iter()
-        .filter_map(|entry| {
-            let validity = entry
-                .coordinates()
-                .iter()
-                .filter(|coordinate| {
-                    coordinate.valid_from().is_some() || coordinate.valid_until().is_some()
-                })
-                .collect::<Vec<_>>();
-            let active = validity.iter().any(|coordinate| {
-                coordinate.valid_from().is_none_or(|start| {
+    let mut validity_by_ref = BTreeMap::<&str, Vec<(Option<&str>, Option<&str>)>>::new();
+    for entry in entries {
+        for coordinate in entry.coordinates() {
+            if coordinate.valid_from().is_some() || coordinate.valid_until().is_some() {
+                validity_by_ref
+                    .entry(entry.ref_id())
+                    .or_default()
+                    .push((coordinate.valid_from(), coordinate.valid_until()));
+            }
+        }
+    }
+    if axis == TemporalAxis::Validity {
+        for relationship in bundle
+            .relationships()
+            .iter()
+            .filter(|relationship| relationship.relationship_type() == "contains_entry")
+        {
+            let explanation = relationship.explanation();
+            if explanation.valid_from().is_some() || explanation.valid_until().is_some() {
+                validity_by_ref
+                    .entry(relationship.target_node_id())
+                    .or_default()
+                    .push((explanation.valid_from(), explanation.valid_until()));
+            }
+        }
+    }
+
+    validity_by_ref
+        .into_iter()
+        .filter_map(|(ref_id, validity)| {
+            // An entry standing on any one of its coordinates is not expired,
+            // however many others have run out.
+            let active = validity.iter().any(|(start, end)| {
+                start.is_none_or(|start| {
                     compare_temporal_instants(start, instant) != Some(Ordering::Greater)
-                }) && coordinate.valid_until().is_none_or(|end| {
+                }) && end.is_none_or(|end| {
                     compare_temporal_instants(end, instant) == Some(Ordering::Greater)
                 })
             });
@@ -683,7 +718,7 @@ fn expired_at_cursor(
             }
             let ended = validity
                 .iter()
-                .filter_map(|coordinate| coordinate.valid_until())
+                .filter_map(|(_, end)| *end)
                 .filter(|end| {
                     matches!(
                         compare_temporal_instants(end, instant),
@@ -694,11 +729,27 @@ fn expired_at_cursor(
                     compare_temporal_instants(left, right).unwrap_or(Ordering::Equal)
                 })?;
             Some(ExpiredMemory {
-                r#ref: entry.ref_id().to_string(),
+                r#ref: ref_id.to_string(),
                 valid_until: timestamp_from_sort_or_rfc3339(Some(ended)),
             })
         })
         .collect()
+}
+
+/// The instant a read is standing at, on whatever clock it asked for.
+fn cursor_instant(cursor: &TemporalCoordinate, axis: TemporalAxis) -> Option<&str> {
+    match axis {
+        TemporalAxis::Validity => cursor.valid_from().or(cursor.valid_until()),
+        TemporalAxis::Occurred => cursor.occurred_at(),
+        TemporalAxis::Observed => cursor.observed_at(),
+        TemporalAxis::Ingested => cursor.ingested_at(),
+        // The default clock resolves in the order the store writes in.
+        TemporalAxis::Default => cursor
+            .occurred_at()
+            .or(cursor.observed_at())
+            .or(cursor.ingested_at())
+            .or(cursor.valid_from()),
+    }
 }
 
 fn missing_explicit_clock(
@@ -1071,6 +1122,162 @@ mod temporal_lifecycle_tests {
     use kmp_proto::v1beta1::TemporalCursor;
 
     use super::temporal_response_from_result;
+
+    fn lifecycle_node(id: &str, kind: &str) -> BundleNode {
+        BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+    }
+
+    /// A freeze that ran for nine days, and a decision taken ten days after it
+    /// lapsed.
+    fn lapsed_freeze_bundle() -> KmpBundle {
+        let entry =
+            |target: &str, occurred_at: &str, valid_from: &str, valid_until: Option<&str>| {
+                let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_occurred_at(occurred_at)
+                    .with_valid_from(valid_from);
+                if let Some(valid_until) = valid_until {
+                    explanation = explanation.with_valid_until(valid_until);
+                }
+                BundleRelationship::new("timeline:main", target, "contains_entry", explanation)
+            };
+        KmpBundle::new(
+            CaseId::new("project:release").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            lifecycle_node("project:release", "memory_anchor"),
+            vec![
+                lifecycle_node("timeline:main", "memory_dimension"),
+                lifecycle_node("constraint:freeze", "constraint"),
+                lifecycle_node("decision:cutover", "decision"),
+            ],
+            vec![
+                entry(
+                    "constraint:freeze",
+                    "2026-08-01T09:00:00Z",
+                    "2026-08-01T09:00:00Z",
+                    Some("2026-08-10T09:00:00Z"),
+                ),
+                entry(
+                    "decision:cutover",
+                    "2026-08-20T09:00:00Z",
+                    "2026-08-20T09:00:00Z",
+                    None,
+                ),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle")
+    }
+
+    fn move_over(
+        bundle: KmpBundle,
+        direction: TemporalDirection,
+        at: &str,
+        axis: TemporalAxis,
+    ) -> kmp_proto::v1beta1::TemporalMoveResponse {
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(direction, DomainCursor::time(at).expect("cursor"))
+                .with_axis(axis),
+        )
+        .expect("traversal");
+        temporal_response_from_result(
+            TemporalCursor {
+                r#ref: String::new(),
+                time: None,
+                sequence: None,
+            },
+            direction,
+            TemporalMemoryResult {
+                traversal,
+                source_bundle: bundle,
+                include: TemporalIncludeOptions {
+                    evidence: false,
+                    relations: false,
+                    raw_refs: false,
+                },
+                quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+            },
+        )
+    }
+
+    /// A move on a recorded clock keeps returning history — dropping the
+    /// lapsed constraint would answer a different question — but it now says
+    /// which of what it returned had already stopped applying.
+    #[test]
+    fn a_recorded_clock_returns_the_lapsed_entry_and_names_it() {
+        for direction in [
+            TemporalDirection::Goto,
+            TemporalDirection::Near,
+            TemporalDirection::Rewind,
+        ] {
+            let response = move_over(
+                lapsed_freeze_bundle(),
+                direction,
+                "2026-08-25T09:00:00Z",
+                TemporalAxis::Occurred,
+            );
+
+            let refs = response
+                .entries
+                .iter()
+                .map(|entry| entry.r#ref.as_str())
+                .collect::<Vec<_>>();
+            assert!(
+                refs.contains(&"constraint:freeze"),
+                "{direction:?} stopped returning history"
+            );
+            let proof = response.proof.expect("proof");
+            assert_eq!(proof.expired.len(), 1, "{direction:?}");
+            assert_eq!(proof.expired[0].r#ref, "constraint:freeze");
+            assert_eq!(
+                proof.expired[0]
+                    .valid_until
+                    .expect("validity end")
+                    .to_string(),
+                "2026-08-10T09:00:00Z"
+            );
+        }
+    }
+
+    /// The as-of read excludes what had ended, which is why it was the one
+    /// read that could never report it.
+    #[test]
+    fn an_as_of_read_names_what_it_left_out_for_having_ended() {
+        let response = move_over(
+            lapsed_freeze_bundle(),
+            TemporalDirection::Goto,
+            "2026-08-25T09:00:00Z",
+            TemporalAxis::Validity,
+        );
+
+        assert_eq!(
+            response
+                .entries
+                .iter()
+                .map(|entry| entry.r#ref.as_str())
+                .collect::<Vec<_>>(),
+            vec!["decision:cutover"]
+        );
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.expired.len(), 1);
+        assert_eq!(proof.expired[0].r#ref, "constraint:freeze");
+    }
+
+    /// Standing before the end of an interval is not standing after it.
+    #[test]
+    fn an_interval_that_had_not_ended_yet_is_not_reported() {
+        let response = move_over(
+            lapsed_freeze_bundle(),
+            TemporalDirection::Forward,
+            "2026-07-01T09:00:00Z",
+            TemporalAxis::Validity,
+        );
+
+        assert!(response.proof.expect("proof").expired.is_empty());
+    }
 
     #[test]
     fn temporal_proof_reports_selected_supersession_without_full_relation_path() {

@@ -515,10 +515,16 @@ message Proof {
   // another entry replacing it, so following `supersedes` never finds one.
   //
   // What "already ended" is measured against depends on the read: a temporal
-  // move compares against the cursor the caller asked for; wake and ask have
-  // no cursor and compare against the latest instant the memory itself knows
-  // about. Wake still returns an expired entry, ranked behind what stands;
-  // ask withholds it and reports it here, so the exclusion is not silent.
+  // move compares against the cursor the caller asked for, on whichever clock
+  // it asked on; wake and ask have no cursor and compare against the latest
+  // instant the memory itself knows about.
+  //
+  // What each verb then does with it also differs, and all three are honest.
+  // A temporal move on a recorded clock returns the entry, because history is
+  // what it was asked for, and names it here; an as-of read on the validity
+  // clock leaves it out and names it here. Wake returns it ranked behind what
+  // stands. Ask withholds it and reports it here, so the exclusion is not
+  // silent.
   repeated ExpiredMemory expired = 10;
 }
 

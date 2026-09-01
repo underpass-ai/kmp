@@ -973,7 +973,7 @@
           }
         },
         "expired": {
-          "description": "Entries whose exclusive validity end is at or before the instant the read is measured against: the caller's cursor on a temporal move, the memory's own latest known instant on wake and ask. Separate from supersession because an interval can expire without a replacement. Wake still returns an expired entry, ranked behind what stands; ask withholds it and reports it here.",
+          "description": "Entries whose exclusive validity end is at or before the instant the read is measured against: the caller's cursor on a temporal move, the memory's own latest known instant on wake and ask. Separate from supersession because an interval can expire without a replacement. A temporal move on a recorded clock returns the entry as the history it is and names it here; an as-of read on the validity clock leaves it out and names it here. Wake returns it ranked behind what stands; ask withholds it and reports it here.",
           "type": "array",
           "items": {
             "type": "object",
