@@ -3,6 +3,8 @@ mod bundle_views;
 mod dimensions;
 mod ingest;
 mod queries;
+mod question_intent;
+mod relation_reach;
 mod responses;
 mod scalars;
 mod visual_projection;

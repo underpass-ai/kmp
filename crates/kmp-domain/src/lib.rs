@@ -35,6 +35,7 @@ pub use value_objects::{KmpMode, ResolutionTier, TierBudget};
 pub use value_objects::{
     KnownMemoryRelationType, MemoryRelationQuality, MemoryRelationSpec, MemoryRelationType,
 };
+pub use value_objects::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
 
 #[cfg(test)]

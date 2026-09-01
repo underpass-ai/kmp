@@ -2,14 +2,31 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::MemoryAnswerPolicy;
-use kmp_domain::{KmpBundle, RelationSemanticClass};
+use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal};
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
+use super::question_intent::QuestionIntent;
+use super::relation_reach::{ReachGraph, RelationReach};
+use super::scalars::timestamp_from_sort_or_rfc3339;
+
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
+
+/// Metadata key marking a candidate the question never matched on its own
+/// text, reached by walking proven relations out from one that did.
+pub(super) const REACHED_BY_KEY: &str = "reached_by";
+pub(super) const REACHED_BY_RELATION: &str = "relation";
 
 const MAX_RELATION_FEATURES_PER_CANDIDATE: usize = 16;
 const MAX_RERANK_CANDIDATES: usize = 64;
+/// How far retrieval may walk from something the question actually matched.
+/// Two hops covers `symptom → decision → constraint`, the shape a root-cause
+/// question needs, without opening the whole neighbourhood.
+const MAX_REACH_HOPS: u32 = 2;
+const MAX_REACHED_REFS: usize = 8;
+const MAX_RESCUED_CANDIDATES: usize = 5;
+
+const SECONDS_PER_DAY: i64 = 86_400;
 
 /// Deterministic, graph-aware reranker for stored entry text and evidence used
 /// by `kmp_ask`.
@@ -59,19 +76,23 @@ impl AnswerEvidenceRanker {
             .as_ref()
             .map(|(terms, _)| terms.clone())
             .unwrap_or_default();
+        let intent = QuestionIntent::read(question);
 
-        let mut candidates = evidence
-            .into_iter()
-            .filter_map(|item| {
-                AnswerCandidate::eligible(
-                    item,
-                    &question_terms,
-                    strict_focus.as_ref(),
-                    required_matches,
-                    &self.context,
-                )
-            })
-            .collect::<Vec<_>>();
+        let mut candidates = Vec::new();
+        let mut rejected = Vec::new();
+        for item in evidence {
+            match AnswerCandidate::eligible(
+                item,
+                &question_terms,
+                strict_focus.as_ref(),
+                required_matches,
+                &intent,
+                &self.context,
+            ) {
+                Ok(candidate) => candidates.push(candidate),
+                Err(item) => rejected.push(*item),
+            }
+        }
 
         candidates.sort_by(|left, right| {
             right
@@ -80,9 +101,81 @@ impl AnswerEvidenceRanker {
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
         let ranked = diversify_candidates(&question_terms, &diversity_focus_terms, candidates);
-        prioritize_distinct_claims(ranked)
+        let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
             .map(|candidate| candidate.item)
+            .collect::<Vec<_>>();
+
+        answer.extend(self.reached_candidates(&answer, rejected));
+        answer
+    }
+
+    /// Rescues what the question could not match on words but the graph can
+    /// prove is connected to something it did.
+    ///
+    /// The ranker's standing rule is that direct stored text establishes
+    /// eligibility and the graph may only improve a position. That rule is
+    /// what keeps an unrelated memory out of an answer, and it stays: these
+    /// candidates arrive after every eligible one and carry the mark that
+    /// keeps them out of the answer core. What changes is that a memory
+    /// causally upstream of a match is no longer unreachable just because it
+    /// shares no vocabulary with the question.
+    fn reached_candidates(
+        &self,
+        eligible: &[MemoryEvidence],
+        rejected: Vec<MemoryEvidence>,
+    ) -> Vec<MemoryEvidence> {
+        if rejected.is_empty() || self.context.reach_graph.is_empty() {
+            return Vec::new();
+        }
+
+        let seeds = eligible
+            .iter()
+            .flat_map(answer_context_refs)
+            .collect::<BTreeSet<_>>();
+        let mut blocked = self.context.superseded_refs.clone();
+        blocked.extend(self.context.expired_refs.iter().cloned());
+        blocked.extend(seeds.iter().cloned());
+
+        let reached =
+            self.context
+                .reach_graph
+                .reach_from(&seeds, &blocked, MAX_REACH_HOPS, MAX_REACHED_REFS);
+        if reached.is_empty() {
+            return Vec::new();
+        }
+
+        let mut rescued = rejected
+            .into_iter()
+            .filter(|item| {
+                self.context.temporal_state(item) == CandidateTemporalState::CurrentOrUnspecified
+            })
+            .filter_map(|item| {
+                let hop = answer_context_refs(&item)
+                    .iter()
+                    .filter_map(|item_ref| reached.get(item_ref))
+                    .min_by(|left, right| {
+                        left.hops
+                            .cmp(&right.hops)
+                            .then_with(|| right.weight.cmp(&left.weight))
+                    })?
+                    .clone();
+                Some((hop, item))
+            })
+            .collect::<Vec<_>>();
+
+        rescued.sort_by(|(left_hop, left), (right_hop, right)| {
+            left_hop
+                .hops
+                .cmp(&right_hop.hops)
+                .then_with(|| right_hop.weight.cmp(&left_hop.weight))
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+
+        rescued
+            .into_iter()
+            .take(MAX_RESCUED_CANDIDATES)
+            .map(|(hop, item)| mark_reached(item, &hop))
             .collect()
     }
 
@@ -168,6 +261,8 @@ enum RelationDirection {
 struct RelationFeature {
     rel: String,
     semantic_class: RelationSemanticClass,
+    /// What the writer's own judgment of this edge is worth to retrieval.
+    signal: u32,
     direction: RelationDirection,
     other_endpoint_ref: String,
     endpoint_terms: BTreeSet<String>,
@@ -197,9 +292,16 @@ impl RelationFeature {
     }
 
     fn stable_cmp(&self, other: &Self) -> Ordering {
-        self.semantic_class
-            .salience_rank()
-            .cmp(&other.semantic_class.salience_rank())
+        // Signal first, so the sixteen features a candidate keeps are the
+        // best-proven ones rather than whichever class happened to sort low.
+        other
+            .signal
+            .cmp(&self.signal)
+            .then_with(|| {
+                self.semantic_class
+                    .salience_rank()
+                    .cmp(&other.semantic_class.salience_rank())
+            })
             .then_with(|| self.rel.cmp(&other.rel))
             .then_with(|| self.direction.cmp(&other.direction))
             .then_with(|| self.other_endpoint_ref.cmp(&other.other_endpoint_ref))
@@ -215,6 +317,17 @@ struct AnswerRecallContext {
     details_by_ref: BTreeMap<String, BTreeSet<String>>,
     relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
     superseded_refs: BTreeSet<String>,
+    /// Entries whose declared applicability ended before the last moment this
+    /// memory knows about. `supersedes` says something replaced them;
+    /// `valid_until` says they simply stopped applying, with nothing in their
+    /// place, and until now the reader never asked.
+    expired_refs: BTreeSet<String>,
+    /// The latest instant anywhere in this bundle, used as the store's own
+    /// present. A kernel that must answer identically on every run cannot
+    /// read the wall clock, and the frontier of what memory knows is the
+    /// honest stand-in for now.
+    frontier: Option<(i64, i32)>,
+    reach_graph: ReachGraph,
 }
 
 impl AnswerRecallContext {
@@ -236,6 +349,34 @@ impl AnswerRecallContext {
             .filter(|relationship| relationship.relationship_type() == "supersedes")
             .map(|relationship| relationship.target_node_id().to_string())
             .collect();
+        let frontier = bundle
+            .relationships()
+            .iter()
+            .flat_map(|relationship| {
+                let explanation = relationship.explanation();
+                [
+                    instant(explanation.occurred_at()),
+                    instant(explanation.observed_at()),
+                    instant(explanation.ingested_at()),
+                    instant(explanation.valid_from()),
+                ]
+            })
+            .flatten()
+            .max();
+        let expired_refs = frontier
+            .map(|frontier| {
+                bundle
+                    .relationships()
+                    .iter()
+                    .filter(|relationship| {
+                        relationship.relationship_type() == "contains_entry"
+                            && instant(relationship.explanation().valid_until())
+                                .is_some_and(|valid_until| valid_until < frontier)
+                    })
+                    .map(|relationship| relationship.target_node_id().to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
 
         for relationship in bundle
             .relationships()
@@ -262,10 +403,13 @@ impl AnswerRecallContext {
                 ))
             };
             let relation_terms = informative_terms(relationship.relationship_type());
+            let signal =
+                RelationSignal::read(relationship.relationship_type(), explanation).weight();
 
             let outgoing = RelationFeature {
                 rel: relationship.relationship_type().to_string(),
                 semantic_class: *explanation.semantic_class(),
+                signal,
                 direction: RelationDirection::Outgoing,
                 other_endpoint_ref: relationship.target_node_id().to_string(),
                 endpoint_terms: endpoint_terms.clone(),
@@ -285,6 +429,7 @@ impl AnswerRecallContext {
                     .push(RelationFeature {
                         rel: relationship.relationship_type().to_string(),
                         semantic_class: *explanation.semantic_class(),
+                        signal,
                         direction: RelationDirection::Incoming,
                         other_endpoint_ref: relationship.source_node_id().to_string(),
                         endpoint_terms,
@@ -305,6 +450,9 @@ impl AnswerRecallContext {
             details_by_ref,
             relationships_by_ref,
             superseded_refs,
+            expired_refs,
+            frontier,
+            reach_graph: ReachGraph::from_bundle(bundle),
         }
     }
 
@@ -334,13 +482,38 @@ impl AnswerRecallContext {
     }
 
     fn temporal_state(&self, item: &MemoryEvidence) -> CandidateTemporalState {
-        if answer_context_refs(item)
+        let refs = answer_context_refs(item);
+        if refs
             .iter()
             .any(|selected_ref| self.superseded_refs.contains(selected_ref))
         {
             CandidateTemporalState::Superseded
+        } else if refs
+            .iter()
+            .any(|selected_ref| self.expired_refs.contains(selected_ref))
+        {
+            CandidateTemporalState::Expired
         } else {
             CandidateTemporalState::CurrentOrUnspecified
+        }
+    }
+
+    /// How recent a candidate is against the store's own present, in coarse
+    /// buckets so a few seconds never outrank a better text match.
+    ///
+    /// An entry with no time is not treated as ancient: it ranks with old
+    /// material rather than below it, because an absent clock is a silence,
+    /// not a claim of age.
+    fn recency_rank(&self, item: &MemoryEvidence) -> u32 {
+        let (Some(frontier), Some(time)) = (self.frontier, item.time.as_ref()) else {
+            return 1;
+        };
+        let age = frontier.0.saturating_sub(time.seconds);
+        match age {
+            age if age <= SECONDS_PER_DAY => 4,
+            age if age <= 7 * SECONDS_PER_DAY => 3,
+            age if age <= 30 * SECONDS_PER_DAY => 2,
+            _ => 1,
         }
     }
 }
@@ -355,15 +528,27 @@ fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) ->
     }
 }
 
+/// Ordered from the strongest evidence of relevance to the weakest.
+///
+/// Text still leads: nothing below `claim_matches` can lift a candidate over
+/// one that answers the question in its own words. What the typed fields buy
+/// is everything underneath — where the old key fell straight through to an
+/// alphabetical tie-break on the ref.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct RelevanceKey {
     content_focus_matches: usize,
     content_matches: usize,
     direct_matches: usize,
     claim_matches: usize,
+    /// Relations of the kind the question asked for: a *why* question met by
+    /// a causal edge, a replacement question met by `supersedes`.
+    intent_relation_matches: usize,
     relation_why_matches: usize,
     relation_matches: usize,
+    /// The writer's own judgment of the matching relations, summed.
+    relation_signal: u32,
     total_matches: usize,
+    recency_rank: u32,
 }
 
 struct AnswerCandidate {
@@ -377,25 +562,37 @@ struct AnswerCandidate {
 enum CandidateTemporalState {
     CurrentOrUnspecified,
     Superseded,
+    /// Applicability ended without a replacement. `valid_until` is the only
+    /// lifecycle KMP models that names no successor, so it cannot be found
+    /// by following `supersedes`.
+    Expired,
 }
 
 impl AnswerCandidate {
+    /// Returns the candidate when the question reaches it directly, and hands
+    /// the item back untouched when it does not, so a later pass can still
+    /// rescue it through the graph.
     fn eligible(
         item: MemoryEvidence,
         question_terms: &BTreeSet<String>,
         strict_focus: Option<&(BTreeSet<String>, usize)>,
         required_matches: usize,
+        intent: &QuestionIntent,
         context: &AnswerRecallContext,
-    ) -> Option<Self> {
+    ) -> Result<Self, Box<MemoryEvidence>> {
         let terms = AnswerCandidateTerms::from_evidence(&item, context);
         let direct_matches = matching_term_count(question_terms, &terms.direct);
         if direct_matches < required_matches {
-            return None;
+            return Err(Box::new(item));
         }
-        if context.temporal_state(&item) == CandidateTemporalState::Superseded
-            && !query_requests_lifecycle(question_terms)
+        // Both lifecycles end a claim's standing as current advice, and a
+        // question that asks about history is asking for exactly them.
+        if matches!(
+            context.temporal_state(&item),
+            CandidateTemporalState::Superseded | CandidateTemporalState::Expired
+        ) && !query_requests_lifecycle(question_terms)
         {
-            return None;
+            return Err(Box::new(item));
         }
 
         let answers_requested_focus =
@@ -403,9 +600,10 @@ impl AnswerCandidate {
                 matching_term_count(focus_terms, &terms.searchable) >= *required_focus_matches
             });
         if !answers_requested_focus {
-            return None;
+            return Err(Box::new(item));
         }
 
+        let relations = context.relationships_for(&item);
         let relevance = RelevanceKey {
             content_focus_matches: strict_focus
                 .map(|(focus_terms, _)| matching_term_count(focus_terms, &terms.content))
@@ -413,11 +611,14 @@ impl AnswerCandidate {
             content_matches: matching_term_count(question_terms, &terms.content),
             direct_matches,
             claim_matches: matching_term_count(question_terms, &terms.claim),
+            intent_relation_matches: intent_relation_matches(intent, &relations),
             relation_why_matches: matching_term_count(question_terms, &terms.relation_why),
             relation_matches: matching_term_count(question_terms, &terms.relation),
+            relation_signal: relation_signal_total(question_terms, &relations),
             total_matches: matching_term_count(question_terms, &terms.searchable),
+            recency_rank: context.recency_rank(&item),
         };
-        Some(Self {
+        Ok(Self {
             relevance,
             searchable_terms: terms.searchable,
             stable_key: stable_evidence_key(&item),
@@ -584,6 +785,60 @@ fn answer_context_refs(item: &MemoryEvidence) -> BTreeSet<String> {
         .collect()
 }
 
+/// How many of a candidate's relations are the kind the question asked for.
+///
+/// An unspecific question asks for none, and every candidate scores zero —
+/// which is what the ranker did before questions had an intent at all.
+fn intent_relation_matches(intent: &QuestionIntent, relations: &[&RelationFeature]) -> usize {
+    if intent.is_unspecific() {
+        return 0;
+    }
+    relations
+        .iter()
+        .filter(|relation| intent.matches(&relation.rel, &relation.semantic_class))
+        .count()
+}
+
+/// The writer's judgment of the relations that actually touch the question,
+/// summed and capped.
+///
+/// Only matching relations count: a candidate cannot climb by being densely
+/// connected to material the question never mentioned.
+fn relation_signal_total(question_terms: &BTreeSet<String>, relations: &[&RelationFeature]) -> u32 {
+    relations
+        .iter()
+        .filter(|relation| relation.matches_any(question_terms))
+        .map(|relation| relation.signal)
+        .sum()
+}
+
+/// Reads a stored instant in either shape the kernel writes it.
+fn instant(value: Option<&str>) -> Option<(i64, i32)> {
+    timestamp_from_sort_or_rfc3339(value).map(|time| (time.seconds, time.nanos))
+}
+
+/// Records how a rescued candidate was reached, so the hop can be audited
+/// rather than trusted.
+fn mark_reached(mut item: MemoryEvidence, hop: &RelationReach) -> MemoryEvidence {
+    item.metadata
+        .insert(REACHED_BY_KEY.to_string(), REACHED_BY_RELATION.to_string());
+    item.metadata
+        .insert("reached_from".to_string(), hop.from_ref.clone());
+    item.metadata
+        .insert("reached_via".to_string(), hop.via_relation.clone());
+    item.metadata
+        .insert("reached_hops".to_string(), hop.hops.to_string());
+    item
+}
+
+/// Whether a candidate arrived through the graph rather than through the
+/// question's own words.
+pub(super) fn was_reached_by_relation(item: &MemoryEvidence) -> bool {
+    item.metadata
+        .get(REACHED_BY_KEY)
+        .is_some_and(|reach| reach == REACHED_BY_RELATION)
+}
+
 fn matching_terms(
     question_terms: &BTreeSet<String>,
     evidence_terms: &BTreeSet<String>,
@@ -670,7 +925,7 @@ fn informative_terms(value: &str) -> BTreeSet<String> {
 /// stay byte-exact; the ranker indexes this folded sibling so a phone or
 /// foreign keyboard does not turn `válvula`, `arrêt`, `refrigeração`,
 /// `Straße`, or `Kühlventil` into an unreachable memory.
-fn fold_search_term(value: &str) -> String {
+pub(super) fn fold_search_term(value: &str) -> String {
     let mut folded = String::with_capacity(value.len());
     for character in value
         .nfkd()
@@ -744,6 +999,7 @@ mod tests {
     use kmp_domain::{
         BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation, Role,
     };
+    use prost_types::Timestamp;
 
     fn ev(source: &str) -> MemoryEvidence {
         MemoryEvidence {
@@ -771,6 +1027,7 @@ mod tests {
         RelationFeature {
             rel: rel.to_string(),
             semantic_class: class,
+            signal: 0,
             direction: RelationDirection::Outgoing,
             other_endpoint_ref: "target".to_string(),
             endpoint_terms: informative_terms("source target"),
@@ -793,7 +1050,7 @@ mod tests {
                     claim.to_string(),
                     vec![relation(rel, class, why)],
                 )]),
-                superseded_refs: BTreeSet::new(),
+                ..Default::default()
             },
         }
     }
@@ -844,6 +1101,269 @@ mod tests {
         )
         .expect("valid bundle");
         AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    fn proven(class: RelationSemanticClass) -> RelationExplanation {
+        RelationExplanation::new(class)
+            .with_rationale("the reserve was diverted before the repair")
+            .with_evidence("recorded in the incident review")
+            .with_confidence("high")
+    }
+
+    fn timed_entry(scope: &str, entry: &str, observed_at: &str) -> BundleRelationship {
+        entry_relationship(scope, entry, observed_at, None)
+    }
+
+    fn expiring_entry(
+        scope: &str,
+        entry: &str,
+        observed_at: &str,
+        valid_until: &str,
+    ) -> BundleRelationship {
+        entry_relationship(scope, entry, observed_at, Some(valid_until))
+    }
+
+    fn entry_relationship(
+        scope: &str,
+        entry: &str,
+        observed_at: &str,
+        valid_until: Option<&str>,
+    ) -> BundleRelationship {
+        let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("timeline")
+            .with_scope_id(scope)
+            .with_observed_at(observed_at);
+        if let Some(valid_until) = valid_until {
+            explanation = explanation.with_valid_until(valid_until);
+        }
+        BundleRelationship::new(scope, entry, "contains_entry", explanation)
+    }
+
+    fn ranker_over(relationships: Vec<BundleRelationship>, refs: &[&str]) -> AnswerEvidenceRanker {
+        let node = |id: &str| {
+            BundleNode::new(
+                id,
+                "memory",
+                id,
+                "fixture",
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("claim:root").expect("valid case id"),
+            Role::new("answerer").expect("valid role"),
+            node("claim:root"),
+            refs.iter().map(|id| node(id)).collect(),
+            relationships,
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("valid bundle");
+        AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    #[test]
+    fn a_proven_relation_reaches_the_cause_that_shares_no_words_with_the_question() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:outage",
+                "claim:cause",
+                "triggers",
+                proven(RelationSemanticClass::Causal),
+            )],
+            &["claim:outage", "claim:cause"],
+        );
+
+        let ranked = ranker.rank(
+            "Why did the checkout outage happen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("outage", "claim:outage", "The checkout outage happened."),
+                claim_ev(
+                    "cause",
+                    "claim:cause",
+                    "Reserve power was diverted for a valve repair.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:outage");
+        assert_eq!(ranked[1].id, "detail:cause");
+        assert!(was_reached_by_relation(&ranked[1]));
+        assert_eq!(ranked[1].metadata["reached_from"], "claim:outage");
+        assert_eq!(ranked[1].metadata["reached_via"], "triggers");
+        assert_eq!(ranked[1].metadata["reached_hops"], "1");
+        assert!(!was_reached_by_relation(&ranked[0]));
+    }
+
+    #[test]
+    fn an_unproven_relation_still_reaches_nothing() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:outage",
+                "claim:cause",
+                "follows",
+                proven(RelationSemanticClass::Procedural),
+            )],
+            &["claim:outage", "claim:cause"],
+        );
+
+        let ranked = ranker.rank(
+            "Why did the checkout outage happen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("outage", "claim:outage", "The checkout outage happened."),
+                claim_ev(
+                    "cause",
+                    "claim:cause",
+                    "Reserve power was diverted for a valve repair.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked.len(), 1);
+        assert_eq!(ranked[0].id, "detail:outage");
+    }
+
+    #[test]
+    fn an_entry_whose_applicability_ended_is_not_offered_as_current() {
+        let ranker = ranker_over(
+            vec![
+                expiring_entry(
+                    "scope:timeline",
+                    "claim:expired",
+                    "2026-01-01T00:00:00Z",
+                    "2026-02-01T00:00:00Z",
+                ),
+                timed_entry("scope:timeline", "claim:live", "2026-03-01T00:00:00Z"),
+            ],
+            &["scope:timeline", "claim:expired", "claim:live"],
+        );
+
+        let current = ranker.rank(
+            "Which release window applies to the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "expired",
+                    "claim:expired",
+                    "The release window applies to the shared store on Mondays.",
+                ),
+                claim_ev(
+                    "live",
+                    "claim:live",
+                    "The release window applies to the shared store on Fridays.",
+                ),
+            ],
+        );
+
+        assert_eq!(current.len(), 1);
+        assert_eq!(current[0].id, "detail:live");
+    }
+
+    #[test]
+    fn a_lifecycle_question_can_still_audit_what_expired() {
+        let ranker = ranker_over(
+            vec![
+                expiring_entry(
+                    "scope:timeline",
+                    "claim:expired",
+                    "2026-01-01T00:00:00Z",
+                    "2026-02-01T00:00:00Z",
+                ),
+                timed_entry("scope:timeline", "claim:live", "2026-03-01T00:00:00Z"),
+            ],
+            &["scope:timeline", "claim:expired", "claim:live"],
+        );
+
+        let audited = ranker.rank(
+            "Which release window was the previous one for the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "expired",
+                "claim:expired",
+                "The release window applies to the shared store on Mondays.",
+            )],
+        );
+
+        assert_eq!(audited.len(), 1);
+        assert_eq!(audited[0].id, "detail:expired");
+    }
+
+    #[test]
+    fn the_relation_the_question_asked_for_outranks_an_otherwise_equal_candidate() {
+        let ranker = ranker_over(
+            vec![
+                BundleRelationship::new(
+                    "claim:motivated",
+                    "claim:decision",
+                    "chosen_because",
+                    proven(RelationSemanticClass::Motivational),
+                ),
+                BundleRelationship::new(
+                    "claim:catalogued",
+                    "claim:decision",
+                    "component_of",
+                    proven(RelationSemanticClass::Structural),
+                ),
+            ],
+            &["claim:motivated", "claim:catalogued", "claim:decision"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the shared engine selected?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "catalogued",
+                    "claim:catalogued",
+                    "The shared engine was selected.",
+                ),
+                claim_ev(
+                    "motivated",
+                    "claim:motivated",
+                    "The shared engine was selected.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:motivated");
+    }
+
+    #[test]
+    fn recency_breaks_a_tie_that_used_to_fall_to_the_reference_name() {
+        let ranker = ranker_over(
+            vec![timed_entry(
+                "scope:timeline",
+                "claim:a",
+                "2026-03-01T00:00:00Z",
+            )],
+            &["scope:timeline", "claim:a"],
+        );
+        let older = MemoryEvidence {
+            time: Some(Timestamp {
+                seconds: 1_735_689_600,
+                nanos: 0,
+            }),
+            ..claim_ev("a-older", "claim:older", "the shared engine is documented")
+        };
+        let newer = MemoryEvidence {
+            time: Some(Timestamp {
+                seconds: 1_772_323_200,
+                nanos: 0,
+            }),
+            ..claim_ev("z-newer", "claim:newer", "the shared engine is documented")
+        };
+
+        let ranked = ranker.rank(
+            "Which shared engine is documented?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![older, newer],
+        );
+
+        assert_eq!(ranked[0].id, "detail:z-newer");
     }
 
     #[test]
@@ -920,7 +1440,7 @@ mod tests {
                     }],
                 ),
             ]),
-            superseded_refs: BTreeSet::new(),
+            ..Default::default()
         };
         let ranker = AnswerEvidenceRanker { context };
 

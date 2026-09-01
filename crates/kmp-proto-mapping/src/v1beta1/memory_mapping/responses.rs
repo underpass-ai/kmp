@@ -16,7 +16,7 @@ use kmp_proto::v1beta1::{
     TraceResponse, WakeClaim, WakePacket, WakeResponse,
 };
 
-use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
+use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker, was_reached_by_relation};
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -203,14 +203,24 @@ pub fn ask_response_from_result(
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
     let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
+    // A candidate the graph reached is proof, not an answer. It travels in
+    // `proof.evidence` with the hop that produced it, and the answer core is
+    // still built only from evidence the question matched in its own words —
+    // the ranker's standing rule, now enforced where the answer is written
+    // rather than by refusing to retrieve the hop at all.
+    let answer_core = evidence
+        .iter()
+        .filter(|item| !was_reached_by_relation(item))
+        .cloned()
+        .collect::<Vec<_>>();
     // `because` and the deterministic answer retain at most five citations.
     // Confidence must describe those surviving citations, not a stronger item
     // that `max_entries` or a later transport budget omitted.
-    let retained_evidence = &evidence[..evidence.len().min(ANSWER_CORE_LIMIT)];
+    let retained_evidence = &answer_core[..answer_core.len().min(ANSWER_CORE_LIMIT)];
     let confidence = ranker.confidence(question, retained_evidence);
     let matched_terms = ranker.matched_query_terms(question, retained_evidence);
     let matched_relations = ranker.matched_relations(question, retained_evidence);
-    let because = evidence
+    let because = answer_core
         .iter()
         .take(ANSWER_CORE_LIMIT)
         .map(|item| AnswerReason {
@@ -1338,6 +1348,94 @@ mod ask_entry_text_tests {
         assert_eq!(proof.evidence.len(), 1);
         assert_eq!(proof.evidence[0].metadata["proof_role"], "entry_text");
         assert!(proof.matched_terms.contains(&"zorblatt".to_string()));
+    }
+
+    /// The graph may carry retrieval to a memory the question could not
+    /// reach in words, and it still may not answer in that memory's name.
+    /// The hop arrives as proof, with the path that produced it, and the
+    /// answer keeps citing only what the question matched directly.
+    #[test]
+    fn a_memory_reached_through_the_graph_is_proof_and_never_the_answer() {
+        let node = |id: &str, kind: &str, summary: &str| {
+            BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let entry = |target: &str| {
+            BundleRelationship::new(
+                "timeline:main",
+                target,
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:kmp", "memory_anchor", "KMP memory"),
+            vec![
+                node("timeline:main", "memory_dimension", "Timeline"),
+                node(
+                    "decision:zorblatt",
+                    "decision",
+                    "ZORBLATT is the selected durable format.",
+                ),
+                node(
+                    "decision:quench",
+                    "decision",
+                    "The overnight batch window moved to the reserve cluster.",
+                ),
+            ],
+            vec![
+                entry("decision:zorblatt"),
+                entry("decision:quench"),
+                BundleRelationship::new(
+                    "decision:zorblatt",
+                    "decision:quench",
+                    "chosen_because",
+                    RelationExplanation::new(RelationSemanticClass::Motivational)
+                        .with_rationale("the batch window forced a durable format decision")
+                        .with_evidence("recorded in the migration review")
+                        .with_confidence("high"),
+                ),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        let result = GetContextResult {
+            bundle,
+            rendered,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        };
+
+        let response = ask_response_from_result(
+            "ZORBLATT",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            result,
+        );
+
+        let proof = response.proof.expect("proof");
+        let reached = proof
+            .evidence
+            .iter()
+            .find(|item| item.metadata.contains_key("reached_by"))
+            .expect("the graph carried retrieval to the connected memory");
+        assert_eq!(reached.metadata["reached_via"], "chosen_because");
+        assert_eq!(reached.metadata["reached_from"], "decision:zorblatt");
+        assert!(
+            response
+                .because
+                .iter()
+                .all(|reason| reason.claim != "decision:quench"),
+            "a memory reached through the graph must not be cited as the answer"
+        );
+        assert_eq!(response.because.len(), 1);
     }
 }
 
