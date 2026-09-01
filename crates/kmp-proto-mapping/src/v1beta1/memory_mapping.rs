@@ -2,6 +2,7 @@ mod answer_ranker;
 mod bundle_views;
 mod dimensions;
 mod ingest;
+mod lexical_index;
 mod memory_lifecycle;
 mod queries;
 mod question_intent;

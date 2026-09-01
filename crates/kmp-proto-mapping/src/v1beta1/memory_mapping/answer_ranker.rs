@@ -6,6 +6,7 @@ use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal};
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
+use super::lexical_index::{LexicalField, TermCounts, ranked_score};
 use super::memory_lifecycle::MemoryLifecycle;
 use super::question_intent::QuestionIntent;
 use super::relation_reach::{ReachGraph, RelationReach};
@@ -57,11 +58,6 @@ impl AnswerEvidenceRanker {
             return evidence;
         }
 
-        let required_matches = if concept_count(&question_terms) <= 2 {
-            1
-        } else {
-            2
-        };
         let strict_focus = match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
                 let terms = strict_answer_focus_terms(question);
@@ -76,14 +72,29 @@ impl AnswerEvidenceRanker {
             .unwrap_or_default();
         let intent = QuestionIntent::read(question);
 
+        // BM25 needs a collection before it can weigh anything, so every
+        // candidate's terms are read once, up front. The collection is this
+        // question's own candidates: inside an about where every entry says
+        // `deploy`, that word earns nothing, and only a measurement taken
+        // here can know it.
+        let prepared = evidence
+            .into_iter()
+            .map(|item| {
+                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+                (item, terms)
+            })
+            .collect::<Vec<_>>();
+        let lexicon = Lexicon::build(question, &prepared);
+
         let mut candidates = Vec::new();
         let mut rejected = Vec::new();
-        for item in evidence {
+        for (item, terms) in prepared {
             match AnswerCandidate::eligible(
                 item,
+                terms,
                 &question_terms,
                 strict_focus.as_ref(),
-                required_matches,
+                &lexicon,
                 &intent,
                 &self.context,
             ) {
@@ -479,11 +490,59 @@ fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) ->
 /// one that answers the question in its own words. What the typed fields buy
 /// is everything underneath — where the old key fell straight through to an
 /// alphabetical tie-break on the ref.
+/// Everything BM25 needs about one question and the candidates it is being
+/// asked against.
+struct Lexicon {
+    question: TermCounts,
+    content: LexicalField,
+    direct: LexicalField,
+    floor: f64,
+}
+
+impl Lexicon {
+    fn build(question: &str, prepared: &[(MemoryEvidence, AnswerCandidateTerms)]) -> Self {
+        let question = informative_term_counts(question);
+        let content = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.content_counts));
+        let direct = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.direct_counts));
+        let floor = direct.eligibility_floor(&question);
+        Self {
+            question,
+            content,
+            direct,
+            floor,
+        }
+    }
+
+    /// Whether a candidate says enough about the question to be answering it.
+    ///
+    /// Measured on the raw score, not the quantized one, so a candidate is
+    /// never refused by a rounding boundary.
+    fn clears_floor(&self, terms: &AnswerCandidateTerms) -> bool {
+        let score = self.direct.score(&self.question, &terms.direct_counts);
+        // Sharing nothing at all is its own answer, and no floor derived from
+        // an empty overlap should be able to admit it.
+        score > 0.0 && score >= self.floor
+    }
+
+    fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {
+        ranked_score(self.content.score(&self.question, &terms.content_counts))
+    }
+
+    fn direct_score(&self, terms: &AnswerCandidateTerms) -> i64 {
+        ranked_score(self.direct.score(&self.question, &terms.direct_counts))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct RelevanceKey {
     content_focus_matches: usize,
-    content_matches: usize,
-    direct_matches: usize,
+    /// BM25 of the question against the candidate's own text, in tenths of a
+    /// point. It replaced a count of distinct shared concepts, which weighed
+    /// a rare word exactly as much as a word every candidate uses.
+    content_score: i64,
+    /// The same, over the text plus the identifiers and metadata a candidate
+    /// is addressed by.
+    direct_score: i64,
     claim_matches: usize,
     /// Relations of the kind the question asked for: a *why* question met by
     /// a causal edge, a replacement question met by `supersedes`.
@@ -519,15 +578,14 @@ impl AnswerCandidate {
     /// rescue it through the graph.
     fn eligible(
         item: MemoryEvidence,
+        terms: AnswerCandidateTerms,
         question_terms: &BTreeSet<String>,
         strict_focus: Option<&(BTreeSet<String>, usize)>,
-        required_matches: usize,
+        lexicon: &Lexicon,
         intent: &QuestionIntent,
         context: &AnswerRecallContext,
     ) -> Result<Self, Box<MemoryEvidence>> {
-        let terms = AnswerCandidateTerms::from_evidence(&item, context);
-        let direct_matches = matching_term_count(question_terms, &terms.direct);
-        if direct_matches < required_matches {
+        if !lexicon.clears_floor(&terms) {
             return Err(Box::new(item));
         }
         // Both lifecycles end a claim's standing as current advice, and a
@@ -553,8 +611,8 @@ impl AnswerCandidate {
             content_focus_matches: strict_focus
                 .map(|(focus_terms, _)| matching_term_count(focus_terms, &terms.content))
                 .unwrap_or_default(),
-            content_matches: matching_term_count(question_terms, &terms.content),
-            direct_matches,
+            content_score: lexicon.content_score(&terms),
+            direct_score: lexicon.direct_score(&terms),
             claim_matches: matching_term_count(question_terms, &terms.claim),
             intent_relation_matches: intent_relation_matches(intent, &relations),
             relation_why_matches: matching_term_count(question_terms, &terms.relation_why),
@@ -574,7 +632,8 @@ impl AnswerCandidate {
 
 struct AnswerCandidateTerms {
     content: BTreeSet<String>,
-    direct: BTreeSet<String>,
+    content_counts: TermCounts,
+    direct_counts: TermCounts,
     claim: BTreeSet<String>,
     relation_why: BTreeSet<String>,
     relation: BTreeSet<String>,
@@ -584,6 +643,7 @@ struct AnswerCandidateTerms {
 impl AnswerCandidateTerms {
     fn from_evidence(item: &MemoryEvidence, context: &AnswerRecallContext) -> Self {
         let content = informative_terms(&item.text);
+        let content_counts = informative_term_counts(&item.text);
         let mut direct_text = format!("{} {}", item.text, item.source);
         direct_text.push(' ');
         direct_text.push_str(&item.id);
@@ -597,6 +657,7 @@ impl AnswerCandidateTerms {
             direct_text.push(' ');
             direct_text.push_str(value);
         }
+        let direct_counts = informative_term_counts(&direct_text);
         let direct = informative_terms(&direct_text);
 
         let mut claim = item
@@ -628,7 +689,8 @@ impl AnswerCandidateTerms {
 
         Self {
             content,
-            direct,
+            content_counts,
+            direct_counts,
             claim,
             relation_why,
             relation,
@@ -841,7 +903,19 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
     }
 }
 
+/// The same tokens `informative_terms` yields, kept with their frequencies
+/// and collapsed onto concept keys so BM25 weighs a synonym pair once.
+fn informative_term_counts(value: &str) -> TermCounts {
+    informative_tokens(value)
+        .map(|term| concept_key(&term).to_string())
+        .collect()
+}
+
 fn informative_terms(value: &str) -> BTreeSet<String> {
+    informative_tokens(value).collect()
+}
+
+fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
     const STOP_WORDS: &[&str] = &[
         "a", "against", "an", "and", "are", "as", "at", "be", "because", "by", "came", "did", "do",
         "does", "earlier", "for", "from", "he", "how", "i", "if", "in", "is", "it", "me", "more",
@@ -858,7 +932,6 @@ fn informative_terms(value: &str) -> BTreeSet<String> {
                 && !STOP_WORDS.contains(&term.as_str())
                 && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
         })
-        .collect()
 }
 
 /// Produces the comparison form only. Stored evidence and returned query text
@@ -1102,6 +1175,86 @@ mod tests {
         )
         .expect("valid bundle");
         AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    /// Five candidates repeating the same common words, and one that shares a
+    /// single rare one. The rule this replaces demanded two shared concepts
+    /// from a question this long and discarded the rare match unscored.
+    #[test]
+    fn a_single_rare_match_is_no_longer_discarded_for_being_alone() {
+        let mut candidates = (0..5)
+            .map(|index| {
+                claim_ev(
+                    &format!("common-{index}"),
+                    &format!("claim:common{index}"),
+                    "The shared store rollout was discussed again.",
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.push(claim_ev(
+            "rare",
+            "claim:rare",
+            "Valkey was benchmarked overnight.",
+        ));
+
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Which valkey adapter handles the shared store rollout?",
+            MemoryAnswerPolicy::BestEffort,
+            candidates,
+        );
+
+        assert_eq!(ranked[0].id, "detail:rare");
+    }
+
+    /// Counting shared concepts said two common words beat one rare one.
+    /// Weighing them says the opposite, which is the whole point of an IDF.
+    #[test]
+    fn one_rare_match_outranks_two_common_ones() {
+        let mut candidates = (0..4)
+            .map(|index| {
+                claim_ev(
+                    &format!("filler-{index}"),
+                    &format!("claim:filler{index}"),
+                    "The shared store was mentioned.",
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.push(claim_ev(
+            "common-pair",
+            "claim:pair",
+            "The shared store was mentioned again.",
+        ));
+        candidates.push(claim_ev("rare-one", "claim:rare", "Valkey was chosen."));
+
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Was valkey chosen for the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            candidates,
+        );
+
+        assert_eq!(ranked[0].id, "detail:rare-one");
+    }
+
+    /// Two candidates say the same rare thing; one says a great deal else.
+    /// Length used to be free surface to be hit on, and the tie fell to the
+    /// alphabetical order of the ref.
+    #[test]
+    fn a_longer_candidate_does_not_win_for_having_more_surface() {
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Was valkey chosen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "a-padded",
+                    "claim:padded",
+                    "Valkey was chosen, and the standup moved, and the calendar invite changed, \
+                     and the agenda was rewritten, and the room was rebooked for the week.",
+                ),
+                claim_ev("z-short", "claim:short", "Valkey was chosen."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:z-short");
     }
 
     #[test]
