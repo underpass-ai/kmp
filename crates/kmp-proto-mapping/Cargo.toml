@@ -16,6 +16,7 @@ workspace = true
 
 [dependencies]
 prost-types.workspace = true
+rust-stemmers.workspace = true
 kmp-application.workspace = true
 kmp-domain.workspace = true
 kmp-proto.workspace = true

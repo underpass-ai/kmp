@@ -4,6 +4,7 @@ mod dimensions;
 mod ingest;
 mod lexical_index;
 mod memory_lifecycle;
+mod morphology;
 mod queries;
 mod question_intent;
 mod relation_reach;

@@ -8,6 +8,7 @@ use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
 use super::lexical_index::{LexicalField, TermCounts, ranked_score};
 use super::memory_lifecycle::MemoryLifecycle;
+use super::morphology::Morphology;
 use super::question_intent::QuestionIntent;
 use super::relation_reach::{ReachGraph, RelationReach};
 
@@ -51,7 +52,8 @@ impl AnswerEvidenceRanker {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
-        let question_terms = informative_terms(question);
+        let morphology = &self.context.morphology;
+        let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
@@ -60,7 +62,7 @@ impl AnswerEvidenceRanker {
 
         let strict_focus = match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
-                let terms = strict_answer_focus_terms(question);
+                let terms = strict_answer_focus_terms(question, morphology);
                 let required_matches = (concept_count(&terms) * 2).div_ceil(3);
                 Some((terms, required_matches))
             }
@@ -84,7 +86,7 @@ impl AnswerEvidenceRanker {
                 (item, terms)
             })
             .collect::<Vec<_>>();
-        let lexicon = Lexicon::build(question, &prepared);
+        let lexicon = Lexicon::build(question, morphology, &prepared);
 
         let mut candidates = Vec::new();
         let mut rejected = Vec::new();
@@ -199,7 +201,7 @@ impl AnswerEvidenceRanker {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question);
+        let question_terms = informative_terms(question, &self.context.morphology);
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
@@ -223,6 +225,12 @@ impl AnswerEvidenceRanker {
         }
     }
 
+    /// The question's own words that reached the retained evidence.
+    ///
+    /// Reported as the caller wrote them, folded but not renamed. Matching
+    /// happens on the search key — a concept the table unified, or a stem —
+    /// and reporting that key instead would answer with the kernel's internal
+    /// vocabulary rather than the reader's.
     pub(super) fn matched_query_terms(
         &self,
         question: &str,
@@ -236,13 +244,10 @@ impl AnswerEvidenceRanker {
                     .into_iter()
             })
             .collect::<BTreeSet<_>>();
-        informative_terms(question)
+        informative_tokens(question)
+            .filter(|token| evidence_terms.contains(&search_key(token, &self.context.morphology)))
+            .collect::<BTreeSet<_>>()
             .into_iter()
-            .filter(|question_term| {
-                evidence_terms
-                    .iter()
-                    .any(|evidence_term| terms_match(question_term, evidence_term))
-            })
             .collect()
     }
 
@@ -251,7 +256,7 @@ impl AnswerEvidenceRanker {
         question: &str,
         evidence: &[MemoryEvidence],
     ) -> Vec<String> {
-        let question_terms = informative_terms(question);
+        let question_terms = informative_terms(question, &self.context.morphology);
         evidence
             .iter()
             .flat_map(|item| self.context.relationships_for(item))
@@ -330,17 +335,35 @@ struct AnswerRecallContext {
     relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
     lifecycle: MemoryLifecycle,
     reach_graph: ReachGraph,
+    /// Read once from the stored memory, then used for both sides of every
+    /// comparison. Stemming a question by one language's rules and the memory
+    /// by another's would split families rather than join them.
+    morphology: Morphology,
 }
 
 impl AnswerRecallContext {
     fn from_bundle(bundle: &KmpBundle) -> Self {
+        let morphology = Morphology::read(
+            std::iter::once(bundle.root_node())
+                .chain(bundle.neighbor_nodes())
+                .map(|node| node.summary())
+                .chain(bundle.node_details().iter().map(|detail| detail.detail()))
+                .chain(bundle.relationships().iter().flat_map(|relationship| {
+                    let explanation = relationship.explanation();
+                    [
+                        explanation.rationale().unwrap_or_default(),
+                        explanation.motivation().unwrap_or_default(),
+                        explanation.evidence().unwrap_or_default(),
+                    ]
+                })),
+        );
         let details_by_ref = bundle
             .node_details()
             .iter()
             .map(|detail| {
                 (
                     detail.node_id().to_string(),
-                    informative_terms(detail.detail()),
+                    informative_terms(detail.detail(), &morphology),
                 )
             })
             .collect();
@@ -351,25 +374,31 @@ impl AnswerRecallContext {
             .filter(|relationship| relationship_is_explanatory(relationship))
         {
             let explanation = relationship.explanation();
-            let endpoint_terms = informative_terms(&format!(
-                "{} {}",
-                relationship.source_node_id(),
-                relationship.target_node_id()
-            ));
+            let endpoint_terms = informative_terms(
+                &format!(
+                    "{} {}",
+                    relationship.source_node_id(),
+                    relationship.target_node_id()
+                ),
+                &morphology,
+            );
             let relation_evidence = explanation.evidence().unwrap_or_default();
-            let evidence_terms = informative_terms(relation_evidence);
+            let evidence_terms = informative_terms(relation_evidence, &morphology);
             // A rationale can improve ranking only when the relation carries
             // its own evidence. It remains context, never a freestanding fact.
             let why_terms = if relation_evidence.trim().is_empty() {
                 BTreeSet::new()
             } else {
-                informative_terms(&format!(
-                    "{} {}",
-                    explanation.rationale().unwrap_or_default(),
-                    explanation.motivation().unwrap_or_default()
-                ))
+                informative_terms(
+                    &format!(
+                        "{} {}",
+                        explanation.rationale().unwrap_or_default(),
+                        explanation.motivation().unwrap_or_default()
+                    ),
+                    &morphology,
+                )
             };
-            let relation_terms = informative_terms(relationship.relationship_type());
+            let relation_terms = informative_terms(relationship.relationship_type(), &morphology);
             let signal =
                 RelationSignal::read(relationship.relationship_type(), explanation).weight();
 
@@ -418,6 +447,7 @@ impl AnswerRecallContext {
             relationships_by_ref,
             lifecycle: MemoryLifecycle::read(bundle),
             reach_graph: ReachGraph::from_bundle(bundle),
+            morphology,
         }
     }
 
@@ -500,8 +530,12 @@ struct Lexicon {
 }
 
 impl Lexicon {
-    fn build(question: &str, prepared: &[(MemoryEvidence, AnswerCandidateTerms)]) -> Self {
-        let question = informative_term_counts(question);
+    fn build(
+        question: &str,
+        morphology: &Morphology,
+        prepared: &[(MemoryEvidence, AnswerCandidateTerms)],
+    ) -> Self {
+        let question = informative_term_counts(question, morphology);
         let content = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.content_counts));
         let direct = LexicalField::build(prepared.iter().map(|(_, terms)| &terms.direct_counts));
         let floor = direct.eligibility_floor(&question);
@@ -593,7 +627,7 @@ impl AnswerCandidate {
         if matches!(
             context.temporal_state(&item),
             CandidateTemporalState::Superseded | CandidateTemporalState::Expired
-        ) && !query_requests_lifecycle(question_terms)
+        ) && !query_requests_lifecycle(question_terms, &context.morphology)
         {
             return Err(Box::new(item));
         }
@@ -642,8 +676,9 @@ struct AnswerCandidateTerms {
 
 impl AnswerCandidateTerms {
     fn from_evidence(item: &MemoryEvidence, context: &AnswerRecallContext) -> Self {
-        let content = informative_terms(&item.text);
-        let content_counts = informative_term_counts(&item.text);
+        let morphology = &context.morphology;
+        let content = informative_terms(&item.text, morphology);
+        let content_counts = informative_term_counts(&item.text, morphology);
         let mut direct_text = format!("{} {}", item.text, item.source);
         direct_text.push(' ');
         direct_text.push_str(&item.id);
@@ -657,13 +692,13 @@ impl AnswerCandidateTerms {
             direct_text.push(' ');
             direct_text.push_str(value);
         }
-        let direct_counts = informative_term_counts(&direct_text);
-        let direct = informative_terms(&direct_text);
+        let direct_counts = informative_term_counts(&direct_text, morphology);
+        let direct = informative_terms(&direct_text, morphology);
 
         let mut claim = item
             .supports
             .iter()
-            .flat_map(|supported_ref| informative_terms(supported_ref))
+            .flat_map(|supported_ref| informative_terms(supported_ref, morphology))
             .collect::<BTreeSet<_>>();
         for selected_ref in answer_context_refs(item) {
             if let Some(detail_terms) = context.details_by_ref.get(&selected_ref) {
@@ -876,7 +911,7 @@ fn concept_count(terms: &BTreeSet<String>) -> usize {
 }
 
 /// Extracts the subject-bearing clause used by strict answer policies.
-fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
+fn strict_answer_focus_terms(question: &str, morphology: &Morphology) -> BTreeSet<String> {
     const CONTEXT_BOUNDARIES: &[&str] = &[
         "after", "before", "because", "if", "once", "when", "while", "antes", "cuando", "despues",
         "después", "mientras", "porque", "si",
@@ -892,12 +927,12 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
         .take_while(|token| !CONTEXT_BOUNDARIES.contains(&token.as_str()))
         .collect::<Vec<_>>()
         .join(" ");
-    let mut terms = informative_terms(&main_clause);
+    let mut terms = informative_terms(&main_clause, morphology);
     for predicate in GENERIC_QUESTION_PREDICATES {
         terms.remove(*predicate);
     }
     if terms.is_empty() {
-        informative_terms(question)
+        informative_terms(question, morphology)
     } else {
         terms
     }
@@ -905,14 +940,30 @@ fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
 
 /// The same tokens `informative_terms` yields, kept with their frequencies
 /// and collapsed onto concept keys so BM25 weighs a synonym pair once.
-fn informative_term_counts(value: &str) -> TermCounts {
+fn informative_term_counts(value: &str, morphology: &Morphology) -> TermCounts {
     informative_tokens(value)
-        .map(|term| concept_key(&term).to_string())
+        .map(|term| search_key(&term, morphology))
         .collect()
 }
 
-fn informative_terms(value: &str) -> BTreeSet<String> {
-    informative_tokens(value).collect()
+fn informative_terms(value: &str, morphology: &Morphology) -> BTreeSet<String> {
+    informative_tokens(value)
+        .map(|term| search_key(&term, morphology))
+        .collect()
+}
+
+/// The form two words are compared in.
+///
+/// The hand-kept concept table speaks first, so every family it already
+/// unifies keeps behaving exactly as it did. Morphology only reaches the words
+/// the table has nothing to say about, which is almost all of them and all of
+/// the Spanish.
+fn search_key(term: &str, morphology: &Morphology) -> String {
+    let concept = concept_key(term);
+    if concept != term {
+        return concept.to_string();
+    }
+    morphology.stem(term).into_owned()
 }
 
 fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
@@ -987,7 +1038,13 @@ fn concept_key(term: &str) -> &str {
     }
 }
 
-fn query_requests_lifecycle(question_terms: &BTreeSet<String>) -> bool {
+/// Whether a question is asking about history rather than about now.
+///
+/// Its vocabulary is compared in the same form the question arrives in.
+/// Terms reach the ranker already folded onto their concept key or their
+/// stem, so a list of bare words would no longer recognise `previous` — the
+/// concept table renames it before this ever sees it.
+fn query_requests_lifecycle(question_terms: &BTreeSet<String>, morphology: &Morphology) -> bool {
     const LIFECYCLE_QUERY_TERMS: &[&str] = &[
         "before",
         "former",
@@ -1001,9 +1058,11 @@ fn query_requests_lifecycle(question_terms: &BTreeSet<String>) -> bool {
         "superseded",
         "supersedes",
     ];
-    question_terms
+    let asked_for = LIFECYCLE_QUERY_TERMS
         .iter()
-        .any(|term| LIFECYCLE_QUERY_TERMS.contains(&term.as_str()))
+        .map(|term| search_key(term, morphology))
+        .collect::<BTreeSet<_>>();
+    question_terms.iter().any(|term| asked_for.contains(term))
 }
 
 #[cfg(test)]
@@ -1043,10 +1102,10 @@ mod tests {
             signal: 0,
             direction: RelationDirection::Outgoing,
             other_endpoint_ref: "target".to_string(),
-            endpoint_terms: informative_terms("source target"),
-            why_terms: informative_terms(why),
+            endpoint_terms: informative_terms("source target", &Morphology::none()),
+            why_terms: informative_terms(why, &Morphology::none()),
             evidence_terms: BTreeSet::new(),
-            relation_terms: informative_terms(rel),
+            relation_terms: informative_terms(rel, &Morphology::none()),
         }
     }
 
@@ -1180,6 +1239,96 @@ mod tests {
     /// Five candidates repeating the same common words, and one that shares a
     /// single rare one. The rule this replaces demanded two shared concepts
     /// from a question this long and discarded the rare match unscored.
+    /// A bundle whose prose is the language the ranker will read.
+    fn ranker_speaking(prose: &[&str]) -> AnswerEvidenceRanker {
+        let node = |id: &str, summary: &str| {
+            BundleNode::new(
+                id,
+                "memory",
+                id,
+                summary,
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("about:memoria").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("about:memoria", prose[0]),
+            prose
+                .iter()
+                .enumerate()
+                .skip(1)
+                .map(|(index, text)| node(&format!("entry:{index}"), text))
+                .collect(),
+            Vec::new(),
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    /// Plural against singular and one conjugation against another. Neither
+    /// pair is in the hand-kept table, and the table has no Spanish at all.
+    #[test]
+    fn a_spanish_question_reaches_the_other_shapes_of_the_same_word() {
+        let ranker = ranker_speaking(&[
+            "La valvula de reserva se congelo durante la noche de la guardia.",
+            "El despliegue de la pasarela se hizo por la manana con el equipo.",
+        ]);
+
+        let ranked = ranker.rank(
+            "Que valvulas se congelaron?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("valve", "claim:valve", "La valvula de reserva se congelo."),
+                claim_ev("other", "claim:other", "El equipo reviso la pasarela."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:valve");
+    }
+
+    #[test]
+    fn an_english_question_reaches_the_noun_from_the_verb() {
+        let ranker = ranker_speaking(&[
+            "The deploy of the gateway was frozen during the audit of the week.",
+            "The weekly meeting was moved to ten in the morning by the team.",
+        ]);
+
+        let ranked = ranker.rank(
+            "What did the deployment freeze?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("gateway", "claim:gateway", "The deploy was frozen."),
+                claim_ev("other", "claim:other", "The team reviewed the gateway."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:gateway");
+    }
+
+    /// Nothing is stemmed when no language can be read, which is what every
+    /// caller got before morphology existed.
+    #[test]
+    fn a_memory_whose_language_cannot_be_read_keeps_exact_matching() {
+        let ranker = ranker_speaking(&["Valkey.", "SQLite."]);
+
+        let ranked = ranker.rank(
+            "Que valvulas se congelaron?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "valve",
+                "claim:valve",
+                "La valvula de reserva se congelo.",
+            )],
+        );
+
+        assert!(ranked.is_empty());
+    }
+
     #[test]
     fn a_single_rare_match_is_no_longer_discarded_for_being_alone() {
         let mut candidates = (0..5)
@@ -1528,7 +1677,7 @@ mod tests {
                 (
                     "claim:weak".to_string(),
                     vec![RelationFeature {
-                        why_terms: informative_terms("shared migration"),
+                        why_terms: informative_terms("shared migration", &Morphology::none()),
                         ..relation("chosen_because", RelationSemanticClass::Motivational, "")
                     }],
                 ),
@@ -1673,7 +1822,11 @@ mod tests {
         let feature = &ranker.context.relationships_by_ref["claim:adr"][0];
         assert_eq!(feature.direction, RelationDirection::Outgoing);
         assert_eq!(feature.other_endpoint_ref, "claim:current");
-        assert!(feature.evidence_terms.contains("architecture"));
+        assert!(
+            feature
+                .evidence_terms
+                .contains(ranker.context.morphology.stem("architecture").as_ref())
+        );
     }
 
     #[test]
@@ -1851,7 +2004,7 @@ mod tests {
 
     #[test]
     fn short_identifiers_and_lifecycle_paraphrases_are_preserved() {
-        let terms = informative_terms("PR #83 C1 M1 P0 ID 7 is to un");
+        let terms = informative_terms("PR #83 C1 M1 P0 ID 7 is to un", &Morphology::none());
         for identifier in ["pr", "83", "c1", "m1", "p0", "id", "7"] {
             assert!(
                 terms.contains(identifier),
@@ -1895,7 +2048,10 @@ mod tests {
             );
         }
 
-        assert_eq!(informative_terms("VÁLVULA"), informative_terms("valvula"));
+        assert_eq!(
+            informative_terms("VÁLVULA", &Morphology::none()),
+            informative_terms("valvula", &Morphology::none())
+        );
         assert_eq!(fold_search_term("Straße"), "strasse");
     }
 
@@ -1914,8 +2070,8 @@ mod tests {
 
     #[test]
     fn synonyms_form_one_scoring_concept() {
-        let question_terms = informative_terms("new installation");
-        let evidence_terms = informative_terms("fresh build");
+        let question_terms = informative_terms("new installation", &Morphology::none());
+        let evidence_terms = informative_terms("fresh build", &Morphology::none());
 
         assert_eq!(concept_count(&question_terms), 1);
         assert_eq!(matching_term_count(&question_terms, &evidence_terms), 1);
