@@ -7,7 +7,7 @@
   ],
   "isError": false,
   "structuredContent": {
-    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe]\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d [entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e…",
+    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe]\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d [entry:q…",
     "because": [
       {
         "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
@@ -36,10 +36,10 @@
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 10,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:ce8a3ca6097eaca39c7b1dc8dfeaa479845fef0bc72751b3ff1aa6fc4369a72d\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:57eb2b298b51fe2bd14b5e3b0f0880b543ebaa2e055888582cc40c451b4a2a3a\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:1:ce8a3ca6097eaca39c7b1dc8dfeaa479845fef0bc72751b3ff1aa6fc4369a72d",
+        "next_cursor": "kmp1:1:57eb2b298b51fe2bd14b5e3b0f0880b543ebaa2e055888582cc40c451b4a2a3a",
         "offset": 0,
         "returned": 1,
         "total": 3
@@ -118,7 +118,12 @@
           "time": "2026-04-12T17:00:00Z"
         }
       ],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "question:parity:claim:denver-detail",
+          "valid_until": "2026-04-12T18:00:00Z"
+        }
+      ],
       "frontier_size": 0,
       "matched_relations": [
         "semantic_delta_from",

@@ -11,16 +11,16 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9819
+        "used_bytes": 9766
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 20,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:19:a6e74c5b5765c0959fdd3cdb9f268a90f94d4cc9b95c1fb1de6913acdcef0476\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:19:6ca256b84167b68cb037f12695a930853fe64f32a9d8ca66605beb4d0936ca0d\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:19:a6e74c5b5765c0959fdd3cdb9f268a90f94d4cc9b95c1fb1de6913acdcef0476",
+        "next_cursor": "kmp1:19:6ca256b84167b68cb037f12695a930853fe64f32a9d8ca66605beb4d0936ca0d",
         "offset": 0,
         "returned": 19,
         "total": 37
@@ -112,7 +112,12 @@
           "time": "2026-04-12T17:00:00Z"
         }
       ],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "question:parity:claim:denver-detail",
+          "valid_until": "2026-04-12T18:00:00Z"
+        }
+      ],
       "frontier_size": 0,
       "matched_relations": [],
       "matched_terms": [],
@@ -230,19 +235,19 @@
           "evidence_ref": "The claim is the store's only prior entry."
         },
         {
-          "because": "Evidence supports this memory entry.",
-          "claim": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-          "evidence_ref": "Both statements are hers, minutes apart."
-        },
-        {
-          "because": "Evidence supports this memory entry.",
-          "claim": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
-          "evidence_ref": "Both statements are hers, minutes apart."
+          "because": "The corrected city replaces the first one while the first stays readable as history.",
+          "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d -> question:parity:claim:denver",
+          "evidence_ref": "She named Boulder after naming Denver."
         },
         {
           "because": "The later statement corrects the earlier one.",
           "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d -> question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
           "evidence_ref": "Both statements are hers, minutes apart."
+        },
+        {
+          "because": "The start date is what makes the move concrete.",
+          "claim": "question:parity:claim:denver-detail -> question:parity:claim:denver",
+          "evidence_ref": "Both statements came from the same conversation."
         }
       ],
       "current_state": [

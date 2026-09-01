@@ -6,9 +6,9 @@ use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal};
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
 use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
 
+use super::memory_lifecycle::MemoryLifecycle;
 use super::question_intent::QuestionIntent;
 use super::relation_reach::{ReachGraph, RelationReach};
-use super::scalars::timestamp_from_sort_or_rfc3339;
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
@@ -25,8 +25,6 @@ const MAX_RERANK_CANDIDATES: usize = 64;
 const MAX_REACH_HOPS: u32 = 2;
 const MAX_REACHED_REFS: usize = 8;
 const MAX_RESCUED_CANDIDATES: usize = 5;
-
-const SECONDS_PER_DAY: i64 = 86_400;
 
 /// Deterministic, graph-aware reranker for stored entry text and evidence used
 /// by `kmp_ask`.
@@ -133,8 +131,11 @@ impl AnswerEvidenceRanker {
             .iter()
             .flat_map(answer_context_refs)
             .collect::<BTreeSet<_>>();
-        let mut blocked = self.context.superseded_refs.clone();
-        blocked.extend(self.context.expired_refs.iter().cloned());
+        // A rescue must respect both lifecycles: a memory that was replaced,
+        // and one that simply stopped applying, stay out however strong the
+        // edge pointing at them.
+        let mut blocked = self.context.lifecycle.superseded_refs().clone();
+        blocked.extend(self.context.lifecycle.expired_refs().cloned());
         blocked.extend(seeds.iter().cloned());
 
         let reached =
@@ -316,17 +317,7 @@ impl RelationFeature {
 struct AnswerRecallContext {
     details_by_ref: BTreeMap<String, BTreeSet<String>>,
     relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
-    superseded_refs: BTreeSet<String>,
-    /// Entries whose declared applicability ended before the last moment this
-    /// memory knows about. `supersedes` says something replaced them;
-    /// `valid_until` says they simply stopped applying, with nothing in their
-    /// place, and until now the reader never asked.
-    expired_refs: BTreeSet<String>,
-    /// The latest instant anywhere in this bundle, used as the store's own
-    /// present. A kernel that must answer identically on every run cannot
-    /// read the wall clock, and the frontier of what memory knows is the
-    /// honest stand-in for now.
-    frontier: Option<(i64, i32)>,
+    lifecycle: MemoryLifecycle,
     reach_graph: ReachGraph,
 }
 
@@ -343,41 +334,6 @@ impl AnswerRecallContext {
             })
             .collect();
         let mut relationships_by_ref = BTreeMap::<String, Vec<_>>::new();
-        let superseded_refs = bundle
-            .relationships()
-            .iter()
-            .filter(|relationship| relationship.relationship_type() == "supersedes")
-            .map(|relationship| relationship.target_node_id().to_string())
-            .collect();
-        let frontier = bundle
-            .relationships()
-            .iter()
-            .flat_map(|relationship| {
-                let explanation = relationship.explanation();
-                [
-                    instant(explanation.occurred_at()),
-                    instant(explanation.observed_at()),
-                    instant(explanation.ingested_at()),
-                    instant(explanation.valid_from()),
-                ]
-            })
-            .flatten()
-            .max();
-        let expired_refs = frontier
-            .map(|frontier| {
-                bundle
-                    .relationships()
-                    .iter()
-                    .filter(|relationship| {
-                        relationship.relationship_type() == "contains_entry"
-                            && instant(relationship.explanation().valid_until())
-                                .is_some_and(|valid_until| valid_until < frontier)
-                    })
-                    .map(|relationship| relationship.target_node_id().to_string())
-                    .collect()
-            })
-            .unwrap_or_default();
-
         for relationship in bundle
             .relationships()
             .iter()
@@ -449,9 +405,7 @@ impl AnswerRecallContext {
         Self {
             details_by_ref,
             relationships_by_ref,
-            superseded_refs,
-            expired_refs,
-            frontier,
+            lifecycle: MemoryLifecycle::read(bundle),
             reach_graph: ReachGraph::from_bundle(bundle),
         }
     }
@@ -485,12 +439,12 @@ impl AnswerRecallContext {
         let refs = answer_context_refs(item);
         if refs
             .iter()
-            .any(|selected_ref| self.superseded_refs.contains(selected_ref))
+            .any(|selected_ref| self.lifecycle.is_superseded(selected_ref))
         {
             CandidateTemporalState::Superseded
         } else if refs
             .iter()
-            .any(|selected_ref| self.expired_refs.contains(selected_ref))
+            .any(|selected_ref| self.lifecycle.is_expired(selected_ref))
         {
             CandidateTemporalState::Expired
         } else {
@@ -505,16 +459,7 @@ impl AnswerRecallContext {
     /// material rather than below it, because an absent clock is a silence,
     /// not a claim of age.
     fn recency_rank(&self, item: &MemoryEvidence) -> u32 {
-        let (Some(frontier), Some(time)) = (self.frontier, item.time.as_ref()) else {
-            return 1;
-        };
-        let age = frontier.0.saturating_sub(time.seconds);
-        match age {
-            age if age <= SECONDS_PER_DAY => 4,
-            age if age <= 7 * SECONDS_PER_DAY => 3,
-            age if age <= 30 * SECONDS_PER_DAY => 2,
-            _ => 1,
-        }
+        self.lifecycle.recency_rank(item.time.as_ref())
     }
 }
 
@@ -810,11 +755,6 @@ fn relation_signal_total(question_terms: &BTreeSet<String>, relations: &[&Relati
         .filter(|relation| relation.matches_any(question_terms))
         .map(|relation| relation.signal)
         .sum()
-}
-
-/// Reads a stored instant in either shape the kernel writes it.
-fn instant(value: Option<&str>) -> Option<(i64, i32)> {
-    timestamp_from_sort_or_rfc3339(value).map(|time| (time.seconds, time.nanos))
 }
 
 /// Records how a rescued candidate was reached, so the hop can be audited

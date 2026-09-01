@@ -33,6 +33,8 @@ use super::bundle_views::{
     temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
+use super::memory_lifecycle::MemoryLifecycle;
+use super::relation_signal_index::RelationSignalIndex;
 use super::scalars::{
     proto_confidence, proto_direction, proto_semantic_class, proto_temporal_axis,
     timestamp_from_sort_or_rfc3339,
@@ -92,8 +94,10 @@ pub fn wake_response_from_result(
     max_entries: Option<usize>,
     result: GetContextResult,
 ) -> WakeResponse {
+    let lifecycle = MemoryLifecycle::read(&result.bundle);
+    let signals = RelationSignalIndex::read(&result.bundle);
     let relationships = memory_relations_from_bundle(&result.bundle);
-    let causal_spine = prioritize_wake_relationships(relationships.clone());
+    let causal_spine = prioritize_wake_relationships(relationships.clone(), &signals);
     let full_evidence = memory_evidence_from_bundle(&result.bundle);
     let current_state = rendered_current_state(&result.rendered, &result.bundle);
     let summary = rendered_summary(&result.rendered);
@@ -122,10 +126,16 @@ pub fn wake_response_from_result(
         .into_iter()
         .collect::<Vec<_>>();
 
-    // Opt-in entry cap: surface the first `max_entries` evidence entries
-    // (graph-traversal order, closest to the about) and report the withheld
-    // sources as proof.missing so proof.frontier_size signals "near-expand to
-    // cover the rest". Unset (or not exceeded) -> behavior unchanged.
+    // Opt-in entry cap: surface `max_entries` evidence entries and report the
+    // withheld sources as proof.missing so proof.frontier_size signals
+    // "near-expand to cover the rest". Unset (or not exceeded) -> every entry.
+    //
+    // Which ones survive the cap used to be graph-traversal order alone. Wake
+    // has no question to rank against, but it does have the judgment already
+    // stored on every edge, and a resume packet whose first ten entries were
+    // whatever the traversal emitted first is a worse answer than one whose
+    // first ten are what someone proved and has not withdrawn.
+    let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let resume_cursor = newest_cursor(&relationships);
 
@@ -154,14 +164,73 @@ pub fn wake_response_from_result(
             next_actions,
             guardrails,
         }),
-        proof: Some(proof(
-            relationships,
-            evidence,
-            withheld,
-            MemoryConfidence::Medium,
-        )),
+        proof: {
+            let mut wake_proof = proof(relationships, evidence, withheld, MemoryConfidence::Medium);
+            // The field has been in the contract since the proof shape
+            // existed and nothing ever filled it, so a memory whose
+            // applicability ended arrived as current state next to an empty
+            // list asserting that none had.
+            wake_proof.expired = lifecycle.expired_memories();
+            Some(wake_proof)
+        },
         warnings: Vec::new(),
     }
+}
+
+/// Orders a wake packet before the entry cap decides what survives it.
+///
+/// Lifecycle leads: what was replaced or has stopped applying is still
+/// returned — wake reports state, it does not censor it — but it goes to the
+/// back, where a cap can cut it before it cuts a live decision. Then the
+/// strongest relation the writer attached, then recency. Ties keep the
+/// traversal order they arrived in, so nothing moves without a reason.
+fn prioritize_wake_evidence(
+    evidence: Vec<MemoryEvidence>,
+    lifecycle: &MemoryLifecycle,
+    signals: &RelationSignalIndex,
+) -> Vec<MemoryEvidence> {
+    let standing = |item: &MemoryEvidence| {
+        let refs = memory_refs_of(item);
+        if refs
+            .iter()
+            .any(|item_ref| lifecycle.is_superseded(item_ref))
+        {
+            0
+        } else if refs.iter().any(|item_ref| lifecycle.is_expired(item_ref)) {
+            1
+        } else {
+            2
+        }
+    };
+
+    let mut evidence = evidence;
+    evidence.sort_by(|left, right| {
+        standing(right)
+            .cmp(&standing(left))
+            .then_with(|| {
+                signals
+                    .strength_over(memory_refs_of(right).iter().map(String::as_str))
+                    .cmp(&signals.strength_over(memory_refs_of(left).iter().map(String::as_str)))
+            })
+            .then_with(|| {
+                lifecycle
+                    .recency_rank(right.time.as_ref())
+                    .cmp(&lifecycle.recency_rank(left.time.as_ref()))
+            })
+    });
+    evidence
+}
+
+/// The memory references a response item stands for: the detail it renders
+/// and the claims it supports.
+fn memory_refs_of(item: &MemoryEvidence) -> Vec<String> {
+    item.id
+        .strip_prefix("detail:")
+        .or_else(|| item.id.strip_prefix("entry:"))
+        .map(str::to_string)
+        .into_iter()
+        .chain(item.supports.iter().cloned())
+        .collect()
 }
 
 fn l0_summary_value(summary: &str, label: &str, empty_values: &[&str]) -> Vec<String> {
@@ -294,6 +363,9 @@ pub fn ask_response_from_result(
     );
     answer_proof.matched_terms = matched_terms;
     answer_proof.matched_relations = matched_relations;
+    // Ask withholds an entry whose applicability ended rather than offering it
+    // as current. Saying so is what separates that from having nothing.
+    answer_proof.expired = MemoryLifecycle::read(&result.bundle).expired_memories();
 
     AskResponse {
         projection: None,
@@ -325,7 +397,16 @@ pub fn ask_response_from_result(
     }
 }
 
-fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<MemoryRelation> {
+/// Orders the causal spine, which is then cut to eight.
+///
+/// The declared salience of the class leads, as it always did. What is new is
+/// the second key: among two causal edges, the one the writer proved goes
+/// first, instead of whichever endpoint happened to sort earlier in the
+/// alphabet.
+fn prioritize_wake_relationships(
+    mut relationships: Vec<MemoryRelation>,
+    signals: &RelationSignalIndex,
+) -> Vec<MemoryRelation> {
     relationships.sort_by(|left, right| {
         let priority = |relationship: &MemoryRelation| match MemorySemanticClass::try_from(
             relationship.semantic_class,
@@ -338,24 +419,34 @@ fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<
             Ok(MemorySemanticClass::Structural) => 5,
             _ => 6,
         };
-        (
-            priority(left),
-            &left.source_ref,
-            &left.target_ref,
-            &left.rel,
-            &left.why,
-            &left.evidence,
-            left.sequence,
-        )
-            .cmp(&(
-                priority(right),
-                &right.source_ref,
-                &right.target_ref,
-                &right.rel,
-                &right.why,
-                &right.evidence,
-                right.sequence,
-            ))
+        let strength = |relationship: &MemoryRelation| {
+            signals.strength_of_edge(
+                &relationship.source_ref,
+                &relationship.target_ref,
+                &relationship.rel,
+            )
+        };
+        priority(left)
+            .cmp(&priority(right))
+            .then_with(|| strength(right).cmp(&strength(left)))
+            .then_with(|| {
+                (
+                    &left.source_ref,
+                    &left.target_ref,
+                    &left.rel,
+                    &left.why,
+                    &left.evidence,
+                    left.sequence,
+                )
+                    .cmp(&(
+                        &right.source_ref,
+                        &right.target_ref,
+                        &right.rel,
+                        &right.why,
+                        &right.evidence,
+                        right.sequence,
+                    ))
+            })
     });
     relationships
 }
@@ -1483,12 +1574,15 @@ mod wake_cap_tests {
             semantic_class: semantic_class as i32,
             ..Default::default()
         };
-        let prioritized = prioritize_wake_relationships(vec![
-            relation(MemorySemanticClass::Structural, "contains_entry"),
-            relation(MemorySemanticClass::Procedural, "follows"),
-            relation(MemorySemanticClass::Evidential, "supports"),
-            relation(MemorySemanticClass::Causal, "triggers"),
-        ]);
+        let prioritized = prioritize_wake_relationships(
+            vec![
+                relation(MemorySemanticClass::Structural, "contains_entry"),
+                relation(MemorySemanticClass::Procedural, "follows"),
+                relation(MemorySemanticClass::Evidential, "supports"),
+                relation(MemorySemanticClass::Causal, "triggers"),
+            ],
+            &RelationSignalIndex::default(),
+        );
 
         assert_eq!(
             prioritized
@@ -1636,5 +1730,185 @@ mod tests {
             newest_cursor(&[bare]).is_none(),
             "a bookmark that points nowhere is worse than none"
         );
+    }
+}
+
+#[cfg(test)]
+mod wake_priority_tests {
+    use std::collections::BTreeMap;
+
+    use kmp_application::{GetContextResult, queries::render_graph_bundle};
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId, KmpBundle,
+        RelationExplanation, RelationSemanticClass, Role,
+    };
+
+    use super::wake_response_from_result;
+
+    fn node(id: &str) -> BundleNode {
+        BundleNode::new(
+            id,
+            "decision",
+            id,
+            id,
+            "ACTIVE",
+            Vec::new(),
+            BTreeMap::new(),
+        )
+    }
+
+    fn detail(id: &str, text: &str) -> BundleNodeDetail {
+        BundleNodeDetail::new(id, text, "hash", 1)
+    }
+
+    fn entry(target: &str, observed_at: &str, valid_until: Option<&str>) -> BundleRelationship {
+        let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("timeline")
+            .with_scope_id("timeline:main")
+            .with_observed_at(observed_at);
+        if let Some(valid_until) = valid_until {
+            explanation = explanation.with_valid_until(valid_until);
+        }
+        BundleRelationship::new("timeline:main", target, "contains_entry", explanation)
+    }
+
+    fn proven(class: RelationSemanticClass) -> RelationExplanation {
+        RelationExplanation::new(class)
+            .with_rationale("the reserve was diverted before the repair")
+            .with_evidence("incident review 4711")
+            .with_confidence("high")
+    }
+
+    fn wake_over(
+        refs: &[&str],
+        details: Vec<BundleNodeDetail>,
+        relationships: Vec<BundleRelationship>,
+        max_entries: Option<usize>,
+    ) -> kmp_proto::v1beta1::WakeResponse {
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("resumer").expect("role"),
+            node("project:kmp"),
+            refs.iter().map(|id| node(id)).collect(),
+            relationships,
+            details,
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        wake_response_from_result(
+            "resume",
+            max_entries,
+            GetContextResult {
+                bundle,
+                rendered,
+                requested_scopes: Vec::new(),
+                served_at: std::time::SystemTime::UNIX_EPOCH,
+                timing: None,
+            },
+        )
+    }
+
+    /// The cap used to keep whatever the traversal emitted first. A resume
+    /// packet capped at one entry must keep the decision someone proved, not
+    /// the containment record that happens to sort earlier.
+    #[test]
+    fn the_entry_cap_keeps_what_the_writer_proved() {
+        let response = wake_over(
+            &[
+                "timeline:main",
+                "decision:bookkeeping",
+                "decision:proven",
+                "outcome:restored",
+            ],
+            vec![
+                detail("decision:bookkeeping", "A routine note was filed."),
+                detail(
+                    "decision:proven",
+                    "Reserve capacity was diverted overnight.",
+                ),
+            ],
+            vec![
+                entry("decision:bookkeeping", "2026-03-01T00:00:00Z", None),
+                entry("decision:proven", "2026-03-01T00:00:00Z", None),
+                BundleRelationship::new(
+                    "decision:proven",
+                    "outcome:restored",
+                    "triggers",
+                    proven(RelationSemanticClass::Causal),
+                ),
+            ],
+            Some(1),
+        );
+
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.evidence.len(), 1);
+        assert_eq!(proof.evidence[0].id, "detail:decision:proven");
+        assert_eq!(proof.frontier_size, 1);
+    }
+
+    /// `proof.expired` has been in the wake contract since the proof shape
+    /// existed and nothing ever filled it.
+    #[test]
+    fn wake_names_what_stopped_applying_instead_of_only_returning_it() {
+        let response = wake_over(
+            &["timeline:main", "constraint:ended", "decision:live"],
+            vec![
+                detail("constraint:ended", "Deploys were frozen for the audit."),
+                detail("decision:live", "The audit closed and deploys resumed."),
+            ],
+            vec![
+                entry(
+                    "constraint:ended",
+                    "2026-01-01T00:00:00Z",
+                    Some("2026-02-01T00:00:00Z"),
+                ),
+                entry("decision:live", "2026-03-01T00:00:00Z", None),
+            ],
+            None,
+        );
+
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.expired.len(), 1);
+        assert_eq!(proof.expired[0].r#ref, "constraint:ended");
+        assert!(proof.expired[0].valid_until.is_some());
+        // Still returned — wake reports state, it does not censor it — but
+        // behind what still stands, so a cap cuts the stale entry first.
+        assert_eq!(
+            proof
+                .evidence
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["detail:decision:live", "detail:constraint:ended"]
+        );
+    }
+
+    /// Two causal edges used to be separated by the alphabet.
+    #[test]
+    fn the_causal_spine_leads_with_the_better_proven_edge() {
+        let response = wake_over(
+            &["a:source", "b:source", "z:target"],
+            Vec::new(),
+            vec![
+                BundleRelationship::new(
+                    "a:source",
+                    "z:target",
+                    "triggers",
+                    RelationExplanation::new(RelationSemanticClass::Causal)
+                        .with_rationale("a why with no evidence behind it"),
+                ),
+                BundleRelationship::new(
+                    "b:source",
+                    "z:target",
+                    "triggers",
+                    proven(RelationSemanticClass::Causal),
+                ),
+            ],
+            None,
+        );
+
+        let spine = response.wake.expect("wake packet").causal_spine;
+        assert_eq!(spine[0].claim, "b:source -> z:target");
     }
 }
