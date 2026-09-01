@@ -11,10 +11,10 @@ use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
 /// `skip_serializing_if` are wire contract: what serializes here is what the
 /// browser's long poll and the MCP tools' `state` carry.
 ///
-/// Cleared optional facets are *omitted* today. That omission is the root
-/// cause pinned for [#463](https://github.com/underpass-ai/kmp/issues/463);
-/// the fix will make them explicit here and in the browser's snapshot
-/// reconciliation, in one reviewable change.
+/// A cleared search serializes as an explicit `null`, never an omission — a
+/// full snapshot must deterministically reconcile the browser, and an
+/// omitted field is indistinguishable from "leave your stale value alone"
+/// ([#463](https://github.com/underpass-ai/kmp/issues/463)).
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ViewStateDto {
     /// Which loom this is.
@@ -36,8 +36,7 @@ pub struct ViewStateDto {
     /// The drawn audit path.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub trace: Option<TraceSelectionDto>,
-    /// The search filter.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    /// The search filter; `null` when none is set.
     pub search: Option<String>,
     /// Who last moved the view.
     #[serde(skip_serializing_if = "Option::is_none")]

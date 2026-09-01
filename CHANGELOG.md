@@ -9,6 +9,19 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- ChronoLoom no longer keeps a stale search or time window after an agent
+  clears the view focus
+  ([#463](https://github.com/underpass-ai/kmp/issues/463)). A full view
+  snapshot now represents cleared optional facets unambiguously — `search`
+  and `focus.time_range` serialize as explicit `null`s instead of being
+  omitted — and the browser reconciles the snapshot instead of treating it
+  as a patch: an agent-cleared search empties the input and its hits, a
+  ref-only focus drops a previous explicit range, and framing grows the
+  cached extent so refs ingested after the probe (and their trace edge)
+  become visible.
+
 ### Changed
 
 - ChronoLoom's two halves are reorganized into explicit hexagonal boundaries

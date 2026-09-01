@@ -13,8 +13,11 @@
           "about": "string",
           "can_undo": "boolean",
           "clock": "string",
-          "focus": {},
+          "focus": {
+            "time_range": "null"
+          },
           "projection": {},
+          "search": "null",
           "view_id": "string",
           "view_revision": "integer"
         },
@@ -41,8 +44,11 @@
       "about": "string",
       "can_undo": "boolean",
       "clock": "string",
-      "focus": {},
+      "focus": {
+        "time_range": "null"
+      },
       "projection": {},
+      "search": "null",
       "view_id": "string",
       "view_revision": "integer"
     },

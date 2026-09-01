@@ -242,6 +242,82 @@ mod tests {
         assert!(!undone.can_undo);
     }
 
+    /// #463's regression: an agent clears the search and replaces an
+    /// explicit window with ref focus. The revision and provenance must
+    /// advance, and the serialized full snapshot must represent the cleared
+    /// facets unambiguously — explicit nulls, present in the wire — so the
+    /// browser reconciles instead of keeping its stale filters.
+    #[test]
+    fn nullable_filter_state_is_explicit_in_the_wire_snapshot() {
+        let registry = registry();
+        let filtered = registry
+            .apply_intent(ApplyIntentCommand {
+                view_id: Some("t".to_string()),
+                idempotency_key: Some("old-filters".to_string()),
+                intent: ViewIntentDto {
+                    focus: Some(crate::view::application::dto::FocusDto {
+                        time_range: Some(crate::view::application::dto::TimeRangeDto {
+                            from: Some("2026-08-31T16:49:00Z".into()),
+                            to: Some("2026-08-31T17:39:00Z".into()),
+                        }),
+                        refs: Vec::new(),
+                    }),
+                    search: Some(Some("attempt-000005".into())),
+                    ..ViewIntentDto::default()
+                },
+                actor: "agent:test".to_string(),
+                ..ApplyIntentCommand::default()
+            })
+            .expect("old filters apply");
+        let cleared = registry
+            .apply_intent(ApplyIntentCommand {
+                view_id: Some("t".to_string()),
+                idempotency_key: Some("clear-filters".to_string()),
+                intent: ViewIntentDto {
+                    focus: Some(crate::view::application::dto::FocusDto {
+                        time_range: None,
+                        refs: vec!["decision:new".into(), "success:old".into()],
+                    }),
+                    search: Some(None),
+                    ..ViewIntentDto::default()
+                },
+                actor: "agent:test".to_string(),
+                ..ApplyIntentCommand::default()
+            })
+            .expect("filters clear");
+        assert!(
+            cleared.state.view_revision > filtered.state.view_revision,
+            "clearing stale browser filters must advance the aggregate revision"
+        );
+        assert_eq!(
+            cleared
+                .state
+                .last_change
+                .as_ref()
+                .and_then(|change| change.idempotency_key.as_ref())
+                .map(|key| key.as_str()),
+            Some("clear-filters"),
+            "the revision provenance must identify the intent that cleared the filters"
+        );
+        let wire = serde_json::to_value(crate::view::application::mappers::view_state_dto(
+            &cleared.state,
+        ))
+        .expect("view state serializes");
+        assert!(
+            wire["search"].is_null() && wire["focus"]["time_range"].is_null(),
+            "a complete snapshot must tell the browser to clear absent filters: {wire}"
+        );
+        assert!(
+            wire.as_object()
+                .is_some_and(|state| state.contains_key("search"))
+                && wire["focus"]
+                    .as_object()
+                    .is_some_and(|focus| focus.contains_key("time_range")),
+            "null filter fields must be present, not skipped: {wire}"
+        );
+        assert_eq!(wire["focus"]["refs"][0], "decision:new");
+    }
+
     /// The boundary may hand the digest in, or leave the registry to take
     /// it — either way a retry under the same key is the same intent.
     #[test]

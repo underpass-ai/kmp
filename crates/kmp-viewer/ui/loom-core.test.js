@@ -308,3 +308,42 @@ test("a projection at an instant holds what was known and still valid", () => {
   assert.equal(JSON.stringify(projection.entries.map((e) => e.ref)), JSON.stringify(["early"]));
   assert.equal(projection.relations.length, 1, "supports reaches a drawn target even from off-screen");
 });
+
+/* ---------------- the aggregate snapshot (#463) ---------------- */
+
+test("a full snapshot's facets normalize cleared filters unambiguously", () => {
+  const cleared = loom.agentStateFacets({
+    view_revision: 42,
+    focus: { time_range: null, refs: ["decision:new", "success:old"] },
+    search: null,
+  });
+  assert.equal(cleared.search, "", "a null search reads as empty, not as leave-alone");
+  assert.equal(cleared.range, null);
+  assert.equal(cleared.explicitRange, false);
+  assert.equal(JSON.stringify(cleared.refs), JSON.stringify(["decision:new", "success:old"]));
+
+  const framed = loom.agentStateFacets({
+    focus: { time_range: { from: "2026-08-31T16:49:00Z", to: "2026-08-31T17:39:00Z" } },
+    search: "attempt-000005",
+  });
+  assert.equal(framed.search, "attempt-000005");
+  assert.equal(framed.explicitRange, true);
+  assert.equal(JSON.stringify(framed.refs), JSON.stringify([]));
+
+  const open = loom.agentStateFacets({ focus: { time_range: { from: "2026-08-31T16:49:00Z" } } });
+  assert.equal(open.explicitRange, false, "an open-ended window is not an explicit frame");
+  assert.equal(loom.agentStateFacets({}).range, null, "a bare snapshot still normalizes");
+});
+
+test("the known extent grows to include refs newer than the cached probe", () => {
+  const current = { t0: 1000, t1: 2000 };
+  const grown = loom.extentIncluding(current, 500, 3000);
+  assert.equal(grown.t0, 500);
+  assert.equal(grown.t1, 3000);
+  const inside = loom.extentIncluding(current, 1200, 1800);
+  assert.equal(inside.t0, 1000);
+  assert.equal(inside.t1, 2000);
+  const fresh = loom.extentIncluding(null, 4000, 4000);
+  assert.equal(fresh.t1, fresh.t0 + 1, "a single instant never collapses the extent");
+  assert.equal(loom.extentIncluding(current, NaN, 3000), current, "an unreadable stamp changes nothing");
+});

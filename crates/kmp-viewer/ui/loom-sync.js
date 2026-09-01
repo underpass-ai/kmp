@@ -83,9 +83,8 @@ KMP_APP.sync = (() => {
         KMP_APP.panels.renderRail();
       }
 
-      const range = state.focus && state.focus.time_range;
-      const refs = (state.focus && state.focus.refs) || [];
-      const explicitRange = Boolean(range && range.from && range.to);
+      const facets = KMP_LOOM.agentStateFacets(state);
+      const { range, refs, explicitRange } = facets;
       let framed = false;
       if (explicitRange) {
         const from = Date.parse(range.from);
@@ -96,8 +95,13 @@ KMP_APP.sync = (() => {
           KMP_APP.viewport.setWindow(view.full.t0, view.full.t1);
           framed = true;
         }
-      } else if (refs.length) {
-        framed = await frameRefs(refs);
+      } else {
+        // Ref-only (or empty) focus replaces an earlier explicit range in
+        // the complete aggregate snapshot; it is not a patch that
+        // preserves it.
+        view.focusRange = null;
+        KMP_APP.panels.syncFocusButton();
+        if (refs.length) framed = await frameRefs(refs);
       }
       // A rung is a density to fall back on, not an override: an intent that
       // named its own window asked for that window.
@@ -105,9 +109,7 @@ KMP_APP.sync = (() => {
         KMP_APP.viewport.applyZoomRung(projection.semantic_zoom);
       }
 
-      if (state.search !== undefined) {
-        KMP_APP.panels.setSearch(state.search || "");
-      }
+      KMP_APP.panels.setSearch(facets.search);
       if (state.trace) {
         tracePick.from = state.trace.from;
         tracePick.to = state.trace.to;
@@ -145,6 +147,10 @@ KMP_APP.sync = (() => {
     const lo = Math.min(...stamps);
     const hi = Math.max(...stamps);
     const pad = Math.max(60000, (hi - lo) * 0.4);
+    // The full extent is a cached probe. Include refs ingested after that
+    // probe before setWindow clamps the requested range to the stale
+    // boundary.
+    view.full = KMP_LOOM.extentIncluding(view.full, lo - pad, hi + pad);
     KMP_APP.viewport.setWindow(lo - pad, hi + pad);
     // setWindow normally reloads after the gesture settles. An agent intent
     // is atomic: load the framed projection before applying its trace or
