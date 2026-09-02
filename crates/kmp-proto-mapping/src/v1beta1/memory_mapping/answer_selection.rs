@@ -22,6 +22,10 @@ pub(super) const REACHED_BY_BRIDGE: &str = "bridge";
 /// The word pairs the table bridged on a candidate that did answer, so a
 /// citation that crossed a language says which words carried it.
 pub(super) const BRIDGED_TERMS_KEY: &str = "bridged_terms";
+/// A cited memory a writer declared to be the same thing as one the question
+/// matched: the ref it restates, and the relation that says so.
+pub(super) const RESTATED_FROM_KEY: &str = "restated_from";
+pub(super) const RESTATED_VIA_KEY: &str = "restated_via";
 /// Metadata the ranker writes about how a candidate was retrieved. It is
 /// read by people and never by the ranker: letting `valvula≈valve 0.51`
 /// back into a candidate's searchable text would make a bridged word look
@@ -32,6 +36,8 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     "reached_via",
     "reached_hops",
     BRIDGED_TERMS_KEY,
+    RESTATED_FROM_KEY,
+    RESTATED_VIA_KEY,
 ];
 
 const MAX_RERANK_CANDIDATES: usize = 64;
@@ -190,6 +196,18 @@ pub(super) fn mark_bridged(item: MemoryEvidence, pairs: &str) -> MemoryEvidence 
     let mut item = mark_reached_by(item, REACHED_BY_BRIDGE);
     item.metadata
         .insert("reached_via".to_string(), pairs.to_string());
+    item
+}
+
+/// Records, on a candidate that answers, that it does so because a writer
+/// declared it the same thing as a memory the question matched. It is cited:
+/// declared equivalence is a claim about the answer, not a route to it.
+pub(super) fn mark_restated(item: MemoryEvidence, hop: &RelationReach) -> MemoryEvidence {
+    let mut item = item;
+    item.metadata
+        .insert(RESTATED_FROM_KEY.to_string(), hop.from_ref.clone());
+    item.metadata
+        .insert(RESTATED_VIA_KEY.to_string(), hop.via_relation.clone());
     item
 }
 
