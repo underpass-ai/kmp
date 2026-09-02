@@ -1,6 +1,6 @@
 ---
 name: kmp-catchup
-description: Catch up on KMP memory since a timestamp or prior frontier. Use for what happened since, yesterday, today, or another temporal interval.
+description: Catch up on KMP memory since a timestamp or prior frontier. Use when the user asks what KMP memory holds for an interval — since, yesterday, today, a date range — or runs /kmp:catchup. A temporal question that does not reach for memory is answered without it.
 ---
 
 # KMP catchup

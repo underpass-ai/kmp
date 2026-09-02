@@ -223,5 +223,57 @@
       "kmp_goto:about",
       "kmp_near:about"
     ]
-  }
+  },
+  "invocation_gate_cases": [
+    {
+      "name": "unprompted_repository_task",
+      "prompt": "Rename this function and update its callers.",
+      "memory_routing": "on_request",
+      "selection_signals": [],
+      "tool_trace": []
+    },
+    {
+      "name": "user_names_kmp_in_spanish",
+      "prompt": "Usa kmp: ¿qué decidimos sobre el almacén?",
+      "memory_routing": "on_request",
+      "selection_signals": [
+        "user_named_kmp"
+      ],
+      "tool_trace": [
+        "kmp_wake"
+      ]
+    },
+    {
+      "name": "kmp_skill_invoked",
+      "prompt": "/kmp:catchup",
+      "memory_routing": "on_request",
+      "selection_signals": [
+        "kmp_skill_invoked"
+      ],
+      "tool_trace": [
+        "kmp_wake",
+        "kmp_forward"
+      ]
+    },
+    {
+      "name": "project_instructions_opt_in",
+      "prompt": "Continue the migration.",
+      "memory_routing": "on_request",
+      "selection_signals": [
+        "project_instructions_opt_in"
+      ],
+      "tool_trace": [
+        "kmp_wake"
+      ]
+    },
+    {
+      "name": "operator_configured_always_on",
+      "prompt": "Continue the migration.",
+      "memory_routing": "always",
+      "selection_signals": [],
+      "tool_trace": [
+        "kmp_wake"
+      ]
+    }
+  ]
 }

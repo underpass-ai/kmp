@@ -1,1 +1,1 @@
-Usage: kmp-mcp config [ask-fallback-languages <tags|none>]
+Usage: kmp-mcp config [memory-routing <on-request|always>|ask-fallback-languages <tags|none>]

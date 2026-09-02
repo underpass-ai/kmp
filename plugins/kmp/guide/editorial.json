@@ -16,10 +16,17 @@
           "evidence": "This is the agent-only operating contract shipped with the KMP plugin."
         },
         {
+          "id": "gate:invocation",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "GATE invocation. Enter KMP when the user asks for it in any language, when a kmp skill or command runs, when the project's own instructions opt in, or when the MCP initialize instructions report always-on memory routing. Otherwise call nothing and work from the material already in front of you. Every verb here governs a route already underway; none of them is a reason to open one.",
+          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request."
+        },
+        {
           "id": "verb:wake",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB wake. Use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up.",
+          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up.",
           "evidence": "The live kmp_wake contract returns an about-scoped continuation packet and resume cursor."
         },
         {
@@ -115,6 +122,14 @@
         }
       ],
       "relations": [
+        {
+          "from": "gate:invocation",
+          "to": "verb:wake",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "The invocation gate constrains when any verb may be called at all, wake included: memory is entered when it is asked for, not because it is installed.",
+          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request."
+        },
         {
           "from": "verb:wake",
           "to": "overview",

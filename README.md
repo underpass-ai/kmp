@@ -91,6 +91,16 @@ You normally ask for the outcome. The KMP skill chooses the memory moves.
 KMP is memory, not surveillance. Store durable decisions and evidence, not
 transcripts.
 
+It also waits to be asked. A session that never mentions memory makes no KMP
+call at all — the agent works from what is in front of it. Naming KMP, running
+a `/kmp:*` command, or opting in from your project's `CLAUDE.md` or `AGENTS.md`
+is what opens a route. If you would rather it enter known work on its own:
+
+```bash
+kmp-mcp config memory-routing always
+kmp-mcp config memory-routing on-request   # the default
+```
+
 ## How it works — the 10-second version
 
 ```mermaid

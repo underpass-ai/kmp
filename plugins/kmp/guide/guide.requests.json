@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:103fc18404fca79f70ff",
+    "idempotency_key": "ingest:guide-sync:1:agent:e992c49818511b807048",
     "memory": {
       "dimensions": [
         {
@@ -76,7 +76,7 @@
               "sequence": 2
             }
           ],
-          "id": "guide:kmp-agent:verb:wake",
+          "id": "guide:kmp-agent:gate:invocation",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -84,7 +84,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB wake. Use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
+          "text": "GATE invocation. Enter KMP when the user asks for it in any language, when a kmp skill or command runs, when the project's own instructions opt in, or when the MCP initialize instructions report always-on memory routing. Otherwise call nothing and work from the material already in front of you. Every verb here governs a route already underway; none of them is a reason to open one."
         },
         {
           "coordinates": [
@@ -106,7 +106,7 @@
               "sequence": 3
             }
           ],
-          "id": "guide:kmp-agent:verb:ask",
+          "id": "guide:kmp-agent:verb:wake",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -114,7 +114,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and natural-language question. Expect: cited stored text or UNKNOWN. Next: inspect a relied-on ref, trace a relied-on connection, or stop honestly at UNKNOWN after the bounded language policy."
+          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
         },
         {
           "coordinates": [
@@ -136,7 +136,7 @@
               "sequence": 4
             }
           ],
-          "id": "guide:kmp-agent:verb:time",
+          "id": "guide:kmp-agent:verb:ask",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -144,7 +144,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Temporal intent beats Ask. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete."
+          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and natural-language question. Expect: cited stored text or UNKNOWN. Next: inspect a relied-on ref, trace a relied-on connection, or stop honestly at UNKNOWN after the bounded language policy."
         },
         {
           "coordinates": [
@@ -166,7 +166,7 @@
               "sequence": 5
             }
           ],
-          "id": "guide:kmp-agent:verb:audit",
+          "id": "guide:kmp-agent:verb:time",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -174,7 +174,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte."
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Temporal intent beats Ask. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete."
         },
         {
           "coordinates": [
@@ -196,7 +196,7 @@
               "sequence": 6
             }
           ],
-          "id": "guide:kmp-agent:verb:write",
+          "id": "guide:kmp-agent:verb:audit",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -204,7 +204,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters."
+          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte."
         },
         {
           "coordinates": [
@@ -226,7 +226,7 @@
               "sequence": 7
             }
           ],
-          "id": "guide:kmp-agent:verb:view",
+          "id": "guide:kmp-agent:verb:write",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -234,7 +234,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state."
+          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters."
         },
         {
           "coordinates": [
@@ -256,7 +256,7 @@
               "sequence": 8
             }
           ],
-          "id": "guide:kmp-agent:verb:guide-sync",
+          "id": "guide:kmp-agent:verb:view",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -264,7 +264,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB guide sync. Use the shipped kmp-guide-sync.sh when setup, update or an explicit guide request must converge the installed guide. It is lifecycle work, not an MCP memory verb. Do not improvise guide entries. Minimum input: the matching installed engine and guide assets. Expect: the fixed guide abouts applied idempotently. Next: wake guide:kmp-agent for agent guidance or run open:guide for the human view."
+          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state."
         },
         {
           "coordinates": [
@@ -282,19 +282,19 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 9
             }
           ],
-          "id": "guide:kmp-agent:advanced:scope",
-          "kind": "constraint",
+          "id": "guide:kmp-agent:verb:guide-sync",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
-            "depth": "advanced",
+            "depth": "basic",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep. Abouts are opaque identifiers and are never joined by relations."
+          "text": "VERB guide sync. Use the shipped kmp-guide-sync.sh when setup, update or an explicit guide request must converge the installed guide. It is lifecycle work, not an MCP memory verb. Do not improvise guide entries. Minimum input: the matching installed engine and guide assets. Expect: the fixed guide abouts applied idempotently. Next: wake guide:kmp-agent for agent guidance or run open:guide for the human view."
         },
         {
           "coordinates": [
@@ -316,7 +316,7 @@
               "sequence": 10
             }
           ],
-          "id": "guide:kmp-agent:advanced:relations",
+          "id": "guide:kmp-agent:advanced:scope",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -324,7 +324,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema."
+          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep. Abouts are opaque identifiers and are never joined by relations."
         },
         {
           "coordinates": [
@@ -346,7 +346,7 @@
               "sequence": 11
             }
           ],
-          "id": "guide:kmp-agent:advanced:idempotency",
+          "id": "guide:kmp-agent:advanced:relations",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -354,7 +354,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry."
+          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema."
         },
         {
           "coordinates": [
@@ -376,7 +376,7 @@
               "sequence": 12
             }
           ],
-          "id": "guide:kmp-agent:advanced:pagination",
+          "id": "guide:kmp-agent:advanced:idempotency",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -384,7 +384,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
+          "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry."
         },
         {
           "coordinates": [
@@ -406,7 +406,7 @@
               "sequence": 13
             }
           ],
-          "id": "guide:kmp-agent:advanced:budgets",
+          "id": "guide:kmp-agent:advanced:pagination",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -414,7 +414,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed."
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
         },
         {
           "coordinates": [
@@ -436,15 +436,15 @@
               "sequence": 14
             }
           ],
-          "id": "guide:kmp-agent:advanced:lifecycle",
-          "kind": "instruction",
+          "id": "guide:kmp-agent:advanced:budgets",
+          "kind": "constraint",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement."
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed."
         },
         {
           "coordinates": [
@@ -466,7 +466,7 @@
               "sequence": 15
             }
           ],
-          "id": "guide:kmp-agent:advanced:reach",
+          "id": "guide:kmp-agent:advanced:lifecycle",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -474,7 +474,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything."
+          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement."
         },
         {
           "coordinates": [
@@ -496,16 +496,15 @@
               "sequence": 16
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:advanced:reach",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question."
+          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything."
         },
         {
           "coordinates": [
@@ -527,16 +526,16 @@
               "sequence": 17
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question."
         },
         {
           "coordinates": [
@@ -558,16 +557,16 @@
               "sequence": 18
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -589,16 +588,16 @@
               "sequence": 19
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -620,16 +619,16 @@
               "sequence": 20
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -651,16 +650,16 @@
               "sequence": 21
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -682,16 +681,16 @@
               "sequence": 22
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -713,16 +712,16 @@
               "sequence": 23
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -744,16 +743,16 @@
               "sequence": 24
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about."
         },
         {
           "coordinates": [
@@ -775,16 +774,16 @@
               "sequence": 25
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -806,16 +805,16 @@
               "sequence": 26
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -837,16 +836,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -866,6 +865,37 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 28
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:28:00Z",
+              "occurred_at": "2026-08-28T00:28:00Z",
+              "scope_id": "timeline",
+              "sequence": 29
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 29
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 29
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -892,6 +922,19 @@
             "guide:kmp-agent:overview"
           ],
           "text": "This is the agent-only operating contract shipped with the KMP plugin.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:gate:invocation",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:gate:invocation"
+          ],
+          "text": "The MCP initialize instructions open with a memory-routing gate whose default is on_request.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1248,12 +1291,22 @@
       ],
       "relations": [
         {
+          "class": "constraint",
+          "confidence": "high",
+          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request.",
+          "from": "guide:kmp-agent:gate:invocation",
+          "rel": "qualifies_as",
+          "sequence": 1,
+          "to": "guide:kmp-agent:verb:wake",
+          "why": "The invocation gate constrains when any verb may be called at all, wake included: memory is entered when it is asked for, not because it is installed."
+        },
+        {
           "class": "procedural",
           "confidence": "high",
           "evidence": "The agent guide overview requires recovery before re-derivation.",
           "from": "guide:kmp-agent:verb:wake",
           "rel": "follows",
-          "sequence": 1,
+          "sequence": 2,
           "to": "guide:kmp-agent:overview",
           "why": "Wake is the entry verb because known work must be recovered before any narrower route is chosen."
         },
@@ -1263,7 +1316,7 @@
           "evidence": "Wake returns current state; Ask retrieves evidence for the remaining non-temporal question.",
           "from": "guide:kmp-agent:verb:ask",
           "rel": "uses_background",
-          "sequence": 2,
+          "sequence": 3,
           "to": "guide:kmp-agent:verb:wake",
           "why": "Semantic Ask is chosen only after wake establishes the exact about and leaves a genuinely semantic gap."
         },
@@ -1273,7 +1326,7 @@
           "evidence": "The live router contract gives temporal intent precedence over Ask.",
           "from": "guide:kmp-agent:verb:time",
           "rel": "corrects",
-          "sequence": 3,
+          "sequence": 4,
           "to": "guide:kmp-agent:verb:ask",
           "why": "Temporal navigation corrects the route when the original request concerns change or a time boundary rather than semantic relevance."
         },
@@ -1283,7 +1336,7 @@
           "evidence": "Ask returns refs; inspect and trace preserve their stored proof.",
           "from": "guide:kmp-agent:verb:audit",
           "rel": "uses_background",
-          "sequence": 4,
+          "sequence": 5,
           "to": "guide:kmp-agent:verb:ask",
           "why": "Inspection or tracing audits the exact refs retained by semantic retrieval."
         },
@@ -1293,7 +1346,7 @@
           "evidence": "Strict writer validation accepts read_context as the audit of prior reads.",
           "from": "guide:kmp-agent:verb:write",
           "rel": "uses_background",
-          "sequence": 5,
+          "sequence": 6,
           "to": "guide:kmp-agent:verb:audit",
           "why": "A related durable write should be grounded in refs the agent actually read rather than reconstructed context."
         },
@@ -1303,7 +1356,7 @@
           "evidence": "ChronoLoom state is a camera position and is not itself proof.",
           "from": "guide:kmp-agent:verb:view",
           "rel": "follows",
-          "sequence": 6,
+          "sequence": 7,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The visual lane frames retrieved proof only after the memory lane has selected it."
         },
@@ -1313,7 +1366,7 @@
           "evidence": "The guide requests use stable refs and content-derived idempotency keys.",
           "from": "guide:kmp-agent:verb:guide-sync",
           "rel": "updates_state",
-          "sequence": 7,
+          "sequence": 8,
           "to": "guide:kmp-agent:overview",
           "why": "Guide sync converges the shipped operating contract before either audience reads it."
         },
@@ -1323,7 +1376,7 @@
           "evidence": "Read schemas default to current_about and require explicit broader scope.",
           "from": "guide:kmp-agent:advanced:scope",
           "rel": "qualifies_as",
-          "sequence": 8,
+          "sequence": 9,
           "to": "guide:kmp-agent:verb:wake",
           "why": "About scope constrains which memories any wake or later read is allowed to cross."
         },
@@ -1333,7 +1386,7 @@
           "evidence": "The writer reports rich versus anemic relation quality.",
           "from": "guide:kmp-agent:advanced:relations",
           "rel": "qualifies_as",
-          "sequence": 9,
+          "sequence": 10,
           "to": "guide:kmp-agent:verb:write",
           "why": "Relation quality determines whether a write preserves an auditable why or only adjacency."
         },
@@ -1343,7 +1396,7 @@
           "evidence": "A key conflict means content changed, while an exact replay is already applied.",
           "from": "guide:kmp-agent:advanced:idempotency",
           "rel": "qualifies_as",
-          "sequence": 10,
+          "sequence": 11,
           "to": "guide:kmp-agent:verb:write",
           "why": "Idempotency constrains retry behavior for every logical write."
         },
@@ -1353,7 +1406,7 @@
           "evidence": "The live read responses expose has_more and an opaque next_cursor.",
           "from": "guide:kmp-agent:advanced:pagination",
           "rel": "qualifies_as",
-          "sequence": 11,
+          "sequence": 12,
           "to": "guide:kmp-agent:verb:time",
           "why": "Temporal and bounded reads are truthful only when their continuation is consumed or disclosed."
         },
@@ -1363,7 +1416,7 @@
           "evidence": "The live projections return the stable floor with a warning and reserve invalid_argument for max_bytes values below 512.",
           "from": "guide:kmp-agent:advanced:budgets",
           "rel": "qualifies_as",
-          "sequence": 12,
+          "sequence": 13,
           "to": "guide:kmp-agent:advanced:pagination",
           "why": "The stable response floor constrains byte-budget handling so a small valid ceiling cannot turn a bounded read into an error or silently erase its canonical object."
         },
@@ -1373,7 +1426,7 @@
           "evidence": "Ask proof exposes superseded, conflicts and expired separately.",
           "from": "guide:kmp-agent:advanced:lifecycle",
           "rel": "uses_background",
-          "sequence": 13,
+          "sequence": 14,
           "to": "guide:kmp-agent:verb:ask",
           "why": "An answer must preserve whether older evidence was replaced, remains conflicting or merely expired."
         },
@@ -1383,7 +1436,7 @@
           "evidence": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 14,
+          "sequence": 15,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1393,7 +1446,7 @@
           "evidence": "Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 15,
+          "sequence": 16,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1403,7 +1456,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 16,
+          "sequence": 17,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1413,7 +1466,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 17,
+          "sequence": 18,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1423,7 +1476,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 18,
+          "sequence": 19,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1433,7 +1486,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 19,
+          "sequence": 20,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1443,7 +1496,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 20,
+          "sequence": 21,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1453,7 +1506,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 21,
+          "sequence": 22,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1463,7 +1516,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 22,
+          "sequence": 23,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1473,7 +1526,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 23,
+          "sequence": 24,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1483,7 +1536,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 24,
+          "sequence": 25,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1493,7 +1546,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1503,7 +1556,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }

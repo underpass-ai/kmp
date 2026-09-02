@@ -46,7 +46,7 @@ architecture; the reviewer holds the rest.
 | `projection` | Kernel response → tool output: byte budgets, pagination truth, per-family mappers | `kmp.rs` + `kmp/` |
 | `write` | Write intent → canonical ingest: intent domain, read-context mapper, validation and relation-quality policies, preflight and commit | `write.rs`, `write/relation_quality.rs`, `ingest.rs` |
 | `lifecycle` | Setup, update, doctor/info, inventory, memory rescue, removal — one context, narrow ports | `lifecycle/` today; absorbs `uninstall.rs`, `diagnostics.rs`, `memories.rs` |
-| `serving` | The MCP boundary: stdio JSON-RPC transport, backend port and its adapters, tool errors, telemetry, view tools, agent policy | `server.rs`, `backend.rs`, `embedded.rs`, `grpc.rs` + `grpc/`, `fixture.rs`, `tool_error.rs`, `observability.rs`, `view_tools.rs`, `agent_policy.rs`, `clock.rs` |
+| `serving` | The MCP boundary: stdio JSON-RPC transport, backend port and its adapters, tool errors, telemetry, view tools, agent policy | `server.rs`, `backend.rs`, `embedded.rs`, `grpc.rs` + `grpc/`, `fixture.rs`, `tool_error.rs`, `observability.rs`, `view_tools.rs`, `agent_policy/`, `clock.rs` |
 | `reader` | Person-facing read operations: document rendering, snapshots | `document.rs`, `snapshot.rs` |
 | `cli` | Parsing, presentation and thin composition roots | `main.rs`, `banner.rs`, `style.rs`, `pulse.rs`, `viewer.rs` |
 | `plugin_notice`, `guide` | Already-shaped contexts | audited in place |
@@ -75,7 +75,7 @@ an audit finding demotes a file back into this table.
 | `tool_error.rs` (199, 2 types) | Error code + envelope | `serving/` domain, one type per file |
 | `observability.rs` (542, 3 types) | OTel wiring + error classification | `serving/adapters/` telemetry; classification joins `tool_error` |
 | `view_tools.rs` (420, 2 types) | Three ChronoLoom view tools | `serving/` use case per tool over the view port |
-| `agent_policy.rs` (452) | Persistent agent guidance, storage inline | `serving/`: policy domain + store adapter (audit decides final seam) |
+| `agent_policy/{mod,instructions,memory_routing}.rs` (528/166/91) | Persistent agent guidance: config storage inline in `mod.rs`, the initialize text and the routing mode already split out | `serving/`: policy domain + store adapter (audit decides final seam) |
 | `clock.rs` (168) | Stamp plausibility | `serving/` domain, likely compliant — audit |
 | `document.rs` (687) | One command: about → readable document | `reader/`: use case over budgeted projection port + renderer adapter |
 | `snapshot.rs` (187) | Recovery points over bundles | `reader/` use case — audit |

@@ -9,6 +9,28 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp-mcp config memory-routing <on-request|always>` decides whether an agent
+  enters known work through `kmp_wake` without being asked. The default is
+  `on-request`, and `kmp-mcp config`, `info` and `doctor` all report which mode
+  is active and where it came from.
+
+### Changed
+
+- KMP is opt-in ([#476](https://github.com/underpass-ai/kmp/issues/476)). The
+  `kmp-memory` skill used to describe itself as a rule for every session — "use
+  whenever the work continues something earlier", which is what work is — and
+  the MCP initialize instructions told an agent not to leave for repository
+  evidence while a KMP page was incomplete, before anything had asked for KMP
+  at all. Both now open with a gate: memory is entered when the user names it
+  in any language, when a kmp skill or command runs, when the project's own
+  instructions opt in, or when an operator has chosen always-on routing.
+  Everything after the gate is unchanged — temporal precedence, bounded Ask,
+  opaque abouts and refs, byte-exact evidence — and now says what it always
+  meant, that it governs a route already underway rather than a reason to open
+  one.
+
 ## [0.7.1] - 2026-09-02
 
 ### Fixed
