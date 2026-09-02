@@ -9,6 +9,28 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_ask` can reach memory the question's own words never matched, and says
+  how it got there. A proven causal or motivational relation is walked out from
+  something the question did match, and this store's own vocabulary — words it
+  keeps using in the same entry — carries a question to a memory that names the
+  other one ([#466](https://github.com/underpass-ai/kmp/issues/466)). Both
+  arrive in `proof.evidence` marked with `reached_by`, after everything matched
+  directly, and neither is ever cited in `because`: the route is evidence about
+  the store, not a claim the reader made.
+- A retrieval baseline, so a change to ranking can be shown to help rather than
+  to move things around
+  ([#467](https://github.com/underpass-ai/kmp/issues/467)). A judged collection
+  of eleven cases, each naming the behaviour it measures, is scored offline and
+  without a model — Recall@k, MRR, nDCG@10, whether the answer *cited* the
+  judged ref rather than merely retrieving it, and the rate of UNKNOWN on
+  questions whose answer is present by construction. `docs/development/
+  retrieval-baseline.tsv` records the floors the way `coverage-floors.tsv`
+  already does, and one case fails on purpose so the number a semantic layer
+  would have to move is visible
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)).
+
 ### Fixed
 
 - ChronoLoom no longer keeps a stale search or time window after an agent
@@ -21,6 +43,24 @@ Detailed notes from the early release cycle remain available in the
   ref-only focus drops a previous explicit range, and framing grows the
   cached extent so refs ingested after the probe (and their trace edge)
   become visible.
+
+- `proof.expired` was declared in the wake and ask contract and never filled, so
+  a kernel whose own guide insists supersession, contradiction and expiry are
+  three different lifecycles was reading one of them and returning an empty list
+  asserting the others had not happened. All three verbs now populate it, and
+  `kmp_ask` withholds an entry whose applicability ended rather than offering it
+  as current — and says so instead of doing it silently.
+- `proof.expired` was unreachable on a temporal read with a time cursor, which
+  is the natural way to ask what held on a date: the traversal dropped intervals
+  that had already ended before the response mapper could name them, so the one
+  read whose whole subject is validity reported none of it. On the recorded
+  clocks the field was gated off entirely, and a `goto` returned a constraint
+  that had lapsed weeks earlier with nothing beside it saying so.
+- The `kmp_ask` eligibility floor refused a candidate longer than average that
+  matched exactly the concept the floor was made of. The bar was fixed at the
+  average length while a candidate's score carries its own length
+  normalization, so a memory that plainly answered a question came back UNKNOWN.
+  Length now decides how well something answers, not whether it may.
 
 ### Changed
 
@@ -37,6 +77,35 @@ Detailed notes from the early release cycle remain available in the
   gestures) with `loom.js` as the composition root. No behavior or wire
   change: today's snapshot serialization, #463's bug included, is pinned by
   tests until the fix lands on the new seams.
+
+- `kmp_ask` weighs words instead of counting them. BM25 over the candidates of
+  each question replaces a tally of shared concepts, so a rare word outranks a
+  common one, repetition saturates, and a long entry no longer wins for offering
+  more surface. Eligibility follows: the floor is the median informativeness of
+  what was asked rather than a count of shared words, which is what used to
+  discard — unscored — the candidate matching the one word that named the
+  subject.
+- `kmp_ask` recognises the other shapes of a word. Snowball stems every term the
+  concept table leaves alone, in the language read once from the stored memory
+  itself, so `deployed` reaches `deployment` and `valvulas` reaches `valvula`.
+  A memory whose language cannot be read, or that mixes two evenly, keeps exact
+  matching. Adds `rust-stemmers` as a runtime dependency of the published
+  `kmp-proto-mapping`.
+- `kmp_ask` uses the judgment already stored on every relation. Semantic class,
+  the writer's own quality rule and declared confidence weigh a candidate, the
+  question's shape routes it to the relation types that answer it, and an entry
+  whose `valid_until` has passed stops competing with one that still applies.
+- `kmp_wake` orders the packet before the entry cap decides what survives it.
+  Lifecycle first, then the strongest relation the writer attached, then
+  recency, with traversal order kept for ties. Nothing is dropped, but a cap now
+  cuts stale material before it cuts a live decision. **A caller that depended on
+  the previous graph-traversal order will receive different entries.**
+- The dimension axis narrows what a read loads instead of what it returns
+  ([#468](https://github.com/underpass-ai/kmp/issues/468)). The scopes the
+  application already resolved travel to the persistence port, and the embedded
+  store stops descending into a dimension nobody asked for. The narrowing is a
+  hint and never a contract: an adapter that ignores it stays correct and only
+  stays slow, and retrieval quality is measurably unchanged.
 
 ## [0.6.2] - 2026-08-31
 
