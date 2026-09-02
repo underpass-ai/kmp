@@ -98,9 +98,23 @@ global `mcp_servers.kmp` table or copy prompts and AGENTS fragments beside it.
 ### Agent routing policy
 
 `kmp-mcp config` shows the policy agents receive at MCP initialization and the
-file that owns it. With no file, genuinely semantic `kmp_ask` calls get one
-bounded English retry after the user's-language question returns `UNKNOWN`.
-Configure a different ordered list during setup with:
+file that owns it.
+
+The policy opens with a gate. By default memory is **opt-in**: an agent calls a
+kmp tool when the user asks for KMP or its memory, when a kmp skill or command
+runs, or when the project's own instructions opt in — and otherwise makes no
+call. Everything after the gate governs a route already underway. An operator
+who wants known work to enter through `kmp_wake` unprompted asks for it:
+
+```bash
+kmp-mcp config memory-routing always
+# or back to opt-in
+kmp-mcp config memory-routing on-request
+```
+
+With no file, genuinely semantic `kmp_ask` calls get one bounded English retry
+after the user's-language question returns `UNKNOWN`. Configure a different
+ordered list during setup with:
 
 ```bash
 kmp-mcp config ask-fallback-languages en,fr

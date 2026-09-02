@@ -122,7 +122,15 @@ mod tests {
         assert_eq!(result["metadata"]["backend"], "stub");
         assert_eq!(result["metadata"]["grpc_tls"], "mutual");
         let instructions = result["instructions"].as_str().expect("instructions");
-        assert!(instructions.contains("Temporal intent has precedence"));
+        // Whichever routing mode this machine configured, its gate is served
+        // ahead of the rules it scopes.
+        let routing_rules = instructions
+            .find("Temporal intent has precedence")
+            .expect("routing rules");
+        assert!(
+            routing_rules > 0,
+            "initialize must open with the memory-routing gate"
+        );
         assert!(instructions.contains("Preserve evidence text"));
         assert!(instructions.contains("Refs are opaque identifiers"));
         assert!(instructions.contains("Never prefix or qualify it with an about"));

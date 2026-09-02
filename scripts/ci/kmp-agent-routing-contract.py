@@ -184,9 +184,46 @@ if set(unknown_guard["forbidden_next_moves"]).intersection(
 if unknown_guard["post_unknown_tool_trace"] != [unknown_guard["next_move"]]:
     fail("bounded semantic UNKNOWN made another tool call before terminating")
 
+# Nothing above starts a route: KMP is entered when it is asked for. A session
+# that never mentions memory must reach the end of its work having called
+# nothing, and the fixture proves both directions of that gate.
+SELECTION_SIGNALS = {
+    "user_named_kmp",
+    "kmp_skill_invoked",
+    "project_instructions_opt_in",
+}
+routing_modes = set()
+unprompted = 0
+for case in FIXTURE["invocation_gate_cases"]:
+    name = case["name"]
+    routing = case["memory_routing"]
+    if routing not in {"on_request", "always"}:
+        fail(f"{name}: unknown memory routing mode {routing!r}")
+    routing_modes.add(routing)
+    signals = set(case["selection_signals"])
+    if signals - SELECTION_SIGNALS:
+        fail(f"{name}: unknown selection signal {sorted(signals - SELECTION_SIGNALS)}")
+    selected = bool(signals) or routing == "always"
+    called = [call for call in case["tool_trace"] if call.startswith("kmp_")]
+    if selected and not called:
+        fail(f"{name}: a selected route never entered KMP")
+    if not selected and called:
+        fail(f"{name}: KMP was called without being asked: {called}")
+    if not selected:
+        unprompted += 1
+if routing_modes != {"on_request", "always"}:
+    fail("the invocation gate does not cover both routing modes")
+if not unprompted:
+    fail("no fixture proves an unprompted session stays out of KMP")
+for signal in SELECTION_SIGNALS:
+    if not any(
+        signal in case["selection_signals"] for case in FIXTURE["invocation_gate_cases"]
+    ):
+        fail(f"the invocation gate does not cover the {signal} signal")
+
 instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
-    ROOT / "crates/kmp-mcp/src/agent_policy.rs",
+    ROOT / "crates/kmp-mcp/src/agent_policy/instructions.rs",
 ]
 required = (
     "temporal intent",
@@ -233,6 +270,15 @@ for asset in opaque_ref_instruction_assets:
     ):
         if phrase not in text:
             fail(f"{asset.relative_to(ROOT)} lost bounded-Ask/about rule: {phrase}")
+
+for asset in instruction_assets:
+    text = " ".join(asset.read_text(encoding="utf-8").casefold().split())
+    for phrase in ("opt-in", "make no kmp call", "always-on"):
+        if phrase not in text:
+            fail(f"{asset.relative_to(ROOT)} lost the invocation gate: {phrase}")
+    for phrase in ("use whenever", "always enters through"):
+        if phrase in text:
+            fail(f"{asset.relative_to(ROOT)} makes KMP mandatory again: {phrase}")
 
 write_instruction_assets = [
     ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md",
@@ -290,7 +336,8 @@ else:
         fail("live MCP schema lost the explicit dry-run preview path")
 
 print(
-    "KMP agent routing contract passed: two languages, complete temporal pages, "
+    "KMP agent routing contract passed: opt-in invocation, two languages, "
+    "complete temporal pages, "
     "result-driven UNKNOWN routing, bounded Ask selections, audit gates, opaque "
     "abouts and refs, byte-exact evidence, shared-view intents, single-call "
     "validated writes"

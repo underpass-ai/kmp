@@ -1,6 +1,6 @@
 ---
 name: kmp-memory
-description: Operate KMP agent memory through the kmp MCP server — recover context at session start instead of re-deriving it, answer questions from stored evidence, navigate history in time, audit a claim back to its proof, and record decisions with relations that carry their why. Use whenever the work continues something earlier (an ongoing project, an incident, a task with prior decisions), whenever you are about to re-derive context you may already have, whenever you need to justify a claim with evidence, and whenever a decision, constraint or outcome is reached that later sessions will need.
+description: Operate KMP agent memory through the kmp MCP server — recover stored context instead of re-deriving it, answer questions from stored evidence, navigate history in time, audit a claim back to its proof, and record decisions with relations that carry their why. Use it when the user asks for KMP or its memory in any language, when a /kmp:* skill or command runs, when the project's own instructions opt in, or when the MCP initialize instructions report always-on memory routing. Without one of those, work from the material already in front of you and make no KMP call.
 ---
 
 # KMP agent memory
@@ -11,14 +11,35 @@ answer is derived from stored evidence by construction. Nothing here
 generates prose. If the memory does not support an answer, `kmp_ask` returns
 `UNKNOWN` — that is a correct result, not a failure to work around.
 
+## Invoked, not assumed
+
+KMP is opt-in. This skill governs what happens once something selects it; it
+does not claim every session. Four things select it:
+
+- the user names KMP or its memory, in any language — "usa kmp", "what does
+  memory say", "check the store";
+- a `/kmp:*` skill or command runs;
+- the project's own instructions (`CLAUDE.md`, `AGENTS.md`) opt in;
+- the MCP initialize instructions report always-on routing, which an operator
+  turns on deliberately with `kmp-mcp config memory-routing always`.
+
+Without one of those, do the work from the material in front of you and make
+no KMP call. An unbidden `kmp_wake` against an empty or unrelated store is not
+a free no-op: it spends a round trip and can shape the answer with evidence
+nobody asked for.
+
+Everything below is about a route already underway. Temporal precedence, page
+continuation, do not leave for repository files mid-page — those govern a KMP
+call in flight. None of them is a reason to start one.
+
 ## Use this as a router, not a tool glossary
 
 Choose a lane before the first call, then let every result choose the next
 move. Do not select `kmp_ask` once and keep treating the whole task as semantic
 when the evidence says it is not.
 
-Known work always enters through `kmp_wake`; apply the remaining rows to the
-part of the goal the wake packet did not already answer.
+Once invoked, known work enters through `kmp_wake`; apply the remaining rows
+to the part of the goal the wake packet did not already answer.
 
 | Signal in the user's goal | First move |
 | --- | --- |
@@ -96,9 +117,10 @@ Before continuing the conversation after a shared-view interaction, call
 the agent's last intent, and the next answer must continue from what both are
 actually looking at.
 
-## Start here: recover before you re-derive
+## Recover before you re-derive
 
-When the work continues something earlier, the first move is:
+Once the route is open and the work continues something earlier, the first
+move is:
 
 ```
 kmp_wake { about: "project:kmp" }

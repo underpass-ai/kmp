@@ -70,7 +70,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
-                 `config [ask-fallback-languages <tags>]` / \
+                 `config [memory-routing <mode>|ask-fallback-languages <tags>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
                  `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR]` / \
@@ -128,7 +128,9 @@ fn subcommand_usage(command: &str) -> &'static str {
     match command {
         "info" => "kmp-mcp info",
         "doctor" => "kmp-mcp doctor",
-        "config" => "kmp-mcp config [ask-fallback-languages <tags|none>]",
+        "config" => {
+            "kmp-mcp config [memory-routing <on-request|always>|ask-fallback-languages <tags|none>]"
+        }
         "document" => "kmp-mcp document <about> [--out FILE]",
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
         "plugin" => "kmp-mcp plugin resolve-engine|notice --plugin-root DIR",
@@ -168,6 +170,7 @@ kmp-mcp doctor                  Diagnose the setup and name the one thing to fix
 kmp-mcp setup                   Align installed native plugins and engines\n  \
 kmp-mcp update                  Update every installed KMP host as one convergence\n  \
 kmp-mcp config                  Show the agent orchestration policy\n  \
+kmp-mcp config memory-routing <on-request|always>\n  \
 kmp-mcp config ask-fallback-languages <tags|none>\n  \
 kmp-mcp guide sync --plugin-root DIR\n  \
                                 Converge the two immutable shipped guides\n  \

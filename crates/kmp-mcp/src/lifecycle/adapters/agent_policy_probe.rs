@@ -12,10 +12,15 @@ pub(crate) fn agent_policy_finding() -> LifecycleFinding {
             LifecycleFinding::new(
                 DiagnosticSeverity::Ok,
                 format!(
-                    "semantic Ask fallback: {languages} ({})",
-                    policy.source_label()
+                    "memory routing: {} ({})",
+                    policy.memory_routing.label(),
+                    policy.routing_source_label()
                 ),
             )
+            .with_detail(format!(
+                "semantic Ask fallback: {languages} ({})",
+                policy.source_label()
+            ))
             .with_detail(format!("config: {}", policy.path.display()))
             .with_detail("temporal intent bypasses Ask and navigates time first")
         }

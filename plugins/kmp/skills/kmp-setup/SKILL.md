@@ -30,8 +30,16 @@ the explicit ownership repair for the requested setup.
 Standalone Codex wiring is retired. The native plugin is the single MCP owner;
 reject `--standalone` and diagnose any old global registration as a collision.
 
-Show the active semantic-Ask fallback policy with `kmp-mcp config`. Change it
-with `kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
+Show the active agent policy with `kmp-mcp config`. It reports two settings.
+
+`memory routing` decides whether an agent enters KMP unasked. The default is
+`on request`: memory is called when the user asks for KMP, when a kmp skill or
+command runs, or when the project opts in. Change it only when the user asks
+for always-on recall, with `kmp-mcp config memory-routing always`;
+`on-request` returns to the default. Never turn it on as part of an install.
+
+Change the semantic-Ask fallback policy with
+`kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
 user requests a different list; `none` disables retries. With no config, one
 English retry is active by default. Explain that only a semantic query may be
 translated: answer in the user's language and preserve stored evidence, refs,
