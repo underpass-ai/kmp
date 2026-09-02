@@ -67,22 +67,41 @@ impl LexicalField {
         (1.0 + (documents - frequency + 0.5) / (frequency + 0.5)).ln()
     }
 
-    /// The BM25 score of one candidate against one question.
+    /// The BM25 score of one candidate against one question, every term
+    /// weighing the same. Retrieval always weighs them, so only the tests of
+    /// the formula itself ask for the plain form.
+    #[cfg(test)]
     pub(super) fn score(&self, question: &TermCounts, document: &TermCounts) -> f64 {
+        self.score_weighted(
+            &question.terms().map(|term| (term.clone(), 1.0)).collect(),
+            document,
+        )
+    }
+
+    /// The same, where a term may count for less than a whole one.
+    ///
+    /// A word the reader wrote weighs one. A word this memory associates with
+    /// it weighs a fraction, so an expansion can lift a candidate the question
+    /// nearly reached and can never outvote the words actually typed.
+    pub(super) fn score_weighted(
+        &self,
+        weights: &BTreeMap<String, f64>,
+        document: &TermCounts,
+    ) -> f64 {
         if self.documents == 0 || self.average_length <= 0.0 {
             return 0.0;
         }
         let length_ratio = document.length() as f64 / self.average_length;
-        question
-            .terms()
-            .map(|term| {
+        weights
+            .iter()
+            .map(|(term, weight)| {
                 let frequency = document.count(term) as f64;
                 if frequency == 0.0 {
                     return 0.0;
                 }
                 let saturation =
                     frequency * (K1 + 1.0) / (frequency + K1 * (1.0 - B + B * length_ratio));
-                self.inverse_document_frequency(term) * saturation
+                weight * self.inverse_document_frequency(term) * saturation
             })
             .sum()
     }

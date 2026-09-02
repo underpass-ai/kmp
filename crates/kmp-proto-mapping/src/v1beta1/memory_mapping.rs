@@ -1,4 +1,5 @@
 mod answer_ranker;
+mod association_index;
 mod bundle_views;
 mod dimensions;
 mod ingest;
