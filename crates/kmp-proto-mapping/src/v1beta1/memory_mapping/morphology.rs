@@ -2,6 +2,9 @@ use std::borrow::Cow;
 
 use rust_stemmers::{Algorithm, Stemmer};
 
+use super::language_vocabulary::LanguageVocabulary;
+use super::search_terms::fold_search_term;
+
 /// Folds a word onto its stem, so a memory written once can be found by the
 /// other shapes of the same word.
 ///
@@ -28,9 +31,16 @@ use rust_stemmers::{Algorithm, Stemmer};
 /// `válvula` — so the Spanish suffixes written with an accent, `-ción` above
 /// all, are no longer there for the algorithm to find. Both gaps are
 /// synonymy-shaped, and belong to a layer above this one.
-#[derive(Default)]
 pub(super) struct Morphology {
     stemmer: Option<Stemmer>,
+}
+
+/// A memory nobody has read yet stems nothing, which is the same answer as a
+/// memory whose language cannot be read.
+impl Default for Morphology {
+    fn default() -> Self {
+        Self::none()
+    }
 }
 
 impl std::fmt::Debug for Morphology {
@@ -42,11 +52,6 @@ impl std::fmt::Debug for Morphology {
     }
 }
 
-/// Enough evidence to be reading a language rather than guessing at one, and
-/// a clear enough majority — two in three — that one language is not having
-/// the other's rules applied to it.
-const MINIMUM_SIGNALS: usize = 3;
-
 impl Morphology {
     /// Nothing is stemmed. What a store whose language cannot be read gets,
     /// and what every caller got before this existed.
@@ -54,40 +59,28 @@ impl Morphology {
         Self { stemmer: None }
     }
 
-    /// Reads the language of a memory from the function words in it.
+    /// Reads the language of a memory, and takes the stemmer for it.
     ///
-    /// Function words are the right signal because they are the ones a writer
-    /// does not choose: a Spanish sentence carries `de`, `que`, `la` whatever
-    /// it is about, and its nouns may well be English product names.
+    /// A language the vocabulary can name but this has no stemmer for reads as
+    /// no language at all, which leaves the memory exactly as written rather
+    /// than stemmed by somebody else's rules.
     pub(super) fn read<'a>(texts: impl IntoIterator<Item = &'a str>) -> Self {
-        let mut spanish = 0usize;
-        let mut english = 0usize;
-        for text in texts {
-            for token in text
-                .split(|character: char| !character.is_alphanumeric())
-                .map(super::answer_ranker::fold_search_term)
-            {
-                if SPANISH_FUNCTION_WORDS.contains(&token.as_str()) {
-                    spanish += 1;
-                } else if ENGLISH_FUNCTION_WORDS.contains(&token.as_str()) {
-                    english += 1;
-                }
-            }
-        }
-
-        let (winner, total) = (spanish.max(english), spanish + english);
-        if winner < MINIMUM_SIGNALS || winner * 3 < total * 2 {
-            // Too little to read, or too even to call. A store that mixes two
-            // languages evenly keeps exact matching rather than having one of
-            // them stemmed by the other's rules.
-            return Self::none();
-        }
+        let tokens = texts
+            .into_iter()
+            .flat_map(|text| text.split(|character: char| !character.is_alphanumeric()))
+            .map(fold_search_term)
+            .collect::<Vec<_>>();
+        let language = LanguageVocabulary::shipped().read(tokens.iter().map(String::as_str));
         Self {
-            stemmer: Some(Stemmer::create(if spanish > english {
-                Algorithm::Spanish
-            } else {
-                Algorithm::English
-            })),
+            stemmer: language.and_then(Self::stemmer_for).map(Stemmer::create),
+        }
+    }
+
+    fn stemmer_for(language: &str) -> Option<Algorithm> {
+        match language {
+            "spanish" => Some(Algorithm::Spanish),
+            "english" => Some(Algorithm::English),
+            _ => None,
         }
     }
 
@@ -106,22 +99,6 @@ impl Morphology {
         self.stemmer.is_some()
     }
 }
-
-/// Function words that belong to one language and not the other. `a` and `no`
-/// are in both and are left out; a word that cannot tell the two apart cannot
-/// help decide between them.
-const SPANISH_FUNCTION_WORDS: &[&str] = &[
-    "al", "como", "con", "cual", "cuando", "de", "del", "donde", "el", "en", "es", "esta", "este",
-    "fue", "ha", "hay", "la", "las", "lo", "los", "mas", "para", "pero", "por", "porque", "que",
-    "se", "ser", "si", "sin", "sobre", "su", "sus", "un", "una", "y", "ya",
-];
-
-const ENGLISH_FUNCTION_WORDS: &[&str] = &[
-    "about", "after", "against", "an", "and", "are", "as", "at", "be", "because", "been", "before",
-    "but", "by", "did", "does", "for", "from", "had", "has", "have", "how", "if", "in", "into",
-    "is", "it", "its", "of", "on", "or", "our", "than", "that", "the", "their", "then", "there",
-    "this", "to", "was", "were", "what", "when", "where", "which", "who", "why", "will", "with",
-];
 
 #[cfg(test)]
 mod tests {

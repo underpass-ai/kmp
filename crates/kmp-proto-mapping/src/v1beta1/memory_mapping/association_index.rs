@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use super::lexical_index::TermCounts;
+use super::term_counts::TermCounts;
 
 /// What this memory has learned that its own words mean together.
 ///

@@ -1763,6 +1763,7 @@ dependencies = [
  "kmp-proto",
  "prost-types 0.13.5",
  "rust-stemmers",
+ "serde",
  "serde_json",
  "sha2",
  "tonic 0.12.3",

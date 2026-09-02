@@ -1,0 +1,191 @@
+{
+  "note": "What kind of connection a question is asking about. A family names the relation types and semantic classes that answer it, and the words that ask for it. Written folded and without diacritics, because that is the form a question reaches the reader in. Adding a word here is a data change, not a code change.",
+  "families": [
+    {
+      "id": "why",
+      "semantic_classes": [
+        "causal",
+        "motivational"
+      ],
+      "relation_types": [
+        "chosen_because",
+        "triggers",
+        "authorizes",
+        "depends_on",
+        "contributes_to"
+      ],
+      "tokens": [
+        "causa",
+        "cause",
+        "caused",
+        "causes",
+        "motive",
+        "motivo",
+        "porque",
+        "proposito",
+        "purpose",
+        "rationale",
+        "razon",
+        "razones",
+        "reason",
+        "why"
+      ],
+      "token_prefixes": []
+    },
+    {
+      "id": "lifecycle",
+      "semantic_classes": [
+        "causal",
+        "evidential"
+      ],
+      "relation_types": [
+        "supersedes",
+        "corrects",
+        "semantic_delta_from",
+        "updates_state",
+        "restates",
+        "contradicts"
+      ],
+      "tokens": [
+        "anterior",
+        "cambio",
+        "changed",
+        "corrected",
+        "corrigio",
+        "former",
+        "previo",
+        "previous",
+        "prior",
+        "replace",
+        "replaced",
+        "replaces",
+        "supersede",
+        "superseded",
+        "supersedes"
+      ],
+      "token_prefixes": [
+        "actualiz",
+        "reemplaz",
+        "sustitu"
+      ]
+    },
+    {
+      "id": "evidence",
+      "semantic_classes": [
+        "evidential"
+      ],
+      "relation_types": [
+        "verified_by",
+        "supports",
+        "checked_against",
+        "derived_from",
+        "confirms_selection",
+        "answers"
+      ],
+      "tokens": [
+        "apoya",
+        "basa",
+        "based",
+        "evidence",
+        "evidencia",
+        "fuente",
+        "proof",
+        "prove",
+        "proved",
+        "proves",
+        "prueba",
+        "respalda",
+        "source",
+        "supports",
+        "verified",
+        "verify"
+      ],
+      "token_prefixes": [
+        "demuestr",
+        "verific"
+      ]
+    },
+    {
+      "id": "constraint",
+      "semantic_classes": [
+        "constraint"
+      ],
+      "relation_types": [
+        "satisfies_constraint",
+        "violates_constraint",
+        "matches_requirement",
+        "excluded_from",
+        "authorizes"
+      ],
+      "tokens": [
+        "allowed",
+        "blocks",
+        "bloquea",
+        "constraint",
+        "forbid",
+        "forbids",
+        "impide",
+        "permite",
+        "prevent",
+        "prevents",
+        "prohibe",
+        "requiere",
+        "require",
+        "required",
+        "requirement",
+        "requires",
+        "requisito"
+      ],
+      "token_prefixes": [
+        "autoriz",
+        "restricc"
+      ]
+    },
+    {
+      "id": "process",
+      "semantic_classes": [
+        "procedural"
+      ],
+      "relation_types": [
+        "follows",
+        "contributes_to",
+        "uses_background"
+      ],
+      "tokens": [
+        "pasos",
+        "procedimiento",
+        "procedure",
+        "proceso",
+        "process",
+        "secuencia",
+        "sequence",
+        "steps"
+      ],
+      "token_prefixes": []
+    },
+    {
+      "id": "composition",
+      "semantic_classes": [
+        "structural"
+      ],
+      "relation_types": [
+        "component_of",
+        "total_of",
+        "contains",
+        "member_of"
+      ],
+      "tokens": [
+        "component",
+        "componente",
+        "componentes",
+        "components",
+        "includes",
+        "incluye",
+        "member",
+        "miembro",
+        "total"
+      ],
+      "token_prefixes": []
+    }
+  ]
+}

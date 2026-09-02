@@ -16,7 +16,8 @@ use kmp_proto::v1beta1::{
     TraceResponse, WakeClaim, WakePacket, WakeResponse,
 };
 
-use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker, was_reached_indirectly};
+use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
+use super::answer_selection::was_reached_indirectly;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
