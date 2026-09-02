@@ -1,0 +1,743 @@
+{
+  "note": "Judged retrieval cases owned by KMP. Each case names the retrieval behaviour it measures; `judged` lists the refs a reader says carry the answer.",
+  "cases": [
+    {
+      "id": "exact-term",
+      "probes": "Control. The question shares the distinctive words of the target outright; any ranker worth the name finds it.",
+      "about": "project:control",
+      "question": "Which valve failed during the night shift?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:control:e2"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:control:e1",
+            "kind": "observation",
+            "text": "The weekly meeting moved to ten in the morning.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:control:e2",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:control:e3",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "rare-term-only",
+      "probes": "The target shares one rare word with the question and nothing else, while six others share the common ones. The rule BM25 replaced discarded it unscored.",
+      "about": "project:rare",
+      "question": "Which valkey adapter handles the shared store rollout?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:rare:target"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:rare:filler0",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:rare:filler1",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:rare:filler2",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:rare:filler3",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:rare:filler4",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:rare:filler5",
+            "kind": "observation",
+            "text": "The shared store rollout was discussed at standup again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:rare:target",
+            "kind": "decision",
+            "text": "Valkey was benchmarked overnight and kept.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "morphology-spanish",
+      "probes": "The question asks in the plural and a different conjugation than the memory was written in. No Spanish exists in the hand-kept concept table.",
+      "about": "project:morfologia",
+      "question": "Que valvulas se congelaron?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:morfologia:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:morfologia:e1",
+            "kind": "incident",
+            "text": "La valvula de reserva se congelo durante la noche de la guardia.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:morfologia:e2",
+            "kind": "observation",
+            "text": "El equipo reviso la pasarela por la manana con el turno de guardia.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:morfologia:e3",
+            "kind": "observation",
+            "text": "La reunion semanal se movio a las diez de la manana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "morphology-english",
+      "probes": "Noun against verb of the same word, a family the concept table never named.",
+      "about": "project:morphology",
+      "question": "What did the deployment freeze?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:morphology:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:morphology:e1",
+            "kind": "incident",
+            "text": "The deploy of the gateway was frozen during the audit of the week.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:morphology:e2",
+            "kind": "observation",
+            "text": "The weekly meeting was moved to ten in the morning by the team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:morphology:e3",
+            "kind": "observation",
+            "text": "The canteen was closed for the day by the building team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "causal-upstream",
+      "probes": "The cause shares no informative word with the question and is reachable only by walking a proven causal relation. It should be retrieved as proof and must not be cited as the answer.",
+      "about": "project:causal",
+      "question": "Why did the checkout outage happen?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:causal:cause"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:causal:outage",
+            "kind": "incident",
+            "text": "The checkout outage began at 03:10 and lasted forty minutes.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:causal:cause",
+            "kind": "decision",
+            "text": "Reserve capacity was diverted to the valve repair crew overnight.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "from": "project:causal:outage",
+            "to": "project:causal:cause",
+            "rel": "triggers",
+            "class": "causal",
+            "why": "Diverting the reserve left no headroom when the morning peak arrived.",
+            "evidence": "Capacity graph and the overnight change record.",
+            "confidence": "high"
+          }
+        ]
+      }
+    },
+    {
+      "id": "superseded-not-current",
+      "probes": "A replaced claim must not come back as current advice when the question asks about now.",
+      "about": "project:supersede",
+      "question": "Which engine is current for the shared store?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:supersede:new"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:supersede:old",
+            "kind": "decision",
+            "text": "The previous engine is current for the shared store.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:supersede:new",
+            "kind": "decision",
+            "text": "Valkey is the current engine for the shared store.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "from": "project:supersede:new",
+            "to": "project:supersede:old",
+            "rel": "supersedes",
+            "class": "evidential",
+            "why": "Valkey replaced the previous engine for the shared store.",
+            "evidence": "Migration close-out note.",
+            "confidence": "high"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lifecycle-audit",
+      "probes": "The same store, asked about history instead of about now. The replaced claim is exactly what is wanted.",
+      "about": "project:lifecycle",
+      "question": "Which engine was the previous one for the shared store?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:lifecycle:old"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:lifecycle:old",
+            "kind": "decision",
+            "text": "The former engine served the shared store until the migration.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:lifecycle:new",
+            "kind": "decision",
+            "text": "Valkey is the current engine for the shared store.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "from": "project:lifecycle:new",
+            "to": "project:lifecycle:old",
+            "rel": "supersedes",
+            "class": "evidential",
+            "why": "Valkey replaced the former engine for the shared store.",
+            "evidence": "Migration close-out note.",
+            "confidence": "high"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expired-not-current",
+      "probes": "An entry whose applicability ended must not answer a question about what applies, and the live one must.",
+      "about": "project:expired",
+      "question": "Which release window applies to the shared store?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:expired:live"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:expired:lapsed",
+            "kind": "constraint",
+            "text": "The release window applies to the shared store on Mondays.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1,
+                "valid_until": "2026-08-10T09:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:expired:live",
+            "kind": "constraint",
+            "text": "The release window applies to the shared store on Fridays.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-20T09:00:00Z",
+                "valid_from": "2026-08-20T09:00:00Z",
+                "sequence": 20
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "distractor-precision",
+      "probes": "One exact answer buried in near-identical noise. Measures whether the specific match leads rather than merely surviving.",
+      "about": "project:distractor",
+      "question": "What exact deficiencies caused the rejection?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:distractor:exact"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:distractor:noise0",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise1",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise2",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise3",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise4",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-05T09:00:00Z",
+                "valid_from": "2026-08-05T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise5",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-06T09:00:00Z",
+                "valid_from": "2026-08-06T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise6",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-07T09:00:00Z",
+                "valid_from": "2026-08-07T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:noise7",
+            "kind": "observation",
+            "text": "Gate deficiencies caused rejection for an unrelated rollout again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-08T09:00:00Z",
+                "valid_from": "2026-08-08T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:distractor:exact",
+            "kind": "incident",
+            "text": "The exact deficiencies causing the rejection were missing contract tests.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-09T09:00:00Z",
+                "valid_from": "2026-08-09T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "paraphrase-gap",
+      "probes": "KNOWN FAILING. The question and the memory share no content word and mean the same thing. Nothing in a lexical retriever can close this; it is the number a semantic layer would move.",
+      "about": "project:paraphrase",
+      "question": "Why was the launch postponed?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:paraphrase:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:paraphrase:e1",
+            "kind": "decision",
+            "text": "The rollout slipped because the auditors had not signed off.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:paraphrase:e2",
+            "kind": "observation",
+            "text": "The canteen menu changed on Tuesday for the whole building.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:paraphrase:e3",
+            "kind": "observation",
+            "text": "A new coffee machine arrived at the second floor.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

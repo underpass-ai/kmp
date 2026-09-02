@@ -87,6 +87,21 @@ impl LexicalField {
             .sum()
     }
 
+    /// What one occurrence is worth in a document of this length.
+    ///
+    /// Length normalization belongs to how well a candidate answers, not to
+    /// whether it may answer at all. A floor fixed at the average length
+    /// refuses a longer-than-average candidate that matches exactly the
+    /// concept the floor is made of — which is a cliff again, wearing the
+    /// units of the thing meant to remove one.
+    pub(super) fn single_occurrence_factor(&self, document: &TermCounts) -> f64 {
+        if self.documents == 0 || self.average_length <= 0.0 {
+            return 1.0;
+        }
+        let length_ratio = document.length() as f64 / self.average_length;
+        (K1 + 1.0) / (1.0 + K1 * (1.0 - B + B * length_ratio))
+    }
+
     /// What a candidate must earn to be answering the question at all.
     ///
     /// The old floor counted words: one shared concept for a short question,
@@ -275,6 +290,26 @@ mod tests {
             field.eligibility_floor(&grounded),
             field.eligibility_floor(&with_absent_word)
         );
+    }
+
+    /// The floor has to speak the same units as the score it is compared
+    /// against, or length normalization turns into a membership rule.
+    #[test]
+    fn the_floor_follows_the_length_of_what_it_judges() {
+        let short = counts(&["valkey", "store"]);
+        let long = counts(&[
+            "valkey", "store", "note", "meeting", "agenda", "calendar", "invite", "room",
+        ]);
+        let field = LexicalField::build([&short, &long]);
+        let question = counts(&["valkey"]);
+        let floor = field.eligibility_floor(&question);
+
+        assert!(field.single_occurrence_factor(&long) < field.single_occurrence_factor(&short));
+        assert!(
+            field.score(&question, &long) < floor,
+            "the fixture must exercise the case a fixed floor refuses"
+        );
+        assert!(field.score(&question, &long) >= floor * field.single_occurrence_factor(&long));
     }
 
     #[test]

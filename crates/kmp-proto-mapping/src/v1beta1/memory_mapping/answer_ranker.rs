@@ -553,9 +553,13 @@ impl Lexicon {
     /// never refused by a rounding boundary.
     fn clears_floor(&self, terms: &AnswerCandidateTerms) -> bool {
         let score = self.direct.score(&self.question, &terms.direct_counts);
+        // The bar is read in the candidate's own length, so a long entry that
+        // says the one thing the question asked about is ranked low rather
+        // than refused.
+        let floor = self.floor * self.direct.single_occurrence_factor(&terms.direct_counts);
         // Sharing nothing at all is its own answer, and no floor derived from
         // an empty overlap should be able to admit it.
-        score > 0.0 && score >= self.floor
+        score > 0.0 && score >= floor
     }
 
     fn content_score(&self, terms: &AnswerCandidateTerms) -> i64 {

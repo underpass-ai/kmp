@@ -14,6 +14,7 @@ pub mod memoryarena;
 pub mod memoryarena_scorecard;
 pub mod memoryarena_smart_writer;
 pub mod raw_dump;
+pub mod retrieval_scorecard;
 pub mod seed_publisher;
 pub mod seed_to_bundle;
 pub mod text_normalization;
