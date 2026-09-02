@@ -82,6 +82,14 @@ impl KernelMcpToolBackend for RetryingEmbeddedKernelMcpBackend {
         "embedded"
     }
 
+    /// Read from the store once it opens. A store that cannot open bridges
+    /// nothing, which is the same answer its `ask` would give.
+    fn bridges_languages(&self) -> bool {
+        self.opened_backend()
+            .map(|backend| backend.bridges_languages())
+            .unwrap_or(false)
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         Box::pin(async move {
             let backend = self.opened_backend()?;

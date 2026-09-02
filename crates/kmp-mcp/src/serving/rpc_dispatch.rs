@@ -53,6 +53,7 @@ impl KernelMcpServer {
                         self.backend_name(),
                         self.grpc_tls_mode_name(),
                         apps,
+                        self.bridges_languages(),
                     ),
                 )
             }),

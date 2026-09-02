@@ -112,7 +112,9 @@ kmp-mcp config memory-routing always
 kmp-mcp config memory-routing on-request
 ```
 
-With no file, genuinely semantic `kmp_ask` calls get one bounded English retry
+With a lexical-bridge table beside the store, `kmp_ask` crosses languages
+inside the kernel and the retry is not used. Without a table and with no
+policy file, genuinely semantic `kmp_ask` calls get one bounded English retry
 after the user's-language question returns `UNKNOWN`. Configure a different
 ordered list during setup with:
 

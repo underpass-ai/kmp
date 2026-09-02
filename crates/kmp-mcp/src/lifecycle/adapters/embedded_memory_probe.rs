@@ -79,7 +79,10 @@ pub(crate) fn describe_data_dir(resolved: &ResolvedDataDir) -> LifecycleFinding 
             }
         ));
     }
+    // Whether `ask` on this store crosses languages is a fact about the
+    // store's directory, and the one an operator cannot otherwise see.
     finding
+        .with_detail(crate::serving::adapters::lexical_bridge_file::describe_lexical_bridge(path))
 }
 
 pub(crate) fn data_dir_finding() -> (LifecycleFinding, Option<ResolvedDataDir>) {

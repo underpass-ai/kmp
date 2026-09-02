@@ -13,6 +13,13 @@ pub trait KernelMcpToolBackend: Send + Sync {
         "disabled"
     }
 
+    /// Whether `kmp_ask` on this backend bridges languages inside the kernel
+    /// — a lexical-bridge table is loaded beside the store — so the agent's
+    /// instructions can stop asking it to translate and retry.
+    fn bridges_languages(&self) -> bool {
+        false
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a>;
 }
 
@@ -26,6 +33,10 @@ where
 
     fn grpc_tls_mode_name(&self) -> &'static str {
         self.as_ref().grpc_tls_mode_name()
+    }
+
+    fn bridges_languages(&self) -> bool {
+        self.as_ref().bridges_languages()
     }
 
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {

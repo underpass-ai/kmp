@@ -9,6 +9,18 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- The MCP initialize instructions are bridge-aware. When a lexical-bridge
+  table is loaded beside the store, the agent is told that `kmp_ask` crosses
+  languages inside the kernel and names its word pairs, not to translate and
+  retry, and to re-ask at most once in other words in the user's language;
+  the configured fallback languages are not used while the bridge is present.
+  Without a table the instructions are unchanged, so `ask_fallback_languages`
+  keeps its meaning for installations that have not installed one. `kmp-mcp
+  info` and `doctor` now say which table a store would read, or that there is
+  none and what that means for `ask`.
+
 ### Added
 
 - Declared paraphrase is retrievable paraphrase
