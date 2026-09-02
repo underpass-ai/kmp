@@ -3,7 +3,8 @@ use std::time::Instant;
 
 use kmp_domain::{
     BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId,
-    GraphNeighborhoodReader, KmpBundle, NodeDetailReader, NodeNeighborhood, NodeProjection, Role,
+    GraphNeighborhoodReader, KmpBundle, NeighborhoodRequest, NodeDetailReader, NodeNeighborhood,
+    NodeProjection, Role,
 };
 
 use crate::ApplicationError;
@@ -56,12 +57,26 @@ where
         generator_version: &str,
         depth: u32,
     ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        self.load_bundle_for(
+            &NeighborhoodRequest::new(root_node_id, clamp_native_graph_traversal_depth(depth)),
+            role,
+            generator_version,
+        )
+        .await
+    }
+
+    /// Loads the bundle for a request that already carries the axes the caller
+    /// resolved, so a store able to narrow on them does not have to be asked
+    /// for what will be thrown away.
+    pub async fn load_bundle_for(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        generator_version: &str,
+    ) -> Result<(Option<KmpBundle>, QueryTimingBreakdown), ApplicationError> {
+        let root_node_id = request.root_node_id();
         let graph_start = Instant::now();
-        let Some(neighborhood) = self
-            .graph_reader
-            .load_neighborhood(root_node_id, clamp_native_graph_traversal_depth(depth))
-            .await?
-        else {
+        let Some(neighborhood) = self.graph_reader.load_scoped_neighborhood(request).await? else {
             return Ok((None, QueryTimingBreakdown::not_found(graph_start.elapsed())));
         };
         if is_placeholder_projection_node(&neighborhood.root) {

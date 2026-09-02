@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::{ContextPathNeighborhood, NodeNeighborhood, PortError};
+use crate::{ContextPathNeighborhood, NeighborhoodRequest, NodeNeighborhood, PortError};
 
 pub trait GraphNeighborhoodReader {
     fn load_neighborhood(
@@ -9,6 +9,24 @@ pub trait GraphNeighborhoodReader {
         root_node_id: &str,
         depth: u32,
     ) -> impl Future<Output = Result<Option<NodeNeighborhood>, PortError>> + Send;
+
+    /// Loads a neighbourhood already narrowed by the axes the caller resolved.
+    ///
+    /// The application resolves the dimension axis into fully namespaced scope
+    /// ids before it asks for anything, and until this existed it carried them
+    /// as far as the query and then filtered the bundle after materialising it
+    /// whole. Handing them down lets a store that can narrow do so.
+    ///
+    /// The narrowing is a hint and never a contract: the default ignores it,
+    /// which leaves an adapter correct and only slow, and the application
+    /// filters what comes back either way. That is what makes adopting this
+    /// one adapter at a time a pure performance change.
+    fn load_scoped_neighborhood(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> impl Future<Output = Result<Option<NodeNeighborhood>, PortError>> + Send {
+        self.load_neighborhood(request.root_node_id(), request.depth())
+    }
 
     fn load_context_path(
         &self,
@@ -28,6 +46,13 @@ where
         depth: u32,
     ) -> Result<Option<NodeNeighborhood>, PortError> {
         self.as_ref().load_neighborhood(root_node_id, depth).await
+    }
+
+    async fn load_scoped_neighborhood(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        self.as_ref().load_scoped_neighborhood(request).await
     }
 
     async fn load_context_path(

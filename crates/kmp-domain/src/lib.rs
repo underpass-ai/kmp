@@ -21,10 +21,10 @@ pub use projection::{
 };
 pub use repositories::{
     ContextEventChange, ContextEventStore, ContextUpdatedEvent, GraphNeighborhoodReader,
-    IdempotentOutcome, MemoryAboutIndexReader, NodeDetailReader, NodeRelationshipReader,
-    NodeRelationships, PortError, ProcessedEventStore, ProjectionCheckpointStore, ProjectionWriter,
-    QualityMetricsObserver, QualityObservationContext, SnapshotSaveOptions, SnapshotStore,
-    TokenEstimator,
+    IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest, NodeDetailReader,
+    NodeRelationshipReader, NodeRelationships, PortError, ProcessedEventStore,
+    ProjectionCheckpointStore, ProjectionWriter, QualityMetricsObserver, QualityObservationContext,
+    SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
 pub use value_objects::{
     BundleMetadata, BundleQualityMetrics, CaseId, DimensionScopeMode, DimensionSelection,
