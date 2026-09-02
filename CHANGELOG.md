@@ -9,6 +9,31 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- The doctor called a healthy installation `Not usable` because setup's own
+  guide sync was counted as uncommitted memory
+  ([#473](https://github.com/underpass-ai/kmp/issues/473)). The guide occupies
+  `guide:kmp` and `guide:kmp-agent` in whatever store it is synced into, and no
+  project's committed bundle has ever carried it — but the durability check
+  compared the *whole* store against `.kmp/memory.jsonl`, so the counts could
+  never agree once setup had run. They are now compared over authored memory
+  alone.
+- A store running ahead of its last checkpoint is no longer a failure. It is
+  the ordinary state after any write, and the probe has already proved the
+  histories merge before it reports anything: the finding is a warning that
+  names how many writes are uncommitted, and the installation stays usable.
+  Genuine divergence, an unreadable bundle and a torn write are still failures.
+  The store-newer-than-bundle check is gone with it — syncing the guide or
+  merely opening the store moves that timestamp, and the events themselves have
+  already been compared.
+- `kmp-mcp export` no longer writes the shipped guide into a project's
+  committed memory. Maintaining `.kmp/memory.jsonl` excludes the guide's
+  abouts, so a save cannot put a copy of the release's own content in every
+  repository that uses KMP, nor produce a bundle diff on every version that
+  bumps it. An explicit export path is unchanged and still takes the whole
+  store, which is what a backup or a migration needs.
+
 ## [0.7.0] - 2026-09-02
 
 ### Added
