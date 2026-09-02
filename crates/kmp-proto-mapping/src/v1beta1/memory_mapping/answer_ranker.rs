@@ -1,15 +1,32 @@
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 use kmp_application::MemoryAnswerPolicy;
-use kmp_domain::{KmpBundle, RelationSemanticClass};
+use kmp_domain::KmpBundle;
 use kmp_proto::v1beta1::{MemoryConfidence, MemoryEvidence};
-use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
+
+use super::answer_candidate::AnswerCandidate;
+use super::answer_candidate_terms::AnswerCandidateTerms;
+use super::answer_recall_context::AnswerRecallContext;
+use super::answer_selection::{
+    answer_context_refs, diversify_candidates, mark_reached, prioritize_distinct_claims,
+    stable_evidence_key,
+};
+use super::candidate_temporal_state::CandidateTemporalState;
+use super::lexicon::Lexicon;
+use super::question_intent::QuestionIntent;
+use super::search_terms::{
+    concept_count, informative_terms, informative_tokens, matching_term_count, search_key,
+    strict_answer_focus_terms,
+};
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 
-const MAX_RELATION_FEATURES_PER_CANDIDATE: usize = 16;
-const MAX_RERANK_CANDIDATES: usize = 64;
+/// How far retrieval may walk from something the question actually matched.
+/// Two hops covers `symptom → decision → constraint`, the shape a root-cause
+/// question needs, without opening the whole neighbourhood.
+const MAX_REACH_HOPS: u32 = 2;
+const MAX_REACHED_REFS: usize = 8;
+const MAX_RESCUED_CANDIDATES: usize = 5;
 
 /// Deterministic, graph-aware reranker for stored entry text and evidence used
 /// by `kmp_ask`.
@@ -35,21 +52,17 @@ impl AnswerEvidenceRanker {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
-        let question_terms = informative_terms(question);
+        let morphology = &self.context.morphology;
+        let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
             evidence.sort_by_key(stable_evidence_key);
             return evidence;
         }
 
-        let required_matches = if concept_count(&question_terms) <= 2 {
-            1
-        } else {
-            2
-        };
         let strict_focus = match policy {
             MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts => {
-                let terms = strict_answer_focus_terms(question);
+                let terms = strict_answer_focus_terms(question, morphology);
                 let required_matches = (concept_count(&terms) * 2).div_ceil(3);
                 Some((terms, required_matches))
             }
@@ -59,19 +72,38 @@ impl AnswerEvidenceRanker {
             .as_ref()
             .map(|(terms, _)| terms.clone())
             .unwrap_or_default();
+        let intent = QuestionIntent::read(question);
 
-        let mut candidates = evidence
+        // BM25 needs a collection before it can weigh anything, so every
+        // candidate's terms are read once, up front. The collection is this
+        // question's own candidates: inside an about where every entry says
+        // `deploy`, that word earns nothing, and only a measurement taken
+        // here can know it.
+        let prepared = evidence
             .into_iter()
-            .filter_map(|item| {
-                AnswerCandidate::eligible(
-                    item,
-                    &question_terms,
-                    strict_focus.as_ref(),
-                    required_matches,
-                    &self.context,
-                )
+            .map(|item| {
+                let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+                (item, terms)
             })
             .collect::<Vec<_>>();
+        let lexicon = Lexicon::build(question, morphology, &prepared);
+
+        let mut candidates = Vec::new();
+        let mut rejected = Vec::new();
+        for (item, terms) in prepared {
+            match AnswerCandidate::eligible(
+                item,
+                terms,
+                &question_terms,
+                strict_focus.as_ref(),
+                &lexicon,
+                &intent,
+                &self.context,
+            ) {
+                Ok(candidate) => candidates.push(candidate),
+                Err(item) => rejected.push(*item),
+            }
+        }
 
         candidates.sort_by(|left, right| {
             right
@@ -80,9 +112,84 @@ impl AnswerEvidenceRanker {
                 .then_with(|| left.stable_key.cmp(&right.stable_key))
         });
         let ranked = diversify_candidates(&question_terms, &diversity_focus_terms, candidates);
-        prioritize_distinct_claims(ranked)
+        let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
             .map(|candidate| candidate.item)
+            .collect::<Vec<_>>();
+
+        answer.extend(self.reached_candidates(&answer, rejected));
+        answer
+    }
+
+    /// Rescues what the question could not match on words but the graph can
+    /// prove is connected to something it did.
+    ///
+    /// The ranker's standing rule is that direct stored text establishes
+    /// eligibility and the graph may only improve a position. That rule is
+    /// what keeps an unrelated memory out of an answer, and it stays: these
+    /// candidates arrive after every eligible one and carry the mark that
+    /// keeps them out of the answer core. What changes is that a memory
+    /// causally upstream of a match is no longer unreachable just because it
+    /// shares no vocabulary with the question.
+    fn reached_candidates(
+        &self,
+        eligible: &[MemoryEvidence],
+        rejected: Vec<MemoryEvidence>,
+    ) -> Vec<MemoryEvidence> {
+        if rejected.is_empty() || self.context.reach_graph.is_empty() {
+            return Vec::new();
+        }
+
+        let seeds = eligible
+            .iter()
+            .flat_map(answer_context_refs)
+            .collect::<BTreeSet<_>>();
+        // A rescue must respect both lifecycles: a memory that was replaced,
+        // and one that simply stopped applying, stay out however strong the
+        // edge pointing at them.
+        let mut blocked = self.context.lifecycle.superseded_refs().clone();
+        blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        blocked.extend(seeds.iter().cloned());
+
+        let reached =
+            self.context
+                .reach_graph
+                .reach_from(&seeds, &blocked, MAX_REACH_HOPS, MAX_REACHED_REFS);
+        if reached.is_empty() {
+            return Vec::new();
+        }
+
+        let mut rescued = rejected
+            .into_iter()
+            .filter(|item| {
+                self.context.temporal_state(item) == CandidateTemporalState::CurrentOrUnspecified
+            })
+            .filter_map(|item| {
+                let hop = answer_context_refs(&item)
+                    .iter()
+                    .filter_map(|item_ref| reached.get(item_ref))
+                    .min_by(|left, right| {
+                        left.hops
+                            .cmp(&right.hops)
+                            .then_with(|| right.weight.cmp(&left.weight))
+                    })?
+                    .clone();
+                Some((hop, item))
+            })
+            .collect::<Vec<_>>();
+
+        rescued.sort_by(|(left_hop, left), (right_hop, right)| {
+            left_hop
+                .hops
+                .cmp(&right_hop.hops)
+                .then_with(|| right_hop.weight.cmp(&left_hop.weight))
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+
+        rescued
+            .into_iter()
+            .take(MAX_RESCUED_CANDIDATES)
+            .map(|(hop, item)| mark_reached(item, &hop))
             .collect()
     }
 
@@ -94,7 +201,7 @@ impl AnswerEvidenceRanker {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question);
+        let question_terms = informative_terms(question, &self.context.morphology);
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
@@ -118,6 +225,12 @@ impl AnswerEvidenceRanker {
         }
     }
 
+    /// The question's own words that reached the retained evidence.
+    ///
+    /// Reported as the caller wrote them, folded but not renamed. Matching
+    /// happens on the search key — a concept the table unified, or a stem —
+    /// and reporting that key instead would answer with the kernel's internal
+    /// vocabulary rather than the reader's.
     pub(super) fn matched_query_terms(
         &self,
         question: &str,
@@ -131,13 +244,10 @@ impl AnswerEvidenceRanker {
                     .into_iter()
             })
             .collect::<BTreeSet<_>>();
-        informative_terms(question)
+        informative_tokens(question)
+            .filter(|token| evidence_terms.contains(&search_key(token, &self.context.morphology)))
+            .collect::<BTreeSet<_>>()
             .into_iter()
-            .filter(|question_term| {
-                evidence_terms
-                    .iter()
-                    .any(|evidence_term| terms_match(question_term, evidence_term))
-            })
             .collect()
     }
 
@@ -146,7 +256,7 @@ impl AnswerEvidenceRanker {
         question: &str,
         evidence: &[MemoryEvidence],
     ) -> Vec<String> {
-        let question_terms = informative_terms(question);
+        let question_terms = informative_terms(question, &self.context.morphology);
         evidence
             .iter()
             .flat_map(|item| self.context.relationships_for(item))
@@ -158,592 +268,22 @@ impl AnswerEvidenceRanker {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum RelationDirection {
-    Incoming,
-    Outgoing,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct RelationFeature {
-    rel: String,
-    semantic_class: RelationSemanticClass,
-    direction: RelationDirection,
-    other_endpoint_ref: String,
-    endpoint_terms: BTreeSet<String>,
-    why_terms: BTreeSet<String>,
-    evidence_terms: BTreeSet<String>,
-    relation_terms: BTreeSet<String>,
-}
-
-impl RelationFeature {
-    fn searchable_terms(&self) -> BTreeSet<String> {
-        self.endpoint_terms
-            .iter()
-            .chain(&self.why_terms)
-            .chain(&self.evidence_terms)
-            .chain(&self.relation_terms)
-            .cloned()
-            .collect()
-    }
-
-    fn matches_any(&self, question_terms: &BTreeSet<String>) -> bool {
-        let relation_terms = self.searchable_terms();
-        question_terms.iter().any(|question_term| {
-            relation_terms
-                .iter()
-                .any(|relation_term| terms_match(question_term, relation_term))
-        })
-    }
-
-    fn stable_cmp(&self, other: &Self) -> Ordering {
-        self.semantic_class
-            .salience_rank()
-            .cmp(&other.semantic_class.salience_rank())
-            .then_with(|| self.rel.cmp(&other.rel))
-            .then_with(|| self.direction.cmp(&other.direction))
-            .then_with(|| self.other_endpoint_ref.cmp(&other.other_endpoint_ref))
-            .then_with(|| self.endpoint_terms.cmp(&other.endpoint_terms))
-            .then_with(|| self.why_terms.cmp(&other.why_terms))
-            .then_with(|| self.evidence_terms.cmp(&other.evidence_terms))
-            .then_with(|| self.relation_terms.cmp(&other.relation_terms))
-    }
-}
-
-#[derive(Default)]
-struct AnswerRecallContext {
-    details_by_ref: BTreeMap<String, BTreeSet<String>>,
-    relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
-    superseded_refs: BTreeSet<String>,
-}
-
-impl AnswerRecallContext {
-    fn from_bundle(bundle: &KmpBundle) -> Self {
-        let details_by_ref = bundle
-            .node_details()
-            .iter()
-            .map(|detail| {
-                (
-                    detail.node_id().to_string(),
-                    informative_terms(detail.detail()),
-                )
-            })
-            .collect();
-        let mut relationships_by_ref = BTreeMap::<String, Vec<_>>::new();
-        let superseded_refs = bundle
-            .relationships()
-            .iter()
-            .filter(|relationship| relationship.relationship_type() == "supersedes")
-            .map(|relationship| relationship.target_node_id().to_string())
-            .collect();
-
-        for relationship in bundle
-            .relationships()
-            .iter()
-            .filter(|relationship| relationship_is_explanatory(relationship))
-        {
-            let explanation = relationship.explanation();
-            let endpoint_terms = informative_terms(&format!(
-                "{} {}",
-                relationship.source_node_id(),
-                relationship.target_node_id()
-            ));
-            let relation_evidence = explanation.evidence().unwrap_or_default();
-            let evidence_terms = informative_terms(relation_evidence);
-            // A rationale can improve ranking only when the relation carries
-            // its own evidence. It remains context, never a freestanding fact.
-            let why_terms = if relation_evidence.trim().is_empty() {
-                BTreeSet::new()
-            } else {
-                informative_terms(&format!(
-                    "{} {}",
-                    explanation.rationale().unwrap_or_default(),
-                    explanation.motivation().unwrap_or_default()
-                ))
-            };
-            let relation_terms = informative_terms(relationship.relationship_type());
-
-            let outgoing = RelationFeature {
-                rel: relationship.relationship_type().to_string(),
-                semantic_class: *explanation.semantic_class(),
-                direction: RelationDirection::Outgoing,
-                other_endpoint_ref: relationship.target_node_id().to_string(),
-                endpoint_terms: endpoint_terms.clone(),
-                why_terms: why_terms.clone(),
-                evidence_terms: evidence_terms.clone(),
-                relation_terms: relation_terms.clone(),
-            };
-            relationships_by_ref
-                .entry(relationship.source_node_id().to_string())
-                .or_default()
-                .push(outgoing);
-
-            if relationship.target_node_id() != relationship.source_node_id() {
-                relationships_by_ref
-                    .entry(relationship.target_node_id().to_string())
-                    .or_default()
-                    .push(RelationFeature {
-                        rel: relationship.relationship_type().to_string(),
-                        semantic_class: *explanation.semantic_class(),
-                        direction: RelationDirection::Incoming,
-                        other_endpoint_ref: relationship.source_node_id().to_string(),
-                        endpoint_terms,
-                        why_terms,
-                        evidence_terms,
-                        relation_terms,
-                    });
-            }
-        }
-
-        for relationships in relationships_by_ref.values_mut() {
-            relationships.sort_by(RelationFeature::stable_cmp);
-            relationships.dedup();
-            relationships.truncate(MAX_RELATION_FEATURES_PER_CANDIDATE);
-        }
-
-        Self {
-            details_by_ref,
-            relationships_by_ref,
-            superseded_refs,
-        }
-    }
-
-    fn relationships_for<'a>(&'a self, item: &MemoryEvidence) -> Vec<&'a RelationFeature> {
-        let mut relationships = Vec::new();
-        if let Some(evidence_ref) = item.id.strip_prefix("detail:")
-            && let Some(direct) = self.relationships_by_ref.get(evidence_ref)
-        {
-            relationships.extend(direct);
-        }
-        for supported_ref in &item.supports {
-            if let Some(semantic) = self.relationships_by_ref.get(supported_ref) {
-                // Do not follow a claim's `supports` edges to sibling evidence.
-                // That would make high-degree claims leak unrelated vocabulary
-                // and turn candidate construction into quadratic work.
-                relationships.extend(
-                    semantic
-                        .iter()
-                        .filter(|relationship| relationship.rel != "supports"),
-                );
-            }
-        }
-        relationships.sort_by(|left, right| left.stable_cmp(right));
-        relationships.dedup();
-        relationships.truncate(MAX_RELATION_FEATURES_PER_CANDIDATE);
-        relationships
-    }
-
-    fn temporal_state(&self, item: &MemoryEvidence) -> CandidateTemporalState {
-        if answer_context_refs(item)
-            .iter()
-            .any(|selected_ref| self.superseded_refs.contains(selected_ref))
-        {
-            CandidateTemporalState::Superseded
-        } else {
-            CandidateTemporalState::CurrentOrUnspecified
-        }
-    }
-}
-
-fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) -> bool {
-    match relationship.explanation().semantic_class() {
-        RelationSemanticClass::Causal
-        | RelationSemanticClass::Motivational
-        | RelationSemanticClass::Constraint => true,
-        RelationSemanticClass::Evidential => relationship.relationship_type() != "supports",
-        RelationSemanticClass::Structural | RelationSemanticClass::Procedural => false,
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct RelevanceKey {
-    content_focus_matches: usize,
-    content_matches: usize,
-    direct_matches: usize,
-    claim_matches: usize,
-    relation_why_matches: usize,
-    relation_matches: usize,
-    total_matches: usize,
-}
-
-struct AnswerCandidate {
-    relevance: RelevanceKey,
-    searchable_terms: BTreeSet<String>,
-    stable_key: String,
-    item: MemoryEvidence,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CandidateTemporalState {
-    CurrentOrUnspecified,
-    Superseded,
-}
-
-impl AnswerCandidate {
-    fn eligible(
-        item: MemoryEvidence,
-        question_terms: &BTreeSet<String>,
-        strict_focus: Option<&(BTreeSet<String>, usize)>,
-        required_matches: usize,
-        context: &AnswerRecallContext,
-    ) -> Option<Self> {
-        let terms = AnswerCandidateTerms::from_evidence(&item, context);
-        let direct_matches = matching_term_count(question_terms, &terms.direct);
-        if direct_matches < required_matches {
-            return None;
-        }
-        if context.temporal_state(&item) == CandidateTemporalState::Superseded
-            && !query_requests_lifecycle(question_terms)
-        {
-            return None;
-        }
-
-        let answers_requested_focus =
-            strict_focus.is_none_or(|(focus_terms, required_focus_matches)| {
-                matching_term_count(focus_terms, &terms.searchable) >= *required_focus_matches
-            });
-        if !answers_requested_focus {
-            return None;
-        }
-
-        let relevance = RelevanceKey {
-            content_focus_matches: strict_focus
-                .map(|(focus_terms, _)| matching_term_count(focus_terms, &terms.content))
-                .unwrap_or_default(),
-            content_matches: matching_term_count(question_terms, &terms.content),
-            direct_matches,
-            claim_matches: matching_term_count(question_terms, &terms.claim),
-            relation_why_matches: matching_term_count(question_terms, &terms.relation_why),
-            relation_matches: matching_term_count(question_terms, &terms.relation),
-            total_matches: matching_term_count(question_terms, &terms.searchable),
-        };
-        Some(Self {
-            relevance,
-            searchable_terms: terms.searchable,
-            stable_key: stable_evidence_key(&item),
-            item,
-        })
-    }
-}
-
-struct AnswerCandidateTerms {
-    content: BTreeSet<String>,
-    direct: BTreeSet<String>,
-    claim: BTreeSet<String>,
-    relation_why: BTreeSet<String>,
-    relation: BTreeSet<String>,
-    searchable: BTreeSet<String>,
-}
-
-impl AnswerCandidateTerms {
-    fn from_evidence(item: &MemoryEvidence, context: &AnswerRecallContext) -> Self {
-        let content = informative_terms(&item.text);
-        let mut direct_text = format!("{} {}", item.text, item.source);
-        direct_text.push(' ');
-        direct_text.push_str(&item.id);
-        for supported_ref in &item.supports {
-            direct_text.push(' ');
-            direct_text.push_str(supported_ref);
-        }
-        for (key, value) in &item.metadata {
-            direct_text.push(' ');
-            direct_text.push_str(key);
-            direct_text.push(' ');
-            direct_text.push_str(value);
-        }
-        let direct = informative_terms(&direct_text);
-
-        let mut claim = item
-            .supports
-            .iter()
-            .flat_map(|supported_ref| informative_terms(supported_ref))
-            .collect::<BTreeSet<_>>();
-        for selected_ref in answer_context_refs(item) {
-            if let Some(detail_terms) = context.details_by_ref.get(&selected_ref) {
-                claim.extend(detail_terms.iter().cloned());
-            }
-        }
-
-        let relationships = context.relationships_for(item);
-        let relation_why = relationships
-            .iter()
-            .flat_map(|relationship| relationship.why_terms.iter().cloned())
-            .collect::<BTreeSet<_>>();
-        let relation = relationships
-            .iter()
-            .flat_map(|relationship| relationship.searchable_terms())
-            .collect::<BTreeSet<_>>();
-        let searchable = direct
-            .iter()
-            .chain(&claim)
-            .chain(&relation)
-            .cloned()
-            .collect();
-
-        Self {
-            content,
-            direct,
-            claim,
-            relation_why,
-            relation,
-            searchable,
-        }
-    }
-}
-
-fn diversify_candidates(
-    question_terms: &BTreeSet<String>,
-    focus_terms: &BTreeSet<String>,
-    mut candidates: Vec<AnswerCandidate>,
-) -> Vec<AnswerCandidate> {
-    if candidates.len() < 2 {
-        return candidates;
-    }
-
-    // Novelty is useful only near the answer boundary. Bounding the greedy
-    // window keeps reranking independent of graph degree; the complete proof
-    // tail retains its already deterministic relevance order.
-    let tail = if candidates.len() > MAX_RERANK_CANDIDATES {
-        candidates.split_off(MAX_RERANK_CANDIDATES)
-    } else {
-        Vec::new()
-    };
-
-    let first = candidates.remove(0);
-    let mut covered = matching_terms(question_terms, &first.searchable_terms);
-    let mut covered_focus = matching_terms(focus_terms, &first.searchable_terms);
-    let mut ranked = vec![first];
-
-    while !candidates.is_empty() {
-        let mut best_index = 0;
-        let mut best_key = None;
-        for (index, candidate) in candidates.iter().enumerate() {
-            let focus_gain = matching_terms(focus_terms, &candidate.searchable_terms)
-                .difference(&covered_focus)
-                .count();
-            let total_gain = matching_terms(question_terms, &candidate.searchable_terms)
-                .difference(&covered)
-                .count();
-            let key = (candidate.relevance, focus_gain, total_gain);
-            if best_key.is_none_or(|current| key > current) {
-                best_index = index;
-                best_key = Some(key);
-            }
-        }
-
-        let selected = candidates.remove(best_index);
-        covered.extend(matching_terms(question_terms, &selected.searchable_terms));
-        covered_focus.extend(matching_terms(focus_terms, &selected.searchable_terms));
-        ranked.push(selected);
-    }
-    ranked.extend(tail);
-    ranked
-}
-
-fn prioritize_distinct_claims(candidates: Vec<AnswerCandidate>) -> Vec<AnswerCandidate> {
-    let mut seen_claims = BTreeSet::new();
-    let mut distinct = Vec::with_capacity(candidates.len());
-    let mut repeated = Vec::new();
-
-    for candidate in candidates {
-        let claim = candidate
-            .item
-            .supports
-            .first()
-            .map(String::as_str)
-            .unwrap_or(candidate.item.source.as_str());
-        if seen_claims.insert(claim.to_string()) {
-            distinct.push(candidate);
-        } else {
-            repeated.push(candidate);
-        }
-    }
-    distinct.extend(repeated);
-    distinct
-}
-
-fn stable_evidence_key(item: &MemoryEvidence) -> String {
-    format!(
-        "{}\u{0}{}\u{0}{}\u{0}{}",
-        item.id,
-        item.supports
-            .first()
-            .map(String::as_str)
-            .unwrap_or_default(),
-        item.source,
-        item.text
-    )
-}
-
-fn answer_context_refs(item: &MemoryEvidence) -> BTreeSet<String> {
-    item.id
-        .strip_prefix("detail:")
-        .map(str::to_string)
-        .into_iter()
-        .chain(item.supports.iter().cloned())
-        .collect()
-}
-
-fn matching_terms(
-    question_terms: &BTreeSet<String>,
-    evidence_terms: &BTreeSet<String>,
-) -> BTreeSet<String> {
-    question_terms
-        .iter()
-        .filter(|question_term| {
-            evidence_terms
-                .iter()
-                .any(|evidence_term| terms_match(question_term, evidence_term))
-        })
-        .cloned()
-        .collect()
-}
-
-fn matching_term_count(
-    question_terms: &BTreeSet<String>,
-    evidence_terms: &BTreeSet<String>,
-) -> usize {
-    matching_terms(question_terms, evidence_terms)
-        .iter()
-        .map(|term| concept_key(term))
-        .collect::<BTreeSet<_>>()
-        .len()
-}
-
-fn concept_count(terms: &BTreeSet<String>) -> usize {
-    terms
-        .iter()
-        .map(|term| concept_key(term))
-        .collect::<BTreeSet<_>>()
-        .len()
-}
-
-/// Extracts the subject-bearing clause used by strict answer policies.
-fn strict_answer_focus_terms(question: &str) -> BTreeSet<String> {
-    const CONTEXT_BOUNDARIES: &[&str] = &[
-        "after", "before", "because", "if", "once", "when", "while", "antes", "cuando", "despues",
-        "después", "mientras", "porque", "si",
-    ];
-    const GENERIC_QUESTION_PREDICATES: &[&str] = &[
-        "happen", "happened", "occur", "occurred", "ocurrio", "ocurrió", "paso", "pasó", "prove",
-        "proved", "proves",
-    ];
-
-    let main_clause = question
-        .split(|character: char| !character.is_alphanumeric())
-        .map(fold_search_term)
-        .take_while(|token| !CONTEXT_BOUNDARIES.contains(&token.as_str()))
-        .collect::<Vec<_>>()
-        .join(" ");
-    let mut terms = informative_terms(&main_clause);
-    for predicate in GENERIC_QUESTION_PREDICATES {
-        terms.remove(*predicate);
-    }
-    if terms.is_empty() {
-        informative_terms(question)
-    } else {
-        terms
-    }
-}
-
-fn informative_terms(value: &str) -> BTreeSet<String> {
-    const STOP_WORDS: &[&str] = &[
-        "a", "against", "an", "and", "are", "as", "at", "be", "because", "by", "came", "did", "do",
-        "does", "earlier", "for", "from", "he", "how", "i", "if", "in", "is", "it", "me", "more",
-        "my", "of", "on", "one", "or", "plus", "same", "should", "than", "the", "this", "to", "us",
-        "use", "used", "uses", "was", "we", "were", "what", "when", "where", "which", "who", "why",
-        "will", "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo",
-        "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
-    ];
-    value
-        .split(|character: char| !character.is_alphanumeric())
-        .map(fold_search_term)
-        .filter(|term| {
-            !term.is_empty()
-                && !STOP_WORDS.contains(&term.as_str())
-                && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
-        })
-        .collect()
-}
-
-/// Produces the comparison form only. Stored evidence and returned query text
-/// stay byte-exact; the ranker indexes this folded sibling so a phone or
-/// foreign keyboard does not turn `válvula`, `arrêt`, `refrigeração`,
-/// `Straße`, or `Kühlventil` into an unreachable memory.
-fn fold_search_term(value: &str) -> String {
-    let mut folded = String::with_capacity(value.len());
-    for character in value
-        .nfkd()
-        .filter(|character| !is_combining_mark(*character))
-    {
-        match character {
-            'ß' | 'ẞ' => folded.push_str("ss"),
-            _ => folded.extend(character.to_lowercase()),
-        }
-    }
-    folded
-}
-
-fn terms_match(left: &str, right: &str) -> bool {
-    concept_key(left) == concept_key(right)
-}
-
-/// Stable semantic buckets for the small set of paraphrases the deterministic
-/// ranker intentionally understands. Counting buckets rather than raw words
-/// prevents a question containing two synonyms from earning two matches from
-/// one evidence term.
-fn concept_key(term: &str) -> &str {
-    match term {
-        "query" | "recall" | "retrieval" | "retrieve" => "concept:recall",
-        "accept" | "accepted" | "acceptance" => "concept:acceptance",
-        "correct" | "corrected" | "correction" | "fix" | "fixed" => "concept:correction",
-        "remain" | "remains" | "remaining" | "still" => "concept:currentness",
-        "destination" | "move" | "moved" | "moves" | "moving" | "relocate" | "relocated"
-        | "relocates" | "relocating" => "concept:movement",
-        "replace" | "replaced" | "replaces" | "replacing" | "supersede" | "superseded"
-        | "supersedes" => "concept:lifecycle",
-        "backend" | "engine" | "sqlite" => "concept:storage-engine",
-        "data" | "directory" | "store" | "stores" | "storage" => "concept:store",
-        "build" | "builds" | "built" | "create" | "created" | "fresh" | "install"
-        | "installation" | "installed" | "new" | "reinstall" | "reinstalled" => {
-            "concept:installation"
-        }
-        "restart" | "restarted" | "restarting" => "concept:restart",
-        "require" | "required" | "requires" => "concept:requirement",
-        "check" | "checked" | "validate" | "validated" | "validation" => "concept:validation",
-        "rank" | "ranked" | "ranking" | "relevance" => "concept:ranking",
-        "old" | "older" | "previous" | "prior" | "stale" => "concept:historical",
-        "default" | "select" | "selected" | "selection" => "concept:selection",
-        "existing" | "present" | "preserve" | "preserved" | "preserving" => "concept:presence",
-        _ => term,
-    }
-}
-
-fn query_requests_lifecycle(question_terms: &BTreeSet<String>) -> bool {
-    const LIFECYCLE_QUERY_TERMS: &[&str] = &[
-        "before",
-        "former",
-        "old",
-        "previous",
-        "replace",
-        "replaced",
-        "replaces",
-        "replacing",
-        "supersede",
-        "superseded",
-        "supersedes",
-    ];
-    question_terms
-        .iter()
-        .any(|term| LIFECYCLE_QUERY_TERMS.contains(&term.as_str()))
-}
-
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
     use kmp_domain::{
-        BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation, Role,
+        BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation,
+        RelationSemanticClass, Role,
     };
+    use prost_types::Timestamp;
+
+    use super::super::answer_selection::was_reached_by_relation;
+    use super::super::morphology::Morphology;
+    use super::super::relation_direction::RelationDirection;
+    use super::super::relation_feature::RelationFeature;
+    use super::super::search_terms::{fold_search_term, terms_match};
 
     fn ev(source: &str) -> MemoryEvidence {
         MemoryEvidence {
@@ -771,12 +311,13 @@ mod tests {
         RelationFeature {
             rel: rel.to_string(),
             semantic_class: class,
+            signal: 0,
             direction: RelationDirection::Outgoing,
             other_endpoint_ref: "target".to_string(),
-            endpoint_terms: informative_terms("source target"),
-            why_terms: informative_terms(why),
+            endpoint_terms: informative_terms("source target", &Morphology::none()),
+            why_terms: informative_terms(why, &Morphology::none()),
             evidence_terms: BTreeSet::new(),
-            relation_terms: informative_terms(rel),
+            relation_terms: informative_terms(rel, &Morphology::none()),
         }
     }
 
@@ -793,7 +334,7 @@ mod tests {
                     claim.to_string(),
                     vec![relation(rel, class, why)],
                 )]),
-                superseded_refs: BTreeSet::new(),
+                ..Default::default()
             },
         }
     }
@@ -844,6 +385,439 @@ mod tests {
         )
         .expect("valid bundle");
         AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    fn proven(class: RelationSemanticClass) -> RelationExplanation {
+        RelationExplanation::new(class)
+            .with_rationale("the reserve was diverted before the repair")
+            .with_evidence("recorded in the incident review")
+            .with_confidence("high")
+    }
+
+    fn timed_entry(scope: &str, entry: &str, observed_at: &str) -> BundleRelationship {
+        entry_relationship(scope, entry, observed_at, None)
+    }
+
+    fn expiring_entry(
+        scope: &str,
+        entry: &str,
+        observed_at: &str,
+        valid_until: &str,
+    ) -> BundleRelationship {
+        entry_relationship(scope, entry, observed_at, Some(valid_until))
+    }
+
+    fn entry_relationship(
+        scope: &str,
+        entry: &str,
+        observed_at: &str,
+        valid_until: Option<&str>,
+    ) -> BundleRelationship {
+        let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("timeline")
+            .with_scope_id(scope)
+            .with_observed_at(observed_at);
+        if let Some(valid_until) = valid_until {
+            explanation = explanation.with_valid_until(valid_until);
+        }
+        BundleRelationship::new(scope, entry, "contains_entry", explanation)
+    }
+
+    fn ranker_over(relationships: Vec<BundleRelationship>, refs: &[&str]) -> AnswerEvidenceRanker {
+        let node = |id: &str| {
+            BundleNode::new(
+                id,
+                "memory",
+                id,
+                "fixture",
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("claim:root").expect("valid case id"),
+            Role::new("answerer").expect("valid role"),
+            node("claim:root"),
+            refs.iter().map(|id| node(id)).collect(),
+            relationships,
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("valid bundle");
+        AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    /// Five candidates repeating the same common words, and one that shares a
+    /// single rare one. The rule this replaces demanded two shared concepts
+    /// from a question this long and discarded the rare match unscored.
+    /// A bundle whose prose is the language the ranker will read.
+    fn ranker_speaking(prose: &[&str]) -> AnswerEvidenceRanker {
+        let node = |id: &str, summary: &str| {
+            BundleNode::new(
+                id,
+                "memory",
+                id,
+                summary,
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("about:memoria").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("about:memoria", prose[0]),
+            prose
+                .iter()
+                .enumerate()
+                .skip(1)
+                .map(|(index, text)| node(&format!("entry:{index}"), text))
+                .collect(),
+            Vec::new(),
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        AnswerEvidenceRanker::from_bundle(&bundle)
+    }
+
+    /// Plural against singular and one conjugation against another. Neither
+    /// pair is in the hand-kept table, and the table has no Spanish at all.
+    #[test]
+    fn a_spanish_question_reaches_the_other_shapes_of_the_same_word() {
+        let ranker = ranker_speaking(&[
+            "La valvula de reserva se congelo durante la noche de la guardia.",
+            "El despliegue de la pasarela se hizo por la manana con el equipo.",
+        ]);
+
+        let ranked = ranker.rank(
+            "Que valvulas se congelaron?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("valve", "claim:valve", "La valvula de reserva se congelo."),
+                claim_ev("other", "claim:other", "El equipo reviso la pasarela."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:valve");
+    }
+
+    #[test]
+    fn an_english_question_reaches_the_noun_from_the_verb() {
+        let ranker = ranker_speaking(&[
+            "The deploy of the gateway was frozen during the audit of the week.",
+            "The weekly meeting was moved to ten in the morning by the team.",
+        ]);
+
+        let ranked = ranker.rank(
+            "What did the deployment freeze?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("gateway", "claim:gateway", "The deploy was frozen."),
+                claim_ev("other", "claim:other", "The team reviewed the gateway."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:gateway");
+    }
+
+    /// Nothing is stemmed when no language can be read, which is what every
+    /// caller got before morphology existed.
+    #[test]
+    fn a_memory_whose_language_cannot_be_read_keeps_exact_matching() {
+        let ranker = ranker_speaking(&["Valkey.", "SQLite."]);
+
+        let ranked = ranker.rank(
+            "Que valvulas se congelaron?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "valve",
+                "claim:valve",
+                "La valvula de reserva se congelo.",
+            )],
+        );
+
+        assert!(ranked.is_empty());
+    }
+
+    #[test]
+    fn a_single_rare_match_is_no_longer_discarded_for_being_alone() {
+        let mut candidates = (0..5)
+            .map(|index| {
+                claim_ev(
+                    &format!("common-{index}"),
+                    &format!("claim:common{index}"),
+                    "The shared store rollout was discussed again.",
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.push(claim_ev(
+            "rare",
+            "claim:rare",
+            "Valkey was benchmarked overnight.",
+        ));
+
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Which valkey adapter handles the shared store rollout?",
+            MemoryAnswerPolicy::BestEffort,
+            candidates,
+        );
+
+        assert_eq!(ranked[0].id, "detail:rare");
+    }
+
+    /// Counting shared concepts said two common words beat one rare one.
+    /// Weighing them says the opposite, which is the whole point of an IDF.
+    #[test]
+    fn one_rare_match_outranks_two_common_ones() {
+        let mut candidates = (0..4)
+            .map(|index| {
+                claim_ev(
+                    &format!("filler-{index}"),
+                    &format!("claim:filler{index}"),
+                    "The shared store was mentioned.",
+                )
+            })
+            .collect::<Vec<_>>();
+        candidates.push(claim_ev(
+            "common-pair",
+            "claim:pair",
+            "The shared store was mentioned again.",
+        ));
+        candidates.push(claim_ev("rare-one", "claim:rare", "Valkey was chosen."));
+
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Was valkey chosen for the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            candidates,
+        );
+
+        assert_eq!(ranked[0].id, "detail:rare-one");
+    }
+
+    /// Two candidates say the same rare thing; one says a great deal else.
+    /// Length used to be free surface to be hit on, and the tie fell to the
+    /// alphabetical order of the ref.
+    #[test]
+    fn a_longer_candidate_does_not_win_for_having_more_surface() {
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Was valkey chosen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "a-padded",
+                    "claim:padded",
+                    "Valkey was chosen, and the standup moved, and the calendar invite changed, \
+                     and the agenda was rewritten, and the room was rebooked for the week.",
+                ),
+                claim_ev("z-short", "claim:short", "Valkey was chosen."),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:z-short");
+    }
+
+    #[test]
+    fn a_proven_relation_reaches_the_cause_that_shares_no_words_with_the_question() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:outage",
+                "claim:cause",
+                "triggers",
+                proven(RelationSemanticClass::Causal),
+            )],
+            &["claim:outage", "claim:cause"],
+        );
+
+        let ranked = ranker.rank(
+            "Why did the checkout outage happen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("outage", "claim:outage", "The checkout outage happened."),
+                claim_ev(
+                    "cause",
+                    "claim:cause",
+                    "Reserve power was diverted for a valve repair.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:outage");
+        assert_eq!(ranked[1].id, "detail:cause");
+        assert!(was_reached_by_relation(&ranked[1]));
+        assert_eq!(ranked[1].metadata["reached_from"], "claim:outage");
+        assert_eq!(ranked[1].metadata["reached_via"], "triggers");
+        assert_eq!(ranked[1].metadata["reached_hops"], "1");
+        assert!(!was_reached_by_relation(&ranked[0]));
+    }
+
+    #[test]
+    fn an_unproven_relation_still_reaches_nothing() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:outage",
+                "claim:cause",
+                "follows",
+                proven(RelationSemanticClass::Procedural),
+            )],
+            &["claim:outage", "claim:cause"],
+        );
+
+        let ranked = ranker.rank(
+            "Why did the checkout outage happen?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev("outage", "claim:outage", "The checkout outage happened."),
+                claim_ev(
+                    "cause",
+                    "claim:cause",
+                    "Reserve power was diverted for a valve repair.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked.len(), 1);
+        assert_eq!(ranked[0].id, "detail:outage");
+    }
+
+    #[test]
+    fn an_entry_whose_applicability_ended_is_not_offered_as_current() {
+        let ranker = ranker_over(
+            vec![
+                expiring_entry(
+                    "scope:timeline",
+                    "claim:expired",
+                    "2026-01-01T00:00:00Z",
+                    "2026-02-01T00:00:00Z",
+                ),
+                timed_entry("scope:timeline", "claim:live", "2026-03-01T00:00:00Z"),
+            ],
+            &["scope:timeline", "claim:expired", "claim:live"],
+        );
+
+        let current = ranker.rank(
+            "Which release window applies to the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "expired",
+                    "claim:expired",
+                    "The release window applies to the shared store on Mondays.",
+                ),
+                claim_ev(
+                    "live",
+                    "claim:live",
+                    "The release window applies to the shared store on Fridays.",
+                ),
+            ],
+        );
+
+        assert_eq!(current.len(), 1);
+        assert_eq!(current[0].id, "detail:live");
+    }
+
+    #[test]
+    fn a_lifecycle_question_can_still_audit_what_expired() {
+        let ranker = ranker_over(
+            vec![
+                expiring_entry(
+                    "scope:timeline",
+                    "claim:expired",
+                    "2026-01-01T00:00:00Z",
+                    "2026-02-01T00:00:00Z",
+                ),
+                timed_entry("scope:timeline", "claim:live", "2026-03-01T00:00:00Z"),
+            ],
+            &["scope:timeline", "claim:expired", "claim:live"],
+        );
+
+        let audited = ranker.rank(
+            "Which release window was the previous one for the shared store?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "expired",
+                "claim:expired",
+                "The release window applies to the shared store on Mondays.",
+            )],
+        );
+
+        assert_eq!(audited.len(), 1);
+        assert_eq!(audited[0].id, "detail:expired");
+    }
+
+    #[test]
+    fn the_relation_the_question_asked_for_outranks_an_otherwise_equal_candidate() {
+        let ranker = ranker_over(
+            vec![
+                BundleRelationship::new(
+                    "claim:motivated",
+                    "claim:decision",
+                    "chosen_because",
+                    proven(RelationSemanticClass::Motivational),
+                ),
+                BundleRelationship::new(
+                    "claim:catalogued",
+                    "claim:decision",
+                    "component_of",
+                    proven(RelationSemanticClass::Structural),
+                ),
+            ],
+            &["claim:motivated", "claim:catalogued", "claim:decision"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the shared engine selected?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "catalogued",
+                    "claim:catalogued",
+                    "The shared engine was selected.",
+                ),
+                claim_ev(
+                    "motivated",
+                    "claim:motivated",
+                    "The shared engine was selected.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:motivated");
+    }
+
+    #[test]
+    fn recency_breaks_a_tie_that_used_to_fall_to_the_reference_name() {
+        let ranker = ranker_over(
+            vec![timed_entry(
+                "scope:timeline",
+                "claim:a",
+                "2026-03-01T00:00:00Z",
+            )],
+            &["scope:timeline", "claim:a"],
+        );
+        let older = MemoryEvidence {
+            time: Some(Timestamp {
+                seconds: 1_735_689_600,
+                nanos: 0,
+            }),
+            ..claim_ev("a-older", "claim:older", "the shared engine is documented")
+        };
+        let newer = MemoryEvidence {
+            time: Some(Timestamp {
+                seconds: 1_772_323_200,
+                nanos: 0,
+            }),
+            ..claim_ev("z-newer", "claim:newer", "the shared engine is documented")
+        };
+
+        let ranked = ranker.rank(
+            "Which shared engine is documented?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![older, newer],
+        );
+
+        assert_eq!(ranked[0].id, "detail:z-newer");
     }
 
     #[test]
@@ -915,12 +889,12 @@ mod tests {
                 (
                     "claim:weak".to_string(),
                     vec![RelationFeature {
-                        why_terms: informative_terms("shared migration"),
+                        why_terms: informative_terms("shared migration", &Morphology::none()),
                         ..relation("chosen_because", RelationSemanticClass::Motivational, "")
                     }],
                 ),
             ]),
-            superseded_refs: BTreeSet::new(),
+            ..Default::default()
         };
         let ranker = AnswerEvidenceRanker { context };
 
@@ -1060,7 +1034,11 @@ mod tests {
         let feature = &ranker.context.relationships_by_ref["claim:adr"][0];
         assert_eq!(feature.direction, RelationDirection::Outgoing);
         assert_eq!(feature.other_endpoint_ref, "claim:current");
-        assert!(feature.evidence_terms.contains("architecture"));
+        assert!(
+            feature
+                .evidence_terms
+                .contains(ranker.context.morphology.stem("architecture").as_ref())
+        );
     }
 
     #[test]
@@ -1238,7 +1216,7 @@ mod tests {
 
     #[test]
     fn short_identifiers_and_lifecycle_paraphrases_are_preserved() {
-        let terms = informative_terms("PR #83 C1 M1 P0 ID 7 is to un");
+        let terms = informative_terms("PR #83 C1 M1 P0 ID 7 is to un", &Morphology::none());
         for identifier in ["pr", "83", "c1", "m1", "p0", "id", "7"] {
             assert!(
                 terms.contains(identifier),
@@ -1282,7 +1260,10 @@ mod tests {
             );
         }
 
-        assert_eq!(informative_terms("VÁLVULA"), informative_terms("valvula"));
+        assert_eq!(
+            informative_terms("VÁLVULA", &Morphology::none()),
+            informative_terms("valvula", &Morphology::none())
+        );
         assert_eq!(fold_search_term("Straße"), "strasse");
     }
 
@@ -1301,8 +1282,8 @@ mod tests {
 
     #[test]
     fn synonyms_form_one_scoring_concept() {
-        let question_terms = informative_terms("new installation");
-        let evidence_terms = informative_terms("fresh build");
+        let question_terms = informative_terms("new installation", &Morphology::none());
+        let evidence_terms = informative_terms("fresh build", &Morphology::none());
 
         assert_eq!(concept_count(&question_terms), 1);
         assert_eq!(matching_term_count(&question_terms, &evidence_terms), 1);

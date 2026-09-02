@@ -30,16 +30,16 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9439
+        "used_bytes": 9521
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 6,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:6:5c438a5055a88006f6caf158c6b5f4bb70fe505c36d06550ee375fe8082e5512\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:6:447a3bdff567bde864e30f9593be0806b87c21f6eb4c06c3f89d7017544fe5ef\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:6:5c438a5055a88006f6caf158c6b5f4bb70fe505c36d06550ee375fe8082e5512",
+        "next_cursor": "kmp1:6:447a3bdff567bde864e30f9593be0806b87c21f6eb4c06c3f89d7017544fe5ef",
         "offset": 0,
         "returned": 6,
         "total": 7
@@ -118,7 +118,12 @@
           "time": "2026-04-12T17:00:00Z"
         }
       ],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "question:parity:claim:denver-detail",
+          "valid_until": "2026-04-12T18:00:00Z"
+        }
+      ],
       "frontier_size": 0,
       "matched_relations": [
         "semantic_delta_from",

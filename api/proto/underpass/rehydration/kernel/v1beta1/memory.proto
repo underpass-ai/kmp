@@ -510,9 +510,21 @@ message Proof {
   // Non-structural relation types whose rationale, evidence or endpoints
   // contributed retained query terms to the selected answer.
   repeated string matched_relations = 9;
-  // Selected historical entries whose validity interval had already ended at
-  // the temporal cursor. Kept apart from supersession because an interval can
-  // expire without another entry replacing it.
+  // Entries whose validity interval had already ended when this response was
+  // read. Kept apart from supersession because an interval can expire without
+  // another entry replacing it, so following `supersedes` never finds one.
+  //
+  // What "already ended" is measured against depends on the read: a temporal
+  // move compares against the cursor the caller asked for, on whichever clock
+  // it asked on; wake and ask have no cursor and compare against the latest
+  // instant the memory itself knows about.
+  //
+  // What each verb then does with it also differs, and all three are honest.
+  // A temporal move on a recorded clock returns the entry, because history is
+  // what it was asked for, and names it here; an as-of read on the validity
+  // clock leaves it out and names it here. Wake returns it ranked behind what
+  // stands. Ask withholds it and reports it here, so the exclusion is not
+  // silent.
   repeated ExpiredMemory expired = 10;
 }
 
@@ -526,8 +538,9 @@ message SupersededMemory {
   string why = 3;
 }
 
-// One historical entry whose exclusive validity end is at or before the
-// temporal cursor used for the read.
+// One entry whose exclusive validity end is at or before the instant the read
+// is measured against: the caller's cursor on a temporal move, the memory's
+// own latest known instant on wake and ask.
 message ExpiredMemory {
   string ref = 1;
   google.protobuf.Timestamp valid_until = 2;

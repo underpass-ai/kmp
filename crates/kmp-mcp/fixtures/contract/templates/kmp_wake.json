@@ -76,7 +76,12 @@
           "time": "string"
         }
       ],
-      "expired": [],
+      "expired": [
+        {
+          "ref": "string",
+          "valid_until": "string"
+        }
+      ],
       "frontier_size": "integer",
       "matched_relations": [],
       "matched_terms": [],

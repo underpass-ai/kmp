@@ -18,6 +18,7 @@ We are grateful to their authors and contributors.
 | [opentelemetry-otlp](https://crates.io/crates/opentelemetry-otlp) | Apache-2.0 | OTLP trace exporter |
 | [opentelemetry_sdk](https://crates.io/crates/opentelemetry_sdk) | Apache-2.0 | OpenTelemetry SDK |
 | [prost](https://crates.io/crates/prost) | Apache-2.0 | Protocol Buffers |
+| [rust-stemmers](https://crates.io/crates/rust-stemmers) | MIT/BSD-3-Clause | Snowball stemming for recall across word forms |
 | [reqwest](https://crates.io/crates/reqwest) | MIT/Apache-2.0 | HTTP client |
 | [serde](https://crates.io/crates/serde) | MIT/Apache-2.0 | Serialization framework |
 | [serde_json](https://crates.io/crates/serde_json) | MIT/Apache-2.0 | JSON serialization |

@@ -17,6 +17,7 @@ use kmp_proto::v1beta1::{
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
+use super::answer_selection::was_reached_by_relation;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -33,6 +34,8 @@ use super::bundle_views::{
     temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
+use super::memory_lifecycle::MemoryLifecycle;
+use super::relation_signal_index::RelationSignalIndex;
 use super::scalars::{
     proto_confidence, proto_direction, proto_semantic_class, proto_temporal_axis,
     timestamp_from_sort_or_rfc3339,
@@ -92,8 +95,10 @@ pub fn wake_response_from_result(
     max_entries: Option<usize>,
     result: GetContextResult,
 ) -> WakeResponse {
+    let lifecycle = MemoryLifecycle::read(&result.bundle);
+    let signals = RelationSignalIndex::read(&result.bundle);
     let relationships = memory_relations_from_bundle(&result.bundle);
-    let causal_spine = prioritize_wake_relationships(relationships.clone());
+    let causal_spine = prioritize_wake_relationships(relationships.clone(), &signals);
     let full_evidence = memory_evidence_from_bundle(&result.bundle);
     let current_state = rendered_current_state(&result.rendered, &result.bundle);
     let summary = rendered_summary(&result.rendered);
@@ -122,10 +127,16 @@ pub fn wake_response_from_result(
         .into_iter()
         .collect::<Vec<_>>();
 
-    // Opt-in entry cap: surface the first `max_entries` evidence entries
-    // (graph-traversal order, closest to the about) and report the withheld
-    // sources as proof.missing so proof.frontier_size signals "near-expand to
-    // cover the rest". Unset (or not exceeded) -> behavior unchanged.
+    // Opt-in entry cap: surface `max_entries` evidence entries and report the
+    // withheld sources as proof.missing so proof.frontier_size signals
+    // "near-expand to cover the rest". Unset (or not exceeded) -> every entry.
+    //
+    // Which ones survive the cap used to be graph-traversal order alone. Wake
+    // has no question to rank against, but it does have the judgment already
+    // stored on every edge, and a resume packet whose first ten entries were
+    // whatever the traversal emitted first is a worse answer than one whose
+    // first ten are what someone proved and has not withdrawn.
+    let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let resume_cursor = newest_cursor(&relationships);
 
@@ -154,14 +165,73 @@ pub fn wake_response_from_result(
             next_actions,
             guardrails,
         }),
-        proof: Some(proof(
-            relationships,
-            evidence,
-            withheld,
-            MemoryConfidence::Medium,
-        )),
+        proof: {
+            let mut wake_proof = proof(relationships, evidence, withheld, MemoryConfidence::Medium);
+            // The field has been in the contract since the proof shape
+            // existed and nothing ever filled it, so a memory whose
+            // applicability ended arrived as current state next to an empty
+            // list asserting that none had.
+            wake_proof.expired = lifecycle.expired_memories();
+            Some(wake_proof)
+        },
         warnings: Vec::new(),
     }
+}
+
+/// Orders a wake packet before the entry cap decides what survives it.
+///
+/// Lifecycle leads: what was replaced or has stopped applying is still
+/// returned — wake reports state, it does not censor it — but it goes to the
+/// back, where a cap can cut it before it cuts a live decision. Then the
+/// strongest relation the writer attached, then recency. Ties keep the
+/// traversal order they arrived in, so nothing moves without a reason.
+fn prioritize_wake_evidence(
+    evidence: Vec<MemoryEvidence>,
+    lifecycle: &MemoryLifecycle,
+    signals: &RelationSignalIndex,
+) -> Vec<MemoryEvidence> {
+    let standing = |item: &MemoryEvidence| {
+        let refs = memory_refs_of(item);
+        if refs
+            .iter()
+            .any(|item_ref| lifecycle.is_superseded(item_ref))
+        {
+            0
+        } else if refs.iter().any(|item_ref| lifecycle.is_expired(item_ref)) {
+            1
+        } else {
+            2
+        }
+    };
+
+    let mut evidence = evidence;
+    evidence.sort_by(|left, right| {
+        standing(right)
+            .cmp(&standing(left))
+            .then_with(|| {
+                signals
+                    .strength_over(memory_refs_of(right).iter().map(String::as_str))
+                    .cmp(&signals.strength_over(memory_refs_of(left).iter().map(String::as_str)))
+            })
+            .then_with(|| {
+                lifecycle
+                    .recency_rank(right.time.as_ref())
+                    .cmp(&lifecycle.recency_rank(left.time.as_ref()))
+            })
+    });
+    evidence
+}
+
+/// The memory references a response item stands for: the detail it renders
+/// and the claims it supports.
+fn memory_refs_of(item: &MemoryEvidence) -> Vec<String> {
+    item.id
+        .strip_prefix("detail:")
+        .or_else(|| item.id.strip_prefix("entry:"))
+        .map(str::to_string)
+        .into_iter()
+        .chain(item.supports.iter().cloned())
+        .collect()
 }
 
 fn l0_summary_value(summary: &str, label: &str, empty_values: &[&str]) -> Vec<String> {
@@ -203,14 +273,24 @@ pub fn ask_response_from_result(
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
     let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
+    // A candidate the graph reached is proof, not an answer. It travels in
+    // `proof.evidence` with the hop that produced it, and the answer core is
+    // still built only from evidence the question matched in its own words —
+    // the ranker's standing rule, now enforced where the answer is written
+    // rather than by refusing to retrieve the hop at all.
+    let answer_core = evidence
+        .iter()
+        .filter(|item| !was_reached_by_relation(item))
+        .cloned()
+        .collect::<Vec<_>>();
     // `because` and the deterministic answer retain at most five citations.
     // Confidence must describe those surviving citations, not a stronger item
     // that `max_entries` or a later transport budget omitted.
-    let retained_evidence = &evidence[..evidence.len().min(ANSWER_CORE_LIMIT)];
+    let retained_evidence = &answer_core[..answer_core.len().min(ANSWER_CORE_LIMIT)];
     let confidence = ranker.confidence(question, retained_evidence);
     let matched_terms = ranker.matched_query_terms(question, retained_evidence);
     let matched_relations = ranker.matched_relations(question, retained_evidence);
-    let because = evidence
+    let because = answer_core
         .iter()
         .take(ANSWER_CORE_LIMIT)
         .map(|item| AnswerReason {
@@ -284,6 +364,9 @@ pub fn ask_response_from_result(
     );
     answer_proof.matched_terms = matched_terms;
     answer_proof.matched_relations = matched_relations;
+    // Ask withholds an entry whose applicability ended rather than offering it
+    // as current. Saying so is what separates that from having nothing.
+    answer_proof.expired = MemoryLifecycle::read(&result.bundle).expired_memories();
 
     AskResponse {
         projection: None,
@@ -315,7 +398,16 @@ pub fn ask_response_from_result(
     }
 }
 
-fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<MemoryRelation> {
+/// Orders the causal spine, which is then cut to eight.
+///
+/// The declared salience of the class leads, as it always did. What is new is
+/// the second key: among two causal edges, the one the writer proved goes
+/// first, instead of whichever endpoint happened to sort earlier in the
+/// alphabet.
+fn prioritize_wake_relationships(
+    mut relationships: Vec<MemoryRelation>,
+    signals: &RelationSignalIndex,
+) -> Vec<MemoryRelation> {
     relationships.sort_by(|left, right| {
         let priority = |relationship: &MemoryRelation| match MemorySemanticClass::try_from(
             relationship.semantic_class,
@@ -328,24 +420,34 @@ fn prioritize_wake_relationships(mut relationships: Vec<MemoryRelation>) -> Vec<
             Ok(MemorySemanticClass::Structural) => 5,
             _ => 6,
         };
-        (
-            priority(left),
-            &left.source_ref,
-            &left.target_ref,
-            &left.rel,
-            &left.why,
-            &left.evidence,
-            left.sequence,
-        )
-            .cmp(&(
-                priority(right),
-                &right.source_ref,
-                &right.target_ref,
-                &right.rel,
-                &right.why,
-                &right.evidence,
-                right.sequence,
-            ))
+        let strength = |relationship: &MemoryRelation| {
+            signals.strength_of_edge(
+                &relationship.source_ref,
+                &relationship.target_ref,
+                &relationship.rel,
+            )
+        };
+        priority(left)
+            .cmp(&priority(right))
+            .then_with(|| strength(right).cmp(&strength(left)))
+            .then_with(|| {
+                (
+                    &left.source_ref,
+                    &left.target_ref,
+                    &left.rel,
+                    &left.why,
+                    &left.evidence,
+                    left.sequence,
+                )
+                    .cmp(&(
+                        &right.source_ref,
+                        &right.target_ref,
+                        &right.rel,
+                        &right.why,
+                        &right.evidence,
+                        right.sequence,
+                    ))
+            })
     });
     relationships
 }
@@ -403,6 +505,7 @@ pub fn temporal_response_from_result(
     let traversal = result.traversal;
     let expired = expired_at_cursor(
         traversal.entries(),
+        &result.source_bundle,
         traversal.axis(),
         traversal.resolved_cursor(),
     );
@@ -548,32 +651,66 @@ pub fn temporal_response_from_result(
     }
 }
 
+/// What had already stopped applying when this read was positioned.
+///
+/// Expiry is history, so a temporal move reports it and never hides it.
+///
+/// On the occurred, observed and ingested clocks a move returns recorded
+/// positions, so a constraint that stopped applying comes back as it was
+/// written — and came back with nothing beside it saying so. Those entries
+/// are named here and still returned: a history reader that silently dropped
+/// them would be answering a different question.
+///
+/// On the validity clock the read is about what held when, so it also names
+/// what an as-of view left out for having ended. That filter runs inside the
+/// traversal, before this ever sees the entries, which is why the one read
+/// where expiry is the whole subject used to report none of it.
 fn expired_at_cursor(
     entries: &[kmp_domain::TemporalEntry],
+    bundle: &KmpBundle,
     axis: TemporalAxis,
     cursor: &TemporalCoordinate,
 ) -> Vec<ExpiredMemory> {
-    if axis != TemporalAxis::Validity {
-        return Vec::new();
-    }
-    let Some(instant) = cursor.valid_from().or(cursor.valid_until()) else {
+    let Some(instant) = cursor_instant(cursor, axis) else {
         return Vec::new();
     };
 
-    entries
-        .iter()
-        .filter_map(|entry| {
-            let validity = entry
-                .coordinates()
-                .iter()
-                .filter(|coordinate| {
-                    coordinate.valid_from().is_some() || coordinate.valid_until().is_some()
-                })
-                .collect::<Vec<_>>();
-            let active = validity.iter().any(|coordinate| {
-                coordinate.valid_from().is_none_or(|start| {
+    let mut validity_by_ref = BTreeMap::<&str, Vec<(Option<&str>, Option<&str>)>>::new();
+    for entry in entries {
+        for coordinate in entry.coordinates() {
+            if coordinate.valid_from().is_some() || coordinate.valid_until().is_some() {
+                validity_by_ref
+                    .entry(entry.ref_id())
+                    .or_default()
+                    .push((coordinate.valid_from(), coordinate.valid_until()));
+            }
+        }
+    }
+    if axis == TemporalAxis::Validity {
+        for relationship in bundle
+            .relationships()
+            .iter()
+            .filter(|relationship| relationship.relationship_type() == "contains_entry")
+        {
+            let explanation = relationship.explanation();
+            if explanation.valid_from().is_some() || explanation.valid_until().is_some() {
+                validity_by_ref
+                    .entry(relationship.target_node_id())
+                    .or_default()
+                    .push((explanation.valid_from(), explanation.valid_until()));
+            }
+        }
+    }
+
+    validity_by_ref
+        .into_iter()
+        .filter_map(|(ref_id, validity)| {
+            // An entry standing on any one of its coordinates is not expired,
+            // however many others have run out.
+            let active = validity.iter().any(|(start, end)| {
+                start.is_none_or(|start| {
                     compare_temporal_instants(start, instant) != Some(Ordering::Greater)
-                }) && coordinate.valid_until().is_none_or(|end| {
+                }) && end.is_none_or(|end| {
                     compare_temporal_instants(end, instant) == Some(Ordering::Greater)
                 })
             });
@@ -582,7 +719,7 @@ fn expired_at_cursor(
             }
             let ended = validity
                 .iter()
-                .filter_map(|coordinate| coordinate.valid_until())
+                .filter_map(|(_, end)| *end)
                 .filter(|end| {
                     matches!(
                         compare_temporal_instants(end, instant),
@@ -593,11 +730,27 @@ fn expired_at_cursor(
                     compare_temporal_instants(left, right).unwrap_or(Ordering::Equal)
                 })?;
             Some(ExpiredMemory {
-                r#ref: entry.ref_id().to_string(),
+                r#ref: ref_id.to_string(),
                 valid_until: timestamp_from_sort_or_rfc3339(Some(ended)),
             })
         })
         .collect()
+}
+
+/// The instant a read is standing at, on whatever clock it asked for.
+fn cursor_instant(cursor: &TemporalCoordinate, axis: TemporalAxis) -> Option<&str> {
+    match axis {
+        TemporalAxis::Validity => cursor.valid_from().or(cursor.valid_until()),
+        TemporalAxis::Occurred => cursor.occurred_at(),
+        TemporalAxis::Observed => cursor.observed_at(),
+        TemporalAxis::Ingested => cursor.ingested_at(),
+        // The default clock resolves in the order the store writes in.
+        TemporalAxis::Default => cursor
+            .occurred_at()
+            .or(cursor.observed_at())
+            .or(cursor.ingested_at())
+            .or(cursor.valid_from()),
+    }
 }
 
 fn missing_explicit_clock(
@@ -971,6 +1124,162 @@ mod temporal_lifecycle_tests {
 
     use super::temporal_response_from_result;
 
+    fn lifecycle_node(id: &str, kind: &str) -> BundleNode {
+        BundleNode::new(id, kind, id, id, "ACTIVE", Vec::new(), BTreeMap::new())
+    }
+
+    /// A freeze that ran for nine days, and a decision taken ten days after it
+    /// lapsed.
+    fn lapsed_freeze_bundle() -> KmpBundle {
+        let entry =
+            |target: &str, occurred_at: &str, valid_from: &str, valid_until: Option<&str>| {
+                let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_occurred_at(occurred_at)
+                    .with_valid_from(valid_from);
+                if let Some(valid_until) = valid_until {
+                    explanation = explanation.with_valid_until(valid_until);
+                }
+                BundleRelationship::new("timeline:main", target, "contains_entry", explanation)
+            };
+        KmpBundle::new(
+            CaseId::new("project:release").expect("case id"),
+            Role::new("temporal-reader").expect("role"),
+            lifecycle_node("project:release", "memory_anchor"),
+            vec![
+                lifecycle_node("timeline:main", "memory_dimension"),
+                lifecycle_node("constraint:freeze", "constraint"),
+                lifecycle_node("decision:cutover", "decision"),
+            ],
+            vec![
+                entry(
+                    "constraint:freeze",
+                    "2026-08-01T09:00:00Z",
+                    "2026-08-01T09:00:00Z",
+                    Some("2026-08-10T09:00:00Z"),
+                ),
+                entry(
+                    "decision:cutover",
+                    "2026-08-20T09:00:00Z",
+                    "2026-08-20T09:00:00Z",
+                    None,
+                ),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle")
+    }
+
+    fn move_over(
+        bundle: KmpBundle,
+        direction: TemporalDirection,
+        at: &str,
+        axis: TemporalAxis,
+    ) -> kmp_proto::v1beta1::TemporalMoveResponse {
+        let traversal = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(direction, DomainCursor::time(at).expect("cursor"))
+                .with_axis(axis),
+        )
+        .expect("traversal");
+        temporal_response_from_result(
+            TemporalCursor {
+                r#ref: String::new(),
+                time: None,
+                sequence: None,
+            },
+            direction,
+            TemporalMemoryResult {
+                traversal,
+                source_bundle: bundle,
+                include: TemporalIncludeOptions {
+                    evidence: false,
+                    relations: false,
+                    raw_refs: false,
+                },
+                quality: BundleQualityMetrics::new(0, 1.0, 0.0, 0.0, 0.0).expect("quality"),
+            },
+        )
+    }
+
+    /// A move on a recorded clock keeps returning history — dropping the
+    /// lapsed constraint would answer a different question — but it now says
+    /// which of what it returned had already stopped applying.
+    #[test]
+    fn a_recorded_clock_returns_the_lapsed_entry_and_names_it() {
+        for direction in [
+            TemporalDirection::Goto,
+            TemporalDirection::Near,
+            TemporalDirection::Rewind,
+        ] {
+            let response = move_over(
+                lapsed_freeze_bundle(),
+                direction,
+                "2026-08-25T09:00:00Z",
+                TemporalAxis::Occurred,
+            );
+
+            let refs = response
+                .entries
+                .iter()
+                .map(|entry| entry.r#ref.as_str())
+                .collect::<Vec<_>>();
+            assert!(
+                refs.contains(&"constraint:freeze"),
+                "{direction:?} stopped returning history"
+            );
+            let proof = response.proof.expect("proof");
+            assert_eq!(proof.expired.len(), 1, "{direction:?}");
+            assert_eq!(proof.expired[0].r#ref, "constraint:freeze");
+            assert_eq!(
+                proof.expired[0]
+                    .valid_until
+                    .expect("validity end")
+                    .to_string(),
+                "2026-08-10T09:00:00Z"
+            );
+        }
+    }
+
+    /// The as-of read excludes what had ended, which is why it was the one
+    /// read that could never report it.
+    #[test]
+    fn an_as_of_read_names_what_it_left_out_for_having_ended() {
+        let response = move_over(
+            lapsed_freeze_bundle(),
+            TemporalDirection::Goto,
+            "2026-08-25T09:00:00Z",
+            TemporalAxis::Validity,
+        );
+
+        assert_eq!(
+            response
+                .entries
+                .iter()
+                .map(|entry| entry.r#ref.as_str())
+                .collect::<Vec<_>>(),
+            vec!["decision:cutover"]
+        );
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.expired.len(), 1);
+        assert_eq!(proof.expired[0].r#ref, "constraint:freeze");
+    }
+
+    /// Standing before the end of an interval is not standing after it.
+    #[test]
+    fn an_interval_that_had_not_ended_yet_is_not_reported() {
+        let response = move_over(
+            lapsed_freeze_bundle(),
+            TemporalDirection::Forward,
+            "2026-07-01T09:00:00Z",
+            TemporalAxis::Validity,
+        );
+
+        assert!(response.proof.expect("proof").expired.is_empty());
+    }
+
     #[test]
     fn temporal_proof_reports_selected_supersession_without_full_relation_path() {
         let node = |id: &str, kind: &str| {
@@ -1339,6 +1648,94 @@ mod ask_entry_text_tests {
         assert_eq!(proof.evidence[0].metadata["proof_role"], "entry_text");
         assert!(proof.matched_terms.contains(&"zorblatt".to_string()));
     }
+
+    /// The graph may carry retrieval to a memory the question could not
+    /// reach in words, and it still may not answer in that memory's name.
+    /// The hop arrives as proof, with the path that produced it, and the
+    /// answer keeps citing only what the question matched directly.
+    #[test]
+    fn a_memory_reached_through_the_graph_is_proof_and_never_the_answer() {
+        let node = |id: &str, kind: &str, summary: &str| {
+            BundleNode::new(id, kind, id, summary, "ACTIVE", Vec::new(), BTreeMap::new())
+        };
+        let entry = |target: &str| {
+            BundleRelationship::new(
+                "timeline:main",
+                target,
+                "contains_entry",
+                RelationExplanation::new(RelationSemanticClass::Structural)
+                    .with_dimension("timeline")
+                    .with_scope_id("timeline:main")
+                    .with_sequence(1),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:kmp", "memory_anchor", "KMP memory"),
+            vec![
+                node("timeline:main", "memory_dimension", "Timeline"),
+                node(
+                    "decision:zorblatt",
+                    "decision",
+                    "ZORBLATT is the selected durable format.",
+                ),
+                node(
+                    "decision:quench",
+                    "decision",
+                    "The overnight batch window moved to the reserve cluster.",
+                ),
+            ],
+            vec![
+                entry("decision:zorblatt"),
+                entry("decision:quench"),
+                BundleRelationship::new(
+                    "decision:zorblatt",
+                    "decision:quench",
+                    "chosen_because",
+                    RelationExplanation::new(RelationSemanticClass::Motivational)
+                        .with_rationale("the batch window forced a durable format decision")
+                        .with_evidence("recorded in the migration review")
+                        .with_confidence("high"),
+                ),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        let result = GetContextResult {
+            bundle,
+            rendered,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        };
+
+        let response = ask_response_from_result(
+            "ZORBLATT",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            result,
+        );
+
+        let proof = response.proof.expect("proof");
+        let reached = proof
+            .evidence
+            .iter()
+            .find(|item| item.metadata.contains_key("reached_by"))
+            .expect("the graph carried retrieval to the connected memory");
+        assert_eq!(reached.metadata["reached_via"], "chosen_because");
+        assert_eq!(reached.metadata["reached_from"], "decision:zorblatt");
+        assert!(
+            response
+                .because
+                .iter()
+                .all(|reason| reason.claim != "decision:quench"),
+            "a memory reached through the graph must not be cited as the answer"
+        );
+        assert_eq!(response.because.len(), 1);
+    }
 }
 
 #[cfg(test)]
@@ -1385,12 +1782,15 @@ mod wake_cap_tests {
             semantic_class: semantic_class as i32,
             ..Default::default()
         };
-        let prioritized = prioritize_wake_relationships(vec![
-            relation(MemorySemanticClass::Structural, "contains_entry"),
-            relation(MemorySemanticClass::Procedural, "follows"),
-            relation(MemorySemanticClass::Evidential, "supports"),
-            relation(MemorySemanticClass::Causal, "triggers"),
-        ]);
+        let prioritized = prioritize_wake_relationships(
+            vec![
+                relation(MemorySemanticClass::Structural, "contains_entry"),
+                relation(MemorySemanticClass::Procedural, "follows"),
+                relation(MemorySemanticClass::Evidential, "supports"),
+                relation(MemorySemanticClass::Causal, "triggers"),
+            ],
+            &RelationSignalIndex::default(),
+        );
 
         assert_eq!(
             prioritized
@@ -1538,5 +1938,185 @@ mod tests {
             newest_cursor(&[bare]).is_none(),
             "a bookmark that points nowhere is worse than none"
         );
+    }
+}
+
+#[cfg(test)]
+mod wake_priority_tests {
+    use std::collections::BTreeMap;
+
+    use kmp_application::{GetContextResult, queries::render_graph_bundle};
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleNodeDetail, BundleRelationship, CaseId, KmpBundle,
+        RelationExplanation, RelationSemanticClass, Role,
+    };
+
+    use super::wake_response_from_result;
+
+    fn node(id: &str) -> BundleNode {
+        BundleNode::new(
+            id,
+            "decision",
+            id,
+            id,
+            "ACTIVE",
+            Vec::new(),
+            BTreeMap::new(),
+        )
+    }
+
+    fn detail(id: &str, text: &str) -> BundleNodeDetail {
+        BundleNodeDetail::new(id, text, "hash", 1)
+    }
+
+    fn entry(target: &str, observed_at: &str, valid_until: Option<&str>) -> BundleRelationship {
+        let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_dimension("timeline")
+            .with_scope_id("timeline:main")
+            .with_observed_at(observed_at);
+        if let Some(valid_until) = valid_until {
+            explanation = explanation.with_valid_until(valid_until);
+        }
+        BundleRelationship::new("timeline:main", target, "contains_entry", explanation)
+    }
+
+    fn proven(class: RelationSemanticClass) -> RelationExplanation {
+        RelationExplanation::new(class)
+            .with_rationale("the reserve was diverted before the repair")
+            .with_evidence("incident review 4711")
+            .with_confidence("high")
+    }
+
+    fn wake_over(
+        refs: &[&str],
+        details: Vec<BundleNodeDetail>,
+        relationships: Vec<BundleRelationship>,
+        max_entries: Option<usize>,
+    ) -> kmp_proto::v1beta1::WakeResponse {
+        let bundle = KmpBundle::new(
+            CaseId::new("project:kmp").expect("case id"),
+            Role::new("resumer").expect("role"),
+            node("project:kmp"),
+            refs.iter().map(|id| node(id)).collect(),
+            relationships,
+            details,
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let rendered = render_graph_bundle(&bundle);
+        wake_response_from_result(
+            "resume",
+            max_entries,
+            GetContextResult {
+                bundle,
+                rendered,
+                requested_scopes: Vec::new(),
+                served_at: std::time::SystemTime::UNIX_EPOCH,
+                timing: None,
+            },
+        )
+    }
+
+    /// The cap used to keep whatever the traversal emitted first. A resume
+    /// packet capped at one entry must keep the decision someone proved, not
+    /// the containment record that happens to sort earlier.
+    #[test]
+    fn the_entry_cap_keeps_what_the_writer_proved() {
+        let response = wake_over(
+            &[
+                "timeline:main",
+                "decision:bookkeeping",
+                "decision:proven",
+                "outcome:restored",
+            ],
+            vec![
+                detail("decision:bookkeeping", "A routine note was filed."),
+                detail(
+                    "decision:proven",
+                    "Reserve capacity was diverted overnight.",
+                ),
+            ],
+            vec![
+                entry("decision:bookkeeping", "2026-03-01T00:00:00Z", None),
+                entry("decision:proven", "2026-03-01T00:00:00Z", None),
+                BundleRelationship::new(
+                    "decision:proven",
+                    "outcome:restored",
+                    "triggers",
+                    proven(RelationSemanticClass::Causal),
+                ),
+            ],
+            Some(1),
+        );
+
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.evidence.len(), 1);
+        assert_eq!(proof.evidence[0].id, "detail:decision:proven");
+        assert_eq!(proof.frontier_size, 1);
+    }
+
+    /// `proof.expired` has been in the wake contract since the proof shape
+    /// existed and nothing ever filled it.
+    #[test]
+    fn wake_names_what_stopped_applying_instead_of_only_returning_it() {
+        let response = wake_over(
+            &["timeline:main", "constraint:ended", "decision:live"],
+            vec![
+                detail("constraint:ended", "Deploys were frozen for the audit."),
+                detail("decision:live", "The audit closed and deploys resumed."),
+            ],
+            vec![
+                entry(
+                    "constraint:ended",
+                    "2026-01-01T00:00:00Z",
+                    Some("2026-02-01T00:00:00Z"),
+                ),
+                entry("decision:live", "2026-03-01T00:00:00Z", None),
+            ],
+            None,
+        );
+
+        let proof = response.proof.expect("proof");
+        assert_eq!(proof.expired.len(), 1);
+        assert_eq!(proof.expired[0].r#ref, "constraint:ended");
+        assert!(proof.expired[0].valid_until.is_some());
+        // Still returned — wake reports state, it does not censor it — but
+        // behind what still stands, so a cap cuts the stale entry first.
+        assert_eq!(
+            proof
+                .evidence
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["detail:decision:live", "detail:constraint:ended"]
+        );
+    }
+
+    /// Two causal edges used to be separated by the alphabet.
+    #[test]
+    fn the_causal_spine_leads_with_the_better_proven_edge() {
+        let response = wake_over(
+            &["a:source", "b:source", "z:target"],
+            Vec::new(),
+            vec![
+                BundleRelationship::new(
+                    "a:source",
+                    "z:target",
+                    "triggers",
+                    RelationExplanation::new(RelationSemanticClass::Causal)
+                        .with_rationale("a why with no evidence behind it"),
+                ),
+                BundleRelationship::new(
+                    "b:source",
+                    "z:target",
+                    "triggers",
+                    proven(RelationSemanticClass::Causal),
+                ),
+            ],
+            None,
+        );
+
+        let spine = response.wake.expect("wake packet").causal_spine;
+        assert_eq!(spine[0].claim, "b:source -> z:target");
     }
 }

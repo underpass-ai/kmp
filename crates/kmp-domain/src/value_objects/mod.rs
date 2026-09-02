@@ -7,6 +7,7 @@ pub mod memory_dimension_identity;
 pub mod provenance;
 pub mod relation_explanation;
 pub mod relation_semantic_class;
+pub mod relation_signal;
 pub mod relation_type;
 pub mod resolution_tier;
 pub mod role;
@@ -23,6 +24,7 @@ pub use memory_dimension_identity::MemoryDimensionIdentity;
 pub use provenance::Provenance;
 pub use relation_explanation::RelationExplanation;
 pub use relation_semantic_class::RelationSemanticClass;
+pub use relation_signal::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};
 pub use relation_type::{
     KnownMemoryRelationType, MemoryRelationQuality, MemoryRelationSpec, MemoryRelationType,
 };
