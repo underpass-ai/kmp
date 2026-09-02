@@ -48,7 +48,7 @@ pub fn render_graph_bundle(bundle: &KmpBundle) -> RenderedContext {
     render_graph_bundle_with_estimator(
         bundle,
         &ContextRenderOptions::default(),
-        &Cl100kEstimator::new(),
+        Cl100kEstimator::shared(),
     )
 }
 
@@ -56,7 +56,7 @@ pub fn render_graph_bundle_with_options(
     bundle: &KmpBundle,
     options: &ContextRenderOptions,
 ) -> RenderedContext {
-    render_graph_bundle_with_estimator(bundle, options, &Cl100kEstimator::new())
+    render_graph_bundle_with_estimator(bundle, options, Cl100kEstimator::shared())
 }
 
 pub fn render_graph_bundle_with_estimator(

@@ -104,7 +104,8 @@ fn project_typed_recall<T>(
     apply: fn(T, &Value) -> T,
 ) -> Result<T, RecallProjectionError> {
     let value = render(&response);
-    match project_recall_output_typed(value, &arguments, default_tokens, &Cl100kEstimator::new())? {
+    match project_recall_output_typed(value, &arguments, default_tokens, Cl100kEstimator::shared())?
+    {
         ProjectionOutcome::Projected(value) => Ok(apply(response, &value)),
         ProjectionOutcome::CoreTooLarge => Err(RecallProjectionError::CoreTooLarge),
     }
