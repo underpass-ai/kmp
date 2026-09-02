@@ -1722,3 +1722,53 @@ fn doctor_does_not_read_the_synced_guide_as_uncommitted_project_memory() {
         "the guide is not uncommitted project memory: {report}"
     );
 }
+
+#[test]
+fn a_store_with_a_lexical_bridge_is_not_told_to_translate_and_retry() {
+    let config_home = tempfile::tempdir().expect("config home");
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../kmp-testkit/judged/lexical-bridge.kmpb");
+    let fixture = fixture.to_str().expect("utf8 fixture path");
+    let envs = [
+        (
+            "XDG_CONFIG_HOME",
+            config_home.path().to_str().expect("utf8 config path"),
+        ),
+        (
+            "KMP_MCP_DATA_DIR",
+            data_dir.path().to_str().expect("utf8 data path"),
+        ),
+        ("KMP_VIEWER_ADDR", "off"),
+        ("KMP_LEXICAL_BRIDGE", fixture),
+    ];
+
+    let output = run_binary(
+        &envs,
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n",
+    );
+    assert!(output.status.success());
+    let response: Value = serde_json::from_slice(&output.stdout).expect("initialize response");
+    let instructions = response["result"]["instructions"]
+        .as_str()
+        .expect("agent instructions");
+    assert!(
+        instructions.contains("bridges languages inside the kernel"),
+        "{instructions}"
+    );
+    assert!(!instructions.contains("Active Ask fallback languages"));
+    assert!(instructions.contains("re-ask at most once in other words"));
+
+    let info = std::process::Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .arg("info")
+        .envs(envs.iter().copied())
+        .output()
+        .expect("info runs");
+    let info = String::from_utf8_lossy(&info.stdout);
+    // The detail wraps at the terminal width, so only the head of the line
+    // is asserted: the count is the fixture's, and the provenance follows.
+    assert!(
+        info.contains("lexical bridge: 165 words"),
+        "info must name the table: {info}"
+    );
+}

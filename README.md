@@ -192,11 +192,17 @@ commit or copy it.
 
 ## Language without flattening the evidence
 
-KMP never translates or rewrites stored evidence. The agent asks first in the
-user's language. If the result is `UNKNOWN`, it may retry the query once per
-configured fallback language; English is the default fallback. Only the query
-changes. Evidence, refs, relation `why` and source metadata stay exactly as
-stored, and the agent answers in the user's language.
+KMP never translates or rewrites stored evidence. With a lexical-bridge table
+beside the store (`<data dir>/lexical-bridge.kmpb`, built by
+`scripts/lexical-bridge/`), `kmp_ask` reaches memory written in another
+language on its own: a citation that crossed a language names the word pairs
+that carried it (`valvula≈valve 0.51`) and answers at medium confidence at
+most, and the agent is told not to translate and retry. Without a table, the
+agent asks first in the user's language and, if the result is `UNKNOWN`, may
+retry the query once per configured fallback language; English is the default
+fallback. Either way only the query changes. Evidence, refs, relation `why`
+and source metadata stay exactly as stored, and the agent answers in the
+user's language. `kmp-mcp info` says which of the two a store is on.
 
 ```bash
 kmp-mcp config ask-fallback-languages en,fr
@@ -252,8 +258,10 @@ answer from the returned evidence.
 
 ### What if my question is Spanish but the evidence is English?
 
-Ask fallback can retry the semantic query in English without translating the
-stored material. Configure the fallback during setup or with `kmp-mcp config`.
+With a lexical-bridge table beside the store, Ask crosses the two languages
+inside the kernel and says which word pairs it used. Without one, Ask fallback
+can retry the semantic query in English without translating the stored
+material. Configure the fallback during setup or with `kmp-mcp config`.
 
 ### Can Codex and Claude share the same memory?
 

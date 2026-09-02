@@ -259,4 +259,9 @@ impl KernelMcpServer {
     pub fn grpc_tls_mode_name(&self) -> &'static str {
         self.backend.grpc_tls_mode_name()
     }
+
+    /// Whether this server's `kmp_ask` bridges languages inside the kernel.
+    pub fn bridges_languages(&self) -> bool {
+        self.backend.bridges_languages()
+    }
 }
