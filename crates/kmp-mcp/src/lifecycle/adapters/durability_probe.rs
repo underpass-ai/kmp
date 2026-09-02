@@ -1,16 +1,17 @@
-use std::path::Path;
-
 use kmp_embedded::{OrphanedProjectBundle, ResolvedDataDir};
 
+use crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
 
 use super::embedded_memory_probe::store_file_on_disk;
 
-/// Whether the machine state has a current, verifiable git-native copy. The
-/// store itself is never opened: the pending marker brackets every write, and
-/// file modification times catch stores written by older binaries that did
-/// not create one.
+/// Whether the machine state has a current, verifiable git-native copy.
+///
+/// What is compared is this project's authored memory. The store also holds
+/// the shipped guide, which setup syncs on its own and which no committed
+/// bundle has ever carried, so the guide's abouts are left out of the live
+/// side before the two are weighed against each other.
 pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<LifecycleFinding> {
     if let Some(orphaned) = resolved.orphaned_bundle() {
         return Some(orphaned_bundle_finding(orphaned));
@@ -80,8 +81,14 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
         }
     };
     if store.is_some() {
-        let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
-            .and_then(|store| store.export_bundle_blocking());
+        // The bundle carries this project's authored memory. The store also
+        // holds the shipped guide, which setup syncs on its own and which no
+        // committed bundle has ever contained — comparing the whole store
+        // against the bundle would report the guide as drift the moment setup
+        // ran, which is to say always.
+        let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
+            store.export_bundle_excluding_abouts_blocking(&ShippedGuideAbouts::owned())
+        });
         let live = match live {
             Ok(live) => live,
             Err(error) => {
@@ -121,32 +128,41 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
         if header.event_count != live_header.event_count
             || header.content_digest != live_header.content_digest
         {
+            // The merge above already proved these histories are compatible,
+            // so this is a store running ahead of its last checkpoint — the
+            // ordinary state after any write, and not a reason to call the
+            // installation unusable. Divergence is the failure, and it has
+            // already returned.
+            let behind = live_header.event_count.saturating_sub(header.event_count);
+            let mut finding = LifecycleFinding::new(
+                DiagnosticSeverity::Warn,
+                "the committed memory is behind the live store",
+            )
+            .with_detail(format!(
+                "live events: {}; committed events: {}",
+                live_header.event_count, header.event_count
+            ));
+            if behind > 0 {
+                finding = finding.with_detail(format!(
+                    "{behind} {} not yet checkpointed",
+                    if behind == 1 {
+                        "write is"
+                    } else {
+                        "writes are"
+                    }
+                ));
+            }
             return Some(
-                LifecycleFinding::new(
-                    DiagnosticSeverity::Fail,
-                    "the live store and committed memory are different revisions",
-                )
-                .with_detail(format!(
-                    "live events: {}; committed events: {}",
-                    live_header.event_count, header.event_count
-                ))
-                .with_detail("run `kmp-mcp export`, inspect the diff, and reconcile explicitly"),
+                finding
+                    .with_detail("run `kmp-mcp export` to checkpoint them, then commit the bundle"),
             );
         }
     }
-    if let Some(store) = store
-        && newer_than(&store, &bundle)
-    {
-        return Some(
-            LifecycleFinding::new(
-                DiagnosticSeverity::Fail,
-                "the gitignored store is newer than its committed memory",
-            )
-            .with_detail(format!("store:  {}", store.display()))
-            .with_detail(format!("bundle: {}", bundle.display()))
-            .with_detail("run `kmp-mcp export`, inspect the diff, and commit it"),
-        );
-    }
+    // A store file touched more recently than its bundle used to be a failure
+    // on its own. It is not evidence: syncing the guide or merely opening the
+    // store moves the timestamp, and the events above have already been read
+    // and compared. Whatever the modification times say, the two hold the same
+    // authored memory.
     if header.bundle_format < kmp_embedded::BUNDLE_FORMAT_VERSION {
         return Some(
             LifecycleFinding::new(
@@ -233,11 +249,6 @@ fn orphaned_bundle_finding(orphaned: &OrphanedProjectBundle) -> LifecycleFinding
              explicit export can refresh known abouts safely",
         )
     }
-}
-
-fn newer_than(left: &Path, right: &Path) -> bool {
-    let modified = |path: &Path| std::fs::metadata(path).and_then(|metadata| metadata.modified());
-    matches!((modified(left), modified(right)), (Ok(left), Ok(right)) if left > right)
 }
 
 #[cfg(test)]

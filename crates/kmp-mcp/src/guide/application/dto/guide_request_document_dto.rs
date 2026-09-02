@@ -1,6 +1,7 @@
 use serde_json::{Value, json};
 
 use crate::guide::domain::guide_error::GuideError;
+use crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GuideRequestDocumentDto {
@@ -13,7 +14,7 @@ impl GuideRequestDocumentDto {
         let about = body
             .get("about")
             .and_then(Value::as_str)
-            .filter(|about| matches!(*about, "guide:kmp" | "guide:kmp-agent"))
+            .filter(|about| ShippedGuideAbouts::contains(about))
             .ok_or_else(|| GuideError::invalid("guide request has an unsupported about"))?
             .to_string();
         if body

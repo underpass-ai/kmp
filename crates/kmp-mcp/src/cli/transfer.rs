@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use kmp_mcp::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
+
 use super::{looks_like_option, unknown_option};
 
 /// `export` and `import`: the whole event log, in order, as one file.
@@ -97,8 +99,8 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
     let is_project_head = kmp_embedded::project_bundle_path(&resolved).as_deref() == Some(path);
     if repair_pending && !abouts.is_empty() {
         eprintln!(
-            "kmp-mcp: --repair-pending requires a full-store export; it cannot be combined \
-             with --about"
+            "kmp-mcp: --repair-pending proves the project's whole memory was written; it \
+             cannot be combined with --about, which exports a chosen subset"
         );
         return 2;
     }
@@ -130,10 +132,22 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
             // The pulse holds the line only while the store is actually
             // read; it is erased before anything else prints.
             let pulse = kmp_mcp::pulse::Pulse::start("saving your memory…");
-            let exported = if abouts.is_empty() {
-                store.export_bundle().await
-            } else {
+            let exported = if !abouts.is_empty() {
                 store.export_bundle_for_abouts(&abouts).await
+            } else if is_project_head {
+                // `.kmp/memory.jsonl` is this project's authored memory, and it
+                // travels in the repository. The shipped guide lives in the
+                // same store because setup syncs it there, but it belongs to
+                // the release, not to the project: writing it here would put a
+                // copy of the guide in every repository that uses KMP and
+                // produce a diff on every version that bumps it.
+                store
+                    .export_bundle_excluding_abouts(&ShippedGuideAbouts::owned())
+                    .await
+            } else {
+                // An explicit path is a backup or a migration, and it takes
+                // everything the store holds.
+                store.export_bundle().await
             };
             pulse.clear();
             match exported {

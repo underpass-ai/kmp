@@ -89,6 +89,42 @@ impl EmbeddedKernelStore {
         encode_bundle(&events, None)
     }
 
+    /// Serializes every event *except* those rooted at one of
+    /// `excluded_abouts`.
+    ///
+    /// The mirror of [`Self::export_bundle_for_abouts`], for the caller that
+    /// knows what does not belong in a bundle rather than what does. A store
+    /// holds content it did not author — a synced guide, say — and a bundle
+    /// that is meant to carry authored memory has to be able to leave it out
+    /// without first enumerating everything else. An excluded about that is
+    /// absent is not an error: exclusion asks for a stream without something,
+    /// and a store that never had it already satisfies that.
+    ///
+    /// Abouts are opaque: matching is exact, with no trimming, case folding or
+    /// prefix expansion.
+    pub fn export_bundle_excluding_abouts_blocking(
+        &self,
+        excluded_abouts: &[String],
+    ) -> Result<String, PortError> {
+        let events = self.read_event_log()?;
+        encode_bundle(
+            &filter_events_excluding_abouts(events, excluded_abouts),
+            None,
+        )
+    }
+
+    /// The async form of [`Self::export_bundle_excluding_abouts_blocking`].
+    pub async fn export_bundle_excluding_abouts(
+        &self,
+        excluded_abouts: &[String],
+    ) -> Result<String, PortError> {
+        let events = self.run(EmbeddedKernelStore::read_event_log).await?;
+        encode_bundle(
+            &filter_events_excluding_abouts(events, excluded_abouts),
+            None,
+        )
+    }
+
     /// Exports the same complete stream with a human-selected snapshot id.
     /// The id is metadata, not a filename: callers may store the bundle in git,
     /// an artifact store, or anywhere else without changing what it identifies.
@@ -330,6 +366,20 @@ fn abouts(events: &[ContextUpdatedEvent]) -> Vec<String> {
         .collect()
 }
 
+fn filter_events_excluding_abouts(
+    events: Vec<ContextUpdatedEvent>,
+    excluded_abouts: &[String],
+) -> Vec<ContextUpdatedEvent> {
+    if excluded_abouts.is_empty() {
+        return events;
+    }
+    let excluded = excluded_abouts.iter().cloned().collect::<BTreeSet<_>>();
+    events
+        .into_iter()
+        .filter(|event| !excluded.contains(&event.root_node_id))
+        .collect()
+}
+
 fn filter_events_for_abouts(
     events: Vec<ContextUpdatedEvent>,
     requested_abouts: &[String],
@@ -477,6 +527,59 @@ mod tests {
         );
         assert_eq!(header.abouts, ["project:a", "project:b"]);
         assert!(header.content_digest.starts_with("sha256:"));
+    }
+
+    #[test]
+    fn exclusion_keeps_everything_the_excluded_abouts_do_not_root() {
+        let events = vec![
+            event("project:a", 1, "a1"),
+            event("guide:kmp", 1, "g1"),
+            event("project:a", 2, "a2"),
+            event("guide:kmp-agent", 1, "g2"),
+        ];
+        let excluded = vec!["guide:kmp".to_string(), "guide:kmp-agent".to_string()];
+
+        let kept = filter_events_excluding_abouts(events, &excluded);
+
+        assert_eq!(
+            kept.iter()
+                .map(|event| (event.root_node_id.as_str(), event.revision))
+                .collect::<Vec<_>>(),
+            vec![("project:a", 1), ("project:a", 2)]
+        );
+    }
+
+    #[test]
+    fn exclusion_matches_exactly_because_abouts_are_opaque() {
+        let events = vec![
+            event("guide:kmp", 1, "g1"),
+            event("guide:kmp:extra", 1, "x1"),
+            event(" guide:kmp", 1, "s1"),
+        ];
+        let excluded = vec!["guide:kmp".to_string()];
+
+        let kept = filter_events_excluding_abouts(events, &excluded);
+
+        assert_eq!(
+            kept.iter()
+                .map(|event| event.root_node_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["guide:kmp:extra", " guide:kmp"]
+        );
+    }
+
+    #[test]
+    fn excluding_an_about_the_store_never_had_is_not_an_error() {
+        // Exclusion asks for a stream without something. A store that never
+        // held it already satisfies that, unlike a filtered export, which is
+        // asking for something and must refuse when it is missing.
+        let events = vec![event("project:a", 1, "a1")];
+        let excluded = vec!["guide:kmp".to_string()];
+
+        let kept = filter_events_excluding_abouts(events, &excluded);
+
+        assert_eq!(kept.len(), 1);
+        assert_eq!(kept[0].root_node_id, "project:a");
     }
 
     #[test]

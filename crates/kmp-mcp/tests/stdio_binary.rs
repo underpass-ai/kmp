@@ -1547,8 +1547,75 @@ fn cli_surface_version_export_import_and_errors() {
     assert!(String::from_utf8_lossy(&wake.stdout).contains("decision:cli"));
 }
 
+/// Authored memory the bundle has not caught up with is worth saying, but it is
+/// the ordinary state after any write: the store runs ahead until the next
+/// checkpoint. The doctor names it and stays usable.
 #[test]
-fn doctor_rejects_a_verified_bundle_from_a_different_live_revision() {
+fn doctor_warns_rather_than_fails_when_the_bundle_is_behind_authored_memory() {
+    let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(std::path::Path::parent)
+        .expect("workspace");
+    let scratch = workspace.join("tmp");
+    std::fs::create_dir_all(&scratch).expect("scratch");
+    let project = tempfile::Builder::new()
+        .prefix("doctor-behind.")
+        .tempdir_in(&scratch)
+        .expect("project");
+    let data_dir = project.path().join(".kernel");
+    std::fs::create_dir_all(project.path().join(".git")).expect("project marker");
+    let bundle_dir = project.path().join(".kmp");
+    let committed = bundle_dir.join("memory.jsonl");
+    std::fs::create_dir_all(&bundle_dir).expect("bundle dir");
+    let binary = env!("CARGO_BIN_EXE_kmp-mcp");
+
+    // Real authored memory in the project store.
+    let ingest = run_binary(
+        &[
+            ("KMP_MCP_BACKEND", "embedded"),
+            ("KMP_MCP_DATA_DIR", data_dir.to_str().expect("utf8")),
+        ],
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:behind\",\"idempotency_key\":\"ingest:behind\",\"memory\":{\"dimensions\":[{\"id\":\"timeline:t\",\"kind\":\"timeline\"}],\"entries\":[{\"id\":\"project:behind:decision:store\",\"kind\":\"decision\",\"text\":\"embedded\",\"coordinates\":[{\"dimension\":\"timeline\",\"scope_id\":\"timeline:t\",\"sequence\":1}]}]}}}}\n",
+    );
+    assert!(ingest.status.success(), "{ingest:?}");
+
+    // Then a committed bundle that predates it: an export taken from an empty
+    // store, written over whatever automatic maintenance produced.
+    let empty_store = project.path().join("empty-store");
+    let exported = Command::new(binary)
+        .args(["export", committed.to_str().expect("bundle path")])
+        .env("KMP_MCP_DATA_DIR", empty_store)
+        .output()
+        .expect("empty export");
+    assert!(exported.status.success(), "{exported:?}");
+
+    let doctor = Command::new(binary)
+        .arg("doctor")
+        .current_dir(project.path())
+        .env_remove("KMP_MCP_DATA_DIR")
+        .env("HOME", project.path().join("home"))
+        .env("XDG_DATA_HOME", project.path().join("xdg-data"))
+        .env("XDG_CONFIG_HOME", project.path().join("xdg-config"))
+        .env("PATH", "/usr/bin:/bin")
+        .output()
+        .expect("doctor");
+    let report = String::from_utf8_lossy(&doctor.stdout);
+    assert!(
+        report.contains("behind the live store"),
+        "uncommitted authored memory must be named: {report}"
+    );
+    assert!(
+        !report.contains("Not usable"),
+        "a store ahead of its checkpoint is still usable: {report}"
+    );
+}
+
+/// The synced guide is not this project's memory. Setup puts it in the store
+/// on its own, and no committed bundle has ever carried it, so a store holding
+/// nothing but the guide is a store with nothing to checkpoint — not drift, and
+/// not a reason to call the installation unusable.
+#[test]
+fn doctor_does_not_read_the_synced_guide_as_uncommitted_project_memory() {
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(std::path::Path::parent)
@@ -1593,9 +1660,12 @@ fn doctor_rejects_a_verified_bundle_from_a_different_live_revision() {
         .output()
         .expect("doctor");
     let report = String::from_utf8_lossy(&doctor.stdout);
-    assert_eq!(doctor.status.code(), Some(1), "{report}");
     assert!(
-        report.contains("live store and committed memory are different revisions"),
-        "{report}"
+        !report.contains("Not usable"),
+        "a synced guide must not make the installation unusable: {report}"
+    );
+    assert!(
+        !report.contains("behind the live store"),
+        "the guide is not uncommitted project memory: {report}"
     );
 }
