@@ -24,8 +24,8 @@
           "placeholder": "https://kmp.example.com"
         }
       ],
-      "fileSha256": "2b9a520f86c9f1b161b323ad7cc123b58fa08f82c3c85957819e46bb3d226924",
-      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.7.0/kmp-mcp-v0.7.0.mcpb",
+      "fileSha256": "3eabde0a0ff8e2cf4a29d6fa88120dd98d3fc1a2b4d2c208aebb371d8035d856",
+      "identifier": "https://github.com/underpass-ai/kmp/releases/download/v0.7.1/kmp-mcp-v0.7.1.mcpb",
       "registryType": "mcpb",
       "transport": {
         "type": "stdio"
@@ -57,7 +57,7 @@
       "transport": {
         "type": "stdio"
       },
-      "version": "0.7.0"
+      "version": "0.7.1"
     }
   ],
   "repository": {
@@ -65,6 +65,6 @@
     "url": "https://github.com/underpass-ai/kmp"
   },
   "title": "KMP",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "websiteUrl": "https://github.com/underpass-ai/kmp"
 }
