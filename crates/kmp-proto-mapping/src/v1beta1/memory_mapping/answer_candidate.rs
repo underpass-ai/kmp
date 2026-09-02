@@ -5,8 +5,9 @@ use kmp_proto::v1beta1::MemoryEvidence;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
-    intent_relation_matches, relation_signal_total, stable_evidence_key,
+    intent_relation_matches, note_bridged_terms, relation_signal_total, stable_evidence_key,
 };
+use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::lexicon::Lexicon;
 use super::question_intent::QuestionIntent;
@@ -46,13 +47,22 @@ impl AnswerCandidate {
             return Err(Box::new(item));
         }
 
+        // A memory in another language is about the same thing; the focus
+        // it must answer counts a bridged concept as answered.
         let answers_requested_focus =
             strict_focus.is_none_or(|(focus_terms, required_focus_matches)| {
-                matching_term_count(focus_terms, &terms.searchable) >= *required_focus_matches
+                lexicon.focus_matches(focus_terms, &terms) >= *required_focus_matches
             });
         if !answers_requested_focus {
             return Err(Box::new(item));
         }
+        // A citation that crossed a language says which words carried it.
+        let bridged = lexicon.bridged_pairs(&terms);
+        let item = if bridged.is_empty() {
+            item
+        } else {
+            note_bridged_terms(item, &BridgedTerm::describe_all(bridged))
+        };
 
         let relations = context.relationships_for(&item);
         let relevance = RelevanceKey {

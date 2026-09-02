@@ -18,6 +18,7 @@ use kmp_proto::v1beta1::{
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
 use super::answer_selection::was_reached_indirectly;
+use super::lexical_bridge::LexicalBridge;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -268,8 +269,9 @@ pub fn ask_response_from_result(
     policy: MemoryAnswerPolicy,
     max_entries: Option<usize>,
     result: GetContextResult,
+    bridge: &LexicalBridge,
 ) -> AskResponse {
-    let ranker = AnswerEvidenceRanker::from_bundle(&result.bundle);
+    let ranker = AnswerEvidenceRanker::from_bundle_with_bridge(&result.bundle, bridge);
     let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
     let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
@@ -1640,6 +1642,7 @@ mod ask_entry_text_tests {
             MemoryAnswerPolicy::EvidenceOrUnknown,
             None,
             result,
+            &super::LexicalBridge::none(),
         );
 
         assert_ne!(response.answer, UNANSWERED);
@@ -1717,6 +1720,7 @@ mod ask_entry_text_tests {
             MemoryAnswerPolicy::EvidenceOrUnknown,
             None,
             result,
+            &super::LexicalBridge::none(),
         );
 
         let proof = response.proof.expect("proof");

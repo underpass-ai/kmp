@@ -940,6 +940,206 @@
           }
         ]
       }
+    },
+    {
+      "id": "cross-question-es",
+      "probes": "The question is Spanish and the memory English, with no word in common: every concept has to be bridged by the lexical-bridge table. Under the strict policy the bridged memory must be cited, at medium confidence, rather than returned as UNKNOWN.",
+      "about": "project:puente",
+      "question": "¿Qué válvula falló durante el turno de noche?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:puente:e2"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:puente:e1",
+            "kind": "observation",
+            "text": "The weekly meeting moved to ten in the morning.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:puente:e2",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:puente:e3",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "cross-store-es",
+      "probes": "The question is English and the memory Spanish, written with its accents. Three of five concepts bridge — `froze` does not reach `congeló`, and `shift` lands on a different entry — which is enough for the right memory to lead and be cited, and the entry `shift` reached arrives as proof, not as an answer.",
+      "about": "project:puente-almacen",
+      "question": "Which valve froze during the night shift?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:puente-almacen:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:puente-almacen:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante la noche de la guardia.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:puente-almacen:e2",
+            "kind": "observation",
+            "text": "El equipo revisó la pasarela por la mañana con el turno de guardia.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:puente-almacen:e3",
+            "kind": "observation",
+            "text": "La reunión semanal se movió a las diez de la mañana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "bridge-precision",
+      "probes": "One Spanish question over English memories that all share the bridged common words — failed, during, night — while only one also names the subject. The subject must lead; sharing three bridged words with the question does not make the others the answer.",
+      "about": "project:puente-precision",
+      "question": "¿Qué válvula falló durante la noche?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:puente-precision:target"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:puente-precision:noise0",
+            "kind": "observation",
+            "text": "The meeting failed to start during the night.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:puente-precision:noise1",
+            "kind": "observation",
+            "text": "During the night the canteen stayed closed.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:puente-precision:noise2",
+            "kind": "observation",
+            "text": "The projector failed again during the night briefing.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:puente-precision:target",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

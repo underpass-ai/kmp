@@ -4,11 +4,14 @@ mod answer_ranker;
 mod answer_recall_context;
 mod answer_selection;
 mod association_index;
+mod bridged_key;
+mod bridged_term;
 mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;
 mod ingest;
 mod language_vocabulary;
+mod lexical_bridge;
 mod lexical_field;
 mod lexicon;
 mod memory_lifecycle;
@@ -29,6 +32,7 @@ mod term_counts;
 mod visual_projection;
 
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
+pub use lexical_bridge::LexicalBridge;
 pub use queries::{
     ask_query_from_proto, inspect_query_from_proto, temporal_query_from_move_proto,
     temporal_query_from_near_proto, trace_query_from_proto, wake_query_from_proto,

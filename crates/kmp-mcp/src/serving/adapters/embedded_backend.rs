@@ -4,7 +4,7 @@ use kmp_domain::{PortError, QualityMetricsObserver, QualityObservationContext, T
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
-    ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
+    LexicalBridge, ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
     temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
     trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
@@ -30,6 +30,7 @@ use crate::serving::{app_data_success_result, tool_success_result};
 use crate::write::build_ingest_plan;
 
 use super::embedded_errors::{kernel_error, mapping_error, temporal_error};
+use super::lexical_bridge_file::load_lexical_bridge;
 
 /// In-process kernel backend: the same JSON argument builders and response
 /// shapes as live mode, with the application service called directly instead
@@ -38,6 +39,9 @@ pub struct EmbeddedKernelMcpBackend {
     kernel: EmbeddedKernel,
     data_dir: String,
     commit_native: Option<CommitNativeBundle>,
+    /// The word table `ask` bridges languages with, read once beside the
+    /// store. Silent when none is installed.
+    lexical_bridge: LexicalBridge,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -68,7 +72,13 @@ impl EmbeddedKernelMcpBackend {
             kernel,
             data_dir: data_dir.display().to_string(),
             commit_native,
+            lexical_bridge: load_lexical_bridge(data_dir),
         })
+    }
+
+    /// The table `ask` bridges languages with on this store.
+    pub fn lexical_bridge(&self) -> &LexicalBridge {
+        &self.lexical_bridge
     }
 
     /// The storage engine this session's store is on.
@@ -97,6 +107,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         let quality_observer = self.kernel.quality_observer();
         let commit_native = self.commit_native.as_ref();
         let store = self.kernel.store();
+        let bridge = &self.lexical_bridge;
         Box::pin(async move {
             let writes = matches!(
                 name,
@@ -106,15 +117,22 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 .and_then(Value::as_bool)
                 .unwrap_or(false);
             let Some(commit_native) = commit_native.filter(|_| writes) else {
-                return embedded_tool_result(&service, quality_observer.as_ref(), name, arguments)
-                    .await;
+                return embedded_tool_result(
+                    &service,
+                    quality_observer.as_ref(),
+                    bridge,
+                    name,
+                    arguments,
+                )
+                .await;
             };
             let pending = commit_native
                 .begin_write(store)
                 .await
                 .map_err(commit_native_preflight_error)?;
             let result =
-                embedded_tool_result(&service, quality_observer.as_ref(), name, arguments).await;
+                embedded_tool_result(&service, quality_observer.as_ref(), bridge, name, arguments)
+                    .await;
             match result {
                 Ok(result) => {
                     let header = commit_native.publish(store, &pending).await.map_err(|error| {
@@ -193,6 +211,7 @@ fn observe_quality(
 async fn embedded_tool_result(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
+    bridge: &LexicalBridge,
     name: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
@@ -201,7 +220,7 @@ async fn embedded_tool_result(
             embedded_ingest(service, arguments).await
         }
         "kmp_wake" => embedded_wake(service, observer, arguments).await,
-        "kmp_ask" => embedded_ask(service, observer, arguments).await,
+        "kmp_ask" => embedded_ask(service, observer, bridge, arguments).await,
         "kmp_goto" => {
             embedded_temporal(
                 service,
@@ -313,6 +332,7 @@ async fn embedded_wake(
 async fn embedded_ask(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
+    bridge: &LexicalBridge,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
@@ -334,7 +354,7 @@ async fn embedded_ask(
         &result.rendered.quality,
     );
     let response = project_ask_response(
-        ask_response_from_result(&question, policy, max_entries, result),
+        ask_response_from_result(&question, policy, max_entries, result, bridge),
         &request,
     )
     .map_err(|error| ToolError::invalid_argument(error.to_string()))?;

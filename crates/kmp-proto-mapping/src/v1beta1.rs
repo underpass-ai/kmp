@@ -16,7 +16,7 @@ pub use graph_mapping::{
     proto_graph_node_v1beta1, proto_node_detail_view_v1beta1,
 };
 pub use memory_mapping::{
-    ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
+    LexicalBridge, ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
     temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
     trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
