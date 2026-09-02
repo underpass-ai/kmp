@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-02
+
 ### Fixed
 
 - The doctor called a healthy installation `Not usable` because setup's own
@@ -912,7 +914,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/underpass-ai/kmp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/underpass-ai/kmp/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/underpass-ai/kmp/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/underpass-ai/kmp/compare/v0.6.0...v0.6.1
