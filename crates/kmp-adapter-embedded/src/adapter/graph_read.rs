@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use kmp_domain::{
-    ContextPathNeighborhood, GraphNeighborhoodReader, MemoryAboutIndexReader, NodeNeighborhood,
-    NodeProjection, NodeRelationProjection, NodeRelationshipReader, NodeRelationships, PortError,
+    ContextPathNeighborhood, GraphNeighborhoodReader, MemoryAboutIndexReader, NeighborhoodRequest,
+    NodeNeighborhood, NodeProjection, NodeRelationProjection, NodeRelationshipReader,
+    NodeRelationships, PortError,
 };
 
 use super::engine::{Key, ReadTx, Table};
@@ -43,18 +44,25 @@ fn outgoing_targets(tx: &dyn ReadTx, source: &str) -> Result<Vec<String>, PortEr
 
 fn reachable_outward(
     tx: &dyn ReadTx,
-    root_node_id: &str,
-    depth: u32,
+    request: &NeighborhoodRequest,
 ) -> Result<BTreeSet<String>, PortError> {
+    let root_node_id = request.root_node_id();
     let mut visited = BTreeSet::from([root_node_id.to_string()]);
     let mut reachable = BTreeSet::new();
     let mut frontier = VecDeque::from([(root_node_id.to_string(), 0u32)]);
 
     while let Some((node_id, hops)) = frontier.pop_front() {
-        if hops == depth {
+        if hops == request.depth() {
             continue;
         }
         for target in outgoing_targets(tx, &node_id)? {
+            // A dimension the caller did not ask for is not descended into,
+            // and everything hanging from it is thereby never loaded. Nothing
+            // else is refused: the narrowing is on the axis, not on the
+            // contents.
+            if !request.admits(&target) {
+                continue;
+            }
             if visited.insert(target.clone()) {
                 reachable.insert(target.clone());
                 frontier.push_back((target, hops + 1));
@@ -136,7 +144,16 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
         root_node_id: &str,
         depth: u32,
     ) -> Result<Option<NodeNeighborhood>, PortError> {
-        let root_node_id = root_node_id.to_string();
+        self.load_scoped_neighborhood(&NeighborhoodRequest::new(root_node_id, depth))
+            .await
+    }
+
+    async fn load_scoped_neighborhood(
+        &self,
+        request: &NeighborhoodRequest,
+    ) -> Result<Option<NodeNeighborhood>, PortError> {
+        let request = request.clone();
+        let root_node_id = request.root_node_id().to_string();
         self.run(move |store| {
             let tx = store.begin_read()?;
             let tx = tx.as_ref();
@@ -145,7 +162,7 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
                 return Ok(None);
             };
 
-            let reachable = reachable_outward(tx, &root_node_id, depth)?;
+            let reachable = reachable_outward(tx, &request)?;
             // Mirrors the Neo4j neighborhood query: an empty neighborhood
             // reports no relations, even for self-referential root edges.
             let relation_rows = if reachable.is_empty() {
@@ -190,7 +207,10 @@ impl GraphNeighborhoodReader for EmbeddedKernelStore {
 
             let mut selected = path_node_ids.iter().cloned().collect::<BTreeSet<_>>();
             selected.insert(target_node_id.clone());
-            selected.extend(reachable_outward(tx, &target_node_id, subtree_depth)?);
+            selected.extend(reachable_outward(
+                tx,
+                &NeighborhoodRequest::new(&target_node_id, subtree_depth),
+            )?);
 
             Ok(Some(ContextPathNeighborhood {
                 neighbors: selected_projections(tx, &selected, &root_node_id)?,

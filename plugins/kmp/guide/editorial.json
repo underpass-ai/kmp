@@ -105,6 +105,13 @@
           "depth": "advanced",
           "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement.",
           "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles."
+        },
+        {
+          "id": "advanced:reach",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything.",
+          "evidence": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core."
         }
       ],
       "relations": [

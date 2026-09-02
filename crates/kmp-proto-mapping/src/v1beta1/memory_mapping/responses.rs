@@ -17,7 +17,7 @@ use kmp_proto::v1beta1::{
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
-use super::answer_selection::was_reached_by_relation;
+use super::answer_selection::was_reached_indirectly;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -280,7 +280,7 @@ pub fn ask_response_from_result(
     // rather than by refusing to retrieve the hop at all.
     let answer_core = evidence
         .iter()
-        .filter(|item| !was_reached_by_relation(item))
+        .filter(|item| !was_reached_indirectly(item))
         .cloned()
         .collect::<Vec<_>>();
     // `because` and the deterministic answer retain at most five citations.

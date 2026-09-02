@@ -1,5 +1,6 @@
 use kmp_domain::{
-    GraphNeighborhoodReader, KmpBundle, NodeDetailReader, SnapshotSaveOptions, SnapshotStore,
+    GraphNeighborhoodReader, KmpBundle, NeighborhoodRequest, NodeDetailReader, SnapshotSaveOptions,
+    SnapshotStore,
 };
 
 use crate::ApplicationError;
@@ -50,12 +51,15 @@ where
         requested_scopes: &[String],
         render_options: &ContextRenderOptions,
     ) -> Result<GetContextResult, ApplicationError> {
+        // The scopes were resolved before this query was built. Handing them to
+        // the reader is what lets a store narrow on the axis rather than the
+        // caller discarding what it should never have loaded.
         let (bundle, timing) = self
             .rehydrate_session
-            .execute_with_depth(
-                root_node_id,
+            .execute_for(
+                &NeighborhoodRequest::new(root_node_id, clamp_native_graph_traversal_depth(depth))
+                    .with_scopes(requested_scopes.to_vec()),
                 role,
-                clamp_native_graph_traversal_depth(depth),
                 false,
                 SnapshotSaveOptions::default(),
             )

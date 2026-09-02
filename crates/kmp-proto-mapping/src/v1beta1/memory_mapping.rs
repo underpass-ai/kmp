@@ -3,6 +3,7 @@ mod answer_candidate_terms;
 mod answer_ranker;
 mod answer_recall_context;
 mod answer_selection;
+mod association_index;
 mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;

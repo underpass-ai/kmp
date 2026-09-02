@@ -8,8 +8,8 @@ use super::answer_candidate::AnswerCandidate;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
-    answer_context_refs, diversify_candidates, mark_reached, prioritize_distinct_claims,
-    stable_evidence_key,
+    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_reached,
+    mark_reached_by, prioritize_distinct_claims, stable_evidence_key,
 };
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::lexicon::Lexicon;
@@ -27,6 +27,7 @@ pub(super) const ANSWER_CORE_LIMIT: usize = 5;
 const MAX_REACH_HOPS: u32 = 2;
 const MAX_REACHED_REFS: usize = 8;
 const MAX_RESCUED_CANDIDATES: usize = 5;
+const MAX_ASSOCIATED_CANDIDATES: usize = 3;
 
 /// Deterministic, graph-aware reranker for stored entry text and evidence used
 /// by `kmp_ask`.
@@ -117,8 +118,48 @@ impl AnswerEvidenceRanker {
             .map(|candidate| candidate.item)
             .collect::<Vec<_>>();
 
+        let (associated, rejected) = self.associated_candidates(rejected, &lexicon);
         answer.extend(self.reached_candidates(&answer, rejected));
+        answer.extend(associated);
         answer
+    }
+
+    /// Rescues what this memory's own vocabulary connects to the question.
+    ///
+    /// Same shape as the relation walk and for the same reason: the words a
+    /// store keeps using together are evidence about that store, not a claim
+    /// the reader made. These arrive marked and stay out of the answer core,
+    /// so an association can carry retrieval and still cannot answer.
+    fn associated_candidates(
+        &self,
+        rejected: Vec<MemoryEvidence>,
+        lexicon: &Lexicon,
+    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        let mut associated = Vec::new();
+        let mut still_rejected = Vec::new();
+        for item in rejected {
+            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+            let current =
+                self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
+            if current && lexicon.is_associated(&terms) {
+                associated.push((lexicon.direct_score(&terms), item));
+            } else {
+                still_rejected.push(item);
+            }
+        }
+        associated.sort_by(|(left_score, left), (right_score, right)| {
+            right_score
+                .cmp(left_score)
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+        (
+            associated
+                .into_iter()
+                .take(MAX_ASSOCIATED_CANDIDATES)
+                .map(|(_, item)| mark_reached_by(item, REACHED_BY_ASSOCIATION))
+                .collect(),
+            still_rejected,
+        )
     }
 
     /// Rescues what the question could not match on words but the graph can
@@ -279,7 +320,7 @@ mod tests {
     };
     use prost_types::Timestamp;
 
-    use super::super::answer_selection::was_reached_by_relation;
+    use super::super::answer_selection::{REACHED_BY_KEY, was_reached_indirectly};
     use super::super::morphology::Morphology;
     use super::super::relation_direction::RelationDirection;
     use super::super::relation_feature::RelationFeature;
@@ -541,6 +582,66 @@ mod tests {
         assert!(ranked.is_empty());
     }
 
+    /// Nothing links the question's word to the answer's but this store's
+    /// habit of using them in the same entry.
+    #[test]
+    fn the_stores_own_vocabulary_can_carry_a_question_to_a_memory_its_words_missed() {
+        // The pair recurs across different sentences, which is what separates
+        // two words that travel together from two that shared one sentence.
+        let together = [
+            "The cache now runs on valkey in staging.",
+            "Valkey backs the cache for the checkout service.",
+            "We moved the cache onto valkey last quarter.",
+        ];
+        let mut candidates = together
+            .iter()
+            .enumerate()
+            .map(|(index, text)| {
+                claim_ev(
+                    &format!("pair-{index}"),
+                    &format!("claim:pair{index}"),
+                    text,
+                )
+            })
+            .collect::<Vec<_>>();
+        let apart = [
+            "The weekly meeting moved to ten in the morning.",
+            "The invoice from the supplier arrived late.",
+            "The canteen menu changed on Tuesday.",
+            "A new laptop was ordered for the intern.",
+            "The fire drill is scheduled for Thursday.",
+            "The parking permits were renewed.",
+            "The printer on the second floor jammed.",
+            "The office plants were watered.",
+            "The badge reader was replaced at reception.",
+        ];
+        candidates.extend(apart.iter().enumerate().map(|(index, text)| {
+            claim_ev(
+                &format!("noise-{index}"),
+                &format!("claim:noise{index}"),
+                text,
+            )
+        }));
+        candidates.push(claim_ev(
+            "target",
+            "claim:target",
+            "Valkey was benchmarked overnight and kept.",
+        ));
+
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "What was chosen for the cache?",
+            MemoryAnswerPolicy::BestEffort,
+            candidates,
+        );
+
+        let target = ranked
+            .iter()
+            .find(|item| item.id == "detail:target")
+            .expect("the association should carry the question to the target");
+        assert!(was_reached_indirectly(target));
+        assert_eq!(target.metadata[REACHED_BY_KEY], REACHED_BY_ASSOCIATION);
+    }
+
     #[test]
     fn a_single_rare_match_is_no_longer_discarded_for_being_alone() {
         let mut candidates = (0..5)
@@ -645,11 +746,11 @@ mod tests {
 
         assert_eq!(ranked[0].id, "detail:outage");
         assert_eq!(ranked[1].id, "detail:cause");
-        assert!(was_reached_by_relation(&ranked[1]));
+        assert!(was_reached_indirectly(&ranked[1]));
         assert_eq!(ranked[1].metadata["reached_from"], "claim:outage");
         assert_eq!(ranked[1].metadata["reached_via"], "triggers");
         assert_eq!(ranked[1].metadata["reached_hops"], "1");
-        assert!(!was_reached_by_relation(&ranked[0]));
+        assert!(!was_reached_indirectly(&ranked[0]));
     }
 
     #[test]

@@ -12,6 +12,9 @@ use super::search_terms::matching_terms;
 /// reached by walking proven relations out from one that did.
 pub(super) const REACHED_BY_KEY: &str = "reached_by";
 pub(super) const REACHED_BY_RELATION: &str = "relation";
+/// Reached because this memory's own vocabulary says the question's words and
+/// this candidate's words go together.
+pub(super) const REACHED_BY_ASSOCIATION: &str = "association";
 
 const MAX_RERANK_CANDIDATES: usize = 64;
 
@@ -143,9 +146,16 @@ pub(super) fn relation_signal_total(
 
 /// Records how a rescued candidate was reached, so the hop can be audited
 /// rather than trusted.
-pub(super) fn mark_reached(mut item: MemoryEvidence, hop: &RelationReach) -> MemoryEvidence {
+/// Records that a candidate arrived by something other than the question's own
+/// words, so a reader can weigh the route instead of taking it on faith.
+pub(super) fn mark_reached_by(mut item: MemoryEvidence, how: &str) -> MemoryEvidence {
     item.metadata
-        .insert(REACHED_BY_KEY.to_string(), REACHED_BY_RELATION.to_string());
+        .insert(REACHED_BY_KEY.to_string(), how.to_string());
+    item
+}
+
+pub(super) fn mark_reached(item: MemoryEvidence, hop: &RelationReach) -> MemoryEvidence {
+    let mut item = mark_reached_by(item, REACHED_BY_RELATION);
     item.metadata
         .insert("reached_from".to_string(), hop.from_ref.clone());
     item.metadata
@@ -155,10 +165,8 @@ pub(super) fn mark_reached(mut item: MemoryEvidence, hop: &RelationReach) -> Mem
     item
 }
 
-/// Whether a candidate arrived through the graph rather than through the
-/// question's own words.
-pub(super) fn was_reached_by_relation(item: &MemoryEvidence) -> bool {
-    item.metadata
-        .get(REACHED_BY_KEY)
-        .is_some_and(|reach| reach == REACHED_BY_RELATION)
+/// Whether a candidate arrived by something other than the question's own
+/// words — a proven relation, or this memory's own vocabulary.
+pub(super) fn was_reached_indirectly(item: &MemoryEvidence) -> bool {
+    item.metadata.contains_key(REACHED_BY_KEY)
 }

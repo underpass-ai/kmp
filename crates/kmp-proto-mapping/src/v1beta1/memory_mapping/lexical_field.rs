@@ -69,24 +69,58 @@ impl LexicalField {
         (1.0 + (documents - frequency + 0.5) / (frequency + 0.5)).ln()
     }
 
-    /// The BM25 score of one candidate against one question.
+    /// The BM25 score of one candidate against one question, every term
+    /// weighing the same. Retrieval always weighs them, so only the tests of
+    /// the formula itself ask for the plain form.
+    #[cfg(test)]
     pub(super) fn score(&self, question: &TermCounts, document: &TermCounts) -> f64 {
+        self.score_weighted(
+            &question.terms().map(|term| (term.clone(), 1.0)).collect(),
+            document,
+        )
+    }
+
+    /// The same, where a term may count for less than a whole one.
+    ///
+    /// A word the reader wrote weighs one. A word this memory associates with
+    /// it weighs a fraction, so an expansion can lift a candidate the question
+    /// nearly reached and can never outvote the words actually typed.
+    pub(super) fn score_weighted(
+        &self,
+        weights: &BTreeMap<String, f64>,
+        document: &TermCounts,
+    ) -> f64 {
         if self.documents == 0 || self.average_length <= 0.0 {
             return 0.0;
         }
         let length_ratio = document.length() as f64 / self.average_length;
-        question
-            .terms()
-            .map(|term| {
+        weights
+            .iter()
+            .map(|(term, weight)| {
                 let frequency = document.count(term) as f64;
                 if frequency == 0.0 {
                     return 0.0;
                 }
                 let saturation =
                     frequency * (K1 + 1.0) / (frequency + K1 * (1.0 - B + B * length_ratio));
-                self.inverse_document_frequency(term) * saturation
+                weight * self.inverse_document_frequency(term) * saturation
             })
             .sum()
+    }
+
+    /// What one occurrence is worth in a document of this length.
+    ///
+    /// Length normalization belongs to how well a candidate answers, not to
+    /// whether it may answer at all. A floor fixed at the average length
+    /// refuses a longer-than-average candidate that matches exactly the
+    /// concept the floor is made of — which is a cliff again, wearing the
+    /// units of the thing meant to remove one.
+    pub(super) fn single_occurrence_factor(&self, document: &TermCounts) -> f64 {
+        if self.documents == 0 || self.average_length <= 0.0 {
+            return 1.0;
+        }
+        let length_ratio = document.length() as f64 / self.average_length;
+        (K1 + 1.0) / (1.0 + K1 * (1.0 - B + B * length_ratio))
     }
 
     /// What a candidate must earn to be answering the question at all.
@@ -239,6 +273,26 @@ mod tests {
             field.eligibility_floor(&grounded),
             field.eligibility_floor(&with_absent_word)
         );
+    }
+
+    /// The floor has to speak the same units as the score it is compared
+    /// against, or length normalization turns into a membership rule.
+    #[test]
+    fn the_floor_follows_the_length_of_what_it_judges() {
+        let short = counts(&["valkey", "store"]);
+        let long = counts(&[
+            "valkey", "store", "note", "meeting", "agenda", "calendar", "invite", "room",
+        ]);
+        let field = LexicalField::build([&short, &long]);
+        let question = counts(&["valkey"]);
+        let floor = field.eligibility_floor(&question);
+
+        assert!(field.single_occurrence_factor(&long) < field.single_occurrence_factor(&short));
+        assert!(
+            field.score(&question, &long) < floor,
+            "the fixture must exercise the case a fixed floor refuses"
+        );
+        assert!(field.score(&question, &long) >= floor * field.single_occurrence_factor(&long));
     }
 
     #[test]

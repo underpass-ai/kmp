@@ -2,8 +2,8 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 use kmp_domain::{
-    BundleMetadata, GraphNeighborhoodReader, KmpBundle, NodeDetailReader, SnapshotSaveOptions,
-    SnapshotStore,
+    BundleMetadata, GraphNeighborhoodReader, KmpBundle, NeighborhoodRequest, NodeDetailReader,
+    SnapshotSaveOptions, SnapshotStore,
 };
 
 use crate::ApplicationError;
@@ -90,10 +90,29 @@ where
         persist_snapshot: bool,
         snapshot_options: SnapshotSaveOptions,
     ) -> Result<(KmpBundle, QueryTimingBreakdown), ApplicationError> {
+        self.execute_for(
+            &NeighborhoodRequest::new(root_node_id, depth),
+            role,
+            persist_snapshot,
+            snapshot_options,
+        )
+        .await
+    }
+
+    /// Rehydrates for a request that already names the axes the caller
+    /// resolved, so the store can narrow instead of the caller discarding.
+    pub async fn execute_for(
+        &self,
+        request: &NeighborhoodRequest,
+        role: &str,
+        persist_snapshot: bool,
+        snapshot_options: SnapshotSaveOptions,
+    ) -> Result<(KmpBundle, QueryTimingBreakdown), ApplicationError> {
+        let root_node_id = request.root_node_id();
         let bundle_reader =
             NodeCentricProjectionReader::new(&self.graph_reader, &self.detail_reader);
         let (bundle, timing) = match bundle_reader
-            .load_bundle_with_depth(root_node_id, role, self.generator_version, depth)
+            .load_bundle_for(request, role, self.generator_version)
             .await?
         {
             (Some(bundle), timing) => (bundle, timing),
