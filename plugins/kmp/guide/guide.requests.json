@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:70c4088fec1b1928a1a4",
+    "idempotency_key": "ingest:guide-sync:1:agent:90c5f795e453c7bb6fc1",
     "memory": {
       "dimensions": [
         {
@@ -564,7 +564,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it."
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach each with kmp_write_memory, intent record_summary, current.ref and current.summary_en only, and the stored text stays exactly as it was."
         },
         {
           "coordinates": [
@@ -1202,7 +1202,7 @@
           "supports": [
             "guide:kmp-agent:advanced:summary"
           ],
-          "text": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text.",
+          "text": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text. The summaries verb and the doctor read the same list off the store's event log; record_summary compiles to an ingest of the stored entry with the summary added to its metadata.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

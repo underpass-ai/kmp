@@ -44,7 +44,8 @@
               "record_observation",
               "record_decision",
               "record_feedback",
-              "record_delta"
+              "record_delta",
+              "record_summary"
             ]
           },
           "actor": {

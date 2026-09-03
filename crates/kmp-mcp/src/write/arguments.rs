@@ -94,7 +94,7 @@ pub(super) fn reject_duplicate_ref(refs: &mut Vec<String>, new_ref: &str) -> Res
 pub(super) fn validate_intent(value: &str) -> Result<(), String> {
     match value {
         "record_turn" | "record_observation" | "record_decision" | "record_feedback"
-        | "record_delta" => Ok(()),
+        | "record_delta" | "record_summary" => Ok(()),
         other => Err(format!("invalid kmp_write_memory intent `{other}`")),
     }
 }

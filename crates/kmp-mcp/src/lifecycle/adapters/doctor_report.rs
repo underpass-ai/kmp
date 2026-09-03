@@ -14,6 +14,7 @@ use super::diagnosis_render::{section, sgr};
 use super::durability_probe::committed_bundle_finding;
 use super::embedded_memory_probe::{compiled_formats, data_dir_finding};
 use super::engines_probe::engines_findings;
+use super::search_summary_probe::search_summary_finding;
 use super::startup_log_probe::startup_history;
 use super::telemetry_probe::telemetry_finding;
 use super::viewer_probe::viewer_finding;
@@ -93,6 +94,13 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
     let agent_policy = agent_policy_finding();
     let agent_policy_level = agent_policy.severity();
     sections.push(ReportSection::single("Agent", agent_policy));
+    let summaries = resolved.as_ref().and_then(search_summary_finding);
+    let summaries_level = summaries
+        .as_ref()
+        .map_or(DiagnosticSeverity::Ok, |finding| finding.severity());
+    if let Some(summaries) = summaries {
+        sections.push(ReportSection::single("Summaries", summaries));
+    }
     sections.push(ReportSection::single("Viewer", viewer_finding()));
     let telemetry = resolved.as_ref().map(telemetry_finding);
     let telemetry_level = telemetry
@@ -132,6 +140,7 @@ pub(crate) fn observe_doctor(lifecycle: Vec<LifecycleFinding>) -> DoctorObservat
         history_level,
         agent_policy_level,
         telemetry_level,
+        summaries_level,
     ]);
 
     DoctorObservation { sections, worst }

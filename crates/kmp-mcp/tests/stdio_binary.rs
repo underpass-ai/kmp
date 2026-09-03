@@ -1769,3 +1769,133 @@ fn a_store_with_a_lexical_bridge_is_not_told_to_translate_and_retry() {
         "info must name the table: {info}"
     );
 }
+
+/// The backfill, end to end on the real binary: a memory written before
+/// summaries existed is listed as owing one, the agent attaches a rendering
+/// through kmp_write_memory with intent record_summary, the list empties, an
+/// English question reaches the Spanish memory through it, and the doctor
+/// reports the store as complete. A rendering that drops the ticket is
+/// refused and attaches nothing.
+#[test]
+fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_english() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let binary = env!("CARGO_BIN_EXE_kmp-mcp");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let seeded = run_binary(
+        &envs,
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ingest\",\"arguments\":{\"about\":\"project:relleno\",\"idempotency_key\":\"ingest:relleno\",\"memory\":{\"dimensions\":[{\"id\":\"work:main\",\"kind\":\"work\"}],\"entries\":[{\"id\":\"project:relleno:decision:valkey\",\"kind\":\"decision\",\"text\":\"Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).\",\"coordinates\":[{\"dimension\":\"work\",\"scope_id\":\"work:main\",\"occurred_at\":\"2026-05-06T10:00:00Z\",\"sequence\":1}]},{\"id\":\"project:relleno:observation:english\",\"kind\":\"observation\",\"text\":\"The weekly meeting moved to ten in the morning.\",\"coordinates\":[{\"dimension\":\"work\",\"scope_id\":\"work:main\",\"occurred_at\":\"2026-05-06T11:00:00Z\",\"sequence\":2}]}]}}}}\n",
+    );
+    assert!(seeded.status.success(), "{seeded:?}");
+
+    let pending = Command::new(binary)
+        .args(["summaries", "pending", "--json"])
+        .envs(envs.iter().copied())
+        .output()
+        .expect("summaries pending runs");
+    assert!(pending.status.success(), "{pending:?}");
+    let pending: Value = serde_json::from_slice(&pending.stdout).expect("pending is JSON");
+    let pending = pending.as_array().expect("a list");
+    assert_eq!(
+        pending.len(),
+        1,
+        "only the Spanish memory owes a summary; the English one is reached as it is: {pending:?}"
+    );
+    assert_eq!(pending[0]["ref"], "project:relleno:decision:valkey");
+    assert_eq!(
+        pending[0]["text"],
+        "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018)."
+    );
+
+    let doctor = Command::new(binary)
+        .arg("doctor")
+        .envs(envs.iter().copied())
+        .output()
+        .expect("doctor runs");
+    let report = String::from_utf8_lossy(&doctor.stdout);
+    assert!(
+        report.contains("search summaries: 1 memory owes one"),
+        "the doctor counts the memory that owes a summary: {report}"
+    );
+
+    let write = |id: u64, summary_en: &str| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": "kmp_write_memory", "arguments": {
+                "about": "project:relleno",
+                "intent": "record_summary",
+                "actor": "agent:backfill",
+                "observed_at": "2026-05-07T10:00:00Z",
+                "scope": {"process": "project:relleno:backfill"},
+                "current": {"ref": "project:relleno:decision:valkey", "summary_en": summary_en}
+            }}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        serde_json::from_slice(&output.stdout).expect("write response")
+    };
+
+    let refused = write(2, "Valkey was adopted for the shared store.");
+    let refusal = refused.to_string();
+    assert!(
+        refusal.contains("refuses current.summary_en") && refusal.contains("adr-018"),
+        "a rendering that drops the identifiers is refused with them named: {refused}"
+    );
+
+    let attached = write(3, "Valkey 7.2 was adopted for the shared store (ADR-018).");
+    let result = &attached["result"]["structuredContent"];
+    assert_eq!(result["accepted"], true, "{attached}");
+    assert!(
+        result["diagnostics"]
+            .as_array()
+            .is_some_and(|diagnostics| diagnostics.iter().any(|line| line
+                .as_str()
+                .is_some_and(|line| line.contains("attached summary_en")))),
+        "{attached}"
+    );
+
+    let pending = Command::new(binary)
+        .args(["summaries", "pending"])
+        .envs(envs.iter().copied())
+        .output()
+        .expect("summaries pending runs again");
+    assert!(pending.status.success());
+    assert!(
+        String::from_utf8_lossy(&pending.stdout).contains("carries one"),
+        "nothing owes a summary after the attach: {}",
+        String::from_utf8_lossy(&pending.stdout)
+    );
+
+    let asked = run_binary(
+        &envs,
+        "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"kmp_ask\",\"arguments\":{\"about\":\"project:relleno\",\"question\":\"Which store engine was adopted (ADR-018)?\",\"asked_as\":\"¿Qué motor de almacén se adoptó (ADR-018)?\",\"answer_policy\":\"evidence_or_unknown\",\"budget\":{\"detail\":\"full\"}}}}\n",
+    );
+    let asked: Value = serde_json::from_slice(&asked.stdout).expect("ask response");
+    let answer = &asked["result"]["structuredContent"];
+    assert_ne!(answer["answer"], "UNKNOWN", "{answer}");
+    let cited = answer["proof"]["evidence"]
+        .as_array()
+        .expect("evidence")
+        .iter()
+        .find(|item| item["id"] == "entry:project:relleno:decision:valkey")
+        .expect("the Spanish memory is reached through its new summary");
+    assert_eq!(
+        cited["text"], "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).",
+        "the citation is the text as it was written, untouched by the attach"
+    );
+    assert_eq!(cited["metadata"]["matched_via"], "summary");
+    assert_eq!(cited["metadata"]["summary_en_by"], "agent:backfill");
+
+    let doctor = Command::new(binary)
+        .arg("doctor")
+        .envs(envs.iter().copied())
+        .output()
+        .expect("doctor runs after the attach");
+    assert!(
+        String::from_utf8_lossy(&doctor.stdout)
+            .contains("search summaries: every memory that needs one carries one")
+    );
+}

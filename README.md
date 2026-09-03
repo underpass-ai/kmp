@@ -217,7 +217,10 @@ text carries, and ranking makes the same reading, so such a summary carries
 nothing. A citation the summary carried says so: `matched_via: summary`, with
 the question's words the rendering supplied in `summary_terms`.
 `kmp_write_memory` takes it as `current.summary_en`, and a strict write
-requires it when the memory is not written in English.
+requires it when the memory is not written in English. A memory written
+before summaries existed still owes one: `kmp-mcp summaries pending` lists
+them, the doctor counts them, and the agent attaches each with
+`kmp_write_memory` and the intent `record_summary`, the stored text untouched.
 
 Questions in Chinese, Japanese or Thai are not segmented by word yet. Their
 stored memory remains byte-exact and inspectable; word-based semantic
