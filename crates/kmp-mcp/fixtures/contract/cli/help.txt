@@ -13,7 +13,6 @@ Usage:
   kmp-mcp update                  Update every installed KMP host as one convergence
   kmp-mcp config                  Show the agent orchestration policy
   kmp-mcp config memory-routing <on-request|always>
-  kmp-mcp config ask-fallback-languages <tags|none>
   kmp-mcp guide sync --plugin-root DIR
   Converge the two immutable shipped guides
   kmp-mcp plugin resolve-engine  Select the engine matching both host manifests

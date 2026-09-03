@@ -776,8 +776,12 @@ fn diacritic_recall_seed_arguments() -> Value {
     })
 }
 
+/// The kernel accepts a question in any language and never rewrites what it
+/// stores: a Spanish question misses English evidence it shares no word
+/// with, and the English question — the one the agent is told to ask, with
+/// the user's words as asked_as — reaches it byte for byte.
 #[tokio::test]
-async fn semantic_language_retry_recovers_english_evidence_without_rewriting_it() {
+async fn a_question_in_the_stored_language_reaches_evidence_the_users_words_missed() {
     const TEXT: &str =
         "We chose a single-writer store because one writer matched one agent per project.";
     const WHY: &str = "The single-writer model matches the product's per-project agent ownership.";
