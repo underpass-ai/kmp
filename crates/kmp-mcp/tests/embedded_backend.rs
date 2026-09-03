@@ -2417,3 +2417,109 @@ async fn embedded_backend_journals_quality_telemetry_for_reads() {
     assert_eq!(wakes[0].root_node_id(), "question:e3");
     assert!(wakes[0].raw_equivalent_tokens() > 0);
 }
+
+/// A writer's English summary is linted where it is written and searched
+/// where it is asked. The ingest names the one that will not carry, and an
+/// English question is answered with the Spanish text, byte for byte, with
+/// the summary visible beside it as what it is.
+#[tokio::test]
+async fn an_english_summary_is_linted_at_ingest_and_searched_at_ask() {
+    const SPANISH: &str = "La válvula de reserva se congeló durante el turno de noche (#469).";
+    const SUMMARY: &str = "The reserve valve froze during the night shift (#469).";
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let coordinate = |sequence: u32| {
+        json!({
+            "dimension": "work",
+            "scope_id": "work:main",
+            "occurred_at": format!("2026-08-0{sequence}T09:00:00Z"),
+            "sequence": sequence
+        })
+    };
+
+    let ingest = call(
+        &server,
+        1,
+        "kmp_ingest",
+        json!({
+            "about": "project:resumen",
+            "idempotency_key": "ingest:resumen",
+            "memory": {
+                "dimensions": [{"id": "work:main", "kind": "work"}],
+                "entries": [
+                    {
+                        "id": "project:resumen:e1",
+                        "kind": "incident",
+                        "text": SPANISH,
+                        "metadata": {"summary_en": SUMMARY},
+                        "coordinates": [coordinate(1)]
+                    },
+                    {
+                        "id": "project:resumen:e2",
+                        "kind": "observation",
+                        "text": "La reunión semanal se movió a las diez de la mañana.",
+                        "metadata": {"summary_en": "La reunión semanal se movió a las diez."},
+                        "coordinates": [coordinate(2)]
+                    }
+                ]
+            }
+        }),
+    )
+    .await;
+    let warnings = ingest["warnings"]
+        .as_array()
+        .expect("ingest reports warnings");
+    assert!(
+        warnings.iter().any(|warning| {
+            warning
+                == "memory entry `project:resumen:e2` carries a summary_en that will not carry \
+                    retrieval: leans to spanish, not to English"
+        }),
+        "the ingest names the summary that will not carry: {warnings:?}"
+    );
+    assert_eq!(ingest["memory"]["accepted"]["entries"], 2);
+
+    let answer = call(
+        &server,
+        2,
+        "kmp_ask",
+        json!({
+            "about": "project:resumen",
+            "question": "Which valve froze during the night shift?",
+            "answer_policy": "evidence_or_unknown",
+            "budget": {"detail": "full"}
+        }),
+    )
+    .await;
+    assert_ne!(answer["answer"], "UNKNOWN", "{answer}");
+    let cited = answer["because"]
+        .as_array()
+        .expect("answer cites")
+        .iter()
+        .map(|item| item["ref"].as_str().unwrap_or_default().to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        cited
+            .iter()
+            .any(|reference| reference.ends_with("project:resumen:e1")),
+        "the memory the summary renders is what is cited: {cited:?}"
+    );
+    let evidence = answer["proof"]["evidence"]
+        .as_array()
+        .expect("proof carries evidence");
+    let e1 = evidence
+        .iter()
+        .find(|item| item["id"] == "entry:project:resumen:e1")
+        .expect("the Spanish entry is in the proof");
+    assert_eq!(e1["text"], SPANISH, "the citation is the text as stored");
+    assert_eq!(
+        e1["metadata"]["summary_en"], SUMMARY,
+        "the summary travels beside the text, visible as what it is"
+    );
+    assert!(
+        evidence
+            .iter()
+            .all(|item| item["id"] != "entry:project:resumen:e2"),
+        "an entry whose summary failed the lint is not reached through it: {evidence:?}"
+    );
+}

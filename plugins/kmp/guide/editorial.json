@@ -119,6 +119,13 @@
           "depth": "advanced",
           "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched.",
           "evidence": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core; a cited item that crossed a language names the word pairs that carried it, and a cited restatement names the memory it restates."
+        },
+        {
+          "id": "advanced:summary",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. Fix the summary the warning names; never alter the text to fit it.",
+          "evidence": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker searches only a summary that passes the same lint, and the citation is the entry text."
         }
       ],
       "relations": [
@@ -233,6 +240,14 @@
           "class": "evidential",
           "why": "An answer must preserve whether older evidence was replaced, remains conflicting or merely expired.",
           "evidence": "Ask proof exposes superseded, conflicts and expired separately."
+        },
+        {
+          "from": "advanced:summary",
+          "to": "verb:write",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "A summary is part of the write, not of the read: it is judged where it is written and searched where it is asked, and the text it renders is what a reader is shown.",
+          "evidence": "kmp_ingest returns a warning per summary the lint refuses, and kmp_ask cites the entry text rather than the summary."
         }
       ]
     },

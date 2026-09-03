@@ -1633,6 +1633,8 @@ version = "0.9.1"
 dependencies = [
  "kmp-plugin-api",
  "serde",
+ "serde_json",
+ "unicode-normalization",
 ]
 
 [[package]]

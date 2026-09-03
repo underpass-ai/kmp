@@ -1228,6 +1228,290 @@
           }
         ]
       }
+    },
+    {
+      "id": "summary-paraphrase",
+      "probes": "The paraphrase gap, closed by the writer instead of a table: an English search summary written at ingest says `launch postponed` where the text says `rollout slipped`. The summary is searched and the text is what is cited. paraphrase-gap stays as the control without one.",
+      "about": "project:resumen",
+      "question": "Why was the launch postponed?",
+      "answer_policy": "best_effort",
+      "judged": [
+        "project:resumen:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:resumen:e1",
+            "kind": "decision",
+            "text": "The rollout slipped because the auditors had not signed off.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The launch was postponed because the audit sign-off was missing."
+            }
+          },
+          {
+            "id": "project:resumen:e2",
+            "kind": "observation",
+            "text": "The canteen menu changed on Tuesday for the whole building.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was changed on Tuesday for the entire building."
+            }
+          },
+          {
+            "id": "project:resumen:e3",
+            "kind": "observation",
+            "text": "A new coffee machine arrived at the second floor.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "A new coffee machine was installed on the second floor."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-cross-language",
+      "probes": "Spanish memory, English question, no word in common, answered through the writer's English summary rather than through the table. Under the strict policy the Spanish text is cited byte for byte, at full confidence, because the summary answers in the reader's own words. cross-store-es measures the same shape through the table alone.",
+      "about": "project:resumen-es",
+      "question": "Which valve froze during the night shift?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:resumen-es:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:resumen-es:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:resumen-es:e2",
+            "kind": "observation",
+            "text": "La reunión semanal se movió a las diez de la mañana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ],
+            "metadata": {
+              "summary_en": "The weekly meeting moved to ten in the morning."
+            }
+          },
+          {
+            "id": "project:resumen-es:e3",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was posted on the board."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-cross-language-es",
+      "probes": "Control for summary-cross-language: the same Spanish store with English summaries, asked in Spanish. The original text must keep answering directly, so the English surface beside it cannot cost the store its own language.",
+      "about": "project:resumen-es",
+      "question": "¿Qué válvula se congeló durante el turno de noche?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:resumen-es:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:resumen-es:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:resumen-es:e2",
+            "kind": "observation",
+            "text": "La reunión semanal se movió a las diez de la mañana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ],
+            "metadata": {
+              "summary_en": "The weekly meeting moved to ten in the morning."
+            }
+          },
+          {
+            "id": "project:resumen-es:e3",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was posted on the board."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-lint-refused",
+      "probes": "An unfaithful summary carries nothing. The second entry's summary says the rollout was postponed where the text says it was brought forward, and it dropped the version it summarised: the lint refuses it at ingest and the ranker searches it by nobody. Were it searched, its shorter text would outrank the faithful summary that kept v0.7.0 and take first place from the judged entry.",
+      "about": "project:resumen-lint",
+      "question": "Why was the rollout postponed?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:resumen-lint:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:resumen-lint:e1",
+            "kind": "decision",
+            "text": "El despliegue de v0.7.0 se retrasó porque los auditores no habían firmado.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The v0.7.0 rollout was postponed because the auditors had not signed off."
+            }
+          },
+          {
+            "id": "project:resumen-lint:e2",
+            "kind": "decision",
+            "text": "El despliegue de v0.8.0 se adelantó una semana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ],
+            "metadata": {
+              "summary_en": "The rollout was postponed."
+            }
+          },
+          {
+            "id": "project:resumen-lint:e3",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was posted on the board."
+            }
+          }
+        ]
+      }
     }
   ]
 }

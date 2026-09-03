@@ -11,6 +11,8 @@ pub mod relation_signal;
 pub mod relation_type;
 pub mod resolution_tier;
 pub mod role;
+pub mod search_summary;
+pub mod search_summary_fault;
 pub mod source_kind;
 pub mod temporal_coordinate;
 pub mod temporal_cursor;
@@ -30,6 +32,8 @@ pub use relation_type::{
 };
 pub use resolution_tier::{ResolutionTier, TierBudget};
 pub use role::Role;
+pub use search_summary::SearchSummary;
+pub use search_summary_fault::SearchSummaryFault;
 pub use source_kind::SourceKind;
 pub use temporal_coordinate::TemporalCoordinate;
 pub use temporal_cursor::{TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow};

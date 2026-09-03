@@ -6,10 +6,10 @@
 # Refresh deliberately, never to make a red build green:
 #   RETRIEVAL_BASELINE=write cargo run -p kmp-testkit --bin retrieval_kmp_scorecard
 metric	floor
-cases	15
-recall_at_1	0.7666
-recall_at_5	0.9333
-recall_at_10	0.9333
-mean_reciprocal_rank	0.8500
-ndcg_at_10	0.8707
-answer_core_precision	0.8000
+cases	19
+recall_at_1	0.8157
+recall_at_5	0.9473
+recall_at_10	0.9473
+mean_reciprocal_rank	0.8815
+ndcg_at_10	0.8979
+answer_core_precision	0.8421

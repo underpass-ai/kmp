@@ -492,7 +492,7 @@ mod tests {
     use super::*;
     use kmp_domain::{
         BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation,
-        RelationSemanticClass, Role,
+        RelationSemanticClass, Role, SearchSummary,
     };
     use prost_types::Timestamp;
 
@@ -1742,6 +1742,78 @@ mod tests {
             ranker
                 .matched_query_terms("valvula noche", &ranked)
                 .is_empty()
+        );
+    }
+
+    fn spanish_shift_report_with_summaries() -> Vec<MemoryEvidence> {
+        let with_summary = |id: &str, text: &str, summary: &str| {
+            let mut item = claim_ev(id, &format!("claim:{id}"), text);
+            item.metadata
+                .insert(SearchSummary::METADATA_KEY.to_string(), summary.to_string());
+            item
+        };
+        vec![
+            with_summary(
+                "e1",
+                "La válvula de reserva se congeló durante el turno de noche.",
+                "The reserve valve froze during the night shift.",
+            ),
+            with_summary(
+                "e2",
+                "La reunión semanal se movió a las diez de la mañana.",
+                "The weekly meeting moved to ten in the morning.",
+            ),
+            with_summary(
+                "e3",
+                "El menú del comedor se publicó en el tablón.",
+                "The canteen menu was posted on the board.",
+            ),
+        ]
+    }
+
+    /// A writer's English rendering is searched, and what comes back is the
+    /// memory it renders, byte for byte. No table is involved: the summary
+    /// alone carries the question across the language.
+    #[test]
+    fn an_english_summary_carries_a_question_to_a_memory_written_in_spanish() {
+        let ranker = ranker_bridging_with(&SILENT_BRIDGE);
+
+        let ranked = ranker.rank(
+            "Which valve froze during the night shift?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            spanish_shift_report_with_summaries(),
+        );
+
+        assert_eq!(ranked.len(), 1, "{ranked:?}");
+        assert_eq!(ranked[0].id, "detail:e1");
+        assert_eq!(
+            ranked[0].text, "La válvula de reserva se congeló durante el turno de noche.",
+            "the citation is the text as stored; the summary is only searched"
+        );
+        assert!(
+            !was_reached_indirectly(&ranked[0]),
+            "the summary answers in the reader's own words: not a hop"
+        );
+    }
+
+    /// The same reading the ingest warned with. A summary that dropped the
+    /// ticket the text carries is searched by nobody, whoever wrote it.
+    #[test]
+    fn a_summary_that_fails_the_lint_carries_nothing() {
+        let ranker = ranker_bridging_with(&SILENT_BRIDGE);
+        let mut report = spanish_shift_report_with_summaries();
+        report[0].text =
+            "La válvula de reserva se congeló durante el turno de noche (#469).".to_string();
+
+        let ranked = ranker.rank(
+            "Which valve froze during the night shift?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            report,
+        );
+
+        assert!(
+            ranked.is_empty(),
+            "a summary that dropped #469 must not carry retrieval: {ranked:?}"
         );
     }
 

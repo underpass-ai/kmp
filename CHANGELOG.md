@@ -9,6 +9,31 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- A writer can attach an English search summary to a memory, and the kernel
+  lints it ([#469](https://github.com/underpass-ai/kmp/issues/469)). The
+  reserved entry metadata key `summary_en` carries an English rendering of
+  the text, written by whoever wrote the memory at the one moment the kernel
+  admits a model. `kmp_ask` searches it and never cites it: a question in
+  English reaches a memory written in Spanish, and the citation is the
+  Spanish text byte for byte. This is what closes the paraphrase gap a table
+  of single words cannot — `rollout slipped` rendered as `launch postponed` —
+  because a writer canonicalises jargon where a lookup cannot. The lint is
+  deterministic and made twice from the same inputs, never stored as a
+  verdict: `kmp_ingest` warns, entry by entry, about a summary that leans to
+  another language, carries fewer than two informative words, repeats the
+  text word for word, or drops an identifier the text carries (`v0.7.0`,
+  `#469`, `kmp-mcp`, `ADR`); and ranking makes the same reading, so a summary
+  that fails it carries no retrieval whoever wrote it and however it arrived.
+  Four judged cases measure it: the paraphrase gap closed by a summary
+  (`paraphrase-gap` stays as the control), a Spanish store answered in English
+  through its summaries and still in Spanish beside them, and an unfaithful
+  summary that dropped the version it summarised carrying nothing. The
+  language reading and the search tokenizer moved from the mapping layer to
+  `kmp-domain`, where both the write path and the read path can share one
+  reading.
+
 ## [0.9.1] - 2026-09-03
 
 ### Changed
