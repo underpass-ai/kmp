@@ -40,6 +40,43 @@ pub(crate) fn load_lexical_bridge(data_dir: &Path) -> LexicalBridge {
     }
 }
 
+/// One line for `info` and `doctor`: which table this store would read, or
+/// that there is none and what that means for `ask`.
+pub(crate) fn describe_lexical_bridge(data_dir: &Path) -> String {
+    let (path, explicit) = lexical_bridge_path(data_dir);
+    let named = if explicit {
+        " via KMP_LEXICAL_BRIDGE"
+    } else {
+        ""
+    };
+    match std::fs::read(&path) {
+        Ok(bytes) => match LexicalBridge::from_bytes(&bytes) {
+            Ok(bridge) if !bridge.is_silent() => format!(
+                "lexical bridge: {} words, {} ({}{named})",
+                bridge.len(),
+                bridge.provenance(),
+                path.display()
+            ),
+            Ok(_) => format!(
+                "lexical bridge: an empty table at {}{named}; ask matches within one language",
+                path.display()
+            ),
+            Err(reason) => format!(
+                "lexical bridge: ignored, {reason} ({}{named}); ask matches within one language",
+                path.display()
+            ),
+        },
+        Err(_) if explicit => format!(
+            "lexical bridge: none; {} named by {LEXICAL_BRIDGE_ENV} could not be read",
+            path.display()
+        ),
+        Err(_) => format!(
+            "lexical bridge: none; ask matches within one language until {} is installed",
+            path.display()
+        ),
+    }
+}
+
 /// Where the table is looked for, and whether an operator named it.
 pub(crate) fn lexical_bridge_path(data_dir: &Path) -> (PathBuf, bool) {
     match std::env::var_os(LEXICAL_BRIDGE_ENV).filter(|value| !value.is_empty()) {
@@ -92,6 +129,31 @@ mod tests {
             .similarity("valvula", "valve")
             .expect("both words are in the fixture");
         assert!(valve > 0.45, "{valve}");
+    }
+
+    #[test]
+    fn info_names_the_table_or_says_what_its_absence_means() {
+        let data_dir = tempfile::tempdir().expect("the fixture is valid");
+
+        let absent = describe_lexical_bridge(data_dir.path());
+        assert!(absent.starts_with("lexical bridge: none"), "{absent}");
+        assert!(absent.contains("lexical-bridge.kmpb"));
+
+        let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../kmp-testkit/judged/lexical-bridge.kmpb");
+        std::fs::copy(&fixture, data_dir.path().join(LEXICAL_BRIDGE_FILE))
+            .expect("the fixture is valid");
+        let present = describe_lexical_bridge(data_dir.path());
+        assert!(present.contains(" words, "), "{present}");
+        assert!(
+            present.contains("static-similarity-mrl-multilingual"),
+            "{present}"
+        );
+
+        std::fs::write(data_dir.path().join(LEXICAL_BRIDGE_FILE), b"garbage")
+            .expect("the fixture is valid");
+        let broken = describe_lexical_bridge(data_dir.path());
+        assert!(broken.starts_with("lexical bridge: ignored"), "{broken}");
     }
 
     #[test]

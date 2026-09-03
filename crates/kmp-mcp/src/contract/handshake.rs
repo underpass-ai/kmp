@@ -32,10 +32,17 @@ pub(crate) fn canonical_tool_name(name: &str) -> &str {
 
 #[cfg(test)]
 pub(crate) fn initialize_result(backend: &str, grpc_tls: &str) -> Value {
-    initialize_result_with_apps(backend, grpc_tls, false)
+    initialize_result_with_apps(backend, grpc_tls, false, false)
 }
 
-pub(crate) fn initialize_result_with_apps(backend: &str, grpc_tls: &str, apps: bool) -> Value {
+/// `bridges_languages` says whether the backend's `kmp_ask` crosses languages
+/// on its own, which decides which language rule the agent is handed.
+pub(crate) fn initialize_result_with_apps(
+    backend: &str,
+    grpc_tls: &str,
+    apps: bool,
+    bridges_languages: bool,
+) -> Value {
     let mut capabilities = json!({"tools": {}});
     if apps {
         capabilities["resources"] = json!({});
@@ -50,7 +57,7 @@ pub(crate) fn initialize_result_with_apps(backend: &str, grpc_tls: &str, apps: b
             "name": SERVER_NAME,
             "version": SERVER_VERSION
         },
-        "instructions": crate::agent_policy::mcp_instructions(),
+        "instructions": crate::agent_policy::mcp_instructions(bridges_languages),
         "metadata": {
             "backend": backend,
             "grpc_tls": grpc_tls

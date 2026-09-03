@@ -9,6 +9,37 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Changed
+
+- Two changes `0.9.0` announced were not in `0.9.0`. A stacked pull request was
+  squashed into its base sixteen seconds before that base merged, so the two
+  commits above it never reached `main` while the notes for them did: the
+  released engine has neither the bridge-aware instructions nor the shared
+  token vocabulary. A released tag is immutable, so the fix is this release,
+  and `0.9.0`'s section no longer claims what it shipped without.
+
+- A store that bridges languages is not told to translate and retry
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). The cross-language
+  retry was a policy with a budget; where a table is installed the kernel
+  crosses the language itself, so the initialize instructions say so — do not
+  translate to retry, do not use a fallback language while the bridge is
+  present, and re-ask at most once in other words in the user's language for
+  the paraphrase a table of single vectors cannot reach. Without a table they
+  say what they always said. The backend port answers `bridges_languages`, and
+  `kmp-mcp info` and `doctor` name the table a store would read — words,
+  provenance, path — or say there is none and what that means for `ask`.
+  `ask_fallback_languages` keeps its meaning for installations without a table.
+
+- `ask` answers in tens of milliseconds instead of hundreds. The token budget
+  was never spent in the wrong order — `ask` does not read the rendered
+  context, and the projection budgets the ranked packet — but every estimate
+  parsed the hundred-thousand-merge `cl100k_base` vocabulary from scratch, twice
+  per `ask`. The vocabulary is immutable, so a process loads it once and every
+  render and projection shares it: one `ask` against a four-entry store falls
+  from ~700 ms to ~32 ms, and the retrieval scorecard's mean per ask, fifteen
+  cases in fresh processes, from 692 ms to 44 ms. No response changes and every
+  retrieval floor holds.
+
 ## [0.9.0] - 2026-09-03
 
 ### Added
@@ -56,28 +87,6 @@ Detailed notes from the early release cycle remain available in the
   `reached_from`, `reached_via`, `reached_hops`, `bridged_terms` — is no
   longer folded back into that item's searchable text on a later pass, so a
   route cannot look like a word the memory wrote.
-
-- A store that bridges languages is not told to translate and retry
-  ([#469](https://github.com/underpass-ai/kmp/issues/469)). The cross-language
-  retry was a policy with a budget; where a table is installed the kernel
-  crosses the language itself, so the initialize instructions say so — do not
-  translate to retry, do not use a fallback language while the bridge is
-  present, and re-ask at most once in other words in the user's language for
-  the paraphrase a table of single vectors cannot reach. Without a table they
-  say what they always said. The backend port answers `bridges_languages`, and
-  `kmp-mcp info` and `doctor` name the table a store would read — words,
-  provenance, path — or say there is none and what that means for `ask`.
-  `ask_fallback_languages` keeps its meaning for installations without a table.
-
-- `ask` answers in tens of milliseconds instead of hundreds. The token budget
-  was never spent in the wrong order — `ask` does not read the rendered
-  context, and the projection budgets the ranked packet — but every estimate
-  parsed the hundred-thousand-merge `cl100k_base` vocabulary from scratch, twice
-  per `ask`. The vocabulary is immutable, so a process loads it once and every
-  render and projection shares it: one `ask` against a four-entry store falls
-  from ~700 ms to ~32 ms, and the retrieval scorecard's mean per ask, fifteen
-  cases in fresh processes, from 692 ms to 44 ms. No response changes and every
-  retrieval floor holds.
 
 ## [0.8.0] - 2026-09-02
 

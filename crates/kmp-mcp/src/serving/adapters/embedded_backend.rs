@@ -102,6 +102,10 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         "embedded"
     }
 
+    fn bridges_languages(&self) -> bool {
+        !self.lexical_bridge.is_silent()
+    }
+
     fn call_tool<'a>(&'a self, name: &'a str, arguments: &'a Value) -> KernelMcpToolFuture<'a> {
         let service = self.kernel.service();
         let quality_observer = self.kernel.quality_observer();
