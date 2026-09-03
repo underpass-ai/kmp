@@ -270,6 +270,7 @@ mod tests {
             expected(&[
                 "about",
                 "answer_policy",
+                "asked_as",
                 "budget",
                 "depth",
                 "dimensions",

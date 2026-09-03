@@ -1170,6 +1170,9 @@ pub fn ask_value(response: &AskResponse) -> Value {
         "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
         "warnings": response.warnings
     });
+    if !response.asked_as.is_empty() {
+        value["asked_as"] = Value::String(response.asked_as.clone());
+    }
     attach_typed_projection(
         &mut value,
         response.projection.as_ref(),
@@ -1211,6 +1214,7 @@ fn apply_wake_value(mut response: WakeResponse, value: &Value) -> WakeResponse {
 
 fn apply_ask_value(mut response: AskResponse, value: &Value) -> AskResponse {
     response.summary = string_at(value, "/summary");
+    response.asked_as = string_at(value, "/asked_as");
     response.answer = value
         .get("answer")
         .and_then(Value::as_str)
@@ -2537,6 +2541,7 @@ mod tests {
             warnings: Vec::new(),
             projection: None,
             truncation: None,
+            asked_as: String::new(),
         }
     }
 

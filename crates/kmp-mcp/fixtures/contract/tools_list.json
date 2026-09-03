@@ -1333,6 +1333,11 @@
             ],
             "type": "string"
           },
+          "asked_as": {
+            "description": "The user's own words when `question` renders them in English. Optional. Searched never; echoed back as `asked_as` for the audit trail, and read against `question` the way a search summary is read against its text: a rendering that leans to another language, carries no informative word, or drops an identifier the user's words carry (`#469`, `v0.7.0`) draws a warning, while the question is still searched as given. Answer in the user's language; cite the stored text byte for byte.",
+            "minLength": 1,
+            "type": "string"
+          },
           "budget": {
             "additionalProperties": false,
             "properties": {
@@ -1449,7 +1454,7 @@
             "type": "object"
           },
           "question": {
-            "description": "Natural-language question.",
+            "description": "Natural-language question, in the kernel's search language: plain English, with every number, identifier and acronym the user wrote kept exactly. The kernel searches it as given and never translates it. It accepts any language — a question in the store's own language reaches the stored text directly — and a memory written in another language is reached through its English `summary_en`.",
             "minLength": 1,
             "type": "string"
           }
@@ -1470,6 +1475,10 @@
               "string",
               "null"
             ]
+          },
+          "asked_as": {
+            "description": "The user's own words, echoed byte for byte when the request carried them. Absent otherwise.",
+            "type": "string"
           },
           "because": {
             "description": "At most five retained citation refs. Empty beside UNKNOWN; canonical text lives in proof.evidence.",

@@ -176,6 +176,12 @@ message AskRequest {
   MemoryBudget budget = 4;
   DimensionSelection dimensions = 5;
   PageRequest page = 6;
+  // The user's own words when `question` is the agent's rendering of them in
+  // the kernel's search language. The kernel translates nothing: it searches
+  // `question`, echoes `asked_as` for the audit trail, and warns when the
+  // rendering leans to another language or drops an identifier the user's
+  // words carry.
+  string asked_as = 7;
 }
 
 message AskResponse {
@@ -186,6 +192,9 @@ message AskResponse {
   repeated string warnings = 5;
   RecallProjection projection = 6;
   RecallTruncation truncation = 7;
+  // `AskRequest.asked_as`, echoed byte for byte so a response says what the
+  // user asked as well as what the kernel searched. Empty when none was given.
+  string asked_as = 8;
 }
 
 message AnswerReason {

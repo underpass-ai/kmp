@@ -76,21 +76,19 @@ Route again after every response:
   ref supplied by the user, byte-for-byte. Never prefix or qualify it with an
   about, translate it, normalize it or reconstruct it. If a ref fails, recover
   the exact stored ref through KMP instead of guessing.
-- Make one initial Ask selection per language: once in the user's language,
-  then at most once in each configured fallback language. Changing budget,
-  detail or optional arguments does not authorize another selection in the
-  same language. Only following `projection.page.next_cursor` with every bound
+- Ask in the kernel's search language: render the question in plain
+  English, keep every number, identifier and acronym the user wrote exactly,
+  and pass the user's own words as `asked_as`. If the result is `UNKNOWN` or
+  the evidence does not answer, re-ask at most once in the user's own words.
+  Changing budget, detail or optional arguments does not authorize another
+  selection. Only following `projection.page.next_cursor` with every bound
   argument unchanged is a continuation, not a retry.
-- On a store with a lexical-bridge table there is no per-language budget:
-  one selection in the user's language, plus at most one re-ask in other
-  words in that same language. The MCP initialize instructions say which of
-  the two rules is in force.
-- When Ask returns `UNKNOWN` or irrelevant evidence, finish the configured
-  language retries, then reclassify the **original goal**. Current, latest or
-  recent state, what changed, why now, and release or decision history move to
-  temporal navigation. A genuinely semantic question ends at `UNKNOWN` after
-  the bounded retries. That terminal result is not permission to inspect the
-  about/root, widen scope or traverse the graph to bypass Ask.
+- When Ask returns `UNKNOWN` or irrelevant evidence after those two
+  selections, reclassify the **original goal**. Current, latest or recent
+  state, what changed, why now, and release or decision history move to
+  temporal navigation. A genuinely semantic question ends at `UNKNOWN`. That
+  terminal result is not permission to inspect the about/root, widen scope or
+  traverse the graph to bypass Ask.
 - Reclassification is not a workaround for `UNKNOWN`: Ask and temporal
   navigation answer different kinds of questions. Do not silently jump to
   repository files while a relevant KMP page or interval is incomplete. If
@@ -209,31 +207,27 @@ question matched, with `restates`, `same_event_as` or `same_entity_as`.
 through the writer's English `summary_en` and not through its text; read those
 words as the writer's, not the memory's.
 
-## Cross-language fallback is only for semantic Ask
+## The question is asked in English; the answer is given in the user's language
 
-Which rule applies is decided by the store, and the MCP initialize
-instructions say which. **With a lexical-bridge table** beside the store,
-`kmp_ask` crosses languages inside the kernel: a citation that crossed one
-names its word pairs in `bridged_terms` and is capped at medium confidence.
-Do not translate the query to retry it and do not use a fallback language;
-if the answer does not come, re-ask at most once in other words in the user's
-language, and only when the question could genuinely be phrased differently.
-A memory whose writer attached an English `summary_en` is reached from an
-English question with no table at all. **Without a table**, the paragraph
-below applies.
+The kernel matches words and never translates. What reaches a memory written
+in any language is its English `summary_en`, so a semantic question is asked
+in the kernel's search language: render it in plain English, keep every
+number, identifier and acronym the user wrote exactly (`v0.7.0`, `#469`,
+`kmp-mcp`), and pass the user's own words as `asked_as`. The kernel searches
+the rendering as given, echoes `asked_as` on the answer for the audit trail,
+and warns when the rendering leans to another language or drops an
+identifier the user's words carry — read the warning and keep it next time;
+the question was still searched.
 
-For a non-temporal semantic question, call `kmp_ask` in the user's language.
-If it returns `UNKNOWN`, or retrieved evidence does not actually answer, retry
-once per language in the configured fallback list. Translate only the query;
-never translate or rewrite stored evidence, refs, relation `why`, or source
-metadata. Cite the original evidence byte-for-byte and answer in the user's
-language. After the configured list, reclassify the original goal before
-stopping: current/recent state or release/decision history moves to temporal
-navigation; `UNKNOWN` is final only for a genuinely semantic question.
-
-The active list comes from the MCP initialize instructions and is visible with
-`kmp-mcp config`. The default is `en`; setup can change or disable it. Do not
-apply this fallback to a temporal interval.
+The kernel accepts a question in any language: one in the store's own
+language reaches the stored text directly, and where a lexical-bridge table
+is installed a citation that crossed a language names its word pairs in
+`bridged_terms` at medium confidence at most. So if the English rendering
+returns `UNKNOWN`, or the evidence does not answer, re-ask at most once in the
+user's own words, and stop there. Never translate or rewrite stored evidence,
+refs, relation `why` or source metadata: cite the stored text byte-for-byte
+and write the answer in the user's language. Do not apply any of this to a
+temporal interval; temporal intent navigates time first.
 
 ## The ten memory moves
 

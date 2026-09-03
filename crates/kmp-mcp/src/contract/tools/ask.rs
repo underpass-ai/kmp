@@ -20,7 +20,8 @@ pub(crate) fn definition() -> Value {
             "required": ["about", "question"],
             "properties": {
                 "about": string_schema("Memory anchor or root ref to ask from."),
-                "question": string_schema("Natural-language question."),
+                "question": string_schema("Natural-language question, in the kernel's search language: plain English, with every number, identifier and acronym the user wrote kept exactly. The kernel searches it as given and never translates it. It accepts any language — a question in the store's own language reaches the stored text directly — and a memory written in another language is reached through its English `summary_en`."),
+                "asked_as": string_schema("The user's own words when `question` renders them in English. Optional. Searched never; echoed back as `asked_as` for the audit trail, and read against `question` the way a search summary is read against its text: a rendering that leans to another language, carries no informative word, or drops an identifier the user's words carry (`#469`, `v0.7.0`) draws a warning, while the question is still searched as given. Answer in the user's language; cite the stored text byte for byte."),
                 "answer_policy": {
                     "type": "string",
                     "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
@@ -41,6 +42,7 @@ fn ask_output_schema() -> Value {
         "summary": described("string", "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained."),
         "answer": nullable_described("string", "UNKNOWN when the selected policy found no answerable evidence; otherwise names the retrieved citations without claiming they prove the answer."),
         "because": described("array", "At most five retained citation refs. Empty beside UNKNOWN; canonical text lives in proof.evidence."),
+        "asked_as": described("string", "The user's own words, echoed byte for byte when the request carried them. Absent otherwise."),
         "proof": proof_output_schema("Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty. Medium at most when the question reached the evidence through the lexical-bridge table rather than in its own words; not capped when the writer's English summary_en carried it.")
     });
     properties

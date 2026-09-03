@@ -184,9 +184,11 @@ language on its own and names the word pairs that carried a citation, at
 medium confidence at most. A writer can attach an English rendering of a
 memory as the reserved entry metadata key `summary_en`; `kmp_ask` searches it
 and never cites it, the kernel lints it, and `kmp_write_memory` takes it as
-`current.summary_en`. Without a table, the agent may retry a semantic query
-once per configured fallback language (`kmp-mcp config ask-fallback-languages`).
-`kmp-mcp info` says which of these a store is on.
+`current.summary_en`. A semantic question is asked in English with the
+user's own words passed as `asked_as`; the kernel echoes them on the answer
+and warns when the rendering dropped an identifier. If the English question
+returns `UNKNOWN`, the agent re-asks once in the user's own words and stops.
+`kmp-mcp info` says whether a store reads a bridge table.
 
 ## License
 

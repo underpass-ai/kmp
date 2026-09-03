@@ -38,19 +38,16 @@ command runs, or when the project opts in. Change it only when the user asks
 for always-on recall, with `kmp-mcp config memory-routing always`;
 `on-request` returns to the default. Never turn it on as part of an install.
 
-Change the semantic-Ask fallback policy with
-`kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
-user requests a different list; `none` disables retries. With no config, one
-English retry is active by default. The list is only used on a store with no
-lexical-bridge table beside it: `kmp-mcp doctor` and `kmp-mcp info` name the
-table a store would read, or say there is none and what that means for Ask,
-and the configured list is inert while a table is present. Report that line
-when the user asks about languages. Explain that only a semantic query may be
-translated: answer in the user's language and preserve stored evidence, refs,
-relation `why`, and source metadata byte-for-byte. Temporal requests navigate
-time and never enter this fallback. Chinese, Japanese, and Thai fallback tags
-are rejected until Ask supports word segmentation for those scripts; storage
-remains byte-exact. Upgrades must leave this policy intact.
+There is no language setting to configure. A semantic question is asked in
+English with the user's own words passed as `asked_as`, and the answer is
+given in the user's language with stored evidence, refs, relation `why` and
+source metadata preserved byte-for-byte. `kmp-mcp doctor` and `kmp-mcp info`
+name the lexical-bridge table a store would read, or say there is none and
+what that means for Ask; report that line when the user asks about
+languages. An older config file may still carry an `ask_fallback_languages`
+line; it is ignored and the doctor says so. Questions in Chinese, Japanese or
+Thai are not segmented by word yet; storage remains byte-exact. Upgrades must
+leave the policy file intact.
 
 Setup and update must not select or write a memory store. Guide sync is a
 separate, explicit data operation. Run it only when the user asks to install
