@@ -123,6 +123,29 @@ Detailed notes from the early release cycle remain available in the
   never meets the summary; `summary-inflected-in-spanish-store` is that case,
   known failing, the way `paraphrase-gap` carries the paraphrase gap.
 
+- The surfaces that speak to the agent agree with the kernel again
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). A review of
+  every one of them found the drift the series had left behind. The proof
+  output schema shared by `kmp_ask`, `kmp_wake` and the temporal verbs
+  documented one evidence metadata key out of the ten the ranker writes; it
+  now explains `reached_by` and its companions, `bridged_terms`,
+  `restated_from`, `matched_via` and `summary_terms`, and `kmp_ask` says that
+  a bridged citation is capped at medium while a summary-carried one is not,
+  and what each answer policy actually does with conflicts. The kmp-memory
+  skill described the fallback-language retry as the only world and never
+  told the reader what `reached_by` or `bridged_terms` mean; it now carries
+  the bridged rule beside the unbridged one, the proof keys, and the reason
+  to declare `restates`, `same_event_as` or `same_entity_as`. The inference
+  prompt fixtures for the writer still taught the retired preview-first
+  workflow and listed twenty-three of the thirty-one writer relations —
+  missing exactly the three that make a paraphrase citable; both are fixed,
+  and the agent routing gate now covers those fixtures. The protocol JSON
+  schema closed `proof` without `frontier_size`, which every recall emits,
+  and described no metadata key at all; the guide gained the language rule
+  `verb:ask` referred to without defining; setup, info and doctor say what
+  the lexical-bridge line means; and the crates.io README gained the
+  language section the other two already had.
+
 ## [0.9.1] - 2026-09-03
 
 ### Changed
