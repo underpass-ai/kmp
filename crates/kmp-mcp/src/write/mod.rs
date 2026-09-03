@@ -19,6 +19,7 @@ pub(crate) mod read_context;
 pub(crate) mod relation_quality;
 pub(crate) mod relations;
 pub(crate) mod results;
+mod search_summary;
 mod writer_identity_audit;
 
 pub(crate) use ingest_plan::KmpIngestPlan;

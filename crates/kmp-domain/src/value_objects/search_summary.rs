@@ -63,9 +63,7 @@ impl SearchSummary {
     pub fn lint(text: &str, summary: &str) -> Result<Self, Vec<SearchSummaryFault>> {
         let mut faults = Vec::new();
 
-        let summary_tokens = alphanumeric_tokens(summary);
-        if let Some(language) =
-            LanguageVocabulary::shipped().leans(summary_tokens.iter().map(String::as_str))
+        if let Some(language) = LanguageVocabulary::shipped().leans_in(summary)
             && language != KERNEL_LANGUAGE
         {
             faults.push(SearchSummaryFault::NotEnglish {
@@ -120,15 +118,6 @@ fn identifiers(text: &str) -> BTreeSet<String> {
 fn surface_tokens(text: &str) -> BTreeSet<String> {
     text.split_whitespace()
         .map(trim_edge_punctuation)
-        .filter(|token| !token.is_empty())
-        .map(fold_search_term)
-        .collect()
-}
-
-/// The words the language is read from: split and folded exactly as the
-/// retrieval layer splits and folds them, so the two readings agree.
-fn alphanumeric_tokens(text: &str) -> Vec<String> {
-    text.split(|character: char| !character.is_alphanumeric())
         .filter(|token| !token.is_empty())
         .map(fold_search_term)
         .collect()

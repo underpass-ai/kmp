@@ -12,6 +12,7 @@ use super::plan::KernelWritePlan;
 use super::read_context::ReadContext;
 use super::relation_quality::*;
 use super::relations::*;
+use super::search_summary::decide_search_summary;
 
 const DEFAULT_CONFIDENCE: &str = "high";
 const DEFAULT_SOURCE_KIND: &str = "agent";
@@ -95,6 +96,11 @@ pub(crate) fn build_write_plan_with_root(
     if strict && current_evidence.is_none() {
         return Err("strict kmp_write_memory requires current.evidence".to_string());
     }
+    let search_summary = decide_search_summary(
+        current_summary,
+        optional_map_string(current, "summary_en"),
+        strict,
+    )?;
 
     let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
         validate_supplied_entry_ref(&about, "current.ref", current_ref)?;
@@ -141,15 +147,19 @@ pub(crate) fn build_write_plan_with_root(
         ));
     }
 
+    let mut current_metadata = json!({
+        "writer_intent": intent,
+        "writer_actor": actor
+    });
+    if let Some(summary) = &search_summary.stored {
+        current_metadata["summary_en"] = json!(summary);
+    }
     let mut entries = vec![json!({
         "id": current_ref.clone(),
         "kind": current_kind,
         "text": current_summary,
         "coordinates": coordinates.clone(),
-        "metadata": {
-            "writer_intent": intent,
-            "writer_actor": actor
-        }
+        "metadata": current_metadata
     })];
     let mut relations = Vec::new();
     let mut relation_names = Vec::new();
@@ -349,7 +359,7 @@ pub(crate) fn build_write_plan_with_root(
         relations: relation_names,
         relation_quality,
         relation_quality_metrics,
-        diagnostics: Vec::new(),
+        diagnostics: search_summary.diagnostics,
         next_suggested_reads: suggested_reads(&current_ref, connect_to),
     })
 }

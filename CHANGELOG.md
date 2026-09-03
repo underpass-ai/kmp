@@ -49,6 +49,19 @@ Detailed notes from the early release cycle remain available in the
   rendering answers all three concepts now ranks above the English text that
   carries two, where it ranked second before.
 
+- The writer asks for the summary, and every surface that speaks to the
+  agent says so ([#469](https://github.com/underpass-ai/kmp/issues/469)).
+  `kmp_write_memory` takes `current.summary_en`; a strict write requires it
+  when `current.summary` is not written in English and refuses one that
+  fails the lint, naming every fault, so the agent fixes the summary while it
+  can — outside strict mode the summary is stored and the result says it
+  will not carry. The initialize instructions, the `kmp_write_memory` and
+  `kmp_ingest` schemas, the kmp-memory skill, the agent guide, the inference
+  prompt fixtures and the READMEs now tell the writer the same thing: write
+  the memory in the language of the work, render it in plain English for
+  search, keep every number, identifier and acronym exactly as written, and
+  never alter the text to fit the summary.
+
 ## [0.9.1] - 2026-09-03
 
 ### Changed
