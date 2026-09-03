@@ -377,6 +377,15 @@ language, too thin, a copy of the text, a dropped identifier. Fix the summary
 the error names; never alter the text to fit it. A cited item that was reached
 through its summary says so with `matched_via: summary` and `summary_terms`.
 
+Memories written before summaries existed still owe one. `kmp-mcp summaries
+pending [<about>] [--json]` lists them, with the text to render and, for a
+summary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.
+Attach each with `kmp_write_memory`, intent `record_summary`, `current.ref`
+and `current.summary_en` only: the text, kind and coordinates are read from
+the store and cannot be supplied, no relation is written, and a rendering
+that fails the lint is refused with every fault named. Do it once per store;
+an exact retry is a no-op.
+
 Use one `idempotency_key` per logical write. Replaying the same accepted write
 returns its success rather than duplicating memory. A `conflict` can also mean
 the store advanced before this attempt committed: follow the error message,

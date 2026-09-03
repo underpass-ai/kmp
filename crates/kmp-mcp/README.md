@@ -184,7 +184,8 @@ language on its own and names the word pairs that carried a citation, at
 medium confidence at most. A writer can attach an English rendering of a
 memory as the reserved entry metadata key `summary_en`; `kmp_ask` searches it
 and never cites it, the kernel lints it, and `kmp_write_memory` takes it as
-`current.summary_en`. A semantic question is asked in English with the
+`current.summary_en` (or attaches it to an older memory with the intent
+`record_summary`; `kmp-mcp summaries pending` lists the ones that owe it). A semantic question is asked in English with the
 user's own words passed as `asked_as`; the kernel echoes them on the answer
 and warns when the rendering dropped an identifier. If the English question
 returns `UNKNOWN`, the agent re-asks once in the user's own words and stops.

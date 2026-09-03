@@ -10,7 +10,11 @@ use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
-use crate::write::{build_write_plan_with_root, write_commit_result, write_dry_run_result};
+use crate::write::existing_entry::ExistingEntry;
+use crate::write::{
+    build_summary_plan, build_write_plan_with_root, is_summary_write, summary_target,
+    write_commit_result, write_dry_run_result,
+};
 
 impl KernelMcpServer {
     pub(super) async fn handle_kmp_write_memory(
@@ -34,7 +38,12 @@ impl KernelMcpServer {
                 return jsonrpc_result(id, tool_error_result(&error));
             }
         };
-        let plan = match build_write_plan_with_root(arguments, allow_unlinked_root) {
+        let planned = if is_summary_write(arguments) {
+            self.plan_summary_write(arguments).await
+        } else {
+            build_write_plan_with_root(arguments, allow_unlinked_root)
+        };
+        let plan = match planned {
             Ok(plan) => plan,
             Err(message) => {
                 // Everything the write planner refuses is about the
@@ -104,6 +113,39 @@ impl KernelMcpServer {
                 jsonrpc_result(id, tool_error_result(&error))
             }
         }
+    }
+
+    /// A `record_summary` write attaches to a memory that exists, so the
+    /// memory is read first — text, kind, coordinates and metadata all come
+    /// from the store — and only the rendering comes from the caller.
+    async fn plan_summary_write(
+        &self,
+        arguments: &Value,
+    ) -> Result<crate::write::plan::KernelWritePlan, String> {
+        let (about, reference) = summary_target(arguments)?;
+        let inspected = self
+            .backend
+            .call_tool(
+                "kmp_inspect",
+                &serde_json::json!({
+                    "about": about,
+                    "ref": reference,
+                    "include": {"details": true, "raw": true}
+                }),
+            )
+            .await
+            .map_err(|error| {
+                format!(
+                    "record_summary could not read `{reference}` before attaching to it: {}",
+                    error.message
+                )
+            })?;
+        let inspected = inspected
+            .get("structuredContent")
+            .cloned()
+            .unwrap_or(inspected);
+        let existing = ExistingEntry::from_inspect(&reference, &inspected)?;
+        build_summary_plan(arguments, &existing)
     }
 
     async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, ToolError> {

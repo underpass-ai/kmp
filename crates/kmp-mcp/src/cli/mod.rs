@@ -8,6 +8,7 @@ mod guide_verb;
 mod lifecycle_verbs;
 mod plugin_verb;
 mod snapshot_verb;
+mod summaries_verb;
 mod transfer;
 mod uninstall_verb;
 mod viewer_verb;
@@ -18,6 +19,7 @@ use guide_verb::run_guide_command;
 use lifecycle_verbs::run_lifecycle_command;
 use plugin_verb::run_plugin_command;
 use snapshot_verb::run_snapshot_command;
+use summaries_verb::run_summaries_command;
 use uninstall_verb::run_uninstall_command;
 use viewer_verb::run_viewer_command;
 
@@ -31,6 +33,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
         "export" | "import" => return transfer::run(command, first_argument, args).await,
         "document" => return run_document_command(args).await,
         "snapshot" => return run_snapshot_command(args).await,
+        "summaries" => return run_summaries_command(args).await,
         "config" => run_config_command(args),
         "guide" => return run_guide_command(args).await,
         "plugin" => return run_plugin_command(args).await,
@@ -70,6 +73,7 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                 "kmp-mcp: unknown command `{other}`; run without arguments for MCP \
                  stdio mode, or use `document <about> [--out FILE]` / \
                  `snapshot create|list|verify|read|merge ...` / \
+                 `summaries pending [<about>] [--json]` / \
                  `config [memory-routing <mode>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
@@ -99,6 +103,7 @@ fn is_cli_subcommand(command: &str) -> bool {
             | "export"
             | "import"
             | "viewer"
+            | "summaries"
     )
 }
 
@@ -139,6 +144,7 @@ fn subcommand_usage(command: &str) -> &'static str {
             "kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] [--dry-run]"
         }
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
+        "summaries" => "kmp-mcp summaries pending [<about>] [--json]",
         "uninstall" => {
             "kmp-mcp uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]"
         }
@@ -175,6 +181,7 @@ kmp-mcp plugin resolve-engine  Select the engine matching both host manifests\n 
 kmp-mcp plugin notice          Report version drift without changing the machine\n  \
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
+kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
 kmp-mcp uninstall [--store <absolute-path>] [--apply]\n  \
                                 Remove one store, or preview the whole installation\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \

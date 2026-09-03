@@ -6,6 +6,7 @@
 pub(crate) mod accepted_counts;
 pub(crate) mod arguments;
 pub(crate) mod coordinates;
+pub(crate) mod existing_entry;
 pub(crate) mod generated_ref;
 pub(crate) mod ingest_arguments;
 pub(crate) mod ingest_change;
@@ -20,9 +21,11 @@ pub(crate) mod relation_quality;
 pub(crate) mod relations;
 pub(crate) mod results;
 mod search_summary;
+pub(crate) mod summary_planner;
 mod writer_identity_audit;
 
 pub(crate) use ingest_plan::KmpIngestPlan;
 pub(crate) use ingest_planner::build_ingest_plan;
 pub(crate) use planner::build_write_plan_with_root;
 pub(crate) use results::{write_commit_result, write_dry_run_result};
+pub(crate) use summary_planner::{build_summary_plan, is_summary_write, summary_target};

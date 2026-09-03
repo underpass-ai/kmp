@@ -498,24 +498,72 @@
         "additionalProperties": false,
         "allOf": [
           {
+            "else": {
+              "properties": {
+                "current": {
+                  "required": [
+                    "kind",
+                    "summary"
+                  ]
+                }
+              }
+            },
             "if": {
-              "not": {
-                "properties": {
-                  "options": {
+              "properties": {
+                "intent": {
+                  "const": "record_summary"
+                }
+              },
+              "required": [
+                "intent"
+              ]
+            },
+            "then": {
+              "properties": {
+                "current": {
+                  "required": [
+                    "ref",
+                    "summary_en"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "allOf": [
+                {
+                  "not": {
                     "properties": {
-                      "strict": {
-                        "const": false
+                      "options": {
+                        "properties": {
+                          "strict": {
+                            "const": false
+                          }
+                        },
+                        "required": [
+                          "strict"
+                        ]
                       }
                     },
                     "required": [
-                      "strict"
+                      "options"
                     ]
                   }
                 },
-                "required": [
-                  "options"
-                ]
-              }
+                {
+                  "not": {
+                    "properties": {
+                      "intent": {
+                        "const": "record_summary"
+                      }
+                    },
+                    "required": [
+                      "intent"
+                    ]
+                  }
+                }
+              ]
             },
             "then": {
               "properties": {
@@ -669,10 +717,6 @@
                 "type": "string"
               }
             },
-            "required": [
-              "kind",
-              "summary"
-            ],
             "type": "object"
           },
           "idempotency_key": {
@@ -681,13 +725,14 @@
             "type": "string"
           },
           "intent": {
-            "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact.",
+            "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact. record_summary attaches an English search summary to a memory that already exists: give current.ref and current.summary_en only — the text, kind and coordinates are read from the store and cannot be supplied, no connect_to is written, and a summary the lint refuses is rejected with every fault named. `kmp-mcp summaries pending` lists the memories that owe one.",
             "enum": [
               "record_turn",
               "record_observation",
               "record_decision",
               "record_feedback",
-              "record_delta"
+              "record_delta",
+              "record_summary"
             ],
             "type": "string"
           },

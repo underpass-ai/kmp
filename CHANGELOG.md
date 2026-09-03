@@ -76,6 +76,20 @@ Detailed notes from the early release cycle remain available in the
   search, keep every number, identifier and acronym exactly as written, and
   never alter the text to fit the summary.
 
+- Memories written before summaries existed can be given one
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). `kmp-mcp
+  summaries pending [<about>] [--json]` lists the memories in a store that
+  owe an English search summary — those not written in English with none,
+  and those whose summary the lint refuses, with the faults — read off the
+  store's own event log the way `document` reads an about; `kmp-mcp doctor`
+  reports the count. The agent attaches each with `kmp_write_memory` and the
+  new intent `record_summary`: `current.ref` and `current.summary_en` only.
+  The write reads the memory first and compiles to an ingest of the same
+  entry with the summary added to its metadata, so the text, kind and
+  coordinates are the stored ones and cannot be supplied; a rendering that
+  fails the lint is refused with every fault named, and an exact retry is a
+  no-op. `summary_en_by` records who attached it.
+
 ### Removed
 
 - `ask_fallback_languages` and `kmp-mcp config ask-fallback-languages`. The
