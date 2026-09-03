@@ -1580,6 +1580,85 @@
           }
         ]
       }
+    },
+    {
+      "id": "summary-plural",
+      "probes": "A mixed store — Spanish and English entries — reads as no single language, so before this nothing was stemmed and an English plural question could not reach the singular in the English summary of a Spanish memory. The question folds in the kernel's search language because the store carries English summaries, so `valves` reaches `valve`; a store with no summary keeps exact matching.",
+      "about": "project:plural",
+      "question": "Which valves froze during the night shifts?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:plural:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:plural:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:plural:e2",
+            "kind": "observation",
+            "text": "The weekly meeting moved to ten in the morning at the request of the whole team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e3",
+            "kind": "observation",
+            "text": "The canteen menu was posted for everyone before lunch on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e4",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón para todos.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
