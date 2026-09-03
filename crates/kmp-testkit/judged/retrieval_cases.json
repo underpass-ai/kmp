@@ -1512,6 +1512,74 @@
           }
         ]
       }
+    },
+    {
+      "id": "summary-is-content",
+      "probes": "A Spanish memory whose English summary answers all three of the question's concepts, against an English memory whose own text carries two of them. Content decides the order and the summary is content: the entry that answers in full through its rendering ranks first, above the one that only mentions the subject in its own words. Before the summary scored as content it ranked second.",
+      "about": "project:resumen-orden",
+      "question": "Which launch was postponed by the audit?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:resumen-orden:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:resumen-orden:e1",
+            "kind": "decision",
+            "text": "El despliegue se retrasó porque los auditores no habían firmado.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The launch was postponed because the audit sign-off was missing."
+            }
+          },
+          {
+            "id": "project:resumen-orden:e2",
+            "kind": "observation",
+            "text": "The launch audit was discussed at the weekly meeting.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:resumen-orden:e3",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was posted on the board."
+            }
+          }
+        ]
+      }
     }
   ]
 }

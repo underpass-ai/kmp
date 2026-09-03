@@ -129,7 +129,9 @@ entry metadata key `summary_en`. `kmp_ask` searches it and never cites it, so
 an English question reaches Spanish memory and the citation stays the Spanish
 text byte for byte. `kmp_ingest` warns about a summary the lint refuses —
 wrong language, too thin, a copy of the text, a dropped identifier — and
-ranking makes the same reading, so such a summary carries nothing.
+ranking makes the same reading, so such a summary carries nothing. A citation
+the summary carried says so: `matched_via: summary`, with the question's words
+the rendering supplied in `summary_terms`.
 
 Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
 Ask supports word segmentation for those scripts. Storage remains byte-exact;
