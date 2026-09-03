@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:4c94e84935e86b7962ba",
+    "idempotency_key": "ingest:guide-sync:1:agent:70c4088fec1b1928a1a4",
     "memory": {
       "dimensions": [
         {
@@ -144,7 +144,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and natural-language question. Expect: cited stored text or UNKNOWN. Next: inspect a relied-on ref, trace a relied-on connection, or stop honestly at UNKNOWN after the bounded language policy."
+          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, and a warning when the rendering dropped an identifier or leans to another language. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN."
         },
         {
           "coordinates": [
@@ -534,7 +534,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Language is decided by the store, not by the question, and the MCP initialize instructions say which rule is in force. With a lexical-bridge table installed beside the store, kmp_ask crosses languages inside the kernel: do not translate the query to retry it and do not use a configured fallback language; re-ask at most once in other words in the user's language. Without a table, ask in the user's language and, if the result does not answer, retry the query once in each configured fallback language. A memory whose writer attached an English summary_en is reached from an English question either way. Only the query is ever translated: evidence text, refs, relation why and source metadata are cited byte for byte, and the answer is written in the user's language."
+          "text": "The question is asked in English; the answer is given in the user's language. The kernel matches words and never translates, and what reaches a memory written in any language is its English summary_en, so a semantic question is rendered in plain English with every number, identifier and acronym kept exactly, and the user's own words travel as asked_as: searched never, echoed on the answer, and read against the question so a rendering that lost an identifier or leans to another language draws a warning while the question is still searched. The kernel accepts any language: a question in the store's own language reaches the stored text directly, and with a lexical-bridge table installed a citation that crossed a language names its word pairs in bridged_terms at medium confidence at most. If the English rendering returns UNKNOWN or the evidence does not answer, re-ask at most once in the user's own words and stop. Evidence text, refs, relation why and source metadata are cited byte for byte. There is no language setting."
         },
         {
           "coordinates": [
@@ -1189,7 +1189,7 @@
           "supports": [
             "guide:kmp-agent:advanced:language"
           ],
-          "text": "The initialize instructions carry one of two language rules depending on whether the backend reports bridges_languages; kmp-mcp info and doctor name the table a store reads or say there is none.",
+          "text": "kmp_ask takes asked_as, echoes it, and returns a warning per rendering fault; kmp-mcp info and doctor name the table a store reads or say there is none; the config verb takes no language setting.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

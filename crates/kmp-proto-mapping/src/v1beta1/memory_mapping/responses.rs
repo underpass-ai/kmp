@@ -1616,7 +1616,7 @@ mod ask_entry_text_tests {
         RelationSemanticClass, Role,
     };
 
-    use super::{UNANSWERED, ask_response_from_result, question_rendering_warnings};
+    use super::{UNANSWERED, ask_response_from_result};
 
     #[test]
     fn ask_can_retrieve_a_fact_present_only_in_the_entry_text() {
@@ -1656,33 +1656,6 @@ mod ask_entry_text_tests {
             served_at: std::time::SystemTime::UNIX_EPOCH,
             timing: None,
         };
-
-        /// The user's words are never searched; they are what the rendering is
-        /// read against. A rendering that lost the ticket says so, and one that
-        /// kept everything says nothing.
-        #[test]
-        fn a_rendering_that_lost_an_identifier_draws_one_warning() {
-            let warnings = question_rendering_warnings(
-                "Why was the launch postponed?",
-                Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
-            );
-
-            assert_eq!(
-                warnings,
-                [
-                    "question is a rendering of asked_as that drops identifiers the user's words \
-                 carry: #469, v0.7.0; the kernel searched it as given"
-                ]
-            );
-            assert!(
-                question_rendering_warnings(
-                    "Why was the v0.7.0 launch (#469) postponed?",
-                    Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
-                )
-                .is_empty()
-            );
-            assert!(question_rendering_warnings("Why?", None).is_empty());
-        }
 
         let response = ask_response_from_result(
             "ZORBLATT",
@@ -2171,5 +2144,32 @@ mod wake_priority_tests {
 
         let spine = response.wake.expect("wake packet").causal_spine;
         assert_eq!(spine[0].claim, "b:source -> z:target");
+    }
+
+    /// The user's words are never searched; they are what the rendering is
+    /// read against. A rendering that lost the ticket says so, and one that
+    /// kept everything says nothing.
+    #[test]
+    fn a_rendering_that_lost_an_identifier_draws_one_warning() {
+        let warnings = super::question_rendering_warnings(
+            "Why was the launch postponed?",
+            Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
+        );
+
+        assert_eq!(
+            warnings,
+            [
+                "question is a rendering of asked_as that drops identifiers the user's words \
+             carry: #469, v0.7.0; the kernel searched it as given"
+            ]
+        );
+        assert!(
+            super::question_rendering_warnings(
+                "Why was the v0.7.0 launch (#469) postponed?",
+                Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
+            )
+            .is_empty()
+        );
+        assert!(super::question_rendering_warnings("Why?", None).is_empty());
     }
 }

@@ -120,6 +120,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "budget",
             "dimensions",
             "page",
+            "asked_as",
         ]
     );
     assert_eq!(
@@ -132,6 +133,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "warnings",
             "projection",
             "truncation",
+            "asked_as",
         ]
     );
     assert_eq!(

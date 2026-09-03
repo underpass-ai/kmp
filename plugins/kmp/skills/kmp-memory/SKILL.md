@@ -224,7 +224,8 @@ language reaches the stored text directly, and where a lexical-bridge table
 is installed a citation that crossed a language names its word pairs in
 `bridged_terms` at medium confidence at most. So if the English rendering
 returns `UNKNOWN`, or the evidence does not answer, re-ask at most once in the
-user's own words, and stop there. Never translate or rewrite stored evidence,
+user's own words, then reclassify the original goal before stopping. Never
+translate or rewrite stored evidence,
 refs, relation `why` or source metadata: cite the stored text byte-for-byte
 and write the answer in the user's language. Do not apply any of this to a
 temporal interval; temporal intent navigates time first.
