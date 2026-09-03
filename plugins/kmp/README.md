@@ -131,7 +131,8 @@ ranking makes the same reading, so such a summary carries nothing. A citation
 the summary carried says so: `matched_via: summary`, with the question's words
 the rendering supplied in `summary_terms`. `kmp_write_memory` takes it as
 `current.summary_en`, and a strict write requires it when the memory is not
-written in English.
+written in English. Older memories that owe one are listed by `kmp-mcp
+summaries pending` and attached with the intent `record_summary`.
 
 Questions in Chinese, Japanese or Thai are not segmented by word yet. Storage
 remains byte-exact; word-based semantic retrieval in those scripts is not

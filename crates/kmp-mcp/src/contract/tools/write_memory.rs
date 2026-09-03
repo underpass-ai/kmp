@@ -28,13 +28,14 @@ pub(crate) fn write_memory_schema() -> Value {
             "about": string_schema("Memory anchor or root ref this semantic memory event should attach to."),
             "intent": {
                 "type": "string",
-                "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact.",
+                "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact. record_summary attaches an English search summary to a memory that already exists: give current.ref and current.summary_en only — the text, kind and coordinates are read from the store and cannot be supplied, no connect_to is written, and a summary the lint refuses is rejected with every fault named. `kmp-mcp summaries pending` lists the memories that owe one.",
                 "enum": [
                     "record_turn",
                     "record_observation",
                     "record_decision",
                     "record_feedback",
-                    "record_delta"
+                    "record_delta",
+                    "record_summary"
                 ]
             },
             "actor": string_schema("Human, agent, or component producing the write."),
@@ -64,7 +65,6 @@ pub(crate) fn write_memory_schema() -> Value {
             "current": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["kind", "summary"],
                 "properties": {
                     "ref": string_schema("Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix."),
                     "kind": {
@@ -150,15 +150,35 @@ pub(crate) fn write_memory_schema() -> Value {
         },
         "allOf": [{
             "if": {
-                "not": {
-                    "required": ["options"],
-                    "properties": {
-                        "options": {
-                            "required": ["strict"],
-                            "properties": {"strict": {"const": false}}
-                        }
-                    }
+                "properties": {"intent": {"const": "record_summary"}},
+                "required": ["intent"]
+            },
+            "then": {
+                "properties": {
+                    "current": {"required": ["ref", "summary_en"]}
                 }
+            },
+            "else": {
+                "properties": {
+                    "current": {"required": ["kind", "summary"]}
+                }
+            }
+        }, {
+            "if": {
+                "allOf": [
+                    {
+                        "not": {
+                            "required": ["options"],
+                            "properties": {
+                                "options": {
+                                    "required": ["strict"],
+                                    "properties": {"strict": {"const": false}}
+                                }
+                            }
+                        }
+                    },
+                    {"not": {"properties": {"intent": {"const": "record_summary"}}, "required": ["intent"]}}
+                ]
             },
             "then": {
                 "properties": {

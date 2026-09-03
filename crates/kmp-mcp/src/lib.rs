@@ -8,6 +8,7 @@ pub mod plugin_notice;
 pub mod pulse;
 pub mod snapshot;
 pub mod style;
+pub mod summaries;
 pub mod viewer;
 
 mod contract;

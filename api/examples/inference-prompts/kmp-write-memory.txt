@@ -8,7 +8,7 @@ The object must have this shape:
 
 {
   "about": "string",
-  "intent": "record_turn|record_observation|record_decision|record_feedback|record_delta",
+  "intent": "record_turn|record_observation|record_decision|record_feedback|record_delta|record_summary",
   "actor": "string",
   "observed_at": "ISO-8601 timestamp",
   "scope": {
@@ -64,6 +64,7 @@ The object must have this shape:
 Hard rules:
 - Emit a single memory event, not a batch.
 - Always include `about`, `intent`, `actor`, `observed_at`, `scope.process`, `current.kind`, `current.summary`, `current.evidence`, and at least one `connect_to` relation.
+- `record_summary` attaches a rendering to a memory that already exists: give `current.ref` and `current.summary_en` only; the text, kind and coordinates are read from the store.
 - Give `current.summary_en`: an English rendering of `current.summary` for search, in plain words a reader would ask with, keeping every number, identifier and acronym exactly as written. It is searched and never cited; `current.summary` is what is cited. Required when `current.summary` is not written in English. Never alter `current.summary` to fit it.
 - Every non-structural relation must include both `why` and `evidence`.
 - Write them as distinct facts: `why` explains why the specific semantic

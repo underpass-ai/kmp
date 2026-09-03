@@ -19,6 +19,7 @@ Usage:
   kmp-mcp plugin notice          Report version drift without changing the machine
   kmp-mcp document <about>        Render one about as a Markdown document
   kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots
+  kmp-mcp summaries pending       List the memories that owe an English search summary
   kmp-mcp uninstall [--store <absolute-path>] [--apply]
   Remove one store, or preview the whole installation
   kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log
