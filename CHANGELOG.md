@@ -9,6 +9,22 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- A question folds in the language it will find the answer in, not only the
+  store's ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking
+  read one language for the whole store and stemmed the question, the text
+  and the English search summary with it. A store of two languages reads as
+  none, so nothing was stemmed, and an English plural could not reach the
+  singular in the English summary of a Spanish memory. Now each field folds
+  in its own language: the text in the store's, the writer's `summary_en` in
+  the kernel's search language whatever the memory's own, and the question in
+  the store's language, or in the kernel's when the store's could not be read
+  and it carries English summaries to match. A store with no summary keeps
+  exact matching rather than being stemmed by rules its text never was. The
+  judged case `summary-plural` measures it, and every existing floor holds:
+  21 cases, R@1 0.8250 → 0.8333, nDCG 0.9031 → 0.9077.
+
 ### Added
 
 - A writer can attach an English search summary to a memory, and the kernel

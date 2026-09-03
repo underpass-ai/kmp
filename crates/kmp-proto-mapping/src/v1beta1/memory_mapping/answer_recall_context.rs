@@ -1,9 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal};
+use kmp_domain::{KmpBundle, RelationSemanticClass, RelationSignal, SearchSummary};
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_selection::answer_context_refs;
+use super::bundle_views::persisted_memory_metadata;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::memory_lifecycle::MemoryLifecycle;
 use super::morphology::Morphology;
@@ -22,15 +23,26 @@ pub(super) struct AnswerRecallContext {
     pub(super) relationships_by_ref: BTreeMap<String, Vec<RelationFeature>>,
     pub(super) lifecycle: MemoryLifecycle,
     pub(super) reach_graph: ReachGraph,
-    /// Read once from the stored memory, then used for both sides of every
-    /// comparison. Stemming a question by one language's rules and the memory
-    /// by another's would split families rather than join them.
+    /// The store's own language, read from the entry texts and used to stem
+    /// them. Stemming a question by one language's rules and the memory by
+    /// another's would split families rather than join them, so both sides of
+    /// a comparison in the store's language use this.
     pub(super) morphology: Morphology,
+    /// The kernel's search language, used for the English search summary a
+    /// writer attaches. It folds the same way whatever language the memory it
+    /// renders was written in, so an English question reaches a Spanish memory
+    /// through its summary even in a store whose own language cannot be read.
+    pub(super) summary_morphology: Morphology,
+    /// The language the question is stemmed in: the store's own when it could
+    /// be read, and the kernel's search language when it could not. A mixed
+    /// store reads as no language and would stem nothing, which is what left
+    /// an English plural from reaching the singular in an English summary.
+    pub(super) question_morphology: Morphology,
 }
 
 impl AnswerRecallContext {
     pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
-        let morphology = Morphology::read(
+        let store_language = Morphology::read_language(
             std::iter::once(bundle.root_node())
                 .chain(bundle.neighbor_nodes())
                 .map(|node| node.summary())
@@ -44,6 +56,21 @@ impl AnswerRecallContext {
                     ]
                 })),
         );
+        let morphology = Morphology::for_language(store_language.as_deref());
+        // The question and the search summary are stemmed the same way, or a
+        // summary written in one shape and a question asked in another would
+        // never meet. That shared language is the store's own when it could be
+        // read — which is what the whole store used before this — and the
+        // kernel's search language only when the store's could not be read and
+        // it carries English summaries to match: a mixed store reads as none,
+        // stemmed nothing, and left an English plural short of the singular in
+        // an English summary. A store with no summary keeps exact matching
+        // rather than being stemmed by rules its own text never was.
+        let search_language = store_language.as_deref().or_else(|| {
+            bundle_carries_search_summary(bundle).then_some(kmp_domain::language::KERNEL_LANGUAGE)
+        });
+        let summary_morphology = Morphology::for_language(search_language);
+        let question_morphology = Morphology::for_language(search_language);
         let details_by_ref = bundle
             .node_details()
             .iter()
@@ -135,6 +162,8 @@ impl AnswerRecallContext {
             lifecycle: MemoryLifecycle::read(bundle),
             reach_graph: ReachGraph::from_bundle(bundle),
             morphology,
+            summary_morphology,
+            question_morphology,
         }
     }
 
@@ -192,6 +221,22 @@ impl AnswerRecallContext {
     pub(super) fn recency_rank(&self, item: &MemoryEvidence) -> u32 {
         self.lifecycle.recency_rank(item.time.as_ref())
     }
+}
+
+/// Whether any memory in the bundle carries an English search summary that
+/// passes the same lint the ranker searches it under.
+///
+/// It decides one thing: whether a question on a store whose own language
+/// could not be read should fold in the kernel's search language. Only a
+/// store with such a summary has an English surface for it to land on.
+fn bundle_carries_search_summary(bundle: &KmpBundle) -> bool {
+    std::iter::once(bundle.root_node())
+        .chain(bundle.neighbor_nodes())
+        .any(|node| {
+            persisted_memory_metadata(node.properties())
+                .get(SearchSummary::METADATA_KEY)
+                .is_some_and(|summary| SearchSummary::lint(node.summary(), summary).is_ok())
+        })
 }
 
 pub(super) fn relationship_is_explanatory(relationship: &kmp_domain::BundleRelationship) -> bool {

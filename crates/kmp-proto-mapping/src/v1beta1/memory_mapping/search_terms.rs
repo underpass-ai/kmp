@@ -79,9 +79,17 @@ pub(super) fn informative_term_counts(value: &str, morphology: &Morphology) -> T
 }
 
 pub(super) fn informative_terms(value: &str, morphology: &Morphology) -> BTreeSet<String> {
-    informative_tokens(value)
-        .map(|term| search_key(&term, morphology))
-        .collect()
+    informative_keys(value, morphology).collect()
+}
+
+/// The search keys of a text under one morphology, in order and with
+/// repeats, so a caller stemming two fields in two languages can chain them
+/// into one term bag.
+pub(super) fn informative_keys<'a>(
+    value: &'a str,
+    morphology: &'a Morphology,
+) -> impl Iterator<Item = String> + 'a {
+    informative_tokens(value).map(move |term| search_key(&term, morphology))
 }
 
 /// The form two words are compared in.

@@ -63,14 +63,33 @@ impl Morphology {
     ///
     /// A language the vocabulary can name but this has no stemmer for reads as
     /// no language at all, which leaves the memory exactly as written rather
-    /// than stemmed by somebody else's rules.
+    /// than stemmed by somebody else's rules. Callers in the ranker read the
+    /// three fields separately; this stays as the single-field reader the
+    /// tests drive.
+    #[cfg(test)]
     pub(super) fn read<'a>(texts: impl IntoIterator<Item = &'a str>) -> Self {
+        Self::for_language(Self::read_language(texts).as_deref())
+    }
+
+    /// Which language a body of text is written in, for a caller that reads
+    /// several fields and must decide the stemmer of each one separately.
+    pub(super) fn read_language<'a>(texts: impl IntoIterator<Item = &'a str>) -> Option<String> {
         let tokens = texts
             .into_iter()
             .flat_map(|text| text.split(|character: char| !character.is_alphanumeric()))
             .map(fold_search_term)
             .collect::<Vec<_>>();
-        let language = LanguageVocabulary::shipped().read(tokens.iter().map(String::as_str));
+        LanguageVocabulary::shipped()
+            .read(tokens.iter().map(String::as_str))
+            .map(str::to_string)
+    }
+
+    /// The stemmer for a named language, or none for an unnamed one or one
+    /// with no stemmer. This is how a caller stems one field in a language it
+    /// read elsewhere: the English search summary in English, whatever the
+    /// store's own language, and the question in the store's language or, when
+    /// the store reads as none, in the kernel's search language.
+    pub(super) fn for_language(language: Option<&str>) -> Self {
         Self {
             stemmer: language.and_then(Self::stemmer_for).map(Stemmer::create),
         }
@@ -92,10 +111,11 @@ impl Morphology {
         }
     }
 
-    /// Whether a language was read at all. The behaviour it gates is visible
-    /// in what gets matched, so only the tests ask directly.
+    /// Whether a language was read at all. A caller reads it to decide the
+    /// fallback for another field: a question folds in the kernel's search
+    /// language exactly when the store's own language could not be read.
     #[cfg(test)]
-    fn is_reading_a_language(&self) -> bool {
+    pub(super) fn is_reading_a_language(&self) -> bool {
         self.stemmer.is_some()
     }
 }
@@ -179,6 +199,27 @@ mod tests {
 
         assert!(!morphology.is_reading_a_language());
         assert_eq!(morphology.stem("deployment"), "deployment");
+    }
+
+    #[test]
+    fn a_named_stemmer_folds_that_language_whatever_the_store_reads() {
+        let english = Morphology::for_language(Some("english"));
+
+        assert!(english.is_reading_a_language());
+        assert_eq!(english.stem("valves"), english.stem("valve"));
+        assert_eq!(english.stem("shifts"), english.stem("shift"));
+    }
+
+    #[test]
+    fn for_language_takes_a_language_read_from_another_field() {
+        let language = Morphology::read_language(["El despliegue de la pasarela se congelo."]);
+        assert_eq!(language.as_deref(), Some("spanish"));
+
+        let spanish = Morphology::for_language(language.as_deref());
+        assert_eq!(spanish.stem("valvulas"), spanish.stem("valvula"));
+
+        let unread = Morphology::for_language(None);
+        assert_eq!(unread.stem("valvulas"), "valvulas");
     }
 
     #[test]

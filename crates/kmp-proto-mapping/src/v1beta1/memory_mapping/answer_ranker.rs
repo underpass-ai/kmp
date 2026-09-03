@@ -88,7 +88,12 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
-        let morphology = &self.context.morphology;
+        // The question folds in the store's language, or in the kernel's
+        // search language when the store's own could not be read; the
+        // candidates' text folds in the store's language and their summaries
+        // in the kernel's. Question and summary therefore meet in one
+        // language even when the store as a whole reads as none.
+        let morphology = &self.context.question_morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
@@ -387,7 +392,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question, &self.context.morphology);
+        let question_terms = informative_terms(question, &self.context.question_morphology);
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
@@ -422,7 +427,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if self.bridge.is_silent() {
             return 0.0;
         }
-        let morphology = &self.context.morphology;
+        let morphology = &self.context.question_morphology;
         let question_counts = informative_term_counts(question, morphology);
         let bridged = BridgedKey::read(
             question,
@@ -462,7 +467,9 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .collect::<BTreeSet<_>>();
         informative_tokens(question)
-            .filter(|token| evidence_terms.contains(&search_key(token, &self.context.morphology)))
+            .filter(|token| {
+                evidence_terms.contains(&search_key(token, &self.context.question_morphology))
+            })
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
@@ -473,7 +480,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         question: &str,
         evidence: &[MemoryEvidence],
     ) -> Vec<String> {
-        let question_terms = informative_terms(question, &self.context.morphology);
+        let question_terms = informative_terms(question, &self.context.question_morphology);
         evidence
             .iter()
             .flat_map(|item| self.context.relationships_for(item))
@@ -745,6 +752,89 @@ mod tests {
         );
 
         assert_eq!(ranked[0].id, "detail:gateway");
+    }
+
+    /// A store of two languages reads as none, so nothing was stemmed and an
+    /// English plural could not reach the singular in an English summary of a
+    /// Spanish memory. Because the store carries a summary, the question folds
+    /// in the kernel's search language and the plural lands.
+    #[test]
+    fn an_english_plural_reaches_an_english_summary_in_a_store_that_reads_as_no_language() {
+        let with_summary = |id: &str, text: &str, summary: &str| {
+            let mut properties = BTreeMap::new();
+            properties.insert(
+                "payload_metadata".to_string(),
+                format!("{{\"summary_en\":\"{summary}\"}}"),
+            );
+            BundleNode::new(id, "memory", id, text, "ACTIVE", Vec::new(), properties)
+        };
+        let plain = |id: &str, text: &str| {
+            BundleNode::new(
+                id,
+                "memory",
+                id,
+                text,
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("about:mixto").expect("case id"),
+            Role::new("answerer").expect("role"),
+            with_summary(
+                "about:mixto",
+                "La válvula de reserva se congeló durante el turno de noche.",
+                "The reserve valve froze during the night shift.",
+            ),
+            vec![
+                plain(
+                    "entry:2",
+                    "The weekly meeting moved to ten in the morning at the team's request.",
+                ),
+                plain(
+                    "entry:3",
+                    "The canteen menu was posted for everyone before lunch on the board.",
+                ),
+                plain(
+                    "entry:4",
+                    "El menú del comedor se publicó en el tablón para todos.",
+                ),
+            ],
+            Vec::new(),
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+        let ranker = AnswerEvidenceRanker::from_bundle(&bundle);
+
+        let ranked = ranker.rank(
+            "Which valves froze during the night shifts?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![{
+                let mut item = claim_ev(
+                    "e1",
+                    "entry:1",
+                    "La válvula de reserva se congeló durante el turno de noche.",
+                );
+                item.metadata.insert(
+                    SearchSummary::METADATA_KEY.to_string(),
+                    "The reserve valve froze during the night shift.".to_string(),
+                );
+                item
+            }],
+        );
+
+        eprintln!(
+            "DEBUG ranked = {:#?}",
+            ranked.iter().map(|r| (&r.id, &r.text)).collect::<Vec<_>>()
+        );
+        assert_eq!(ranked.len(), 1, "{ranked:?}");
+        assert_eq!(ranked[0].id, "detail:e1");
+        assert_eq!(
+            ranked[0].text, "La válvula de reserva se congeló durante el turno de noche.",
+            "the citation is the Spanish text as stored"
+        );
     }
 
     /// Nothing is stemmed when no language can be read, which is what every
@@ -1784,6 +1874,10 @@ mod tests {
             spanish_shift_report_with_summaries(),
         );
 
+        eprintln!(
+            "DEBUG ranked = {:#?}",
+            ranked.iter().map(|r| (&r.id, &r.text)).collect::<Vec<_>>()
+        );
         assert_eq!(ranked.len(), 1, "{ranked:?}");
         assert_eq!(ranked[0].id, "detail:e1");
         assert_eq!(
