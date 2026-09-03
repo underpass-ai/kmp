@@ -8,15 +8,18 @@ use super::answer_candidate::AnswerCandidate;
 use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
-    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_reached,
-    mark_reached_by, prioritize_distinct_claims, stable_evidence_key,
+    REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_bridged, mark_reached,
+    mark_reached_by, mark_restated, prioritize_distinct_claims, stable_evidence_key,
 };
+use super::bridged_key::BridgedKey;
+use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
+use super::lexical_bridge::LexicalBridge;
 use super::lexicon::Lexicon;
 use super::question_intent::QuestionIntent;
 use super::search_terms::{
-    concept_count, informative_terms, informative_tokens, matching_term_count, search_key,
-    strict_answer_focus_terms,
+    concept_count, informative_term_counts, informative_terms, informative_tokens,
+    matching_term_count, search_key, strict_answer_focus_terms,
 };
 
 pub(super) const ANSWER_CORE_LIMIT: usize = 5;
@@ -28,6 +31,20 @@ const MAX_REACH_HOPS: u32 = 2;
 const MAX_REACHED_REFS: usize = 8;
 const MAX_RESCUED_CANDIDATES: usize = 5;
 const MAX_ASSOCIATED_CANDIDATES: usize = 3;
+const MAX_BRIDGED_CANDIDATES: usize = 3;
+/// How many declared restatements may join the answer core. Equivalence is
+/// one hop by construction, so this bounds fan-out, not depth.
+const MAX_RESTATED_CANDIDATES: usize = 3;
+
+/// The share of the question's concepts that, covered outright or through
+/// the table, reads as "found it, in other words". It is the exact-coverage
+/// bar for `High`, applied to coverage the table helped with, and earns
+/// `Medium` at most: a bridged answer is never as sure as one in the reader's
+/// own words.
+const BRIDGED_COVERAGE_FOR_MEDIUM: f64 = 0.6;
+
+/// What every ranker reads with until a table is installed beside the store.
+static SILENT_BRIDGE: LexicalBridge = LexicalBridge::none();
 
 /// Deterministic, graph-aware reranker for stored entry text and evidence used
 /// by `kmp_ask`.
@@ -35,15 +52,33 @@ const MAX_ASSOCIATED_CANDIDATES: usize = 3;
 /// Direct stored text establishes eligibility. Graph detail and explanatory
 /// relationships can then improve an eligible candidate's position, but can
 /// never promote unrelated evidence into an answer.
-#[derive(Default)]
-pub(super) struct AnswerEvidenceRanker {
+pub(super) struct AnswerEvidenceRanker<'a> {
     context: AnswerRecallContext,
+    /// The table this installation bridges languages with, or none.
+    bridge: &'a LexicalBridge,
 }
 
-impl AnswerEvidenceRanker {
+impl Default for AnswerEvidenceRanker<'_> {
+    fn default() -> Self {
+        Self {
+            context: AnswerRecallContext::default(),
+            bridge: &SILENT_BRIDGE,
+        }
+    }
+}
+
+impl<'a> AnswerEvidenceRanker<'a> {
+    /// A ranker over a bundle with no table, which is what the tests of
+    /// everything above the table read with.
+    #[cfg(test)]
     pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
+        Self::from_bundle_with_bridge(bundle, &SILENT_BRIDGE)
+    }
+
+    pub(super) fn from_bundle_with_bridge(bundle: &KmpBundle, bridge: &'a LexicalBridge) -> Self {
         Self {
             context: AnswerRecallContext::from_bundle(bundle),
+            bridge,
         }
     }
 
@@ -87,7 +122,7 @@ impl AnswerEvidenceRanker {
                 (item, terms)
             })
             .collect::<Vec<_>>();
-        let lexicon = Lexicon::build(question, morphology, &prepared);
+        let lexicon = Lexicon::build(question, morphology, &prepared, self.bridge);
 
         let mut candidates = Vec::new();
         let mut rejected = Vec::new();
@@ -118,10 +153,120 @@ impl AnswerEvidenceRanker {
             .map(|candidate| candidate.item)
             .collect::<Vec<_>>();
 
+        let (restated, rejected) = self.restated_candidates(&answer, rejected);
+        answer.extend(restated);
         let (associated, rejected) = self.associated_candidates(rejected, &lexicon);
+        let (bridged, rejected) = self.bridged_candidates(rejected, &lexicon);
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
+        answer.extend(bridged);
         answer
+    }
+
+    /// Admits what a writer declared to be the same thing as an answer.
+    ///
+    /// `restates`, `same_event_as` and `same_entity_as` are not routes to a
+    /// memory; they are a person's word that two memories say one thing. A
+    /// restatement of what the question matched is therefore what the
+    /// question matched, in other words — the one paraphrase the kernel can
+    /// close without a table or a model, and only ever because somebody
+    /// wrote it down. It joins the answer core after the memories the
+    /// question reached on its own, carrying the ref it restates and the
+    /// relation that says so; the lifecycles still apply, so a replaced or
+    /// expired restatement stays out.
+    fn restated_candidates(
+        &self,
+        eligible: &[MemoryEvidence],
+        rejected: Vec<MemoryEvidence>,
+    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        if rejected.is_empty() || !self.context.reach_graph.has_equivalences() {
+            return (Vec::new(), rejected);
+        }
+        let seeds = eligible
+            .iter()
+            .flat_map(answer_context_refs)
+            .collect::<BTreeSet<_>>();
+        let mut blocked = self.context.lifecycle.superseded_refs().clone();
+        blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        let equivalents = self.context.reach_graph.equivalents_of(&seeds, &blocked);
+        if equivalents.is_empty() {
+            return (Vec::new(), rejected);
+        }
+
+        let mut restated = Vec::new();
+        let mut still_rejected = Vec::new();
+        for item in rejected {
+            let current =
+                self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
+            let hop = answer_context_refs(&item)
+                .iter()
+                .filter_map(|item_ref| equivalents.get(item_ref))
+                .max_by_key(|hop| hop.weight)
+                .cloned();
+            match hop {
+                Some(hop) if current => restated.push((hop, item)),
+                _ => still_rejected.push(item),
+            }
+        }
+        restated.sort_by(|(left_hop, left), (right_hop, right)| {
+            right_hop
+                .weight
+                .cmp(&left_hop.weight)
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+        (
+            restated
+                .into_iter()
+                .take(MAX_RESTATED_CANDIDATES)
+                .map(|(hop, item)| mark_restated(item, &hop))
+                .collect(),
+            still_rejected,
+        )
+    }
+
+    /// Rescues what the table connects to the question across a language
+    /// without covering enough of it to answer.
+    ///
+    /// A candidate that bridged most of the question cleared the floor and
+    /// is an answer already, with its pairs noted. One that bridged a word
+    /// or two is the same kind of thing as an association: evidence about
+    /// the store, not a claim the reader made. It arrives marked with the
+    /// pairs that reached it and stays out of the answer core.
+    fn bridged_candidates(
+        &self,
+        rejected: Vec<MemoryEvidence>,
+        lexicon: &Lexicon,
+    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        let mut bridged = Vec::new();
+        let mut still_rejected = Vec::new();
+        for item in rejected {
+            let terms = AnswerCandidateTerms::from_evidence(&item, &self.context);
+            let current =
+                self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
+            let pairs = lexicon.bridged_pairs(&terms);
+            if current && !pairs.is_empty() {
+                bridged.push((
+                    lexicon.direct_score(&terms),
+                    BridgedTerm::describe_all(pairs),
+                    item,
+                ));
+            } else {
+                still_rejected.push(item);
+            }
+        }
+        bridged.sort_by(|(left_score, _, left), (right_score, _, right)| {
+            right_score
+                .cmp(left_score)
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+        (
+            bridged
+                .into_iter()
+                .take(MAX_BRIDGED_CANDIDATES)
+                .map(|(_, pairs, item)| mark_bridged(item, &pairs))
+                .collect(),
+            still_rejected,
+        )
     }
 
     /// Rescues what this memory's own vocabulary connects to the question.
@@ -261,9 +406,40 @@ impl AnswerEvidenceRanker {
             MemoryConfidence::High
         } else if coverage >= 0.3 {
             MemoryConfidence::Medium
+        } else if self.bridged_coverage(question, evidence) >= BRIDGED_COVERAGE_FOR_MEDIUM {
+            // No words in common and most of the meaning by the table's
+            // lights: found, in other words. Abstention finally has a signal
+            // that is not the one retrieval failed on.
+            MemoryConfidence::Medium
         } else {
             MemoryConfidence::Low
         }
+    }
+
+    /// The best share of the question any retained item covers, counting a
+    /// concept the table bridged as covered.
+    fn bridged_coverage(&self, question: &str, evidence: &[MemoryEvidence]) -> f64 {
+        if self.bridge.is_silent() {
+            return 0.0;
+        }
+        let morphology = &self.context.morphology;
+        let question_counts = informative_term_counts(question, morphology);
+        let bridged = BridgedKey::read(
+            question,
+            morphology,
+            evidence.iter().map(|item| item.text.as_str()),
+            self.bridge,
+        );
+        evidence
+            .iter()
+            .map(|item| {
+                BridgedKey::coverage(
+                    &bridged,
+                    &question_counts,
+                    &AnswerCandidateTerms::from_evidence(item, &self.context),
+                )
+            })
+            .fold(0.0, f64::max)
     }
 
     /// The question's own words that reached the retained evidence.
@@ -320,7 +496,11 @@ mod tests {
     };
     use prost_types::Timestamp;
 
-    use super::super::answer_selection::{REACHED_BY_KEY, was_reached_indirectly};
+    use super::super::answer_selection::{
+        BRIDGED_TERMS_KEY, REACHED_BY_BRIDGE, REACHED_BY_KEY, RESTATED_FROM_KEY, RESTATED_VIA_KEY,
+        was_reached_indirectly,
+    };
+    use super::super::lexical_bridge::tests::spanish_english_toy;
     use super::super::morphology::Morphology;
     use super::super::relation_direction::RelationDirection;
     use super::super::relation_feature::RelationFeature;
@@ -367,7 +547,7 @@ mod tests {
         rel: &str,
         class: RelationSemanticClass,
         why: &str,
-    ) -> AnswerEvidenceRanker {
+    ) -> AnswerEvidenceRanker<'static> {
         AnswerEvidenceRanker {
             context: AnswerRecallContext {
                 details_by_ref: BTreeMap::new(),
@@ -377,6 +557,7 @@ mod tests {
                 )]),
                 ..Default::default()
             },
+            bridge: &SILENT_BRIDGE,
         }
     }
 
@@ -384,7 +565,7 @@ mod tests {
         rel: &str,
         class: RelationSemanticClass,
         why: &str,
-    ) -> AnswerEvidenceRanker {
+    ) -> AnswerEvidenceRanker<'static> {
         ranker_from_relationship_with_evidence(
             rel,
             class,
@@ -398,7 +579,7 @@ mod tests {
         class: RelationSemanticClass,
         why: &str,
         relation_evidence: Option<&str>,
-    ) -> AnswerEvidenceRanker {
+    ) -> AnswerEvidenceRanker<'static> {
         let node = |id: &str| {
             BundleNode::new(
                 id,
@@ -464,7 +645,10 @@ mod tests {
         BundleRelationship::new(scope, entry, "contains_entry", explanation)
     }
 
-    fn ranker_over(relationships: Vec<BundleRelationship>, refs: &[&str]) -> AnswerEvidenceRanker {
+    fn ranker_over(
+        relationships: Vec<BundleRelationship>,
+        refs: &[&str],
+    ) -> AnswerEvidenceRanker<'static> {
         let node = |id: &str| {
             BundleNode::new(
                 id,
@@ -493,7 +677,7 @@ mod tests {
     /// single rare one. The rule this replaces demanded two shared concepts
     /// from a question this long and discarded the rare match unscored.
     /// A bundle whose prose is the language the ranker will read.
-    fn ranker_speaking(prose: &[&str]) -> AnswerEvidenceRanker {
+    fn ranker_speaking(prose: &[&str]) -> AnswerEvidenceRanker<'static> {
         let node = |id: &str, summary: &str| {
             BundleNode::new(
                 id,
@@ -997,7 +1181,10 @@ mod tests {
             ]),
             ..Default::default()
         };
-        let ranker = AnswerEvidenceRanker { context };
+        let ranker = AnswerEvidenceRanker {
+            context,
+            bridge: &SILENT_BRIDGE,
+        };
 
         let ranked = ranker.rank(question, MemoryAnswerPolicy::EvidenceOrUnknown, candidates);
 
@@ -1416,5 +1603,235 @@ mod tests {
 
             assert_eq!(ranked[0].id, "detail:current-default", "{question}");
         }
+    }
+
+    /// A ranker over no bundle at all, reading with the toy table: the
+    /// shape every cross-language test needs.
+    fn ranker_bridging_with(bridge: &LexicalBridge) -> AnswerEvidenceRanker<'_> {
+        AnswerEvidenceRanker {
+            context: AnswerRecallContext::default(),
+            bridge,
+        }
+    }
+
+    /// Ids and claims are deliberately mute: a ref that repeated the word
+    /// would give a candidate the term the test is checking it lacks.
+    fn english_shift_report() -> Vec<MemoryEvidence> {
+        vec![
+            claim_ev(
+                "e1",
+                "claim:e1",
+                "The reserve valve failed during the night shift.",
+            ),
+            claim_ev(
+                "e2",
+                "claim:e2",
+                "The weekly meeting moved to ten in the morning.",
+            ),
+            claim_ev(
+                "e3",
+                "claim:e3",
+                "The canteen menu was posted on the board.",
+            ),
+        ]
+    }
+
+    #[test]
+    fn a_question_in_another_language_is_answered_and_says_which_words_carried_it() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        let ranked = ranker.rank(
+            "Que valvula fallo durante la noche?",
+            MemoryAnswerPolicy::BestEffort,
+            english_shift_report(),
+        );
+
+        assert_eq!(
+            ranked.len(),
+            1,
+            "only the bridged memory bears on the question"
+        );
+        assert_eq!(ranked[0].id, "detail:e1");
+        assert!(
+            !was_reached_indirectly(&ranked[0]),
+            "most of the question bridged: this is an answer, not a hop"
+        );
+        let carried = &ranked[0].metadata[BRIDGED_TERMS_KEY];
+        assert!(carried.contains("valvula≈valve"), "{carried}");
+        assert!(carried.contains("noche≈night"), "{carried}");
+    }
+
+    #[test]
+    fn a_strict_policy_counts_a_bridged_concept_as_answered() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        let ranked = ranker.rank(
+            "valvula noche",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            english_shift_report(),
+        );
+
+        assert_eq!(ranked[0].id, "detail:e1");
+        assert!(!was_reached_indirectly(&ranked[0]));
+    }
+
+    #[test]
+    fn bridging_half_the_question_is_proof_and_not_an_answer() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        // `canteen` is answered outright; the valve memory bridges one of the
+        // two concepts and no more.
+        let ranked = ranker.rank(
+            "valvula canteen",
+            MemoryAnswerPolicy::BestEffort,
+            english_shift_report(),
+        );
+
+        assert_eq!(ranked[0].id, "detail:e3");
+        assert!(!was_reached_indirectly(&ranked[0]));
+        let valve = ranked
+            .iter()
+            .find(|item| item.id == "detail:e1")
+            .expect("the bridged memory arrives as proof");
+        assert_eq!(valve.metadata[REACHED_BY_KEY], REACHED_BY_BRIDGE);
+        assert!(valve.metadata["reached_via"].contains("valvula≈valve"));
+        assert!(!valve.metadata.contains_key(BRIDGED_TERMS_KEY));
+    }
+
+    #[test]
+    fn confidence_reads_found_in_other_words_as_medium_and_never_high() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+        let valve = &english_shift_report()[..1];
+
+        // Both concepts bridged, none shared: medium, because the table's
+        // opinion is not the reader's words.
+        assert_eq!(
+            ranker.confidence("valvula noche", valve),
+            MemoryConfidence::Medium
+        );
+        // Two of four bridged and nothing shared: not enough to say so.
+        assert_eq!(
+            ranker.confidence("Que valvula fallo durante la noche?", valve),
+            MemoryConfidence::Low
+        );
+        // Without a table the same question stays low, as it always was.
+        assert_eq!(
+            AnswerEvidenceRanker::default().confidence("valvula noche", valve),
+            MemoryConfidence::Low
+        );
+    }
+
+    #[test]
+    fn a_bridged_word_does_not_become_a_word_the_memory_wrote() {
+        let table = spanish_english_toy();
+        let ranker = ranker_bridging_with(&table);
+
+        let ranked = ranker.rank(
+            "valvula noche",
+            MemoryAnswerPolicy::BestEffort,
+            english_shift_report(),
+        );
+
+        // The provenance is written on the item; reading its terms back must
+        // not find the reader's Spanish inside an English memory.
+        assert!(
+            ranker
+                .matched_query_terms("valvula noche", &ranked)
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn without_a_table_a_question_in_another_language_reaches_nothing() {
+        let ranked = AnswerEvidenceRanker::default().rank(
+            "Que valvula fallo durante la noche?",
+            MemoryAnswerPolicy::BestEffort,
+            english_shift_report(),
+        );
+
+        assert!(ranked.is_empty());
+    }
+
+    #[test]
+    fn a_declared_restatement_of_what_the_question_matched_is_cited_in_other_words() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale(
+                        "the go-live note and the decision record the same postponement",
+                    )
+                    .with_evidence("release calendar and the decision record")
+                    .with_confidence("high"),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the launch postponed?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "original",
+                    "claim:original",
+                    "The rollout slipped because the auditors had not signed off.",
+                ),
+                claim_ev(
+                    "in-other-words",
+                    "claim:in-other-words",
+                    "Launch postponed: go-live waits for the audit sign-off.",
+                ),
+                claim_ev(
+                    "noise",
+                    "claim:noise",
+                    "The canteen menu changed on Tuesday.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:in-other-words");
+        let original = &ranked[1];
+        assert_eq!(original.id, "detail:original");
+        assert!(
+            !was_reached_indirectly(original),
+            "a declared restatement answers; it is not a hop"
+        );
+        assert_eq!(original.metadata[RESTATED_FROM_KEY], "claim:in-other-words");
+        assert_eq!(original.metadata[RESTATED_VIA_KEY], "restates");
+        assert!(ranked.iter().all(|item| item.id != "detail:noise"));
+    }
+
+    #[test]
+    fn a_restatement_needs_a_seed_the_question_matched() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale("same postponement")
+                    .with_evidence("release calendar")
+                    .with_confidence("high"),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the launch postponed?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "original",
+                "claim:original",
+                "The rollout slipped because the auditors had not signed off.",
+            )],
+        );
+
+        assert!(ranked.is_empty(), "nothing matched, so nothing is restated");
     }
 }

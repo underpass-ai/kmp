@@ -9,6 +9,52 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Declared paraphrase is retrievable paraphrase
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). `restates`,
+  `same_event_as` and `same_entity_as` are a writer's word that two memories
+  say one thing, and `kmp_ask` now cites the other side of such a relation
+  beside a memory the question matched: one hop, proof-carrying edges only,
+  the lifecycles still applied, at most three per answer. The cited
+  restatement carries `restated_from` and `restated_via`. This is the one
+  route to a paraphrase that needs no table and no model — only that
+  somebody wrote it down — and the judged case `declared-paraphrase` measures
+  it: the paraphrase gap, plus one `restates`, cited.
+
+- `kmp_ask` bridges languages inside the kernel
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). A lexical-bridge
+  table beside the store — one signed-byte vector per whole word, built
+  offline from a static embedding model, read by the kernel with no new
+  crates and integer arithmetic only — lets a question written in Spanish
+  reach a memory written in English, and the reverse, without a model at
+  runtime and without an agent re-asking in another language. A cited memory
+  that crossed a language carries `bridged_terms`, the word pairs that
+  carried it (`valvula≈valve 0.51; noche≈night 0.91`), and answers at
+  `medium` confidence at most; a memory that bridges only a word or two
+  arrives in proof with `reached_by: bridge` and the pairs in `reached_via`,
+  and is not cited. Under `evidence_or_unknown` a bridged memory counts as
+  answering the question's focus, so a cross-language question stops being a
+  false UNKNOWN. The table is absent by default: without one, `ask` behaves
+  exactly as before. Install one as `<data dir>/lexical-bridge.kmpb` or name
+  it with `KMP_LEXICAL_BRIDGE`; `scripts/lexical-bridge/` builds it and
+  documents the format, the teacher and the measured threshold.
+- Three judged retrieval cases cross a language — `cross-question-es`,
+  `cross-store-es`, `bridge-precision` — scored against a committed fixture
+  table of real vectors for the words the cases use. The baseline rises with
+  them: recall@1 0.6364 → 0.7857, nDCG@10 0.7902 → 0.8615, and
+  `lifecycle-audit` reaches recall@1 1.0 because `previous≈former` is a
+  bridge too. `paraphrase-gap` stays the one known failure: a single vector
+  per word has no sense to pick, so `slipped` does not reach `postponed`, and
+  the table says so rather than pretending.
+
+### Changed
+
+- Retrieval provenance the ranker writes on an evidence item — `reached_by`,
+  `reached_from`, `reached_via`, `reached_hops`, `bridged_terms` — is no
+  longer folded back into that item's searchable text on a later pass, so a
+  route cannot look like a word the memory wrote.
+
 ## [0.8.0] - 2026-09-02
 
 ### Added

@@ -27,17 +27,30 @@ use crate::transport::proto_mapping_v1beta1::{
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
+use kmp_proto_mapping::v1beta1::LexicalBridge;
 use kmp_proto_mapping::v1beta1::recall_projection::{
     RecallProjectionError, project_ask_response, project_wake_response,
 };
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     application: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
+    /// The word table `ask` bridges languages with. The served kernel has no
+    /// store directory to find one beside, so it is handed in, and none is
+    /// the default.
+    lexical_bridge: Arc<LexicalBridge>,
 }
 
 impl<G, D, S, E, W> MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     pub fn new(application: Arc<KernelMemoryApplicationService<G, D, S, E, W>>) -> Self {
-        Self { application }
+        Self {
+            application,
+            lexical_bridge: Arc::new(LexicalBridge::none()),
+        }
+    }
+
+    pub fn with_lexical_bridge(mut self, lexical_bridge: Arc<LexicalBridge>) -> Self {
+        self.lexical_bridge = lexical_bridge;
+        self
     }
 }
 
@@ -157,7 +170,13 @@ where
         })?;
         let selected_abouts = selected_abouts_from_bundle(&result.bundle);
         let response = project_ask_response(
-            ask_response_from_result(&question, answer_policy, max_entries, result),
+            ask_response_from_result(
+                &question,
+                answer_policy,
+                max_entries,
+                result,
+                &self.lexical_bridge,
+            ),
             &projection_request,
         )
         .map_err(|error| {

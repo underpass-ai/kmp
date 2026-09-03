@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:e992c49818511b807048",
+    "idempotency_key": "ingest:guide-sync:1:agent:3a123c0b50ddffdb3042",
     "memory": {
       "dimensions": [
         {
@@ -504,7 +504,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything."
+          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched."
         },
         {
           "coordinates": [
@@ -1116,7 +1116,7 @@
           "supports": [
             "guide:kmp-agent:advanced:reach"
           ],
-          "text": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core.",
+          "text": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core; a cited item that crossed a language names the word pairs that carried it, and a cited restatement names the memory it restates.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

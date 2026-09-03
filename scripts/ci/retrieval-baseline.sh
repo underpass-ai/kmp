@@ -14,6 +14,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT_DIR}"
 
+# Every case runs against the same lexical-bridge table: the judged fixture,
+# built by scripts/lexical-bridge/build.py from the words the cases use, so
+# the cross-language cases measure the mechanism and not whichever table an
+# operator happens to have installed.
+export KMP_LEXICAL_BRIDGE="${KMP_LEXICAL_BRIDGE:-${ROOT_DIR}/crates/kmp-testkit/judged/lexical-bridge.kmpb}"
+
 cargo run --locked --quiet -p kmp-testkit --bin retrieval_kmp_scorecard -- \
   "${1:-crates/kmp-testkit/judged/retrieval_cases.json}" \
   "${2:-docs/development/retrieval-baseline.tsv}"

@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_recall_context::AnswerRecallContext;
-use super::answer_selection::answer_context_refs;
+use super::answer_selection::{answer_context_refs, is_retrieval_provenance};
 use super::search_terms::{informative_term_counts, informative_terms};
 use super::term_counts::TermCounts;
 
@@ -30,6 +30,9 @@ impl AnswerCandidateTerms {
             direct_text.push_str(supported_ref);
         }
         for (key, value) in &item.metadata {
+            if is_retrieval_provenance(key) {
+                continue;
+            }
             direct_text.push(' ');
             direct_text.push_str(key);
             direct_text.push(' ');
