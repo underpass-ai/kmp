@@ -40,6 +40,7 @@ pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemory
     Ok(AskMemoryQuery {
         about: request.about,
         question: request.question,
+        asked_as: non_empty(request.asked_as),
         answer_policy: answer_policy_from_proto(request.answer_policy)?,
         dimensions: domain_dimension_selection(request.dimensions)?,
         token_budget: if budget.tokens == 0 {

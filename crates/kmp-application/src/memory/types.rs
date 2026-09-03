@@ -153,6 +153,10 @@ pub struct WakeMemoryQuery {
 pub struct AskMemoryQuery {
     pub about: String,
     pub question: String,
+    /// The user's own words when `question` is the agent's rendering of them
+    /// in the kernel's search language. Searched never; echoed and read
+    /// against the question so a rendering that lost something says so.
+    pub asked_as: Option<String>,
     pub answer_policy: MemoryAnswerPolicy,
     pub dimensions: DimensionSelection,
     pub token_budget: u32,

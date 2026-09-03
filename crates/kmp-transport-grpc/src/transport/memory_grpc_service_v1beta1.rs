@@ -164,6 +164,7 @@ where
             .map_err(|status| map_proto_error("KernelMemoryService.Ask", &start, *status))?;
         let answer_policy = query.answer_policy;
         let max_entries = query.max_entries;
+        let asked_as = query.asked_as.clone();
         log_dimensioned_request("KernelMemoryService.Ask", &query.about, &query.dimensions);
         let result = self.application.ask(query).await.map_err(|error| {
             map_application_error_with_log("KernelMemoryService.Ask", &start, error)
@@ -172,6 +173,7 @@ where
         let response = project_ask_response(
             ask_response_from_result(
                 &question,
+                asked_as.as_deref(),
                 answer_policy,
                 max_entries,
                 result,

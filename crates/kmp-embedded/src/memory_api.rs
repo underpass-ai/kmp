@@ -52,6 +52,9 @@ impl MemoryRecallApi for EmbeddedKernel {
         let query = AskMemoryQuery {
             about: request.about,
             question: request.question,
+            // The versioned memory API does not carry the user's words yet;
+            // the kernel searches the question as given and warns on nothing.
+            asked_as: None,
             answer_policy: answer_policy(request.answer_policy),
             dimensions: dimensions(request.dimension_kinds, request.scoped_to_about),
             token_budget: request.token_budget,

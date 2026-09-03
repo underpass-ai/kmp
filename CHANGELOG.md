@@ -11,6 +11,20 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- The question is asked in English and the user's words travel with it
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). `kmp_ask` takes
+  `asked_as`, the user's own words when `question` is the agent's rendering
+  of them in the kernel's search language. The kernel searches the rendering
+  as given and translates nothing; it echoes `asked_as` on the answer for the
+  audit trail and reads the rendering against it the way a search summary is
+  read against its text — a rendering that leans to another language, carries
+  no informative word, or drops an identifier the user's words carry draws a
+  warning, while the question is still searched. The initialize instructions,
+  the kmp-memory skill, the guide and the READMEs now say the same thing: ask
+  in plain English keeping every number, identifier and acronym, pass
+  `asked_as`, re-ask at most once in the user's own words, answer in the
+  user's language, cite byte for byte.
+
 - A writer can attach an English search summary to a memory, and the kernel
   lints it ([#469](https://github.com/underpass-ai/kmp/issues/469)). The
   reserved entry metadata key `summary_en` carries an English rendering of
@@ -61,6 +75,16 @@ Detailed notes from the early release cycle remain available in the
   the memory in the language of the work, render it in plain English for
   search, keep every number, identifier and acronym exactly as written, and
   never alter the text to fit the summary.
+
+### Removed
+
+- `ask_fallback_languages` and `kmp-mcp config ask-fallback-languages`. The
+  retry-per-configured-language policy was a workaround for a kernel that
+  could only match the store's language; with English search summaries, the
+  bridge table and `asked_as`, the question is asked in English first and in
+  the user's words once, and there is no list to configure. An older config
+  file that still carries the line is read without it and `kmp-mcp doctor`
+  says so.
 
 ### Fixed
 

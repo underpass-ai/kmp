@@ -1403,6 +1403,7 @@ async fn memory_service_ask_indexes_entry_text_and_explicit_evidence_not_anchor_
             about: "question:evidence-answer".to_string(),
             question: "What is the explicit answer?".to_string(),
             answer_policy: AnswerPolicy::EvidenceOrUnknown as i32,
+            asked_as: String::new(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
                 tokens: 1024,
@@ -1478,6 +1479,7 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
             question: "Which database engine was used when the CI workflow concluded and the remote branch remained present?"
                 .to_string(),
             answer_policy,
+            asked_as: String::new(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
                 tokens: 1024,
@@ -1540,6 +1542,7 @@ async fn memory_service_ask_show_conflicts_surfaces_explicit_conflict_relations(
             about: "question:conflict-answer".to_string(),
             question: "Is cache enabled at the incident checkpoint?".to_string(),
             answer_policy: AnswerPolicy::ShowConflicts as i32,
+            asked_as: String::new(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
                 tokens: 1024,
@@ -1643,6 +1646,7 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
             about: "question:830ce83f".to_string(),
             question: "Where did Rachel move?".to_string(),
             answer_policy: AnswerPolicy::EvidenceOrUnknown as i32,
+            asked_as: String::new(),
             budget: Some(MemoryBudget {
                 max_entries: 0,
                 tokens: 1024,

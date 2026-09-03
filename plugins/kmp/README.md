@@ -112,17 +112,15 @@ kmp-mcp config memory-routing always
 kmp-mcp config memory-routing on-request
 ```
 
-With a lexical-bridge table beside the store, `kmp_ask` crosses languages
-inside the kernel and the retry is not used. Without a table and with no
-policy file, genuinely semantic `kmp_ask` calls get one bounded English retry
-after the user's-language question returns `UNKNOWN`. Configure a different
-ordered list during setup with:
-
-```bash
-kmp-mcp config ask-fallback-languages en,fr
-# or disable retries
-kmp-mcp config ask-fallback-languages none
-```
+A semantic question is asked in the kernel's search language: the agent
+renders it in plain English, keeps every number, identifier and acronym the
+user wrote, and passes the user's own words as `asked_as`. The kernel searches
+the rendering as given, echoes `asked_as` on the answer, and warns when the
+rendering dropped an identifier or leans to another language. If the English
+question returns `UNKNOWN`, the agent re-asks once in the user's own words and
+stops. With a lexical-bridge table beside the store, `kmp_ask` also crosses
+languages inside the kernel and names the word pairs that carried a citation.
+There is no language setting to configure.
 
 A writer can also attach an English rendering of a memory as the reserved
 entry metadata key `summary_en`. `kmp_ask` searches it and never cites it, so
@@ -135,9 +133,9 @@ the rendering supplied in `summary_terms`. `kmp_write_memory` takes it as
 `current.summary_en`, and a strict write requires it when the memory is not
 written in English.
 
-Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
-Ask supports word segmentation for those scripts. Storage remains byte-exact;
-word-based semantic retrieval in those languages is not supported yet.
+Questions in Chinese, Japanese or Thai are not segmented by word yet. Storage
+remains byte-exact; word-based semantic retrieval in those scripts is not
+supported.
 
 The fallback translates only the query. The answer follows the user's
 language; evidence text, refs, relation `why`, and source metadata remain

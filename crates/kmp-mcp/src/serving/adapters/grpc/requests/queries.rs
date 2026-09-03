@@ -35,6 +35,7 @@ pub(crate) fn ask_request_from_arguments(arguments: &Value) -> Result<AskRequest
     Ok(AskRequest {
         about: required_string(arguments, "about")?,
         question: required_string(arguments, "question")?,
+        asked_as: optional_string(arguments, "asked_as").unwrap_or_default(),
         answer_policy: answer_policy_from_object(arguments_object)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 2)?),
         dimensions: dimension_selection_from_arguments(arguments)?,

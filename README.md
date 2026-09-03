@@ -192,22 +192,20 @@ commit or copy it.
 
 ## Language without flattening the evidence
 
-KMP never translates or rewrites stored evidence. With a lexical-bridge table
-beside the store (`<data dir>/lexical-bridge.kmpb`, built by
-`scripts/lexical-bridge/`), `kmp_ask` reaches memory written in another
-language on its own: a citation that crossed a language names the word pairs
-that carried it (`valvula≈valve 0.51`) and answers at medium confidence at
-most, and the agent is told not to translate and retry. Without a table, the
-agent asks first in the user's language and, if the result is `UNKNOWN`, may
-retry the query once per configured fallback language; English is the default
-fallback. Either way only the query changes. Evidence, refs, relation `why`
-and source metadata stay exactly as stored, and the agent answers in the
-user's language. `kmp-mcp info` says which of the two a store is on.
-
-```bash
-kmp-mcp config ask-fallback-languages en,fr
-kmp-mcp config ask-fallback-languages none
-```
+KMP never translates or rewrites stored evidence. A semantic question is
+asked in the kernel's search language: the agent renders it in plain English,
+keeps every number, identifier and acronym the user wrote, and passes the
+user's own words as `asked_as`. The kernel searches the rendering as given,
+echoes `asked_as` on the answer, and warns when the rendering dropped an
+identifier or leans to another language. It accepts a question in any
+language, so if the English one returns `UNKNOWN` the agent re-asks once in
+the user's own words and stops. With a lexical-bridge table beside the store
+(`<data dir>/lexical-bridge.kmpb`, built by `scripts/lexical-bridge/`),
+`kmp_ask` also reaches memory written in another language on its own: a
+citation that crossed a language names the word pairs that carried it
+(`valvula≈valve 0.51`) and answers at medium confidence at most. Either way,
+evidence, refs, relation `why` and source metadata stay exactly as stored,
+and the agent answers in the user's language.
 
 A writer can also attach an English rendering of a memory as the reserved
 entry metadata key `summary_en`. `kmp_ask` searches it and never cites it: a
@@ -221,12 +219,12 @@ the question's words the rendering supplied in `summary_terms`.
 `kmp_write_memory` takes it as `current.summary_en`, and a strict write
 requires it when the memory is not written in English.
 
-Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
-Ask supports word segmentation for those scripts. Their stored memory remains
-byte-exact and inspectable; word-based semantic retrieval is not supported yet.
+Questions in Chinese, Japanese or Thai are not segmented by word yet. Their
+stored memory remains byte-exact and inspectable; word-based semantic
+retrieval in those scripts is not supported.
 
 Temporal requests such as “yesterday” use temporal navigation, not semantic
-Ask fallback.
+Ask.
 
 ## Shared memory, when you actually need it
 
@@ -271,12 +269,12 @@ it stores a memory; KMP lints that summary and never produces one.
 
 ### What if my question is Spanish but the evidence is English?
 
-With a lexical-bridge table beside the store, Ask crosses the two languages
-inside the kernel and says which word pairs it used. A memory whose writer
-attached an English `summary_en` is reachable from an English question with no
-table at all. Without either, Ask fallback can retry the semantic query in
-English without translating the stored material. Configure the fallback
-during setup or with `kmp-mcp config`.
+The agent asks in English and passes your Spanish as `asked_as`, so the
+English evidence is reached directly; a Spanish memory is reached through the
+English `summary_en` its writer attached, and with a lexical-bridge table
+beside the store Ask crosses the two languages on its own and says which word
+pairs it used. The stored material is never translated, and the answer comes
+back in Spanish.
 
 ### Can Codex and Claude share the same memory?
 
