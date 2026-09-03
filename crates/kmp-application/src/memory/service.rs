@@ -69,7 +69,7 @@ where
             .update_context(update_context)
             .await?;
         outcome.read_after_write_ready = true;
-        outcome.warnings = accepted.warnings;
+        outcome.warnings.extend(accepted.warnings);
         Ok(outcome)
     }
 

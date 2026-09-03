@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
+use kmp_domain::language::LanguageVocabulary;
 use rust_stemmers::{Algorithm, Stemmer};
 
-use super::language_vocabulary::LanguageVocabulary;
 use super::search_terms::fold_search_term;
 
 /// Folds a word onto its stem, so a memory written once can be found by the

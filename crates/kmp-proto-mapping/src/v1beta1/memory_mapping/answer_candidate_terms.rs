@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use kmp_domain::SearchSummary;
 use kmp_proto::v1beta1::MemoryEvidence;
 
 use super::answer_recall_context::AnswerRecallContext;
@@ -31,6 +32,18 @@ impl AnswerCandidateTerms {
         }
         for (key, value) in &item.metadata {
             if is_retrieval_provenance(key) {
+                continue;
+            }
+            if key == SearchSummary::METADATA_KEY {
+                // The writer's English rendering is searched only when it
+                // passes the same reading the ingest warned with. A summary
+                // that dropped an identifier or arrived in the wrong language
+                // stays visible beside the memory and carries nothing here,
+                // whoever wrote it and however it arrived.
+                if SearchSummary::lint(&item.text, value).is_ok() {
+                    direct_text.push(' ');
+                    direct_text.push_str(value);
+                }
                 continue;
             }
             direct_text.push(' ');

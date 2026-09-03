@@ -19,6 +19,10 @@ construction rather than trusted afterwards.
 - **Projections** — the materialization events (`graph.node.materialized`,
   `graph.relation.materialized`, `node.detail.materialized`) and the
   checkpoint/envelope machinery that applies them exactly once.
+- **Language** — which language a memory is written in, read from its
+  function words, and the folded form two writers' words are compared in.
+  The write path lints a search summary with it and the read path stems with
+  it, from one reading.
 - **Repositories** — the persistence traits the kernel reads and writes
   through: graph neighbourhood, node detail, the append-only context event
   store, snapshots, the about index.

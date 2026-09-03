@@ -1,4 +1,5 @@
 pub mod error;
+pub mod language;
 pub mod model;
 pub mod plugins;
 pub mod projection;
@@ -37,6 +38,7 @@ pub use value_objects::{
 };
 pub use value_objects::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
+pub use value_objects::{SearchSummary, SearchSummaryFault};
 
 #[cfg(test)]
 mod tests {

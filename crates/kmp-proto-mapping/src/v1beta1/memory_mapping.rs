@@ -10,7 +10,6 @@ mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;
 mod ingest;
-mod language_vocabulary;
 mod lexical_bridge;
 mod lexical_field;
 mod lexicon;

@@ -209,6 +209,15 @@ kmp-mcp config ask-fallback-languages en,fr
 kmp-mcp config ask-fallback-languages none
 ```
 
+A writer can also attach an English rendering of a memory as the reserved
+entry metadata key `summary_en`. `kmp_ask` searches it and never cites it: a
+question in English reaches a memory written in Spanish through the summary,
+and what is cited is the Spanish text byte for byte. The kernel lints the
+summary rather than trusting it — `kmp_ingest` warns about one that leans to
+another language, is too thin, repeats the text, or drops an identifier the
+text carries, and ranking makes the same reading, so such a summary carries
+nothing.
+
 Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
 Ask supports word segmentation for those scripts. Their stored memory remains
 byte-exact and inspectable; word-based semantic retrieval is not supported yet.

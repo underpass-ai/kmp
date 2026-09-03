@@ -1,7 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use kmp_domain::{MemoryDimensionIdentity, MemoryRelationType, RelationSemanticClass, SourceKind};
+use kmp_domain::{
+    MemoryDimensionIdentity, MemoryRelationType, RelationSemanticClass, SearchSummary,
+    SearchSummaryFault, SourceKind,
+};
 
 use crate::ApplicationError;
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
@@ -42,7 +45,7 @@ pub fn translate_memory_ingest(
             evidence: command.memory.evidence.len(),
         },
         read_after_write_ready: false,
-        warnings: Vec::new(),
+        warnings: search_summary_warnings(&command.memory),
     };
 
     Ok((
@@ -331,6 +334,32 @@ fn namespaced_memory(
         relations,
         evidence: evidence_items,
     })
+}
+
+/// The English summaries this ingest carries that will not carry retrieval,
+/// said now, while the writer that produced them can still fix them.
+///
+/// The verdict is not stored. The reader makes the same reading when it
+/// ranks, so a summary that fails here is searched by nobody, and one that
+/// passes is searched whoever wrote it.
+fn search_summary_warnings(memory: &MemoryData) -> Vec<String> {
+    memory
+        .entries
+        .iter()
+        .filter_map(|entry| {
+            let summary = entry.metadata.get(SearchSummary::METADATA_KEY)?;
+            SearchSummary::lint(&entry.text, summary)
+                .err()
+                .map(|faults| {
+                    format!(
+                        "memory entry `{}` carries a {} that will not carry retrieval: {}",
+                        entry.id,
+                        SearchSummary::METADATA_KEY,
+                        SearchSummaryFault::describe(&faults)
+                    )
+                })
+        })
+        .collect()
 }
 
 /// The commit clock in the same lexicographically sortable representation
@@ -634,6 +663,56 @@ mod tests {
                 .as_str()
                 .is_some_and(|value| value.starts_with("unix:")),
             "the kernel must stamp when it learned every coordinate: {entry_payload}"
+        );
+    }
+
+    /// A summary that will not carry retrieval is said at ingest, while the
+    /// writer can still fix it. The verdict is not stored: the reader makes
+    /// the same reading, so what is warned about here is what ranking will
+    /// not search.
+    #[test]
+    fn translate_memory_ingest_warns_about_a_search_summary_that_will_not_carry() {
+        let mut command = sample_command();
+        command.memory.entries[0].text =
+            "Rachel dijo que se mudaba a Denver por el ticket #469.".to_string();
+        command.memory.entries[0].metadata.insert(
+            "summary_en".to_string(),
+            "Rachel said she was moving to Denver.".to_string(),
+        );
+
+        let (_, outcome) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect("a degraded summary is a warning, not a refusal");
+
+        assert_eq!(
+            outcome.warnings,
+            [
+                "memory entry `question:830ce83f:claim:rachel-denver` carries a summary_en that will \
+                 not carry retrieval: drops identifiers the text carries: #469"
+            ]
+        );
+        assert_eq!(outcome.accepted.entries, 1);
+    }
+
+    #[test]
+    fn translate_memory_ingest_is_silent_about_a_search_summary_that_carries() {
+        let mut command = sample_command();
+        command.memory.entries[0].text =
+            "Rachel dijo que se mudaba a Denver por el ticket #469.".to_string();
+        command.memory.entries[0].metadata.insert(
+            "summary_en".to_string(),
+            "Rachel said she was moving to Denver because of ticket #469.".to_string(),
+        );
+
+        let (update, outcome) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect("a faithful summary translates");
+
+        assert!(outcome.warnings.is_empty(), "{:?}", outcome.warnings);
+        let entry_payload: serde_json::Value =
+            serde_json::from_str(&update.changes[1].payload_json).expect("entry payload json");
+        assert_eq!(
+            entry_payload["metadata"]["summary_en"],
+            "Rachel said she was moving to Denver because of ticket #469.",
+            "the summary is stored as written, beside the text"
         );
     }
 

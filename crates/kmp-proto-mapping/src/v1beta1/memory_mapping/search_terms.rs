@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use unicode_normalization::{UnicodeNormalization, char::is_combining_mark};
+pub(super) use kmp_domain::language::{fold_search_term, informative_tokens};
 
 use super::morphology::Morphology;
 use super::term_counts::TermCounts;
@@ -96,43 +96,6 @@ pub(super) fn search_key(term: &str, morphology: &Morphology) -> String {
         return concept.to_string();
     }
     morphology.stem(term).into_owned()
-}
-
-pub(super) fn informative_tokens(value: &str) -> impl Iterator<Item = String> + '_ {
-    const STOP_WORDS: &[&str] = &[
-        "a", "against", "an", "and", "are", "as", "at", "be", "because", "by", "came", "did", "do",
-        "does", "earlier", "for", "from", "he", "how", "i", "if", "in", "is", "it", "me", "more",
-        "my", "of", "on", "one", "or", "plus", "same", "should", "than", "the", "this", "to", "us",
-        "use", "used", "uses", "was", "we", "were", "what", "when", "where", "which", "who", "why",
-        "will", "with", "el", "la", "los", "las", "de", "al", "del", "donde", "en", "es", "lo",
-        "no", "por", "para", "que", "se", "su", "un", "ya", "como", "cual", "cuando",
-    ];
-    value
-        .split(|character: char| !character.is_alphanumeric())
-        .map(fold_search_term)
-        .filter(|term| {
-            !term.is_empty()
-                && !STOP_WORDS.contains(&term.as_str())
-                && (term.chars().all(|character| character.is_ascii_digit()) || term.len() >= 2)
-        })
-}
-
-/// Produces the comparison form only. Stored evidence and returned query text
-/// stay byte-exact; the ranker indexes this folded sibling so a phone or
-/// foreign keyboard does not turn `válvula`, `arrêt`, `refrigeração`,
-/// `Straße`, or `Kühlventil` into an unreachable memory.
-pub(super) fn fold_search_term(value: &str) -> String {
-    let mut folded = String::with_capacity(value.len());
-    for character in value
-        .nfkd()
-        .filter(|character| !is_combining_mark(*character))
-    {
-        match character {
-            'ß' | 'ẞ' => folded.push_str("ss"),
-            _ => folded.extend(character.to_lowercase()),
-        }
-    }
-    folded
 }
 
 pub(super) fn terms_match(left: &str, right: &str) -> bool {
