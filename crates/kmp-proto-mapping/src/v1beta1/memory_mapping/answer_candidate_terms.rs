@@ -9,8 +9,18 @@ use super::search_terms::{informative_term_counts, informative_terms};
 use super::term_counts::TermCounts;
 
 pub(super) struct AnswerCandidateTerms {
+    /// What the candidate says: its text, and the writer's English rendering
+    /// of it when one passed the lint. They are one content for ranking — a
+    /// reader shown the entry is shown both — and are kept apart in `text`
+    /// and `summary` only so a citation can say which of them the question
+    /// landed on.
     pub(super) content: BTreeSet<String>,
     pub(super) content_counts: TermCounts,
+    /// The text alone.
+    pub(super) text: BTreeSet<String>,
+    /// The writer's rendering alone; empty when there is none or it failed
+    /// the lint.
+    pub(super) summary: BTreeSet<String>,
     pub(super) direct_counts: TermCounts,
     pub(super) claim: BTreeSet<String>,
     pub(super) relation_why: BTreeSet<String>,
@@ -21,9 +31,18 @@ pub(super) struct AnswerCandidateTerms {
 impl AnswerCandidateTerms {
     pub(super) fn from_evidence(item: &MemoryEvidence, context: &AnswerRecallContext) -> Self {
         let morphology = &context.morphology;
-        let content = informative_terms(&item.text, morphology);
-        let content_counts = informative_term_counts(&item.text, morphology);
-        let mut direct_text = format!("{} {}", item.text, item.source);
+        let summary_text = search_summary(item);
+        let text = informative_terms(&item.text, morphology);
+        let summary = summary_text
+            .map(|summary| informative_terms(summary, morphology))
+            .unwrap_or_default();
+        let content_text = match summary_text {
+            Some(summary) => format!("{} {}", item.text, summary),
+            None => item.text.clone(),
+        };
+        let content = informative_terms(&content_text, morphology);
+        let content_counts = informative_term_counts(&content_text, morphology);
+        let mut direct_text = format!("{} {}", content_text, item.source);
         direct_text.push(' ');
         direct_text.push_str(&item.id);
         for supported_ref in &item.supports {
@@ -31,19 +50,10 @@ impl AnswerCandidateTerms {
             direct_text.push_str(supported_ref);
         }
         for (key, value) in &item.metadata {
-            if is_retrieval_provenance(key) {
-                continue;
-            }
-            if key == SearchSummary::METADATA_KEY {
-                // The writer's English rendering is searched only when it
-                // passes the same reading the ingest warned with. A summary
-                // that dropped an identifier or arrived in the wrong language
-                // stays visible beside the memory and carries nothing here,
-                // whoever wrote it and however it arrived.
-                if SearchSummary::lint(&item.text, value).is_ok() {
-                    direct_text.push(' ');
-                    direct_text.push_str(value);
-                }
+            // The summary is content, above, or nothing at all; the keys the
+            // ranker writes about how a candidate was retrieved are read by
+            // people and never searched.
+            if is_retrieval_provenance(key) || key == SearchSummary::METADATA_KEY {
                 continue;
             }
             direct_text.push(' ');
@@ -84,6 +94,8 @@ impl AnswerCandidateTerms {
         Self {
             content,
             content_counts,
+            text,
+            summary,
             direct_counts,
             claim,
             relation_why,
@@ -91,4 +103,17 @@ impl AnswerCandidateTerms {
             searchable,
         }
     }
+}
+
+/// The writer's English rendering of a memory, when it passes the same
+/// reading the ingest warned with.
+///
+/// A summary that dropped an identifier or arrived in the wrong language
+/// stays visible beside the memory and is searched by nobody, whoever wrote
+/// it and however it arrived.
+fn search_summary(item: &MemoryEvidence) -> Option<&str> {
+    let summary = item.metadata.get(SearchSummary::METADATA_KEY)?;
+    SearchSummary::lint(&item.text, summary)
+        .ok()
+        .map(|_| summary.as_str())
 }

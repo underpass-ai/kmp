@@ -34,6 +34,21 @@ Detailed notes from the early release cycle remain available in the
   `kmp-domain`, where both the write path and the read path can share one
   reading.
 
+- The summary is content, and a citation says when it carried
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking used to
+  let a memory's own text decide first, so an English memory that mentioned
+  the subject outranked a Spanish one whose summary answered the whole
+  question. A memory's content is now its text and the writer's rendering
+  together — what a reader shown the entry is shown — and BM25, the focus a
+  strict policy demands, and the eligibility floor all read it that way. A
+  cited memory the question reached through its rendering and not through
+  its text carries `matched_via: summary` and `summary_terms`, the question's
+  words the rendering supplied, as the reader wrote them; a rendering that
+  repeats what the text already said is credited with nothing. The judged
+  case `summary-is-content` measures the order: the Spanish memory whose
+  rendering answers all three concepts now ranks above the English text that
+  carries two, where it ranked second before.
+
 ## [0.9.1] - 2026-09-03
 
 ### Changed

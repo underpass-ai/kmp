@@ -26,6 +26,12 @@ pub(super) const BRIDGED_TERMS_KEY: &str = "bridged_terms";
 /// matched: the ref it restates, and the relation that says so.
 pub(super) const RESTATED_FROM_KEY: &str = "restated_from";
 pub(super) const RESTATED_VIA_KEY: &str = "restated_via";
+/// A cited memory the question reached through the writer's English
+/// rendering rather than through its own text, and the question's words
+/// that rendering supplied.
+pub(super) const MATCHED_VIA_KEY: &str = "matched_via";
+pub(super) const MATCHED_VIA_SUMMARY: &str = "summary";
+pub(super) const SUMMARY_TERMS_KEY: &str = "summary_terms";
 /// Metadata the ranker writes about how a candidate was retrieved. It is
 /// read by people and never by the ranker: letting `valvula≈valve 0.51`
 /// back into a candidate's searchable text would make a bridged word look
@@ -38,6 +44,8 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     BRIDGED_TERMS_KEY,
     RESTATED_FROM_KEY,
     RESTATED_VIA_KEY,
+    MATCHED_VIA_KEY,
+    SUMMARY_TERMS_KEY,
 ];
 
 const MAX_RERANK_CANDIDATES: usize = 64;
@@ -216,6 +224,17 @@ pub(super) fn mark_restated(item: MemoryEvidence, hop: &RelationReach) -> Memory
 pub(super) fn note_bridged_terms(mut item: MemoryEvidence, pairs: &str) -> MemoryEvidence {
     item.metadata
         .insert(BRIDGED_TERMS_KEY.to_string(), pairs.to_string());
+    item
+}
+
+/// Records, on a candidate that answered, that some of the question's words
+/// reached it through the writer's English rendering and not through the
+/// memory's own text: which words, as the reader wrote them.
+pub(super) fn note_summary_terms(mut item: MemoryEvidence, words: &str) -> MemoryEvidence {
+    item.metadata
+        .insert(MATCHED_VIA_KEY.to_string(), MATCHED_VIA_SUMMARY.to_string());
+    item.metadata
+        .insert(SUMMARY_TERMS_KEY.to_string(), words.to_string());
     item
 }
 

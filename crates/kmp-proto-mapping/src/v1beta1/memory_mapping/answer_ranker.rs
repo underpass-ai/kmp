@@ -150,7 +150,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         let ranked = diversify_candidates(&question_terms, &diversity_focus_terms, candidates);
         let mut answer = prioritize_distinct_claims(ranked)
             .into_iter()
-            .map(|candidate| candidate.item)
+            .map(|candidate| candidate.into_item(question, morphology))
             .collect::<Vec<_>>();
 
         let (restated, rejected) = self.restated_candidates(&answer, rejected);
@@ -497,8 +497,8 @@ mod tests {
     use prost_types::Timestamp;
 
     use super::super::answer_selection::{
-        BRIDGED_TERMS_KEY, REACHED_BY_BRIDGE, REACHED_BY_KEY, RESTATED_FROM_KEY, RESTATED_VIA_KEY,
-        was_reached_indirectly,
+        BRIDGED_TERMS_KEY, MATCHED_VIA_KEY, REACHED_BY_BRIDGE, REACHED_BY_KEY, RESTATED_FROM_KEY,
+        RESTATED_VIA_KEY, SUMMARY_TERMS_KEY, was_reached_indirectly,
     };
     use super::super::lexical_bridge::tests::spanish_english_toy;
     use super::super::morphology::Morphology;
@@ -1794,6 +1794,84 @@ mod tests {
             !was_reached_indirectly(&ranked[0]),
             "the summary answers in the reader's own words: not a hop"
         );
+        assert_eq!(ranked[0].metadata[MATCHED_VIA_KEY], "summary");
+        assert_eq!(
+            ranked[0].metadata[SUMMARY_TERMS_KEY],
+            "during, froze, night, shift, valve"
+        );
+    }
+
+    /// The summary is content, not an address. A memory whose rendering
+    /// answers the whole question outranks one whose own text mentions
+    /// part of it, under the policy that used to let the text decide first.
+    #[test]
+    fn a_summary_that_answers_in_full_outranks_a_text_that_answers_in_part() {
+        let ranker = ranker_bridging_with(&SILENT_BRIDGE);
+        let mut rendered = claim_ev(
+            "e1",
+            "claim:e1",
+            "El despliegue se retrasó porque los auditores no habían firmado.",
+        );
+        rendered.metadata.insert(
+            SearchSummary::METADATA_KEY.to_string(),
+            "The launch was postponed because the audit sign-off was missing.".to_string(),
+        );
+        let partial = claim_ev(
+            "e2",
+            "claim:e2",
+            "The launch audit was discussed at the weekly meeting.",
+        );
+
+        let ranked = ranker.rank(
+            "Which launch was postponed by the audit?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![partial, rendered],
+        );
+
+        assert_eq!(
+            ranked
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<Vec<_>>(),
+            ["detail:e1", "detail:e2"]
+        );
+        assert_eq!(ranked[0].metadata[MATCHED_VIA_KEY], "summary");
+        assert_eq!(
+            ranked[0].metadata[SUMMARY_TERMS_KEY], "audit, launch, postponed",
+            "the words the rendering supplied, as the reader wrote them"
+        );
+        assert!(
+            !ranked[1].metadata.contains_key(MATCHED_VIA_KEY),
+            "a memory the question reached in its own words says nothing of a summary"
+        );
+    }
+
+    /// The note names only what the text did not already say. A rendering
+    /// of an English memory that repeats the words the question landed on
+    /// supplied nothing, and a citation that says otherwise would credit the
+    /// writer with the memory's own words.
+    #[test]
+    fn a_summary_that_adds_nothing_to_the_text_is_not_credited() {
+        let ranker = ranker_bridging_with(&SILENT_BRIDGE);
+        let mut item = claim_ev(
+            "e1",
+            "claim:e1",
+            "The reserve valve froze during the night shift (#469).",
+        );
+        item.metadata.insert(
+            SearchSummary::METADATA_KEY.to_string(),
+            "The backup valve froze on the night shift (#469).".to_string(),
+        );
+
+        let ranked = ranker.rank(
+            "Which valve froze during the night shift?",
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            vec![item],
+        );
+
+        assert_eq!(ranked.len(), 1);
+        assert!(!ranked[0].metadata.contains_key(MATCHED_VIA_KEY));
+        assert!(!ranked[0].metadata.contains_key(SUMMARY_TERMS_KEY));
     }
 
     /// The same reading the ingest warned with. A summary that dropped the
