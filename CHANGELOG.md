@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-09-03
+
 ### Changed
 
 - Two changes `0.9.0` announced were not in `0.9.0`. A stacked pull request was
@@ -1017,7 +1019,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/underpass-ai/kmp/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/underpass-ai/kmp/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/underpass-ai/kmp/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/underpass-ai/kmp/compare/v0.7.0...v0.7.1
