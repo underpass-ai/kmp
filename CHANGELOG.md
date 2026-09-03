@@ -11,6 +11,14 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- The `cl100k_base` vocabulary is loaded once per process instead of once
+  per estimate. Every `ask`, `wake`, temporal read and projection parsed the
+  hundred-thousand-merge table again — twice per `ask`, once to render a
+  bundle the answer never reads and once to project the response — and on a
+  store of three entries that was most of the call. The retrieval scorecard's
+  mean per-ask time is the measure: see the pull request for the before and
+  after on the same fourteen judged cases.
+
 - The MCP initialize instructions are bridge-aware. When a lexical-bridge
   table is loaded beside the store, the agent is told that `kmp_ask` crosses
   languages inside the kernel and names its word pairs, not to translate and
