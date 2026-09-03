@@ -188,17 +188,16 @@
   "semantic_unknown_guard_case": {
     "about": "project:kmp-host-regression-0.2.8",
     "user_language": "es",
-    "fallback_languages": [
-      "en"
-    ],
+    "search_language": "en",
     "ask_selections": [
       {
-        "language": "es",
+        "language": "en",
+        "asked_as": "es",
         "about": "project:kmp-host-regression-0.2.8",
         "selection": "initial"
       },
       {
-        "language": "en",
+        "language": "es",
         "about": "project:kmp-host-regression-0.2.8",
         "selection": "initial"
       }

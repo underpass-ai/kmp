@@ -153,11 +153,15 @@ if set(passed_abouts).intersection(opaque_about["forbidden_variants"]):
     fail("an opaque about was stripped or prefixed")
 
 unknown_guard = FIXTURE["semantic_unknown_guard_case"]
-expected_languages = [unknown_guard["user_language"], *unknown_guard["fallback_languages"]]
+# The question is asked once in the kernel's search language with the user's
+# own words as asked_as, then at most once in the user's own words.
+expected_languages = [unknown_guard["search_language"], unknown_guard["user_language"]]
 selections = unknown_guard["ask_selections"]
 actual_languages = [selection["language"] for selection in selections]
 if actual_languages != expected_languages or len(actual_languages) != len(set(actual_languages)):
-    fail("semantic Ask made more than one initial selection per language")
+    fail("semantic Ask did not ask once in the search language and once in the user's words")
+if selections[0].get("asked_as") != unknown_guard["user_language"]:
+    fail("the English selection did not carry the user's own words as asked_as")
 if any(selection["about"] != unknown_guard["about"] for selection in selections):
     fail("semantic Ask changed the opaque about during language fallback")
 if any(selection["selection"] != "initial" for selection in selections):
@@ -228,7 +232,7 @@ instruction_assets = [
 required = (
     "temporal intent",
     "half-open UTC interval",
-    "translate only the query",
+    "asked_as",
     "user's language",
     "kmp_goto",
     "deduplicate",
@@ -263,7 +267,7 @@ for asset in opaque_ref_instruction_assets:
         "abouts are opaque routing identifiers",
         "never strip or add a kind prefix",
         "byte-for-byte into every",
-        "one initial ask selection per language",
+        "at most once in the user's own words",
         "does not authorize another selection",
         "projection.page.next_cursor",
         "inspect the about/root",

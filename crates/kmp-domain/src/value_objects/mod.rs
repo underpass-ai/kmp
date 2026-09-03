@@ -5,6 +5,8 @@ pub mod dimension_selection;
 pub mod kmp_mode;
 pub mod memory_dimension_identity;
 pub mod provenance;
+pub mod question_rendering;
+pub mod question_rendering_fault;
 pub mod relation_explanation;
 pub mod relation_semantic_class;
 pub mod relation_signal;
@@ -24,6 +26,8 @@ pub use dimension_selection::{DimensionScopeMode, DimensionSelection, DimensionS
 pub use kmp_mode::KmpMode;
 pub use memory_dimension_identity::MemoryDimensionIdentity;
 pub use provenance::Provenance;
+pub use question_rendering::QuestionRendering;
+pub use question_rendering_fault::QuestionRenderingFault;
 pub use relation_explanation::RelationExplanation;
 pub use relation_semantic_class::RelationSemanticClass;
 pub use relation_signal::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};

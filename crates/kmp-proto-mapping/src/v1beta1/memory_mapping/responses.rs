@@ -6,8 +6,8 @@ use kmp_application::{
     MemoryAnswerPolicy, TemporalMemoryResult, TracePageRequest,
 };
 use kmp_domain::{
-    BundleNodeDetail, KmpBundle, TemporalAxis, TemporalCoordinate, TemporalDirection,
-    compare_temporal_instants,
+    BundleNodeDetail, KmpBundle, QuestionRendering, QuestionRenderingFault, TemporalAxis,
+    TemporalCoordinate, TemporalDirection, compare_temporal_instants,
 };
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
@@ -266,6 +266,7 @@ fn cap_wake_evidence(
 
 pub fn ask_response_from_result(
     question: &str,
+    asked_as: Option<&str>,
     policy: MemoryAnswerPolicy,
     max_entries: Option<usize>,
     result: GetContextResult,
@@ -396,7 +397,26 @@ pub fn ask_response_from_result(
         answer,
         because,
         proof: Some(answer_proof),
-        warnings: Vec::new(),
+        warnings: question_rendering_warnings(question, asked_as),
+        asked_as: asked_as.unwrap_or_default().to_string(),
+    }
+}
+
+/// What a rendered question lost of the user's words, said on the answer.
+///
+/// The kernel searched the question as given whatever this says; the warning
+/// is for the agent that rendered it, so the next ask keeps the identifier or
+/// the language the user's words carried.
+fn question_rendering_warnings(question: &str, asked_as: Option<&str>) -> Vec<String> {
+    let Some(asked_as) = asked_as else {
+        return Vec::new();
+    };
+    match QuestionRendering::lint(asked_as, question) {
+        Ok(_) => Vec::new(),
+        Err(faults) => vec![format!(
+            "question is a rendering of asked_as that {}; the kernel searched it as given",
+            QuestionRenderingFault::describe(&faults)
+        )],
     }
 }
 
@@ -1596,7 +1616,7 @@ mod ask_entry_text_tests {
         RelationSemanticClass, Role,
     };
 
-    use super::{UNANSWERED, ask_response_from_result};
+    use super::{UNANSWERED, ask_response_from_result, question_rendering_warnings};
 
     #[test]
     fn ask_can_retrieve_a_fact_present_only_in_the_entry_text() {
@@ -1637,8 +1657,36 @@ mod ask_entry_text_tests {
             timing: None,
         };
 
+        /// The user's words are never searched; they are what the rendering is
+        /// read against. A rendering that lost the ticket says so, and one that
+        /// kept everything says nothing.
+        #[test]
+        fn a_rendering_that_lost_an_identifier_draws_one_warning() {
+            let warnings = question_rendering_warnings(
+                "Why was the launch postponed?",
+                Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
+            );
+
+            assert_eq!(
+                warnings,
+                [
+                    "question is a rendering of asked_as that drops identifiers the user's words \
+                 carry: #469, v0.7.0; the kernel searched it as given"
+                ]
+            );
+            assert!(
+                question_rendering_warnings(
+                    "Why was the v0.7.0 launch (#469) postponed?",
+                    Some("¿Por qué se retrasó el despliegue de v0.7.0 (#469)?"),
+                )
+                .is_empty()
+            );
+            assert!(question_rendering_warnings("Why?", None).is_empty());
+        }
+
         let response = ask_response_from_result(
             "ZORBLATT",
+            None,
             MemoryAnswerPolicy::EvidenceOrUnknown,
             None,
             result,
@@ -1717,6 +1765,7 @@ mod ask_entry_text_tests {
 
         let response = ask_response_from_result(
             "ZORBLATT",
+            None,
             MemoryAnswerPolicy::EvidenceOrUnknown,
             None,
             result,

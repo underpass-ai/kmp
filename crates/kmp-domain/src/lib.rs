@@ -37,8 +37,10 @@ pub use value_objects::{
     KnownMemoryRelationType, MemoryRelationQuality, MemoryRelationSpec, MemoryRelationType,
 };
 pub use value_objects::{MAX_RELATION_SIGNAL_WEIGHT, RelationSignal};
+pub use value_objects::{
+    QuestionRendering, QuestionRenderingFault, SearchSummary, SearchSummaryFault,
+};
 pub use value_objects::{RelationExplanation, RelationSemanticClass};
-pub use value_objects::{SearchSummary, SearchSummaryFault};
 
 #[cfg(test)]
 mod tests {

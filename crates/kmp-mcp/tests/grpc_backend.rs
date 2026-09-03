@@ -735,6 +735,7 @@ impl KernelMemoryService for FakeMemoryService {
             warnings: Vec::new(),
             projection: None,
             truncation: None,
+            asked_as: String::new(),
         };
         Ok(Response::new(
             project_ask_response(response, &request)

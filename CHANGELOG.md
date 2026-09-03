@@ -9,6 +9,83 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- The question is asked in English and the user's words travel with it
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). `kmp_ask` takes
+  `asked_as`, the user's own words when `question` is the agent's rendering
+  of them in the kernel's search language. The kernel searches the rendering
+  as given and translates nothing; it echoes `asked_as` on the answer for the
+  audit trail and reads the rendering against it the way a search summary is
+  read against its text — a rendering that leans to another language, carries
+  no informative word, or drops an identifier the user's words carry draws a
+  warning, while the question is still searched. The initialize instructions,
+  the kmp-memory skill, the guide and the READMEs now say the same thing: ask
+  in plain English keeping every number, identifier and acronym, pass
+  `asked_as`, re-ask at most once in the user's own words, answer in the
+  user's language, cite byte for byte.
+
+- A writer can attach an English search summary to a memory, and the kernel
+  lints it ([#469](https://github.com/underpass-ai/kmp/issues/469)). The
+  reserved entry metadata key `summary_en` carries an English rendering of
+  the text, written by whoever wrote the memory at the one moment the kernel
+  admits a model. `kmp_ask` searches it and never cites it: a question in
+  English reaches a memory written in Spanish, and the citation is the
+  Spanish text byte for byte. This is what closes the paraphrase gap a table
+  of single words cannot — `rollout slipped` rendered as `launch postponed` —
+  because a writer canonicalises jargon where a lookup cannot. The lint is
+  deterministic and made twice from the same inputs, never stored as a
+  verdict: `kmp_ingest` warns, entry by entry, about a summary that leans to
+  another language, carries fewer than two informative words, repeats the
+  text word for word, or drops an identifier the text carries (`v0.7.0`,
+  `#469`, `kmp-mcp`, `ADR`); and ranking makes the same reading, so a summary
+  that fails it carries no retrieval whoever wrote it and however it arrived.
+  Four judged cases measure it: the paraphrase gap closed by a summary
+  (`paraphrase-gap` stays as the control), a Spanish store answered in English
+  through its summaries and still in Spanish beside them, and an unfaithful
+  summary that dropped the version it summarised carrying nothing. The
+  language reading and the search tokenizer moved from the mapping layer to
+  `kmp-domain`, where both the write path and the read path can share one
+  reading.
+
+- The summary is content, and a citation says when it carried
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking used to
+  let a memory's own text decide first, so an English memory that mentioned
+  the subject outranked a Spanish one whose summary answered the whole
+  question. A memory's content is now its text and the writer's rendering
+  together — what a reader shown the entry is shown — and BM25, the focus a
+  strict policy demands, and the eligibility floor all read it that way. A
+  cited memory the question reached through its rendering and not through
+  its text carries `matched_via: summary` and `summary_terms`, the question's
+  words the rendering supplied, as the reader wrote them; a rendering that
+  repeats what the text already said is credited with nothing. The judged
+  case `summary-is-content` measures the order: the Spanish memory whose
+  rendering answers all three concepts now ranks above the English text that
+  carries two, where it ranked second before.
+
+- The writer asks for the summary, and every surface that speaks to the
+  agent says so ([#469](https://github.com/underpass-ai/kmp/issues/469)).
+  `kmp_write_memory` takes `current.summary_en`; a strict write requires it
+  when `current.summary` is not written in English and refuses one that
+  fails the lint, naming every fault, so the agent fixes the summary while it
+  can — outside strict mode the summary is stored and the result says it
+  will not carry. The initialize instructions, the `kmp_write_memory` and
+  `kmp_ingest` schemas, the kmp-memory skill, the agent guide, the inference
+  prompt fixtures and the READMEs now tell the writer the same thing: write
+  the memory in the language of the work, render it in plain English for
+  search, keep every number, identifier and acronym exactly as written, and
+  never alter the text to fit the summary.
+
+### Removed
+
+- `ask_fallback_languages` and `kmp-mcp config ask-fallback-languages`. The
+  retry-per-configured-language policy was a workaround for a kernel that
+  could only match the store's language; with English search summaries, the
+  bridge table and `asked_as`, the question is asked in English first and in
+  the user's words once, and there is no list to configure. An older config
+  file that still carries the line is read without it and `kmp-mcp doctor`
+  says so.
+
 ### Fixed
 
 - A store of two languages stems in the kernel's search language when it

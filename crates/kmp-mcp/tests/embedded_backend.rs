@@ -2605,3 +2605,83 @@ async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_
         "only the question's words the text did not carry are credited: {cited}"
     );
 }
+
+/// The user's words travel with the English question. The kernel searches
+/// the rendering, echoes `asked_as` on the answer, and warns when the
+/// rendering dropped an identifier the user wrote — while still citing.
+#[tokio::test]
+async fn asked_as_is_echoed_and_a_rendering_that_dropped_the_ticket_is_warned_about() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(
+        &server,
+        1,
+        "kmp_ingest",
+        json!({
+            "about": "project:pregunta",
+            "idempotency_key": "ingest:pregunta",
+            "memory": {
+                "dimensions": [{"id": "work:main", "kind": "work"}],
+                "entries": [{
+                    "id": "project:pregunta:e1",
+                    "kind": "incident",
+                    "text": "La válvula de reserva se congeló durante el turno de noche (#469).",
+                    "metadata": {"summary_en": "The reserve valve froze during the night shift (#469)."},
+                    "coordinates": [{
+                        "dimension": "work",
+                        "scope_id": "work:main",
+                        "occurred_at": "2026-08-01T09:00:00Z",
+                        "sequence": 1
+                    }]
+                }]
+            }
+        }),
+    )
+    .await;
+    let ask = |id: u64, question: &str| {
+        call(
+            &server,
+            id,
+            "kmp_ask",
+            json!({
+                "about": "project:pregunta",
+                "question": question,
+                "asked_as": "¿Qué válvula se congeló durante el turno de noche (#469)?",
+                "answer_policy": "evidence_or_unknown",
+                "budget": {"detail": "full"}
+            }),
+        )
+    };
+
+    let lossy = ask(2, "Which valve froze during the night shift?").await;
+    assert_ne!(
+        lossy["answer"], "UNKNOWN",
+        "the rendering is searched as given: {lossy}"
+    );
+    assert_eq!(
+        lossy["asked_as"], "¿Qué válvula se congeló durante el turno de noche (#469)?",
+        "the user's words come back byte for byte"
+    );
+    let warnings = lossy["warnings"].as_array().expect("warnings");
+    assert!(
+        warnings.iter().any(|warning| {
+            warning
+                .as_str()
+                .is_some_and(|text| text.contains("drops identifiers the user's words carry: #469"))
+        }),
+        "a rendering that lost the ticket says so: {warnings:?}"
+    );
+
+    let faithful = ask(3, "Which valve froze during the night shift (#469)?").await;
+    assert_ne!(faithful["answer"], "UNKNOWN", "{faithful}");
+    assert!(
+        faithful["warnings"]
+            .as_array()
+            .is_some_and(|warnings| !warnings.iter().any(|warning| {
+                warning
+                    .as_str()
+                    .is_some_and(|text| text.contains("rendering of asked_as"))
+            })),
+        "a faithful rendering draws no warning: {faithful}"
+    );
+}

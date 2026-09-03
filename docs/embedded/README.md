@@ -110,7 +110,7 @@ Run `kmp-mcp --help` for the live command contract.
 
 | Command | Purpose |
 |:--|:--|
-| `info`, `doctor`, `config` | Identify the installation, diagnose it and configure Ask fallback languages. |
+| `info`, `doctor`, `config` | Identify the installation, diagnose it and configure memory routing. |
 | `export [file] [--about <about>]...`, `import` | Checkpoint all events or exact opaque abouts, then restore a bundle. |
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |

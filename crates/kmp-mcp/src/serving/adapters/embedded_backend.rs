@@ -342,6 +342,7 @@ async fn embedded_ask(
     let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
     let query = ask_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let question = query.question.clone();
+    let asked_as = query.asked_as.clone();
     let policy = query.answer_policy;
     let max_entries = query.max_entries;
     let about = query.about.clone();
@@ -358,7 +359,14 @@ async fn embedded_ask(
         &result.rendered.quality,
     );
     let response = project_ask_response(
-        ask_response_from_result(&question, policy, max_entries, result, bridge),
+        ask_response_from_result(
+            &question,
+            asked_as.as_deref(),
+            policy,
+            max_entries,
+            result,
+            bridge,
+        ),
         &request,
     )
     .map_err(|error| ToolError::invalid_argument(error.to_string()))?;

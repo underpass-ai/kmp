@@ -1,6 +1,6 @@
-use std::collections::BTreeSet;
-
-use crate::language::{KERNEL_LANGUAGE, LanguageVocabulary, fold_search_term, informative_tokens};
+use crate::language::{
+    KERNEL_LANGUAGE, LanguageVocabulary, identifiers, informative_tokens, surface_tokens,
+};
 
 use super::search_summary_fault::SearchSummaryFault;
 
@@ -101,64 +101,6 @@ impl SearchSummary {
     pub fn as_str(&self) -> &str {
         &self.summary
     }
-}
-
-/// The identifiers a text carries, folded: the tokens a faithful rendering in
-/// another language keeps exactly as they are.
-fn identifiers(text: &str) -> BTreeSet<String> {
-    text.split_whitespace()
-        .map(trim_edge_punctuation)
-        .filter(|token| is_identifier(token))
-        .map(fold_search_term)
-        .collect()
-}
-
-/// Every whitespace-delimited token of a text, trimmed of the punctuation
-/// that closes a clause and folded, so `#469,` and `(#469)` both carry `#469`.
-fn surface_tokens(text: &str) -> BTreeSet<String> {
-    text.split_whitespace()
-        .map(trim_edge_punctuation)
-        .filter(|token| !token.is_empty())
-        .map(fold_search_term)
-        .collect()
-}
-
-fn trim_edge_punctuation(token: &str) -> &str {
-    const EDGE_PUNCTUATION: &[char] = &[
-        '.', ',', ';', ':', '!', '?', '¡', '¿', '(', ')', '[', ']', '{', '}', '"', '\'', '«', '»',
-        '“', '”', '‘', '’', '`',
-    ];
-    token.trim_matches(EDGE_PUNCTUATION)
-}
-
-/// Whether a token is something a translation copies rather than renders.
-fn is_identifier(token: &str) -> bool {
-    if token.chars().count() < 2 {
-        return false;
-    }
-    let has_digit = token.chars().any(|character| character.is_ascii_digit());
-    let is_tagged = token.starts_with('#') || token.starts_with('@');
-    let is_acronym = token
-        .chars()
-        .all(|character| character.is_ascii_uppercase());
-    has_digit || is_tagged || is_acronym || is_compound(token)
-}
-
-/// `kmp-mcp`, `ref_boundary.rs`, `feat/lexical-bridge`: alphanumeric runs of
-/// at least two characters joined by the punctuation identifiers are joined
-/// with. An abbreviation such as `e.g.` or `p.ej.` is not one, because a
-/// translation renders those.
-fn is_compound(token: &str) -> bool {
-    const JOINERS: &[char] = &['-', '_', '/', '.', ':'];
-    let inner = token.trim_matches(JOINERS);
-    if !inner.contains(JOINERS) {
-        return false;
-    }
-    let runs = inner.split(JOINERS).collect::<Vec<_>>();
-    runs.len() >= 2
-        && runs.iter().all(|run| {
-            run.chars().count() >= 2 && run.chars().all(|character| character.is_alphanumeric())
-        })
 }
 
 #[cfg(test)]
