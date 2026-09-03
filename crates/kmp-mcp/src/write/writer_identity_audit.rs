@@ -83,6 +83,7 @@ mod tests {
             .remove("semantic_delta");
         morning["current"]["kind"] = json!("observation");
         morning["current"]["summary"] = json!("la presion del circuito es normal");
+        morning["current"]["summary_en"] = json!("The circuit pressure is normal.");
         morning["current"]["evidence"] = json!("manometro a las 09:00 marca 4.1 bar");
         morning["occurred_at"] = json!("2026-05-06T09:00:00Z");
 
@@ -123,10 +124,14 @@ mod tests {
             .remove("semantic_delta");
         success["current"]["kind"] = json!("observation");
         success["current"]["summary"] = json!(format!("{prefix}exito y sin incidencias"));
+        success["current"]["summary_en"] =
+            json!("The 2.4.1 deployment to preproduction finished successfully without incidents.");
         success["current"]["evidence"] = json!("CI job 4001: exit 0");
 
         let mut failure = success.clone();
         failure["current"]["summary"] = json!(format!("{prefix}errores graves de arranque"));
+        failure["current"]["summary_en"] =
+            json!("The 2.4.1 deployment to preproduction finished with serious start-up errors.");
         failure["current"]["evidence"] = json!("CI job 4002: exit 1, panic en el arranque");
 
         let success_ref = build_write_plan(&success)

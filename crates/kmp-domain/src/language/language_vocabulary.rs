@@ -3,6 +3,8 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
+use super::search_tokens::fold_search_term;
+
 /// The words that give a memory's language away.
 ///
 /// Function words are the right signal because a writer does not choose them:
@@ -73,7 +75,8 @@ impl LanguageVocabulary {
 
     /// Which way a short text leans: the language with more function words
     /// than any other, from however few, or none when there is no signal or
-    /// a tie.
+    /// a tie. The text is split and folded the way the retrieval layer
+    /// splits and folds it, so the two readings agree.
     ///
     /// This is a different question from [`Self::read`]. Reading a memory's
     /// language decides which stemmer is applied to every word in it, and a
@@ -82,6 +85,16 @@ impl LanguageVocabulary {
     /// function words at all, and the question asked of it is only whether
     /// it was written in the language it was supposed to be — where one
     /// `porque` is already an answer.
+    pub fn leans_in(&self, text: &str) -> Option<&str> {
+        let tokens = text
+            .split(|character: char| !character.is_alphanumeric())
+            .filter(|token| !token.is_empty())
+            .map(fold_search_term)
+            .collect::<Vec<_>>();
+        self.leans(tokens.iter().map(String::as_str))
+    }
+
+    /// The same, over tokens the caller has already split and folded.
     pub fn leans<'a>(&self, tokens: impl IntoIterator<Item = &'a str>) -> Option<&str> {
         let mut counts = vec![0usize; self.languages.len()];
         for token in tokens {
@@ -174,6 +187,10 @@ mod tests {
         );
         assert_eq!(vocabulary.leans(words("launch postponed audit")), None);
         assert_eq!(vocabulary.leans(words("the launch fue postponed")), None);
+        assert_eq!(
+            vocabulary.leans_in("El despliegue de v0.7.0 se retrasó."),
+            Some("spanish")
+        );
     }
 
     #[test]

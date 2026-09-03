@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:a17883ce0040998942be",
+    "idempotency_key": "ingest:guide-sync:1:agent:c62d7343c7ec1edbd9f1",
     "memory": {
       "dimensions": [
         {
@@ -234,7 +234,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters."
+          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters."
         },
         {
           "coordinates": [
@@ -534,7 +534,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. Fix the summary the warning names; never alter the text to fit it."
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it."
         },
         {
           "coordinates": [

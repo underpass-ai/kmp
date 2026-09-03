@@ -380,6 +380,98 @@ mod tests {
         );
     }
 
+    /// A memory written in Spanish reaches an English question only through
+    /// its rendering, so a strict write without one is refused with the
+    /// reason, and one with a rendering stores it beside the text.
+    #[test]
+    fn a_strict_write_of_a_spanish_memory_requires_and_stores_its_english_summary() {
+        let mut request = sample_write_request();
+        request["current"]["summary"] =
+            json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
+
+        let error = build_write_plan(&request).expect_err("no rendering, no strict write");
+        assert!(error.contains("requires current.summary_en"), "{error}");
+        assert!(error.contains("leans to spanish"), "{error}");
+
+        request["current"]["summary_en"] =
+            json!("The v0.7.0 launch was postponed because the auditors had not signed off.");
+        let plan = build_write_plan(&request).expect("a faithful rendering is accepted");
+        let entry = &plan.ingest_arguments["memory"]["entries"][0];
+        assert_eq!(
+            entry["text"],
+            "El despliegue de v0.7.0 se retrasó porque los auditores no firmaron."
+        );
+        assert_eq!(
+            entry["metadata"]["summary_en"],
+            "The v0.7.0 launch was postponed because the auditors had not signed off."
+        );
+        assert!(plan.diagnostics.is_empty(), "{:?}", plan.diagnostics);
+    }
+
+    #[test]
+    fn a_strict_write_refuses_a_summary_that_fails_the_lint_and_names_the_fault() {
+        let mut request = sample_write_request();
+        request["current"]["summary"] =
+            json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
+        request["current"]["summary_en"] =
+            json!("The launch was postponed because the auditors had not signed off.");
+
+        let error = build_write_plan(&request).expect_err("a dropped identifier is refused");
+
+        assert!(error.contains("refuses current.summary_en"), "{error}");
+        assert!(
+            error.contains("drops identifiers the text carries: v0.7.0"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn an_english_memory_needs_no_summary_and_keeps_one_it_is_given() {
+        let request = sample_write_request();
+        let plan = build_write_plan(&request).expect("English text is reached in English");
+        assert!(
+            plan.ingest_arguments["memory"]["entries"][0]["metadata"]
+                .get("summary_en")
+                .is_none()
+        );
+
+        let mut request = sample_write_request();
+        request["current"]["summary_en"] =
+            json!("Retry the token refresh instead of widening the timeout.");
+        let plan = build_write_plan(&request).expect("a rendering of English text is accepted");
+        assert_eq!(
+            plan.ingest_arguments["memory"]["entries"][0]["metadata"]["summary_en"],
+            "Retry the token refresh instead of widening the timeout."
+        );
+    }
+
+    #[test]
+    fn outside_strict_mode_a_failing_summary_is_stored_and_the_plan_says_it_will_not_carry() {
+        let mut request = sample_write_request();
+        request["options"]["strict"] = json!(false);
+        request["current"]["summary"] =
+            json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
+        request["current"]["summary_en"] = json!("Se pospuso el despliegue.");
+
+        let plan = build_write_plan(&request).expect("non-strict stores what it is given");
+
+        assert_eq!(
+            plan.ingest_arguments["memory"]["entries"][0]["metadata"]["summary_en"],
+            "Se pospuso el despliegue."
+        );
+        assert_eq!(plan.diagnostics.len(), 1, "{:?}", plan.diagnostics);
+        assert!(
+            plan.diagnostics[0].contains("will not carry retrieval"),
+            "{:?}",
+            plan.diagnostics
+        );
+        assert!(
+            plan.diagnostics[0].contains("leans to spanish, not to English"),
+            "{:?}",
+            plan.diagnostics
+        );
+    }
+
     fn sample_write_request() -> Value {
         json!({
             "about": "incident:mobile-login",

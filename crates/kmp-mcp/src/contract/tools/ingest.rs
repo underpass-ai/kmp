@@ -56,7 +56,11 @@ pub(crate) fn definition() -> Value {
                                         "minItems": 1,
                                         "items": temporal_coordinate_schema()
                                     },
-                                    "metadata": string_map_schema()
+                                    "metadata": {
+                                        "type": "object",
+                                        "additionalProperties": {"type": "string"},
+                                        "description": "Free string metadata stored beside the entry and searched by kmp_ask. One key is reserved: `summary_en`, an English rendering of `text` for search, searched and never cited. The kernel lints it and returns a warning for an entry whose summary leans to another language, carries fewer than two informative words, repeats `text` word for word, or drops an identifier `text` carries; such a summary is stored and carries nothing."
+                                    }
                                 }
                             }
                         },

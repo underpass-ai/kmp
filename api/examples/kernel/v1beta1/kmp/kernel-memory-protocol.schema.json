@@ -1105,6 +1105,10 @@
         "summary": {
           "$ref": "#/$defs/non_empty_string"
         },
+        "summary_en": {
+          "$ref": "#/$defs/non_empty_string",
+          "description": "English rendering of summary for search: searched by kmp_ask and never cited. Strict writes require it when summary is not written in English and refuse one that fails the kernel's lint."
+        },
         "evidence": {
           "$ref": "#/$defs/non_empty_string"
         }

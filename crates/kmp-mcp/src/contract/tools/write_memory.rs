@@ -83,7 +83,8 @@ pub(crate) fn write_memory_schema() -> Value {
                             "success_path"
                         ]
                     },
-                    "summary": string_schema("Concise semantic memory text to store."),
+                    "summary": string_schema("Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte."),
+                    "summary_en": string_schema("English rendering of `summary` for search, written by you as you write the memory. kmp_ask searches it and never cites it: an English question reaches this memory through it, and the citation is `summary` byte for byte. Write plain English a reader would ask with, keep every number, identifier and acronym exactly as written (`v0.7.0`, `#469`, `kmp-mcp`, `ADR`), and never alter `summary` to fit it. Strict mode requires it when `summary` is not written in English, and refuses one that leans to another language, carries fewer than two informative words, repeats `summary` word for word, or drops an identifier `summary` carries; outside strict mode such a summary is stored and carries nothing. Worth writing for English text too when its wording is jargon (`rollout slipped` → `launch postponed`)."),
                     "evidence": string_schema("Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.")
                 }
             },
@@ -137,7 +138,7 @@ pub(crate) fn write_memory_schema() -> Value {
                     },
                     "strict": {
                         "type": "boolean",
-                        "description": "When true, fail fast on unsupported relations and missing proof. Defaults to true."
+                        "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint. Defaults to true."
                     },
                     "sequence": {
                         "type": "integer",

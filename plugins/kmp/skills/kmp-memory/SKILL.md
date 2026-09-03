@@ -334,6 +334,18 @@ constraints, outcomes — each with coordinates and evidence.
 Never write transcripts. Memory is not a log of the conversation; it is the
 durable shape of the work. A transcript makes later traversal worthless.
 
+Write in the language of the work, and give the memory an English rendering
+for search: `current.summary_en`, plain English a reader would ask with, every
+number, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,
+`kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is
+`current.summary`, byte for byte — so an English question reaches a memory
+written in Spanish, and jargon (`rollout slipped`) is found by the words
+people ask with (`launch postponed`). A strict write requires it when the
+memory is not written in English and refuses one that fails the lint: wrong
+language, too thin, a copy of the text, a dropped identifier. Fix the summary
+the error names; never alter the text to fit it. A cited item that was reached
+through its summary says so with `matched_via: summary` and `summary_terms`.
+
 Use one `idempotency_key` per logical write. Replaying the same accepted write
 returns its success rather than duplicating memory. A `conflict` can also mean
 the store advanced before this attempt committed: follow the error message,

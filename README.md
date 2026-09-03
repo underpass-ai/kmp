@@ -218,6 +218,8 @@ another language, is too thin, repeats the text, or drops an identifier the
 text carries, and ranking makes the same reading, so such a summary carries
 nothing. A citation the summary carried says so: `matched_via: summary`, with
 the question's words the rendering supplied in `summary_terms`.
+`kmp_write_memory` takes it as `current.summary_en`, and a strict write
+requires it when the memory is not written in English.
 
 Fallback tags whose primary language is `zh`, `ja`, or `th` are rejected until
 Ask supports word segmentation for those scripts. Their stored memory remains

@@ -2523,3 +2523,85 @@ async fn an_english_summary_is_linted_at_ingest_and_searched_at_ask() {
         "an entry whose summary failed the lint is not reached through it: {evidence:?}"
     );
 }
+
+/// The writer asks for the rendering and stores it beside the text: a strict
+/// `kmp_write_memory` of a Spanish decision refuses to proceed without
+/// `current.summary_en`, accepts a faithful one, and the memory is then
+/// cited by an English question through it, the Spanish text byte for byte.
+#[tokio::test]
+async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_through_it() {
+    const SPANISH: &str = "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).";
+    const SUMMARY: &str = "Valkey 7.2 was adopted for the shared store (ADR-018).";
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let write = |summary_en: Option<&str>| {
+        let mut current = json!({
+            "kind": "decision",
+            "summary": SPANISH,
+            "evidence": "Registro de la decisión en la reunión de arquitectura."
+        });
+        if let Some(summary_en) = summary_en {
+            current["summary_en"] = json!(summary_en);
+        }
+        json!({
+            "about": "project:escritor",
+            "intent": "record_decision",
+            "actor": "agent:tests",
+            "observed_at": "2026-05-06T10:00:00Z",
+            "scope": {"process": "project:escritor:proceso"},
+            "current": current
+        })
+    };
+
+    let refused = server
+        .handle_json_line(&tool_call(1, "kmp_write_memory", write(None)))
+        .await
+        .expect("a refusal is a response");
+    let refused: Value = serde_json::from_str(&refused).expect("response is JSON");
+    let refusal = refused.to_string();
+    assert!(
+        refusal.contains("requires current.summary_en") && refusal.contains("leans to spanish"),
+        "a strict write of a Spanish memory without a rendering must say what it needs: {refused}"
+    );
+
+    let accepted = call(&server, 2, "kmp_write_memory", write(Some(SUMMARY))).await;
+    assert_eq!(accepted["accepted"], true, "{accepted}");
+    assert!(
+        accepted["diagnostics"]
+            .as_array()
+            .is_some_and(Vec::is_empty),
+        "a rendering that passes the lint draws no diagnostic: {accepted}"
+    );
+
+    let answer = call(
+        &server,
+        3,
+        "kmp_ask",
+        json!({
+            "about": "project:escritor",
+            "question": "Which engine was adopted for the shared store?",
+            "answer_policy": "evidence_or_unknown",
+            "budget": {"detail": "full"}
+        }),
+    )
+    .await;
+    assert_ne!(answer["answer"], "UNKNOWN", "{answer}");
+    let cited = answer["proof"]["evidence"]
+        .as_array()
+        .expect("proof carries evidence")
+        .iter()
+        .find(|item| item["metadata"]["summary_en"] == SUMMARY)
+        .expect("the written memory is in the proof with its rendering beside it");
+    assert_eq!(
+        cited["text"], SPANISH,
+        "the citation is the text as written"
+    );
+    assert_eq!(cited["metadata"]["matched_via"], "summary");
+    // `adopted` is not credited to the rendering: the store reads as Spanish,
+    // and its stemmer folds the text's `adoptó` and the question's `adopted`
+    // onto one stem, so the text already carried that word on its own.
+    assert_eq!(
+        cited["metadata"]["summary_terms"], "shared, store",
+        "only the question's words the text did not carry are credited: {cited}"
+    );
+}
