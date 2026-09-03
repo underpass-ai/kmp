@@ -76,7 +76,12 @@ Current status:
   `proof.path[].evidence_refs`; successful asks expose retained recall terms
   and contributing semantic relation types in `proof` without exposing scoring
   internals; entry claims and stored evidence are both searchable and remain
-  distinguishable through `proof.evidence[].metadata.proof_role`;
+  distinguishable through `proof.evidence[].metadata.proof_role`, and the
+  same metadata says how an item was retrieved: `reached_by` marks proof the
+  question never matched on its own words, `bridged_terms` names the word
+  pairs a lexical-bridge table crossed a language with, `restated_from` names
+  a declared restatement, and `matched_via: summary` with `summary_terms`
+  names the question's words a writer's English `summary_en` supplied;
 - `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
   proof returns `projection.page.next_cursor`, while `budget.tokens` remains a
@@ -169,6 +174,19 @@ Live backend mapping:
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
+
+## Language without flattening the evidence
+
+KMP never translates or rewrites stored evidence. With a lexical-bridge table
+beside the store (`<data dir>/lexical-bridge.kmpb`, built by the repository's
+`scripts/lexical-bridge/`), `kmp_ask` reaches memory written in another
+language on its own and names the word pairs that carried a citation, at
+medium confidence at most. A writer can attach an English rendering of a
+memory as the reserved entry metadata key `summary_en`; `kmp_ask` searches it
+and never cites it, the kernel lints it, and `kmp_write_memory` takes it as
+`current.summary_en`. Without a table, the agent may retry a semantic query
+once per configured fallback language (`kmp-mcp config ask-fallback-languages`).
+`kmp-mcp info` says which of these a store is on.
 
 ## License
 

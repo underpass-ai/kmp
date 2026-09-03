@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_ask",
-        "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+        "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -23,7 +23,7 @@ pub(crate) fn definition() -> Value {
                 "question": string_schema("Natural-language question."),
                 "answer_policy": {
                     "type": "string",
-                    "description": "Deterministic evidence policy. show_conflicts surfaces explicit conflict relations in proof.conflicts; best_effort does not generate fallback text.",
+                    "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
                     "enum": ["evidence_or_unknown", "show_conflicts", "best_effort"]
                 },
                 "dimensions": dimensions_schema(),
@@ -41,7 +41,7 @@ fn ask_output_schema() -> Value {
         "summary": described("string", "States whether nothing was retrieved, retrieved evidence did not bear on the question, or evidence was retained."),
         "answer": nullable_described("string", "UNKNOWN when the selected policy found no answerable evidence; otherwise names the retrieved citations without claiming they prove the answer."),
         "because": described("array", "At most five retained citation refs. Empty beside UNKNOWN; canonical text lives in proof.evidence."),
-        "proof": proof_output_schema("Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty.")
+        "proof": proof_output_schema("Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty. Medium at most when the question reached the evidence through the lexical-bridge table rather than in its own words; not capped when the writer's English summary_en carried it.")
     });
     properties
         .as_object_mut()

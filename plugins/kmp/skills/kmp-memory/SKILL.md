@@ -81,6 +81,10 @@ Route again after every response:
   detail or optional arguments does not authorize another selection in the
   same language. Only following `projection.page.next_cursor` with every bound
   argument unchanged is a continuation, not a retry.
+- On a store with a lexical-bridge table there is no per-language budget:
+  one selection in the user's language, plus at most one re-ask in other
+  words in that same language. The MCP initialize instructions say which of
+  the two rules is in force.
 - When Ask returns `UNKNOWN` or irrelevant evidence, finish the configured
   language retries, then reclassify the **original goal**. Current, latest or
   recent state, what changed, why now, and release or decision history move to
@@ -184,7 +188,39 @@ Exclude entries at or after `end`. If a budget or selection cap prevents a
 complete boundary probe or interval, report the exact continuation action;
 never call a partial page the whole period.
 
+## Proof that arrived by a route
+
+Ask proof can carry memory the question never matched on its own words. An
+evidence item with `reached_by` arrived by a route: `relation` means a proven
+causal or motivational edge was walked out from something the question did
+match, named by `reached_from`, `reached_via` and `reached_hops`;
+`association` means this store's own vocabulary connects the question's words
+to that memory's; `bridge` means the installed lexical-bridge table connects a
+few of the question's words to that memory's across a language, and
+`reached_via` lists the pairs. Read them as proof and never as the answer:
+they are not in `because`, and the kernel makes no claim that they answer.
+
+A cited item may instead say how it was reached. `bridged_terms` means it
+answered, but most of the question reached it through the table rather than
+in the reader's words, so confidence is medium at most. `restated_from` and
+`restated_via` mean a writer declared it the same thing as a memory the
+question matched, with `restates`, `same_event_as` or `same_entity_as`.
+`matched_via: summary` with `summary_terms` means the question reached it
+through the writer's English `summary_en` and not through its text; read those
+words as the writer's, not the memory's.
+
 ## Cross-language fallback is only for semantic Ask
+
+Which rule applies is decided by the store, and the MCP initialize
+instructions say which. **With a lexical-bridge table** beside the store,
+`kmp_ask` crosses languages inside the kernel: a citation that crossed one
+names its word pairs in `bridged_terms` and is capped at medium confidence.
+Do not translate the query to retry it and do not use a fallback language;
+if the answer does not come, re-ask at most once in other words in the user's
+language, and only when the question could genuinely be phrased differently.
+A memory whose writer attached an English `summary_en` is reached from an
+English question with no table at all. **Without a table**, the paragraph
+below applies.
 
 For a non-temporal semantic question, call `kmp_ask` in the user's language.
 If it returns `UNKNOWN`, or retrieved evidence does not actually answer, retry
@@ -521,6 +557,12 @@ does not justify one, use a narrow fallback and say only what is known:
 | Only temporal sequence | `follows` / procedural |
 | A response to a prior turn | `answers` / evidential |
 | Background was consulted | `uses_background` / evidential |
+
+Declaring that two memories say one thing — `restates`, `same_event_as` or
+`same_entity_as`, with `why` and `evidence` — is what lets `kmp_ask` cite the
+second beside the first when a question matches only one of them. It is the
+one route to a retrievable paraphrase that needs no table and no model, and
+it exists only because somebody wrote it down. Write it when you know it.
 
 Never use a vague relation like `related_to`, invent a causal link, or dress
 one of these fallbacks in motivational or constraint language. A weak honest

@@ -82,7 +82,7 @@
           "id": "advanced:relations",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema.",
+          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema. Declaring that two memories say one thing, with restates, same_event_as or same_entity_as carrying why and evidence, is what makes the second citable beside the first when a question matches only one of them.",
           "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality."
         },
         {
@@ -119,6 +119,13 @@
           "depth": "advanced",
           "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched.",
           "evidence": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core; a cited item that crossed a language names the word pairs that carried it, and a cited restatement names the memory it restates."
+        },
+        {
+          "id": "advanced:language",
+          "kind": "constraint",
+          "depth": "advanced",
+          "text": "Language is decided by the store, not by the question, and the MCP initialize instructions say which rule is in force. With a lexical-bridge table installed beside the store, kmp_ask crosses languages inside the kernel: do not translate the query to retry it and do not use a configured fallback language; re-ask at most once in other words in the user's language. Without a table, ask in the user's language and, if the result does not answer, retry the query once in each configured fallback language. A memory whose writer attached an English summary_en is reached from an English question either way. Only the query is ever translated: evidence text, refs, relation why and source metadata are cited byte for byte, and the answer is written in the user's language.",
+          "evidence": "The initialize instructions carry one of two language rules depending on whether the backend reports bridges_languages; kmp-mcp info and doctor name the table a store reads or say there is none."
         },
         {
           "id": "advanced:summary",
@@ -248,6 +255,14 @@
           "class": "constraint",
           "why": "A summary is part of the write, not of the read: it is judged where it is written and searched where it is asked, and the text it renders is what a reader is shown.",
           "evidence": "kmp_ingest returns a warning per summary the lint refuses, and kmp_ask cites the entry text rather than the summary."
+        },
+        {
+          "from": "advanced:language",
+          "to": "verb:ask",
+          "rel": "qualifies_as",
+          "class": "constraint",
+          "why": "The language rule bounds how many Ask selections a question may spend and forbids translating anything but the query; which rule applies is a property of the store, not of the agent.",
+          "evidence": "kmp_ask on a bridged store cites with bridged_terms and is not retried in another language; on an unbridged store the fallback list is applied once per language."
         }
       ]
     },

@@ -1191,7 +1191,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {
@@ -1315,7 +1315,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+      "description": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -1325,7 +1325,7 @@
             "type": "string"
           },
           "answer_policy": {
-            "description": "Deterministic evidence policy. show_conflicts surfaces explicit conflict relations in proof.conflicts; best_effort does not generate fallback text.",
+            "description": "Deterministic evidence policy. Explicit `contradicts` relations on the proof path are surfaced in proof.conflicts under every policy. evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question; show_conflicts selects no additional conflict detection today. best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
             "enum": [
               "evidence_or_unknown",
               "show_conflicts",
@@ -1549,7 +1549,7 @@
             "additionalProperties": false,
             "properties": {
               "confidence": {
-                "description": "Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty.",
+                "description": "Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty. Medium at most when the question reached the evidence through the lexical-bridge table rather than in its own words; not capped when the writer's English summary_en carried it.",
                 "type": "string"
               },
               "conflicts": {
@@ -1557,7 +1557,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {
@@ -1905,7 +1905,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {
@@ -2276,7 +2276,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {
@@ -2647,7 +2647,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {
@@ -3018,7 +3018,7 @@
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence.",
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
                 "type": "array"
               },
               "expired": {

@@ -96,7 +96,7 @@
     },
     "answer_policy": {
       "type": "string",
-      "description": "Answer policy selector. Current live gRPC/MCP mode is deterministic evidence-only: show_conflicts does not run conflict detection yet, and best_effort does not generate fallback text.",
+      "description": "Answer policy selector. Deterministic evidence-only in every mode: explicit contradicts relations on the proof path are surfaced in proof.conflicts under every policy; evidence_or_unknown and show_conflicts return UNKNOWN when the best retained evidence barely shares a term with the question, and show_conflicts selects no additional conflict detection yet; best_effort keeps that low-overlap neighbourhood and never generates fallback text.",
       "enum": [
         "evidence_or_unknown",
         "show_conflicts",
@@ -108,6 +108,20 @@
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "entry_metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Free string metadata stored beside the entry and searched by kmp_ask. One key is reserved: summary_en, an English rendering of text for search, searched and never cited. The kernel lints it and returns an ingest warning for an entry whose summary leans to another language, carries fewer than two informative words, repeats text word for word, or drops an identifier text carries; such a summary is stored and carries nothing."
+    },
+    "evidence_metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Stored metadata of the cited item, plus how it was retrieved. proof_role distinguishes an entry claim (entry_text, entry_detail) from stored evidence. reached_by (relation, association or bridge) with reached_from, reached_via and reached_hops marks an item the question never matched on its own words: proof, not answer, never cited in because. On a cited item, bridged_terms names the word pairs the lexical-bridge table crossed a language with; restated_from and restated_via name a memory a writer declared this one restates; matched_via: summary with summary_terms says the question reached it through the writer's summary_en and names the question's words the summary supplied. summary_en itself travels here as stored."
     },
     "provenance": {
       "type": "object",
@@ -313,7 +327,7 @@
           }
         },
         "metadata": {
-          "$ref": "#/$defs/metadata"
+          "$ref": "#/$defs/entry_metadata"
         }
       }
     },
@@ -437,7 +451,7 @@
           "$ref": "#/$defs/date_time"
         },
         "metadata": {
-          "$ref": "#/$defs/metadata"
+          "$ref": "#/$defs/evidence_metadata"
         }
       }
     },
@@ -709,7 +723,7 @@
           }
         },
         "metadata": {
-          "$ref": "#/$defs/metadata"
+          "$ref": "#/$defs/entry_metadata"
         }
       }
     },
@@ -1006,6 +1020,11 @@
           "items": {
             "$ref": "#/$defs/non_empty_string"
           }
+        },
+        "frontier_size": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How much was reachable and not returned, which is the signal to expand the recall."
         }
       }
     },

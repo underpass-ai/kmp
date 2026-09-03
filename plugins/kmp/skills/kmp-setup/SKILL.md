@@ -41,7 +41,11 @@ for always-on recall, with `kmp-mcp config memory-routing always`;
 Change the semantic-Ask fallback policy with
 `kmp-mcp config ask-fallback-languages <comma-separated-tags>` when the
 user requests a different list; `none` disables retries. With no config, one
-English retry is active by default. Explain that only a semantic query may be
+English retry is active by default. The list is only used on a store with no
+lexical-bridge table beside it: `kmp-mcp doctor` and `kmp-mcp info` name the
+table a store would read, or say there is none and what that means for Ask,
+and the configured list is inert while a table is present. Report that line
+when the user asks about languages. Explain that only a semantic query may be
 translated: answer in the user's language and preserve stored evidence, refs,
 relation `why`, and source metadata byte-for-byte. Temporal requests navigate
 time and never enter this fallback. Chinese, Japanese, and Thai fallback tags
