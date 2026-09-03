@@ -2,9 +2,10 @@
 //!
 //! The kernel remains deterministic and non-generative. This module stores the
 //! small amount of persistent guidance an agent needs before it chooses a KMP
-//! verb: whether memory is entered at all, that temporal requests navigate
-//! time, and that only semantic Ask may retry a translated query. Stored
-//! evidence is never touched.
+//! verb: whether memory is entered at all. Everything else the agent is told
+//! — that temporal requests navigate time, that a semantic question is asked
+//! in the kernel's search language with the user's words as `asked_as` — is
+//! fixed by the kernel and not configured. Stored evidence is never touched.
 
 pub mod instructions;
 pub mod memory_routing;
@@ -14,31 +15,40 @@ pub use memory_routing::MemoryRouting;
 
 use std::path::{Path, PathBuf};
 
-const KEY: &str = "ask_fallback_languages";
-const DEFAULT_FALLBACK_LANGUAGE: &str = "en";
-const UNSEGMENTED_FALLBACK_LANGUAGES: [&str; 3] = ["zh", "ja", "th"];
+/// The setting a previous release configured and this one no longer reads.
+/// A file that still carries it is read without it, and the doctor says so.
+const RETIRED_FALLBACK_KEY: &str = "ask_fallback_languages";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AgentPolicy {
-    pub ask_fallback_languages: Vec<String>,
     pub memory_routing: MemoryRouting,
     pub path: PathBuf,
-    pub configured: bool,
     pub routing_configured: bool,
+    /// Whether the file still carries `ask_fallback_languages`, which nothing
+    /// reads any more.
+    pub retired_fallback_setting: bool,
 }
 
 impl AgentPolicy {
-    pub fn source_label(&self) -> &'static str {
-        source_label(self.configured)
-    }
-
     pub fn routing_source_label(&self) -> &'static str {
-        source_label(self.routing_configured)
+        if self.routing_configured {
+            "configured"
+        } else {
+            "default"
+        }
     }
-}
 
-fn source_label(configured: bool) -> &'static str {
-    if configured { "configured" } else { "default" }
+    /// What to tell an operator whose file still carries the retired
+    /// setting, or nothing when it does not.
+    pub fn retired_setting_notice(&self) -> Option<String> {
+        self.retired_fallback_setting.then(|| {
+            format!(
+                "{RETIRED_FALLBACK_KEY} is no longer read: a semantic question is asked in \
+                 English with the user's words as asked_as; remove the line from {}",
+                self.path.display()
+            )
+        })
+    }
 }
 
 pub fn config_path() -> Result<PathBuf, String> {
@@ -93,24 +103,25 @@ fn load_from(path: &Path) -> Result<AgentPolicy, String> {
 
 fn default_policy(path: &Path) -> AgentPolicy {
     AgentPolicy {
-        ask_fallback_languages: vec![DEFAULT_FALLBACK_LANGUAGE.to_string()],
         memory_routing: MemoryRouting::default(),
         path: path.to_path_buf(),
-        configured: false,
         routing_configured: false,
+        retired_fallback_setting: false,
     }
 }
 
 fn parse_policy(text: &str, path: &Path) -> Result<AgentPolicy, String> {
-    let languages = parse_languages(text)?;
     let routing = parse_memory_routing(text)?;
+    // The retired key is looked for, never parsed: whatever it says, it is
+    // not a reason to refuse a file whose only other setting is valid.
+    let retired_fallback_setting = root_setting(text, RETIRED_FALLBACK_KEY)
+        .map(|found| found.is_some())
+        .unwrap_or(true);
     Ok(AgentPolicy {
-        configured: languages.is_some(),
         routing_configured: routing.is_some(),
-        ask_fallback_languages: languages
-            .unwrap_or_else(|| vec![DEFAULT_FALLBACK_LANGUAGE.to_string()]),
         memory_routing: routing.unwrap_or_default(),
         path: path.to_path_buf(),
+        retired_fallback_setting,
     })
 }
 
@@ -145,14 +156,6 @@ fn root_setting<'a>(text: &'a str, key: &str) -> Result<Option<(usize, &'a str)>
     Ok(found)
 }
 
-fn parse_languages(text: &str) -> Result<Option<Vec<String>>, String> {
-    root_setting(text, KEY)?
-        .map(|(line, value)| {
-            parse_array(value).map_err(|error| format!("line {line} has invalid {KEY}: {error}"))
-        })
-        .transpose()
-}
-
 fn parse_memory_routing(text: &str) -> Result<Option<MemoryRouting>, String> {
     let routing_key = memory_routing::KEY;
     root_setting(text, routing_key)?
@@ -169,81 +172,6 @@ fn parse_memory_routing(text: &str) -> Result<Option<MemoryRouting>, String> {
                 .map_err(|error| format!("line {line} has invalid {routing_key}: {error}"))
         })
         .transpose()
-}
-
-fn parse_array(value: &str) -> Result<Vec<String>, String> {
-    let inner = value
-        .strip_prefix('[')
-        .and_then(|value| value.strip_suffix(']'))
-        .ok_or_else(|| "expected a TOML string array such as [\"en\"]".to_string())?
-        .trim();
-    if inner.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let mut languages = Vec::new();
-    for item in inner.split(',') {
-        let item = item.trim();
-        let language = item
-            .strip_prefix('"')
-            .and_then(|value| value.strip_suffix('"'))
-            .ok_or_else(|| format!("{item:?} is not a quoted language tag"))?;
-        let language = normalize_tag(language)?;
-        if !languages.contains(&language) {
-            languages.push(language);
-        }
-    }
-    Ok(languages)
-}
-
-fn normalize_tag(value: &str) -> Result<String, String> {
-    let tag = value.trim().to_ascii_lowercase();
-    if tag.is_empty()
-        || tag.len() > 35
-        || tag.starts_with('-')
-        || tag.ends_with('-')
-        || !tag
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
-    {
-        return Err(format!("{value:?} is not a language tag"));
-    }
-    let primary = tag.split('-').next().unwrap_or_default();
-    if UNSEGMENTED_FALLBACK_LANGUAGES.contains(&primary) {
-        return Err(format!(
-            "{value:?} is not a supported Ask fallback language yet: Ask cannot retrieve by \
-             word in Chinese, Japanese, or Thai text without segmentation; stored memory \
-             remains byte-exact"
-        ));
-    }
-    Ok(tag)
-}
-
-pub fn parse_cli_languages(value: &str) -> Result<Vec<String>, String> {
-    let value = value.trim();
-    if value.eq_ignore_ascii_case("none") || value.is_empty() {
-        return Ok(Vec::new());
-    }
-    let mut languages = Vec::new();
-    for value in value.split(',') {
-        let language = normalize_tag(value)?;
-        if !languages.contains(&language) {
-            languages.push(language);
-        }
-    }
-    Ok(languages)
-}
-
-pub fn store(languages: &[String]) -> Result<AgentPolicy, String> {
-    let rendered = format!(
-        "{KEY} = [{}]",
-        languages
-            .iter()
-            .map(|language| format!("\"{language}\""))
-            .collect::<Vec<_>>()
-            .join(", ")
-    );
-    store_setting(KEY, &rendered)
 }
 
 pub fn store_memory_routing(routing: MemoryRouting) -> Result<AgentPolicy, String> {
@@ -311,35 +239,23 @@ fn updated_config(existing: &str, key: &str, rendered: &str) -> String {
 }
 
 pub fn display(policy: &AgentPolicy) -> String {
-    let languages = if policy.ask_fallback_languages.is_empty() {
-        "none".to_string()
-    } else {
-        policy.ask_fallback_languages.join(", ")
-    };
-    format!(
-        "KMP agent policy\n\nconfig: {}\nmemory routing: {} ({})\nask fallback languages: {} ({})\n",
+    let mut rendered = format!(
+        "KMP agent policy\n\nconfig: {}\nmemory routing: {} ({})\n",
         policy.path.display(),
         policy.memory_routing.label(),
         policy.routing_source_label(),
-        languages,
-        policy.source_label()
-    )
+    );
+    if let Some(notice) = policy.retired_setting_notice() {
+        rendered.push_str("note: ");
+        rendered.push_str(&notice);
+        rendered.push('\n');
+    }
+    rendered
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_and_normalizes_the_configured_list() {
-        let parsed = parse_languages(
-            "# agent policy\nask_fallback_languages = [\"EN\", \"es-ES\", \"en\"]\n",
-        )
-        .expect("valid policy")
-        .expect("configured list");
-
-        assert_eq!(parsed, ["en", "es-es"]);
-    }
 
     #[test]
     fn config_path_supports_windows_native_environment_fallbacks() {
@@ -376,60 +292,34 @@ mod tests {
     }
 
     #[test]
-    fn rejects_duplicate_or_malformed_policy() {
-        assert!(parse_languages("ask_fallback_languages = en\n").is_err());
-        assert!(
-            parse_languages(
-                "ask_fallback_languages = [\"en\"]\nask_fallback_languages = [\"fr\"]\n"
-            )
-            .is_err()
-        );
-    }
-
-    #[test]
-    fn rejects_unsegmented_ask_fallback_languages_and_their_variants() {
-        for tag in ["zh", "ZH-Hans", "ja-JP", "th-TH"] {
-            let error = parse_cli_languages(tag).expect_err("unsupported fallback must fail");
-            assert!(error.contains("not a supported Ask fallback language yet"));
-            assert!(error.contains("without segmentation"));
-        }
-        assert!(
-            parse_languages("ask_fallback_languages = [\"en\", \"zh-Hant\"]\n")
-                .expect_err("an unsupported configured fallback must fail")
-                .contains("without segmentation")
-        );
-        assert_eq!(
-            parse_cli_languages("es,fr,ar").expect("space-delimited scripts remain supported"),
-            ["es", "fr", "ar"]
-        );
-    }
-
-    #[test]
     fn store_preserves_unrelated_configuration() {
         let replaced = updated_config(
-            "future_setting = true\nask_fallback_languages = [\"fr\"]\n",
-            KEY,
-            "ask_fallback_languages = [\"en\"]",
+            "future_setting = true\nmemory_routing = \"on_request\"\n",
+            memory_routing::KEY,
+            "memory_routing = \"always\"",
         );
 
         assert!(replaced.contains("future_setting = true"));
-        assert!(replaced.contains("ask_fallback_languages = [\"en\"]"));
-        assert_eq!(replaced.matches(KEY).count(), 1);
+        assert!(replaced.contains("memory_routing = \"always\""));
+        assert_eq!(replaced.matches(memory_routing::KEY).count(), 1);
     }
 
     #[test]
     fn root_policy_does_not_capture_or_enter_an_unrelated_table() {
-        let existing = "[future]\nask_fallback_languages = [\"fr\"]\n";
-        assert_eq!(parse_languages(existing).expect("valid TOML subset"), None);
+        let existing = "[future]\nmemory_routing = \"always\"\n";
+        assert_eq!(
+            parse_memory_routing(existing).expect("valid TOML subset"),
+            None
+        );
 
-        let replaced = updated_config(existing, KEY, "ask_fallback_languages = [\"en\"]");
+        let replaced = updated_config(existing, memory_routing::KEY, "memory_routing = \"always\"");
         assert_eq!(
             replaced,
-            "ask_fallback_languages = [\"en\"]\n\n[future]\nask_fallback_languages = [\"fr\"]\n"
+            "memory_routing = \"always\"\n\n[future]\nmemory_routing = \"always\"\n"
         );
         assert_eq!(
-            parse_languages(&replaced).expect("root policy parses"),
-            Some(vec!["en".to_string()])
+            parse_memory_routing(&replaced).expect("root policy parses"),
+            Some(MemoryRouting::Always)
         );
     }
 
@@ -440,26 +330,39 @@ mod tests {
         assert_eq!(default.routing_source_label(), "default");
         assert_eq!(default, default_policy(Path::new("/policy")));
 
-        let configured = parse_policy(
-            "memory_routing = \"always\"\nask_fallback_languages = [\"fr\"]\n",
-            Path::new("/policy"),
-        )
-        .expect("valid policy");
+        let configured = parse_policy("memory_routing = \"always\"\n", Path::new("/policy"))
+            .expect("valid policy");
         assert_eq!(configured.memory_routing, MemoryRouting::Always);
         assert_eq!(configured.routing_source_label(), "configured");
-        assert_eq!(configured.source_label(), "configured");
+        assert!(!configured.retired_fallback_setting);
+    }
 
-        // Opting into always-on routing must not silently configure anything
-        // else, and configuring a fallback list must not opt into routing.
-        let routing_only =
-            parse_policy("memory_routing = \"always\"\n", Path::new("/policy")).expect("valid");
-        assert_eq!(routing_only.ask_fallback_languages, ["en"]);
-        assert_eq!(routing_only.source_label(), "default");
-        let languages_only =
-            parse_policy("ask_fallback_languages = [\"fr\"]\n", Path::new("/policy"))
-                .expect("valid");
-        assert_eq!(languages_only.memory_routing, MemoryRouting::OnRequest);
-        assert_eq!(languages_only.routing_source_label(), "default");
+    /// A file written by a release that still configured fallback languages
+    /// is read without them: the setting is noticed, never parsed, and never
+    /// a reason to refuse the file.
+    #[test]
+    fn a_retired_fallback_setting_is_noticed_and_otherwise_ignored() {
+        let policy = parse_policy(
+            "ask_fallback_languages = [\"en\", \"fr\"]\nmemory_routing = \"always\"\n",
+            Path::new("/policy"),
+        )
+        .expect("the retired setting does not invalidate the file");
+
+        assert_eq!(policy.memory_routing, MemoryRouting::Always);
+        assert!(policy.retired_fallback_setting);
+        let notice = policy.retired_setting_notice().expect("notice");
+        assert!(notice.contains("no longer read"), "{notice}");
+        assert!(notice.contains("asked_as"), "{notice}");
+        assert!(notice.contains("/policy"), "{notice}");
+
+        // Even a value the old parser would have refused is only noticed.
+        let malformed = parse_policy("ask_fallback_languages = en\n", Path::new("/policy"))
+            .expect("a retired setting is not parsed");
+        assert!(malformed.retired_fallback_setting);
+        assert_eq!(malformed.memory_routing, MemoryRouting::OnRequest);
+
+        let clean = parse_policy("", Path::new("/policy")).expect("empty");
+        assert_eq!(clean.retired_setting_notice(), None);
     }
 
     #[test]
@@ -487,42 +390,39 @@ mod tests {
     }
 
     #[test]
-    fn each_setting_is_written_without_disturbing_the_other() {
-        let with_languages = updated_config(
+    fn writing_the_routing_leaves_a_retired_line_where_it_is() {
+        let with_retired = updated_config(
             "ask_fallback_languages = [\"en\", \"fr\"]\n",
             memory_routing::KEY,
             "memory_routing = \"always\"",
         );
-        let policy = parse_policy(&with_languages, Path::new("/policy")).expect("valid policy");
-        assert_eq!(policy.ask_fallback_languages, ["en", "fr"]);
+        let policy = parse_policy(&with_retired, Path::new("/policy")).expect("valid policy");
         assert_eq!(policy.memory_routing, MemoryRouting::Always);
+        assert!(policy.retired_fallback_setting);
 
         let then_back = updated_config(
-            &with_languages,
+            &with_retired,
             memory_routing::KEY,
             "memory_routing = \"on_request\"",
         );
         assert_eq!(then_back.matches(memory_routing::KEY).count(), 1);
-        let policy = parse_policy(&then_back, Path::new("/policy")).expect("valid policy");
-        assert_eq!(policy.memory_routing, MemoryRouting::OnRequest);
-        assert_eq!(policy.ask_fallback_languages, ["en", "fr"]);
+        assert!(then_back.contains("ask_fallback_languages"));
     }
 
     #[test]
-    fn display_names_both_settings_and_where_they_came_from() {
+    fn display_names_the_routing_and_the_retired_setting() {
         let rendered = display(&AgentPolicy {
-            ask_fallback_languages: Vec::new(),
             memory_routing: MemoryRouting::Always,
             path: PathBuf::from("/policy"),
-            configured: true,
             routing_configured: true,
+            retired_fallback_setting: true,
         });
 
         assert!(rendered.contains("memory routing: always (configured)"));
-        assert!(rendered.contains("ask fallback languages: none (configured)"));
-        assert!(
-            display(&default_policy(Path::new("/policy")))
-                .contains("memory routing: on request (default)")
-        );
+        assert!(rendered.contains("note: ask_fallback_languages is no longer read"));
+        assert!(!rendered.contains("ask fallback languages:"));
+        let default = display(&default_policy(Path::new("/policy")));
+        assert!(default.contains("memory routing: on request (default)"));
+        assert!(!default.contains("note:"));
     }
 }
