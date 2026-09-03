@@ -294,6 +294,22 @@ for asset in write_instruction_assets:
     if ("invalid" not in text and "validation fail" not in text) or "nothing" not in text:
         fail(f"{asset.relative_to(ROOT)} does not state fail-before-write behavior")
 
+# The inference-prompt fixtures teach a model the writer directly, and they
+# drifted back to the two-call workflow while every gated surface said one
+# call. They are gated the same way now.
+writer_prompt_assets = [
+    ROOT / "api/examples/inference-prompts/kmp-write-memory.txt",
+    ROOT / "api/examples/inference-prompts/kmp-write-memory.request.json",
+]
+for asset in writer_prompt_assets:
+    text = asset.read_text(encoding="utf-8").casefold()
+    if "dry_run=true` first" in text or "use options.dry_run=true and" in text:
+        fail(f"{asset.relative_to(ROOT)} tells the writer to preview before committing")
+    if "set it to false" not in text or "one call" not in text:
+        fail(f"{asset.relative_to(ROOT)} does not select commit as the default")
+    if "summary_en" not in text:
+        fail(f"{asset.relative_to(ROOT)} does not ask the writer for the English search summary")
+
 memory_skill = (ROOT / "plugins/kmp/skills/kmp-memory/SKILL.md").read_text(
     encoding="utf-8"
 )

@@ -15,5 +15,6 @@ state explicitly that host wiring and ownership were not checked.
 
 Show the first branded block verbatim. Then give the usable/not-usable verdict,
 the first blocking cause, and the exact repair named by the doctor. Preserve
-warnings about fixture mode, stale sessions, retired tool-name policies, and
-plugin/global MCP ownership collisions.
+warnings about fixture mode, stale sessions, retired tool-name policies,
+plugin/global MCP ownership collisions, and a lexical-bridge table the store
+ignored: a malformed table means Ask quietly stopped crossing languages.

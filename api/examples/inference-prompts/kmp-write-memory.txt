@@ -33,7 +33,7 @@ The object must have this shape:
   "connect_to": [
     {
       "ref": "string",
-      "rel": "follows|answers|uses_background|depends_on|chosen_because|triggers|authorizes|verified_by|semantic_delta_from|updates_state|supports|supersedes|contradicts|satisfies_constraint|violates_constraint|contributes_to|excluded_from|checked_against|derived_from|confirms_selection|contains|member_of|scoped_to",
+      "rel": "follows|answers|uses_background|depends_on|chosen_because|triggers|authorizes|verified_by|semantic_delta_from|updates_state|supports|supersedes|contradicts|satisfies_constraint|violates_constraint|contributes_to|excluded_from|checked_against|derived_from|confirms_selection|restates|corrects|component_of|total_of|same_event_as|same_entity_as|qualifies_as|matches_requirement|contains|member_of|scoped_to",
       "class": "structural|causal|motivational|procedural|evidential|constraint",
       "why": "string",
       "evidence": "string",
@@ -55,7 +55,7 @@ The object must have this shape:
   },
   "idempotency_key": "string",
   "options": {
-    "dry_run": true,
+    "dry_run": false,
     "strict": true,
     "sequence": 1
   }
@@ -87,7 +87,7 @@ Hard rules:
   - `uses_background` with `class=evidential` for scoped background usage.
 - Do not upgrade an anemic fallback into causal, motivational, or constraint language.
 - Keep summaries short. Put proof in `evidence`.
-- Use `options.dry_run=true` first unless the caller explicitly asks to commit.
+- Omit `options.dry_run` or set it to false: the normal write is one call, and a validation failure writes nothing. Set it to true only when the caller explicitly asks for a preview.
 - Use `options.strict=true` by default.
 - Omit optional fields only when they do not apply. Never fill unknown values with placeholders.
 
@@ -109,6 +109,15 @@ Relation selection:
 - `checked_against`: a value is checked against a rule, budget, or window.
 - `derived_from`: a result was computed from operands or evidence.
 - `confirms_selection`: feedback confirms a prior selected option.
+- `restates`: the current memory says the same thing as an existing one, as a repeated claim or value.
+- `corrects`: the current memory corrects an earlier fact or value.
+- `component_of`: a value is part of a larger total or set.
+- `total_of`: a value is the aggregate total of component values.
+- `same_event_as`: the current memory and an existing one describe the same event.
+- `same_entity_as`: the current memory and an existing one describe the same entity.
+- `qualifies_as`: a memory qualifies as a category or role under a stated rule.
+- `matches_requirement`: a memory satisfies a query or requirement predicate.
+- Declaring that two memories say one thing — `restates`, `same_event_as`, `same_entity_as`, with `why` and `evidence` — is what lets `kmp_ask` cite the second beside the first when a question matches only one of them. Write it when you know it.
 
 Inputs:
 

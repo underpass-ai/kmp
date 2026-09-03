@@ -48,7 +48,17 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         "evidence": described(
             "array",
             "Stored entry text or evidence, verbatim. `text` is the canonical body and \
-             `metadata.proof_role` distinguishes the claim from its evidence."
+             `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may \
+             also say how an item was retrieved, never what it says. `reached_by` (relation, \
+             association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks \
+             an item the question never matched on its own words: proof, not answer, and never \
+             cited in `because`. On a cited item, `bridged_terms` names the word pairs the \
+             lexical-bridge table crossed a language with (`valvula≈valve 0.51`); \
+             `restated_from` and `restated_via` name a memory a writer declared this one \
+             restates; `matched_via: summary` with `summary_terms` says the question reached it \
+             through the writer's English `summary_en` and not through its text, and names the \
+             question's words the summary supplied. Read those as the writer's words, not the \
+             memory's."
         ),
         "missing": described(
             "array",

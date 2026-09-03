@@ -266,14 +266,17 @@ service.
 ### Is there an LLM inside KMP?
 
 No. KMP validates, stores, retrieves and proves. Your agent writes the final
-answer from the returned evidence.
+answer from the returned evidence, and writes the English search summary when
+it stores a memory; KMP lints that summary and never produces one.
 
 ### What if my question is Spanish but the evidence is English?
 
 With a lexical-bridge table beside the store, Ask crosses the two languages
-inside the kernel and says which word pairs it used. Without one, Ask fallback
-can retry the semantic query in English without translating the stored
-material. Configure the fallback during setup or with `kmp-mcp config`.
+inside the kernel and says which word pairs it used. A memory whose writer
+attached an English `summary_en` is reachable from an English question with no
+table at all. Without either, Ask fallback can retry the semantic query in
+English without translating the stored material. Configure the fallback
+during setup or with `kmp-mcp config`.
 
 ### Can Codex and Claude share the same memory?
 
