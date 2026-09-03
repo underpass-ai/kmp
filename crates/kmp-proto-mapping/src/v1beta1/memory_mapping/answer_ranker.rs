@@ -88,12 +88,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         policy: MemoryAnswerPolicy,
         evidence: Vec<MemoryEvidence>,
     ) -> Vec<MemoryEvidence> {
-        // The question folds in the store's language, or in the kernel's
-        // search language when the store's own could not be read; the
-        // candidates' text folds in the store's language and their summaries
-        // in the kernel's. Question and summary therefore meet in one
-        // language even when the store as a whole reads as none.
-        let morphology = &self.context.question_morphology;
+        let morphology = &self.context.morphology;
         let question_terms = informative_terms(question, morphology);
         if question_terms.is_empty() {
             let mut evidence = evidence;
@@ -392,7 +387,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if evidence.is_empty() {
             return MemoryConfidence::Unknown;
         }
-        let question_terms = informative_terms(question, &self.context.question_morphology);
+        let question_terms = informative_terms(question, &self.context.morphology);
         if question_terms.is_empty() {
             return MemoryConfidence::Low;
         }
@@ -427,7 +422,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         if self.bridge.is_silent() {
             return 0.0;
         }
-        let morphology = &self.context.question_morphology;
+        let morphology = &self.context.morphology;
         let question_counts = informative_term_counts(question, morphology);
         let bridged = BridgedKey::read(
             question,
@@ -467,9 +462,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .collect::<BTreeSet<_>>();
         informative_tokens(question)
-            .filter(|token| {
-                evidence_terms.contains(&search_key(token, &self.context.question_morphology))
-            })
+            .filter(|token| evidence_terms.contains(&search_key(token, &self.context.morphology)))
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
@@ -480,7 +473,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
         question: &str,
         evidence: &[MemoryEvidence],
     ) -> Vec<String> {
-        let question_terms = informative_terms(question, &self.context.question_morphology);
+        let question_terms = informative_terms(question, &self.context.morphology);
         evidence
             .iter()
             .flat_map(|item| self.context.relationships_for(item))
@@ -825,10 +818,6 @@ mod tests {
             }],
         );
 
-        eprintln!(
-            "DEBUG ranked = {:#?}",
-            ranked.iter().map(|r| (&r.id, &r.text)).collect::<Vec<_>>()
-        );
         assert_eq!(ranked.len(), 1, "{ranked:?}");
         assert_eq!(ranked[0].id, "detail:e1");
         assert_eq!(
@@ -1874,10 +1863,6 @@ mod tests {
             spanish_shift_report_with_summaries(),
         );
 
-        eprintln!(
-            "DEBUG ranked = {:#?}",
-            ranked.iter().map(|r| (&r.id, &r.text)).collect::<Vec<_>>()
-        );
         assert_eq!(ranked.len(), 1, "{ranked:?}");
         assert_eq!(ranked[0].id, "detail:e1");
         assert_eq!(
