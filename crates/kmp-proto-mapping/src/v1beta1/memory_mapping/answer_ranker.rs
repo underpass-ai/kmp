@@ -9,7 +9,7 @@ use super::answer_candidate_terms::AnswerCandidateTerms;
 use super::answer_recall_context::AnswerRecallContext;
 use super::answer_selection::{
     REACHED_BY_ASSOCIATION, answer_context_refs, diversify_candidates, mark_bridged, mark_reached,
-    mark_reached_by, prioritize_distinct_claims, stable_evidence_key,
+    mark_reached_by, mark_restated, prioritize_distinct_claims, stable_evidence_key,
 };
 use super::bridged_key::BridgedKey;
 use super::bridged_term::BridgedTerm;
@@ -32,6 +32,9 @@ const MAX_REACHED_REFS: usize = 8;
 const MAX_RESCUED_CANDIDATES: usize = 5;
 const MAX_ASSOCIATED_CANDIDATES: usize = 3;
 const MAX_BRIDGED_CANDIDATES: usize = 3;
+/// How many declared restatements may join the answer core. Equivalence is
+/// one hop by construction, so this bounds fan-out, not depth.
+const MAX_RESTATED_CANDIDATES: usize = 3;
 
 /// The share of the question's concepts that, covered outright or through
 /// the table, reads as "found it, in other words". It is the exact-coverage
@@ -150,12 +153,75 @@ impl<'a> AnswerEvidenceRanker<'a> {
             .map(|candidate| candidate.item)
             .collect::<Vec<_>>();
 
+        let (restated, rejected) = self.restated_candidates(&answer, rejected);
+        answer.extend(restated);
         let (associated, rejected) = self.associated_candidates(rejected, &lexicon);
         let (bridged, rejected) = self.bridged_candidates(rejected, &lexicon);
         answer.extend(self.reached_candidates(&answer, rejected));
         answer.extend(associated);
         answer.extend(bridged);
         answer
+    }
+
+    /// Admits what a writer declared to be the same thing as an answer.
+    ///
+    /// `restates`, `same_event_as` and `same_entity_as` are not routes to a
+    /// memory; they are a person's word that two memories say one thing. A
+    /// restatement of what the question matched is therefore what the
+    /// question matched, in other words — the one paraphrase the kernel can
+    /// close without a table or a model, and only ever because somebody
+    /// wrote it down. It joins the answer core after the memories the
+    /// question reached on its own, carrying the ref it restates and the
+    /// relation that says so; the lifecycles still apply, so a replaced or
+    /// expired restatement stays out.
+    fn restated_candidates(
+        &self,
+        eligible: &[MemoryEvidence],
+        rejected: Vec<MemoryEvidence>,
+    ) -> (Vec<MemoryEvidence>, Vec<MemoryEvidence>) {
+        if rejected.is_empty() || !self.context.reach_graph.has_equivalences() {
+            return (Vec::new(), rejected);
+        }
+        let seeds = eligible
+            .iter()
+            .flat_map(answer_context_refs)
+            .collect::<BTreeSet<_>>();
+        let mut blocked = self.context.lifecycle.superseded_refs().clone();
+        blocked.extend(self.context.lifecycle.expired_refs().cloned());
+        let equivalents = self.context.reach_graph.equivalents_of(&seeds, &blocked);
+        if equivalents.is_empty() {
+            return (Vec::new(), rejected);
+        }
+
+        let mut restated = Vec::new();
+        let mut still_rejected = Vec::new();
+        for item in rejected {
+            let current =
+                self.context.temporal_state(&item) == CandidateTemporalState::CurrentOrUnspecified;
+            let hop = answer_context_refs(&item)
+                .iter()
+                .filter_map(|item_ref| equivalents.get(item_ref))
+                .max_by_key(|hop| hop.weight)
+                .cloned();
+            match hop {
+                Some(hop) if current => restated.push((hop, item)),
+                _ => still_rejected.push(item),
+            }
+        }
+        restated.sort_by(|(left_hop, left), (right_hop, right)| {
+            right_hop
+                .weight
+                .cmp(&left_hop.weight)
+                .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
+        });
+        (
+            restated
+                .into_iter()
+                .take(MAX_RESTATED_CANDIDATES)
+                .map(|(hop, item)| mark_restated(item, &hop))
+                .collect(),
+            still_rejected,
+        )
     }
 
     /// Rescues what the table connects to the question across a language
@@ -431,7 +497,8 @@ mod tests {
     use prost_types::Timestamp;
 
     use super::super::answer_selection::{
-        BRIDGED_TERMS_KEY, REACHED_BY_BRIDGE, REACHED_BY_KEY, was_reached_indirectly,
+        BRIDGED_TERMS_KEY, REACHED_BY_BRIDGE, REACHED_BY_KEY, RESTATED_FROM_KEY, RESTATED_VIA_KEY,
+        was_reached_indirectly,
     };
     use super::super::lexical_bridge::tests::spanish_english_toy;
     use super::super::morphology::Morphology;
@@ -1687,5 +1754,84 @@ mod tests {
         );
 
         assert!(ranked.is_empty());
+    }
+
+    #[test]
+    fn a_declared_restatement_of_what_the_question_matched_is_cited_in_other_words() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale(
+                        "the go-live note and the decision record the same postponement",
+                    )
+                    .with_evidence("release calendar and the decision record")
+                    .with_confidence("high"),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the launch postponed?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![
+                claim_ev(
+                    "original",
+                    "claim:original",
+                    "The rollout slipped because the auditors had not signed off.",
+                ),
+                claim_ev(
+                    "in-other-words",
+                    "claim:in-other-words",
+                    "Launch postponed: go-live waits for the audit sign-off.",
+                ),
+                claim_ev(
+                    "noise",
+                    "claim:noise",
+                    "The canteen menu changed on Tuesday.",
+                ),
+            ],
+        );
+
+        assert_eq!(ranked[0].id, "detail:in-other-words");
+        let original = &ranked[1];
+        assert_eq!(original.id, "detail:original");
+        assert!(
+            !was_reached_indirectly(original),
+            "a declared restatement answers; it is not a hop"
+        );
+        assert_eq!(original.metadata[RESTATED_FROM_KEY], "claim:in-other-words");
+        assert_eq!(original.metadata[RESTATED_VIA_KEY], "restates");
+        assert!(ranked.iter().all(|item| item.id != "detail:noise"));
+    }
+
+    #[test]
+    fn a_restatement_needs_a_seed_the_question_matched() {
+        let ranker = ranker_over(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                RelationExplanation::new(RelationSemanticClass::Evidential)
+                    .with_rationale("same postponement")
+                    .with_evidence("release calendar")
+                    .with_confidence("high"),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        );
+
+        let ranked = ranker.rank(
+            "Why was the launch postponed?",
+            MemoryAnswerPolicy::BestEffort,
+            vec![claim_ev(
+                "original",
+                "claim:original",
+                "The rollout slipped because the auditors had not signed off.",
+            )],
+        );
+
+        assert!(ranked.is_empty(), "nothing matched, so nothing is restated");
     }
 }

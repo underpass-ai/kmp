@@ -24,27 +24,57 @@ struct ReachEdge {
 /// And it must carry its own proof. An anemic succession edge, a structural
 /// containment edge and an invented relation type are all absent, so a
 /// high-degree node cannot drag its neighbourhood along with it.
+///
+/// A second, separate subgraph holds declared equivalence. `restates`,
+/// `same_event_as` and `same_entity_as` do not say what led to what; they
+/// say two memories are the same thing in other words, and a writer proved
+/// it. A restatement of what the question matched is what the question
+/// matched — which is the one route to a paraphrase that needs no table and
+/// no model, only that somebody wrote it down.
 #[derive(Debug, Default)]
 pub(super) struct ReachGraph {
     edges: BTreeMap<String, Vec<ReachEdge>>,
+    equivalences: BTreeMap<String, Vec<ReachEdge>>,
 }
+
+/// The relation types that declare two memories to be the same thing.
+///
+/// `supersedes` and `corrects` are deliberately absent: they declare a
+/// replacement, and the lifecycle already decides which side of one is
+/// current. `contradicts` keeps two claims in tension, which is the opposite
+/// of the same thing.
+const EQUIVALENCE_RELATIONS: &[&str] = &["restates", "same_event_as", "same_entity_as"];
 
 impl ReachGraph {
     pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
         let mut edges = BTreeMap::<String, Vec<ReachEdge>>::new();
+        let mut equivalences = BTreeMap::<String, Vec<ReachEdge>>::new();
 
         for relationship in bundle.relationships() {
             let explanation = relationship.explanation();
-            if !is_walkable_class(explanation.semantic_class()) {
-                continue;
-            }
-            let signal = RelationSignal::read(relationship.relationship_type(), explanation);
+            let relation = relationship.relationship_type();
+            let signal = RelationSignal::read(relation, explanation);
             if !signal.carries_retrieval() {
                 continue;
             }
-
-            let relation = relationship.relationship_type();
             let weight = signal.weight();
+
+            // Equivalence is read whatever its class, because it is not a
+            // claim about causation; it still has to carry its own proof.
+            if EQUIVALENCE_RELATIONS.contains(&relation) {
+                insert_both_ways(
+                    &mut equivalences,
+                    relationship.source_node_id(),
+                    relationship.target_node_id(),
+                    relation,
+                    weight,
+                );
+                continue;
+            }
+            if !is_walkable_class(explanation.semantic_class()) {
+                continue;
+            }
+
             insert_both_ways(
                 &mut edges,
                 relationship.source_node_id(),
@@ -68,7 +98,7 @@ impl ReachGraph {
             }
         }
 
-        for adjacency in edges.values_mut() {
+        for adjacency in edges.values_mut().chain(equivalences.values_mut()) {
             adjacency.sort_by(|left, right| {
                 right
                     .weight
@@ -79,11 +109,55 @@ impl ReachGraph {
             adjacency.dedup();
         }
 
-        Self { edges }
+        Self {
+            edges,
+            equivalences,
+        }
     }
 
     pub(super) fn is_empty(&self) -> bool {
         self.edges.is_empty()
+    }
+
+    pub(super) fn has_equivalences(&self) -> bool {
+        !self.equivalences.is_empty()
+    }
+
+    /// The memories a writer declared to be the same thing as any of the
+    /// seeds, one hop away and never further: a restatement of a
+    /// restatement is a chain nobody vouched for as a whole.
+    ///
+    /// Each equivalent is reported once, from the strongest edge that
+    /// reaches it, and the seeds themselves and everything `blocked` stay
+    /// out — a superseded claim is not rescued by having been restated.
+    pub(super) fn equivalents_of(
+        &self,
+        seeds: &BTreeSet<String>,
+        blocked: &BTreeSet<String>,
+    ) -> BTreeMap<String, RelationReach> {
+        let mut equivalents = BTreeMap::<String, RelationReach>::new();
+        for seed in seeds {
+            for edge in self.equivalences.get(seed).into_iter().flatten() {
+                if seeds.contains(&edge.target) || blocked.contains(&edge.target) {
+                    continue;
+                }
+                let stronger = equivalents
+                    .get(&edge.target)
+                    .is_none_or(|known| edge.weight > known.weight);
+                if stronger {
+                    equivalents.insert(
+                        edge.target.clone(),
+                        RelationReach {
+                            hops: 1,
+                            weight: edge.weight,
+                            from_ref: seed.clone(),
+                            via_relation: edge.relation.clone(),
+                        },
+                    );
+                }
+            }
+        }
+        equivalents
     }
 
     /// Walks out from what the question already matched.
@@ -422,5 +496,100 @@ mod tests {
         );
 
         assert!(reached["claim:c"].weight < reached["claim:b"].weight);
+    }
+
+    #[test]
+    fn a_proven_restatement_is_an_equivalent_and_not_a_causal_route() {
+        let graph = ReachGraph::from_bundle(&bundle(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                proven(RelationSemanticClass::Evidential),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        ));
+
+        assert!(graph.is_empty(), "equivalence is not a walk");
+        assert!(graph.has_equivalences());
+        let equivalents = graph.equivalents_of(
+            &BTreeSet::from(["claim:original".to_string()]),
+            &BTreeSet::new(),
+        );
+        let hop = equivalents
+            .get("claim:in-other-words")
+            .expect("the restatement is reached from either side");
+        assert_eq!(hop.hops, 1);
+        assert_eq!(hop.from_ref, "claim:original");
+        assert_eq!(hop.via_relation, "restates");
+    }
+
+    #[test]
+    fn equivalence_stops_at_one_hop_and_respects_the_block_list() {
+        let graph = ReachGraph::from_bundle(&bundle(
+            vec![
+                BundleRelationship::new(
+                    "claim:a",
+                    "claim:b",
+                    "same_event_as",
+                    proven(RelationSemanticClass::Evidential),
+                ),
+                BundleRelationship::new(
+                    "claim:b",
+                    "claim:c",
+                    "same_event_as",
+                    proven(RelationSemanticClass::Evidential),
+                ),
+                BundleRelationship::new(
+                    "claim:a",
+                    "claim:superseded",
+                    "restates",
+                    proven(RelationSemanticClass::Evidential),
+                ),
+            ],
+            &["claim:a", "claim:b", "claim:c", "claim:superseded"],
+        ));
+
+        let equivalents = graph.equivalents_of(
+            &BTreeSet::from(["claim:a".to_string()]),
+            &BTreeSet::from(["claim:superseded".to_string()]),
+        );
+
+        assert!(equivalents.contains_key("claim:b"));
+        assert!(
+            !equivalents.contains_key("claim:c"),
+            "a chain nobody vouched for as a whole"
+        );
+        assert!(!equivalents.contains_key("claim:superseded"));
+    }
+
+    #[test]
+    fn a_restatement_without_proof_is_not_an_equivalent() {
+        let graph = ReachGraph::from_bundle(&bundle(
+            vec![BundleRelationship::new(
+                "claim:in-other-words",
+                "claim:original",
+                "restates",
+                RelationExplanation::new(RelationSemanticClass::Evidential),
+            )],
+            &["claim:in-other-words", "claim:original"],
+        ));
+
+        assert!(!graph.has_equivalences());
+    }
+
+    #[test]
+    fn a_replacement_is_not_an_equivalence() {
+        let graph = ReachGraph::from_bundle(&bundle(
+            vec![BundleRelationship::new(
+                "claim:new",
+                "claim:old",
+                "supersedes",
+                proven(RelationSemanticClass::Evidential),
+            )],
+            &["claim:new", "claim:old"],
+        ));
+
+        assert!(!graph.has_equivalences());
     }
 }

@@ -11,6 +11,17 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- Declared paraphrase is retrievable paraphrase
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). `restates`,
+  `same_event_as` and `same_entity_as` are a writer's word that two memories
+  say one thing, and `kmp_ask` now cites the other side of such a relation
+  beside a memory the question matched: one hop, proof-carrying edges only,
+  the lifecycles still applied, at most three per answer. The cited
+  restatement carries `restated_from` and `restated_via`. This is the one
+  route to a paraphrase that needs no table and no model — only that
+  somebody wrote it down — and the judged case `declared-paraphrase` measures
+  it: the paraphrase gap, plus one `restates`, cited.
+
 - `kmp_ask` bridges languages inside the kernel
   ([#469](https://github.com/underpass-ai/kmp/issues/469)). A lexical-bridge
   table beside the store — one signed-byte vector per whole word, built
