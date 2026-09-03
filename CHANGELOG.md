@@ -11,97 +11,26 @@ Detailed notes from the early release cycle remain available in the
 
 ### Fixed
 
-- A question folds in the language it will find the answer in, not only the
-  store's ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking
-  read one language for the whole store and stemmed the question, the text
-  and the English search summary with it. A store of two languages reads as
-  none, so nothing was stemmed, and an English plural could not reach the
-  singular in the English summary of a Spanish memory. Now each field folds
-  in its own language: the text in the store's, the writer's `summary_en` in
-  the kernel's search language whatever the memory's own, and the question in
-  the store's language, or in the kernel's when the store's could not be read
-  and it carries English summaries to match. A store with no summary keeps
-  exact matching rather than being stemmed by rules its text never was. The
-  judged case `summary-plural` measures it, and every existing floor holds:
-  21 cases, R@1 0.8250 → 0.8333, nDCG 0.9031 → 0.9077.
-
-### Added
-
-- A writer can attach an English search summary to a memory, and the kernel
-  lints it ([#469](https://github.com/underpass-ai/kmp/issues/469)). The
-  reserved entry metadata key `summary_en` carries an English rendering of
-  the text, written by whoever wrote the memory at the one moment the kernel
-  admits a model. `kmp_ask` searches it and never cites it: a question in
-  English reaches a memory written in Spanish, and the citation is the
-  Spanish text byte for byte. This is what closes the paraphrase gap a table
-  of single words cannot — `rollout slipped` rendered as `launch postponed` —
-  because a writer canonicalises jargon where a lookup cannot. The lint is
-  deterministic and made twice from the same inputs, never stored as a
-  verdict: `kmp_ingest` warns, entry by entry, about a summary that leans to
-  another language, carries fewer than two informative words, repeats the
-  text word for word, or drops an identifier the text carries (`v0.7.0`,
-  `#469`, `kmp-mcp`, `ADR`); and ranking makes the same reading, so a summary
-  that fails it carries no retrieval whoever wrote it and however it arrived.
-  Four judged cases measure it: the paraphrase gap closed by a summary
-  (`paraphrase-gap` stays as the control), a Spanish store answered in English
-  through its summaries and still in Spanish beside them, and an unfaithful
-  summary that dropped the version it summarised carrying nothing. The
-  language reading and the search tokenizer moved from the mapping layer to
-  `kmp-domain`, where both the write path and the read path can share one
-  reading.
-
-- The summary is content, and a citation says when it carried
-  ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking used to
-  let a memory's own text decide first, so an English memory that mentioned
-  the subject outranked a Spanish one whose summary answered the whole
-  question. A memory's content is now its text and the writer's rendering
-  together — what a reader shown the entry is shown — and BM25, the focus a
-  strict policy demands, and the eligibility floor all read it that way. A
-  cited memory the question reached through its rendering and not through
-  its text carries `matched_via: summary` and `summary_terms`, the question's
-  words the rendering supplied, as the reader wrote them; a rendering that
-  repeats what the text already said is credited with nothing. The judged
-  case `summary-is-content` measures the order: the Spanish memory whose
-  rendering answers all three concepts now ranks above the English text that
-  carries two, where it ranked second before.
-
-- The writer asks for the summary, and every surface that speaks to the
-  agent says so ([#469](https://github.com/underpass-ai/kmp/issues/469)).
-  `kmp_write_memory` takes `current.summary_en`; a strict write requires it
-  when `current.summary` is not written in English and refuses one that
-  fails the lint, naming every fault, so the agent fixes the summary while it
-  can — outside strict mode the summary is stored and the result says it
-  will not carry. The initialize instructions, the `kmp_write_memory` and
-  `kmp_ingest` schemas, the kmp-memory skill, the agent guide, the inference
-  prompt fixtures and the READMEs now tell the writer the same thing: write
-  the memory in the language of the work, render it in plain English for
-  search, keep every number, identifier and acronym exactly as written, and
-  never alter the text to fit the summary.
-
-### Fixed
-
-- The surfaces that speak to the agent agree with the kernel again
-  ([#469](https://github.com/underpass-ai/kmp/issues/469)). A review of
-  every one of them found the drift the series had left behind. The proof
-  output schema shared by `kmp_ask`, `kmp_wake` and the temporal verbs
-  documented one evidence metadata key out of the ten the ranker writes; it
-  now explains `reached_by` and its companions, `bridged_terms`,
-  `restated_from`, `matched_via` and `summary_terms`, and `kmp_ask` says that
-  a bridged citation is capped at medium while a summary-carried one is not,
-  and what each answer policy actually does with conflicts. The kmp-memory
-  skill described the fallback-language retry as the only world and never
-  told the reader what `reached_by` or `bridged_terms` mean; it now carries
-  the bridged rule beside the unbridged one, the proof keys, and the reason
-  to declare `restates`, `same_event_as` or `same_entity_as`. The inference
-  prompt fixtures for the writer still taught the retired preview-first
-  workflow and listed twenty-three of the thirty-one writer relations —
-  missing exactly the three that make a paraphrase citable; both are fixed,
-  and the agent routing gate now covers those fixtures. The protocol JSON
-  schema closed `proof` without `frontier_size`, which every recall emits,
-  and described no metadata key at all; the guide gained the language rule
-  `verb:ask` referred to without defining; setup, info and doctor say what
-  the lexical-bridge line means; and the crates.io README gained the
-  language section the other two already had.
+- A store of two languages stems in the kernel's search language when it
+  carries English summaries
+  ([#469](https://github.com/underpass-ai/kmp/issues/469)). Ranking reads one
+  language for the whole store and stems the question and every candidate
+  field with it, on purpose: a question stemmed by one rule and a memory by
+  another stop meeting on the words they share. A store of two languages
+  reads as none and stemmed nothing, so an English plural could not reach the
+  singular in the English summary of a Spanish memory. Such a store now stems
+  everything in the kernel's search language, still both sides alike, but
+  only when it carries an English summary to land on; a mixed store with no
+  summary keeps exact matching rather than being stemmed by rules its text
+  never was. The judged case `summary-plural` measures it, and every existing
+  floor holds. An intermediate shape that stemmed the summary and the
+  question in one language and the text in another was measured and refused:
+  it broke exact matches on English text in the very store it targeted. What
+  one stemmer cannot do is folded into a number: a store whose entries all
+  read as Spanish stems its English summaries with Spanish rules too, so an
+  English inflection those rules do not fold (`frozen`, `nights`, `shifts`)
+  never meets the summary; `summary-inflected-in-spanish-store` is that case,
+  known failing, the way `paraphrase-gap` carries the paraphrase gap.
 
 ## [0.9.1] - 2026-09-03
 

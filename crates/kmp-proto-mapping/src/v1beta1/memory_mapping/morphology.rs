@@ -22,7 +22,11 @@ use super::search_terms::fold_search_term;
 /// both sides of every comparison. Choosing per word does not work: the
 /// Spanish rules reduce `release` to `rel` while both languages reduce
 /// `released` to `releas`, so picking a stemmer word by word splits families
-/// instead of joining them.
+/// instead of joining them. Choosing per field does not work either, and for
+/// the same reason: a question stemmed and a text left as written stop
+/// meeting on the words they share. A store that reads as no language stems
+/// nothing — unless it carries English search summaries, in which case it
+/// stems everything in the kernel's search language, still both sides alike.
 ///
 /// Two limits are worth knowing rather than discovering. Snowball strips
 /// suffixes and does not undo the Spanish diphthong, so `despliegue` and
@@ -63,16 +67,15 @@ impl Morphology {
     ///
     /// A language the vocabulary can name but this has no stemmer for reads as
     /// no language at all, which leaves the memory exactly as written rather
-    /// than stemmed by somebody else's rules. Callers in the ranker read the
-    /// three fields separately; this stays as the single-field reader the
-    /// tests drive.
+    /// than stemmed by somebody else's rules. The ranker reads the language and
+    /// chooses the fallback itself; this one-step form is what the tests drive.
     #[cfg(test)]
     pub(super) fn read<'a>(texts: impl IntoIterator<Item = &'a str>) -> Self {
         Self::for_language(Self::read_language(texts).as_deref())
     }
 
-    /// Which language a body of text is written in, for a caller that reads
-    /// several fields and must decide the stemmer of each one separately.
+    /// Which language a body of text is written in, for a caller that decides
+    /// the stemmer after reading it.
     pub(super) fn read_language<'a>(texts: impl IntoIterator<Item = &'a str>) -> Option<String> {
         let tokens = texts
             .into_iter()
@@ -85,10 +88,9 @@ impl Morphology {
     }
 
     /// The stemmer for a named language, or none for an unnamed one or one
-    /// with no stemmer. This is how a caller stems one field in a language it
-    /// read elsewhere: the English search summary in English, whatever the
-    /// store's own language, and the question in the store's language or, when
-    /// the store reads as none, in the kernel's search language.
+    /// with no stemmer. The caller reads the language with `read_language`
+    /// and may substitute the kernel's search language before building the
+    /// stemmer, which is why the two steps are separate.
     pub(super) fn for_language(language: Option<&str>) -> Self {
         Self {
             stemmer: language.and_then(Self::stemmer_for).map(Stemmer::create),
@@ -111,9 +113,8 @@ impl Morphology {
         }
     }
 
-    /// Whether a language was read at all. A caller reads it to decide the
-    /// fallback for another field: a question folds in the kernel's search
-    /// language exactly when the store's own language could not be read.
+    /// Whether a language was read at all. The behaviour it gates is visible
+    /// in what gets matched, so only the tests ask directly.
     #[cfg(test)]
     pub(super) fn is_reading_a_language(&self) -> bool {
         self.stemmer.is_some()

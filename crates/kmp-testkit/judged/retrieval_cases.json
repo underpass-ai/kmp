@@ -1659,6 +1659,235 @@
           }
         ]
       }
+    },
+    {
+      "id": "summary-store-text-exact",
+      "probes": "Regression guard for the mixed store that stems in the kernel's search language. An English question whose words appear verbatim in an English text entry with no summary must still be cited: stemming the question while leaving the text as written would break exact matches on `meeting`, `moved` and `morning`, and did in an intermediate shape of this change.",
+      "about": "project:plural",
+      "question": "Which meeting moved to the morning at the request of the team?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:plural:e2"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:plural:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:plural:e2",
+            "kind": "observation",
+            "text": "The weekly meeting moved to ten in the morning at the request of the whole team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e3",
+            "kind": "observation",
+            "text": "The canteen menu was posted for everyone before lunch on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e4",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón para todos.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-store-text-inflected",
+      "probes": "The gain the same rule buys beyond the summary: in a mixed store that carries English summaries, an English question inflected differently from an English text entry (`meetings were moved`, `mornings`) reaches it, because everything folds in the kernel's search language on both sides. Before, the store read as no language and stemmed nothing.",
+      "about": "project:plural",
+      "question": "Which meetings were moved to the mornings at the team's request?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:plural:e2"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:plural:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:plural:e2",
+            "kind": "observation",
+            "text": "The weekly meeting moved to ten in the morning at the request of the whole team.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e3",
+            "kind": "observation",
+            "text": "The canteen menu was posted for everyone before lunch on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:plural:e4",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón para todos.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-04T09:00:00Z",
+                "valid_from": "2026-08-04T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "summary-inflected-in-spanish-store",
+      "probes": "KNOWN FAILING. A store whose entries all read as Spanish stems everything with Spanish rules, the English summary and the English question included, because one stemmer serves both sides of every comparison. English inflections the Spanish rules do not fold — `frozen`, `nights`, `shifts` — never meet the summary's `froze`, `night`, `shift`. Closing it means stemming the question once per field it is compared with, in that field's language, without letting the two readings double-count a concept; it is the number that step would move.",
+      "about": "project:homogeneo",
+      "question": "Which shifts had frozen valves?",
+      "answer_policy": "evidence_or_unknown",
+      "judged": [
+        "project:homogeneo:e1"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:homogeneo:e1",
+            "kind": "incident",
+            "text": "La válvula de reserva se congeló durante el turno de noche.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-01T09:00:00Z",
+                "valid_from": "2026-08-01T09:00:00Z",
+                "sequence": 1
+              }
+            ],
+            "metadata": {
+              "summary_en": "The reserve valve froze during the night shift."
+            }
+          },
+          {
+            "id": "project:homogeneo:e2",
+            "kind": "observation",
+            "text": "La reunión semanal se movió a las diez de la mañana.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-02T09:00:00Z",
+                "valid_from": "2026-08-02T09:00:00Z",
+                "sequence": 2
+              }
+            ],
+            "metadata": {
+              "summary_en": "The weekly meeting moved to ten in the morning."
+            }
+          },
+          {
+            "id": "project:homogeneo:e3",
+            "kind": "observation",
+            "text": "El menú del comedor se publicó en el tablón.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-03T09:00:00Z",
+                "valid_from": "2026-08-03T09:00:00Z",
+                "sequence": 3
+              }
+            ],
+            "metadata": {
+              "summary_en": "The canteen menu was posted on the board."
+            }
+          }
+        ]
+      }
     }
   ]
 }

@@ -50,7 +50,7 @@ impl AnswerCandidate {
         if matches!(
             context.temporal_state(&item),
             CandidateTemporalState::Superseded | CandidateTemporalState::Expired
-        ) && !query_requests_lifecycle(question_terms, &context.question_morphology)
+        ) && !query_requests_lifecycle(question_terms, &context.morphology)
         {
             return Err(Box::new(item));
         }
