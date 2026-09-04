@@ -267,7 +267,13 @@ impl EngineStore for FilesystemEngineStore {
                 _ => {}
             }
         }
-        let expected = crate::tool_names().into_iter().collect::<BTreeSet<_>>();
+        // An older engine is held to the surface it shipped with, not to
+        // this build's: the proof stays exact and stops refusing every
+        // honest engine the day a tool is added.
+        let expected = crate::lifecycle::domain::tool_surface_history::expected_tool_surface(
+            target,
+            crate::tool_names(),
+        );
         if initialized_version.as_deref() != Some(target.engine_version()) || tools != expected {
             return Err(LifecycleError::SurfaceMismatch(format!(
                 "{} failed the exact lifecycle proof: version={initialized_version:?}, missing={:?}, unexpected={:?}",

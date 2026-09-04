@@ -99,10 +99,14 @@ impl RealHostLifecycleHarness {
 
         let doctor = self.host(self.path(&self.shared_binary()), &["doctor"]);
         let diagnosis = String::from_utf8_lossy(&doctor.stdout);
+        let answers_all = format!(
+            "effective engine answers all {} tools",
+            kmp_mcp::tool_names().len()
+        );
         for clause in [
             "claude: effective MCP registration is usable",
             "codex: effective MCP registration is usable",
-            "effective engine answers all 13 tools",
+            answers_all.as_str(),
             "plugin trees are byte-for-byte identical",
             "Usable.",
         ] {
