@@ -2724,3 +2724,186 @@ fn relate_proposes_links_from_shared_keys_and_stores_none_of_them() {
         "a proposal is never stored: {second}"
     );
 }
+
+/// The one relation that crosses abouts, on the real binary. `kmp_relate`
+/// proposes a pair; a writer declares it as `same_event_as` with why,
+/// evidence and the proposal in `read_context`; the edge lives in the
+/// writing about, `kmp_relate` shows it as declared, `kmp_ask` across the
+/// abouts cites the declaring entry beside the other about's outcome, and
+/// `kmp_trace` between the two abouts walks it. Raw `kmp_ingest` and any
+/// other relation across abouts are refused, and so is the equivalence
+/// without its proposal.
+#[test]
+fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_abouts() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let call = |id: u64, name: &str, arguments: Value| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("response");
+        response["result"].clone()
+    };
+    let placed = |occurred_at: &str| serde_json::json!({"dimension": "release", "scope_id": "release:spring", "occurred_at": occurred_at, "sequence": 1});
+    let alpha_fact = serde_json::json!({"id": "service:alpha:decision:blocker", "kind": "decision", "text": "Ticket #469 blocks the release until the freeze lifts.", "coordinates": [placed("2026-03-10T10:00:00Z")]});
+    let beta_fact = serde_json::json!({"id": "service:beta:outcome:freeze", "kind": "outcome", "text": "The payments audit froze the #469 rollout.", "coordinates": [placed("2026-03-20T10:00:00Z")]});
+    let dimensions = serde_json::json!([{"id": "release:spring", "kind": "release"}]);
+    let seeded = call(
+        1,
+        "kmp_ingest",
+        serde_json::json!({"about": "service:alpha", "idempotency_key": "ingest:alpha", "memory": {"dimensions": dimensions, "entries": [alpha_fact, serde_json::json!({"id": "service:alpha:observation:canteen", "kind": "observation", "text": "The canteen menu was posted.", "coordinates": [placed("2026-03-12T10:00:00Z")]})]}}),
+    );
+    assert_ne!(seeded["isError"], true, "{seeded}");
+    let seeded = call(
+        2,
+        "kmp_ingest",
+        serde_json::json!({"about": "service:beta", "idempotency_key": "ingest:beta", "memory": {"dimensions": dimensions, "entries": [beta_fact]}}),
+    );
+    assert_ne!(seeded["isError"], true, "{seeded}");
+
+    // Raw ingest never crosses an about, whatever the relation says.
+    let raw = call(
+        3,
+        "kmp_ingest",
+        serde_json::json!({"about": "service:alpha", "idempotency_key": "ingest:alpha:raw", "memory": {"dimensions": dimensions, "entries": [{"id": "service:alpha:observation:raw", "kind": "observation", "text": "A raw note.", "coordinates": [placed("2026-03-11T10:00:00Z")]}], "relations": [
+            {"from": "service:alpha:observation:raw", "to": "service:beta:outcome:freeze", "rel": "same_event_as", "class": "evidential", "why": "w", "evidence": "e", "confidence": "high", "method": "kmp_relate:identifier"}
+        ]}}),
+    );
+    assert_eq!(raw["isError"], true, "{raw}");
+    assert!(
+        raw.to_string().contains("does not belong to about"),
+        "{raw}"
+    );
+
+    let both = serde_json::json!({"scope": "abouts", "abouts": ["service:alpha", "service:beta"]});
+    let march = serde_json::json!({"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"});
+    let proposed = call(
+        4,
+        "kmp_relate",
+        serde_json::json!({"about": "service:alpha", "dimensions": both, "interval": march}),
+    );
+    let proposal = &proposed["structuredContent"]["proposed"][0];
+    assert_eq!(
+        proposal["from"], "service:alpha:decision:blocker",
+        "{proposed}"
+    );
+    assert_eq!(proposal["to"], "service:beta:outcome:freeze", "{proposed}");
+    assert_eq!(
+        proposal["proposed_by"],
+        serde_json::json!(["identifier"]),
+        "{proposed}"
+    );
+
+    let declare: Value = serde_json::from_str(r#"{"about": "service:alpha", "intent": "record_observation", "actor": "agent:relate", "observed_at": "2026-03-25T10:00:00Z", "scope": {"process": "service:alpha:reconcile"}, "current": {"ref": "service:alpha:observation:same-freeze", "kind": "observation", "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.", "evidence": "kmp_relate proposed the pair by identifier."}, "connect_to": [{"ref": "service:beta:outcome:freeze", "rel": "same_event_as", "class": "evidential", "why": "Both record the same freeze, keyed by #469.", "evidence": "kmp_relate proposal by identifier: #469 rare across the span.", "confidence": "high"}, {"ref": "service:alpha:decision:blocker", "rel": "restates", "class": "evidential", "why": "The same freeze in this about's words.", "evidence": "The blocker entry names #469 too.", "confidence": "high"}], "read_context": {"inspected_refs": ["service:alpha:decision:blocker"], "relate_proposals": [{"from": "service:alpha:decision:blocker", "to": "service:beta:outcome:freeze", "proposed_by": ["identifier"]}]}, "options": {"strict": true}}"#).expect("declaration");
+
+    // Any other relation across abouts is refused, and so is the
+    // equivalence without the proposal it was declared from.
+    let mut follows = declare.clone();
+    follows["connect_to"][0]["rel"] = serde_json::json!("follows");
+    follows["connect_to"][0]["class"] = serde_json::json!("procedural");
+    let refused = call(5, "kmp_write_memory", follows);
+    assert_eq!(refused["isError"], true, "{refused}");
+    assert!(
+        refused
+            .to_string()
+            .contains("only with `same_event_as` or `same_entity_as`"),
+        "{refused}"
+    );
+    let mut unproven = declare.clone();
+    unproven["read_context"] =
+        serde_json::json!({"inspected_refs": ["service:alpha:decision:blocker"]});
+    let refused = call(6, "kmp_write_memory", unproven);
+    assert_eq!(refused["isError"], true, "{refused}");
+    assert!(
+        refused
+            .to_string()
+            .contains("read_context.relate_proposals"),
+        "{refused}"
+    );
+
+    let written = call(7, "kmp_write_memory", declare);
+    assert_ne!(written["isError"], true, "{written}");
+    assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
+    let quality = &written["structuredContent"]["relation_quality"][0];
+    assert_eq!(quality["crosses_about"], true, "{written}");
+    assert_eq!(
+        quality["prior_context_sources"],
+        serde_json::json!(["kmp_relate"]),
+        "{written}"
+    );
+
+    // The edge is declared in the writing about; the proposal still stands.
+    let related = call(
+        8,
+        "kmp_relate",
+        serde_json::json!({"about": "service:alpha", "dimensions": both, "interval": march}),
+    );
+    let declared = related["structuredContent"]["declared"]
+        .as_array()
+        .expect("declared");
+    assert!(
+        declared.iter().any(
+            |edge| edge["from"] == "service:alpha:observation:same-freeze"
+                && edge["rel"] == "same_event_as"
+                && edge["to"] == "service:beta:outcome:freeze"
+        ),
+        "{related}"
+    );
+    assert!(declared.iter().any(|edge| edge["rel"] == "restates" && edge["to"] == "service:alpha:decision:blocker"), "{related}");
+    assert_eq!(
+        related["structuredContent"]["proposed"][0]["from"], "service:alpha:decision:blocker",
+        "{related}"
+    );
+
+    // Across the abouts, the question reaches the other about's outcome in
+    // its own words and cites the declaring entry as the same thing in
+    // other words.
+    let asked = call(
+        9,
+        "kmp_ask",
+        serde_json::json!({"about": "service:alpha", "question": "What froze the rollout during the payments audit?", "answer_policy": "best_effort", "dimensions": both, "depth": 3}),
+    );
+    let evidence = asked["structuredContent"]["proof"]["evidence"]
+        .as_array()
+        .expect("evidence");
+    assert!(
+        evidence
+            .iter()
+            .any(|item| item["id"] == "entry:service:beta:outcome:freeze"),
+        "{asked}"
+    );
+    let restated = evidence
+        .iter()
+        .find(|item| item["id"] == "entry:service:alpha:observation:same-freeze")
+        .unwrap_or_else(|| panic!("the declaring entry is cited across the about: {asked}"));
+    assert_eq!(
+        restated["metadata"]["restated_from"], "service:beta:outcome:freeze",
+        "{asked}"
+    );
+    assert_eq!(
+        restated["metadata"]["restated_via"], "same_event_as",
+        "{asked}"
+    );
+
+    // A trace between the two abouts walks the declared equivalence.
+    let traced = call(
+        10,
+        "kmp_trace",
+        serde_json::json!({"about": "service:alpha", "from": "service:alpha:observation:same-freeze", "to": "service:beta:outcome:freeze"}),
+    );
+    assert_ne!(traced["isError"], true, "{traced}");
+    let path = traced["structuredContent"]["trace"]
+        .as_array()
+        .expect("trace");
+    assert!(
+        path.iter().any(|hop| hop["rel"] == "same_event_as"),
+        "{traced}"
+    );
+}

@@ -1333,6 +1333,12 @@
           "items": {
             "$ref": "#/$defs/trace_path_read_context"
           }
+        },
+        "relate_proposals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relate_proposal_read_context"
+          }
         }
       }
     },
@@ -2395,6 +2401,36 @@
         },
         "why": {
           "$ref": "#/$defs/non_empty_string"
+        }
+      }
+    },
+    "relate_proposal_read_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "proposed_by"
+      ],
+      "description": "A proposal kmp_relate returned, handed back as the proof for an equivalence declared across abouts.",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "to": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "proposed_by": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "identifier",
+              "summary",
+              "entity"
+            ]
+          }
         }
       }
     }

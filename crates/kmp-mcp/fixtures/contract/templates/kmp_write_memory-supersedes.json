@@ -38,6 +38,7 @@
       {
         "class": "string",
         "confidence": "string",
+        "crosses_about": "boolean",
         "fallback": "boolean",
         "from": "string",
         "prior_context_observed": "boolean",

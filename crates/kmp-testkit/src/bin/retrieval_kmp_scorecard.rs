@@ -54,6 +54,11 @@ struct JudgedCase {
     /// store holds them: never joined by a relation.
     #[serde(default)]
     memories: Vec<SeededMemory>,
+    /// Writes made through `kmp_write_memory` after the ingests, exactly as
+    /// the tool takes them: the only way a case declares the one relation
+    /// that crosses an about.
+    #[serde(default)]
+    writes: Vec<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -163,6 +168,15 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
                 "idempotency_key": format!("judged:{}:{}", case.id, seeded.about),
                 "memory": seeded.memory
             }),
+        )
+        .await?;
+    }
+    for (index, write) in case.writes.iter().enumerate() {
+        call(
+            &server,
+            30 + index as u64,
+            "kmp_write_memory",
+            write.clone(),
         )
         .await?;
     }

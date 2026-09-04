@@ -4,8 +4,8 @@ use std::sync::Arc;
 use kmp_domain::{
     BundleNode, BundleRelationship, ContextEventStore, DimensionScopeMode, DimensionSelection,
     DimensionSelectionMode, GraphNeighborhoodReader, KmpBundle, KmpMode, MemoryAboutIndexReader,
-    MemoryDimensionIdentity, NodeDetailReader, NodeRelationshipReader, ProjectionWriter,
-    ResolutionTier, SnapshotStore, TemporalCoordinate, TemporalMemoryTraversal,
+    MemoryDimensionIdentity, MemoryRelationType, NodeDetailReader, NodeRelationshipReader,
+    ProjectionWriter, ResolutionTier, SnapshotStore, TemporalCoordinate, TemporalMemoryTraversal,
     TemporalTraversalRequest,
 };
 
@@ -15,8 +15,8 @@ use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
     MemoryIngestCommand, MemoryIngestOutcome, RelateMemoryQuery, TemporalMemoryQuery,
     TemporalMemoryResult, TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult,
-    WakeMemoryQuery, build_visual_projection, translate_memory_ingest, validate_ref_token,
-    validate_supplied_member_ref,
+    WakeMemoryQuery, build_visual_projection, crosses_abouts, translate_memory_ingest,
+    validate_ref_token, validate_supplied_member_ref,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
@@ -55,7 +55,32 @@ where
         &self,
         command: MemoryIngestCommand,
     ) -> Result<MemoryIngestOutcome, ApplicationError> {
-        let existing = self.existing_memory_refs(&command.about).await?;
+        let mut existing = self.existing_memory_refs(&command.about).await?;
+        // A relation that declares an equivalence across abouts must land
+        // on a ref that exists somewhere; the translation refuses it unless
+        // this read found it, and reads nothing for any other relation.
+        for relation in &command.memory.relations {
+            let Ok(relation_type) = MemoryRelationType::new(&relation.rel) else {
+                continue;
+            };
+            let target_ref = relation.target_ref.trim().to_string();
+            if !crosses_abouts(&command.about, relation, &relation_type, &target_ref) {
+                continue;
+            }
+            match self
+                .query_application
+                .get_node_detail(GetNodeDetailQuery {
+                    node_id: target_ref.clone(),
+                })
+                .await
+            {
+                Ok(_) => {
+                    existing.foreign.insert(target_ref);
+                }
+                Err(ApplicationError::NotFound(_)) => {}
+                Err(error) => return Err(error),
+            }
+        }
         let (update_context, mut outcome) = translate_memory_ingest(&command, &existing)?;
         if command.dry_run {
             outcome
@@ -747,6 +772,7 @@ fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
         refs,
         dimensions,
         max_sequences,
+        foreign: BTreeSet::new(),
     }
 }
 

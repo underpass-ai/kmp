@@ -220,10 +220,16 @@ impl<'a> AnswerEvidenceRanker<'a> {
                 _ => still_rejected.push(item),
             }
         }
+        // The memory's own text is the citation; its evidence follows it.
+        // Left to the stable key alone, `detail:` sorts before `entry:` and
+        // three evidence items would fill the cap while the entry they
+        // support stayed out.
+        let own_text = |item: &MemoryEvidence| item.id.starts_with("entry:");
         restated.sort_by(|(left_hop, left), (right_hop, right)| {
             right_hop
                 .weight
                 .cmp(&left_hop.weight)
+                .then_with(|| own_text(right).cmp(&own_text(left)))
                 .then_with(|| stable_evidence_key(left).cmp(&stable_evidence_key(right)))
         });
         (

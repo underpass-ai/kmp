@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:98ec07b83bb17a3fc764",
+    "idempotency_key": "ingest:guide-sync:1:agent:95cfc495c24e5f6e3741",
     "memory": {
       "dimensions": [
         {
@@ -174,7 +174,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the dimension scopes they share, what each about declared between its own facts, and which declared contradictions still stand. Abouts are never joined by relations, so this is read off the coordinates and declared by nobody. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, proposed links between facts of different abouts that share a key — an identifier rare across the span, a matching English summary, a proper name — with the signals that read them and never stored, and a proof that says which abouts were read and which had nothing inside. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened."
+          "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the dimension scopes they share, what each about declared between its own facts, and which declared contradictions still stand. Abouts are never joined by relations, so this is read off the coordinates and declared by nobody. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, proposed links between facts of different abouts that share a key — an identifier rare across the span, a matching English summary, a proper name — with the signals that read them and never stored, and a proof that says which abouts were read and which had nothing inside. A proposal a writer declares with kmp_write_memory as same_event_as or same_entity_as comes back declared, and from then on ask cites through it across abouts and trace walks it. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened."
         },
         {
           "coordinates": [
@@ -264,7 +264,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters."
+          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Expect: validated relation quality and read-after-write readiness. Next: inspect the generated ref when the write matters. One relation may cross an about, and only from here: same_event_as or same_entity_as to a ref of another about, class evidential, with why, evidence and the kmp_relate proposal in read_context.relate_proposals; the edge lives in the about that writes it and the other about does not change."
         },
         {
           "coordinates": [
@@ -873,7 +873,7 @@
             "source": "tools/list",
             "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1393,7 +1393,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_trace"
           ],
-          "text": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about.",
+          "text": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1716,7 +1716,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about.",
+          "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
           "sequence": 26,

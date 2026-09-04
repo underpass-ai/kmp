@@ -2718,6 +2718,127 @@
           }
         }
       ]
+    },
+    {
+      "id": "ask-cites-across-abouts-through-same-event-as",
+      "probes": "The one relation that crosses abouts: a writer declared, from a kmp_relate proposal, that an entry of this about is the same event as an outcome of another. The question reaches the other about's outcome in its own words; the declaring entry shares none of them and is cited beside it as the same thing in other words, carrying restated_from across the about boundary.",
+      "about": "service:alpha",
+      "question": "What froze the rollout during the payments audit?",
+      "answer_policy": "best_effort",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "judged": [
+        "service:beta:outcome:freeze",
+        "service:alpha:observation:same-freeze"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "release:spring",
+            "kind": "release"
+          }
+        ],
+        "entries": [
+          {
+            "id": "service:alpha:decision:blocker",
+            "kind": "decision",
+            "text": "Ticket #469 blocks the release until the freeze lifts.",
+            "coordinates": [
+              {
+                "dimension": "release",
+                "scope_id": "release:spring",
+                "occurred_at": "2026-03-10T10:00:00Z",
+                "sequence": 1
+              }
+            ]
+          }
+        ]
+      },
+      "memories": [
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:outcome:freeze",
+                "kind": "outcome",
+                "text": "The payments audit froze the #469 rollout.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "writes": [
+        {
+          "about": "service:alpha",
+          "intent": "record_observation",
+          "actor": "agent:relate",
+          "observed_at": "2026-03-25T10:00:00Z",
+          "scope": {
+            "process": "service:alpha:reconcile"
+          },
+          "current": {
+            "ref": "service:alpha:observation:same-freeze",
+            "kind": "observation",
+            "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.",
+            "evidence": "kmp_relate proposed the pair by identifier."
+          },
+          "connect_to": [
+            {
+              "ref": "service:beta:outcome:freeze",
+              "rel": "same_event_as",
+              "class": "evidential",
+              "why": "Both record the same freeze, keyed by #469.",
+              "evidence": "kmp_relate proposal by identifier: #469 rare across the span.",
+              "confidence": "high"
+            },
+            {
+              "ref": "service:alpha:decision:blocker",
+              "rel": "restates",
+              "class": "evidential",
+              "why": "The same freeze in this about's words.",
+              "evidence": "The blocker entry names #469 too.",
+              "confidence": "high"
+            }
+          ],
+          "read_context": {
+            "inspected_refs": [
+              "service:alpha:decision:blocker"
+            ],
+            "relate_proposals": [
+              {
+                "from": "service:alpha:decision:blocker",
+                "to": "service:beta:outcome:freeze",
+                "proposed_by": [
+                  "identifier"
+                ]
+              }
+            ]
+          },
+          "options": {
+            "strict": true
+          }
+        }
+      ]
     }
   ]
 }

@@ -39,6 +39,7 @@
       {
         "class": "evidential",
         "confidence": "high",
+        "crosses_about": false,
         "fallback": false,
         "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
         "prior_context_observed": true,
@@ -56,6 +57,7 @@
       {
         "class": "causal",
         "confidence": "high",
+        "crosses_about": false,
         "fallback": false,
         "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
         "prior_context_observed": true,
@@ -73,6 +75,7 @@
       {
         "class": "causal",
         "confidence": "high",
+        "crosses_about": false,
         "fallback": false,
         "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
         "prior_context_observed": true,

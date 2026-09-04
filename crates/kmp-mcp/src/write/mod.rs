@@ -17,6 +17,7 @@ pub(crate) mod plan;
 mod planner;
 mod planner_audit;
 pub(crate) mod read_context;
+pub(crate) mod relate_proposal;
 pub(crate) mod relation_quality;
 pub(crate) mod relations;
 pub(crate) mod results;
@@ -26,6 +27,7 @@ mod writer_identity_audit;
 
 pub(crate) use ingest_plan::KmpIngestPlan;
 pub(crate) use ingest_planner::build_ingest_plan;
+pub(crate) use ingest_validation::reject_refs_outside_about;
 pub(crate) use planner::build_write_plan_with_root;
 pub(crate) use results::{write_commit_result, write_dry_run_result};
 pub(crate) use summary_planner::{build_summary_plan, is_summary_write, summary_target};

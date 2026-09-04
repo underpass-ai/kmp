@@ -6,7 +6,7 @@
 # case added or removed is a deliberate refresh, never a silent one.
 # Refresh with: RELATE_BASELINE=write bash scripts/ci/relate-baseline.sh
 metric	floor
-cases	9
+cases	10
 facts_precision	1.0000
 facts_recall	1.0000
 declared_precision	1.0000

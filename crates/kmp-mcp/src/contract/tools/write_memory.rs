@@ -108,7 +108,7 @@ pub(crate) fn write_memory_schema() -> Value {
                     "additionalProperties": false,
                     "required": ["ref", "rel", "class"],
                     "properties": {
-                        "ref": string_schema("Existing memory ref this new memory connects to."),
+                        "ref": string_schema("Existing memory ref this new memory connects to. Inside this about for every relation; a ref of another about is accepted only with `same_event_as` or `same_entity_as`, class `evidential`, `why`, `evidence`, and the kmp_relate proposal in `read_context.relate_proposals`. That is the one relation that crosses an about; the edge lives in this about and the other does not change."),
                         "rel": {
                             "type": "string",
                             "enum": writer_relation_names(),
@@ -223,6 +223,27 @@ pub(crate) fn read_context_schema() -> Value {
                         "refs": {
                             "type": "array",
                             "items": string_schema("Optional intermediate ref observed in the trace path.")
+                        }
+                    }
+                }
+            },
+            "relate_proposals": {
+                "type": "array",
+                "description": "Proposals kmp_relate returned, handed back as they came: the proof a writer carries when it declares an equivalence to a ref of another about.",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["from", "to", "proposed_by"],
+                    "properties": {
+                        "from": string_schema("The proposal's `from`, as kmp_relate returned it."),
+                        "to": string_schema("The proposal's `to`, as kmp_relate returned it."),
+                        "proposed_by": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "string",
+                                "enum": ["identifier", "summary", "entity"]
+                            }
                         }
                     }
                 }
