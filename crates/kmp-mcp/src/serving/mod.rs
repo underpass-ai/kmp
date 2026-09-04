@@ -5,6 +5,7 @@
 pub(crate) mod adapters;
 pub(crate) mod backend_choice;
 pub(crate) mod environment;
+mod existing_entry_read;
 pub(crate) mod grpc_tls_config;
 pub(crate) mod grpc_tls_mode;
 pub(crate) mod json_rpc;
