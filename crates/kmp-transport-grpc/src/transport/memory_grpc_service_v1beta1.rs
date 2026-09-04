@@ -341,7 +341,7 @@ where
             .map_err(|error| {
                 map_application_error_with_log("KernelMemoryService.Relate", &start, error)
             })?;
-        let response = relate_response_from_result(result, &query)
+        let response = relate_response_from_result(result, &query, &self.lexical_bridge)
             .map_err(|status| map_proto_error("KernelMemoryService.Relate", &start, *status))?;
         tracing::info!(
             rpc = "KernelMemoryService.Relate",

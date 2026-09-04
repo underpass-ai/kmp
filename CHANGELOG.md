@@ -11,6 +11,26 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_relate` proposes links between abouts that share a key, and stores
+  none of them. On top of the reading, `proposed` lists pairs of facts of
+  different abouts the kernel takes for the same thing, each with the
+  signals that read it: an identifier both texts carry that is rare across
+  the span — carried by at least two facts, by fewer than all, and at or
+  above the median rarity of what any two facts share, so `#469` in two of
+  ten facts informs and `2026` in all ten joins nothing — with its `idf`; an
+  English summary that shares most of its concepts with the other's, at
+  least two outright or through the lexical-bridge table at cosine 0.45 or
+  above; a proper name both sentences carry, read off its shape and never
+  at a sentence start. A shared dimension scope weighs in. Each proposal
+  carries the signals' weights summed, a `why` in the words it read, and
+  at most three per fact keep a common key from joining everything with
+  everything. Reproducible bit for bit and never stored: a writer may
+  declare one, with this as the proof. The domain gains `ProposedLink`,
+  `ProposalSignal` and the proper-name reader; the contract gains
+  `ProposedLink` on `RelateResponse`; the relate bank gains the `proposed`
+  section and five cases: by identifier, by summary, by entity, not by a
+  common token, and declared against proposed.
+
 - `kmp_relate`, the fourteenth tool: what the memories of several abouts
   have to do with each other, read off what they share and declared by
   nobody. Abouts are never joined by relations, so the read is made from the

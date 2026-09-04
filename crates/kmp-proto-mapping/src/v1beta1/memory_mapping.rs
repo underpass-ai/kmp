@@ -20,6 +20,7 @@ mod question_intent;
 mod question_vocabulary;
 mod reach_graph;
 mod relate;
+mod relate_proposals;
 mod relation_direction;
 mod relation_feature;
 mod relation_reach;

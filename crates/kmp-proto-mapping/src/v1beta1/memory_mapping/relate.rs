@@ -14,20 +14,25 @@ use kmp_domain::{
 use kmp_proto::v1beta1::{
     CoordinateRelation as ProtoCoordinateRelation, CoordinateRelationKind as ProtoKind,
     FactState as ProtoFactState, MemoryConfidence, MemoryEvidence, MemoryRelation, PageInfo, Proof,
-    RelateResponse, RelatedFact as ProtoRelatedFact, SupersededMemory, Tension as ProtoTension,
+    ProposedLink as ProtoProposedLink, RelateResponse, RelatedFact as ProtoRelatedFact,
+    SupersededMemory, Tension as ProtoTension,
 };
 
+use super::answer_recall_context::search_morphology;
 use super::bundle_views::{
     about_by_entry, abouts_in_bundle, bundle_node_properties, memory_relations_from_bundle,
     persisted_memory_metadata, proto_coordinate_from_domain,
 };
+use super::lexical_bridge::LexicalBridge;
 use super::memory_lifecycle::MemoryLifecycle;
+use super::relate_proposals::{FactWords, propose_links};
 use super::scalars::{ProtoMappingResult, proto_temporal_axis};
 use super::temporal_admission::TemporalAdmission;
 
 pub fn relate_response_from_result(
     result: GetContextResult,
     query: &RelateMemoryQuery,
+    bridge: &LexicalBridge,
 ) -> ProtoMappingResult<RelateResponse> {
     let bundle = &result.bundle;
     let admission = TemporalAdmission::read(bundle, &query.temporal)?;
@@ -87,6 +92,7 @@ pub fn relate_response_from_result(
 
     let mut domain_facts = Vec::new();
     let mut facts = Vec::new();
+    let mut words = Vec::new();
     for entry_ref in &inside {
         let coordinates = coordinates_by_ref.remove(entry_ref).unwrap_or_default();
         let about = owners.get(entry_ref).cloned().unwrap_or_default();
@@ -99,6 +105,19 @@ pub fn relate_response_from_result(
         };
         let properties = bundle_node_properties(bundle, entry_ref);
         let text = entry_text(bundle, entry_ref);
+        words.push(FactWords {
+            ref_id: entry_ref.clone(),
+            about: about.clone(),
+            text: text.clone(),
+            summary_en: properties
+                .map(persisted_memory_metadata)
+                .and_then(|metadata| {
+                    metadata
+                        .get(kmp_domain::SearchSummary::METADATA_KEY)
+                        .map(|summary| summary.trim().to_string())
+                })
+                .filter(|summary| !summary.is_empty()),
+        });
         facts.push(ProtoRelatedFact {
             r#ref: entry_ref.clone(),
             about: about.clone(),
@@ -173,9 +192,52 @@ pub fn relate_response_from_result(
         })
         .collect::<Vec<_>>();
 
-    // One ordered sequence — facts, declared, coordinate, tensions — paged
-    // by position, so a continuation never repeats and never skips.
-    let total = facts.len() + declared.len() + coordinate.len() + tensions.len();
+    // What two abouts share without either declaring it, proposed with
+    // the signal that read it and stored nowhere.
+    let morphology = search_morphology(&bounded);
+    let proposed = propose_links(&domain_facts, &words, &morphology, bridge)
+        .into_iter()
+        .map(|proposal| {
+            let mut link = ProtoProposedLink {
+                from: proposal.from().to_string(),
+                to: proposal.to().to_string(),
+                proposed_by: proposal
+                    .signals()
+                    .iter()
+                    .map(|signal| signal.name().to_string())
+                    .collect(),
+                scope_id: proposal.scope_id().to_string(),
+                weight: proposal.weight(),
+                why: proposal.why(),
+                ..ProtoProposedLink::default()
+            };
+            for signal in proposal.signals() {
+                match signal {
+                    kmp_domain::ProposalSignal::Identifier { shared, idf } => {
+                        link.shared = shared.clone();
+                        link.idf = *idf;
+                    }
+                    kmp_domain::ProposalSignal::Summary {
+                        shared_terms,
+                        bridged,
+                        ..
+                    } => {
+                        link.shared_terms = shared_terms.clone();
+                        link.bridged = bridged.clone();
+                    }
+                    kmp_domain::ProposalSignal::Entity { entities } => {
+                        link.entities = entities.clone();
+                    }
+                }
+            }
+            link
+        })
+        .collect::<Vec<_>>();
+
+    // One ordered sequence — facts, declared, coordinate, tensions,
+    // proposed — paged by position, so a continuation never repeats and
+    // never skips.
+    let total = facts.len() + declared.len() + coordinate.len() + tensions.len() + proposed.len();
     let offset = query.page.offset().min(total);
     let end = offset
         .saturating_add(query.page.entries_or_default())
@@ -187,6 +249,12 @@ pub fn relate_response_from_result(
     let tensions_page = slice_section(
         &tensions,
         facts.len() + declared.len() + coordinate.len(),
+        offset,
+        end,
+    );
+    let proposed_page = slice_section(
+        &proposed,
+        facts.len() + declared.len() + coordinate.len() + tensions.len(),
         offset,
         end,
     );
@@ -266,14 +334,15 @@ pub fn relate_response_from_result(
         }
     } else {
         format!(
-            "Related {} {} of {} on the {} clock: {} declared, {} by coordinate, {} in tension",
+            "Related {} {} of {} on the {} clock: {} declared, {} by coordinate, {} in tension, {} proposed",
             facts.len(),
             if facts.len() == 1 { "fact" } else { "facts" },
             abouts_phrase(&abouts),
             axis_name(axis),
             declared.len(),
             coordinate.len(),
-            tensions.len()
+            tensions.len(),
+            proposed.len()
         )
     };
 
@@ -283,6 +352,7 @@ pub fn relate_response_from_result(
         declared: declared_page,
         coordinate: coordinate_page,
         tensions: tensions_page,
+        proposed: proposed_page,
         proof: Some(proof),
         warnings,
         page: Some(PageInfo {

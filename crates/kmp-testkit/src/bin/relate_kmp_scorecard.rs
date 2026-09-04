@@ -58,6 +58,9 @@ struct Expected {
     /// `[ref, other]`.
     #[serde(default)]
     tensions: Vec<[String; 2]>,
+    /// `[from, signal, to]`: one row per signal a proposal must carry.
+    #[serde(default)]
+    proposed: Vec<[String; 3]>,
     /// The lifecycle state a fact must carry, by ref.
     #[serde(default)]
     states: std::collections::BTreeMap<String, String>,
@@ -94,6 +97,7 @@ struct Outcome {
     declared: SectionScore,
     coordinate: SectionScore,
     tensions: SectionScore,
+    proposed: SectionScore,
     /// 1 when every judged state matched and the nearest-outside expectation
     /// held, 0 otherwise.
     states_and_nearest: f64,
@@ -115,19 +119,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let collection: JudgedCollection = serde_json::from_str(&fs::read_to_string(&cases_path)?)?;
     let mut outcomes = Vec::new();
     println!(
-        "{:<34} {:>9} {:>9} {:>9} {:>9} {:>6}  note",
-        "case", "facts P/R", "decl P/R", "coord P/R", "tens P/R", "state"
+        "{:<34} {:>9} {:>9} {:>9} {:>9} {:>9} {:>6}  note",
+        "case", "facts P/R", "decl P/R", "coord P/R", "tens P/R", "prop P/R", "state"
     );
     for case in &collection.cases {
         let outcome = run_case(case).await?;
         let cell = |score: SectionScore| format!("{:.2}/{:.2}", score.precision, score.recall);
         println!(
-            "{:<34} {:>9} {:>9} {:>9} {:>9} {:>6}",
+            "{:<34} {:>9} {:>9} {:>9} {:>9} {:>9} {:>6}",
             case.id,
             cell(outcome.facts),
             cell(outcome.declared),
             cell(outcome.coordinate),
             cell(outcome.tensions),
+            cell(outcome.proposed),
             if outcome.states_and_nearest >= 1.0 {
                 "yes"
             } else {
@@ -139,12 +144,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             outcome.declared,
             outcome.coordinate,
             outcome.tensions,
+            outcome.proposed,
         ]
         .iter()
         .all(|score| score.precision >= 1.0 && score.recall >= 1.0)
             && outcome.states_and_nearest >= 1.0;
         if !perfect {
-            println!("{:<34} {:>41}  {}", "", "", case.probes);
+            println!("{:<34} {:>51}  {}", "", "", case.probes);
         }
         outcomes.push(outcome);
     }
@@ -187,6 +193,7 @@ async fn run_case(case: &JudgedCase) -> Result<Outcome, Box<dyn Error>> {
     let mut declared = BTreeSet::new();
     let mut coordinate = BTreeSet::new();
     let mut tensions = BTreeSet::new();
+    let mut proposed = BTreeSet::new();
     let mut nearest = None;
     let mut cursor: Option<String> = None;
     let mut id = 100;
@@ -235,6 +242,11 @@ async fn run_case(case: &JudgedCase) -> Result<Outcome, Box<dyn Error>> {
                 tension["other"].as_str().unwrap_or_default()
             ));
         }
+        for link in page["proposed"].as_array().into_iter().flatten() {
+            for signal in link["proposed_by"].as_array().into_iter().flatten() {
+                proposed.insert(triple(&link["from"], signal, &link["to"]));
+            }
+        }
         if nearest.is_none() {
             nearest = page["proof"]["nearest_outside"]["ref"]
                 .as_str()
@@ -279,6 +291,14 @@ async fn run_case(case: &JudgedCase) -> Result<Outcome, Box<dyn Error>> {
                 .collect(),
             &tensions,
         ),
+        proposed: score_section(
+            &expected
+                .proposed
+                .iter()
+                .map(|[from, signal, to]| format!("{from} {signal} {to}"))
+                .collect(),
+            &proposed,
+        ),
         states_and_nearest: f64::from(states_hold && nearest_holds),
     })
 }
@@ -309,6 +329,8 @@ fn scorecard(outcomes: &[Outcome]) -> Vec<(&'static str, f64)> {
         ("coordinate_recall", mean(&|o| o.coordinate.recall)),
         ("tensions_precision", mean(&|o| o.tensions.precision)),
         ("tensions_recall", mean(&|o| o.tensions.recall)),
+        ("proposed_precision", mean(&|o| o.proposed.precision)),
+        ("proposed_recall", mean(&|o| o.proposed.recall)),
         ("states_and_nearest", mean(&|o| o.states_and_nearest)),
     ]
 }
@@ -343,7 +365,7 @@ fn write_baseline(
     let mut out = String::from(
         "# Relate baseline: the floors `scripts/ci/relate-baseline.sh` holds `kmp_relate` to.\n\
          # Each row is the mean over the judged collection of one precision or recall per\n\
-         # section — facts, declared, coordinate, tensions — plus the share of cases whose\n\
+         # section — facts, declared, coordinate, tensions, proposed — plus the share of cases whose\n\
          # judged lifecycle states and nearest-outside expectation held. A number may rise\n\
          # freely; lowering one is a reviewed change that says why. `cases` is exact, so a\n\
          # case added or removed is a deliberate refresh, never a silent one.\n\

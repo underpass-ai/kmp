@@ -11,12 +11,14 @@
 
 mod coordinate_relation;
 mod declared_edge;
+mod proposal;
 mod related_fact;
 mod relations;
 mod tension;
 
 pub use coordinate_relation::{CoordinateRelation, CoordinateRelationKind};
 pub use declared_edge::DeclaredEdge;
+pub use proposal::{MAX_PROPOSALS_PER_FACT, ProposalSignal, ProposedLink, cap_proposals_per_fact};
 pub use related_fact::{FactState, RelatedFact};
 pub use relations::{MAX_COORDINATE_RELATIONS, Relations, relate};
 pub use tension::Tension;

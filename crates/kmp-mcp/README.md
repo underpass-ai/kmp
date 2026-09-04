@@ -92,8 +92,12 @@ Current status:
   stand and that a declared `contradicts` joins. Nothing is ranked by a
   question; every relation carries a `why` a reader can check against the
   coordinates, and the proof says which abouts were read and which had
-  nothing inside. Pages by position over facts, declared, coordinate and
-  tensions in that order;
+  nothing inside. It also proposes, and never stores, links between facts of
+  different abouts that share a key — an identifier rare across the span, an
+  English summary that matches, a proper name both carry — each with the
+  signals that read it, a weight and a `why`, at most three per fact; a
+  writer may declare one with this as the proof. Pages by position over
+  facts, declared, coordinate, tensions and proposed in that order;
 - `kmp_ask` and `kmp_wake` stand where they are asked: `as_of` names an
   instant (`time`, or `ref` for that entry's own instant), `interval` a
   half-open span `[start, end)` with either side open, and `axis` the clock

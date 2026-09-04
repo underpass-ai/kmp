@@ -257,7 +257,7 @@ async fn embedded_tool_result(
             )
             .await
         }
-        "kmp_relate" => embedded_relate(service, observer, arguments).await,
+        "kmp_relate" => embedded_relate(service, observer, bridge, arguments).await,
         "kmp_trace" => embedded_trace(service, observer, arguments).await,
         "kmp_inspect" => embedded_inspect(service, arguments).await,
         "kmp_view_read_projection" => embedded_visual_projection(service, arguments).await,
@@ -450,6 +450,7 @@ async fn embedded_near(
 async fn embedded_relate(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
+    bridge: &LexicalBridge,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = relate_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
@@ -467,8 +468,8 @@ async fn embedded_relate(
         result.bundle.metadata().revision,
         &result.rendered.quality,
     );
-    let response =
-        relate_response_from_result(result, &query).map_err(|status| mapping_error(&status))?;
+    let response = relate_response_from_result(result, &query, bridge)
+        .map_err(|status| mapping_error(&status))?;
     Ok(tool_success_result(relate_from_response(response)))
 }
 
