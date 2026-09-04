@@ -572,6 +572,14 @@ message Proof {
   // The instant this recall stood at, when the caller asked for one; a ref
   // cursor is reported as the instant it resolved to.
   google.protobuf.Timestamp as_of = 14;
+  // The abouts this recall read together, the current one first: one when
+  // `dimensions.scope` stayed inside it, the named list or every anchor
+  // otherwise. Each cited ref already carries its about; this says which
+  // were looked at, so silence from one is distinguishable from absence.
+  repeated string abouts_selected = 15;
+  // Of those, the abouts with no entry inside the interval or in effect at
+  // the instant, when the caller asked for one. Empty otherwise.
+  repeated string abouts_empty_in_selection = 16;
 }
 
 // One entry replaced by another, so a reader can tell history from advice.

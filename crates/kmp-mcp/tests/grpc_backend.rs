@@ -1021,6 +1021,8 @@ fn proof(source: &str, target: &str) -> Proof {
         axis: 0,
         nearest_outside: None,
         as_of: None,
+        abouts_selected: Vec::new(),
+        abouts_empty_in_selection: Vec::new(),
     }
 }
 

@@ -58,6 +58,8 @@
       "total": 1
     },
     "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [],
       "as_of": null,
       "axis": null,
       "confidence": "medium",

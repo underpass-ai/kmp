@@ -30,16 +30,16 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 2400,
-        "used_bytes": 9585
+        "used_bytes": 9654
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 6,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:6:8ae43a4639f931007fb585ee33830f8c26ffc2685664a02c8602c39c5645fc4e\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:6:f5a54bec4eec5f22298e7a8bf21f29aa11b7349f6f4e0020d1663952271d6a8c\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:6:8ae43a4639f931007fb585ee33830f8c26ffc2685664a02c8602c39c5645fc4e",
+        "next_cursor": "kmp1:6:f5a54bec4eec5f22298e7a8bf21f29aa11b7349f6f4e0020d1663952271d6a8c",
         "offset": 0,
         "returned": 6,
         "total": 7
@@ -61,6 +61,10 @@
       "selection_omitted": 0
     },
     "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "question:parity"
+      ],
       "as_of": null,
       "axis": null,
       "confidence": "high",

@@ -114,6 +114,18 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
             "On UNKNOWN within an interval: the closest match outside it — its `ref`, its \
              `time` and the `axis` that instant was read on — so a reader can tell \"not then\" \
              from \"not known\". Null otherwise."
+        ),
+        "abouts_selected": described(
+            "array",
+            "The abouts this recall read together, the current one first: one when \
+             `dimensions.scope` stayed inside it, the named list or every anchor otherwise. \
+             Each cited ref already carries its about; this says which were looked at, so \
+             silence from one is distinguishable from absence."
+        ),
+        "abouts_empty_in_selection": described(
+            "array",
+            "Of the abouts read, those with no entry inside the interval or in effect at the \
+             instant, when the caller asked for one. Empty otherwise."
         )
     }))
 }

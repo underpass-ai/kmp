@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:a16b477eac155566e98d",
+    "idempotency_key": "ingest:guide-sync:1:agent:2741ccc8eeeb2c38e581",
     "memory": {
       "dimensions": [
         {
@@ -324,7 +324,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep. Abouts are opaque identifiers and are never joined by relations."
+          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep, narrowed by dimension kind with mode=only and include, or by exact scope with scope_ids. The proof names the abouts a recall read in abouts_selected, the current one first, and, bounded by as_of or interval, the ones with nothing inside it in abouts_empty_in_selection. Abouts are opaque identifiers and are never joined by relations."
         },
         {
           "coordinates": [

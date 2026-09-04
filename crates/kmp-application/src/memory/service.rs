@@ -387,7 +387,14 @@ where
         }
 
         let roots = if should_filter_all_abouts_by_dimensions(selection) {
-            let dimension_ids = selection.dimensions().iter().cloned().collect::<Vec<_>>();
+            // Kinds from `include`, exact ids from `scope_ids`: the index
+            // resolves either, and the filter that follows reads both.
+            let dimension_ids = selection
+                .dimensions()
+                .iter()
+                .chain(selection.scope_ids().iter())
+                .cloned()
+                .collect::<Vec<_>>();
             self.query_application
                 .list_memory_abouts_by_dimensions(&dimension_ids)
                 .await?
@@ -427,8 +434,9 @@ fn projected_evidence_supports(
 
 fn should_filter_all_abouts_by_dimensions(selection: &DimensionSelection) -> bool {
     selection.scope_mode() == DimensionScopeMode::AllAbouts
-        && selection.mode() == DimensionSelectionMode::Only
-        && !selection.dimensions().is_empty()
+        && ((selection.mode() == DimensionSelectionMode::Only
+            && !selection.dimensions().is_empty())
+            || !selection.scope_ids().is_empty())
 }
 
 fn inspect_raw_coordinates(
@@ -956,6 +964,22 @@ mod tests {
             ]),
             vec!["question:a".to_string(), "question:b".to_string()]
         );
+    }
+
+    /// A sweep is narrowed by dimension kind through `include` and by exact
+    /// scope through `scope_ids`; either alone is enough to ask the index.
+    #[test]
+    fn a_sweep_is_narrowed_by_kinds_or_by_exact_scopes() {
+        let by_kind = DimensionSelection::only(["incident"]).with_all_about_scope();
+        assert!(should_filter_all_abouts_by_dimensions(&by_kind));
+        let by_scope = DimensionSelection::all()
+            .with_all_about_scope()
+            .with_scope_ids(["incident:north-outage"]);
+        assert!(should_filter_all_abouts_by_dimensions(&by_scope));
+        let whole_sweep = DimensionSelection::all().with_all_about_scope();
+        assert!(!should_filter_all_abouts_by_dimensions(&whole_sweep));
+        let inside_one_about = DimensionSelection::only(["incident"]);
+        assert!(!should_filter_all_abouts_by_dimensions(&inside_one_about));
     }
 
     #[test]

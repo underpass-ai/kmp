@@ -31,6 +31,7 @@ mod temporal_admission;
 mod term_counts;
 mod visual_projection;
 
+pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use lexical_bridge::LexicalBridge;
 pub use queries::{

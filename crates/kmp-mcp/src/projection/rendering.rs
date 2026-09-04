@@ -87,7 +87,9 @@ pub(super) fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
             "ref": nearest.r#ref,
             "time": nearest.time.map(|at| at.to_string()),
             "axis": temporal_axis_label(nearest.axis)
-        }))
+        })),
+        "abouts_selected": proof.abouts_selected,
+        "abouts_empty_in_selection": proof.abouts_empty_in_selection
     })
 }
 
@@ -164,7 +166,9 @@ pub(super) fn empty_proof_json() -> Value {
         "interval": null,
         "axis": null,
         "as_of": null,
-        "nearest_outside": null
+        "nearest_outside": null,
+        "abouts_selected": [],
+        "abouts_empty_in_selection": []
     })
 }
 

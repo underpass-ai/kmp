@@ -27,10 +27,10 @@ use crate::transport::proto_mapping_v1beta1::{
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
-use kmp_proto_mapping::v1beta1::LexicalBridge;
 use kmp_proto_mapping::v1beta1::recall_projection::{
     RecallProjectionError, project_ask_response, project_wake_response,
 };
+use kmp_proto_mapping::v1beta1::{LexicalBridge, abouts_in_bundle};
 
 pub struct MemoryGrpcServiceV1Beta1<G, D, S, E, W> {
     application: Arc<KernelMemoryApplicationService<G, D, S, E, W>>,
@@ -599,18 +599,8 @@ fn selected_abouts_from_bundle_and_scope_ids<'a>(
     bundle: &KmpBundle,
     scope_ids: impl IntoIterator<Item = &'a str>,
 ) -> Vec<String> {
-    let mut seen = BTreeSet::from([bundle.root_node_id().as_str().to_string()]);
-    let mut selected = vec![bundle.root_node_id().as_str().to_string()];
-
-    for node in bundle
-        .neighbor_nodes()
-        .iter()
-        .filter(|node| node.node_kind() == "memory_anchor")
-    {
-        if seen.insert(node.node_id().to_string()) {
-            selected.push(node.node_id().to_string());
-        }
-    }
+    let mut selected = abouts_in_bundle(bundle);
+    let mut seen = selected.iter().cloned().collect::<BTreeSet<_>>();
 
     for scope_id in scope_ids {
         let Some(identity) = MemoryDimensionIdentity::parse(scope_id) else {

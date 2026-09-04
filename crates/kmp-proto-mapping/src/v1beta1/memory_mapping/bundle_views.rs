@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use kmp_application::RenderedContext;
 use kmp_domain::{
-    BundleNodeDetail, BundleRelationship, KmpBundle, MemoryRelationType, RelationExplanation,
-    TemporalCoordinate,
+    BundleNodeDetail, BundleRelationship, KmpBundle, MemoryDimensionIdentity, MemoryRelationType,
+    RelationExplanation, TemporalCoordinate,
 };
 use kmp_proto::v1beta1::{
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemoryRelationExplanation,
@@ -290,7 +290,61 @@ pub(super) fn proof(
         axis: 0,
         nearest_outside: None,
         as_of: None,
+        abouts_selected: Vec::new(),
+        abouts_empty_in_selection: Vec::new(),
     }
+}
+
+/// The abouts a bundle was read from, the current one first: the root, then
+/// every other anchor the merge brought in. Abouts are never joined by
+/// relations, so an anchor in the neighbourhood is there because the
+/// caller's `dimensions.scope` named it or swept it.
+pub fn abouts_in_bundle(bundle: &KmpBundle) -> Vec<String> {
+    let root = bundle.root_node_id().as_str().to_string();
+    let mut others = bundle
+        .neighbor_nodes()
+        .iter()
+        .filter(|node| node.node_kind() == "memory_anchor")
+        .map(|node| node.node_id().to_string())
+        .chain(
+            // A dimension selection keeps entries and their coordinates and
+            // drops the other anchors, so the about that placed an entry is
+            // read off the coordinate's scope, which every entry carries.
+            about_by_entry(bundle).into_values(),
+        )
+        .collect::<BTreeSet<_>>();
+    others.remove(&root);
+    std::iter::once(root).chain(others).collect()
+}
+
+/// Which about placed each entry: the about in the namespaced scope of its
+/// `contains_entry` coordinate, and failing that the anchor that `records`
+/// it.
+pub(super) fn about_by_entry(bundle: &KmpBundle) -> BTreeMap<String, String> {
+    let mut abouts = BTreeMap::new();
+    for relationship in bundle.relationships() {
+        match relationship.relationship_type() {
+            "contains_entry" => {
+                if let Some(identity) = relationship
+                    .explanation()
+                    .scope_id()
+                    .and_then(MemoryDimensionIdentity::parse)
+                {
+                    abouts.insert(
+                        relationship.target_node_id().to_string(),
+                        identity.about().to_string(),
+                    );
+                }
+            }
+            "records" => {
+                abouts
+                    .entry(relationship.target_node_id().to_string())
+                    .or_insert_with(|| relationship.source_node_id().to_string());
+            }
+            _ => {}
+        }
+    }
+    abouts
 }
 
 /// Normalizes proof hops around the canonical evidence registry.
@@ -996,5 +1050,101 @@ mod superseded_tests {
         assert_eq!(superseded.len(), 1, "one line per replaced entry");
         assert_eq!(superseded[0].superseded_by, "decision:second");
         assert_eq!(superseded_from_relations(&reversed), superseded);
+    }
+}
+
+#[cfg(test)]
+mod abouts_tests {
+    use std::collections::BTreeMap as StdMap;
+
+    use kmp_domain::{
+        BundleMetadata, BundleNode, BundleRelationship, CaseId, KmpBundle, RelationExplanation,
+        RelationSemanticClass, Role,
+    };
+
+    use super::{about_by_entry, abouts_in_bundle};
+
+    fn node(id: &str, kind: &str) -> BundleNode {
+        BundleNode::new(id, kind, id, "fixture", "ACTIVE", Vec::new(), StdMap::new())
+    }
+
+    fn placed(scope: &str, entry: &str) -> BundleRelationship {
+        BundleRelationship::new(
+            scope,
+            entry,
+            "contains_entry",
+            RelationExplanation::new(RelationSemanticClass::Structural)
+                .with_dimension("incident")
+                .with_scope_id(scope),
+        )
+    }
+
+    fn records(about: &str, entry: &str) -> BundleRelationship {
+        BundleRelationship::new(
+            about,
+            entry,
+            "records",
+            RelationExplanation::new(RelationSemanticClass::Structural),
+        )
+    }
+
+    /// After a dimension selection the other anchors are gone and only the
+    /// coordinates remain, and they are enough: the about that placed an
+    /// entry is in its scope. The current about stays first.
+    #[test]
+    fn the_abouts_read_are_read_off_the_coordinates_the_current_one_first() {
+        let bundle = KmpBundle::new(
+            CaseId::new("project:beta").expect("case id"),
+            Role::new("answerer").expect("role"),
+            node("project:beta", "memory_anchor"),
+            vec![
+                node(
+                    "about:project:beta:dimension:incident:north",
+                    "memory_dimension",
+                ),
+                node("project:beta:e1", "memory_entry"),
+                node(
+                    "about:project:alpha:dimension:incident:north",
+                    "memory_dimension",
+                ),
+                node("project:alpha:e1", "memory_entry"),
+                node("project:gamma:e1", "memory_entry"),
+                node("project:gamma", "memory_anchor"),
+            ],
+            vec![
+                placed(
+                    "about:project:beta:dimension:incident:north",
+                    "project:beta:e1",
+                ),
+                records("project:beta", "project:beta:e1"),
+                placed(
+                    "about:project:alpha:dimension:incident:north",
+                    "project:alpha:e1",
+                ),
+                records("project:gamma", "project:gamma:e1"),
+            ],
+            Vec::new(),
+            BundleMetadata::initial("test"),
+        )
+        .expect("bundle");
+
+        assert_eq!(
+            abouts_in_bundle(&bundle),
+            vec!["project:beta", "project:alpha", "project:gamma"]
+        );
+        let owners = about_by_entry(&bundle);
+        assert_eq!(
+            owners.get("project:alpha:e1").map(String::as_str),
+            Some("project:alpha")
+        );
+        assert_eq!(
+            owners.get("project:beta:e1").map(String::as_str),
+            Some("project:beta")
+        );
+        assert_eq!(
+            owners.get("project:gamma:e1").map(String::as_str),
+            Some("project:gamma"),
+            "an entry with no coordinate still belongs to the anchor that records it"
+        );
     }
 }

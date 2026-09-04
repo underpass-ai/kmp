@@ -47,7 +47,30 @@ Detailed notes from the early release cycle remain available in the
   about and rare in the span, and an UNKNOWN that names its nearest neighbour;
   the recorded floors rise with them.
 
+- A recall read across abouts says which abouts it read. `proof` on `kmp_ask`
+  and `kmp_wake` gains `abouts_selected`, the current about first and then
+  every other the selection named or resolved, and `abouts_empty_in_selection`,
+  the abouts read that had nothing inside the interval or in effect at the
+  instant when the caller asked for one. Each cited ref already carries its
+  about; the list is what makes silence from an about distinguishable from
+  never having looked. The abouts are read off the coordinates every entry
+  carries, so they survive a dimension selection that keeps the entries and
+  drops the other anchors. Two judged cases measure it: three abouts read by
+  dimension kind with the answer in the second, and three abouts read within
+  the release window, two of which decided something inside it. The second
+  judges two refs, and a first-position recall of a two-ref answer is one
+  half by construction: `recall_at_1` records 0.8529 for 34 cases against
+  0.8593 for 32, while every other floor rises.
+
 ### Fixed
+
+- `all_abouts` narrowed by dimension kind finds the abouts that carry it. The
+  memory about index matched a dimension by its id (`incident:north-outage`)
+  while the filter that follows reads kinds (`incident`), so `dimensions`
+  with `scope: all_abouts`, `mode: only` and an `include` of kinds either
+  found no about at all or, given ids, kept no entry. The index now resolves
+  a name as a kind or as an id, and `scope_ids` narrow the sweep too, so the
+  two halves of the selection read the same names.
 
 - `record_summary` reads the memory it attaches to even when that memory is
   well connected ([#497](https://github.com/underpass-ai/kmp/issues/497)).

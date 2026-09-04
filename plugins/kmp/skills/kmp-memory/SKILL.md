@@ -636,7 +636,15 @@ Scope is auditable, never implicit:
 
 - omitted → `current_about`
 - `abouts` → requires a non-empty list
-- `all_abouts` → traverses every memory anchor, explicitly
+- `all_abouts` → traverses every memory anchor, explicitly; with
+  `mode: only` and `include`, only the anchors that carry a dimension of that
+  kind, and with `scope_ids`, only those that carry that exact scope
+
+The proof says which abouts were read: `proof.abouts_selected`, the current
+one first. Each cited ref carries its about already; the list is what makes
+silence from an about distinguishable from never having looked. Bounded by
+`as_of` or `interval`, `proof.abouts_empty_in_selection` names the abouts
+read that had nothing inside the span or in effect at the instant.
 
 Widen deliberately. `all_abouts` on a large store is a real cost, and an
 unscoped sweep buries the answer you wanted — but scoping to the two or three

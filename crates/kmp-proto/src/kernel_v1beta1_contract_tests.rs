@@ -166,6 +166,8 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "axis",
             "nearest_outside",
             "as_of",
+            "abouts_selected",
+            "abouts_empty_in_selection",
         ]
     );
     assert_eq!(

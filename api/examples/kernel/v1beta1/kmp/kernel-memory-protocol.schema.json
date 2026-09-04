@@ -1077,6 +1077,20 @@
             }
           ],
           "description": "On UNKNOWN within an interval, the closest match outside it: the difference between not-then and not-known."
+        },
+        "abouts_selected": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          },
+          "description": "The abouts the recall read together, the current one first."
+        },
+        "abouts_empty_in_selection": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          },
+          "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant; empty without a temporal selection."
         }
       }
     },
