@@ -36,4 +36,5 @@ pub mod store_reach;
 pub mod store_size;
 pub mod store_storage;
 pub mod survey_roots;
+pub mod tool_surface_history;
 pub mod tree_digest;

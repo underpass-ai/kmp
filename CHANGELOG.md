@@ -37,7 +37,10 @@ Detailed notes from the early release cycle remain available in the
   transport, the embedded and fixture backends, the HTTP authorization, the
   snapshot allowlist, the plugin capabilities, the MCPB manifest, the guide
   (a new `verb:relate` entry), the skills, the READMEs and every gate that
-  counts tools go from thirteen to fourteen in the same change.
+  counts tools go from thirteen to fourteen in the same change. The lifecycle
+  proof stays exact and holds an older engine to the surface it shipped with
+  rather than to this build's, so a 0.4.2 engine that answers thirteen tools
+  is still exactly what 0.4.2 was.
 
 - A question with a date is one Ask that stands where it was asked
   (`kmp_ask` and `kmp_wake` take `as_of`, `interval` and `axis`). Until now
