@@ -57,10 +57,15 @@ pub(crate) fn write_memory_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["process"],
                 "properties": {
-                    "task": string_schema("Optional task dimension scope id."),
-                    "process": string_schema("Caller-defined stable id for the agentic process this memory belongs to. Unknown values intentionally create or attach that process dimension; this is an identifier, not an enum."),
-                    "episode": string_schema("Optional agentic episode dimension scope id.")
+                    "task": string_schema("Optional task scope id: the well-known `task` label."),
+                    "process": string_schema("Caller-defined stable id for the agentic process this memory belongs to: the `agentic_process` label every write carries. Unknown values intentionally create or attach that dimension; this is an identifier, not an enum."),
+                    "episode": string_schema("Optional agentic episode scope id: the well-known `agentic_episode` label.")
                 }
+            },
+            "labels": {
+                "type": "object",
+                "additionalProperties": string_schema("The scope id this memory stands in under that key."),
+                "description": "Any other label this memory stands in, `key: value`: `component`, `release`, `customer`, whatever catalogues this about. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned before naming one and reuse what exists. Within an about a scope id names one label and keeps the kind of its first use, so a value already used under another key is refused, naming both. Each label becomes a coordinate with the same clocks; `scope.process`, `scope.task` and `scope.episode` are the same thing under their well-known keys and cannot be given twice."
             },
             "current": {
                 "type": "object",
@@ -258,6 +263,10 @@ fn write_memory_output_schema() -> Value {
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "summary": described("string", "Counts and scope of the semantic write the planner prepared."),
         "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
+        "labels": output_object(json!({
+            "written": described("array", "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted."),
+            "created": described("array", "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.")
+        })),
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
         "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),
         "relation_quality_metrics": described("object", "Aggregate counts and prior-context coverage for the compiled relations."),

@@ -21,11 +21,21 @@
           "evidence": "integer",
           "relations": "integer"
         },
+        "created_dimensions": [],
         "memory_id": "string",
         "read_after_write_ready": "boolean"
       },
       "summary": "string",
       "warnings": []
+    },
+    "labels": {
+      "created": [],
+      "written": [
+        {
+          "key": "string",
+          "value": "string"
+        }
+      ]
     },
     "next_suggested_reads": [
       {

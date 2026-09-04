@@ -14,6 +14,9 @@
         "evidence": 1,
         "relations": 1
       },
+      "created_dimensions": [
+        "about:question:parity:dimension:conversation:rachel"
+      ],
       "memory_id": "memory:parity:ingest:1",
       "read_after_write_ready": true
     },

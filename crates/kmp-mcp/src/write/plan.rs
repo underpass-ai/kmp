@@ -8,6 +8,9 @@ pub(crate) struct KernelWritePlan {
     pub(crate) dry_run: bool,
     pub(crate) ingest_arguments: Value,
     pub(crate) generated_refs: Vec<String>,
+    /// The labels the write carries, each `{ key, value }`, in the order
+    /// their coordinates were emitted.
+    pub(crate) labels: Vec<Value>,
     pub(crate) relations: Vec<String>,
     pub(crate) relation_quality: Vec<Value>,
     pub(crate) relation_quality_metrics: Value,

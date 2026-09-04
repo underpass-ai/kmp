@@ -681,6 +681,7 @@ impl KernelMemoryService for FakeMemoryService {
                         .unwrap_or_default() as u32,
                 }),
                 read_after_write_ready: true,
+                created_dimensions: Vec::new(),
             }),
             warnings: Vec::new(),
         }))

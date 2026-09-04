@@ -22,7 +22,10 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
             },
             "read_after_write_ready": memory
                 .map(|memory| memory.read_after_write_ready)
-                .unwrap_or(false)
+                .unwrap_or(false),
+            "created_dimensions": memory
+                .map(|memory| memory.created_dimensions.clone())
+                .unwrap_or_default()
         },
         "warnings": response.warnings
     })
@@ -48,7 +51,8 @@ pub(crate) fn dry_run_ingest_from_plan(plan: &KmpIngestPlan) -> Value {
                 "relations": plan.accepted.relations,
                 "evidence": plan.accepted.evidence
             },
-            "read_after_write_ready": false
+            "read_after_write_ready": false,
+            "created_dimensions": []
         },
         "warnings": [
             "dry_run=true; validated memory without sending a KernelMemoryService.Ingest call"

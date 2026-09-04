@@ -57,7 +57,12 @@ pub(crate) fn build_write_plan_with_root(
     let process_scope = required_map_string(scope, "process", "scope.process")?;
     let task_scope = optional_map_string(scope, "task");
     let episode_scope = optional_map_string(scope, "episode");
-    validate_distinct_scope_ids(process_scope, task_scope, episode_scope)?;
+    let labels = writer_labels(
+        process_scope,
+        task_scope,
+        episode_scope,
+        arguments.get("labels"),
+    )?;
     let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
@@ -118,33 +123,9 @@ pub(crate) fn build_write_plan_with_root(
     let mut local_refs = BTreeSet::from([current_ref.clone()]);
     let mut dimensions = Vec::new();
     let mut coordinates = Vec::new();
-    if let Some(task_scope) = task_scope {
-        dimensions.push(dimension(task_scope, "task", "Kernel write task"));
-        coordinates.push(coordinate("task", task_scope, sequence, clocks));
-    }
-    dimensions.push(dimension(
-        process_scope,
-        "agentic_process",
-        "Kernel write process",
-    ));
-    coordinates.push(coordinate(
-        "agentic_process",
-        process_scope,
-        sequence,
-        clocks,
-    ));
-    if let Some(episode_scope) = episode_scope {
-        dimensions.push(dimension(
-            episode_scope,
-            "agentic_episode",
-            "Kernel write episode",
-        ));
-        coordinates.push(coordinate(
-            "agentic_episode",
-            episode_scope,
-            sequence,
-            clocks,
-        ));
+    for label in &labels {
+        dimensions.push(dimension(&label.value, &label.key, label.title));
+        coordinates.push(coordinate(&label.key, &label.value, sequence, clocks));
     }
 
     let mut current_metadata = json!({
@@ -380,12 +361,100 @@ pub(crate) fn build_write_plan_with_root(
         dry_run,
         ingest_arguments,
         generated_refs,
+        labels: labels
+            .iter()
+            .map(|label| json!({ "key": label.key, "value": label.value }))
+            .collect(),
         relations: relation_names,
         relation_quality,
         relation_quality_metrics,
         diagnostics: search_summary.diagnostics,
         next_suggested_reads: suggested_reads(&current_ref, connect_to),
     })
+}
+
+/// The labels a write emits, in the order the ingest has always carried
+/// them: the well-known task, process and episode scopes first, then the
+/// caller's own `labels` by key. `scope.process` is the one label every
+/// write carries; `scope.task` and `scope.episode` are the two well-known
+/// ones; `labels` names any other facet. A value is refused where it is
+/// already used under another key.
+fn writer_labels(
+    process: &str,
+    task: Option<&str>,
+    episode: Option<&str>,
+    labels: Option<&Value>,
+) -> Result<Vec<WriterLabel>, String> {
+    let mut emitted = Vec::new();
+    if let Some(task) = task {
+        emitted.push(WriterLabel::new(
+            "task",
+            task,
+            "scope.task",
+            "Kernel write task",
+        ));
+    }
+    emitted.push(WriterLabel::new(
+        "agentic_process",
+        process,
+        "scope.process",
+        "Kernel write process",
+    ));
+    if let Some(episode) = episode {
+        emitted.push(WriterLabel::new(
+            "agentic_episode",
+            episode,
+            "scope.episode",
+            "Kernel write episode",
+        ));
+    }
+    if let Some(labels) = labels {
+        let object = labels
+            .as_object()
+            .ok_or_else(|| "`labels` must be an object of `key: value` strings".to_string())?;
+        let mut own = object.iter().collect::<Vec<_>>();
+        own.sort_by(|left, right| left.0.cmp(right.0));
+        for (key, value) in own {
+            validate_label_key(key)?;
+            let field = format!("labels.{key}");
+            let value = value
+                .as_str()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .ok_or_else(|| format!("`{field}` must be a non-empty string"))?;
+            validate_ref_token(&field, value)?;
+            match key.as_str() {
+                "agentic_process" => {
+                    return Err(
+                        "`labels.agentic_process` is `scope.process`: give the process there"
+                            .to_string(),
+                    );
+                }
+                "task" if task.is_some() => {
+                    return Err(
+                        "`task` is given twice: use `scope.task` or `labels.task`, not both"
+                            .to_string(),
+                    );
+                }
+                "agentic_episode" if episode.is_some() => {
+                    return Err("`agentic_episode` is given twice: use `scope.episode` or `labels.agentic_episode`, not both".to_string());
+                }
+                _ => {}
+            }
+            emitted.push(WriterLabel::new(key, value, field, "Kernel write label"));
+        }
+    }
+    // The reuse check reads process first so a refusal names the argument
+    // every write carries before the optional one that collided with it.
+    let mut declared = emitted.clone();
+    declared.sort_by_key(|label| match label.field.as_str() {
+        "scope.process" => 0,
+        "scope.task" => 1,
+        "scope.episode" => 2,
+        _ => 3,
+    });
+    validate_distinct_label_values(&declared)?;
+    Ok(emitted)
 }
 
 fn dimension(id: &str, kind: &str, title: &str) -> Value {

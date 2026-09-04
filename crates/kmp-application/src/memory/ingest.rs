@@ -38,6 +38,15 @@ pub fn translate_memory_ingest(
     validate_command(command)?;
     let ingested_at = kernel_ingested_at();
     let memory = namespaced_memory(&command.about, &command.memory, existing, &ingested_at)?;
+    // A dimension declared here that the about did not hold yet is a label
+    // this write creates; the writer reports it so vocabulary growth is
+    // seen at the moment it happens rather than discovered later.
+    let created_dimensions = memory
+        .dimensions
+        .iter()
+        .map(|dimension| dimension.id.clone())
+        .filter(|id| !existing.dimensions.contains(id))
+        .collect::<Vec<_>>();
 
     let changes = memory_changes(&memory)?;
     let outcome = MemoryIngestOutcome {
@@ -50,6 +59,7 @@ pub fn translate_memory_ingest(
         },
         read_after_write_ready: false,
         warnings: search_summary_warnings(&command.memory),
+        created_dimensions,
     };
 
     Ok((

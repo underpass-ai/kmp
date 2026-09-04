@@ -137,6 +137,9 @@ pub struct MemoryIngestOutcome {
     pub accepted: MemoryAcceptedCounts,
     pub read_after_write_ready: bool,
     pub warnings: Vec<String>,
+    /// The dimension nodes this ingest declares for the first time, as
+    /// namespaced ids: the labels the write created rather than reused.
+    pub created_dimensions: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

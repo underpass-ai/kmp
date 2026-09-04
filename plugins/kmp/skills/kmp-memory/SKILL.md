@@ -406,6 +406,18 @@ constraints, outcomes — each with coordinates and evidence.
 Never write transcripts. Memory is not a log of the conversation; it is the
 durable shape of the work. A transcript makes later traversal worthless.
 
+Label what you write. `scope.process` is the label every write carries;
+`scope.task` and `scope.episode` are the two well-known ones; `labels`
+names any other facet the about is catalogued by — `component`, `release`,
+`customer`, `risk` — as `key: value`. Every label becomes a coordinate with
+the same clocks, so a later filter, a `relate` across abouts and a lane in
+the viewer can stand on it. Before naming one, read the `labels` catalogue
+`kmp_wake` returned and reuse what exists: a filter hides what it misses,
+and a value already used under another key is refused, because within an
+about a scope id names one label and keeps the kind of its first use. The
+response says which labels were written and, after a commit, which were
+created; a created label is vocabulary growing, so make sure it was meant.
+
 Write in the language of the work, and give the memory an English rendering
 for search: `current.summary_en`, plain English a reader would ask with, every
 number, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,

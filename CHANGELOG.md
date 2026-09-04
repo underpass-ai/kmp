@@ -19,6 +19,16 @@ Detailed notes from the early release cycle remain available in the
   instead of guessed. The most used labels are the first expansion the
   packet fills; the rest follow the causal spine, and `truncation` reports
   what did not fit. Nothing of the core is shortened for a label.
+- `kmp_write_memory` accepts `labels`, `key: value` pairs for any facet
+  that catalogues the about — `component`, `release`, `customer` — beside
+  the well-known `scope.process`, `scope.task` and `scope.episode`. Each
+  label becomes a coordinate with the same clocks; a key is an identifier
+  a filter can name; a value already used under another key in the same
+  write is refused naming both arguments. The response lists
+  `labels.written` and, after a commit, `labels.created`: the labels the
+  about did not hold before, so vocabulary grows in the open.
+- `kmp_ingest` reports `memory.created_dimensions`, the namespaced
+  dimension nodes an ingest declared for the first time.
 
 ### Changed
 

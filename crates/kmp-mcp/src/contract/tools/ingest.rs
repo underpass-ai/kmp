@@ -158,7 +158,8 @@ fn ingest_output_schema() -> Value {
                 "relations": described("integer", "Number of relations accepted."),
                 "evidence": described("integer", "Number of evidence items accepted.")
             })),
-            "read_after_write_ready": described("boolean", "Whether a read issued now is guaranteed to observe this write.")
+            "read_after_write_ready": described("boolean", "Whether a read issued now is guaranteed to observe this write."),
+            "created_dimensions": string_array("Dimension nodes this ingest declared for the first time, namespaced `about:{about}:dimension:{scope}`: the labels the write created rather than reused.")
         })),
         "warnings": warnings_output_schema()
     }))

@@ -66,6 +66,7 @@ pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestRespo
                 evidence: outcome.accepted.evidence as u32,
             }),
             read_after_write_ready: outcome.read_after_write_ready,
+            created_dimensions: outcome.created_dimensions,
         }),
         warnings: outcome.warnings,
     }

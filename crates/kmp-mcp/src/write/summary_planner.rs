@@ -136,6 +136,7 @@ pub(crate) fn build_summary_plan(
         dry_run,
         ingest_arguments,
         generated_refs: Vec::new(),
+        labels: Vec::new(),
         relations: Vec::new(),
         relation_quality: Vec::new(),
         relation_quality_metrics: relation_quality_metrics(&[]),

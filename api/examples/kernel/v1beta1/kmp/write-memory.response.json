@@ -6,6 +6,22 @@
     "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
     "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c"
   ],
+  "labels": {
+    "written": [
+      {
+        "key": "task",
+        "value": "incident:mobile-login"
+      },
+      {
+        "key": "agentic_process",
+        "value": "incident:mobile-login:resolution"
+      },
+      {
+        "key": "agentic_episode",
+        "value": "incident:mobile-login:episode:backend"
+      }
+    ]
+  },
   "relations": [
     "chosen_because",
     "updates_state",
