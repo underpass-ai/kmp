@@ -1846,6 +1846,304 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
+      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), and tensions: facts that still stand and that a declared `contradicts` joins. Nothing is ranked by a question and nothing is generated; every relation says why in one sentence a reader can check against the coordinates. Pages by position over facts, declared, coordinate and tensions in that order.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "The current about: the read's root and the first of proof.abouts_selected.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
+            "type": "string"
+          },
+          "budget": {
+            "additionalProperties": false,
+            "properties": {
+              "depth": {
+                "default": 2,
+                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "minimum": 1,
+                "type": "integer"
+              },
+              "detail": {
+                "default": "balanced",
+                "description": "How much expansion detail is eligible before byte or entry caps are applied.",
+                "enum": [
+                  "compact",
+                  "balanced",
+                  "full"
+                ],
+                "type": "string"
+              },
+              "max_bytes": {
+                "default": 10000,
+                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "minimum": 512,
+                "type": "integer"
+              },
+              "max_entries": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "tokens": {
+                "default": 2400,
+                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "dimensions": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts": {
+                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "items": {
+                  "description": "Memory about id.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "exclude": {
+                "items": {
+                  "description": "Dimension kind to exclude.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "include": {
+                "items": {
+                  "description": "Dimension kind to include.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "mode": {
+                "enum": [
+                  "all",
+                  "only",
+                  "except"
+                ],
+                "type": "string"
+              },
+              "scope": {
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "enum": [
+                  "current_about",
+                  "abouts",
+                  "all_abouts"
+                ],
+                "type": "string"
+              },
+              "scope_ids": {
+                "items": {
+                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque cursor returned by page.next_cursor.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum number of trace relations to return in this page.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "about"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_relate",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "coordinate": {
+            "description": "Relations between facts of different abouts read off their coordinates inside a scope they share: `from`, `to`, `kind` (`shares_scope`, `before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), the bare `scope_id`, the `axis` read, and `why` in one checkable sentence. Declared by nobody.",
+            "type": "array"
+          },
+          "declared": {
+            "description": "The relations each about declared between its own facts, cut to the selection, with class, why, evidence and confidence. Abouts declare nothing across each other, so none of these crosses an about.",
+            "type": "array"
+          },
+          "facts": {
+            "description": "The entries of the selected abouts within the selection: `ref`, `about`, `kind`, `text` verbatim, `coordinates`, and `state` — `current`, `superseded` (with `superseded_by`) or `expired` (with `valid_until`) — as the lifecycle stood at the end of the interval.",
+            "type": "array"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "has_more": {
+                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "type": "boolean"
+              },
+              "next_cursor": {
+                "description": "Opaque relate cursor; repeat it as page.cursor with every other argument unchanged.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "returned": {
+                "description": "How many items this response carries.",
+                "type": "integer"
+              },
+              "total": {
+                "description": "How many facts, declared, coordinate and tensions, by position in that order the selection holds in total.",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "proof": {
+            "additionalProperties": false,
+            "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "confidence": {
+                "description": "Unspecified: a relate reading ranks nothing by a question. `interval`, `axis`, `abouts_selected`, `abouts_empty_in_selection`, `superseded`, `expired` and, when nothing fell within the selection, `nearest_outside` are what it declares.",
+                "type": "string"
+              },
+              "conflicts": {
+                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "type": "array"
+              },
+              "expired": {
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "type": "array"
+              },
+              "frontier_size": {
+                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "matched_relations": {
+                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "type": "array"
+              },
+              "matched_terms": {
+                "description": "Question terms that matched retrieved evidence.",
+                "type": "array"
+              },
+              "missing": {
+                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "path": {
+                "description": "The traversal that connects the cited evidence.",
+                "type": "array"
+              },
+              "superseded": {
+                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "summary": {
+            "description": "How many facts of how many abouts were related on which clock, and how many relations of each kind; or that nothing fell within the selection, naming the nearest fact outside it.",
+            "type": "string"
+          },
+          "tensions": {
+            "description": "Facts that both still stand and that a declared `contradicts` joins: `ref`, `other`, the `scope_id` they share when they share one, and the `why` and `evidence` of the declaration. Shown, never resolved.",
+            "type": "array"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
       "description": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
       "inputSchema": {
         "additionalProperties": false,

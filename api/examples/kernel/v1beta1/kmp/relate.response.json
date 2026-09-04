@@ -1,0 +1,86 @@
+{
+  "summary": "Related 2 facts of 2 abouts on the occurred clock: 0 declared, 1 by coordinate, 0 in tension",
+  "facts": [
+    {
+      "ref": "service:alpha:decision:rollout-canary",
+      "about": "service:alpha",
+      "kind": "decision",
+      "text": "The spring release rollout starts with a canary of five percent.",
+      "coordinates": [
+        {
+          "dimension": "release",
+          "scope_id": "about:service:alpha:dimension:release:spring",
+          "occurred_at": "2026-03-10T10:00:00Z",
+          "sequence": 1
+        }
+      ],
+      "state": "current"
+    },
+    {
+      "ref": "service:beta:decision:rollout-freeze",
+      "about": "service:beta",
+      "kind": "decision",
+      "text": "The spring release rollout freezes during the payments audit.",
+      "coordinates": [
+        {
+          "dimension": "release",
+          "scope_id": "about:service:beta:dimension:release:spring",
+          "occurred_at": "2026-03-20T10:00:00Z",
+          "sequence": 1
+        }
+      ],
+      "state": "current"
+    }
+  ],
+  "declared": [],
+  "coordinate": [
+    {
+      "from": "service:alpha:decision:rollout-canary",
+      "to": "service:beta:decision:rollout-freeze",
+      "kind": "before",
+      "scope_id": "release:spring",
+      "axis": "occurred",
+      "why": "Both stand in `release:spring`; `service:alpha:decision:rollout-canary` comes before `service:beta:decision:rollout-freeze` on the occurred clock."
+    },
+    {
+      "from": "service:alpha:decision:rollout-canary",
+      "to": "service:beta:decision:rollout-freeze",
+      "kind": "same_sequence",
+      "scope_id": "release:spring",
+      "axis": "occurred",
+      "why": "Both stand in `release:spring` at the same sequence."
+    }
+  ],
+  "tensions": [],
+  "proof": {
+    "path": [],
+    "evidence": [],
+    "conflicts": [],
+    "superseded": [],
+    "expired": [],
+    "missing": [],
+    "frontier_size": 0,
+    "matched_terms": [],
+    "matched_relations": [],
+    "confidence": "unknown",
+    "interval": {
+      "start": "2026-03-01T00:00:00Z",
+      "end": "2026-04-01T00:00:00Z"
+    },
+    "axis": "occurred",
+    "as_of": null,
+    "nearest_outside": null,
+    "abouts_selected": [
+      "service:alpha",
+      "service:beta"
+    ],
+    "abouts_empty_in_selection": []
+  },
+  "page": {
+    "returned": 4,
+    "total": 4,
+    "has_more": false,
+    "next_cursor": null
+  },
+  "warnings": []
+}

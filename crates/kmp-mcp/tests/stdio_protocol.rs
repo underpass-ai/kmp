@@ -233,6 +233,7 @@ async fn tools_list_exposes_read_only_kmp_tools() {
             "kmp_write_memory",
             "kmp_wake",
             "kmp_ask",
+            "kmp_relate",
             "kmp_goto",
             "kmp_near",
             "kmp_rewind",

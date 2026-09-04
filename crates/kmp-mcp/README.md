@@ -3,7 +3,7 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through ten memory tools plus three
+on embedded SQLite, and exposes them through eleven memory tools plus three
 semantic view tools over a shared ChronoLoom view.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
@@ -64,7 +64,7 @@ Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
-  `kmp_trace`, `kmp_inspect`, `kmp_view_open`, `kmp_view_apply_intent`, and
+  `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_view_open`, `kmp_view_apply_intent`, and
   `kmp_view_get_state`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
@@ -82,6 +82,18 @@ Current status:
   pairs a lexical-bridge table crossed a language with, `restated_from` names
   a declared restatement, and `matched_via: summary` with `summary_terms`
   names the question's words a writer's English `summary_en` supplied;
+- `kmp_relate` reads what the memories of several abouts have to do with
+  each other, off what they share and declared by nobody: the facts of the
+  selected abouts within `interval` on `axis` with the lifecycle state they
+  had at its end, the relations each about declared between its own facts,
+  coordinate relations between facts of different abouts inside a scope they
+  share (`before`, `after`, `during`, `concurrent`, `same_sequence`,
+  `same_rank`, or the bare `shares_scope`), and tensions — facts that still
+  stand and that a declared `contradicts` joins. Nothing is ranked by a
+  question; every relation carries a `why` a reader can check against the
+  coordinates, and the proof says which abouts were read and which had
+  nothing inside. Pages by position over facts, declared, coordinate and
+  tensions in that order;
 - `kmp_ask` and `kmp_wake` stand where they are asked: `as_of` names an
   instant (`time`, or `ref` for that entry's own instant), `interval` a
   half-open span `[start, end)` with either side open, and `axis` the clock
@@ -185,6 +197,7 @@ Live backend mapping:
 | `kmp_near` | `KernelMemoryService.Near` |
 | `kmp_rewind` | `KernelMemoryService.Rewind` |
 | `kmp_forward` | `KernelMemoryService.Forward` |
+| `kmp_relate` | `KernelMemoryService.Relate` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |

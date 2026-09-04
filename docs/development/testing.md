@@ -12,6 +12,8 @@ cargo test --workspace --locked
 bash scripts/ci/documentation-spine.sh
 python3 scripts/ci/kmp-capability-contract.py
 python3 scripts/ci/kmp-agent-routing-contract.py
+bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection; refresh with RETRIEVAL_BASELINE=write
+bash scripts/ci/relate-baseline.sh      # kmp_relate against the judged relate collection; refresh with RELATE_BASELINE=write
 ```
 
 Run clippy before proposing Rust changes:

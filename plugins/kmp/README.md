@@ -3,7 +3,7 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through ten memory tools plus three
+on embedded SQLite, and exposes them through eleven memory tools plus three
 semantic view tools over a shared ChronoLoom view.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
@@ -212,7 +212,7 @@ Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
 Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
 commands. [`capabilities.json`](capabilities.json) is the machine-checked
 inventory that maps each workflow to its owner and exposure; the ten memory
-tools sit inside the separate thirteen-tool MCP contract. [VOICE.md](VOICE.md)
+tools sit inside the separate fourteen-tool MCP contract. [VOICE.md](VOICE.md)
 remains the source of truth
 for how the host workflows talk.
 

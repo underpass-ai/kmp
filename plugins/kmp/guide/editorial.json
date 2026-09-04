@@ -37,6 +37,13 @@
           "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer."
         },
         {
+          "id": "verb:relate",
+          "kind": "instruction",
+          "depth": "basic",
+          "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the dimension scopes they share, what each about declared between its own facts, and which declared contradictions still stand. Abouts are never joined by relations, so this is read off the coordinates and declared by nobody. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, and a proof that says which abouts were read and which had nothing inside. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened.",
+          "evidence": "The live kmp_relate contract returns facts, declared, coordinate and tensions with a proof and never ranks by a question."
+        },
+        {
           "id": "verb:time",
           "kind": "instruction",
           "depth": "basic",
@@ -159,6 +166,14 @@
           "class": "evidential",
           "why": "Semantic Ask is chosen only after wake establishes the exact about and leaves a genuinely semantic gap.",
           "evidence": "Wake returns current state; Ask retrieves evidence for the remaining non-temporal question."
+        },
+        {
+          "from": "verb:relate",
+          "to": "verb:ask",
+          "rel": "qualifies_as",
+          "class": "procedural",
+          "why": "Ask answers a question from evidence; relate reads the shape of what several abouts hold in a span without a question to rank by. The one is chosen when the user wants an answer, the other when the user wants to see how memories of different projects stand to each other.",
+          "evidence": "The live kmp_relate contract ranks nothing and returns coordinate relations declared by nobody; kmp_ask cites evidence for a question."
         },
         {
           "from": "verb:time",

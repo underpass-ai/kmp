@@ -11,9 +11,9 @@ use kmp_domain::{
 use kmp_proto::v1beta1::{
     AskRequest, AskResponse, ForwardRequest, ForwardResponse, GotoRequest, GotoResponse,
     IngestRequest, IngestResponse, InspectRequest, InspectResponse, NearRequest, NearResponse,
-    ProjectVisualRequest, ProjectVisualResponse, RewindRequest, RewindResponse,
-    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TraceRequest, TraceResponse,
-    WakeRequest, WakeResponse, kernel_memory_service_server::KernelMemoryService,
+    ProjectVisualRequest, ProjectVisualResponse, RelateRequest, RelateResponse, RewindRequest,
+    RewindResponse, TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TraceRequest,
+    TraceResponse, WakeRequest, WakeResponse, kernel_memory_service_server::KernelMemoryService,
 };
 use opentelemetry::KeyValue;
 use prost::Message;
@@ -22,8 +22,9 @@ use tonic::{Code, Request, Response, Status};
 use crate::transport::proto_mapping_v1beta1::{
     ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
-    temporal_query_from_move_proto, temporal_query_from_near_proto, temporal_response_from_result,
-    trace_query_from_proto, trace_response_from_result, visual_projection_query_from_proto,
+    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
+    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
+    trace_response_from_result, visual_projection_query_from_proto,
     visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use crate::transport::support::map_application_error;
@@ -316,6 +317,46 @@ where
             "none",
             start.elapsed(),
         );
+        Ok(Response::new(response))
+    }
+
+    #[tracing::instrument(skip(self, request), fields(rpc = "KernelMemory.Relate"))]
+    async fn relate(
+        &self,
+        request: Request<RelateRequest>,
+    ) -> Result<Response<RelateResponse>, Status> {
+        let start = Instant::now();
+        let request = request.into_inner();
+        let query = relate_query_from_proto(request)
+            .map_err(|status| map_proto_error("KernelMemoryService.Relate", &start, *status))?;
+        log_dimensioned_request(
+            "KernelMemoryService.Relate",
+            &query.about,
+            &query.dimensions,
+        );
+        let result = self
+            .application
+            .relate(query.clone())
+            .await
+            .map_err(|error| {
+                map_application_error_with_log("KernelMemoryService.Relate", &start, error)
+            })?;
+        let response = relate_response_from_result(result, &query)
+            .map_err(|status| map_proto_error("KernelMemoryService.Relate", &start, *status))?;
+        tracing::info!(
+            rpc = "KernelMemoryService.Relate",
+            facts = response.facts.len(),
+            coordinate = response.coordinate.len(),
+            warnings = response.warnings.len(),
+            "kernel memory grpc response"
+        );
+        record_kmp_grpc_rpc(
+            "KernelMemoryService.Relate",
+            "success",
+            "none",
+            start.elapsed(),
+        );
+
         Ok(Response::new(response))
     }
 

@@ -142,8 +142,8 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
             .as_array()
             .expect("a tool list")
             .len(),
-        13,
-        "ten memory tools and three view tools"
+        14,
+        "eleven memory tools and three view tools"
     );
     let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
         .expect("the implicit embedded backend creates its session journal")
@@ -167,8 +167,8 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
 
     let mut first = LiveMcp::start(&first_store, &data_home, &home);
     let mut second = LiveMcp::start(&second_store, &data_home, &home);
-    assert_eq!(first.tool_count(), 13);
-    assert_eq!(second.tool_count(), 13);
+    assert_eq!(first.tool_count(), 14);
+    assert_eq!(second.tool_count(), 14);
 
     let refused = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--store"])
@@ -186,10 +186,10 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(refusal.contains("Nothing was removed"), "{refusal}");
     assert!(first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(first.tool_count(), 13, "uninstall must not kill its owner");
+    assert_eq!(first.tool_count(), 14, "uninstall must not kill its owner");
     assert_eq!(
         second.tool_count(),
-        13,
+        14,
         "an unrelated host must stay fully usable"
     );
 
@@ -214,7 +214,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(report.contains("every other KMP store and host was left alone"));
     assert!(!first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(second.tool_count(), 13);
+    assert_eq!(second.tool_count(), 14);
 
     let rescues = std::fs::read_dir(&workspace)
         .expect("workspace listing")
@@ -2368,5 +2368,216 @@ fn an_ask_across_abouts_names_the_abouts_it_read_and_the_ones_that_were_empty() 
         bounded["proof"]["abouts_empty_in_selection"],
         serde_json::json!(["project:alpha"]),
         "alpha's paging fell before the span and its canteen note after it: {bounded}"
+    );
+}
+
+/// `kmp_relate` on the real binary: two abouts sharing one release scope,
+/// read within March on the occurred clock, relate by coordinate — the
+/// facts of one about stand before the other's, two share a sequence — the
+/// declared contradiction between two facts that still stand is a tension,
+/// and the proof says where the read stood. An empty window names the
+/// nearest fact outside it and the abouts that had nothing; a page cursor
+/// continues without repeating.
+#[test]
+fn relate_reads_what_two_abouts_share_and_pages_by_position() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let call = |id: u64, name: &str, arguments: Value| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("response");
+        assert_ne!(response["result"]["isError"], true, "{response}");
+        response["result"]["structuredContent"].clone()
+    };
+    let placed = |occurred_at: &str, sequence: u64| serde_json::json!({"dimension": "release", "scope_id": "release:spring", "occurred_at": occurred_at, "sequence": sequence});
+    call(
+        1,
+        "kmp_ingest",
+        serde_json::json!({
+            "about": "service:alpha", "idempotency_key": "ingest:alpha",
+            "memory": {
+                "dimensions": [{"id": "release:spring", "kind": "release"}],
+                "entries": [
+                    {"id": "service:alpha:decision:canary", "kind": "decision", "text": "The spring release rollout starts with a canary of five percent.", "coordinates": [placed("2026-03-10T10:00:00Z", 1)]},
+                    {"id": "service:alpha:constraint:freeze", "kind": "constraint", "text": "No deploys during the payments audit.", "coordinates": [placed("2026-03-12T10:00:00Z", 2)]},
+                    {"id": "service:alpha:decision:ship", "kind": "decision", "text": "Ship the hotfix on the fifteenth.", "coordinates": [placed("2026-03-15T10:00:00Z", 3)]},
+                    {"id": "service:alpha:observation:february", "kind": "observation", "text": "February planning closed.", "coordinates": [placed("2026-02-20T10:00:00Z", 4)]}
+                ],
+                "relations": [{"from": "service:alpha:decision:ship", "to": "service:alpha:constraint:freeze", "rel": "contradicts", "class": "constraint", "why": "A hotfix ships inside the audit freeze.", "evidence": "Release calendar, March.", "confidence": "high"}]
+            }
+        }),
+    );
+    call(
+        2,
+        "kmp_ingest",
+        serde_json::json!({
+            "about": "service:beta", "idempotency_key": "ingest:beta",
+            "memory": {
+                "dimensions": [{"id": "release:spring", "kind": "release"}],
+                "entries": [{"id": "service:beta:decision:freeze", "kind": "decision", "text": "The spring release rollout freezes during the payments audit.", "coordinates": [placed("2026-03-20T10:00:00Z", 1)]}]
+            }
+        }),
+    );
+    let both = serde_json::json!({"scope": "abouts", "abouts": ["service:alpha", "service:beta"]});
+
+    let march = call(
+        3,
+        "kmp_relate",
+        serde_json::json!({
+            "about": "service:alpha", "dimensions": both,
+            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
+            "axis": "occurred"
+        }),
+    );
+    let facts = march["facts"].as_array().expect("facts");
+    assert_eq!(facts.len(), 4, "February is outside the span: {march}");
+    assert!(
+        facts.iter().all(|fact| fact["state"] == "current"),
+        "{march}"
+    );
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact["ref"] == "service:beta:decision:freeze"
+                && fact["about"] == "service:beta"),
+        "{march}"
+    );
+    let declared = march["declared"].as_array().expect("declared");
+    assert_eq!(declared.len(), 1, "{march}");
+    assert_eq!(declared[0]["rel"], "contradicts");
+    let coordinate = march["coordinate"].as_array().expect("coordinate");
+    let kinds = coordinate
+        .iter()
+        .map(|relation| {
+            (
+                relation["from"].as_str().unwrap_or_default().to_string(),
+                relation["kind"].as_str().unwrap_or_default().to_string(),
+            )
+        })
+        .collect::<Vec<_>>();
+    assert!(
+        kinds.contains(&(
+            "service:alpha:decision:canary".to_string(),
+            "before".to_string()
+        )),
+        "{march}"
+    );
+    assert!(
+        kinds.contains(&(
+            "service:alpha:decision:canary".to_string(),
+            "same_sequence".to_string()
+        )),
+        "{march}"
+    );
+    assert!(
+        kinds.contains(&(
+            "service:alpha:decision:ship".to_string(),
+            "before".to_string()
+        )),
+        "{march}"
+    );
+    assert!(
+        coordinate
+            .iter()
+            .all(|relation| relation["to"] == "service:beta:decision:freeze"
+                && relation["scope_id"] == "release:spring"
+                && relation["axis"] == "occurred"),
+        "every coordinate relation crosses to beta inside the shared scope: {march}"
+    );
+    assert!(
+        coordinate.iter().all(|relation| relation["why"]
+            .as_str()
+            .is_some_and(|why| why.contains("release:spring"))),
+        "{march}"
+    );
+    let tensions = march["tensions"].as_array().expect("tensions");
+    assert_eq!(tensions.len(), 1, "{march}");
+    assert_eq!(tensions[0]["ref"], "service:alpha:decision:ship");
+    assert_eq!(tensions[0]["other"], "service:alpha:constraint:freeze");
+    assert_eq!(tensions[0]["scope_id"], "release:spring");
+    assert_eq!(march["proof"]["axis"], "occurred");
+    assert_eq!(march["proof"]["interval"]["start"], "2026-03-01T00:00:00Z");
+    assert_eq!(
+        march["proof"]["abouts_selected"],
+        serde_json::json!(["service:alpha", "service:beta"])
+    );
+    assert_eq!(
+        march["proof"]["abouts_empty_in_selection"],
+        serde_json::json!([])
+    );
+    assert_eq!(
+        march["page"]["total"],
+        4 + 1 + coordinate.len() + 1,
+        "{march}"
+    );
+    assert_eq!(march["page"]["has_more"], false);
+
+    let january = call(
+        4,
+        "kmp_relate",
+        serde_json::json!({
+            "about": "service:alpha", "dimensions": both,
+            "interval": {"start": "2026-01-01T00:00:00Z", "end": "2026-02-01T00:00:00Z"}
+        }),
+    );
+    assert!(
+        january["facts"].as_array().is_some_and(Vec::is_empty),
+        "{january}"
+    );
+    assert_eq!(
+        january["proof"]["nearest_outside"]["ref"], "service:alpha:observation:february",
+        "{january}"
+    );
+    assert_eq!(
+        january["proof"]["abouts_empty_in_selection"],
+        serde_json::json!(["service:alpha", "service:beta"])
+    );
+    assert!(
+        january["summary"]
+            .as_str()
+            .is_some_and(|summary| summary.contains("nearest outside it")),
+        "{january}"
+    );
+
+    let first = call(
+        5,
+        "kmp_relate",
+        serde_json::json!({
+            "about": "service:alpha", "dimensions": both,
+            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
+            "page": {"entries": 3}
+        }),
+    );
+    assert_eq!(first["facts"].as_array().map(Vec::len), Some(3), "{first}");
+    assert_eq!(first["page"]["has_more"], true);
+    assert_eq!(first["page"]["next_cursor"], "3");
+    let rest = call(
+        6,
+        "kmp_relate",
+        serde_json::json!({
+            "about": "service:alpha", "dimensions": both,
+            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"},
+            "page": {"entries": 100, "cursor": "3"}
+        }),
+    );
+    assert_eq!(
+        rest["facts"].as_array().map(Vec::len),
+        Some(1),
+        "the fourth fact opens the second page: {rest}"
+    );
+    assert_eq!(rest["declared"].as_array().map(Vec::len), Some(1));
+    assert_eq!(rest["tensions"].as_array().map(Vec::len), Some(1));
+    assert_eq!(rest["page"]["has_more"], false);
+    assert_eq!(
+        rest["page"]["returned"],
+        march["page"]["total"].as_u64().expect("total") - 3
     );
 }

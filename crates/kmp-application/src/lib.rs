@@ -14,12 +14,13 @@ pub use commands::{
 };
 pub use kmp_application::KmpApplication;
 pub use memory::{
-    AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, ExistingMemoryRefs, InspectMemoryQuery,
-    InspectMemoryResult, InspectedEvidence, KernelMemoryApplicationService, MAX_TRACE_PAGE_ENTRIES,
-    MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, MemoryAcceptedCounts,
-    MemoryAnswerPolicy, MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData,
-    MemoryEvidenceData, MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData,
-    MemoryRelationData, TemporalAxisView, TemporalCoordinateView, TemporalIncludeOptions,
+    AskMemoryQuery, DEFAULT_RELATE_PAGE_ENTRIES, DEFAULT_TRACE_PAGE_ENTRIES, ExistingMemoryRefs,
+    InspectMemoryQuery, InspectMemoryResult, InspectedEvidence, KernelMemoryApplicationService,
+    MAX_RELATE_PAGE_ENTRIES, MAX_TRACE_PAGE_ENTRIES, MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES,
+    MAX_VISUAL_SOURCE_ENTRIES, MemoryAcceptedCounts, MemoryAnswerPolicy, MemoryCoordinateData,
+    MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData, MemoryIngestCommand,
+    MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData, RelateMemoryQuery,
+    RelatePageRequest, TemporalAxisView, TemporalCoordinateView, TemporalIncludeOptions,
     TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, TracePageRequest, VisualBin,
     VisualCluster, VisualEntry, VisualLevelOfDetail, VisualMetric, VisualProjectionPage,
     VisualProjectionQuery, VisualProjectionResult, VisualRange, VisualRelation, WakeMemoryQuery,

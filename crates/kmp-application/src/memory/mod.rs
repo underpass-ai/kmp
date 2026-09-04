@@ -11,12 +11,13 @@ pub use ref_boundary::{
 };
 pub use service::KernelMemoryApplicationService;
 pub use types::{
-    AskMemoryQuery, DEFAULT_TRACE_PAGE_ENTRIES, InspectMemoryQuery, InspectMemoryResult,
-    InspectedEvidence, MAX_TRACE_PAGE_ENTRIES, MemoryAcceptedCounts, MemoryAnswerPolicy,
-    MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
-    MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData,
-    TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery,
-    TracePageRequest, WakeMemoryQuery,
+    AskMemoryQuery, DEFAULT_RELATE_PAGE_ENTRIES, DEFAULT_TRACE_PAGE_ENTRIES, InspectMemoryQuery,
+    InspectMemoryResult, InspectedEvidence, MAX_RELATE_PAGE_ENTRIES, MAX_TRACE_PAGE_ENTRIES,
+    MemoryAcceptedCounts, MemoryAnswerPolicy, MemoryCoordinateData, MemoryData,
+    MemoryDimensionData, MemoryEntryData, MemoryEvidenceData, MemoryIngestCommand,
+    MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData, RelateMemoryQuery,
+    RelatePageRequest, TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult,
+    TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
 };
 pub use visual_projection::{
     MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, TemporalAxisView,

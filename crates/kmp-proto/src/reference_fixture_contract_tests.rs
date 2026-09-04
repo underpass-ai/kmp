@@ -55,6 +55,10 @@ const KMP_FORWARD_REQUEST_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/forward.request.json");
 const KMP_FORWARD_RESPONSE_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/forward.response.json");
+const KMP_RELATE_REQUEST_FIXTURE: &str =
+    include_str!("../../../api/examples/kernel/v1beta1/kmp/relate.request.json");
+const KMP_RELATE_RESPONSE_FIXTURE: &str =
+    include_str!("../../../api/examples/kernel/v1beta1/kmp/relate.response.json");
 const KMP_TRACE_REQUEST_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/trace.request.json");
 const KMP_TRACE_RESPONSE_FIXTURE: &str =
@@ -229,6 +233,11 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
     );
     assert!(
         fixture_object_field(&schema, "$defs")
+            .get("relate_request")
+            .is_some()
+    );
+    assert!(
+        fixture_object_field(&schema, "$defs")
             .get("trace_request")
             .is_some()
     );
@@ -335,6 +344,23 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
         sorted_keys(object_keys(&parse_fixture(KMP_FORWARD_RESPONSE_FIXTURE))),
         sorted_strs(&[
             "summary", "temporal", "coverage", "entries", "proof", "warnings", "raw_refs"
+        ])
+    );
+    assert_eq!(
+        sorted_keys(object_keys(&parse_fixture(KMP_RELATE_REQUEST_FIXTURE))),
+        sorted_strs(&["about", "dimensions", "interval", "axis"])
+    );
+    assert_eq!(
+        sorted_keys(object_keys(&parse_fixture(KMP_RELATE_RESPONSE_FIXTURE))),
+        sorted_strs(&[
+            "summary",
+            "facts",
+            "declared",
+            "coordinate",
+            "tensions",
+            "proof",
+            "page",
+            "warnings"
         ])
     );
     assert_eq!(

@@ -227,7 +227,7 @@ pub(super) fn persisted_memory_source(properties: &BTreeMap<String, String>) -> 
         .filter(|source| !source.trim().is_empty())
 }
 
-fn bundle_node_properties<'a>(
+pub(super) fn bundle_node_properties<'a>(
     bundle: &'a KmpBundle,
     node_id: &str,
 ) -> Option<&'a BTreeMap<String, String>> {

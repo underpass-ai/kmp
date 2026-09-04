@@ -1,5 +1,6 @@
 use kmp_proto::v1beta1::{
-    AskRequest, InspectRequest, TemporalMoveRequest, TemporalNearRequest, TraceRequest, WakeRequest,
+    AskRequest, InspectRequest, RelateRequest, TemporalMoveRequest, TemporalNearRequest,
+    TraceRequest, WakeRequest,
 };
 use serde_json::Value;
 
@@ -85,6 +86,18 @@ pub(crate) fn temporal_near_request_from_arguments(
         include: temporal_include_from_arguments(arguments)?,
         budget: Some(memory_budget_from_arguments(arguments, 2400, 3)?),
         axis: temporal_axis_from_arguments(arguments)?,
+    })
+}
+
+pub(crate) fn relate_request_from_arguments(arguments: &Value) -> Result<RelateRequest, String> {
+    validate_required_arguments(arguments, &["about"])?;
+    Ok(RelateRequest {
+        about: required_string(arguments, "about")?,
+        dimensions: dimension_selection_from_arguments(arguments)?,
+        interval: interval_from_arguments(arguments)?,
+        axis: temporal_axis_from_arguments(arguments)?,
+        budget: Some(memory_budget_from_arguments(arguments, 2400, 2)?),
+        page: page_from_arguments(arguments)?,
     })
 }
 

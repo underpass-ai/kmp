@@ -1,0 +1,425 @@
+{
+  "note": "Judged relate cases owned by KMP. Each case names the behaviour it measures; `expected` lists the facts, declared relations, coordinate relations and tensions a reader says the reading holds, the lifecycle states that must hold, and the ref the proof must name nearest outside an empty span.",
+  "cases": [
+    {
+      "id": "relate-shared-dimension-window",
+      "probes": "Two abouts share the release scope. Within March on the occurred clock, every fact of one stands before the other's, and the two placed at the same sequence say so; February is outside and nothing is declared across abouts.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "axis": "occurred",
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:decision:canary",
+                "kind": "decision",
+                "text": "The spring release rollout starts with a canary of five percent.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-10T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:decision:ship",
+                "kind": "decision",
+                "text": "Ship the hotfix on the fifteenth.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-15T10:00:00Z",
+                    "sequence": 3
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:observation:february",
+                "kind": "observation",
+                "text": "February planning closed.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-02-20T10:00:00Z",
+                    "sequence": 4
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:decision:freeze",
+                "kind": "decision",
+                "text": "The spring release rollout freezes during the payments audit.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:decision:canary",
+          "service:alpha:decision:ship",
+          "service:beta:decision:freeze"
+        ],
+        "coordinate": [
+          [
+            "service:alpha:decision:canary",
+            "before",
+            "service:beta:decision:freeze"
+          ],
+          [
+            "service:alpha:decision:canary",
+            "same_sequence",
+            "service:beta:decision:freeze"
+          ],
+          [
+            "service:alpha:decision:ship",
+            "before",
+            "service:beta:decision:freeze"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "relate-declared-within-about",
+      "probes": "One about, three facts in March: the graph it declared comes back cut to the span, and the fact a later one replaced carries the superseded state the lifecycle had at the end of the span.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "current_about"
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:decision:old",
+                "kind": "decision",
+                "text": "The rollout starts with a canary of one percent.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-01T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:decision:new",
+                "kind": "decision",
+                "text": "The rollout starts with a canary of five percent.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-10T10:00:00Z",
+                    "sequence": 2
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:outcome:followup",
+                "kind": "outcome",
+                "text": "The canary ran clean for a week.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-18T10:00:00Z",
+                    "sequence": 3
+                  }
+                ]
+              }
+            ],
+            "relations": [
+              {
+                "from": "service:alpha:decision:new",
+                "to": "service:alpha:decision:old",
+                "rel": "supersedes",
+                "class": "evidential",
+                "why": "One percent was too small to see anything.",
+                "evidence": "Canary dashboards, first week of March.",
+                "confidence": "high"
+              },
+              {
+                "from": "service:alpha:outcome:followup",
+                "to": "service:alpha:decision:new",
+                "rel": "follows",
+                "class": "procedural",
+                "why": "The week after the canary widened.",
+                "evidence": "Canary dashboards, third week of March.",
+                "confidence": "high"
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:decision:old",
+          "service:alpha:decision:new",
+          "service:alpha:outcome:followup"
+        ],
+        "declared": [
+          [
+            "service:alpha:decision:new",
+            "supersedes",
+            "service:alpha:decision:old"
+          ],
+          [
+            "service:alpha:outcome:followup",
+            "follows",
+            "service:alpha:decision:new"
+          ]
+        ],
+        "states": {
+          "service:alpha:decision:old": "superseded",
+          "service:alpha:decision:new": "current"
+        }
+      }
+    },
+    {
+      "id": "relate-tension",
+      "probes": "A declared contradiction between two facts that both still stand is a tension; one whose side had run out by the end of the span is not.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "current_about"
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:constraint:freeze",
+                "kind": "constraint",
+                "text": "No deploys during the payments audit.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-12T10:00:00Z",
+                    "sequence": 1,
+                    "valid_from": "2026-03-12T10:00:00Z"
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:decision:ship",
+                "kind": "decision",
+                "text": "Ship the hotfix on the fifteenth.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-15T10:00:00Z",
+                    "sequence": 2
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:constraint:old-window",
+                "kind": "constraint",
+                "text": "Deploys only before noon.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-02T10:00:00Z",
+                    "sequence": 3,
+                    "valid_from": "2026-03-02T10:00:00Z",
+                    "valid_until": "2026-03-05T00:00:00Z"
+                  }
+                ]
+              }
+            ],
+            "relations": [
+              {
+                "from": "service:alpha:decision:ship",
+                "to": "service:alpha:constraint:freeze",
+                "rel": "contradicts",
+                "class": "constraint",
+                "why": "A hotfix ships inside the audit freeze.",
+                "evidence": "Release calendar, March.",
+                "confidence": "high"
+              },
+              {
+                "from": "service:alpha:decision:ship",
+                "to": "service:alpha:constraint:old-window",
+                "rel": "contradicts",
+                "class": "constraint",
+                "why": "The hotfix ships in the afternoon.",
+                "evidence": "Release calendar, March.",
+                "confidence": "medium"
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:constraint:freeze",
+          "service:alpha:decision:ship",
+          "service:alpha:constraint:old-window"
+        ],
+        "declared": [
+          [
+            "service:alpha:decision:ship",
+            "contradicts",
+            "service:alpha:constraint:freeze"
+          ],
+          [
+            "service:alpha:decision:ship",
+            "contradicts",
+            "service:alpha:constraint:old-window"
+          ]
+        ],
+        "tensions": [
+          [
+            "service:alpha:decision:ship",
+            "service:alpha:constraint:freeze"
+          ]
+        ],
+        "states": {
+          "service:alpha:constraint:old-window": "expired"
+        }
+      }
+    },
+    {
+      "id": "relate-empty-window-nearest",
+      "probes": "Nothing of two abouts falls in March: the reading is empty, both abouts are named as empty, and the proof names the fact nearest to the span, which is February's, not the one further into April.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:observation:february",
+                "kind": "observation",
+                "text": "February planning closed.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-02-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:observation:april",
+                "kind": "observation",
+                "text": "April review opened.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-04-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "nearest_outside": "service:alpha:observation:february"
+      }
+    }
+  ]
+}

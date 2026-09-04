@@ -65,6 +65,10 @@
       "description": "Move forward through memory history"
     },
     {
+      "name": "kmp_relate",
+      "description": "Relate the memories of several abouts by what they share"
+    },
+    {
       "name": "kmp_trace",
       "description": "Trace the proof path between references"
     },

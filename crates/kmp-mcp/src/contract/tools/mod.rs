@@ -6,6 +6,7 @@ pub(crate) mod goto;
 pub(crate) mod ingest;
 pub(crate) mod inspect;
 pub(crate) mod near;
+pub(crate) mod relate;
 pub(crate) mod rewind;
 pub(crate) mod trace;
 pub(crate) mod view_apply_intent;

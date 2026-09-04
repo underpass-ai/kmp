@@ -18,7 +18,7 @@
 <!-- kmp:public-overview:begin -->
 KMP gives Codex and Claude Code local-first memory that preserves what
 happened, when and why. It stores decisions and evidence, not transcripts,
-on embedded SQLite, and exposes them through ten memory tools plus three
+on embedded SQLite, and exposes them through eleven memory tools plus three
 semantic view tools over a shared ChronoLoom view.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
@@ -115,7 +115,7 @@ flowchart LR
 ```
 
 The plugin installs the skills and declares one local MCP process. The skill
-turns intent into one or more of thirteen typed tools. `kmp-mcp` validates the
+turns intent into one or more of fourteen typed tools. `kmp-mcp` validates the
 request, and the kernel reads or writes the local graph-temporal store. The
 agent—not KMP—turns returned evidence into conversational prose.
 
@@ -136,7 +136,7 @@ pan or undo at any time.
 |:--|:--|:--|
 | Plugin | Installation, host discovery, skills and the single MCP declaration. | Memory semantics or a second tool vocabulary. |
 | Skills | When to recover, ask, navigate, audit, write, diagnose, save or restore. | Persistence. |
-| <code>kmp&#8209;mcp</code> | The schema-checked thirteen-tool boundary over local stdio. | Choosing a workflow from user prose. |
+| <code>kmp&#8209;mcp</code> | The schema-checked fourteen-tool boundary over local stdio. | Choosing a workflow from user prose. |
 | Kernel | Validation, temporal storage, traversal, deterministic retrieval and proof. | Generating prose or inventing rationale. |
 
 Human workflows such as `kmp-setup`, `kmp-doctor`, `kmp-info`, `kmp-catchup`,
@@ -145,14 +145,15 @@ not extra memory verbs. The machine-checked ownership map is
 [`plugins/kmp/capabilities.json`](plugins/kmp/capabilities.json).
 
 <details>
-<summary><strong>The thirteen MCP moves</strong></summary>
+<summary><strong>The fourteen MCP moves</strong></summary>
 
-Ten over memory, three over the view a person is looking at.
+Eleven over memory, three over the view a person is looking at.
 
 | Tool | Purpose |
 |:--|:--|
 | `kmp_wake` | Recover compact state before continuing work. |
 | `kmp_ask` | Retrieve evidence for a semantic question, or `UNKNOWN`. |
+| `kmp_relate` | Read what the memories of several abouts have to do with each other in a span, off the scopes and clocks they share. |
 | `kmp_goto` | Jump to memory at a time, sequence or ref. |
 | `kmp_near` | Inspect the temporal neighborhood around a cursor. |
 | `kmp_rewind` | Move backward through memory. |

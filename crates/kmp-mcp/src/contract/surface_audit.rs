@@ -143,7 +143,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 13, "ten memory tools and three view tools");
+        assert_eq!(tools.len(), 14, "eleven memory tools and three view tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -194,24 +194,26 @@ mod tests {
                 .get("prefer")
                 .is_none()
         );
-        assert_eq!(tools[4]["name"], "kmp_goto");
-        assert_eq!(tools[4]["inputSchema"]["required"][1], "at");
-        assert!(tools[4]["description"].as_str().is_some_and(|description| {
+        assert_eq!(tools[4]["name"], "kmp_relate");
+        assert_eq!(tools[4]["inputSchema"]["required"][0], "about");
+        assert_eq!(tools[5]["name"], "kmp_goto");
+        assert_eq!(tools[5]["inputSchema"]["required"][1], "at");
+        assert!(tools[5]["description"].as_str().is_some_and(|description| {
             description.contains("feeding page.next_cursor back to kmp_goto does not paginate")
         }));
         assert!(
-            tools[4]["outputSchema"]["properties"]
+            tools[5]["outputSchema"]["properties"]
                 .get("next_action")
                 .is_some()
         );
         assert!(
-            tools[4]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
+            tools[5]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
                 ["description"]
                 .as_str()
                 .is_some_and(|description| description.contains("Do not pass it back to `at.ref`"))
         );
         assert!(
-            tools[5]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
+            tools[6]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
                 ["description"]
                 .as_str()
                 .is_some_and(|description| description.contains("Do not pass it back to `around.ref`"))
@@ -283,6 +285,10 @@ mod tests {
                 "page",
                 "question",
             ])
+        );
+        assert_eq!(
+            keys(schema("kmp_relate")),
+            expected(&["about", "axis", "budget", "dimensions", "interval", "page"])
         );
         for (name, cursor) in [
             ("kmp_goto", "at"),
@@ -407,8 +413,8 @@ mod tests {
     #[test]
     fn output_schemas_cover_the_mapper_top_level_fields() {
         use kmp_proto::v1beta1::{
-            AskResponse, IngestResponse, InspectResponse, TemporalMoveResponse, TraceResponse,
-            WakeResponse,
+            AskResponse, IngestResponse, InspectResponse, RelateResponse, TemporalMoveResponse,
+            TraceResponse, WakeResponse,
         };
 
         let tools = tools_list_result();
@@ -443,6 +449,10 @@ mod tests {
             (
                 "kmp_goto",
                 crate::projection::temporal_from_response(TemporalMoveResponse::default()),
+            ),
+            (
+                "kmp_relate",
+                crate::projection::relate_from_response(RelateResponse::default()),
             ),
             (
                 "kmp_trace",

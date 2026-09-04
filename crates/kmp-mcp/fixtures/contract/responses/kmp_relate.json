@@ -1,0 +1,224 @@
+{
+  "content": [
+    {
+      "text": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "coordinate": [],
+    "declared": [
+      {
+        "class": "evidential",
+        "confidence": "medium",
+        "evidence": "The claim is the store's only prior entry.",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "rel": "uses_background",
+        "sequence": 1,
+        "to": "question:parity:claim:denver",
+        "why": "The decision was taken while reading this claim back."
+      },
+      {
+        "class": "evidential",
+        "confidence": "high",
+        "evidence": "She named Boulder after naming Denver.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "rel": "supersedes",
+        "sequence": 1,
+        "to": "question:parity:claim:denver",
+        "why": "The corrected city replaces the first one while the first stays readable as history."
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "rel": "semantic_delta_from",
+        "sequence": 2,
+        "to": "question:parity:claim:denver",
+        "why": "The later statement corrects the earlier one."
+      },
+      {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "rel": "updates_state",
+        "sequence": 2,
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "why": "The later statement corrects the earlier one."
+      },
+      {
+        "class": "evidential",
+        "confidence": "high",
+        "evidence": "Both statements came from the same conversation.",
+        "from": "question:parity:claim:denver-detail",
+        "rel": "supports",
+        "to": "question:parity:claim:denver",
+        "why": "The start date is what makes the move concrete."
+      }
+    ],
+    "facts": [
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T18:00:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 3,
+            "valid_from": "2026-04-12T18:00:00Z"
+          }
+        ],
+        "kind": "claim",
+        "ref": "question:parity:claim:boulder-current",
+        "state": "current",
+        "text": "The Boulder start date is the one that stands."
+      },
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:00:00Z",
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 1
+          }
+        ],
+        "kind": "claim",
+        "ref": "question:parity:claim:denver",
+        "state": "superseded",
+        "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "text": "Rachel said she was moving to Denver."
+      },
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "conversation",
+            "ingested_at": "<stamped at call time>",
+            "occurred_at": "2026-04-12T15:05:00Z",
+            "rank": 2,
+            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "sequence": 2,
+            "valid_from": "2026-04-12T15:05:00Z",
+            "valid_until": "2026-04-12T18:00:00Z"
+          }
+        ],
+        "kind": "claim",
+        "ref": "question:parity:claim:denver-detail",
+        "state": "expired",
+        "text": "She starts the new job in Denver in June.",
+        "valid_until": "2026-04-12T18:00:00Z"
+      },
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T16:00:00Z",
+            "occurred_at": "2026-04-12T16:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 1
+          }
+        ],
+        "kind": "decision",
+        "metadata": {
+          "writer_actor": "parity-test",
+          "writer_intent": "record_decision"
+        },
+        "ref": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "state": "current",
+        "text": "Pin the answered surface, not only the advertised one."
+      },
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z",
+            "occurred_at": "2026-04-12T17:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 3
+          }
+        ],
+        "kind": "semantic_delta",
+        "metadata": {
+          "delta_from": "Rachel said she was moving to Denver.",
+          "delta_to": "Rachel is moving to Boulder.",
+          "writer_actor": "parity-test",
+          "writer_intent": "record_delta"
+        },
+        "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "state": "current",
+        "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
+      },
+      {
+        "about": "question:parity",
+        "coordinates": [
+          {
+            "dimension": "agentic_process",
+            "ingested_at": "<stamped at call time>",
+            "observed_at": "2026-04-12T17:00:00Z",
+            "occurred_at": "2026-04-12T17:00:00Z",
+            "scope_id": "about:question:parity:dimension:parity",
+            "sequence": 2
+          }
+        ],
+        "kind": "semantic_delta",
+        "metadata": {
+          "writer_actor": "parity-test",
+          "writer_intent": "record_delta"
+        },
+        "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "state": "current",
+        "text": "Rachel is moving to Boulder, not Denver."
+      }
+    ],
+    "page": {
+      "has_more": false,
+      "next_cursor": null,
+      "returned": 11,
+      "total": 11
+    },
+    "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "question:parity"
+      ],
+      "as_of": null,
+      "axis": null,
+      "confidence": "unspecified",
+      "conflicts": [],
+      "evidence": [],
+      "expired": [
+        {
+          "ref": "question:parity:claim:denver-detail",
+          "valid_until": "2026-04-12T18:00:00Z"
+        }
+      ],
+      "frontier_size": 0,
+      "interval": null,
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "nearest_outside": null,
+      "path": [],
+      "superseded": [
+        {
+          "ref": "question:parity:claim:denver",
+          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "why": "The corrected city replaces the first one while the first stays readable as history."
+        }
+      ]
+    },
+    "summary": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension",
+    "tensions": [],
+    "warnings": []
+  }
+}

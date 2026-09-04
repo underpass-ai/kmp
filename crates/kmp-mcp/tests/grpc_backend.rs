@@ -7,10 +7,11 @@ use kmp_proto::v1beta1::{
     ForwardResponse, GotoRequest, GotoResponse, IngestRequest, IngestResponse, IngestedMemory,
     InspectRequest, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
     MemoryEvidence, MemoryRelation, MemorySemanticClass, MemorySourceKind, NearRequest,
-    NearResponse, ProjectVisualRequest, ProjectVisualResponse, Proof, RawMemoryRef, RewindRequest,
-    RewindResponse, TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalEntry,
-    TemporalMoveRequest, TemporalMoveResponse, TemporalNearRequest, TemporalState, TraceRequest,
-    TraceResponse, WakeClaim, WakePacket, WakeRequest, WakeResponse,
+    NearResponse, ProjectVisualRequest, ProjectVisualResponse, Proof, RawMemoryRef, RelateRequest,
+    RelateResponse, RewindRequest, RewindResponse, TemporalCoordinate, TemporalCursor,
+    TemporalDirection, TemporalEntry, TemporalMoveRequest, TemporalMoveResponse,
+    TemporalNearRequest, TemporalState, TraceRequest, TraceResponse, WakeClaim, WakePacket,
+    WakeRequest, WakeResponse,
     kernel_memory_service_server::{KernelMemoryService, KernelMemoryServiceServer},
 };
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
@@ -798,6 +799,17 @@ impl KernelMemoryService for FakeMemoryService {
         Err(Status::unimplemented(
             "not used by this backend contract test",
         ))
+    }
+
+    async fn relate(
+        &self,
+        request: Request<RelateRequest>,
+    ) -> Result<Response<RelateResponse>, Status> {
+        let request = request.into_inner();
+        Ok(Response::new(RelateResponse {
+            summary: format!("Related nothing of `{}`.", request.about),
+            ..RelateResponse::default()
+        }))
     }
 
     async fn trace(
