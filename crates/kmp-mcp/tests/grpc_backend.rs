@@ -682,6 +682,7 @@ impl KernelMemoryService for FakeMemoryService {
                 }),
                 read_after_write_ready: true,
                 created_dimensions: Vec::new(),
+                resembling_labels: Vec::new(),
             }),
             warnings: Vec::new(),
         }))

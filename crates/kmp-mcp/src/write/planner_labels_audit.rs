@@ -124,4 +124,81 @@ mod tests {
             ])
         );
     }
+
+    #[test]
+    fn strict_writes_ask_the_kernel_to_refuse_a_resembling_label_and_lax_ones_to_warn() {
+        let strict = build_write_plan(&sample_write_request()).expect("strict plan");
+        assert_eq!(strict.ingest_arguments["label_policy"], "refuse");
+
+        let mut lax = sample_write_request();
+        lax["options"]["strict"] = json!(false);
+        let lax = build_write_plan(&lax).expect("lax plan");
+        assert_eq!(lax.ingest_arguments["label_policy"], "warn");
+    }
+
+    #[test]
+    fn labels_new_marks_the_dimension_the_writer_insists_on() {
+        let mut request = sample_write_request();
+        request["labels"] = json!({ "component": "kmp_viewer" });
+        request["options"]["labels_new"] = json!(["component"]);
+
+        let plan = build_write_plan(&request).expect("plan");
+
+        let dimensions = plan.ingest_arguments["memory"]["dimensions"]
+            .as_array()
+            .expect("dimensions");
+        let component = dimensions
+            .iter()
+            .find(|dimension| dimension["kind"] == "component")
+            .expect("component dimension");
+        assert_eq!(component["metadata"]["writer_intended_new"], "true");
+        assert!(
+            dimensions
+                .iter()
+                .filter(|dimension| dimension["kind"] != "component")
+                .all(|dimension| dimension.get("metadata").is_none()),
+            "only the insisted label carries the marker"
+        );
+
+        let mut request = sample_write_request();
+        request["options"]["labels_new"] = json!(["release"]);
+        let error = build_write_plan(&request).expect_err("unknown key");
+        assert_eq!(
+            error,
+            "options.labels_new names `release`, which is not a label of this write"
+        );
+    }
+
+    #[test]
+    fn a_committed_write_passes_the_kernel_s_resemblances_through() {
+        let mut request = sample_write_request();
+        request["options"]["dry_run"] = json!(false);
+        request["options"]["strict"] = json!(false);
+        let plan = build_write_plan(&request).expect("plan");
+        let ingest_result = json!({
+            "memory": {
+                "created_dimensions": [],
+                "resembling_labels": [{
+                    "key": "task",
+                    "value": "incident:mobile-login",
+                    "existing_key": "task",
+                    "existing_value": "incident-mobile-login",
+                    "kind": "same_label_spelled_differently",
+                    "why": "`task=incident:mobile-login` resembles `task=incident-mobile-login`, already in the about."
+                }]
+            }
+        });
+
+        let result = write_commit_result(&plan, ingest_result, None, None);
+
+        assert_eq!(
+            result["labels"]["resembling"].as_array().map(Vec::len),
+            Some(1)
+        );
+        assert_eq!(
+            result["labels"]["resembling"][0]["kind"],
+            "same_label_spelled_differently"
+        );
+        assert_eq!(result["labels"]["created"], json!([]));
+    }
 }

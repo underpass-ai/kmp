@@ -25,7 +25,8 @@
           "about:question:parity:dimension:parity"
         ],
         "memory_id": "memory:write:f44bcf5cd628fba5",
-        "read_after_write_ready": true
+        "read_after_write_ready": true,
+        "resembling_labels": []
       },
       "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
       "warnings": []
@@ -37,6 +38,7 @@
           "value": "parity"
         }
       ],
+      "resembling": [],
       "written": [
         {
           "key": "agentic_process",

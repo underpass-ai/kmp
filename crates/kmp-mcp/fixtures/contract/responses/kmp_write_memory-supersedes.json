@@ -24,13 +24,15 @@
         },
         "created_dimensions": [],
         "memory_id": "memory:write:756d82ab906b9c4d",
-        "read_after_write_ready": true
+        "read_after_write_ready": true,
+        "resembling_labels": []
       },
       "summary": "Ingested 2 entries, 3 relations, and 3 evidence items for question:parity.",
       "warnings": []
     },
     "labels": {
       "created": [],
+      "resembling": [],
       "written": [
         {
           "key": "agentic_process",

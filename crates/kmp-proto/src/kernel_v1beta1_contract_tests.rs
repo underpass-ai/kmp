@@ -90,7 +90,8 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "memory",
             "provenance",
             "idempotency_key",
-            "dry_run"
+            "dry_run",
+            "label_policy"
         ]
     );
     assert_eq!(

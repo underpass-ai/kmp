@@ -22,6 +22,15 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
         .transpose()?;
     let idempotency_key = required_string_field(arguments, "idempotency_key", "idempotency_key")?;
     let dry_run = optional_bool_field(arguments, "dry_run", "dry_run")?.unwrap_or(false);
+    let label_policy = match arguments.get("label_policy").and_then(Value::as_str) {
+        None | Some("warn") => kmp_proto::v1beta1::LabelPolicy::Warn,
+        Some("refuse") => kmp_proto::v1beta1::LabelPolicy::Refuse,
+        Some(other) => {
+            return Err(format!(
+                "label_policy must be `warn` or `refuse`, not `{other}`"
+            ));
+        }
+    };
 
     Ok(IngestRequest {
         about,
@@ -29,6 +38,7 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
         provenance,
         idempotency_key,
         dry_run,
+        label_policy: label_policy as i32,
     })
 }
 

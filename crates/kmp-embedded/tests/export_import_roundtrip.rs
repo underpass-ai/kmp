@@ -82,6 +82,7 @@ fn corpus_with_first_entry_text(
         provenance: None,
         idempotency_key: idempotency_key.to_string(),
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 

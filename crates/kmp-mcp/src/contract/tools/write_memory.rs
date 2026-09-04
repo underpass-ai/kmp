@@ -141,9 +141,14 @@ pub(crate) fn write_memory_schema() -> Value {
                         "type": "boolean",
                         "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits."
                     },
+                    "labels_new": {
+                        "type": "array",
+                        "items": string_schema("A label key of this write."),
+                        "description": "Label keys the writer insists are new even where the catalogue holds one that resembles them: it read the catalogue and means something else. The kernel leaves those labels out of the resemblance check; every other new label that resembles an existing one is refused under strict and written with a warning otherwise."
+                    },
                     "strict": {
                         "type": "boolean",
-                        "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint. Defaults to true."
+                        "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint, and a new label that resembles one the about already holds. Defaults to true."
                     },
                     "sequence": {
                         "type": "integer",
@@ -265,7 +270,8 @@ fn write_memory_output_schema() -> Value {
         "generated_refs": string_array("Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes."),
         "labels": output_object(json!({
             "written": described("array", "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted."),
-            "created": described("array", "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.")
+            "created": described("array", "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it."),
+            "resembling": described("array", "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.")
         })),
         "relations": string_array("Typed relation names compiled into the canonical ingest."),
         "relation_quality": described("array", "Per-relation validation, including rich/anemic quality and prior-context evidence."),

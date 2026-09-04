@@ -742,10 +742,17 @@ fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
     let mut dimensions = BTreeSet::new();
     let mut max_sequences = BTreeMap::new();
 
+    let mut labels = BTreeSet::new();
     for node in bundle.neighbor_nodes() {
         refs.insert(node.node_id().to_string());
         if node.node_kind() == "memory_dimension" {
             dimensions.insert(node.node_id().to_string());
+            if let Some(kind) = node.properties().get("dimension_kind") {
+                let value = MemoryDimensionIdentity::parse(node.node_id())
+                    .map(|identity| identity.dimension_id().to_string())
+                    .unwrap_or_else(|| node.node_id().to_string());
+                labels.insert((kind.clone(), value));
+            }
         }
     }
 
@@ -771,6 +778,7 @@ fn existing_refs_from_bundle(bundle: &KmpBundle) -> ExistingMemoryRefs {
     ExistingMemoryRefs {
         refs,
         dimensions,
+        labels,
         max_sequences,
         foreign: BTreeSet::new(),
     }

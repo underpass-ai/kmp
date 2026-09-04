@@ -2,15 +2,16 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use kmp_domain::{
-    DECLARED_FROM_RELATE_METHOD, MemoryDimensionIdentity, MemoryRelationType,
-    RelationSemanticClass, SearchSummary, SearchSummaryFault, SourceKind,
+    DECLARED_FROM_RELATE_METHOD, INTENDED_NEW_LABEL_METADATA_KEY, MemoryDimensionIdentity,
+    MemoryRelationType, RelationSemanticClass, SearchSummary, SearchSummaryFault, SourceKind,
+    label_resemblances,
 };
 
 use crate::ApplicationError;
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
 use crate::memory::{
-    MemoryAcceptedCounts, MemoryCoordinateData, MemoryData, MemoryDimensionData,
-    MemoryIngestCommand, MemoryIngestOutcome, MemoryRelationData,
+    LabelPolicy, MemoryAcceptedCounts, MemoryCoordinateData, MemoryData, MemoryDimensionData,
+    MemoryIngestCommand, MemoryIngestOutcome, MemoryRelationData, ResemblingLabelData,
 };
 
 use super::ref_boundary::{
@@ -22,6 +23,9 @@ use super::ref_boundary::{
 pub struct ExistingMemoryRefs {
     pub refs: BTreeSet<String>,
     pub dimensions: BTreeSet<String>,
+    /// The about's catalogue as `(kind, bare scope id)` pairs: what a new
+    /// label is compared against before it is written.
+    pub labels: BTreeSet<(String, String)>,
     /// Refs of other abouts the service verified exist before this ingest,
     /// for the one relation that may cross an about: an equivalence a
     /// writer declared from a `kmp_relate` proposal.
@@ -47,6 +51,24 @@ pub fn translate_memory_ingest(
         .map(|dimension| dimension.id.clone())
         .filter(|id| !existing.dimensions.contains(id))
         .collect::<Vec<_>>();
+    // Does one resemble it? A new label is folded and compared against the
+    // catalogue; the kernel never renames in silence. Under REFUSE the match
+    // is a refusal that names both labels, unless the writer marked the
+    // dimension as intended new; under WARN it is written and said.
+    let resembling_labels = resembling_labels(&command.about, &command.memory, existing)?;
+    if command.label_policy == LabelPolicy::Refuse && !resembling_labels.is_empty() {
+        return Err(ApplicationError::Validation(format!(
+            "labels resemble ones the about already holds: {}. Reuse the existing label, or set the dimension metadata `{}: \"true\"` to insist on the new one",
+            resembling_labels
+                .iter()
+                .map(|label| label.why.clone())
+                .collect::<Vec<_>>()
+                .join(" "),
+            INTENDED_NEW_LABEL_METADATA_KEY
+        )));
+    }
+    let mut warnings = search_summary_warnings(&command.memory);
+    warnings.extend(resembling_labels.iter().map(|label| label.why.clone()));
 
     let changes = memory_changes(&memory)?;
     let outcome = MemoryIngestOutcome {
@@ -58,8 +80,9 @@ pub fn translate_memory_ingest(
             evidence: command.memory.evidence.len(),
         },
         read_after_write_ready: false,
-        warnings: search_summary_warnings(&command.memory),
+        warnings,
         created_dimensions,
+        resembling_labels,
     };
 
     Ok((
@@ -79,6 +102,51 @@ pub fn translate_memory_ingest(
         },
         outcome,
     ))
+}
+
+/// The labels this ingest declares for the first time that resemble one the
+/// about already holds, each with why. A dimension the about holds already
+/// is a reuse and resembles nothing; one the writer marked as intended new
+/// was compared by the writer and is left alone.
+fn resembling_labels(
+    about: &str,
+    memory: &MemoryData,
+    existing: &ExistingMemoryRefs,
+) -> Result<Vec<ResemblingLabelData>, ApplicationError> {
+    let catalogue = existing
+        .labels
+        .iter()
+        .map(|(kind, value)| (kind.as_str(), value.as_str()))
+        .collect::<Vec<_>>();
+    let mut found = Vec::new();
+    for dimension in &memory.dimensions {
+        let identity = dimension_identity(about, &dimension.id)?;
+        if existing.dimensions.contains(&identity.node_id()) {
+            continue;
+        }
+        if dimension
+            .metadata
+            .get(INTENDED_NEW_LABEL_METADATA_KEY)
+            .is_some_and(|value| value == "true")
+        {
+            continue;
+        }
+        for resemblance in label_resemblances(
+            &dimension.kind,
+            identity.dimension_id(),
+            catalogue.iter().copied(),
+        ) {
+            found.push(ResemblingLabelData {
+                key: resemblance.key().to_string(),
+                value: resemblance.value().to_string(),
+                existing_key: resemblance.existing_key().to_string(),
+                existing_value: resemblance.existing_value().to_string(),
+                kind: resemblance.kind().name().to_string(),
+                why: resemblance.why(),
+            });
+        }
+    }
+    Ok(found)
 }
 
 fn validate_command(command: &MemoryIngestCommand) -> Result<(), ApplicationError> {
@@ -165,6 +233,8 @@ fn namespaced_memory(
         known_refs.insert(dimension_ref.clone());
 
         let mut metadata = dimension.metadata.clone();
+        // The writer's insistence is read at translation and never stored.
+        metadata.remove(INTENDED_NEW_LABEL_METADATA_KEY);
         metadata
             .entry("memory_about".to_string())
             .or_insert_with(|| about.to_string());
@@ -948,6 +1018,7 @@ mod tests {
             .into_iter()
             .collect(),
             dimensions: [dimension_ref].into_iter().collect(),
+            labels: BTreeSet::new(),
             ..ExistingMemoryRefs::default()
         };
 
@@ -966,6 +1037,7 @@ mod tests {
         let existing = ExistingMemoryRefs {
             refs: [dimension_ref.clone()].into_iter().collect(),
             dimensions: [dimension_ref.clone()].into_iter().collect(),
+            labels: BTreeSet::new(),
             ..ExistingMemoryRefs::default()
         };
 
@@ -1001,6 +1073,7 @@ mod tests {
         let existing = ExistingMemoryRefs {
             refs: BTreeSet::new(),
             dimensions: [dimension_ref].into_iter().collect(),
+            labels: BTreeSet::new(),
             ..ExistingMemoryRefs::default()
         };
 
@@ -1105,6 +1178,96 @@ mod tests {
         }
     }
 
+    fn catalogue_with(kind: &str, value: &str) -> ExistingMemoryRefs {
+        ExistingMemoryRefs {
+            labels: BTreeSet::from([(kind.to_string(), value.to_string())]),
+            ..ExistingMemoryRefs::default()
+        }
+    }
+
+    #[test]
+    fn a_lax_ingest_writes_a_resembling_label_and_says_so() {
+        let command = sample_command();
+        let existing = catalogue_with("conversation", "conversation-rachel-2026-04-12");
+
+        let (_, outcome) =
+            translate_memory_ingest(&command, &existing).expect("warn policy writes");
+
+        assert_eq!(outcome.resembling_labels.len(), 1);
+        let resembling = &outcome.resembling_labels[0];
+        assert_eq!(resembling.key, "conversation");
+        assert_eq!(resembling.value, "conversation:rachel-2026-04-12");
+        assert_eq!(resembling.existing_value, "conversation-rachel-2026-04-12");
+        assert_eq!(resembling.kind, "same_label_spelled_differently");
+        assert!(
+            outcome
+                .warnings
+                .iter()
+                .any(|warning| warning == &resembling.why),
+            "the why is also a warning: {:?}",
+            outcome.warnings
+        );
+    }
+
+    #[test]
+    fn a_refusing_ingest_names_both_labels_and_the_way_to_insist() {
+        let mut command = sample_command();
+        command.label_policy = crate::memory::LabelPolicy::Refuse;
+        let existing = catalogue_with("release", "conversation-rachel-2026-04-12");
+
+        let error = translate_memory_ingest(&command, &existing).expect_err("refused");
+
+        let message = match error {
+            ApplicationError::Validation(message) => message,
+            other => panic!("expected a validation error, got {other:?}"),
+        };
+        assert!(
+            message.contains("`conversation=conversation:rachel-2026-04-12` resembles `release=conversation-rachel-2026-04-12`"),
+            "{message}"
+        );
+        assert!(
+            message.contains("the same value under another key"),
+            "{message}"
+        );
+        assert!(message.contains("writer_intended_new"), "{message}");
+    }
+
+    #[test]
+    fn an_insisted_label_is_left_alone_and_the_insistence_is_not_stored() {
+        let mut command = sample_command();
+        command.label_policy = crate::memory::LabelPolicy::Refuse;
+        command.memory.dimensions[0]
+            .metadata
+            .insert("writer_intended_new".to_string(), "true".to_string());
+        let existing = catalogue_with("conversation", "conversation-rachel-2026-04-12");
+
+        let (update, outcome) =
+            translate_memory_ingest(&command, &existing).expect("insisted label writes");
+
+        assert!(outcome.resembling_labels.is_empty());
+        assert!(
+            !update.changes[0]
+                .payload_json
+                .contains("writer_intended_new"),
+            "the marker is read at translation and never stored: {}",
+            update.changes[0].payload_json
+        );
+    }
+
+    #[test]
+    fn a_label_the_about_already_holds_resembles_nothing() {
+        let command = sample_command();
+        let mut existing = catalogue_with("conversation", "conversation:rachel-2026-04-12");
+        existing
+            .dimensions
+            .insert("about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string());
+
+        let (_, outcome) = translate_memory_ingest(&command, &existing).expect("reuse");
+
+        assert!(outcome.resembling_labels.is_empty());
+        assert!(outcome.created_dimensions.is_empty());
+    }
+
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
             about: "question:830ce83f".to_string(),
@@ -1160,6 +1323,7 @@ mod tests {
             provenance: None,
             idempotency_key: "ingest:app-test".to_string(),
             dry_run: false,
+            label_policy: Default::default(),
         }
     }
 

@@ -25,6 +25,24 @@ pub(crate) fn ingest_from_response(response: IngestResponse) -> Value {
                 .unwrap_or(false),
             "created_dimensions": memory
                 .map(|memory| memory.created_dimensions.clone())
+                .unwrap_or_default(),
+            "resembling_labels": memory
+                .map(|memory| {
+                    memory
+                        .resembling_labels
+                        .iter()
+                        .map(|label| {
+                            json!({
+                                "key": label.key,
+                                "value": label.value,
+                                "existing_key": label.existing_key,
+                                "existing_value": label.existing_value,
+                                "kind": label.kind,
+                                "why": label.why
+                            })
+                        })
+                        .collect::<Vec<_>>()
+                })
                 .unwrap_or_default()
         },
         "warnings": response.warnings
@@ -52,7 +70,8 @@ pub(crate) fn dry_run_ingest_from_plan(plan: &KmpIngestPlan) -> Value {
                 "evidence": plan.accepted.evidence
             },
             "read_after_write_ready": false,
-            "created_dimensions": []
+            "created_dimensions": [],
+            "resembling_labels": []
         },
         "warnings": [
             "dry_run=true; validated memory without sending a KernelMemoryService.Ingest call"

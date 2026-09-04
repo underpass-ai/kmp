@@ -18,7 +18,8 @@
         "string"
       ],
       "memory_id": "string",
-      "read_after_write_ready": "boolean"
+      "read_after_write_ready": "boolean",
+      "resembling_labels": []
     },
     "summary": "string",
     "warnings": []

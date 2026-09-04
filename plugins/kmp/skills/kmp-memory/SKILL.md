@@ -418,6 +418,17 @@ about a scope id names one label and keeps the kind of its first use. The
 response says which labels were written and, after a commit, which were
 created; a created label is vocabulary growing, so make sure it was meant.
 
+The kernel asks the same question you should: does one resemble it? A new
+label is folded — only case and separators forgiven — and compared with the
+catalogue. A strict write that names `component=kmp_viewer` where
+`component=kmp-viewer` exists, or `repo=kmp-viewer` where that value already
+stands under `component`, is refused, and the error names both labels. A lax
+write goes through and says so in `labels.resembling`. When you read the
+catalogue and still mean a new label, say so with `options.labels_new:
+["component"]`; the kernel leaves that label alone. Nothing is renamed in
+silence, and nothing is guessed: the threshold forgives spelling and nothing
+else.
+
 Write in the language of the work, and give the memory an English rendering
 for search: `current.summary_en`, plain English a reader would ask with, every
 number, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,
