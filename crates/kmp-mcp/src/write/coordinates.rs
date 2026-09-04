@@ -58,7 +58,7 @@ pub(super) fn validate_distinct_scope_ids(
         for right in (left + 1)..scopes.len() {
             if scopes[right].1 == Some(left_id) {
                 return Err(format!(
-                    "scope.{} and scope.{} reuse `{left_id}`; every scope dimension must use a distinct id",
+                    "scope.{} and scope.{} reuse `{left_id}`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds",
                     scopes[left].0, scopes[right].0
                 ));
             }

@@ -175,6 +175,7 @@ pub fn relate_response_from_result(
             from: relation.from().to_string(),
             to: relation.to().to_string(),
             kind: proto_kind(relation.kind()) as i32,
+            dimension: relation.dimension().to_string(),
             scope_id: relation.scope_id().to_string(),
             axis: proto_temporal_axis(relation.axis()) as i32,
             why: relation.why(),
@@ -186,6 +187,7 @@ pub fn relate_response_from_result(
         .map(|tension| ProtoTension {
             r#ref: tension.ref_id().to_string(),
             other: tension.other().to_string(),
+            dimension: tension.dimension().to_string(),
             scope_id: tension.scope_id().to_string(),
             why: tension.why().to_string(),
             evidence: tension.evidence().to_string(),
@@ -206,6 +208,7 @@ pub fn relate_response_from_result(
                     .iter()
                     .map(|signal| signal.name().to_string())
                     .collect(),
+                dimension: proposal.dimension().to_string(),
                 scope_id: proposal.scope_id().to_string(),
                 weight: proposal.weight(),
                 why: proposal.why(),

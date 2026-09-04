@@ -1,3 +1,4 @@
+use super::shared_label::SharedLabel;
 use std::collections::BTreeMap;
 
 /// The most proposals one fact takes part in. A common key would otherwise
@@ -50,7 +51,9 @@ pub struct ProposedLink {
     from: String,
     to: String,
     signals: Vec<ProposalSignal>,
-    /// The scope both stand in, when they share one; sharing one weighs.
+    /// The label both stand in, when they share one; sharing one weighs.
+    /// The dimension kind is its key and the scope its value.
+    dimension: String,
     scope_id: String,
     weight: u32,
 }
@@ -63,10 +66,12 @@ impl ProposedLink {
         from: impl Into<String>,
         to: impl Into<String>,
         mut signals: Vec<ProposalSignal>,
-        scope_id: Option<String>,
+        label: Option<SharedLabel>,
     ) -> Self {
         signals.sort_by_key(|signal| std::cmp::Reverse(signal.weight()));
-        let scope_id = scope_id.unwrap_or_default();
+        let (dimension, scope_id) = label
+            .map(|label| (label.key().to_string(), label.value().to_string()))
+            .unwrap_or_default();
         let weight = signals.iter().map(ProposalSignal::weight).sum::<u32>()
             + if scope_id.is_empty() {
                 0
@@ -77,6 +82,7 @@ impl ProposedLink {
             from: from.into(),
             to: to.into(),
             signals,
+            dimension,
             scope_id,
             weight,
         }
@@ -92,6 +98,10 @@ impl ProposedLink {
 
     pub fn signals(&self) -> &[ProposalSignal] {
         &self.signals
+    }
+
+    pub fn dimension(&self) -> &str {
+        &self.dimension
     }
 
     pub fn scope_id(&self) -> &str {
@@ -136,7 +146,10 @@ impl ProposedLink {
             })
             .collect::<Vec<_>>();
         if !self.scope_id.is_empty() {
-            parts.push(format!("both stand in `{}`", self.scope_id));
+            parts.push(format!(
+                "both stand in `{}={}`",
+                self.dimension, self.scope_id
+            ));
         }
         let mut why = parts.join("; ");
         if let Some(first) = why.get(..1) {
@@ -181,9 +194,14 @@ mod tests {
         from: &str,
         to: &str,
         weight_signals: Vec<ProposalSignal>,
-        scope: Option<&str>,
+        label: Option<(&str, &str)>,
     ) -> ProposedLink {
-        ProposedLink::new(from, to, weight_signals, scope.map(str::to_string))
+        ProposedLink::new(
+            from,
+            to,
+            weight_signals,
+            label.map(|(key, value)| SharedLabel::new(key, value)),
+        )
     }
 
     fn identifier(shared: &str, idf: f64) -> ProposalSignal {
@@ -204,7 +222,7 @@ mod tests {
                 },
                 identifier("#469", 1.1),
             ],
-            Some("release:spring"),
+            Some(("release", "spring")),
         );
         assert_eq!(proposal.weight(), 4 + 2 + 2);
         assert_eq!(
@@ -215,7 +233,7 @@ mod tests {
         let why = proposal.why();
         assert!(why.starts_with("Both carry `#469`"), "{why}");
         assert!(why.contains("both name `Valkey`"), "{why}");
-        assert!(why.ends_with("; both stand in `release:spring`."), "{why}");
+        assert!(why.ends_with("; both stand in `release=spring`."), "{why}");
     }
 
     #[test]

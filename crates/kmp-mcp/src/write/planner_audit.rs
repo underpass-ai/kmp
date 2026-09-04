@@ -193,7 +193,7 @@ mod tests {
 
         assert_eq!(
             error,
-            "scope.process and scope.task reuse `incident:mobile-login:resolution`; every scope dimension must use a distinct id"
+            "scope.process and scope.task reuse `incident:mobile-login:resolution`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds"
         );
     }
 

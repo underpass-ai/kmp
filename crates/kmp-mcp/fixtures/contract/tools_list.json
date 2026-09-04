@@ -2044,7 +2044,7 @@
         "additionalProperties": false,
         "properties": {
           "coordinate": {
-            "description": "Relations between facts of different abouts read off their coordinates inside a scope they share: `from`, `to`, `kind` (`shares_scope`, `before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), the bare `scope_id`, the `axis` read, and `why` in one checkable sentence. Declared by nobody.",
+            "description": "Relations between facts of different abouts read off their coordinates inside a label they share — the same `dimension` kind and the same bare `scope_id`: `from`, `to`, `kind` (`shares_scope`, `before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), `dimension`, `scope_id`, the `axis` read, and `why` in one checkable sentence. The same scope under two kinds is two labels and relates nothing. Declared by nobody.",
             "type": "array"
           },
           "declared": {
@@ -2163,7 +2163,7 @@
             "type": "object"
           },
           "proposed": {
-            "description": "Pairs of facts of different abouts the kernel proposes are about the same thing, at most three per fact, strongest first: `from`, `to`, `proposed_by` (`identifier`, `summary`, `entity`, strongest first), the `shared` identifiers with the `idf` of the rarest across the span, the `shared_terms` and `bridged` concept pairs of matching summaries, the `entities` both name, the `scope_id` both stand in, the `weight` the signals sum to, and `why`. Reproducible bit for bit and never stored: a writer may declare one, with this as the proof.",
+            "description": "Pairs of facts of different abouts the kernel proposes are about the same thing, at most three per fact, strongest first: `from`, `to`, `proposed_by` (`identifier`, `summary`, `entity`, strongest first), the `shared` identifiers with the `idf` of the rarest across the span, the `shared_terms` and `bridged` concept pairs of matching summaries, the `entities` both name, the label both stand in as `dimension` and `scope_id`, the `weight` the signals sum to, and `why`. Reproducible bit for bit and never stored: a writer may declare one, with this as the proof.",
             "type": "array"
           },
           "summary": {
@@ -2171,7 +2171,7 @@
             "type": "string"
           },
           "tensions": {
-            "description": "Facts that both still stand and that a declared `contradicts` joins: `ref`, `other`, the `scope_id` they share when they share one, and the `why` and `evidence` of the declaration. Shown, never resolved.",
+            "description": "Facts that both still stand and that a declared `contradicts` joins: `ref`, `other`, the label they share when they share one as `dimension` and `scope_id`, and the `why` and `evidence` of the declaration. Shown, never resolved.",
             "type": "array"
           },
           "warnings": {
