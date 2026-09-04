@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_wake",
-        "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
+        "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -25,7 +25,10 @@ pub(crate) fn definition() -> Value {
                 "dimensions": dimensions_schema(),
                 "depth": integer_schema("Optional graph traversal depth. Applies in embedded and live gRPC modes; it overrides budget.depth."),
                 "budget": budget_schema(1_600, 2),
-                "page": recall_page_schema()
+                "page": recall_page_schema(),
+                "as_of": as_of_schema(),
+                "interval": interval_schema(),
+                "axis": recall_axis_schema()
             }
         }),
         wake_output_schema(),

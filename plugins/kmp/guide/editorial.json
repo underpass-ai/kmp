@@ -26,21 +26,21 @@
           "id": "verb:wake",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up.",
+          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Optional: as_of, interval and axis bound the packet in time — its evidence, spine, resume cursor and proof stand on the selection. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up.",
           "evidence": "The live kmp_wake contract returns an about-scoped continuation packet and resume cursor."
         },
         {
           "id": "verb:ask",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, and a warning when the rendering dropped an identifier or leans to another language. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN.",
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN.",
           "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer."
         },
         {
           "id": "verb:time",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Temporal intent beats Ask. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete.",
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete.",
           "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately."
         },
         {
@@ -165,8 +165,8 @@
           "to": "verb:ask",
           "rel": "corrects",
           "class": "procedural",
-          "why": "Temporal navigation corrects the route when the original request concerns change or a time boundary rather than semantic relevance.",
-          "evidence": "The live router contract gives temporal intent precedence over Ask."
+          "why": "Temporal navigation corrects the route when the original request asks what a period holds rather than for an answer; a semantic question that carries a date stays an Ask and stands where it was asked with as_of or interval.",
+          "evidence": "The live router contract gives temporal intent precedence over Ask in two shapes: enumeration through the temporal verbs, and a dated Ask bounded by as_of or interval."
         },
         {
           "from": "verb:audit",

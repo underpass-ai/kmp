@@ -14,5 +14,5 @@ pub use kmp_stats::KmpStats;
 pub use relationship_path::directed_relationship_path;
 pub use temporal_memory::{
     TemporalEntry, TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
-    compare_temporal_instants,
+    compare_temporal_instants, temporal_instant_nanos,
 };

@@ -41,6 +41,9 @@ impl MemoryRecallApi for EmbeddedKernel {
             depth: request.depth,
             max_tier: request.max_tier.map(tier),
             max_entries: request.max_entries.map(|entries| entries as usize),
+            // The versioned memory API names no instant yet; the packet
+            // stands on the memory's frontier.
+            temporal: kmp_domain::TemporalSelection::Frontier,
         };
         let result = self.service().wake(query).await.map_err(translate_error)?;
         self.observe_recall_quality("kmp_wake", &result);
@@ -61,6 +64,7 @@ impl MemoryRecallApi for EmbeddedKernel {
             depth: request.depth,
             max_tier: request.max_tier.map(tier),
             max_entries: None,
+            temporal: kmp_domain::TemporalSelection::Frontier,
         };
         let result = self.service().ask(query).await.map_err(translate_error)?;
         self.observe_recall_quality("kmp_ask", &result);

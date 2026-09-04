@@ -76,6 +76,26 @@ for case in FIXTURE["temporal_cases"]:
 if any(refs != case_refs[0] for refs in case_refs[1:]):
     fail("English and Spanish temporal prompts selected different material refs")
 
+# A semantic question that carries a date is one Ask standing within the
+# same half-open UTC interval the enumeration would walk: no temporal verb,
+# no second selection, the user's words beside the English rendering.
+for case in FIXTURE["dated_semantic_cases"]:
+    trace = case["tool_trace"]
+    if trace != ["kmp_ask"]:
+        fail(f"dated semantic {case['language']} case did not make exactly one kmp_ask: {trace}")
+    arguments = case["arguments"]
+    if arguments.get("interval") != FIXTURE["expected_utc_interval"]:
+        fail(f"dated semantic {case['language']} case did not pass the half-open UTC interval")
+    if "as_of" in arguments:
+        fail(f"dated semantic {case['language']} case passed as_of beside interval")
+    if arguments.get("asked_as") != case["prompt"]:
+        fail(f"dated semantic {case['language']} case did not carry the user's words as asked_as")
+    if not arguments.get("question"):
+        fail(f"dated semantic {case['language']} case has no English rendering")
+dated_questions = {case["arguments"]["question"] for case in FIXTURE["dated_semantic_cases"]}
+if len(dated_questions) != 1:
+    fail("English and Spanish dated prompts rendered different questions")
+
 semantic = FIXTURE["semantic_case"]
 fallbacks = semantic["fallback_languages"]
 if semantic["primary_result"] != "UNKNOWN":
@@ -232,6 +252,9 @@ instruction_assets = [
 required = (
     "temporal intent",
     "half-open UTC interval",
+    "as_of",
+    "interval",
+    "nearest_outside",
     "asked_as",
     "user's language",
     "kmp_goto",

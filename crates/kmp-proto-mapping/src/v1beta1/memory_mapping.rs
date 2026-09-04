@@ -27,6 +27,7 @@ mod relevance_key;
 mod responses;
 mod scalars;
 mod search_terms;
+mod temporal_admission;
 mod term_counts;
 mod visual_projection;
 

@@ -16,6 +16,7 @@ use super::bridged_term::BridgedTerm;
 use super::candidate_temporal_state::CandidateTemporalState;
 use super::lexical_bridge::LexicalBridge;
 use super::lexicon::Lexicon;
+use super::memory_lifecycle::MemoryLifecycle;
 use super::question_intent::QuestionIntent;
 use super::search_terms::{
     concept_count, informative_term_counts, informative_terms, informative_tokens,
@@ -72,14 +73,25 @@ impl<'a> AnswerEvidenceRanker<'a> {
     /// everything above the table read with.
     #[cfg(test)]
     pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
-        Self::from_bundle_with_bridge(bundle, &SILENT_BRIDGE)
+        Self::from_bundle_at(bundle, &SILENT_BRIDGE, MemoryLifecycle::read(bundle))
     }
 
-    pub(super) fn from_bundle_with_bridge(bundle: &KmpBundle, bridge: &'a LexicalBridge) -> Self {
+    /// A ranker standing on a lifecycle read at an instant the caller
+    /// named, so what was replaced or expired after it still competes.
+    pub(super) fn from_bundle_at(
+        bundle: &KmpBundle,
+        bridge: &'a LexicalBridge,
+        lifecycle: MemoryLifecycle,
+    ) -> Self {
         Self {
-            context: AnswerRecallContext::from_bundle(bundle),
+            context: AnswerRecallContext::from_bundle_with_lifecycle(bundle, lifecycle),
             bridge,
         }
+    }
+
+    /// The `proof.expired` list for the lifecycle this ranker stands on.
+    pub(super) fn expired_memories(&self) -> Vec<kmp_proto::v1beta1::ExpiredMemory> {
+        self.context.expired_memories()
     }
 
     pub(super) fn rank(

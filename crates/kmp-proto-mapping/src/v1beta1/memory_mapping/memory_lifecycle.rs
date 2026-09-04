@@ -1,10 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use kmp_domain::KmpBundle;
+use kmp_domain::{KmpBundle, TemporalAxis, TemporalCoordinate};
 use kmp_proto::v1beta1::ExpiredMemory;
 use prost_types::Timestamp;
 
 use super::scalars::timestamp_from_sort_or_rfc3339;
+use super::temporal_admission::{LifecycleInstant, clock_instant};
 
 const SECONDS_PER_DAY: i64 = 86_400;
 
@@ -81,6 +82,87 @@ impl MemoryLifecycle {
         }
     }
 
+    /// The lifecycles as they stood at one instant rather than at the
+    /// memory's frontier: an entry is replaced only if its replacement
+    /// already existed then, on the clock the recall reads, and expired only
+    /// if its validity had ended by then. What was replaced or ran out
+    /// *after* the instant is current for that question, and recency is
+    /// measured from the instant.
+    pub(super) fn read_at(
+        bundle: &KmpBundle,
+        instant: LifecycleInstant,
+        axis: TemporalAxis,
+    ) -> Self {
+        let at = instant.at;
+        // "Already" is `<=` when the instant itself has passed and `<` at
+        // the exclusive end of a span.
+        let already = |when: (i64, i32)| {
+            if instant.inclusive {
+                when <= at
+            } else {
+                when < at
+            }
+        };
+
+        let mut instants_by_ref = BTreeMap::<String, (i64, i32)>::new();
+        for relationship in bundle
+            .relationships()
+            .iter()
+            .filter(|relationship| relationship.relationship_type() == "contains_entry")
+        {
+            let Ok(Some(coordinate)) =
+                TemporalCoordinate::from_relation_explanation(relationship.explanation())
+            else {
+                continue;
+            };
+            let Some(when) =
+                clock_instant(&coordinate, axis).and_then(|(when, _)| instant_of(when))
+            else {
+                continue;
+            };
+            let entry = instants_by_ref
+                .entry(relationship.target_node_id().to_string())
+                .or_insert(when);
+            *entry = (*entry).min(when);
+        }
+
+        // A replacement whose instant is unknown counts, as it does at the
+        // frontier: an absent clock is a silence, not a claim of lateness.
+        let superseded = bundle
+            .relationships()
+            .iter()
+            .filter(|relationship| relationship.relationship_type() == "supersedes")
+            .filter(|relationship| {
+                instants_by_ref
+                    .get(relationship.source_node_id())
+                    .is_none_or(|when| already(*when))
+            })
+            .map(|relationship| relationship.target_node_id().to_string())
+            .collect();
+
+        let expired = bundle
+            .relationships()
+            .iter()
+            .filter(|relationship| relationship.relationship_type() == "contains_entry")
+            .filter_map(|relationship| {
+                let valid_until = relationship.explanation().valid_until()?;
+                let ended = instant_of(valid_until)?;
+                already(ended).then(|| {
+                    (
+                        relationship.target_node_id().to_string(),
+                        timestamp_from_sort_or_rfc3339(Some(valid_until)),
+                    )
+                })
+            })
+            .collect();
+
+        Self {
+            frontier: Some(at),
+            expired,
+            superseded,
+        }
+    }
+
     /// The frontier is an internal notion: callers read the answers derived
     /// from it — expiry and recency — never the instant itself.
     #[cfg(test)]
@@ -143,6 +225,10 @@ impl MemoryLifecycle {
 /// Reads a stored instant in either shape the kernel writes it.
 fn instant(value: Option<&str>) -> Option<(i64, i32)> {
     timestamp_from_sort_or_rfc3339(value).map(|time| (time.seconds, time.nanos))
+}
+
+fn instant_of(value: &str) -> Option<(i64, i32)> {
+    instant(Some(value))
 }
 
 #[cfg(test)]
@@ -323,5 +409,101 @@ mod tests {
         assert_eq!(at(3 * SECONDS_PER_DAY), 3);
         assert_eq!(at(20 * SECONDS_PER_DAY), 2);
         assert_eq!(at(400 * SECONDS_PER_DAY), 1);
+    }
+
+    fn supersession(replacer: &str, replaced: &str) -> BundleRelationship {
+        BundleRelationship::new(
+            replacer,
+            replaced,
+            "supersedes",
+            RelationExplanation::new(RelationSemanticClass::Evidential)
+                .with_rationale("replaced after review"),
+        )
+    }
+
+    /// Read at an instant, a replacement that did not exist yet does not
+    /// replace, and a validity that had not ended yet has not expired.
+    #[test]
+    fn read_at_an_instant_keeps_what_was_replaced_or_ran_out_only_later() {
+        let bundle = bundle(
+            vec![
+                entry("claim:old", "2026-03-01T00:00:00Z", None),
+                entry("claim:new", "2026-03-20T00:00:00Z", None),
+                supersession("claim:new", "claim:old"),
+                entry(
+                    "claim:lease",
+                    "2026-03-01T00:00:00Z",
+                    Some("2026-04-01T00:00:00Z"),
+                ),
+                entry("claim:late", "2026-05-01T00:00:00Z", None),
+            ],
+            &[
+                "scope:timeline",
+                "claim:old",
+                "claim:new",
+                "claim:lease",
+                "claim:late",
+            ],
+        );
+        let at_frontier = MemoryLifecycle::read(&bundle);
+        assert!(at_frontier.is_superseded("claim:old"));
+        assert!(at_frontier.is_expired("claim:lease"));
+
+        let march_tenth = timestamp_from_sort_or_rfc3339(Some("2026-03-10T00:00:00Z")).expect("t");
+        let then = MemoryLifecycle::read_at(
+            &bundle,
+            LifecycleInstant {
+                at: (march_tenth.seconds, march_tenth.nanos),
+                inclusive: true,
+            },
+            TemporalAxis::Observed,
+        );
+        assert!(
+            !then.is_superseded("claim:old"),
+            "the replacement did not exist on the tenth"
+        );
+        assert!(
+            !then.is_expired("claim:lease"),
+            "the lease still ran on the tenth"
+        );
+        assert_eq!(
+            then.recency_rank(Some(&march_tenth)),
+            4,
+            "recency is measured from the instant"
+        );
+    }
+
+    /// The exclusive end of a span: a validity ending exactly there has not
+    /// ended within the span; as of that very instant, it has.
+    #[test]
+    fn the_end_of_a_span_is_exclusive_and_an_instant_is_inclusive() {
+        let bundle = bundle(
+            vec![entry(
+                "claim:lease",
+                "2026-03-01T00:00:00Z",
+                Some("2026-04-01T00:00:00Z"),
+            )],
+            &["scope:timeline", "claim:lease"],
+        );
+        let april = timestamp_from_sort_or_rfc3339(Some("2026-04-01T00:00:00Z")).expect("t");
+        let at = (april.seconds, april.nanos);
+        let within = MemoryLifecycle::read_at(
+            &bundle,
+            LifecycleInstant {
+                at,
+                inclusive: false,
+            },
+            TemporalAxis::Default,
+        );
+        assert!(!within.is_expired("claim:lease"));
+        let as_of = MemoryLifecycle::read_at(
+            &bundle,
+            LifecycleInstant {
+                at,
+                inclusive: true,
+            },
+            TemporalAxis::Default,
+        );
+        assert!(as_of.is_expired("claim:lease"));
     }
 }

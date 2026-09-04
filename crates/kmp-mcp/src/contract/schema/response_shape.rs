@@ -72,8 +72,10 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         ),
         "expired": described(
             "array",
-            "Historical entries whose exclusive `valid_until` is at or before the temporal \
-             cursor. Expiry needs no replacement, so this is separate from `superseded`."
+            "Historical entries whose exclusive `valid_until` had passed where the read \
+             stood: the cursor on a temporal move, `as_of` or the interval's end on wake and \
+             ask, else the memory's own latest instant. Expiry needs no replacement, so this \
+             is separate from `superseded`."
         ),
         "conflicts": described(
             "array",
@@ -90,6 +92,28 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         "frontier_size": described(
             "integer",
             "How much was reachable and not returned, which is the signal to expand."
+        ),
+        "interval": nullable_described(
+            "object",
+            "The half-open span the recall stood within, `start` and `end`, when the caller \
+             asked for one; null otherwise."
+        ),
+        "axis": nullable_described(
+            "string",
+            "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, \
+             `validity`, or `default` for the compatible precedence; null when the recall \
+             stood at the memory's own frontier."
+        ),
+        "as_of": nullable_described(
+            "string",
+            "The instant the recall stood at, when the caller asked for one; a `ref` cursor is \
+             reported as the instant it resolved to. Null otherwise."
+        ),
+        "nearest_outside": nullable_described(
+            "object",
+            "On UNKNOWN within an interval: the closest match outside it — its `ref`, its \
+             `time` and the `axis` that instant was read on — so a reader can tell \"not then\" \
+             from \"not known\". Null otherwise."
         )
     }))
 }

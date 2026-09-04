@@ -2034,3 +2034,194 @@ fn a_well_connected_memory_gets_its_summary_attached_even_when_inspect_pages_its
         "the attach moved no link: {with_links}"
     );
 }
+
+/// A question with a date is one `kmp_ask`, on the real binary. Standing at
+/// an instant, the decision in force then is cited and the one that replaced
+/// it later does not exist yet; within a span that holds nothing bearing on
+/// the question, the answer is UNKNOWN and the proof names the nearest match
+/// outside the span; an instant and a span together are refused; and a wake
+/// bounded to the span carries only what fell inside it.
+#[test]
+fn a_question_with_a_date_is_one_ask_that_stands_where_it_was_asked() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let seed = serde_json::json!({
+        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": {"name": "kmp_ingest", "arguments": {
+            "about": "project:cuando",
+            "idempotency_key": "ingest:cuando",
+            "memory": {
+                "dimensions": [{"id": "work:main", "kind": "work"}],
+                "entries": [
+                    {"id": "project:cuando:decision:cache-valkey", "kind": "decision",
+                     "text": "The shared cache runs on Valkey for the checkout service.",
+                     "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-03-01T10:00:00Z", "sequence": 1}]},
+                    {"id": "project:cuando:observation:canteen", "kind": "observation",
+                     "text": "The canteen menu was posted on the board.",
+                     "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-03-05T09:00:00Z", "sequence": 2}]},
+                    {"id": "project:cuando:decision:cache-dragonfly", "kind": "decision",
+                     "text": "The shared cache runs on Dragonfly for the checkout service.",
+                     "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-03-20T10:00:00Z", "sequence": 3}]}
+                ],
+                "relations": [
+                    {"from": "project:cuando:decision:cache-dragonfly", "to": "project:cuando:decision:cache-valkey",
+                     "rel": "supersedes", "class": "evidential",
+                     "why": "Valkey was replaced after the latency review.",
+                     "evidence": "Latency review of the checkout cache.", "confidence": "high"}
+                ]
+            }
+        }}
+    });
+    let seeded = run_binary(&envs, &format!("{seed}\n"));
+    assert!(seeded.status.success(), "{seeded:?}");
+
+    let call = |id: u64, name: &str, arguments: Value| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("response");
+        response["result"].clone()
+    };
+    let question = "Which engine runs the shared cache for the checkout service?";
+
+    // At the frontier the older decision is superseded and the newer cited.
+    let now = call(
+        2,
+        "kmp_ask",
+        serde_json::json!({"about": "project:cuando", "question": question}),
+    );
+    let answer = &now["structuredContent"];
+    assert_eq!(
+        answer["because"][0]["ref"], "entry:project:cuando:decision:cache-dragonfly",
+        "{answer}"
+    );
+    assert!(
+        answer["proof"]["as_of"].is_null()
+            && answer["proof"]["interval"].is_null()
+            && answer["proof"]["axis"].is_null(),
+        "{answer}"
+    );
+
+    // As of the tenth, the replacement did not exist: Valkey is current.
+    let then = call(
+        3,
+        "kmp_ask",
+        serde_json::json!({
+            "about": "project:cuando", "question": question,
+            "as_of": {"time": "2026-03-10T00:00:00Z"}
+        }),
+    );
+    let answer = &then["structuredContent"];
+    assert_ne!(answer["answer"], "UNKNOWN", "{answer}");
+    assert_eq!(
+        answer["because"][0]["ref"], "entry:project:cuando:decision:cache-valkey",
+        "{answer}"
+    );
+    assert_eq!(answer["proof"]["as_of"], "2026-03-10T00:00:00Z", "{answer}");
+    assert_eq!(answer["proof"]["axis"], "default", "{answer}");
+    assert!(
+        answer["proof"]["superseded"]
+            .as_array()
+            .is_some_and(Vec::is_empty),
+        "nothing had replaced it yet: {answer}"
+    );
+
+    // Within February nothing bears on the question; the nearest match
+    // outside the span is named, on the clock it was read.
+    let february = call(
+        4,
+        "kmp_ask",
+        serde_json::json!({
+            "about": "project:cuando", "question": question,
+            "interval": {"start": "2026-02-01T00:00:00Z", "end": "2026-03-01T00:00:00Z"},
+            "axis": "occurred"
+        }),
+    );
+    let answer = &february["structuredContent"];
+    assert_eq!(answer["answer"], "UNKNOWN", "{answer}");
+    assert_eq!(
+        answer["proof"]["interval"]["start"], "2026-02-01T00:00:00Z",
+        "{answer}"
+    );
+    assert_eq!(
+        answer["proof"]["interval"]["end"], "2026-03-01T00:00:00Z",
+        "{answer}"
+    );
+    assert_eq!(answer["proof"]["axis"], "occurred", "{answer}");
+    assert_eq!(
+        answer["proof"]["nearest_outside"]["ref"], "project:cuando:decision:cache-valkey",
+        "{answer}"
+    );
+    assert_eq!(
+        answer["proof"]["nearest_outside"]["time"], "2026-03-01T10:00:00Z",
+        "{answer}"
+    );
+    assert_eq!(
+        answer["proof"]["nearest_outside"]["axis"], "occurred",
+        "{answer}"
+    );
+    assert!(
+        answer["summary"]
+            .as_str()
+            .is_some_and(|summary| summary.contains("nearest match outside the interval")),
+        "{answer}"
+    );
+
+    // An instant and a span together are refused before anything is read.
+    let both = call(
+        5,
+        "kmp_ask",
+        serde_json::json!({
+            "about": "project:cuando", "question": question,
+            "as_of": {"time": "2026-03-10T00:00:00Z"},
+            "interval": {"start": "2026-03-01T00:00:00Z"}
+        }),
+    );
+    assert_eq!(both["isError"], true, "{both}");
+    assert!(both.to_string().contains("exclusive"), "{both}");
+
+    // A wake bounded to the first ten days of March carries only what fell
+    // inside them, and its proof says where it stood.
+    let wake = call(
+        6,
+        "kmp_wake",
+        serde_json::json!({
+            "about": "project:cuando",
+            "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-03-10T00:00:00Z"}
+        }),
+    );
+    let packet = &wake["structuredContent"];
+    let refs = packet["proof"]["evidence"]
+        .as_array()
+        .expect("evidence")
+        .iter()
+        .map(|item| item["id"].as_str().unwrap_or_default().to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        refs.iter().any(|id| id.ends_with("cache-valkey")),
+        "{packet}"
+    );
+    assert!(
+        refs.iter().any(|id| id.ends_with("observation:canteen")),
+        "{packet}"
+    );
+    assert!(
+        !refs.iter().any(|id| id.ends_with("cache-dragonfly")),
+        "the twentieth is outside the span: {packet}"
+    );
+    assert_eq!(
+        packet["proof"]["interval"]["end"], "2026-03-10T00:00:00Z",
+        "{packet}"
+    );
+    assert_eq!(
+        packet["resume_cursor"]["ref"], "project:cuando:observation:canteen",
+        "the newest inside the span: {packet}"
+    );
+}

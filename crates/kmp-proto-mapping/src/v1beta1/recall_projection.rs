@@ -1494,8 +1494,39 @@ fn proof_value(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "frontier_size": proof.frontier_size,
         "matched_terms": proof.matched_terms,
         "matched_relations": proof.matched_relations,
-        "confidence": confidence_label(proof.confidence)
+        "confidence": confidence_label(proof.confidence),
+        "interval": proof.interval.as_ref().map(interval_value),
+        "axis": (proof.interval.is_some() || proof.as_of.is_some()).then(|| temporal_axis_label(proof.axis)),
+        "as_of": proof.as_of.map(|at| at.to_string()),
+        "nearest_outside": proof.nearest_outside.as_ref().map(nearest_outside_value)
     })
+}
+
+/// Where a recall stood in time, as the proof declares it: the keys are
+/// present and null when the caller named no instant and no span.
+fn interval_value(interval: &kmp_proto::v1beta1::TemporalInterval) -> Value {
+    json!({
+        "start": interval.start.map(|at| at.to_string()),
+        "end": interval.end.map(|at| at.to_string())
+    })
+}
+
+fn nearest_outside_value(nearest: &kmp_proto::v1beta1::NearestOutside) -> Value {
+    json!({
+        "ref": nearest.r#ref,
+        "time": nearest.time.map(|at| at.to_string()),
+        "axis": temporal_axis_label(nearest.axis)
+    })
+}
+
+fn temporal_axis_label(value: i32) -> &'static str {
+    match kmp_proto::v1beta1::TemporalAxis::try_from(value) {
+        Ok(kmp_proto::v1beta1::TemporalAxis::Occurred) => "occurred",
+        Ok(kmp_proto::v1beta1::TemporalAxis::Observed) => "observed",
+        Ok(kmp_proto::v1beta1::TemporalAxis::Ingested) => "ingested",
+        Ok(kmp_proto::v1beta1::TemporalAxis::Validity) => "validity",
+        _ => "default",
+    }
 }
 
 fn normalized_proof_relation(
@@ -1546,7 +1577,8 @@ fn empty_proof_value() -> Value {
     json!({
         "path": [], "evidence": [], "conflicts": [], "superseded": [], "expired": [],
         "missing": ["proof"], "frontier_size": 1, "matched_terms": [],
-        "matched_relations": [], "confidence": "unknown"
+        "matched_relations": [], "confidence": "unknown",
+        "interval": null, "axis": null, "as_of": null, "nearest_outside": null
     })
 }
 
@@ -2537,6 +2569,10 @@ mod tests {
                 frontier_size: 2,
                 matched_terms: vec!["storage".to_string(), "current".to_string()],
                 matched_relations: vec!["supports".to_string()],
+                interval: None,
+                axis: 0,
+                nearest_outside: None,
+                as_of: None,
             }),
             warnings: Vec::new(),
             projection: None,

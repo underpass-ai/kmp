@@ -31,6 +31,20 @@ struct JudgedCase {
     answer_policy: String,
     judged: Vec<String>,
     memory: Value,
+    /// Where the question stands in time, exactly as `kmp_ask` takes it:
+    /// an instant, a half-open span, and the clock they read.
+    #[serde(default)]
+    as_of: Option<Value>,
+    #[serde(default)]
+    interval: Option<Value>,
+    #[serde(default)]
+    axis: Option<String>,
+    /// For a question whose right answer is UNKNOWN within its span: the ref
+    /// the proof must name as the nearest match outside it. Such a case is
+    /// scored as if that ref were the one citation, so the ordinary metrics
+    /// carry it without a column of their own.
+    #[serde(default)]
+    nearest_outside: Option<String>,
 }
 
 #[tokio::main]
@@ -125,22 +139,49 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
     )
     .await?;
 
+    let mut arguments = json!({
+        "about": case.about,
+        "question": case.question,
+        "answer_policy": case.answer_policy,
+        "depth": 3,
+        "budget": {"tokens": 2048, "detail": "balanced", "max_entries": 10}
+    });
+    if let Some(as_of) = &case.as_of {
+        arguments["as_of"] = as_of.clone();
+    }
+    if let Some(interval) = &case.interval {
+        arguments["interval"] = interval.clone();
+    }
+    if let Some(axis) = &case.axis {
+        arguments["axis"] = json!(axis);
+    }
     let started = Instant::now();
-    let answer = call(
-        &server,
-        2,
-        "kmp_ask",
-        json!({
-            "about": case.about,
-            "question": case.question,
-            "answer_policy": case.answer_policy,
-            "depth": 3,
-            "budget": {"tokens": 2048, "detail": "balanced", "max_entries": 10}
-        }),
-    )
-    .await?;
+    let answer = call(&server, 2, "kmp_ask", arguments).await?;
     let elapsed_millis = started.elapsed().as_millis() as u64;
     let _ = fs::remove_dir_all(&data_dir);
+
+    if let Some(expected) = &case.nearest_outside {
+        // The right answer is UNKNOWN, and the proof must say what lies
+        // nearest outside the span: that ref is the one citation this case
+        // scores, and only when the answer was honestly UNKNOWN.
+        let unknown = answer["answer"].as_str() == Some("UNKNOWN");
+        let named = answer["proof"]["nearest_outside"]["ref"]
+            .as_str()
+            .filter(|_| unknown)
+            .map(str::to_string)
+            .into_iter()
+            .collect::<Vec<_>>();
+        return Ok(RetrievalOutcome {
+            judged: BTreeSet::from([expected.clone()]),
+            retrieved: named.clone(),
+            cited: named.into_iter().collect(),
+            unknown: false,
+            used_bytes: answer["projection"]["budget"]["used_bytes"]
+                .as_u64()
+                .unwrap_or_default(),
+            elapsed_millis,
+        });
+    }
 
     let retrieved = answer["proof"]["evidence"]
         .as_array()

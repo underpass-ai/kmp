@@ -137,6 +137,12 @@ message WakeRequest {
   // Continuation of the canonical recall projection. The cursor is bound to
   // the same request, snapshot and ordered eligible selection.
   PageRequest page = 6;
+  // Wake at one instant, within a half-open span, on one clock. The three
+  // mean what they mean on AskRequest: `as_of` and `interval` are exclusive,
+  // and `axis` has nothing to select on without one of them.
+  TemporalCursor as_of = 7;
+  TemporalInterval interval = 8;
+  TemporalAxis axis = 9;
 }
 
 message WakeResponse {
@@ -182,6 +188,19 @@ message AskRequest {
   // rendering leans to another language or drops an identifier the user's
   // words carry.
   string asked_as = 7;
+  // Ask at one instant: only what was in effect then on `axis` competes, and
+  // the lifecycles — supersession, expiry — are read as they stood then, so
+  // an entry replaced or expired later is current for this question. A ref
+  // cursor stands at that entry's own instant on the axis. Exclusive with
+  // `interval`.
+  TemporalCursor as_of = 8;
+  // Ask within a half-open span on `axis`: only what falls inside competes,
+  // the collection the ranker weighs is the span's own, and an UNKNOWN names
+  // the nearest match outside it. Exclusive with `as_of`.
+  TemporalInterval interval = 9;
+  // The clock `as_of` and `interval` are read on. UNSPECIFIED keeps the
+  // compatible precedence. An axis alone has nothing to select on.
+  TemporalAxis axis = 10;
 }
 
 message AskResponse {
@@ -371,6 +390,13 @@ message TemporalCursor {
   optional uint32 sequence = 3;
 }
 
+// A half-open span on one clock: `start` inclusive, `end` exclusive. Either
+// bound may be left unset to leave that side open; at least one is set.
+message TemporalInterval {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
 message TemporalEntry {
   string ref = 1;
   string kind = 2;
@@ -535,6 +561,17 @@ message Proof {
   // stands. Ask withholds it and reports it here, so the exclusion is not
   // silent.
   repeated ExpiredMemory expired = 10;
+  // The span this recall stood within, when the caller asked for one.
+  TemporalInterval interval = 11;
+  // The clock `as_of` or `interval` was read on, as the caller named it;
+  // UNSPECIFIED is the compatible precedence.
+  TemporalAxis axis = 12;
+  // On UNKNOWN within an interval: the best match outside it, so a reader
+  // can tell "not then" from "not known".
+  NearestOutside nearest_outside = 13;
+  // The instant this recall stood at, when the caller asked for one; a ref
+  // cursor is reported as the instant it resolved to.
+  google.protobuf.Timestamp as_of = 14;
 }
 
 // One entry replaced by another, so a reader can tell history from advice.
@@ -553,6 +590,16 @@ message SupersededMemory {
 message ExpiredMemory {
   string ref = 1;
   google.protobuf.Timestamp valid_until = 2;
+}
+
+// The closest match outside the interval a recall was bounded to.
+message NearestOutside {
+  string ref = 1;
+  // Its instant on the clock the recall read.
+  google.protobuf.Timestamp time = 2;
+  // The clock that instant was read from. Never UNSPECIFIED here: the
+  // compatible precedence resolves to one clock per entry.
+  TemporalAxis axis = 3;
 }
 
 // Per-response quality/composition summary, promoted from OTel so a client can

@@ -126,6 +126,13 @@ pub fn compare_temporal_instants(left: &str, right: &str) -> Option<Ordering> {
     Some(timestamp_nanos(left)?.cmp(&timestamp_nanos(right)?))
 }
 
+/// Reads an instant in either spelling the kernel stores as nanoseconds on
+/// its canonical axis, for callers that measure distances rather than
+/// compare; `None` for a value that is not an instant.
+pub fn temporal_instant_nanos(value: &str) -> Option<i128> {
+    timestamp_nanos(value)
+}
+
 fn timestamp_nanos(value: &str) -> Option<i128> {
     if let Some(value) = value.strip_prefix("unix:") {
         let (seconds, nanos) = value.split_once(':')?;

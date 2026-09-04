@@ -1010,13 +1010,40 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
+      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to wake from.",
             "minLength": 1,
+            "type": "string"
+          },
+          "as_of": {
+            "additionalProperties": false,
+            "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+            "properties": {
+              "ref": {
+                "description": "Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "time": {
+                "description": "ISO-8601 instant to stand at.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "axis": {
+            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
             "type": "string"
           },
           "budget": {
@@ -1123,6 +1150,23 @@
             "minLength": 1,
             "type": "string"
           },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "page": {
             "additionalProperties": false,
             "properties": {
@@ -1227,6 +1271,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Wake uses medium for a non-empty deterministic retrieval packet; this is not relation-writer certainty.",
                 "type": "string"
@@ -1240,12 +1298,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -1258,6 +1323,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",
@@ -1360,7 +1432,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+      "description": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -1378,9 +1450,36 @@
             ],
             "type": "string"
           },
+          "as_of": {
+            "additionalProperties": false,
+            "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+            "properties": {
+              "ref": {
+                "description": "Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "time": {
+                "description": "ISO-8601 instant to stand at.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "asked_as": {
             "description": "The user's own words when `question` renders them in English. Optional. Searched never; echoed back as `asked_as` for the audit trail, and read against `question` the way a search summary is read against its text: a rendering that leans to another language, carries no informative word, or drops an identifier the user's words carry (`#469`, `v0.7.0`) draws a warning, while the question is still searched as given. Answer in the user's language; cite the stored text byte for byte.",
             "minLength": 1,
+            "type": "string"
+          },
+          "axis": {
+            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "enum": [
+              "occurred",
+              "observed",
+              "ingested",
+              "validity"
+            ],
             "type": "string"
           },
           "budget": {
@@ -1478,6 +1577,23 @@
                   "type": "string"
                 },
                 "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -1602,6 +1718,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Derived from lexical term overlap between the question and the best retained evidence item. It is not a judgement that the evidence answers the question, and it is not relation-writer certainty. Medium at most when the question reached the evidence through the lexical-bridge table rather than in its own words; not capped when the writer's English summary_en carried it.",
                 "type": "string"
@@ -1615,12 +1745,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -1633,6 +1770,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",
@@ -1950,6 +2094,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
                 "type": "string"
@@ -1963,12 +2121,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -1981,6 +2146,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",
@@ -2321,6 +2493,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
                 "type": "string"
@@ -2334,12 +2520,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -2352,6 +2545,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",
@@ -2692,6 +2892,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
                 "type": "string"
@@ -2705,12 +2919,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -2723,6 +2944,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",
@@ -3063,6 +3291,20 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "as_of": {
+                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "axis": {
+                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "confidence": {
                 "description": "Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty.",
                 "type": "string"
@@ -3076,12 +3318,19 @@
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` is at or before the temporal cursor. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
                 "type": "array"
               },
               "frontier_size": {
                 "description": "How much was reachable and not returned, which is the signal to expand.",
                 "type": "integer"
+              },
+              "interval": {
+                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "matched_relations": {
                 "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
@@ -3094,6 +3343,13 @@
               "missing": {
                 "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
                 "type": "array"
+              },
+              "nearest_outside": {
+                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "path": {
                 "description": "The traversal that connects the cited evidence.",

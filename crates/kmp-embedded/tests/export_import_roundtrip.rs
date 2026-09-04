@@ -151,6 +151,7 @@ async fn wake_node_ids(kernel: &EmbeddedKernel) -> Vec<String> {
             depth: 2,
             max_tier: None,
             max_entries: None,
+            temporal: kmp_domain::TemporalSelection::Frontier,
         })
         .await
         .expect("wake succeeds");

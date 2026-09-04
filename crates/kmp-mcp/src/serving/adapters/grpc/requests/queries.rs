@@ -8,9 +8,9 @@ use crate::contract::validator::{optional_string, required_string, validate_requ
 use super::common::{answer_policy_from_object, memory_budget_from_arguments, object};
 use super::dimensions::dimension_selection_from_arguments;
 use super::temporal::{
-    inspect_include_from_arguments, page_from_arguments, temporal_axis_from_arguments,
-    temporal_cursor_from_arguments, temporal_include_from_arguments, temporal_limit_from_arguments,
-    temporal_window_from_arguments,
+    as_of_from_arguments, inspect_include_from_arguments, interval_from_arguments,
+    page_from_arguments, temporal_axis_from_arguments, temporal_cursor_from_arguments,
+    temporal_include_from_arguments, temporal_limit_from_arguments, temporal_window_from_arguments,
 };
 
 pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeRequest, String> {
@@ -22,6 +22,9 @@ pub(crate) fn wake_request_from_arguments(arguments: &Value) -> Result<WakeReque
         budget: Some(memory_budget_from_arguments(arguments, 1600, 2)?),
         dimensions: dimension_selection_from_arguments(arguments)?,
         page: page_from_arguments(arguments)?,
+        as_of: as_of_from_arguments(arguments)?,
+        interval: interval_from_arguments(arguments)?,
+        axis: temporal_axis_from_arguments(arguments)?,
     })
 }
 
@@ -40,6 +43,9 @@ pub(crate) fn ask_request_from_arguments(arguments: &Value) -> Result<AskRequest
         budget: Some(memory_budget_from_arguments(arguments, 2400, 2)?),
         dimensions: dimension_selection_from_arguments(arguments)?,
         page: page_from_arguments(arguments)?,
+        as_of: as_of_from_arguments(arguments)?,
+        interval: interval_from_arguments(arguments)?,
+        axis: temporal_axis_from_arguments(arguments)?,
     })
 }
 

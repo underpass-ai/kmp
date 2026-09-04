@@ -73,7 +73,21 @@ pub(super) fn proof_json(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "frontier_size": proof.frontier_size,
         "matched_terms": proof.matched_terms,
         "matched_relations": proof.matched_relations,
-        "confidence": confidence_label(proof.confidence)
+        "confidence": confidence_label(proof.confidence),
+        // Where the recall stood in time, when the caller named it. A
+        // temporal move stands at its cursor and leaves these null.
+        "interval": proof.interval.as_ref().map(|interval| json!({
+            "start": interval.start.map(|at| at.to_string()),
+            "end": interval.end.map(|at| at.to_string())
+        })),
+        "axis": (proof.interval.is_some() || proof.as_of.is_some())
+            .then(|| temporal_axis_label(proof.axis)),
+        "as_of": proof.as_of.map(|at| at.to_string()),
+        "nearest_outside": proof.nearest_outside.as_ref().map(|nearest| json!({
+            "ref": nearest.r#ref,
+            "time": nearest.time.map(|at| at.to_string()),
+            "axis": temporal_axis_label(nearest.axis)
+        }))
     })
 }
 
@@ -146,7 +160,11 @@ pub(super) fn empty_proof_json() -> Value {
         "frontier_size": 1,
         "matched_terms": [],
         "matched_relations": [],
-        "confidence": "unknown"
+        "confidence": "unknown",
+        "interval": null,
+        "axis": null,
+        "as_of": null,
+        "nearest_outside": null
     })
 }
 

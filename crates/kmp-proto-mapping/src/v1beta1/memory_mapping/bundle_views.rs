@@ -286,6 +286,10 @@ pub(super) fn proof(
         frontier_size,
         matched_terms: Vec::new(),
         matched_relations: Vec::new(),
+        interval: None,
+        axis: 0,
+        nearest_outside: None,
+        as_of: None,
     }
 }
 

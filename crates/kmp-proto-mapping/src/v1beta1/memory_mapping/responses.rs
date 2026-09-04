@@ -7,7 +7,7 @@ use kmp_application::{
 };
 use kmp_domain::{
     BundleNodeDetail, KmpBundle, QuestionRendering, QuestionRenderingFault, TemporalAxis,
-    TemporalCoordinate, TemporalDirection, compare_temporal_instants,
+    TemporalCoordinate, TemporalDirection, TemporalSelection, compare_temporal_instants,
 };
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
@@ -19,6 +19,8 @@ use kmp_proto::v1beta1::{
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
 use super::answer_selection::was_reached_indirectly;
 use super::lexical_bridge::LexicalBridge;
+use super::scalars::ProtoMappingResult;
+use super::temporal_admission::TemporalAdmission;
 
 /// What the `answer` field carries when memory does not answer the question.
 ///
@@ -95,12 +97,21 @@ pub fn wake_response_from_result(
     intent: &str,
     max_entries: Option<usize>,
     result: GetContextResult,
-) -> WakeResponse {
-    let lifecycle = MemoryLifecycle::read(&result.bundle);
-    let signals = RelationSignalIndex::read(&result.bundle);
-    let relationships = memory_relations_from_bundle(&result.bundle);
+    temporal: &TemporalSelection,
+) -> ProtoMappingResult<WakeResponse> {
+    // A packet bounded in time stands on the selection: its evidence, its
+    // spine, its cursor and its proof are the selection's. The rendered
+    // prose is the about's, because it is rendered before this reads it.
+    let admission = TemporalAdmission::read(&result.bundle, temporal)?;
+    let bounded = admission.bound(&result.bundle);
+    let lifecycle = lifecycle_for(&bounded, &admission);
+    let signals = RelationSignalIndex::read(&bounded);
+    let relationships = memory_relations_from_bundle(&bounded);
     let causal_spine = prioritize_wake_relationships(relationships.clone(), &signals);
-    let full_evidence = memory_evidence_from_bundle(&result.bundle);
+    let full_evidence = memory_evidence_from_bundle(&result.bundle)
+        .into_iter()
+        .filter(|item| admission.admits(item))
+        .collect::<Vec<_>>();
     let current_state = rendered_current_state(&result.rendered, &result.bundle);
     let summary = rendered_summary(&result.rendered);
     // The L0 summary already selects one blocker and one next action. Leaving
@@ -141,7 +152,7 @@ pub fn wake_response_from_result(
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let resume_cursor = newest_cursor(&relationships);
 
-    WakeResponse {
+    Ok(WakeResponse {
         projection: None,
         truncation: None,
         resume_cursor,
@@ -173,9 +184,22 @@ pub fn wake_response_from_result(
             // applicability ended arrived as current state next to an empty
             // list asserting that none had.
             wake_proof.expired = lifecycle.expired_memories();
+            let stood = admission.proof_fields();
+            wake_proof.interval = stood.interval;
+            wake_proof.axis = stood.axis;
+            wake_proof.as_of = stood.as_of;
             Some(wake_proof)
         },
         warnings: Vec::new(),
+    })
+}
+
+/// The lifecycles as they stand where the recall stands: at the instant the
+/// caller named, or at the memory's own frontier.
+fn lifecycle_for(bundle: &KmpBundle, admission: &TemporalAdmission) -> MemoryLifecycle {
+    match admission.lifecycle_instant() {
+        Some(instant) => MemoryLifecycle::read_at(bundle, instant, admission.axis()),
+        None => MemoryLifecycle::read(bundle),
     }
 }
 
@@ -271,9 +295,19 @@ pub fn ask_response_from_result(
     max_entries: Option<usize>,
     result: GetContextResult,
     bridge: &LexicalBridge,
-) -> AskResponse {
-    let ranker = AnswerEvidenceRanker::from_bundle_with_bridge(&result.bundle, bridge);
-    let candidate_evidence = answer_evidence_from_bundle(&result.bundle);
+    temporal: &TemporalSelection,
+) -> ProtoMappingResult<AskResponse> {
+    let admission = TemporalAdmission::read(&result.bundle, temporal)?;
+    let bounded = admission.bound(&result.bundle);
+    let lifecycle = lifecycle_for(&bounded, &admission);
+    let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle);
+    // What the selection admits is decided before the ranker weighs a word,
+    // so the collection its statistics read is the selection's own: a word
+    // common in the about and rare in the span earns what it earns there.
+    let (candidate_evidence, outside_evidence): (Vec<_>, Vec<_>) =
+        answer_evidence_from_bundle(&result.bundle)
+            .into_iter()
+            .partition(|item| admission.admits(item));
     let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     // A candidate the graph reached is proof, not an answer. It travels in
@@ -351,7 +385,7 @@ pub fn ask_response_from_result(
         if unknown {
             Vec::new()
         } else {
-            answer_relations_from_bundle(&result.bundle, &evidence)
+            answer_relations_from_bundle(&bounded, &evidence)
         },
         evidence,
         if unknown {
@@ -369,9 +403,47 @@ pub fn ask_response_from_result(
     answer_proof.matched_relations = matched_relations;
     // Ask withholds an entry whose applicability ended rather than offering it
     // as current. Saying so is what separates that from having nothing.
-    answer_proof.expired = MemoryLifecycle::read(&result.bundle).expired_memories();
+    answer_proof.expired = ranker.expired_memories();
+    let stood = admission.proof_fields();
+    answer_proof.interval = stood.interval;
+    answer_proof.axis = stood.axis;
+    answer_proof.as_of = stood.as_of;
+    // UNKNOWN within a span is one of two things: not known, or not then.
+    // When what lies outside the span does bear on the question, the proof
+    // names the closest of it, so the caller can widen the span on purpose
+    // instead of concluding the memory was never written.
+    if unknown && admission.bounds_a_span() && !outside_evidence.is_empty() {
+        let outside_core = ranker
+            .rank(question, policy, outside_evidence)
+            .into_iter()
+            .filter(|item| !was_reached_indirectly(item))
+            .take(ANSWER_CORE_LIMIT)
+            .collect::<Vec<_>>();
+        let outside_bears = !outside_core.is_empty()
+            && !(matches!(
+                policy,
+                MemoryAnswerPolicy::EvidenceOrUnknown | MemoryAnswerPolicy::ShowConflicts
+            ) && ranker.confidence(question, &outside_core) == MemoryConfidence::Low);
+        if outside_bears {
+            answer_proof.nearest_outside = admission.nearest_outside(&outside_core);
+        }
+    }
+    let nearest_outside_note = answer_proof
+        .nearest_outside
+        .as_ref()
+        .map(|nearest| {
+            format!(
+                "; the nearest match outside the interval is {} at {}",
+                nearest.r#ref,
+                nearest
+                    .time
+                    .map(|time| time.to_string())
+                    .unwrap_or_else(|| "an unread instant".to_string())
+            )
+        })
+        .unwrap_or_default();
 
-    AskResponse {
+    Ok(AskResponse {
         projection: None,
         truncation: None,
         summary: if answer == UNANSWERED {
@@ -380,10 +452,12 @@ pub fn ask_response_from_result(
             // one is a memory that has not been written yet, the other is a
             // question this memory cannot settle.
             if retrieved == 0 {
-                format!("Nothing in this memory was retrieved for: {question}")
+                format!(
+                    "Nothing in this memory was retrieved for: {question}{nearest_outside_note}"
+                )
             } else {
                 format!(
-                    "Retrieved {retrieved} memory {}, none of which bears on: {question}",
+                    "Retrieved {retrieved} memory {}, none of which bears on: {question}{nearest_outside_note}",
                     if retrieved == 1 { "item" } else { "items" }
                 )
             }
@@ -399,7 +473,7 @@ pub fn ask_response_from_result(
         proof: Some(answer_proof),
         warnings: question_rendering_warnings(question, asked_as),
         asked_as: asked_as.unwrap_or_default().to_string(),
-    }
+    })
 }
 
 /// What a rendered question lost of the user's words, said on the answer.
@@ -1664,7 +1738,9 @@ mod ask_entry_text_tests {
             None,
             result,
             &super::LexicalBridge::none(),
-        );
+            &kmp_domain::TemporalSelection::Frontier,
+        )
+        .expect("an answer");
 
         assert_ne!(response.answer, UNANSWERED);
         let proof = response.proof.expect("proof");
@@ -1743,7 +1819,9 @@ mod ask_entry_text_tests {
             None,
             result,
             &super::LexicalBridge::none(),
-        );
+            &kmp_domain::TemporalSelection::Frontier,
+        )
+        .expect("an answer");
 
         let proof = response.proof.expect("proof");
         let reached = proof
@@ -2040,7 +2118,9 @@ mod wake_priority_tests {
                 served_at: std::time::SystemTime::UNIX_EPOCH,
                 timing: None,
             },
+            &kmp_domain::TemporalSelection::Frontier,
         )
+        .expect("a packet")
     }
 
     /// The cap used to keep whatever the traversal emitted first. A resume

@@ -1888,6 +1888,625 @@
           }
         ]
       }
+    },
+    {
+      "id": "ask-as-of-before-supersession",
+      "probes": "Standing at an instant, the decision that was in force then is the answer, and the one that replaced it later does not exist yet. At the frontier the older decision is superseded and withheld; as of the tenth it is current and the only one there is.",
+      "about": "project:asof",
+      "question": "Which engine runs the shared cache for the checkout service?",
+      "answer_policy": "evidence_or_unknown",
+      "as_of": {
+        "time": "2026-03-10T00:00:00Z"
+      },
+      "judged": [
+        "project:asof:decision:cache-valkey"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:asof:decision:cache-valkey",
+            "kind": "decision",
+            "text": "The shared cache runs on Valkey for the checkout service.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-01T10:00:00Z",
+                "sequence": 1,
+                "valid_from": "2026-03-01T10:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:asof:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:asof:decision:cache-dragonfly",
+            "kind": "decision",
+            "text": "The shared cache runs on Dragonfly for the checkout service.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-20T10:00:00Z",
+                "sequence": 3,
+                "valid_from": "2026-03-20T10:00:00Z"
+              }
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "from": "project:asof:decision:cache-dragonfly",
+            "to": "project:asof:decision:cache-valkey",
+            "rel": "supersedes",
+            "class": "evidential",
+            "why": "Valkey was replaced after the latency review found the checkout tail too long.",
+            "evidence": "Latency review of the checkout cache, March.",
+            "confidence": "high"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ask-as-of-expired-later",
+      "probes": "A constraint that ran out after the instant is in force at the instant. At the frontier its validity has ended and Ask withholds it; as of the fifteenth it holds and is cited.",
+      "about": "project:expiry",
+      "question": "Are deployments to checkout frozen?",
+      "answer_policy": "evidence_or_unknown",
+      "as_of": {
+        "time": "2026-03-15T00:00:00Z"
+      },
+      "judged": [
+        "project:expiry:constraint:freeze"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:expiry:constraint:freeze",
+            "kind": "constraint",
+            "text": "Deployments to checkout are frozen during the payments audit.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-01T09:00:00Z",
+                "sequence": 1,
+                "valid_from": "2026-03-01T09:00:00Z",
+                "valid_until": "2026-04-01T00:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:expiry:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:expiry:observation:audit-closed",
+            "kind": "observation",
+            "text": "The payments audit closed without findings.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-15T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-only-inside-competes",
+      "probes": "Within a span only what falls inside competes. The same failure recorded in March and again in September: asked about March, the March record is the answer and the September one, the more recent at the frontier, is not in the running.",
+      "about": "project:span",
+      "question": "Which valve failed during the night shift?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "judged": [
+        "project:span:incident:valve-march"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:span:incident:valve-march",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-04T02:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:span:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:span:incident:valve-september",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift again.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-09-04T02:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-axis-occurred",
+      "probes": "The same text on two clocks is two answers. Asked what happened in April on the occurred clock, the bearing that overheated in April is the answer, not the one seen in April that had overheated in March.",
+      "about": "project:clocks",
+      "question": "Which bearing overheated on line two?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-04-01T00:00:00Z",
+        "end": "2026-05-01T00:00:00Z"
+      },
+      "axis": "occurred",
+      "judged": [
+        "project:clocks:incident:bearing-second"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:clocks:incident:bearing-first",
+            "kind": "incident",
+            "text": "The pump bearing overheated on line two.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-10T14:00:00Z",
+                "sequence": 1,
+                "observed_at": "2026-04-12T10:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:clocks:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:clocks:incident:bearing-second",
+            "kind": "incident",
+            "text": "The pump bearing overheated on line two once more.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-20T14:00:00Z",
+                "sequence": 3,
+                "observed_at": "2026-05-03T10:00:00Z"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-axis-observed",
+      "probes": "The same store and span on the observed clock: what we knew in April is the bearing seen in the April review, though it had overheated in March; the April failure was not seen until May.",
+      "about": "project:clocks",
+      "question": "Which bearing overheated on line two?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-04-01T00:00:00Z",
+        "end": "2026-05-01T00:00:00Z"
+      },
+      "axis": "observed",
+      "judged": [
+        "project:clocks:incident:bearing-first"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:clocks:incident:bearing-first",
+            "kind": "incident",
+            "text": "The pump bearing overheated on line two.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-10T14:00:00Z",
+                "sequence": 1,
+                "observed_at": "2026-04-12T10:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:clocks:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:clocks:incident:bearing-second",
+            "kind": "incident",
+            "text": "The pump bearing overheated on line two once more.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-20T14:00:00Z",
+                "sequence": 3,
+                "observed_at": "2026-05-03T10:00:00Z"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-valid-includes-expired-later",
+      "probes": "On the validity clock, what was in force during the span competes even though it has run out since. At the frontier the rule is expired and withheld; within the span it held for every day of it.",
+      "about": "project:valid",
+      "question": "Do night deployments require a second approver?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-03-10T00:00:00Z",
+        "end": "2026-03-20T00:00:00Z"
+      },
+      "axis": "validity",
+      "judged": [
+        "project:valid:constraint:second-approver"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:valid:constraint:second-approver",
+            "kind": "constraint",
+            "text": "Night deployments require a second approver.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-01T09:00:00Z",
+                "sequence": 1,
+                "valid_from": "2026-03-01T09:00:00Z",
+                "valid_until": "2026-04-01T00:00:00Z"
+              }
+            ]
+          },
+          {
+            "id": "project:valid:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:valid:observation:rota-retired",
+            "kind": "observation",
+            "text": "The approver rota was retired.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-05-01T09:00:00Z",
+                "sequence": 3,
+                "valid_from": "2026-05-01T09:00:00Z"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-local-idf",
+      "probes": "The collection a span weighs is its own. `cutover` appears in eight rehearsals across the year and in one record inside March; within the span that word is rare and decides, against a sibling that shares every other word.",
+      "about": "project:idf",
+      "question": "Who handled the cutover?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "judged": [
+        "project:idf:observation:cutover-handled"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:idf:observation:cutover-handled",
+            "kind": "observation",
+            "text": "The platform team handled the cutover on the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T02:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:canteen-move",
+            "kind": "observation",
+            "text": "The platform team handled the canteen move.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-06T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-01",
+            "kind": "observation",
+            "text": "Cutover rehearsal 1 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-01-15T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-02",
+            "kind": "observation",
+            "text": "Cutover rehearsal 2 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-02-15T09:00:00Z",
+                "sequence": 4
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-04",
+            "kind": "observation",
+            "text": "Cutover rehearsal 3 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-04-15T09:00:00Z",
+                "sequence": 5
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-05",
+            "kind": "observation",
+            "text": "Cutover rehearsal 4 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-05-15T09:00:00Z",
+                "sequence": 6
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-06",
+            "kind": "observation",
+            "text": "Cutover rehearsal 5 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-06-15T09:00:00Z",
+                "sequence": 7
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-07",
+            "kind": "observation",
+            "text": "Cutover rehearsal 6 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-07-15T09:00:00Z",
+                "sequence": 8
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-08",
+            "kind": "observation",
+            "text": "Cutover rehearsal 7 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-08-15T09:00:00Z",
+                "sequence": 9
+              }
+            ]
+          },
+          {
+            "id": "project:idf:observation:rehearsal-09",
+            "kind": "observation",
+            "text": "Cutover rehearsal 8 completed on schedule.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-09-15T09:00:00Z",
+                "sequence": 10
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "interval-unknown-with-nearest",
+      "probes": "Nothing inside the span bears on the question and something outside does: the answer is UNKNOWN, and the proof names the nearest match outside the span, so a reader can tell not-then from not-known.",
+      "about": "project:nearest",
+      "question": "Which valve failed during the night shift?",
+      "answer_policy": "evidence_or_unknown",
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "nearest_outside": "project:nearest:incident:valve-february",
+      "judged": [
+        "project:nearest:incident:valve-february"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:nearest:incident:valve-february",
+            "kind": "incident",
+            "text": "The reserve valve failed during the night shift.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-02-20T02:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:nearest:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          },
+          {
+            "id": "project:nearest:observation:march-review",
+            "kind": "observation",
+            "text": "The March review covered the maintenance backlog.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-12T09:00:00Z",
+                "sequence": 3
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

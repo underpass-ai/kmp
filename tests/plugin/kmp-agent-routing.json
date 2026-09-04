@@ -79,6 +79,40 @@
       ]
     }
   ],
+  "dated_semantic_cases": [
+    {
+      "language": "en",
+      "prompt": "Why was language routing decided on 24 August?",
+      "tool_trace": [
+        "kmp_ask"
+      ],
+      "arguments": {
+        "about": "project:kmp",
+        "question": "Why was language routing decided?",
+        "asked_as": "Why was language routing decided on 24 August?",
+        "interval": {
+          "start": "2026-08-23T22:00:00Z",
+          "end": "2026-08-24T22:00:00Z"
+        }
+      }
+    },
+    {
+      "language": "es",
+      "prompt": "¿Por qué se decidió el enrutado por idioma el 24 de agosto?",
+      "tool_trace": [
+        "kmp_ask"
+      ],
+      "arguments": {
+        "about": "project:kmp",
+        "question": "Why was language routing decided?",
+        "asked_as": "¿Por qué se decidió el enrutado por idioma el 24 de agosto?",
+        "interval": {
+          "start": "2026-08-23T22:00:00Z",
+          "end": "2026-08-24T22:00:00Z"
+        }
+      }
+    }
+  ],
   "semantic_case": {
     "user_language": "es",
     "question": "¿Por qué un escritor corresponde a un agente por proyecto?",

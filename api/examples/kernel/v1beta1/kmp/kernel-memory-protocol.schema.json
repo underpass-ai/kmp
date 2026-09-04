@@ -1025,6 +1025,58 @@
           "type": "integer",
           "minimum": 0,
           "description": "How much was reachable and not returned, which is the signal to expand the recall."
+        },
+        "interval": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/temporal_interval"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The span the recall stood within, when the caller asked for one; null otherwise."
+        },
+        "axis": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "occurred",
+                "observed",
+                "ingested",
+                "validity",
+                "default"
+              ],
+              "description": "One of the five clocks; `default` is the compatible precedence (occurred, validity start, observed, ingested)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The clock `as_of` or `interval` was read on; null when the recall stood at the memory's own frontier."
+        },
+        "as_of": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/date_time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to."
+        },
+        "nearest_outside": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nearest_outside"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "On UNKNOWN within an interval, the closest match outside it: the difference between not-then and not-known."
         }
       }
     },
@@ -1772,6 +1824,24 @@
         },
         "dimensions": {
           "$ref": "#/$defs/dimension_selection"
+        },
+        "as_of": {
+          "$ref": "#/$defs/temporal_cursor",
+          "description": "Stand at one instant: a `time`, or a `ref` for that entry's own instant on the axis. Exclusive with `interval`."
+        },
+        "interval": {
+          "$ref": "#/$defs/temporal_interval",
+          "description": "Stand within a half-open span. Exclusive with `as_of`."
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "occurred",
+            "observed",
+            "ingested",
+            "validity"
+          ],
+          "description": "The clock `as_of` and `interval` read; omitted, the compatible precedence. It has nothing to select on without one of them."
         }
       }
     },
@@ -1977,6 +2047,46 @@
           "items": {
             "$ref": "#/$defs/raw_memory_ref"
           }
+        }
+      }
+    },
+    "temporal_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A half-open span on one clock: `start` inclusive, `end` exclusive; either bound may be absent to leave that side open, and at least one is present.",
+      "properties": {
+        "start": {
+          "$ref": "#/$defs/date_time"
+        },
+        "end": {
+          "$ref": "#/$defs/date_time"
+        }
+      }
+    },
+    "nearest_outside": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref"
+      ],
+      "description": "On UNKNOWN within an interval: the closest match outside it, its instant and the clock that instant was read on.",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "time": {
+          "$ref": "#/$defs/date_time"
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "occurred",
+            "observed",
+            "ingested",
+            "validity",
+            "default"
+          ],
+          "description": "One of the five clocks; `default` is the compatible precedence (occurred, validity start, observed, ingested)."
         }
       }
     }

@@ -1,6 +1,6 @@
 use kmp_domain::{
     DimensionSelection, ResolutionTier, TemporalAxis, TemporalCoordinate, TemporalCursor,
-    TemporalDirection, TemporalWindow,
+    TemporalDirection, TemporalSelection, TemporalWindow,
 };
 
 use crate::queries::{GetNodeDetailResult, GraphRelationshipView};
@@ -147,6 +147,9 @@ pub struct WakeMemoryQuery {
     /// the about has more, Wake returns the first `max_entries` and reports the
     /// withheld count via proof.frontier_size so the client near-expands.
     pub max_entries: Option<usize>,
+    /// Which instants the packet stands on: the memory's frontier, one
+    /// instant, or a half-open span on one clock.
+    pub temporal: TemporalSelection,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -164,6 +167,10 @@ pub struct AskMemoryQuery {
     pub max_tier: Option<ResolutionTier>,
     /// Cap on answer evidence entries after relevance filtering.
     pub max_entries: Option<usize>,
+    /// Which instants the answer stands on: the memory's frontier, one
+    /// instant, or a half-open span on one clock. Only what the selection
+    /// admits competes, and the lifecycles are read as they stood then.
+    pub temporal: TemporalSelection,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

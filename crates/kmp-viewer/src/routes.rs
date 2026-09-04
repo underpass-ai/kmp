@@ -181,6 +181,7 @@ where
             depth: param_or_refuse!(depth_param(request)),
             max_tier,
             max_entries: None,
+            temporal: kmp_domain::TemporalSelection::Frontier,
         };
         match self.service.wake(query).await {
             Ok(result) => HttpResponse::json(&views::graph_view(about, &result)),

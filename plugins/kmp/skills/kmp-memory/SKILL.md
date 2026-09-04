@@ -44,15 +44,18 @@ to the part of the goal the wake packet did not already answer.
 | Signal in the user's goal | First move |
 | --- | --- |
 | Continue known work or recover its state | `kmp_wake` |
-| Yesterday, since, before/after, a date, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_goto`, `kmp_near`, `kmp_rewind` or `kmp_forward` |
-| A genuinely non-temporal question answerable from stored evidence | `kmp_ask` |
+| Enumerate a period: yesterday, since, before/after, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_goto`, `kmp_near`, `kmp_rewind` or `kmp_forward` |
+| A semantic question that carries a date or a range: why something was decided in March, what rule held during the incident, what was known on the tenth | one `kmp_ask` with `interval` or `as_of`, and `axis` for a clock other than when it happened |
+| A genuinely semantic question with no date, answerable from stored evidence | `kmp_ask` |
 | One cited ref must support a consequential claim | `kmp_inspect` |
 | A connection between two refs is part of the claim | `kmp_trace` |
 | The user asks to see, show, open, or navigate memory — including `muéstrame`, `enséñame`, `abre` or `ver` | Finish the retrieval lane, then `kmp_view_open` and `kmp_view_apply_intent` |
 | A durable decision, constraint or outcome was reached | `kmp_write_memory` |
 
-`kmp_ask` is direct-evidence retrieval. It is not time traversal and it does
-not synthesize strategy, policy or prose. If a question asks what a campaign,
+`kmp_ask` is direct-evidence retrieval. It does not walk a period — the
+temporal verbs enumerate — but it does stand where it is asked: `as_of` and
+`interval` bound what competes and when the lifecycles are read. It does not
+synthesize strategy, policy or prose. If a question asks what a campaign,
 handoff or recommendation *should say*, retrieve the underlying stored
 decisions in their own vocabulary and let the agent synthesize only after
 retrieval. Relations may rank eligible evidence; they cannot promote unrelated
@@ -154,9 +157,32 @@ temporal coordinate.
 Classify the request before choosing `kmp_ask`. `yesterday`, `today`, `since`,
 `before`, `after`, `during`, an explicit date or timestamp, and a release
 window are temporal intent. The same applies in the user's language — for
-example `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Enter the
-temporal lane first; do not spend an Ask call and do not present Ask as an
-exhaustive interval query.
+example `ayer`, `hoy`, `desde`, `antes`, `después` and `durante`. Temporal
+intent takes one of two shapes, and the shape decides the lane.
+
+**Enumerate a period.** "What happened yesterday", "what changed since the
+release", "what is current": the user wants what memory holds for a span,
+in order. Enter the temporal lane first; do not spend an Ask call and do not
+present Ask as an exhaustive interval query.
+
+**Answer a semantic question that carries a date.** "Why was the launch
+postponed in March", "what rule held during the incident", "what did we
+know on the tenth": the user wants an answer, and the date says where to
+stand. This is one `kmp_ask`, not a walk. Pass the same half-open UTC
+interval as `interval` — `{ "start": "…Z", "end": "…Z" }`, either side may
+be open — or the instant as `as_of` — `{ "time": "…Z" }`, or `{ "ref": "…" }`
+to stand where that entry happened. Name `axis` only when the question is
+about a clock other than when it happened: `observed` for what was known,
+`ingested` for what had been written, `validity` for what held. The kernel
+admits only what falls inside, weighs the question's words against the
+span's own collection, reads supersession and expiry as they stood then —
+an entry replaced or expired *after* the instant is current for that
+question — and declares where it stood in `proof.interval`, `proof.as_of`
+and `proof.axis`. `UNKNOWN` within an interval is one of two things, and
+`proof.nearest_outside` tells them apart: when it names a ref, the memory
+exists outside the span, so widen the interval on purpose; when it is null,
+nothing bearing on the question was found anywhere in the neighbourhood.
+`kmp_wake` takes the same three arguments to bound a resume packet.
 
 Temporal intent does not require an explicit date. “What is current?”, “what
 changed?”, “why now?”, release readiness, and recent decision history ask for
@@ -227,8 +253,9 @@ returns `UNKNOWN`, or the evidence does not answer, re-ask at most once in the
 user's own words, then reclassify the original goal before stopping. Never
 translate or rewrite stored evidence,
 refs, relation `why` or source metadata: cite the stored text byte-for-byte
-and write the answer in the user's language. Do not apply any of this to a
-temporal interval; temporal intent navigates time first.
+and write the answer in the user's language. A period to enumerate is
+navigated, not asked; a semantic question with a date is asked this same
+way, with `interval` or `as_of` beside the English rendering.
 
 ## The ten memory moves
 
@@ -237,7 +264,7 @@ temporal interval; temporal intent navigates time first.
 | Move | Use it when |
 | --- | --- |
 | `kmp_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
-| `kmp_ask` | You have a non-temporal semantic question. Deterministic evidence answer, or `UNKNOWN`. |
+| `kmp_ask` | You have a semantic question. Deterministic evidence answer, or `UNKNOWN`. With a date or a range, add `interval` or `as_of`, and `axis` for a clock other than when it happened. |
 
 **Navigate time** — all four take a timestamp, a sequence number, or a ref.
 

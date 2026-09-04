@@ -58,6 +58,8 @@
       "total": 1
     },
     "proof": {
+      "as_of": null,
+      "axis": null,
       "confidence": "medium",
       "conflicts": [],
       "evidence": [],
@@ -68,9 +70,11 @@
         }
       ],
       "frontier_size": 0,
+      "interval": null,
       "matched_relations": [],
       "matched_terms": [],
       "missing": [],
+      "nearest_outside": null,
       "path": [],
       "superseded": []
     },
