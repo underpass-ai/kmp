@@ -13,6 +13,7 @@ use super::read_context::ReadContext;
 use super::relation_quality::*;
 use super::relations::*;
 use super::search_summary::decide_search_summary;
+use super::writer_label::*;
 
 const DEFAULT_CONFIDENCE: &str = "high";
 const DEFAULT_SOURCE_KIND: &str = "agent";

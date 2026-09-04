@@ -16,6 +16,7 @@ pub(crate) mod ingest_validation;
 pub(crate) mod plan;
 mod planner;
 mod planner_audit;
+mod planner_labels_audit;
 pub(crate) mod read_context;
 pub(crate) mod relate_proposal;
 pub(crate) mod relation_quality;
@@ -24,6 +25,7 @@ pub(crate) mod results;
 mod search_summary;
 pub(crate) mod summary_planner;
 mod writer_identity_audit;
+pub(crate) mod writer_label;
 
 pub(crate) use ingest_plan::KmpIngestPlan;
 pub(crate) use ingest_planner::build_ingest_plan;
