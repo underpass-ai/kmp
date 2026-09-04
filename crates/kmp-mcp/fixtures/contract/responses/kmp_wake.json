@@ -11,25 +11,25 @@
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9830
+        "used_bytes": 9477
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 20,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:19:a0314dc0a799c2e79696a915a8b2041348bcac5872316a4f9700bc80088c0c65\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:18:47a00c068c5d903b0820fa68d2fb68ac07d83749fd53899510461f4f234aa46c\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:19:a0314dc0a799c2e79696a915a8b2041348bcac5872316a4f9700bc80088c0c65",
+        "next_cursor": "kmp1:18:47a00c068c5d903b0820fa68d2fb68ac07d83749fd53899510461f4f234aa46c",
         "offset": 0,
-        "returned": 19,
+        "returned": 18,
         "total": 37
       },
       "sections": {
         "proof.evidence": {
           "core": 0,
           "eligible": 12,
-          "returned_on_page": 4,
+          "returned_on_page": 3,
           "total": 12
         },
         "proof.path": {
@@ -60,6 +60,10 @@
       "selection_omitted": 0
     },
     "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "question:parity"
+      ],
       "as_of": null,
       "axis": null,
       "confidence": "medium",
@@ -100,18 +104,6 @@
           ],
           "text": "The claim is the store's only prior entry.",
           "time": "2026-04-12T16:00:00Z"
-        },
-        {
-          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
-          "source": "kmp_write_memory:parity-test:semantic_delta",
-          "supports": [
-            "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta"
-          ],
-          "text": "Both statements are hers, minutes apart.",
-          "time": "2026-04-12T17:00:00Z"
         }
       ],
       "expired": [
@@ -203,9 +195,9 @@
       "omitted": {
         "core_text_shortened": false,
         "excluded_by_detail": 20,
-        "page_items": 18,
+        "page_items": 19,
         "prior_page_items": 0,
-        "remaining_page_items": 18,
+        "remaining_page_items": 19,
         "selection_items": 0
       },
       "token_limit": 1600,

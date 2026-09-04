@@ -308,6 +308,13 @@ impl MemoryAboutIndexReader for EmbeddedKernelStore {
                                         || dimension
                                             .node_id
                                             .ends_with(&format!(":dimension:{dimension_id}"))
+                                        // A selection names dimensions by kind
+                                        // (`incident`) as readily as by id
+                                        // (`incident:north-outage`); the filter
+                                        // that follows reads kinds, so the
+                                        // index that picks the abouts must too.
+                                        || dimension.properties.get("dimension_kind")
+                                            == Some(dimension_id)
                                 })
                         });
                     if matches {

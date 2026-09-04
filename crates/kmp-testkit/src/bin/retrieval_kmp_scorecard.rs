@@ -45,6 +45,21 @@ struct JudgedCase {
     /// carry it without a column of their own.
     #[serde(default)]
     nearest_outside: Option<String>,
+    /// Which abouts the question may reach, exactly as `kmp_ask` takes
+    /// `dimensions`; absent, the question stays inside `about`.
+    #[serde(default)]
+    dimensions: Option<Value>,
+    /// Memories written to other abouts before the question is asked, each
+    /// through its own ingest, so a case can read across abouts the way a
+    /// store holds them: never joined by a relation.
+    #[serde(default)]
+    memories: Vec<SeededMemory>,
+}
+
+#[derive(Debug, Deserialize)]
+struct SeededMemory {
+    about: String,
+    memory: Value,
 }
 
 #[tokio::main]
@@ -138,6 +153,19 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
         }),
     )
     .await?;
+    for (index, seeded) in case.memories.iter().enumerate() {
+        call(
+            &server,
+            10 + index as u64,
+            "kmp_ingest",
+            json!({
+                "about": seeded.about,
+                "idempotency_key": format!("judged:{}:{}", case.id, seeded.about),
+                "memory": seeded.memory
+            }),
+        )
+        .await?;
+    }
 
     let mut arguments = json!({
         "about": case.about,
@@ -154,6 +182,9 @@ async fn run_case(case: &JudgedCase) -> Result<RetrievalOutcome, Box<dyn Error>>
     }
     if let Some(axis) = &case.axis {
         arguments["axis"] = json!(axis);
+    }
+    if let Some(dimensions) = &case.dimensions {
+        arguments["dimensions"] = dimensions.clone();
     }
     let started = Instant::now();
     let answer = call(&server, 2, "kmp_ask", arguments).await?;

@@ -2225,3 +2225,148 @@ fn a_question_with_a_date_is_one_ask_that_stands_where_it_was_asked() {
         "the newest inside the span: {packet}"
     );
 }
+
+/// A question read across abouts says which abouts it read, on the real
+/// binary: the current one first, then the others the selection named or
+/// resolved by dimension kind; and within a span, which of them had nothing
+/// inside it. A question that stayed inside its about names that one.
+#[test]
+fn an_ask_across_abouts_names_the_abouts_it_read_and_the_ones_that_were_empty() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let ingest = |id: u64, about: &str, dimensions: Value, entries: Value| {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": "kmp_ingest", "arguments": {
+                "about": about, "idempotency_key": format!("ingest:{about}"),
+                "memory": {"dimensions": dimensions, "entries": entries}
+            }}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("ingest response");
+        assert_ne!(response["result"]["isError"], true, "{response}");
+    };
+    let incident =
+        serde_json::json!({"dimension": "incident", "scope_id": "incident:north-outage"});
+    let with = |base: &Value, occurred_at: &str, sequence: u64| {
+        let mut coordinate = base.clone();
+        coordinate["occurred_at"] = serde_json::json!(occurred_at);
+        coordinate["sequence"] = serde_json::json!(sequence);
+        coordinate
+    };
+    ingest(
+        1,
+        "project:alpha",
+        serde_json::json!([{"id": "incident:north-outage", "kind": "incident"}, {"id": "work:main", "kind": "work"}]),
+        serde_json::json!([
+            {"id": "project:alpha:observation:north-paging", "kind": "observation",
+             "text": "Paging for the north outage reached the alpha rota after midnight.",
+             "coordinates": [with(&incident, "2026-03-04T01:00:00Z", 1)]},
+            {"id": "project:alpha:observation:canteen", "kind": "observation",
+             "text": "The canteen menu was posted on the board.",
+             "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-03-05T09:00:00Z", "sequence": 2}]}
+        ]),
+    );
+    ingest(
+        2,
+        "project:beta",
+        serde_json::json!([{"id": "incident:north-outage", "kind": "incident"}]),
+        serde_json::json!([{"id": "project:beta:observation:breaker", "kind": "observation",
+            "text": "The east feeder breaker tripped during the north outage.",
+            "coordinates": [with(&incident, "2026-03-04T01:20:00Z", 1)]}]),
+    );
+    ingest(
+        3,
+        "project:gamma",
+        serde_json::json!([{"id": "work:main", "kind": "work"}]),
+        serde_json::json!([{"id": "project:gamma:observation:comms", "kind": "observation",
+            "text": "Customer comms went out at two.",
+            "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-03-04T02:00:00Z", "sequence": 1}]}]),
+    );
+
+    let ask = |id: u64, extra: Value| -> Value {
+        let mut arguments = serde_json::json!({
+            "about": "project:alpha",
+            "question": "Which breaker tripped during the north outage?",
+            "answer_policy": "evidence_or_unknown",
+            "depth": 3
+        });
+        for (key, value) in extra.as_object().expect("extra arguments") {
+            arguments[key] = value.clone();
+        }
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": "kmp_ask", "arguments": arguments}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("ask response");
+        assert_ne!(response["result"]["isError"], true, "{response}");
+        response["result"]["structuredContent"].clone()
+    };
+
+    // Inside its own about, the question reads one about and finds nothing
+    // that bears on it: the breaker is beta's.
+    let inside = ask(4, serde_json::json!({}));
+    assert_eq!(inside["answer"], "UNKNOWN", "{inside}");
+    assert_eq!(
+        inside["proof"]["abouts_selected"],
+        serde_json::json!(["project:alpha"]),
+        "{inside}"
+    );
+    assert_eq!(
+        inside["proof"]["abouts_empty_in_selection"],
+        serde_json::json!([]),
+        "{inside}"
+    );
+
+    // Read by dimension kind across every about, the abouts that carry an
+    // incident are the ones read, and the second about's entry is cited.
+    let by_kind = ask(
+        5,
+        serde_json::json!({
+            "dimensions": {"scope": "all_abouts", "mode": "only", "include": ["incident"]}
+        }),
+    );
+    assert_ne!(by_kind["answer"], "UNKNOWN", "{by_kind}");
+    assert_eq!(
+        by_kind["because"][0]["ref"], "entry:project:beta:observation:breaker",
+        "{by_kind}"
+    );
+    assert_eq!(
+        by_kind["proof"]["abouts_selected"],
+        serde_json::json!(["project:alpha", "project:beta"]),
+        "gamma carries no incident dimension: {by_kind}"
+    );
+    assert_eq!(
+        by_kind["proof"]["abouts_empty_in_selection"],
+        serde_json::json!([]),
+        "{by_kind}"
+    );
+
+    // Named together and bounded to a span that starts after alpha's only
+    // incident entry, alpha was read and had nothing inside it.
+    let bounded = ask(
+        6,
+        serde_json::json!({
+            "dimensions": {"scope": "abouts", "abouts": ["project:alpha", "project:beta", "project:gamma"]},
+            "interval": {"start": "2026-03-04T01:10:00Z", "end": "2026-03-05T00:00:00Z"}
+        }),
+    );
+    assert_ne!(bounded["answer"], "UNKNOWN", "{bounded}");
+    assert_eq!(
+        bounded["proof"]["abouts_selected"],
+        serde_json::json!(["project:alpha", "project:beta", "project:gamma"]),
+        "{bounded}"
+    );
+    assert_eq!(
+        bounded["proof"]["abouts_empty_in_selection"],
+        serde_json::json!(["project:alpha"]),
+        "alpha's paging fell before the span and its canteen note after it: {bounded}"
+    );
+}

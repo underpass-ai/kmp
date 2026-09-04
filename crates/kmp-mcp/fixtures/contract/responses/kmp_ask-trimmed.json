@@ -7,7 +7,7 @@
   ],
   "isError": false,
   "structuredContent": {
-    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe]\n- question:parity:entry:semantic_delta:…",
+    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [entry:question:parity:entry:semantic_delta:rachel-is-moving-…",
     "because": [
       {
         "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
@@ -36,10 +36,10 @@
       "core_text_shortened": true,
       "detail": "compact",
       "excluded_by_detail": 10,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:ed2cfd2fcc9e7d7af9c449c8547067c0dee70925f0dc6da821d71f33c6c6d8fe\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:6e79e67c443e8dbed066106c2d80c05fc3a4f19029680993c367512b0d2a5ec4\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:1:ed2cfd2fcc9e7d7af9c449c8547067c0dee70925f0dc6da821d71f33c6c6d8fe",
+        "next_cursor": "kmp1:1:6e79e67c443e8dbed066106c2d80c05fc3a4f19029680993c367512b0d2a5ec4",
         "offset": 0,
         "returned": 1,
         "total": 3
@@ -61,6 +61,10 @@
       "selection_omitted": 0
     },
     "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "question:parity"
+      ],
       "as_of": null,
       "axis": null,
       "confidence": "high",

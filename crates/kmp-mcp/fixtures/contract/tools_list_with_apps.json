@@ -1271,6 +1271,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [
@@ -1718,6 +1726,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [
@@ -2094,6 +2110,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [
@@ -2493,6 +2517,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [
@@ -2892,6 +2924,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [
@@ -3291,6 +3331,14 @@
           "proof": {
             "additionalProperties": false,
             "properties": {
+              "abouts_empty_in_selection": {
+                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "type": "array"
+              },
+              "abouts_selected": {
+                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "type": "array"
+              },
               "as_of": {
                 "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
                 "type": [

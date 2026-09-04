@@ -49,6 +49,10 @@
       "selection_omitted": "integer"
     },
     "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "string"
+      ],
       "as_of": "null",
       "axis": "null",
       "confidence": "string",

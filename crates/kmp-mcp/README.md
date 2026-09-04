@@ -98,7 +98,11 @@ Current status:
   reported compatibility hint and never filters canonical structured content;
   `budget.max_bytes` is the cross-host hard ceiling;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
-  about list; `all_abouts` is explicit and uses the kernel memory about index;
+  about list; `all_abouts` is explicit and uses the kernel memory about index,
+  which resolves `include` by dimension kind and `scope_ids` by exact id; the
+  proof names the abouts a recall read in `proof.abouts_selected`, the
+  current one first, and, bounded by `as_of` or `interval`, the ones with
+  nothing inside it in `proof.abouts_empty_in_selection`;
 - `kmp_inspect` keeps the typed object stable and pages evidence, outgoing
   links, incoming links and typed raw audit refs under `budget.max_bytes`;
   partial pages report the complete size and an opaque continuation cursor, so

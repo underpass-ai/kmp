@@ -1498,7 +1498,9 @@ fn proof_value(proof: &kmp_proto::v1beta1::Proof) -> Value {
         "interval": proof.interval.as_ref().map(interval_value),
         "axis": (proof.interval.is_some() || proof.as_of.is_some()).then(|| temporal_axis_label(proof.axis)),
         "as_of": proof.as_of.map(|at| at.to_string()),
-        "nearest_outside": proof.nearest_outside.as_ref().map(nearest_outside_value)
+        "nearest_outside": proof.nearest_outside.as_ref().map(nearest_outside_value),
+        "abouts_selected": proof.abouts_selected,
+        "abouts_empty_in_selection": proof.abouts_empty_in_selection
     })
 }
 
@@ -1578,7 +1580,8 @@ fn empty_proof_value() -> Value {
         "path": [], "evidence": [], "conflicts": [], "superseded": [], "expired": [],
         "missing": ["proof"], "frontier_size": 1, "matched_terms": [],
         "matched_relations": [], "confidence": "unknown",
-        "interval": null, "axis": null, "as_of": null, "nearest_outside": null
+        "interval": null, "axis": null, "as_of": null, "nearest_outside": null,
+        "abouts_selected": [], "abouts_empty_in_selection": []
     })
 }
 
@@ -2573,6 +2576,8 @@ mod tests {
                 axis: 0,
                 nearest_outside: None,
                 as_of: None,
+                abouts_selected: Vec::new(),
+                abouts_empty_in_selection: Vec::new(),
             }),
             warnings: Vec::new(),
             projection: None,

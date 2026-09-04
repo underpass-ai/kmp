@@ -126,6 +126,28 @@ impl TemporalAdmission {
         })
     }
 
+    /// Of the abouts read, those with no entry the selection admits: silence
+    /// from an about that was looked at, said apart from absence. Empty when
+    /// nothing bounds the recall.
+    pub(super) fn abouts_empty_in_selection(
+        &self,
+        abouts: &[String],
+        about_by_entry: &BTreeMap<String, String>,
+    ) -> Vec<String> {
+        let Some(admitted) = &self.admitted else {
+            return Vec::new();
+        };
+        let with_something = admitted
+            .iter()
+            .filter_map(|entry| about_by_entry.get(entry))
+            .collect::<BTreeSet<_>>();
+        abouts
+            .iter()
+            .filter(|about| !with_something.contains(about))
+            .cloned()
+            .collect()
+    }
+
     /// Whether a node stands in time outside the selection: an entry with a
     /// coordinate that the selection did not admit. What touches such a
     /// node did not exist where the recall stands.

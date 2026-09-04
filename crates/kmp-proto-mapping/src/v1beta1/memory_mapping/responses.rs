@@ -29,8 +29,8 @@ use super::temporal_admission::TemporalAdmission;
 /// question — `summary` and `proof.missing` say which.
 pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
-    answer_evidence_from_bundle, answer_relations_from_bundle, bundle_memory_metadata,
-    memory_evidence_from_bundle, memory_relation_from_bundle_relationship,
+    about_by_entry, abouts_in_bundle, answer_evidence_from_bundle, answer_relations_from_bundle,
+    bundle_memory_metadata, memory_evidence_from_bundle, memory_relation_from_bundle_relationship,
     memory_relations_from_bundle, persisted_memory_metadata, persisted_memory_source, proof,
     proto_coordinate_from_domain, proto_relation_explanation, rendered_current_state,
     rendered_summary, superseded_from_relations, temporal_evidence_from_bundle,
@@ -188,6 +188,10 @@ pub fn wake_response_from_result(
             wake_proof.interval = stood.interval;
             wake_proof.axis = stood.axis;
             wake_proof.as_of = stood.as_of;
+            let abouts = abouts_in_bundle(&result.bundle);
+            wake_proof.abouts_empty_in_selection =
+                admission.abouts_empty_in_selection(&abouts, &about_by_entry(&result.bundle));
+            wake_proof.abouts_selected = abouts;
             Some(wake_proof)
         },
         warnings: Vec::new(),
@@ -408,6 +412,13 @@ pub fn ask_response_from_result(
     answer_proof.interval = stood.interval;
     answer_proof.axis = stood.axis;
     answer_proof.as_of = stood.as_of;
+    // Which abouts were looked at, and which of them had nothing where the
+    // recall stood: an answer read from three abouts that cites one should
+    // say the other two were read, or their silence reads as absence.
+    let abouts = abouts_in_bundle(&result.bundle);
+    answer_proof.abouts_empty_in_selection =
+        admission.abouts_empty_in_selection(&abouts, &about_by_entry(&result.bundle));
+    answer_proof.abouts_selected = abouts;
     // UNKNOWN within a span is one of two things: not known, or not then.
     // When what lies outside the span does bear on the question, the proof
     // names the closest of it, so the caller can widen the span on purpose

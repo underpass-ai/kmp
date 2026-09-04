@@ -2507,6 +2507,217 @@
           }
         ]
       }
+    },
+    {
+      "id": "multi-about-by-dimension",
+      "probes": "Three abouts, two of which share an incident dimension; the answer sits in the second, not the current one. Read by dimension kind across every about, the abouts that carry it are resolved and the cited ref is the second about's: the current about's loading precedence does not reorder relevance.",
+      "about": "project:alpha",
+      "question": "Which breaker tripped during the north outage?",
+      "answer_policy": "evidence_or_unknown",
+      "dimensions": {
+        "scope": "all_abouts",
+        "mode": "only",
+        "include": [
+          "incident"
+        ]
+      },
+      "judged": [
+        "project:beta:observation:breaker"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "incident:north-outage",
+            "kind": "incident"
+          },
+          {
+            "id": "work:main",
+            "kind": "work"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:alpha:observation:north-paging",
+            "kind": "observation",
+            "text": "Paging for the north outage reached the alpha rota after midnight.",
+            "coordinates": [
+              {
+                "dimension": "incident",
+                "scope_id": "incident:north-outage",
+                "occurred_at": "2026-03-04T01:00:00Z",
+                "sequence": 1
+              }
+            ]
+          },
+          {
+            "id": "project:alpha:observation:canteen",
+            "kind": "observation",
+            "text": "The canteen menu was posted on the board.",
+            "coordinates": [
+              {
+                "dimension": "work",
+                "scope_id": "work:main",
+                "occurred_at": "2026-03-05T09:00:00Z",
+                "sequence": 2
+              }
+            ]
+          }
+        ]
+      },
+      "memories": [
+        {
+          "about": "project:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "incident:north-outage",
+                "kind": "incident"
+              }
+            ],
+            "entries": [
+              {
+                "id": "project:beta:observation:breaker",
+                "kind": "observation",
+                "text": "The east feeder breaker tripped during the north outage.",
+                "coordinates": [
+                  {
+                    "dimension": "incident",
+                    "scope_id": "incident:north-outage",
+                    "occurred_at": "2026-03-04T01:20:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "project:gamma",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "incident:north-outage",
+                "kind": "incident"
+              }
+            ],
+            "entries": [
+              {
+                "id": "project:gamma:observation:comms",
+                "kind": "observation",
+                "text": "Customer comms for the north outage went out at two.",
+                "coordinates": [
+                  {
+                    "dimension": "incident",
+                    "scope_id": "incident:north-outage",
+                    "occurred_at": "2026-03-04T02:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "multi-about-interval",
+      "probes": "T1 by T2: three abouts read together within the release window. Two decided something inside it and are cited; the third decided before the window and is named in proof.abouts_empty_in_selection rather than cited.",
+      "about": "project:alpha",
+      "question": "What happens to the spring release rollout?",
+      "answer_policy": "evidence_or_unknown",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "project:alpha",
+          "project:beta",
+          "project:gamma"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "judged": [
+        "project:alpha:decision:rollout-canary",
+        "project:beta:decision:rollout-freeze"
+      ],
+      "memory": {
+        "dimensions": [
+          {
+            "id": "release:spring",
+            "kind": "release"
+          }
+        ],
+        "entries": [
+          {
+            "id": "project:alpha:decision:rollout-canary",
+            "kind": "decision",
+            "text": "The spring release rollout starts with a canary of five percent.",
+            "coordinates": [
+              {
+                "dimension": "release",
+                "scope_id": "release:spring",
+                "occurred_at": "2026-03-10T10:00:00Z",
+                "sequence": 1
+              }
+            ]
+          }
+        ]
+      },
+      "memories": [
+        {
+          "about": "project:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "project:beta:decision:rollout-freeze",
+                "kind": "decision",
+                "text": "The spring release rollout freezes during the payments audit.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "project:gamma",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "project:gamma:decision:rollout-early",
+                "kind": "decision",
+                "text": "The spring release rollout was decided early, in February.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-02-10T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ]
 }
