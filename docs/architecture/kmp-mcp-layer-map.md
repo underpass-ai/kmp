@@ -42,7 +42,7 @@ architecture; the reviewer holds the rest.
 
 | Context | Owns | Today |
 |:--|:--|:--|
-| `contract` | What the server advertises and validates: the thirteen tool definitions, schema families, a minimal registry, argument validation | `protocol.rs` + `protocol/`, `args.rs` |
+| `contract` | What the server advertises and validates: the fourteen tool definitions, schema families, a minimal registry, argument validation | `protocol.rs` + `protocol/`, `args.rs` |
 | `projection` | Kernel response → tool output: byte budgets, pagination truth, per-family mappers | `kmp.rs` + `kmp/` |
 | `write` | Write intent → canonical ingest: intent domain, read-context mapper, validation and relation-quality policies, preflight and commit | `write.rs`, `write/relation_quality.rs`, `ingest.rs` |
 | `lifecycle` | Setup, update, doctor/info, inventory, memory rescue, removal — one context, narrow ports | `lifecycle/` today; absorbs `uninstall.rs`, `diagnostics.rs`, `memories.rs` |
@@ -58,7 +58,7 @@ an audit finding demotes a file back into this table.
 
 | File (lines) | Today | Target |
 |:--|:--|:--|
-| `protocol.rs` (1847) | Free functions returning `Value`; every tool definition in one file | `contract/`: one definition file per tool (thirteen), schema families, registry, validator adapter |
+| `protocol.rs` (1847) | Free functions returning `Value`; every tool definition in one file | `contract/`: one definition file per tool (fourteen), schema families, registry, validator adapter |
 | `protocol/{json_rpc,relation_vocabulary,request_shape,response_shape,result,schema}.rs` | #409 slices, functions over `Value` | `contract/` schema family modules; JSON-RPC framing moves to `serving` transport |
 | `args.rs` (94) | Required-argument check over `Value` | `contract/` validator adapter |
 | `kmp.rs` (1782, ~1301 test) | Response projection, budgets, ~15 fns + one huge test module | `projection/`: budget value objects, one mapper per response family; tests move with their mapper; shared fixtures into `test_support` |

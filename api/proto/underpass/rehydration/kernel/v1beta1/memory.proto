@@ -10,6 +10,9 @@ service KernelMemoryService {
   rpc Ingest(IngestRequest) returns (IngestResponse);
   rpc Wake(WakeRequest) returns (WakeResponse);
   rpc Ask(AskRequest) returns (AskResponse);
+  // What memories of several abouts have to do with each other, read off
+  // what they share and never declared.
+  rpc Relate(RelateRequest) returns (RelateResponse);
   rpc Goto(GotoRequest) returns (GotoResponse);
   rpc Near(NearRequest) returns (NearResponse);
   rpc Rewind(RewindRequest) returns (RewindResponse);
@@ -480,6 +483,104 @@ message TraceResponse {
   repeated string warnings = 3;
   PageInfo page = 4;
   ResponseQuality quality = 5;
+}
+
+// Relate: what memories of several abouts have to do with each other,
+// read off what they share and never declared. Abouts are joined by no
+// relation, so this is read from the coordinates: the dimension scopes two
+// abouts both use, and where on one clock each memory stands inside them.
+message RelateRequest {
+  // The current about: the read's root and the first of `abouts_selected`.
+  string about = 1;
+  // Which abouts to relate: `scope: abouts` names them, `all_abouts` sweeps
+  // them, narrowed by dimension kind or exact scope like every other read.
+  DimensionSelection dimensions = 2;
+  // The half-open span the facts fall within on `axis`; open on either side.
+  TemporalInterval interval = 3;
+  // The clock `interval` and the coordinate relations are read on.
+  TemporalAxis axis = 4;
+  MemoryBudget budget = 5;
+  // Continuation of a paged relate; the cursor is bound to the same
+  // request and selection.
+  PageRequest page = 6;
+}
+
+message RelateResponse {
+  string summary = 1;
+  // The entries of the selected abouts inside the interval, with the state
+  // their lifecycle had at its end.
+  repeated RelatedFact facts = 2;
+  // The relations each about declared between its own facts, cut to the
+  // interval: the graph that exists, with class, quality, why and evidence.
+  repeated MemoryRelation declared = 3;
+  // Relations between facts of different abouts, read off their
+  // coordinates inside a scope they share.
+  repeated CoordinateRelation coordinate = 4;
+  // Facts that still stand and that a declared `contradicts` joins.
+  repeated Tension tensions = 5;
+  Proof proof = 6;
+  repeated string warnings = 7;
+  PageInfo page = 8;
+}
+
+// An entry as relate reads it: where it stands, which about placed it, and
+// what its lifecycle said at the end of the interval.
+message RelatedFact {
+  string ref = 1;
+  string about = 2;
+  string kind = 3;
+  string text = 4;
+  repeated TemporalCoordinate coordinates = 5;
+  FactState state = 6;
+  // What replaced it, when `state` is SUPERSEDED.
+  string superseded_by = 7;
+  // When it ran out, when `state` is EXPIRED.
+  google.protobuf.Timestamp valid_until = 8;
+  map<string, string> metadata = 9;
+}
+
+enum FactState {
+  FACT_STATE_UNSPECIFIED = 0;
+  FACT_STATE_CURRENT = 1;
+  FACT_STATE_SUPERSEDED = 2;
+  FACT_STATE_EXPIRED = 3;
+}
+
+// How two facts of different abouts stand to each other inside a scope
+// they share. Read, not declared, and said in `why`.
+message CoordinateRelation {
+  string from = 1;
+  string to = 2;
+  CoordinateRelationKind kind = 3;
+  // The scope both stand in, stripped of the about that namespaces it.
+  string scope_id = 4;
+  TemporalAxis axis = 5;
+  string why = 6;
+}
+
+enum CoordinateRelationKind {
+  COORDINATE_RELATION_KIND_UNSPECIFIED = 0;
+  // They share the scope and neither carries an instant on the clock read.
+  COORDINATE_RELATION_KIND_SHARES_SCOPE = 1;
+  COORDINATE_RELATION_KIND_BEFORE = 2;
+  COORDINATE_RELATION_KIND_AFTER = 3;
+  // `from` holds within the span of `to`, on the validity clock.
+  COORDINATE_RELATION_KIND_DURING = 4;
+  // The same instant, or overlapping spans.
+  COORDINATE_RELATION_KIND_CONCURRENT = 5;
+  COORDINATE_RELATION_KIND_SAME_SEQUENCE = 6;
+  COORDINATE_RELATION_KIND_SAME_RANK = 7;
+}
+
+// Two facts that both still stand and that a declared `contradicts` joins.
+// Shown, never resolved.
+message Tension {
+  string ref = 1;
+  string other = 2;
+  // The scope both stand in, when they share one.
+  string scope_id = 3;
+  string why = 4;
+  string evidence = 5;
 }
 
 message InspectRequest {

@@ -6,6 +6,11 @@ use kmp_domain::{
 use crate::queries::{GetNodeDetailResult, GraphRelationshipView};
 
 pub const DEFAULT_TRACE_PAGE_ENTRIES: usize = 64;
+/// A relate page counts facts, declared relations, coordinate relations and
+/// tensions alike; facts carry their text, so the page is kept smaller than
+/// a trace page.
+pub const DEFAULT_RELATE_PAGE_ENTRIES: usize = 32;
+pub const MAX_RELATE_PAGE_ENTRIES: usize = 256;
 pub const MAX_TRACE_PAGE_ENTRIES: usize = 256;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -186,6 +191,37 @@ pub struct TemporalMemoryQuery {
     pub token_budget: u32,
     pub depth: u32,
     pub max_tier: Option<ResolutionTier>,
+}
+
+/// What memories of several abouts have to do with each other: the abouts
+/// the selection names or resolves, read within one span on one clock.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RelateMemoryQuery {
+    pub about: String,
+    pub dimensions: DimensionSelection,
+    /// The span and clock the facts fall within; the memory's frontier when
+    /// the caller named none.
+    pub temporal: TemporalSelection,
+    pub token_budget: u32,
+    pub depth: u32,
+    pub max_tier: Option<ResolutionTier>,
+    pub page: RelatePageRequest,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RelatePageRequest {
+    pub entries: Option<usize>,
+    pub cursor: Option<usize>,
+}
+
+impl RelatePageRequest {
+    pub fn offset(&self) -> usize {
+        self.cursor.unwrap_or_default()
+    }
+
+    pub fn entries_or_default(&self) -> usize {
+        self.entries.unwrap_or(DEFAULT_RELATE_PAGE_ENTRIES)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

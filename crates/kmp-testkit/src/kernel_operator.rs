@@ -5,6 +5,7 @@ pub fn kernel_operator_allowed_read_tools() -> Vec<String> {
     [
         "kmp_wake",
         "kmp_ask",
+        "kmp_relate",
         "kmp_near",
         "kmp_goto",
         "kmp_rewind",
@@ -46,6 +47,12 @@ pub fn kernel_operator_is_bounded_tool_call(tool: &str, arguments: &Value) -> bo
                 && optional_limit(arguments, &["window", "before_entries"], 64)
                 && optional_limit(arguments, &["window", "after_entries"], 64)
                 && path_cursor(arguments, &["around"]).is_some()
+        }
+        "kmp_relate" => {
+            path_non_empty_string(arguments, &["about"])
+                && optional_limit(arguments, &["budget", "tokens"], 16_000)
+                && optional_limit(arguments, &["budget", "depth"], 8)
+                && optional_limit(arguments, &["page", "entries"], 256)
         }
         "kmp_trace" => {
             path_non_empty_string(arguments, &["about"])
@@ -166,6 +173,7 @@ fn validate_tool_call_shape(action: &Value) -> Result<(), String> {
         "kmp_goto" => validate_temporal_arguments(arguments, "at", "kmp_goto"),
         "kmp_rewind" => validate_temporal_arguments(arguments, "from", "kmp_rewind"),
         "kmp_forward" => validate_temporal_arguments(arguments, "from", "kmp_forward"),
+        "kmp_relate" => validate_relate_arguments(arguments),
         "kmp_trace" => validate_trace_arguments(arguments),
         "kmp_inspect" => validate_inspect_arguments(arguments),
         "kmp_write_memory" => validate_write_memory_arguments(arguments),
@@ -187,6 +195,21 @@ fn validate_stop_shape(action: &Value) -> Result<(), String> {
         "action.final_refs",
     )?;
     required_non_empty_string(action, "reason", "action")?;
+    Ok(())
+}
+
+fn validate_relate_arguments(arguments: &Value) -> Result<(), String> {
+    exact_keys(
+        arguments,
+        "action.arguments",
+        &["about"],
+        &["dimensions", "interval", "axis", "budget", "page"],
+    )?;
+    required_non_empty_string(arguments, "about", "action.arguments")?;
+    if let Some(dimensions) = arguments.get("dimensions") {
+        validate_dimensions(dimensions, "action.arguments.dimensions")?;
+    }
+    validate_optional_non_empty_string(arguments, "axis", "action.arguments")?;
     Ok(())
 }
 

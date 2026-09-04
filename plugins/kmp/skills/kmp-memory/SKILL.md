@@ -47,6 +47,7 @@ to the part of the goal the wake packet did not already answer.
 | Enumerate a period: yesterday, since, before/after, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_goto`, `kmp_near`, `kmp_rewind` or `kmp_forward` |
 | A semantic question that carries a date or a range: why something was decided in March, what rule held during the incident, what was known on the tenth | one `kmp_ask` with `interval` or `as_of`, and `axis` for a clock other than when it happened |
 | A genuinely semantic question with no date, answerable from stored evidence | `kmp_ask` |
+| What the memories of several abouts have to do with each other in a span: which facts fell in the window, how they stand in time inside the scopes they share, what each about declared, which contradictions still stand | `kmp_relate` |
 | One cited ref must support a consequential claim | `kmp_inspect` |
 | A connection between two refs is part of the claim | `kmp_trace` |
 | The user asks to see, show, open, or navigate memory — including `muéstrame`, `enséñame`, `abre` or `ver` | Finish the retrieval lane, then `kmp_view_open` and `kmp_view_apply_intent` |
@@ -257,7 +258,7 @@ and write the answer in the user's language. A period to enumerate is
 navigated, not asked; a semantic question with a date is asked this same
 way, with `interval` or `as_of` beside the English rendering.
 
-## The ten memory moves
+## The eleven memory moves
 
 **Entry**
 
@@ -265,6 +266,7 @@ way, with `interval` or `as_of` beside the English rendering.
 | --- | --- |
 | `kmp_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
 | `kmp_ask` | You have a semantic question. Deterministic evidence answer, or `UNKNOWN`. With a date or a range, add `interval` or `as_of`, and `axis` for a clock other than when it happened. |
+| `kmp_relate` | You want the shape of what several abouts hold in a span, not an answer to a question: facts with their lifecycle state, what each about declared, how facts of different abouts stand to each other inside the scopes they share (`before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), and the contradictions that still stand. Nothing is ranked, nothing is declared: every relation says why in a sentence you can check against the coordinates. |
 
 **Navigate time** — all four take a timestamp, a sequence number, or a ref.
 

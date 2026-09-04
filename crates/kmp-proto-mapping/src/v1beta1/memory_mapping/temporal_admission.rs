@@ -126,6 +126,13 @@ impl TemporalAdmission {
         })
     }
 
+    /// Whether an entry, by its own coordinates, falls inside the selection.
+    pub(super) fn admits_entry(&self, entry_ref: &str) -> bool {
+        self.admitted
+            .as_ref()
+            .is_none_or(|admitted| admitted.contains(entry_ref))
+    }
+
     /// Of the abouts read, those with no entry the selection admits: silence
     /// from an about that was looked at, said apart from absence. Empty when
     /// nothing bounds the recall.

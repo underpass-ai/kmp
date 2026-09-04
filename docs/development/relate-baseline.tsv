@@ -1,0 +1,18 @@
+# Relate baseline: the floors `scripts/ci/relate-baseline.sh` holds `kmp_relate` to.
+# Each row is the mean over the judged collection of one precision or recall per
+# section — facts, declared, coordinate, tensions — plus the share of cases whose
+# judged lifecycle states and nearest-outside expectation held. A number may rise
+# freely; lowering one is a reviewed change that says why. `cases` is exact, so a
+# case added or removed is a deliberate refresh, never a silent one.
+# Refresh with: RELATE_BASELINE=write bash scripts/ci/relate-baseline.sh
+metric	floor
+cases	4
+facts_precision	1.0000
+facts_recall	1.0000
+declared_precision	1.0000
+declared_recall	1.0000
+coordinate_precision	1.0000
+coordinate_recall	1.0000
+tensions_precision	1.0000
+tensions_recall	1.0000
+states_and_nearest	1.0000

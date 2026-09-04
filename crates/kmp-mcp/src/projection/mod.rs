@@ -7,6 +7,7 @@ pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
 mod recall_budget_audit;
 pub(crate) mod recall_projection;
+pub(crate) mod relate_projection;
 mod rendering;
 mod serialized_size;
 pub(crate) mod temporal_projection;
@@ -23,6 +24,7 @@ pub(crate) use recall_projection::enforce_recall_output_budget;
 pub(crate) use recall_projection::{
     ask_from_response, try_enforce_recall_output_budget, wake_from_response,
 };
+pub(crate) use relate_projection::relate_from_response;
 pub(crate) use temporal_projection::{enforce_temporal_output_budget, temporal_from_response};
 pub(crate) use trace_projection::trace_from_response;
 pub(crate) use visual_projection::visual_projection_from_response;

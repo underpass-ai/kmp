@@ -36,7 +36,7 @@ Transport bindings:
 
 - MCP tools expose `kmp_ingest`, `kmp_write_memory`, `kmp_wake`,
   `kmp_ask`, `kmp_goto`, `kmp_near`, `kmp_rewind`,
-  `kmp_forward`, `kmp_trace`, and `kmp_inspect`.
+  `kmp_forward`, `kmp_relate`, `kmp_trace`, and `kmp_inspect`.
 - `kmp_write_memory` is a writer helper, not a parallel memory model. It
   validates writer intent and relation quality, then compiles to the canonical
   `kmp_ingest` payload. With `dry_run=true` it returns that payload as

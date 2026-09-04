@@ -13,9 +13,9 @@ use crate::ApplicationError;
 use crate::commands::CommandApplicationService;
 use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
-    MemoryIngestCommand, MemoryIngestOutcome, TemporalMemoryQuery, TemporalMemoryResult,
-    TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery,
-    build_visual_projection, translate_memory_ingest, validate_ref_token,
+    MemoryIngestCommand, MemoryIngestOutcome, RelateMemoryQuery, TemporalMemoryQuery,
+    TemporalMemoryResult, TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult,
+    WakeMemoryQuery, build_visual_projection, translate_memory_ingest, validate_ref_token,
     validate_supplied_member_ref,
 };
 use crate::queries::{
@@ -176,6 +176,33 @@ where
         let temporal_query = query.temporal_query()?;
         let temporal = self.temporal(temporal_query).await?;
         build_visual_projection(&query, temporal)
+    }
+
+    /// The neighbourhood `relate` reads: the same load as `ask` over the
+    /// abouts the selection names or resolves. Where the facts fall in time,
+    /// and what they have to do with each other, is read from the bundle
+    /// afterwards; the store is asked for nothing it does not hold.
+    pub async fn relate(
+        &self,
+        query: RelateMemoryQuery,
+    ) -> Result<GetContextResult, ApplicationError> {
+        let render_options = memory_render_options(
+            query.token_budget,
+            query.max_tier,
+            KmpMode::ReasonPreserving,
+            EndpointHint::Neighborhood,
+        );
+        let dimensions = query.dimensions.resolve_current_about(&query.about);
+        let result = self
+            .memory_context(
+                &query.about,
+                "relater",
+                query.depth,
+                &dimensions,
+                &render_options,
+            )
+            .await?;
+        apply_dimension_selection(result, &dimensions, &render_options)
     }
 
     pub async fn trace(

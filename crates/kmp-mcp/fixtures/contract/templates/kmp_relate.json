@@ -1,0 +1,83 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "coordinate": [],
+    "declared": [
+      {
+        "class": "string",
+        "confidence": "string",
+        "evidence": "string",
+        "from": "string",
+        "rel": "string",
+        "sequence": "integer",
+        "to": "string",
+        "why": "string"
+      }
+    ],
+    "facts": [
+      {
+        "about": "string",
+        "coordinates": [
+          {
+            "dimension": "string",
+            "ingested_at": "string",
+            "occurred_at": "string",
+            "scope_id": "string",
+            "sequence": "integer",
+            "valid_from": "string"
+          }
+        ],
+        "kind": "string",
+        "ref": "string",
+        "state": "string",
+        "text": "string"
+      }
+    ],
+    "page": {
+      "has_more": "boolean",
+      "next_cursor": "null",
+      "returned": "integer",
+      "total": "integer"
+    },
+    "proof": {
+      "abouts_empty_in_selection": [],
+      "abouts_selected": [
+        "string"
+      ],
+      "as_of": "null",
+      "axis": "null",
+      "confidence": "string",
+      "conflicts": [],
+      "evidence": [],
+      "expired": [
+        {
+          "ref": "string",
+          "valid_until": "string"
+        }
+      ],
+      "frontier_size": "integer",
+      "interval": "null",
+      "matched_relations": [],
+      "matched_terms": [],
+      "missing": [],
+      "nearest_outside": "null",
+      "path": [],
+      "superseded": [
+        {
+          "ref": "string",
+          "superseded_by": "string",
+          "why": "string"
+        }
+      ]
+    },
+    "summary": "string",
+    "tensions": [],
+    "warnings": []
+  }
+}

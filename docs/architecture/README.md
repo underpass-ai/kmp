@@ -36,7 +36,7 @@ flowchart TB
 
 The plugin is not a kernel adapter. It packages discovery and orchestration.
 `kmp-mcp` is the protocol boundary. Both composition roots call the same
-application use cases and expose the same thirteen MCP tools.
+application use cases and expose the same fourteen MCP tools.
 
 ## Layer ownership
 
@@ -113,7 +113,10 @@ cursor and return visible pagination state; a partial page is never presented
 as a complete interval.
 
 `kmp_goto`, `kmp_near`, `kmp_rewind` and `kmp_forward` move through stored
-time. `kmp_trace` and `kmp_inspect` audit graph structure and evidence. Semantic
+time. `kmp_relate` reads what the memories of several abouts have to do with
+each other inside a span, off the dimension scopes and clocks they share,
+since abouts are never joined by relations. `kmp_trace` and `kmp_inspect`
+audit graph structure and evidence. Semantic
 Ask is not a substitute for temporal navigation: it enumerates nothing. It
 does stand where it is asked — `as_of` at an instant, `interval` within a
 half-open span, `axis` on one of the five clocks — so a question that carries

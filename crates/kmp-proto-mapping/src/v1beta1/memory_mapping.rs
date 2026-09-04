@@ -19,6 +19,7 @@ mod queries;
 mod question_intent;
 mod question_vocabulary;
 mod reach_graph;
+mod relate;
 mod relation_direction;
 mod relation_feature;
 mod relation_reach;
@@ -35,9 +36,11 @@ pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use lexical_bridge::LexicalBridge;
 pub use queries::{
-    ask_query_from_proto, inspect_query_from_proto, temporal_query_from_move_proto,
-    temporal_query_from_near_proto, trace_query_from_proto, wake_query_from_proto,
+    ask_query_from_proto, inspect_query_from_proto, relate_query_from_proto,
+    temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
+    wake_query_from_proto,
 };
+pub use relate::relate_response_from_result;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result,

@@ -53,6 +53,12 @@
       "$ref": "#/$defs/forward_response"
     },
     {
+      "$ref": "#/$defs/relate_request"
+    },
+    {
+      "$ref": "#/$defs/relate_response"
+    },
+    {
       "$ref": "#/$defs/trace_request"
     },
     {
@@ -1501,6 +1507,7 @@
             "kmp_rewind",
             "kmp_forward",
             "kmp_trace",
+            "kmp_relate",
             "kmp_inspect"
           ]
         }
@@ -2101,6 +2108,219 @@
             "default"
           ],
           "description": "One of the five clocks; `default` is the compatible precedence (occurred, validity start, observed, ingested)."
+        }
+      }
+    },
+    "relate_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "about"
+      ],
+      "description": "Read what the memories of several abouts have to do with each other, off what they share and never declared.",
+      "properties": {
+        "about": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "dimensions": {
+          "$ref": "#/$defs/dimension_selection"
+        },
+        "interval": {
+          "$ref": "#/$defs/temporal_interval"
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "occurred",
+            "observed",
+            "ingested",
+            "validity"
+          ]
+        },
+        "budget": {
+          "$ref": "#/$defs/budget"
+        },
+        "page": {
+          "type": "object"
+        }
+      }
+    },
+    "related_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "about",
+        "state"
+      ],
+      "description": "An entry as relate reads it: where it stands, which about placed it, and what its lifecycle said at the end of the interval.",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "about": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "coordinates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "current",
+            "superseded",
+            "expired"
+          ]
+        },
+        "superseded_by": {
+          "type": "string"
+        },
+        "valid_until": {
+          "$ref": "#/$defs/date_time"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "coordinate_relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "kind",
+        "scope_id",
+        "axis",
+        "why"
+      ],
+      "description": "How two facts of different abouts stand to each other inside a scope they share; read, not declared.",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "to": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "shares_scope",
+            "before",
+            "after",
+            "during",
+            "concurrent",
+            "same_sequence",
+            "same_rank"
+          ]
+        },
+        "scope_id": {
+          "type": "string"
+        },
+        "axis": {
+          "type": "string",
+          "enum": [
+            "occurred",
+            "observed",
+            "ingested",
+            "validity",
+            "default"
+          ]
+        },
+        "why": {
+          "$ref": "#/$defs/non_empty_string"
+        }
+      }
+    },
+    "tension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "other"
+      ],
+      "description": "Two facts that both still stand and that a declared contradicts joins. Shown, never resolved.",
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "other": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "scope_id": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      }
+    },
+    "relate_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "facts",
+        "declared",
+        "coordinate",
+        "tensions",
+        "proof",
+        "warnings"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/related_fact"
+          }
+        },
+        "declared": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relation"
+          }
+        },
+        "coordinate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/coordinate_relation"
+          }
+        },
+        "tensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tension"
+          }
+        },
+        "proof": {
+          "$ref": "#/$defs/proof"
+        },
+        "page": {
+          "type": "object"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

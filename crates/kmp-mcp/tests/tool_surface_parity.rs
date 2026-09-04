@@ -300,6 +300,10 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         (
+            "kmp_relate",
+            json!({"about": ABOUT, "budget": {"depth": 3}}),
+        ),
+        (
             "kmp_trace",
             json!({"about": ABOUT, "from": DETAIL, "to": CLAIM, "budget": {"depth": 3}}),
         ),
@@ -572,7 +576,7 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let server = KernelMcpServer::with_embedded_backend(backend);
 
     // Negotiate MCP Apps, so the two app-only tools are callable and the
-    // surface under test is the full fifteen rather than the thirteen a plain
+    // surface under test is the full sixteen rather than the fourteen a plain
     // host sees.
     server
         .handle_json_line(
@@ -640,7 +644,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 15, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 16, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         assert!(

@@ -29,8 +29,8 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
 
     match name {
         "kmp_ingest" | "kmp_write_memory" => require_scope(identity, WRITE_SCOPE)?,
-        "kmp_wake" | "kmp_ask" | "kmp_goto" | "kmp_near" | "kmp_rewind" | "kmp_forward"
-        | "kmp_trace" | "kmp_inspect" => require_scope(identity, READ_SCOPE)?,
+        "kmp_wake" | "kmp_ask" | "kmp_relate" | "kmp_goto" | "kmp_near" | "kmp_rewind"
+        | "kmp_forward" | "kmp_trace" | "kmp_inspect" => require_scope(identity, READ_SCOPE)?,
         _ => return Ok(()),
     }
 
@@ -85,6 +85,7 @@ fn canonical_tool_name(name: &str) -> &str {
             "write_memory" => "kmp_write_memory",
             "wake" => "kmp_wake",
             "ask" => "kmp_ask",
+            "relate" => "kmp_relate",
             "goto" => "kmp_goto",
             "near" => "kmp_near",
             "rewind" => "kmp_rewind",

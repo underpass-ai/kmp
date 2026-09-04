@@ -27,6 +27,8 @@ const REWIND_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/rewind.response.json");
 const FORWARD_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/forward.response.json");
+const RELATE_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/relate.response.json");
 const TRACE_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/trace.response.json");
 const INSPECT_RESPONSE_FIXTURE: &str =
@@ -64,6 +66,7 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         "kmp_near" => read_fixture_tool_result(arguments, &["about"], NEAR_RESPONSE_FIXTURE),
         "kmp_rewind" => read_fixture_tool_result(arguments, &["about"], REWIND_RESPONSE_FIXTURE),
         "kmp_forward" => read_fixture_tool_result(arguments, &["about"], FORWARD_RESPONSE_FIXTURE),
+        "kmp_relate" => read_fixture_tool_result(arguments, &["about"], RELATE_RESPONSE_FIXTURE),
         "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
         "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
         "kmp_view_read_projection" => {

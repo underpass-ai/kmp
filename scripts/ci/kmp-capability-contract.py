@@ -13,13 +13,14 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / "plugins" / "kmp"
 CONTRACT = json.loads((PLUGIN / "capabilities.json").read_text(encoding="utf-8"))
 
-# Ten moves over memory, and three over the view a person is looking at.
+# Eleven moves over memory, and three over the view a person is looking at.
 # The view tools are read-only with respect to memory by construction.
 EXPECTED_TOOLS = {
     "kmp_ingest",
     "kmp_write_memory",
     "kmp_wake",
     "kmp_ask",
+    "kmp_relate",
     "kmp_goto",
     "kmp_near",
     "kmp_rewind",

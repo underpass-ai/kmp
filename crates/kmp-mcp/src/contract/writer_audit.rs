@@ -88,6 +88,7 @@ mod tests {
         let defaults = [
             ("kmp_wake", 1_600, 2),
             ("kmp_ask", 2_400, 2),
+            ("kmp_relate", 2_400, 2),
             ("kmp_goto", 2_400, 3),
             ("kmp_near", 2_400, 3),
             ("kmp_rewind", 2_400, 3),

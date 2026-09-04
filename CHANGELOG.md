@@ -11,6 +11,34 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_relate`, the fourteenth tool: what the memories of several abouts
+  have to do with each other, read off what they share and declared by
+  nobody. Abouts are never joined by relations, so the read is made from the
+  coordinates: the dimension scopes two abouts both use, and where on one
+  clock each memory stands inside them. Given the current about, a
+  `dimensions` selection that names or sweeps the abouts, an `interval` and
+  an `axis`, it returns the facts inside the span with the lifecycle state
+  they had at its end (`current`, `superseded` with what replaced them,
+  `expired` with when), the relations each about declared between its own
+  facts cut to the span, coordinate relations between facts of different
+  abouts inside a scope they share — `before`, `after`, `during`,
+  `concurrent`, `same_sequence`, `same_rank`, or the bare `shares_scope`
+  when neither carries the clock read — each with a `why` a reader can
+  check against the coordinates, and tensions: facts that both still stand
+  and that a declared `contradicts` joins, shown and never resolved. The
+  proof declares the interval, the axis, the abouts read and the ones with
+  nothing inside, and when nothing fell within the span, the nearest fact
+  outside it. Pages by position over the four sections in order; past five
+  hundred coordinate relations the reading says how many it left out. The
+  contract gains `rpc Relate`, `RelateRequest`, `RelateResponse`,
+  `RelatedFact`, `CoordinateRelation` and `Tension`; the domain gains the
+  `relate` module with `RelatedFact`, `CoordinateRelation` and `Tension` as
+  value objects and the one pure function that reads them. The gRPC
+  transport, the embedded and fixture backends, the HTTP authorization, the
+  snapshot allowlist, the plugin capabilities, the MCPB manifest, the guide
+  (a new `verb:relate` entry), the skills, the READMEs and every gate that
+  counts tools go from thirteen to fourteen in the same change.
+
 - A question with a date is one Ask that stands where it was asked
   (`kmp_ask` and `kmp_wake` take `as_of`, `interval` and `axis`). Until now
   the agent's only temporal move was to enumerate: walk a half-open interval

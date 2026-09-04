@@ -1,6 +1,7 @@
 use kmp_application::{
-    AskMemoryQuery, InspectMemoryQuery, MAX_TRACE_PAGE_ENTRIES, TemporalIncludeOptions,
-    TemporalMemoryQuery, TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
+    AskMemoryQuery, InspectMemoryQuery, MAX_RELATE_PAGE_ENTRIES, MAX_TRACE_PAGE_ENTRIES,
+    RelateMemoryQuery, RelatePageRequest, TemporalIncludeOptions, TemporalMemoryQuery,
+    TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
 };
 use kmp_domain::{
     TemporalAxis, TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection,
@@ -8,8 +9,8 @@ use kmp_domain::{
 use kmp_proto::v1beta1::TemporalCursor as ProtoTemporalCursor;
 use kmp_proto::v1beta1::TemporalInterval as ProtoTemporalInterval;
 use kmp_proto::v1beta1::{
-    AskRequest, InspectInclude, InspectRequest, PageRequest, TemporalInclude, TemporalLimit,
-    TemporalMoveRequest, TemporalNearRequest, TraceRequest, WakeRequest,
+    AskRequest, InspectInclude, InspectRequest, PageRequest, RelateRequest, TemporalInclude,
+    TemporalLimit, TemporalMoveRequest, TemporalNearRequest, TraceRequest, WakeRequest,
 };
 
 use super::dimensions::domain_dimension_selection;
@@ -59,6 +60,48 @@ pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemory
         max_entries: (budget.max_entries != 0).then_some(budget.max_entries as usize),
         temporal,
     })
+}
+
+pub fn relate_query_from_proto(request: RelateRequest) -> ProtoMappingResult<RelateMemoryQuery> {
+    let budget = request.budget.unwrap_or_default();
+    validate_recall_budget(&budget)?;
+    Ok(RelateMemoryQuery {
+        about: request.about,
+        dimensions: domain_dimension_selection(request.dimensions)?,
+        temporal: temporal_selection_from_proto(None, request.interval, request.axis)?,
+        token_budget: if budget.tokens == 0 {
+            2400
+        } else {
+            budget.tokens
+        },
+        depth: if budget.depth == 0 { 2 } else { budget.depth },
+        max_tier: max_tier_from_detail(memory_detail_level(budget.detail)?),
+        page: relate_page_from_proto(request.page)?,
+    })
+}
+
+fn relate_page_from_proto(value: Option<PageRequest>) -> ProtoMappingResult<RelatePageRequest> {
+    let Some(page) = value else {
+        return Ok(RelatePageRequest::default());
+    };
+    let entries = if page.entries == 0 {
+        None
+    } else {
+        let entries = page.entries as usize;
+        if entries > MAX_RELATE_PAGE_ENTRIES {
+            return Err(invalid_argument(format!(
+                "relate page.entries must be <= {MAX_RELATE_PAGE_ENTRIES}"
+            )));
+        }
+        Some(entries)
+    };
+    let cursor = match non_empty(page.cursor) {
+        Some(cursor) => Some(cursor.parse::<usize>().map_err(|_| {
+            invalid_argument("relate page.cursor must be a next_cursor returned by Relate")
+        })?),
+        None => None,
+    };
+    Ok(RelatePageRequest { entries, cursor })
 }
 
 /// The instants a recall stands on, from the three request fields that name

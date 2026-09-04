@@ -201,6 +201,7 @@ jobs:
               "kmp_write_memory",
               "kmp_wake",
               "kmp_ask",
+              "kmp_relate",
               "kmp_goto",
               "kmp_near",
               "kmp_rewind",
