@@ -121,6 +121,7 @@ fn wake_query() -> WakeMemoryQuery {
         depth: 2,
         max_tier: None,
         max_entries: None,
+        temporal: kmp_domain::TemporalSelection::Frontier,
     }
 }
 

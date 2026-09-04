@@ -18,6 +18,8 @@ pub mod search_summary_fault;
 pub mod source_kind;
 pub mod temporal_coordinate;
 pub mod temporal_cursor;
+pub mod temporal_interval;
+pub mod temporal_selection;
 
 pub use bundle_metadata::BundleMetadata;
 pub use bundle_quality_metrics::BundleQualityMetrics;
@@ -41,3 +43,5 @@ pub use search_summary_fault::SearchSummaryFault;
 pub use source_kind::SourceKind;
 pub use temporal_coordinate::TemporalCoordinate;
 pub use temporal_cursor::{TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow};
+pub use temporal_interval::TemporalInterval;
+pub use temporal_selection::TemporalSelection;

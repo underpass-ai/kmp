@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:90c5f795e453c7bb6fc1",
+    "idempotency_key": "ingest:guide-sync:1:agent:a16b477eac155566e98d",
     "memory": {
       "dimensions": [
         {
@@ -114,7 +114,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
+          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Optional: as_of, interval and axis bound the packet in time — its evidence, spine, resume cursor and proof stand on the selection. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
         },
         {
           "coordinates": [
@@ -144,7 +144,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB ask. Use kmp_ask for a genuinely semantic question that stored evidence can answer. Do not use it for yesterday, since, current, latest, before or after. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, and a warning when the rendering dropped an identifier or leans to another language. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN."
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN."
         },
         {
           "coordinates": [
@@ -174,7 +174,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Temporal intent beats Ask. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete."
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete."
         },
         {
           "coordinates": [
@@ -595,7 +595,7 @@
             "source": "tools/list",
             "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question."
+          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
         },
         {
           "coordinates": [
@@ -936,7 +936,7 @@
             "source": "tools/list",
             "tool_name": "kmp_wake"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory."
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
         },
         {
           "coordinates": [
@@ -1215,7 +1215,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_ask"
           ],
-          "text": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+          "text": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1358,7 +1358,7 @@
           "supports": [
             "guide:kmp-agent:tool:kmp_wake"
           ],
-          "text": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
+          "text": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1409,12 +1409,12 @@
         {
           "class": "procedural",
           "confidence": "high",
-          "evidence": "The live router contract gives temporal intent precedence over Ask.",
+          "evidence": "The live router contract gives temporal intent precedence over Ask in two shapes: enumeration through the temporal verbs, and a dated Ask bounded by as_of or interval.",
           "from": "guide:kmp-agent:verb:time",
           "rel": "corrects",
           "sequence": 4,
           "to": "guide:kmp-agent:verb:ask",
-          "why": "Temporal navigation corrects the route when the original request concerns change or a time boundary rather than semantic relevance."
+          "why": "Temporal navigation corrects the route when the original request asks what a period holds rather than for an answer; a semantic question that carries a date stays an Ask and stands where it was asked with as_of or interval."
         },
         {
           "class": "evidential",
@@ -1539,7 +1539,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question.",
+          "evidence": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
           "sequence": 17,
@@ -1649,7 +1649,7 @@
         {
           "class": "evidential",
           "confidence": "high",
-          "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory.",
+          "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
           "sequence": 28,

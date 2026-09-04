@@ -123,3 +123,37 @@ pub(crate) fn recall_page_schema() -> Value {
         }
     })
 }
+
+/// Where a recall stands in time, when the caller names it: the same three
+/// arguments on `kmp_ask` and `kmp_wake`.
+pub(crate) fn as_of_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+        "properties": {
+            "time": string_schema("ISO-8601 instant to stand at."),
+            "ref": string_schema("Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.")
+        }
+    })
+}
+
+pub(crate) fn interval_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+        "properties": {
+            "start": string_schema("ISO-8601 inclusive start. Omit it to leave the span open on this side."),
+            "end": string_schema("ISO-8601 exclusive end. Omit it to leave the span open on this side.")
+        }
+    })
+}
+
+pub(crate) fn recall_axis_schema() -> Value {
+    json!({
+        "type": "string",
+        "enum": ["occurred", "observed", "ingested", "validity"],
+        "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`."
+    })
+}

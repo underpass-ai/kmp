@@ -9,6 +9,44 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- A question with a date is one Ask that stands where it was asked
+  (`kmp_ask` and `kmp_wake` take `as_of`, `interval` and `axis`). Until now
+  the agent's only temporal move was to enumerate: walk a half-open interval
+  with `kmp_goto` and `kmp_forward` and read everything it holds. A semantic
+  question that merely carries a date — why was the launch postponed in
+  March, what rule held during the incident, what did we know on the tenth —
+  had no honest answer that way. Now `as_of` names an instant (a `time`, or
+  a `ref` for that entry's own instant), `interval` a half-open span
+  `[start, end)` with either side open, and `axis` the clock read
+  (`occurred`, `observed`, `ingested`, `validity`; omitted, the compatible
+  precedence, which the proof names per entry). Only what falls inside
+  competes, and it is decided before the ranker builds its collection, so
+  the words are weighed against the span's own statistics; supersession and
+  expiry are read as they stood then, so an entry replaced or expired after
+  the instant is current for that question, and a replacement that did not
+  exist yet replaces nothing, on the proof path too; recency is measured from
+  the instant. The proof declares where the recall stood in `interval`,
+  `as_of` and `axis`, and an `UNKNOWN` within an interval names the closest
+  match outside it in `nearest_outside`, with its instant and the clock it
+  was read on: the difference between "not known" and "not then". A wake
+  bounded the same way carries only what fell inside, with its spine, resume
+  cursor and proof standing on the selection; its rendered summary is still
+  the about's. An instant and a span together, or an axis alone, are refused
+  before anything is read; a `sequence` cursor names no instant and is
+  refused too. The contract gains `TemporalInterval` and `NearestOutside`;
+  the domain gains the interval and the selection as value objects. The
+  agent's routing rule now has two shapes — enumerate a period with the
+  temporal verbs, answer a dated question with one Ask — in the initialize
+  instructions, the skill, the guide, the READMEs and the routing gate, which
+  pins a dated case in English and Spanish. Eight judged cases measure it:
+  as-of before a supersession, as-of before an expiry, a span in which only
+  the inside competes, the same text on the occurred and observed clocks, a
+  validity span that includes what has expired since, a word common in the
+  about and rare in the span, and an UNKNOWN that names its nearest neighbour;
+  the recorded floors rise with them.
+
 ### Fixed
 
 - `record_summary` reads the memory it attaches to even when that memory is

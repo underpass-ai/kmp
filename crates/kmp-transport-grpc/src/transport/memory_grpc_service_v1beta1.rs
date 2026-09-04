@@ -116,13 +116,15 @@ where
             .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?;
         let intent = query.intent.clone();
         let max_entries = query.max_entries;
+        let temporal = query.temporal.clone();
         log_dimensioned_request("KernelMemoryService.Wake", &query.about, &query.dimensions);
         let result = self.application.wake(query).await.map_err(|error| {
             map_application_error_with_log("KernelMemoryService.Wake", &start, error)
         })?;
         let selected_abouts = selected_abouts_from_bundle(&result.bundle);
         let response = project_wake_response(
-            wake_response_from_result(&intent, max_entries, result),
+            wake_response_from_result(&intent, max_entries, result, &temporal)
+                .map_err(|status| map_proto_error("KernelMemoryService.Wake", &start, *status))?,
             &projection_request,
         )
         .map_err(|error| {
@@ -165,6 +167,7 @@ where
         let answer_policy = query.answer_policy;
         let max_entries = query.max_entries;
         let asked_as = query.asked_as.clone();
+        let temporal = query.temporal.clone();
         log_dimensioned_request("KernelMemoryService.Ask", &query.about, &query.dimensions);
         let result = self.application.ask(query).await.map_err(|error| {
             map_application_error_with_log("KernelMemoryService.Ask", &start, error)
@@ -178,7 +181,9 @@ where
                 max_entries,
                 result,
                 &self.lexical_bridge,
-            ),
+                &temporal,
+            )
+            .map_err(|status| map_proto_error("KernelMemoryService.Ask", &start, *status))?,
             &projection_request,
         )
         .map_err(|error| {

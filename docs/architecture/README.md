@@ -114,7 +114,11 @@ as a complete interval.
 
 `kmp_goto`, `kmp_near`, `kmp_rewind` and `kmp_forward` move through stored
 time. `kmp_trace` and `kmp_inspect` audit graph structure and evidence. Semantic
-Ask is not a substitute for temporal navigation.
+Ask is not a substitute for temporal navigation: it enumerates nothing. It
+does stand where it is asked — `as_of` at an instant, `interval` within a
+half-open span, `axis` on one of the five clocks — so a question that carries
+a date is answered from what was in effect then, with supersession and expiry
+read as they stood then and the proof declaring where it stood.
 
 ## Backend selection
 

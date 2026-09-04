@@ -83,6 +83,7 @@ You normally ask for the outcome. The KMP skill chooses the memory moves.
 | “Continue the KMP documentation work.” | Wakes `project:kmp` before re-deriving it. | Current decisions, constraints and next actions. |
 | “Why did we choose SQLite?” | Asks memory and follows the stored evidence. | A grounded answer, or `UNKNOWN`. |
 | “What happened yesterday?” | Resolves the interval and navigates every temporal page. | Ordered memory from that period. |
+| “Why was the launch postponed in March?” | Asks memory standing within March: only what fell inside competes, and the lifecycles are read as they stood then. | A grounded answer from that time, or `UNKNOWN` naming the nearest match outside the span. |
 | “Remember that retries are capped at two because logs showed amplification.” | Records the decision, its evidence and meaningful relations. | Durable state with an auditable why. |
 | “Show the proof between this incident and that decision.” | Traces the typed path and inspects its evidence. | The stored connection, rationale and sources. |
 | “Undo that decision.” | Writes a state that supersedes the old one. | Both decisions remain visible in time. |
@@ -227,7 +228,9 @@ stored memory remains byte-exact and inspectable; word-based semantic
 retrieval in those scripts is not supported.
 
 Temporal requests such as “yesterday” use temporal navigation, not semantic
-Ask.
+Ask. A semantic question that carries a date or a range is one Ask that
+stands where it was asked: `as_of` for an instant, `interval` for a half-open
+span, `axis` for the clock, and the proof declares where it stood.
 
 ## Shared memory, when you actually need it
 

@@ -1353,6 +1353,9 @@ async fn memory_service_wake_and_ask_read_live_context() {
             }),
             dimensions: None,
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }))
         .await
         .expect("wake should read live context")
@@ -1418,6 +1421,9 @@ async fn memory_service_ask_indexes_entry_text_and_explicit_evidence_not_anchor_
                 ..Default::default()
             }),
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }))
         .await
         .expect("ask should use explicit evidence")
@@ -1494,6 +1500,9 @@ async fn memory_service_ask_strict_policies_require_the_requested_subject() {
                 ..Default::default()
             }),
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }
     }
 
@@ -1557,6 +1566,9 @@ async fn memory_service_ask_show_conflicts_surfaces_explicit_conflict_relations(
                 ..Default::default()
             }),
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }))
         .await
         .expect("ask should surface explicit conflicts")
@@ -1619,6 +1631,9 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 ..Default::default()
             }),
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }))
         .await
         .expect("wake should apply dimension selection")
@@ -1661,6 +1676,9 @@ async fn memory_service_wake_and_ask_apply_dimensions_detail_and_answer_policy()
                 ..Default::default()
             }),
             page: None,
+            as_of: None,
+            interval: None,
+            axis: 0,
         }))
         .await
         .expect("ask should apply answer policy")
@@ -1695,6 +1713,9 @@ async fn memory_service_returns_typed_stale_recall_cursor_details() {
             entries: 1,
             cursor: String::new(),
         }),
+        as_of: None,
+        interval: None,
+        axis: 0,
     };
     let first = service
         .wake(Request::new(request.clone()))

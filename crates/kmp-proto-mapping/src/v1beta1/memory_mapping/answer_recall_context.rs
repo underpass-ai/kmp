@@ -38,7 +38,12 @@ pub(super) struct AnswerRecallContext {
 }
 
 impl AnswerRecallContext {
-    pub(super) fn from_bundle(bundle: &KmpBundle) -> Self {
+    /// The context standing on a lifecycle read where the recall stands: at
+    /// the memory's frontier, or at an instant the caller named.
+    pub(super) fn from_bundle_with_lifecycle(
+        bundle: &KmpBundle,
+        lifecycle: MemoryLifecycle,
+    ) -> Self {
         let morphology = search_morphology(bundle);
         let details_by_ref = bundle
             .node_details()
@@ -128,10 +133,15 @@ impl AnswerRecallContext {
         Self {
             details_by_ref,
             relationships_by_ref,
-            lifecycle: MemoryLifecycle::read(bundle),
+            lifecycle,
             reach_graph: ReachGraph::from_bundle(bundle),
             morphology,
         }
+    }
+
+    /// The `proof.expired` list for the lifecycle this context stands on.
+    pub(super) fn expired_memories(&self) -> Vec<kmp_proto::v1beta1::ExpiredMemory> {
+        self.lifecycle.expired_memories()
     }
 
     pub(super) fn relationships_for<'a>(

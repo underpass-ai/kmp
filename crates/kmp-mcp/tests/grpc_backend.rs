@@ -1017,6 +1017,10 @@ fn proof(source: &str, target: &str) -> Proof {
         matched_terms: Vec::new(),
         matched_relations: Vec::new(),
         confidence: MemoryConfidence::High as i32,
+        interval: None,
+        axis: 0,
+        nearest_outside: None,
+        as_of: None,
     }
 }
 

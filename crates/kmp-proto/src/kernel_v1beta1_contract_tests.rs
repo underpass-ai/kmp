@@ -97,7 +97,17 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "WakeRequest"),
-        vec!["about", "role", "intent", "budget", "dimensions", "page"]
+        vec![
+            "about",
+            "role",
+            "intent",
+            "budget",
+            "dimensions",
+            "page",
+            "as_of",
+            "interval",
+            "axis",
+        ]
     );
     assert_eq!(
         message_field_names(memory_file, "WakeResponse"),
@@ -121,6 +131,9 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "dimensions",
             "page",
             "asked_as",
+            "as_of",
+            "interval",
+            "axis",
         ]
     );
     assert_eq!(
@@ -149,6 +162,10 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "matched_terms",
             "matched_relations",
             "expired",
+            "interval",
+            "axis",
+            "nearest_outside",
+            "as_of",
         ]
     );
     assert_eq!(

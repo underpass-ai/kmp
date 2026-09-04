@@ -49,6 +49,8 @@
       "total": "integer"
     },
     "proof": {
+      "as_of": "null",
+      "axis": "null",
       "confidence": "string",
       "conflicts": [],
       "evidence": [
@@ -67,9 +69,11 @@
       ],
       "expired": [],
       "frontier_size": "integer",
+      "interval": "null",
       "matched_relations": [],
       "matched_terms": [],
       "missing": [],
+      "nearest_outside": "null",
       "path": [
         {
           "class": "string",

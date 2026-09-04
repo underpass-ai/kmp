@@ -10,7 +10,7 @@ pub use error::DomainError;
 pub use model::{
     BundleNode, BundleNodeDetail, BundleRelationship, KmpBundle, KmpStats, TemporalEntry,
     TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
-    compare_temporal_instants, directed_relationship_path,
+    compare_temporal_instants, directed_relationship_path, temporal_instant_nanos,
 };
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,
@@ -30,7 +30,8 @@ pub use repositories::{
 pub use value_objects::{
     BundleMetadata, BundleQualityMetrics, CaseId, DimensionScopeMode, DimensionSelection,
     DimensionSelectionMode, MemoryDimensionIdentity, Provenance, Role, SourceKind, TemporalAxis,
-    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalWindow,
+    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection,
+    TemporalWindow,
 };
 pub use value_objects::{KmpMode, ResolutionTier, TierBudget};
 pub use value_objects::{

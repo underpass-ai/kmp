@@ -1,6 +1,6 @@
 use kmp_proto::v1beta1::{
-    InspectInclude, PageRequest, TemporalAxis, TemporalCursor, TemporalInclude, TemporalLimit,
-    TemporalWindow,
+    InspectInclude, PageRequest, TemporalAxis, TemporalCursor, TemporalInclude, TemporalInterval,
+    TemporalLimit, TemporalWindow,
 };
 
 pub(super) fn temporal_axis_from_arguments(arguments: &Value) -> Result<i32, String> {
@@ -139,6 +139,56 @@ pub(super) fn inspect_include_from_arguments(
         details: optional_bool_field(include, "details", "include.details")?.unwrap_or(true),
         raw,
     }))
+}
+
+/// The instant a recall stands at, when the caller names one: `as_of` with
+/// a `ref` or a `time`. A sequence is relative to one dimension and names
+/// no instant, so it is refused here with the reason.
+pub(super) fn as_of_from_arguments(arguments: &Value) -> Result<Option<TemporalCursor>, String> {
+    let arguments = object(arguments, "tool arguments")?;
+    let Some(cursor) = optional_object_field(arguments, "as_of", "as_of")? else {
+        return Ok(None);
+    };
+    let ref_value =
+        optional_string_field(cursor, "ref", "as_of.ref")?.filter(|value| !value.trim().is_empty());
+    let time = optional_timestamp_field(cursor, "time", "as_of.time")?;
+    if cursor.contains_key("sequence") {
+        return Err(
+            "as_of takes `ref` or `time`; a sequence is relative to one dimension and names no \
+             instant"
+                .to_string(),
+        );
+    }
+    match (ref_value, time) {
+        (Some(ref_value), None) => Ok(Some(TemporalCursor {
+            r#ref: ref_value,
+            time: None,
+            sequence: None,
+        })),
+        (None, Some(time)) => Ok(Some(TemporalCursor {
+            r#ref: String::new(),
+            time: Some(time),
+            sequence: None,
+        })),
+        _ => Err("as_of requires exactly one of `ref` or `time`".to_string()),
+    }
+}
+
+/// The half-open span a recall stands within, when the caller names one:
+/// `interval` with `start` (inclusive), `end` (exclusive), or both.
+pub(super) fn interval_from_arguments(
+    arguments: &Value,
+) -> Result<Option<TemporalInterval>, String> {
+    let arguments = object(arguments, "tool arguments")?;
+    let Some(interval) = optional_object_field(arguments, "interval", "interval")? else {
+        return Ok(None);
+    };
+    let start = optional_timestamp_field(interval, "start", "interval.start")?;
+    let end = optional_timestamp_field(interval, "end", "interval.end")?;
+    if start.is_none() && end.is_none() {
+        return Err("interval needs a `start`, an `end`, or both".to_string());
+    }
+    Ok(Some(TemporalInterval { start, end }))
 }
 
 #[cfg(test)]

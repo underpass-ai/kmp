@@ -257,10 +257,13 @@ mod tests {
             keys(schema("kmp_wake")),
             expected(&[
                 "about",
+                "as_of",
+                "axis",
                 "budget",
                 "depth",
                 "dimensions",
                 "intent",
+                "interval",
                 "page",
                 "role"
             ])
@@ -270,10 +273,13 @@ mod tests {
             expected(&[
                 "about",
                 "answer_policy",
+                "as_of",
                 "asked_as",
+                "axis",
                 "budget",
                 "depth",
                 "dimensions",
+                "interval",
                 "page",
                 "question",
             ])

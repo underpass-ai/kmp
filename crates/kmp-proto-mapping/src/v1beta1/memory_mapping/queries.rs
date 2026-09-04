@@ -2,7 +2,11 @@ use kmp_application::{
     AskMemoryQuery, InspectMemoryQuery, MAX_TRACE_PAGE_ENTRIES, TemporalIncludeOptions,
     TemporalMemoryQuery, TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
 };
-use kmp_domain::{TemporalCursor, TemporalDirection};
+use kmp_domain::{
+    TemporalAxis, TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection,
+};
+use kmp_proto::v1beta1::TemporalCursor as ProtoTemporalCursor;
+use kmp_proto::v1beta1::TemporalInterval as ProtoTemporalInterval;
 use kmp_proto::v1beta1::{
     AskRequest, InspectInclude, InspectRequest, PageRequest, TemporalInclude, TemporalLimit,
     TemporalMoveRequest, TemporalNearRequest, TraceRequest, WakeRequest,
@@ -31,12 +35,14 @@ pub fn wake_query_from_proto(request: WakeRequest) -> ProtoMappingResult<WakeMem
         depth: if budget.depth == 0 { 2 } else { budget.depth },
         max_tier: max_tier_from_detail(memory_detail_level(budget.detail)?),
         max_entries: (budget.max_entries != 0).then_some(budget.max_entries as usize),
+        temporal: temporal_selection_from_proto(request.as_of, request.interval, request.axis)?,
     })
 }
 
 pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemoryQuery> {
     let budget = request.budget.unwrap_or_default();
     validate_recall_budget(&budget)?;
+    let temporal = temporal_selection_from_proto(request.as_of, request.interval, request.axis)?;
     Ok(AskMemoryQuery {
         about: request.about,
         question: request.question,
@@ -51,7 +57,43 @@ pub fn ask_query_from_proto(request: AskRequest) -> ProtoMappingResult<AskMemory
         depth: if budget.depth == 0 { 2 } else { budget.depth },
         max_tier: max_tier_from_detail(memory_detail_level(budget.detail)?),
         max_entries: (budget.max_entries != 0).then_some(budget.max_entries as usize),
+        temporal,
     })
+}
+
+/// The instants a recall stands on, from the three request fields that name
+/// them. An instant and a span are exclusive, and a clock alone has nothing
+/// to select on: naming one without the other would be a request that
+/// changes nothing, and a request that changes nothing is a mistake the
+/// caller would rather hear about.
+fn temporal_selection_from_proto(
+    as_of: Option<ProtoTemporalCursor>,
+    interval: Option<ProtoTemporalInterval>,
+    axis: i32,
+) -> ProtoMappingResult<TemporalSelection> {
+    let axis = temporal_axis_from_proto(axis)?;
+    match (as_of, interval) {
+        (Some(_), Some(_)) => Err(invalid_argument(
+            "as_of and interval are exclusive: stand at an instant or within a span, not both",
+        )),
+        (Some(cursor), None) => {
+            let cursor = domain_cursor_from_proto(&cursor)?;
+            TemporalSelection::as_of(cursor, axis)
+                .map_err(|error| invalid_argument(error.to_string()))
+        }
+        (None, Some(interval)) => {
+            let interval = TemporalInterval::new(
+                proto_timestamp_to_sort_string(interval.start),
+                proto_timestamp_to_sort_string(interval.end),
+            )
+            .map_err(|error| invalid_argument(error.to_string()))?;
+            Ok(TemporalSelection::within(interval, axis))
+        }
+        (None, None) if axis != TemporalAxis::Default => Err(invalid_argument(
+            "axis has nothing to select on without as_of or interval",
+        )),
+        (None, None) => Ok(TemporalSelection::Frontier),
+    }
 }
 
 pub fn temporal_query_from_move_proto(
@@ -292,5 +334,125 @@ mod tests {
         assert!(query.include_outgoing);
         assert!(query.include_details);
         assert!(!query.include_raw);
+    }
+}
+
+#[cfg(test)]
+mod temporal_selection_tests {
+    use kmp_domain::{TemporalAxis, TemporalSelection};
+    use kmp_proto::v1beta1::{AskRequest, TemporalAxis as ProtoAxis};
+    use prost_types::Timestamp;
+
+    use super::*;
+
+    fn ask(
+        as_of: Option<ProtoTemporalCursor>,
+        interval: Option<ProtoTemporalInterval>,
+        axis: i32,
+    ) -> AskRequest {
+        AskRequest {
+            about: "about:x".to_string(),
+            question: "what stood".to_string(),
+            as_of,
+            interval,
+            axis,
+            ..AskRequest::default()
+        }
+    }
+
+    fn at(seconds: i64) -> Option<Timestamp> {
+        Some(Timestamp { seconds, nanos: 0 })
+    }
+
+    #[test]
+    fn an_instant_and_a_span_are_exclusive_and_a_clock_alone_selects_nothing() {
+        let both = ask(
+            Some(ProtoTemporalCursor {
+                r#ref: String::new(),
+                time: at(1_000),
+                sequence: None,
+            }),
+            Some(ProtoTemporalInterval {
+                start: at(0),
+                end: at(2_000),
+            }),
+            0,
+        );
+        let error = ask_query_from_proto(both).expect_err("exclusive");
+        assert!(error.message().contains("exclusive"), "{}", error.message());
+
+        let clock_alone = ask(None, None, ProtoAxis::Observed as i32);
+        let error = ask_query_from_proto(clock_alone).expect_err("nothing to select on");
+        assert!(
+            error.message().contains("nothing to select on"),
+            "{}",
+            error.message()
+        );
+
+        let neither = ask(None, None, 0);
+        assert!(
+            ask_query_from_proto(neither)
+                .expect("frontier")
+                .temporal
+                .is_frontier()
+        );
+    }
+
+    #[test]
+    fn a_span_maps_to_the_domain_interval_and_a_sequence_cursor_is_refused() {
+        let span = ask(
+            None,
+            Some(ProtoTemporalInterval {
+                start: at(0),
+                end: at(2_000),
+            }),
+            ProtoAxis::Validity as i32,
+        );
+        let query = ask_query_from_proto(span).expect("a span");
+        assert_eq!(query.temporal.axis(), Some(TemporalAxis::Validity));
+        assert!(query.temporal.interval().is_some());
+
+        let empty = ask(
+            None,
+            Some(ProtoTemporalInterval {
+                start: at(2_000),
+                end: at(2_000),
+            }),
+            0,
+        );
+        assert!(
+            ask_query_from_proto(empty).is_err(),
+            "an empty span selects nothing"
+        );
+
+        let sequence = ask(
+            Some(ProtoTemporalCursor {
+                r#ref: String::new(),
+                time: None,
+                sequence: Some(3),
+            }),
+            None,
+            0,
+        );
+        let error = ask_query_from_proto(sequence).expect_err("no instant");
+        assert!(
+            error.message().contains("names no instant"),
+            "{}",
+            error.message()
+        );
+
+        let by_ref = ask(
+            Some(ProtoTemporalCursor {
+                r#ref: "about:x:e1".to_string(),
+                time: None,
+                sequence: None,
+            }),
+            None,
+            0,
+        );
+        assert!(matches!(
+            ask_query_from_proto(by_ref).expect("as of a ref").temporal,
+            TemporalSelection::AsOf { .. }
+        ));
     }
 }

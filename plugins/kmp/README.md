@@ -144,7 +144,12 @@ byte-for-byte as stored. Temporal requests such as “yesterday” or a release
 window bypass semantic Ask: the agent resolves the user's timezone, navigates
 the half-open UTC interval and consumes every page. It captures the inclusive
 start with `kmp_goto` before the strictly-after `kmp_forward`, merges refs and
-excludes the end. Setup and upgrades preserve the configured list.
+excludes the end. A semantic question that merely carries a date — why
+something was decided in March — is one `kmp_ask` with that interval as
+`interval`, or the instant as `as_of`: the kernel admits only what fell
+inside, reads supersession and expiry as they stood then, and an `UNKNOWN`
+names the nearest match outside the span. Setup and upgrades preserve the
+configured list.
 
 Setup and update install the versioned guide assets but never select or write
 a memory store. `/kmp:guide` performs the separate, explicit sync:

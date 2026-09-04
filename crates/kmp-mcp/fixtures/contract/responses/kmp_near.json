@@ -92,6 +92,8 @@
       "total": 6
     },
     "proof": {
+      "as_of": null,
+      "axis": null,
       "confidence": "medium",
       "conflicts": [],
       "evidence": [
@@ -183,9 +185,11 @@
       ],
       "expired": [],
       "frontier_size": 0,
+      "interval": null,
       "matched_relations": [],
       "matched_terms": [],
       "missing": [],
+      "nearest_outside": null,
       "path": [
         {
           "class": "structural",

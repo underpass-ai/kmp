@@ -312,6 +312,7 @@ async fn embedded_wake(
     let query = wake_query_from_proto(request.clone()).map_err(|status| mapping_error(&status))?;
     let intent = query.intent.clone();
     let max_entries = query.max_entries;
+    let temporal = query.temporal.clone();
     let about = query.about.clone();
     let result = service
         .wake(query)
@@ -326,7 +327,8 @@ async fn embedded_wake(
         &result.rendered.quality,
     );
     let response = project_wake_response(
-        wake_response_from_result(&intent, max_entries, result),
+        wake_response_from_result(&intent, max_entries, result, &temporal)
+            .map_err(|status| mapping_error(&status))?,
         &request,
     )
     .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
@@ -345,6 +347,7 @@ async fn embedded_ask(
     let asked_as = query.asked_as.clone();
     let policy = query.answer_policy;
     let max_entries = query.max_entries;
+    let temporal = query.temporal.clone();
     let about = query.about.clone();
     let result = service
         .ask(query)
@@ -366,7 +369,9 @@ async fn embedded_ask(
             max_entries,
             result,
             bridge,
-        ),
+            &temporal,
+        )
+        .map_err(|status| mapping_error(&status))?,
         &request,
     )
     .map_err(|error| ToolError::invalid_argument(error.to_string()))?;

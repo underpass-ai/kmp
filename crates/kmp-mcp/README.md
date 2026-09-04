@@ -82,6 +82,16 @@ Current status:
   pairs a lexical-bridge table crossed a language with, `restated_from` names
   a declared restatement, and `matched_via: summary` with `summary_terms`
   names the question's words a writer's English `summary_en` supplied;
+- `kmp_ask` and `kmp_wake` stand where they are asked: `as_of` names an
+  instant (`time`, or `ref` for that entry's own instant), `interval` a
+  half-open span `[start, end)` with either side open, and `axis` the clock
+  (`occurred`, `observed`, `ingested`, `validity`; omitted, the compatible
+  precedence). Only what falls inside competes, the ranker's collection is
+  the span's own, supersession and expiry are read as they stood then, and
+  the proof declares it in `proof.interval`, `proof.as_of` and `proof.axis`;
+  an `UNKNOWN` within an interval names the nearest match outside it in
+  `proof.nearest_outside`. An instant and a span together, or an axis
+  alone, are refused;
 - `kmp_ask` and `kmp_wake` preserve a stable core and fill a deterministic
   semantic prefix under `budget.max_bytes` (10,000 by default); expandable
   proof returns `projection.page.next_cursor`, while `budget.tokens` remains a
