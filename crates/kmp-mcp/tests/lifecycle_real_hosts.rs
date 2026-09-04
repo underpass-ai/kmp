@@ -321,7 +321,18 @@ impl RealHostLifecycleHarness {
             BTreeSet::from(["claude", "codex"])
         );
         assert!(engines.iter().all(|engine| engine["version"] == version));
-        assert!(engines.iter().all(|engine| engine["tool_count"] == 13));
+        // The baseline engine answers the surface it shipped with; the
+        // candidate answers everything this build declares.
+        let expected_tools = if version == BASELINE_VERSION {
+            13
+        } else {
+            kmp_mcp::tool_names().len()
+        };
+        assert!(
+            engines
+                .iter()
+                .all(|engine| engine["tool_count"] == expected_tools)
+        );
         assert!(
             receipt["plugin_tree_digest"]
                 .as_str()
