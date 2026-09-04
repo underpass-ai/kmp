@@ -6,6 +6,7 @@ use crate::{TemporalAxis, compare_temporal_instants};
 use super::coordinate_relation::{CoordinateRelation, CoordinateRelationKind};
 use super::declared_edge::DeclaredEdge;
 use super::related_fact::{FactState, RelatedFact};
+use super::shared_label::SharedLabel;
 use super::tension::Tension;
 
 /// The most coordinate relations one reading returns. Pairs grow with the
@@ -24,20 +25,21 @@ pub struct Relations {
 /// Reads what facts of different abouts have to do with each other, and
 /// which declared contradictions still stand between facts that do.
 ///
-/// Coordinate relations are read inside each scope two or more abouts
-/// share, one per pair of facts from different abouts, ordered by scope and
-/// then by the pair, so the same store reads the same way every time.
+/// Coordinate relations are read inside each label two or more abouts
+/// share — the same dimension kind and the same scope — one per pair of
+/// facts from different abouts, ordered by label and then by the pair, so
+/// the same store reads the same way every time.
 pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAxis) -> Relations {
-    let mut by_scope = BTreeMap::<String, Vec<&RelatedFact>>::new();
+    let mut by_label = BTreeMap::<SharedLabel, Vec<&RelatedFact>>::new();
     for fact in facts {
-        for scope in fact.bare_scopes() {
-            by_scope.entry(scope).or_default().push(fact);
+        for label in fact.labels() {
+            by_label.entry(label).or_default().push(fact);
         }
     }
 
     let mut coordinate = Vec::new();
     let mut omitted_coordinate = 0usize;
-    for (scope, mut placed) in by_scope {
+    for (label, mut placed) in by_label {
         placed.sort_by(|left, right| {
             (left.about(), left.ref_id()).cmp(&(right.about(), right.ref_id()))
         });
@@ -47,7 +49,7 @@ pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAx
                 if first.about() == second.about() {
                     continue;
                 }
-                for relation in pair_relations(first, second, &scope, axis) {
+                for relation in pair_relations(first, second, &label, axis) {
                     if coordinate.len() < MAX_COORDINATE_RELATIONS {
                         coordinate.push(relation);
                     } else {
@@ -72,11 +74,10 @@ pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAx
                 return None;
             }
             let shared = first
-                .bare_scopes()
-                .intersection(&second.bare_scopes())
+                .labels()
+                .intersection(&second.labels())
                 .next()
-                .cloned()
-                .unwrap_or_default();
+                .cloned();
             Some(Tension::new(
                 edge.from.clone(),
                 edge.to.clone(),
@@ -100,16 +101,16 @@ pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAx
 fn pair_relations(
     first: &RelatedFact,
     second: &RelatedFact,
-    scope: &str,
+    label: &SharedLabel,
     axis: TemporalAxis,
 ) -> Vec<CoordinateRelation> {
     let mut relations = Vec::new();
     let temporal = if axis == TemporalAxis::Validity {
-        span_relation(first.validity_in(scope), second.validity_in(scope))
+        span_relation(first.validity_in(label), second.validity_in(label))
     } else {
         instant_relation(
-            first.instant_in(scope, axis),
-            second.instant_in(scope, axis),
+            first.instant_in(label, axis),
+            second.instant_in(label, axis),
         )
     };
     let (from, to, kind) = match temporal {
@@ -121,28 +122,28 @@ fn pair_relations(
         from.ref_id(),
         to.ref_id(),
         kind,
-        scope,
+        label,
         axis,
     ));
-    if let (Some(left), Some(right)) = (first.sequence_in(scope), second.sequence_in(scope))
+    if let (Some(left), Some(right)) = (first.sequence_in(label), second.sequence_in(label))
         && left == right
     {
         relations.push(CoordinateRelation::new(
             first.ref_id(),
             second.ref_id(),
             CoordinateRelationKind::SameSequence,
-            scope,
+            label,
             axis,
         ));
     }
-    if let (Some(left), Some(right)) = (first.rank_in(scope), second.rank_in(scope))
+    if let (Some(left), Some(right)) = (first.rank_in(label), second.rank_in(label))
         && left == right
     {
         relations.push(CoordinateRelation::new(
             first.ref_id(),
             second.ref_id(),
             CoordinateRelationKind::SameRank,
-            scope,
+            label,
             axis,
         ));
     }
@@ -228,8 +229,18 @@ mod tests {
         validity: (Option<&str>, Option<&str>),
         sequence: Option<u32>,
     ) -> TemporalCoordinate {
+        coordinate_of_kind("incident", scope, occurred_at, validity, sequence)
+    }
+
+    fn coordinate_of_kind(
+        kind: &str,
+        scope: &str,
+        occurred_at: Option<&str>,
+        validity: (Option<&str>, Option<&str>),
+        sequence: Option<u32>,
+    ) -> TemporalCoordinate {
         let mut explanation = RelationExplanation::new(RelationSemanticClass::Structural)
-            .with_dimension("incident")
+            .with_dimension(kind)
             .with_scope_id(scope);
         if let Some(at) = occurred_at {
             explanation = explanation.with_occurred_at(at);
@@ -255,6 +266,85 @@ mod tests {
         state: FactState,
     ) -> RelatedFact {
         RelatedFact::new(ref_id, about, coordinates, state).expect("fact")
+    }
+
+    #[test]
+    fn the_same_scope_under_two_kinds_is_two_labels_and_relates_nothing() {
+        let facts = vec![
+            fact(
+                "project:alpha:e1",
+                "project:alpha",
+                vec![coordinate_of_kind(
+                    "owner",
+                    "about:project:alpha:dimension:kmp",
+                    Some("2026-03-04T01:00:00Z"),
+                    (None, None),
+                    Some(1),
+                )],
+                FactState::Current,
+            ),
+            fact(
+                "project:beta:e1",
+                "project:beta",
+                vec![coordinate_of_kind(
+                    "repo",
+                    "about:project:beta:dimension:kmp",
+                    Some("2026-03-04T01:20:00Z"),
+                    (None, None),
+                    Some(1),
+                )],
+                FactState::Current,
+            ),
+        ];
+
+        let relations = relate(&facts, &[], TemporalAxis::Default);
+
+        assert!(
+            relations.coordinate.is_empty(),
+            "`owner=kmp` and `repo=kmp` share a value, not a label: {:?}",
+            relations.coordinate
+        );
+    }
+
+    #[test]
+    fn a_coordinate_relation_names_the_label_it_was_read_in() {
+        let facts = vec![
+            fact(
+                "project:alpha:e1",
+                "project:alpha",
+                vec![coordinate(
+                    "about:project:alpha:dimension:north",
+                    Some("2026-03-04T01:00:00Z"),
+                    (None, None),
+                    None,
+                )],
+                FactState::Current,
+            ),
+            fact(
+                "project:beta:e1",
+                "project:beta",
+                vec![coordinate(
+                    "about:project:beta:dimension:north",
+                    Some("2026-03-04T01:20:00Z"),
+                    (None, None),
+                    None,
+                )],
+                FactState::Current,
+            ),
+        ];
+
+        let relations = relate(&facts, &[], TemporalAxis::Default);
+
+        assert_eq!(relations.coordinate.len(), 1);
+        assert_eq!(relations.coordinate[0].dimension(), "incident");
+        assert_eq!(relations.coordinate[0].scope_id(), "north");
+        assert!(
+            relations.coordinate[0]
+                .why()
+                .starts_with("Both stand in `incident=north`;"),
+            "{}",
+            relations.coordinate[0].why()
+        );
     }
 
     #[test]

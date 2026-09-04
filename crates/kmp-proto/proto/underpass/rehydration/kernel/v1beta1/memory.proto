@@ -570,6 +570,9 @@ message ProposedLink {
   // The signals' weights summed, plus the shared scope.
   uint32 weight = 10;
   string why = 11;
+  // The dimension kind of the scope both stand in: with `scope_id`, the
+  // label they share. Empty when they share none.
+  string dimension = 12;
 }
 
 // An entry as relate reads it: where it stands, which about placed it, and
@@ -605,6 +608,9 @@ message CoordinateRelation {
   string scope_id = 4;
   TemporalAxis axis = 5;
   string why = 6;
+  // The dimension kind of that scope: with `scope_id`, the label both stand
+  // in. Two abouts relate through a label, never through a bare scope.
+  string dimension = 7;
 }
 
 enum CoordinateRelationKind {
@@ -630,6 +636,8 @@ message Tension {
   string scope_id = 3;
   string why = 4;
   string evidence = 5;
+  // The dimension kind of that scope: with `scope_id`, the label they share.
+  string dimension = 6;
 }
 
 message InspectRequest {

@@ -41,7 +41,7 @@ pub(super) fn propose_links(
 ) -> Vec<ProposedLink> {
     let scopes_by_ref = facts
         .iter()
-        .map(|fact| (fact.ref_id().to_string(), fact.bare_scopes()))
+        .map(|fact| (fact.ref_id().to_string(), fact.labels()))
         .collect::<BTreeMap<_, _>>();
     let identifiers_by_ref = words
         .iter()
