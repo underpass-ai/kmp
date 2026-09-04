@@ -47,7 +47,8 @@ fn wake_output_schema() -> Value {
             "guardrails": string_array("Stored constraints the continuation should preserve.")
         })),
         "proof": proof_output_schema("Wake uses medium for a non-empty deterministic retrieval packet; this is not relation-writer certainty."),
-        "resume_cursor": nullable_described("object", "Newest temporal coordinate covered by this packet; null when the packet carries no temporal anchor.")
+        "resume_cursor": nullable_described("object", "Newest temporal coordinate covered by this packet; null when the packet carries no temporal anchor."),
+        "labels": described("array", "The catalogue of the abouts this wake read: every label their entries stand in, as `about`, `key` (the dimension kind), `value` (the scope id), `entries` and `last_observed_at`. The current about first, then by use. Read it before naming a label on a new memory, so an existing one is reused instead of guessed. The most used labels are the first expansion the packet fills; the rest follow the causal spine, and `truncation` reports what did not fit. Nothing of the core is shortened to make room for a label.")
     });
     properties
         .as_object_mut()

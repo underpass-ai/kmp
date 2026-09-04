@@ -7,25 +7,47 @@
   ],
   "isError": false,
   "structuredContent": {
+    "labels": [
+      {
+        "about": "question:parity",
+        "entries": 3,
+        "key": "agentic_process",
+        "last_observed_at": "2026-04-12T17:00:00Z",
+        "value": "parity"
+      },
+      {
+        "about": "question:parity",
+        "entries": 3,
+        "key": "conversation",
+        "last_observed_at": "2026-04-12T18:00:00Z",
+        "value": "conversation:rachel"
+      }
+    ],
     "projection": {
       "budget": {
         "max_bytes": 10000,
         "tokens_advisory": 1600,
-        "used_bytes": 9477
+        "used_bytes": 9808
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": false,
       "detail": "balanced",
       "excluded_by_detail": 20,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:18:47a00c068c5d903b0820fa68d2fb68ac07d83749fd53899510461f4f234aa46c\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:20:061a0a89a1b6b0344ca5d2d42fc9d52401e9e34c4b4e3c9ab34e5ffe9f6ee437\"; budget.tokens, budget.max_bytes, and page.entries may change.",
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:18:47a00c068c5d903b0820fa68d2fb68ac07d83749fd53899510461f4f234aa46c",
+        "next_cursor": "kmp1:20:061a0a89a1b6b0344ca5d2d42fc9d52401e9e34c4b4e3c9ab34e5ffe9f6ee437",
         "offset": 0,
-        "returned": 18,
-        "total": 37
+        "returned": 20,
+        "total": 39
       },
       "sections": {
+        "labels": {
+          "core": 0,
+          "eligible": 2,
+          "returned_on_page": 2,
+          "total": 2
+        },
         "proof.evidence": {
           "core": 0,
           "eligible": 12,

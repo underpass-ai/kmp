@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:95cfc495c24e5f6e3741",
+    "idempotency_key": "ingest:guide-sync:1:agent:a3591b88ae260883c89a",
     "memory": {
       "dimensions": [
         {
@@ -114,7 +114,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Optional: as_of, interval and axis bound the packet in time — its evidence, spine, resume cursor and proof stand on the selection. Expect: compact current state, causal spine, open loops, next actions and a resume cursor. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
+          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Optional: as_of, interval and axis bound the packet in time — its evidence, spine, resume cursor and proof stand on the selection. Expect: compact current state, causal spine, open loops, next actions, a resume cursor and labels — the catalogue of the about, each label as key=value (a coordinate's dimension kind and scope id) with how many entries stand in it and when one was last observed, the current about first and then by use. Read the labels before naming one on a new memory: reuse what exists in scope, and know that a dimensions filter hides what it misses instead of ranking it low. The most used labels come first in the packet; the rest page, so raise budget.max_bytes or follow the cursor for the whole catalogue. Next: inspect or trace consequential refs; use the cursor to move forward when catching up."
         },
         {
           "coordinates": [
@@ -1068,7 +1068,7 @@
           "supports": [
             "guide:kmp-agent:verb:wake"
           ],
-          "text": "The live kmp_wake contract returns an about-scoped continuation packet and resume cursor.",
+          "text": "The live kmp_wake contract returns an about-scoped continuation packet, a resume cursor and the labels catalogue read off the about's coordinates.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

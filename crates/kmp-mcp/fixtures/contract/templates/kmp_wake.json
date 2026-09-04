@@ -7,6 +7,15 @@
   ],
   "isError": "boolean",
   "structuredContent": {
+    "labels": [
+      {
+        "about": "string",
+        "entries": "integer",
+        "key": "string",
+        "last_observed_at": "string",
+        "value": "string"
+      }
+    ],
     "projection": {
       "budget": {
         "max_bytes": "integer",
@@ -26,6 +35,12 @@
         "total": "integer"
       },
       "sections": {
+        "labels": {
+          "core": "integer",
+          "eligible": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
         "proof.evidence": {
           "core": "integer",
           "eligible": "integer",

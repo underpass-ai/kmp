@@ -161,6 +161,27 @@ message WakeResponse {
   optional TemporalCursor resume_cursor = 5;
   RecallProjection projection = 6;
   RecallTruncation truncation = 7;
+  // The catalogue of the abouts this wake read: every (key, value) pair
+  // their entries stand in, with how many stand in it and the latest
+  // instant any was observed. Read it before labelling a new memory, so a
+  // writer reuses what exists instead of guessing what to call it. The
+  // current about comes first, then by use. The most used labels are the
+  // first expansion the packet fills, ahead of the state lines beyond the
+  // first; the rest follow the causal spine, and `truncation` reports what
+  // did not fit. Nothing of the core is shortened to make room for a label.
+  repeated MemoryLabel labels = 8;
+}
+
+// One label an about's memory carries: a `dimension` kind read as the key
+// and a `scope_id` read as the value, exactly the pair every coordinate
+// names. `entries` counts the entries that stand in it and
+// `last_observed_at` is the latest observed instant among them.
+message MemoryLabel {
+  string about = 1;
+  string key = 2;
+  string value = 3;
+  uint32 entries = 4;
+  google.protobuf.Timestamp last_observed_at = 5;
 }
 
 message WakePacket {

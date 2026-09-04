@@ -1235,6 +1235,10 @@
       "outputSchema": {
         "additionalProperties": false,
         "properties": {
+          "labels": {
+            "description": "The catalogue of the abouts this wake read: every label their entries stand in, as `about`, `key` (the dimension kind), `value` (the scope id), `entries` and `last_observed_at`. The current about first, then by use. Read it before naming a label on a new memory, so an existing one is reused instead of guessed. The most used labels are the first expansion the packet fills; the rest follow the causal spine, and `truncation` reports what did not fit. Nothing of the core is shortened to make room for a label.",
+            "type": "array"
+          },
           "projection": {
             "additionalProperties": false,
             "properties": {

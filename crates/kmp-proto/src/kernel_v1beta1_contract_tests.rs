@@ -121,6 +121,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "resume_cursor",
             "projection",
             "truncation",
+            "labels",
         ]
     );
     assert_eq!(

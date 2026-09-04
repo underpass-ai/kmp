@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 use kmp_domain::TokenEstimator;
+use kmp_proto::v1beta1::MemoryLabel;
 use kmp_proto::v1beta1::{
     AnswerReason, AskRequest, AskResponse, DimensionScopeMode, DimensionSelection,
     DimensionSelectionMode, ExpiredMemory, MemoryConfidence, MemoryDetailLevel, MemoryEvidence,
@@ -15,6 +16,14 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 pub const DEFAULT_MAX_BYTES: usize = 10_000;
+/// The head of the catalogue: the labels most entries stand in, the current
+/// about first, up to this many and this many serialized bytes. A writer
+/// reads them before naming a label, so they are the first expansion the
+/// packet fills, ahead of the state lines beyond the first; the rest of the
+/// catalogue follows the causal spine. Nothing enters the core: the prose
+/// and the cited proof are never shortened to make room for a label.
+const LABEL_HEAD_ITEMS: usize = 8;
+const LABEL_HEAD_BYTES: usize = 800;
 
 /// Reads `budget.max_bytes` the way the recall projection does, so the
 /// temporal verbs cannot mean something different by the same argument.
@@ -369,10 +378,11 @@ enum Section {
     ProofEvidence,
     ProofPath,
     ProofMissing,
+    Labels,
 }
 
 impl Section {
-    const ALL: [Self; 8] = [
+    const ALL: [Self; 9] = [
         Self::WakeCurrentState,
         Self::WakeCausalSpine,
         Self::WakeOpenLoops,
@@ -381,6 +391,7 @@ impl Section {
         Self::ProofEvidence,
         Self::ProofPath,
         Self::ProofMissing,
+        Self::Labels,
     ];
 
     fn name(self) -> &'static str {
@@ -393,6 +404,7 @@ impl Section {
             Self::ProofEvidence => "proof.evidence",
             Self::ProofPath => "proof.path",
             Self::ProofMissing => "proof.missing",
+            Self::Labels => "labels",
         }
     }
 
@@ -406,6 +418,7 @@ impl Section {
             Self::ProofEvidence => &["proof", "evidence"],
             Self::ProofPath => &["proof", "path"],
             Self::ProofMissing => &["proof", "missing"],
+            Self::Labels => &["labels"],
         }
     }
 }
@@ -440,8 +453,10 @@ impl ProjectionPlan {
 
         let mut items = Vec::new();
         if value.get("wake").is_some() {
+            // State lines beyond the first sit at 1 so the catalogue head,
+            // at 0, is the one expansion that precedes them.
             for (section, min_detail, priority) in [
-                (Section::WakeCurrentState, Detail::Compact, 0),
+                (Section::WakeCurrentState, Detail::Compact, 1),
                 (Section::WakeCausalSpine, Detail::Compact, 5),
                 (Section::WakeOpenLoops, Detail::Balanced, 10),
                 (Section::WakeNextActions, Detail::Balanced, 11),
@@ -456,6 +471,29 @@ impl ProjectionPlan {
                         .into_iter()
                         .map(|value| ProjectionItem::new(section, value, min_detail, priority)),
                 );
+            }
+            // The catalogue is expansion in its own order: a writer needs
+            // its head before naming a label, and a filter without it is a
+            // guess, so the head goes first; the tail follows the causal
+            // spine, ahead of the proof path. The stable key carries the
+            // catalogue's rank, so paging keeps labels by use rather than by
+            // their JSON.
+            let mut head_bytes = 0usize;
+            for (index, label) in take_array(&mut value, &["labels"]).into_iter().enumerate() {
+                let bytes = serde_json::to_string(&label)
+                    .map(|text| text.len())
+                    .unwrap_or(0);
+                let in_head = index < LABEL_HEAD_ITEMS && head_bytes + bytes <= LABEL_HEAD_BYTES;
+                if in_head {
+                    head_bytes += bytes;
+                }
+                items.push(ProjectionItem {
+                    section: Section::Labels,
+                    value: label,
+                    min_detail: Detail::Compact,
+                    priority: if in_head { 0 } else { 6 },
+                    stable_key: format!("labels:{index:05}"),
+                });
             }
         }
 
@@ -1145,6 +1183,7 @@ pub fn wake_value(response: &WakeResponse) -> Value {
             "guardrails": wake.map(|wake| wake.guardrails.clone()).unwrap_or_default()
         },
         "proof": response.proof.as_ref().map(proof_value).unwrap_or_else(empty_proof_value),
+        "labels": response.labels.iter().map(memory_label_value).collect::<Vec<_>>(),
         "resume_cursor": response.resume_cursor.as_ref().map(temporal_cursor_value).unwrap_or(Value::Null),
         "warnings": response.warnings
     });
@@ -1206,6 +1245,13 @@ fn apply_wake_value(mut response: WakeResponse, value: &Value) -> WakeResponse {
     {
         apply_proof_value(proof, projected);
     }
+    response.labels = value
+        .get("labels")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .map(memory_label_from_value)
+        .collect();
     response.warnings = strings_at(value, "/warnings");
     response.projection = value.get("projection").and_then(projection_from_value);
     response.truncation = value.get("truncation").and_then(truncation_from_value);
@@ -1728,6 +1774,29 @@ fn temporal_cursor_value(cursor: &TemporalCursor) -> Value {
         value.insert("sequence".to_string(), json!(sequence));
     }
     Value::Object(value)
+}
+
+fn memory_label_value(label: &MemoryLabel) -> Value {
+    let mut value = Map::new();
+    insert_non_empty(&mut value, "about", &label.about);
+    insert_non_empty(&mut value, "key", &label.key);
+    insert_non_empty(&mut value, "value", &label.value);
+    value.insert("entries".to_string(), json!(label.entries));
+    insert_timestamp(&mut value, "last_observed_at", label.last_observed_at);
+    Value::Object(value)
+}
+
+fn memory_label_from_value(value: &Value) -> MemoryLabel {
+    MemoryLabel {
+        about: string_at(value, "/about"),
+        key: string_at(value, "/key"),
+        value: string_at(value, "/value"),
+        entries: u32_at(value, "/entries"),
+        last_observed_at: value
+            .pointer("/last_observed_at")
+            .and_then(Value::as_str)
+            .and_then(|instant| instant.parse::<Timestamp>().ok()),
+    }
 }
 
 fn temporal_coordinate_value(coordinate: &TemporalCoordinate) -> Value {
@@ -2592,6 +2661,7 @@ mod tests {
             .expect("typed ask fixture proof");
         WakeResponse {
             summary: "Deterministic wake packet.".to_string(),
+            labels: Vec::new(),
             wake: Some(kmp_proto::v1beta1::WakePacket {
                 objective: "continue parity work".to_string(),
                 current_state: (0..8)
@@ -2612,6 +2682,116 @@ mod tests {
             projection: None,
             truncation: None,
         }
+    }
+
+    fn labels_fixture(count: usize) -> Vec<MemoryLabel> {
+        (0..count)
+            .map(|index| MemoryLabel {
+                about: "project:kmp".to_string(),
+                key: "task".to_string(),
+                value: format!("underpass-ai-kmp-{index:03}"),
+                entries: u32::try_from(count - index).expect("small count"),
+                last_observed_at: Some(Timestamp {
+                    seconds: 1_756_000_000 + i64::try_from(index).expect("small index"),
+                    nanos: 0,
+                }),
+            })
+            .collect()
+    }
+
+    fn wake_request_with_bytes(max_bytes: u32) -> kmp_proto::v1beta1::WakeRequest {
+        kmp_proto::v1beta1::WakeRequest {
+            about: "project:kmp".to_string(),
+            budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                max_bytes: u64::from(max_bytes),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn wake_value_carries_the_labels_and_apply_reads_them_back() {
+        let mut response = typed_wake_fixture(2);
+        response.labels = labels_fixture(3);
+
+        let value = wake_value(&response);
+
+        assert_eq!(array_len(&value, &["labels"]), 3);
+        assert_eq!(value["labels"][0]["about"], "project:kmp");
+        assert_eq!(value["labels"][0]["key"], "task");
+        assert_eq!(value["labels"][0]["value"], "underpass-ai-kmp-000");
+        assert_eq!(value["labels"][0]["entries"], 3);
+        assert!(value["labels"][0]["last_observed_at"].is_string());
+        let applied = apply_wake_value(typed_wake_fixture(2), &value);
+        assert_eq!(applied.labels, response.labels);
+    }
+
+    #[test]
+    fn under_a_tight_budget_the_labels_yield_before_the_cited_proof() {
+        let mut response = typed_wake_fixture(4);
+        response.labels = labels_fixture(60);
+        let cited = response
+            .wake
+            .as_ref()
+            .map(|wake| {
+                wake.causal_spine
+                    .iter()
+                    .map(|claim| claim.evidence_ref.clone())
+                    .collect::<BTreeSet<_>>()
+            })
+            .unwrap_or_default();
+
+        let generous = project_wake_response(response.clone(), &wake_request_with_bytes(60_000))
+            .expect("generous projection");
+        assert_eq!(
+            generous.labels.len(),
+            60,
+            "a generous budget keeps the whole catalogue"
+        );
+
+        let tight = project_wake_response(response, &wake_request_with_bytes(4_000))
+            .expect("tight projection");
+        assert!(
+            !tight.labels.is_empty() && tight.labels.len() < 60,
+            "a tight budget keeps the head of the catalogue and drops the tail, kept {}",
+            tight.labels.len()
+        );
+        assert_eq!(
+            tight.labels[0].value, "underpass-ai-kmp-000",
+            "the catalogue keeps its own order under the budget"
+        );
+        let retained = tight
+            .proof
+            .as_ref()
+            .map(|proof| {
+                proof
+                    .evidence
+                    .iter()
+                    .map(|item| item.id.clone())
+                    .collect::<BTreeSet<_>>()
+            })
+            .unwrap_or_default();
+        assert!(
+            cited.is_subset(&retained),
+            "the cited proof survives the budget the catalogue yielded to"
+        );
+        assert_eq!(
+            tight
+                .projection
+                .as_ref()
+                .map(|projection| projection.core_text_shortened),
+            Some(false),
+            "no word of the core is shortened to make room for a label"
+        );
+        assert_eq!(
+            tight
+                .truncation
+                .as_ref()
+                .map(|truncation| truncation.truncated),
+            Some(true),
+            "dropping labels is reported as truncation"
+        );
     }
 
     fn projected(packet: Value, arguments: Value) -> Value {

@@ -153,6 +153,18 @@ would be state about the reader rather than about the work. The bookmark is
 yours to hold. `resume_cursor` is `null` when nothing in the packet carries a
 temporal coordinate.
 
+Wake also returns `labels`: the catalogue of the about — every label its
+entries stand in, as `key` (the dimension kind: `task`, `agentic_process`,
+`agentic_episode`, or any kind an ingest declared) and `value` (the scope
+id), with how many entries stand in it and when one was last observed. Read
+it before you write: a label that already exists is the one to reuse in
+`scope`, and a filter on `dimensions` is only as good as the labels you know
+exist, because a selection hides what it misses rather than ranking it low.
+The current about comes first, then by use. The most used labels are the
+first expansion the packet fills; the rest page after the causal spine, and
+`truncation` says what did not fit — raise `budget.max_bytes` or follow the
+cursor when you need the whole catalogue.
+
 ## Route before retrieving: temporal intent wins
 
 Classify the request before choosing `kmp_ask`. `yesterday`, `today`, `since`,

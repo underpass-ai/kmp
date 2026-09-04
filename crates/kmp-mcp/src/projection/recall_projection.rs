@@ -329,6 +329,7 @@ mod tests {
     fn maps_wake_and_ignores_transport_budget_types() {
         let response = WakeResponse {
             summary: "Wake summary".to_string(),
+            labels: Vec::new(),
             wake: Some(WakePacket {
                 objective: "continue".to_string(),
                 current_state: vec!["state".to_string()],

@@ -108,7 +108,10 @@ path. The agent generates conversational prose from the returned proof.
 ## Temporal model
 
 Every recorded entry has an `observed_at` coordinate. Dimensions group entries
-by task, process, episode or another explicit scope. Temporal reads use a
+by task, process, episode or another explicit scope. Read as labels, a
+coordinate's `dimension` kind is the key and its `scope_id` the value, and
+`kmp_wake` returns the catalogue of labels the abouts it read carry, so a
+writer reuses what exists instead of naming it again. Temporal reads use a
 cursor and return visible pagination state; a partial page is never presented
 as a complete interval.
 
