@@ -9,6 +9,24 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Fixed
+
+- `record_summary` reads the memory it attaches to even when that memory is
+  well connected ([#497](https://github.com/underpass-ai/kmp/issues/497)).
+  The write reads the entry back through `kmp_inspect` before it attaches
+  the summary, and inspect pages its expandable sections in a fixed order
+  with the raw record last, so a memory with enough links pushed its own raw
+  record onto a continuation page the pre-read never turned and the write
+  refused a memory that was there: `was inspected but its raw record did not
+  come back`. The pre-read now asks for the stable object and the raw record
+  only, with links left out, and when the record still does not fit under
+  the default ceiling it repeats the inspection once at the exact size the
+  first page reported. The unlinked-root preflight, which has nothing to say
+  about a memory that exists, is no longer made for this intent. Nothing
+  changes for the caller: `current.ref` and `current.summary_en` are still
+  all it supplies, and the stored text, kind, coordinates and links stay as
+  they were.
+
 ## [0.10.0] - 2026-09-03
 
 ### Added

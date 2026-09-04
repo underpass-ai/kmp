@@ -1899,3 +1899,138 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
             .contains("search summaries: every memory that needs one carries one")
     );
 }
+
+/// The failure in #497 on the real binary: inspect pages its expandable
+/// sections with the raw record last, so a memory with enough links put its
+/// own raw record on a continuation page and `record_summary` refused a
+/// memory that was there. The write now reads the memory without its links
+/// and attaches the summary; the text, kind and coordinates stay the stored
+/// ones.
+#[test]
+fn a_well_connected_memory_gets_its_summary_attached_even_when_inspect_pages_its_raw_record() {
+    const LINKS: usize = 48;
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let target = "project:relleno:decision:valkey";
+    let text = "Se adoptó Valkey 7.2 para el almacén compartido (ADR-018).";
+    let mut entries = vec![serde_json::json!({
+        "id": target,
+        "kind": "decision",
+        "text": text,
+        "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-05-06T10:00:00Z", "sequence": 1}]
+    })];
+    let mut relations = Vec::new();
+    for index in 1..=LINKS {
+        let follower = format!("project:relleno:observation:seguimiento-{index:02}");
+        entries.push(serde_json::json!({
+            "id": follower,
+            "kind": "observation",
+            "text": format!("Seguimiento {index} del despliegue del almacén compartido."),
+            "coordinates": [{"dimension": "work", "scope_id": "work:main", "occurred_at": "2026-05-07T10:00:00Z", "sequence": index + 1}]
+        }));
+        relations.push(serde_json::json!({
+            "from": follower,
+            "to": target,
+            "rel": "follows",
+            "class": "procedural",
+            "why": format!("El seguimiento {index} se hizo después de adoptar el almacén compartido."),
+            "confidence": "high"
+        }));
+    }
+    let seed = serde_json::json!({
+        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": {"name": "kmp_ingest", "arguments": {
+            "about": "project:relleno",
+            "idempotency_key": "ingest:relleno:connected",
+            "memory": {
+                "dimensions": [{"id": "work:main", "kind": "work"}],
+                "entries": entries,
+                "relations": relations
+            }
+        }}
+    });
+    let seeded = run_binary(&envs, &format!("{seed}\n"));
+    assert!(seeded.status.success(), "{seeded:?}");
+    let seeded: Value = serde_json::from_slice(&seeded.stdout).expect("ingest response");
+    assert_eq!(
+        seeded["result"]["structuredContent"]["memory"]["accepted"]["relations"], LINKS,
+        "{seeded}"
+    );
+
+    let inspect = |id: u64, include: Value| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": "kmp_inspect", "arguments": {
+                "about": "project:relleno", "ref": target, "include": include
+            }}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("inspect response");
+        response["result"]["structuredContent"].clone()
+    };
+
+    // The shape the report describes: read with its links, the memory's
+    // raw record is not on the first page.
+    let with_links = inspect(2, serde_json::json!({"details": true, "raw": true}));
+    assert_eq!(with_links["page"]["has_more"], true, "{with_links}");
+    assert_eq!(
+        with_links["page"]["sections"]["raw"]["returned_on_page"], 0,
+        "the links fill the page and the raw record is pushed off it: {with_links}"
+    );
+    let links_before = with_links["page"]["sections"]["incoming"]["total"].clone();
+    assert!(
+        links_before
+            .as_u64()
+            .is_some_and(|total| total >= LINKS as u64),
+        "{with_links}"
+    );
+
+    let attach = serde_json::json!({
+        "jsonrpc": "2.0", "id": 3, "method": "tools/call",
+        "params": {"name": "kmp_write_memory", "arguments": {
+            "about": "project:relleno",
+            "intent": "record_summary",
+            "actor": "agent:backfill",
+            "observed_at": "2026-05-08T10:00:00Z",
+            "scope": {"process": "project:relleno:backfill"},
+            "current": {"ref": target, "summary_en": "Valkey 7.2 was adopted for the shared store (ADR-018)."}
+        }}
+    });
+    let attached = run_binary(&envs, &format!("{attach}\n"));
+    assert!(attached.status.success(), "{attached:?}");
+    let attached: Value = serde_json::from_slice(&attached.stdout).expect("write response");
+    assert_eq!(
+        attached["result"]["structuredContent"]["accepted"], true,
+        "the summary attaches to a well connected memory: {attached}"
+    );
+
+    let read_back = inspect(
+        4,
+        serde_json::json!({"details": true, "raw": true, "incoming": false, "outgoing": false}),
+    );
+    assert_eq!(read_back["object"]["text"], text, "{read_back}");
+    assert_eq!(
+        read_back["object"]["metadata"]["summary_en"],
+        "Valkey 7.2 was adopted for the shared store (ADR-018)."
+    );
+    assert_eq!(
+        read_back["object"]["metadata"]["summary_en_by"],
+        "agent:backfill"
+    );
+    assert_eq!(read_back["raw"][0]["kind"], "decision", "{read_back}");
+    assert_eq!(
+        read_back["raw"][0]["coordinates"][0]["sequence"], 1,
+        "the coordinates are the stored ones: {read_back}"
+    );
+
+    let with_links = inspect(5, serde_json::json!({"details": true, "raw": true}));
+    assert_eq!(
+        with_links["page"]["sections"]["incoming"]["total"], links_before,
+        "the attach moved no link: {with_links}"
+    );
+}
