@@ -1200,9 +1200,10 @@ mod tests {
             .expect("a declared equivalence is written");
         assert!(
             update.changes.iter().any(|change| {
-                let payload = serde_json::to_string(&change.payload).unwrap_or_default();
-                payload.contains("same_event_as")
-                    && payload.contains("incident:platform:outcome:freeze")
+                change.payload_json.contains("same_event_as")
+                    && change
+                        .payload_json
+                        .contains("incident:platform:outcome:freeze")
             }),
             "the equivalence is among the changes"
         );
