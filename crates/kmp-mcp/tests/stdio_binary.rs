@@ -2515,7 +2515,13 @@ fn relate_reads_what_two_abouts_share_and_pages_by_position() {
     );
     assert_eq!(
         march["page"]["total"],
-        4 + 1 + coordinate.len() + 1,
+        4 + 1
+            + coordinate.len()
+            + 1
+            + march["proposed"]
+                .as_array()
+                .map(Vec::len)
+                .unwrap_or_default(),
         "{march}"
     );
     assert_eq!(march["page"]["has_more"], false);
@@ -2579,5 +2585,142 @@ fn relate_reads_what_two_abouts_share_and_pages_by_position() {
     assert_eq!(
         rest["page"]["returned"],
         march["page"]["total"].as_u64().expect("total") - 3
+    );
+}
+
+/// A proposal is read off what two abouts share and stored nowhere: a
+/// ticket rare across the span, a proper name both sentences carry, two
+/// English summaries that match. The year every fact carries joins nothing.
+/// Reading twice gives the same proposals, and nothing becomes declared.
+#[test]
+fn relate_proposes_links_from_shared_keys_and_stores_none_of_them() {
+    let data_dir = tempfile::tempdir().expect("data dir");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let call = |id: u64, name: &str, arguments: Value| -> Value {
+        let request = serde_json::json!({
+            "jsonrpc": "2.0", "id": id, "method": "tools/call",
+            "params": {"name": name, "arguments": arguments}
+        });
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("response");
+        assert_ne!(response["result"]["isError"], true, "{response}");
+        response["result"]["structuredContent"].clone()
+    };
+    let placed = |occurred_at: &str, sequence: u64| serde_json::json!({"dimension": "release", "scope_id": "release:spring", "occurred_at": occurred_at, "sequence": sequence});
+    call(
+        1,
+        "kmp_ingest",
+        serde_json::json!({
+            "about": "service:alpha", "idempotency_key": "ingest:alpha",
+            "memory": {"dimensions": [{"id": "release:spring", "kind": "release"}], "entries": [
+                {"id": "service:alpha:decision:blocker", "kind": "decision", "text": "Ticket #469 blocks the 2026 release.", "coordinates": [placed("2026-03-10T10:00:00Z", 1)]},
+                {"id": "service:alpha:decision:valkey", "kind": "decision", "text": "Se adoptó Valkey para la caché compartida en 2026.", "coordinates": [placed("2026-03-11T10:00:00Z", 2)], "metadata": {"summary_en": "Valkey was adopted for the shared cache."}},
+                {"id": "service:alpha:observation:canteen", "kind": "observation", "text": "The 2026 canteen menu was posted.", "coordinates": [placed("2026-03-12T10:00:00Z", 3)]}
+            ]}
+        }),
+    );
+    call(
+        2,
+        "kmp_ingest",
+        serde_json::json!({
+            "about": "service:beta", "idempotency_key": "ingest:beta",
+            "memory": {"dimensions": [{"id": "release:spring", "kind": "release"}], "entries": [
+                {"id": "service:beta:outcome:fix", "kind": "outcome", "text": "The fix for #469 shipped in 2026.", "coordinates": [placed("2026-03-20T10:00:00Z", 1)]},
+                {"id": "service:beta:observation:valkey", "kind": "observation", "text": "La caché compartida corre sobre Valkey desde 2026.", "coordinates": [placed("2026-03-21T10:00:00Z", 2)], "metadata": {"summary_en": "The shared cache runs on Valkey."}}
+            ]}
+        }),
+    );
+    let arguments = serde_json::json!({
+        "about": "service:alpha",
+        "dimensions": {"scope": "abouts", "abouts": ["service:alpha", "service:beta"]},
+        "interval": {"start": "2026-03-01T00:00:00Z", "end": "2026-04-01T00:00:00Z"}
+    });
+    let first = call(3, "kmp_relate", arguments.clone());
+    let proposed = first["proposed"].as_array().expect("proposed");
+    let by_pair = |from: &str, to: &str| {
+        proposed
+            .iter()
+            .find(|link| link["from"] == from && link["to"] == to)
+            .cloned()
+            .unwrap_or_else(|| panic!("no proposal {from} -> {to}: {first}"))
+    };
+    let ticket = by_pair("service:alpha:decision:blocker", "service:beta:outcome:fix");
+    assert_eq!(
+        ticket["proposed_by"],
+        serde_json::json!(["identifier"]),
+        "{ticket}"
+    );
+    assert_eq!(
+        ticket["shared"],
+        serde_json::json!(["#469"]),
+        "the year every fact carries joins nothing: {ticket}"
+    );
+    assert!(
+        ticket["idf"].as_f64().is_some_and(|idf| idf > 0.0),
+        "{ticket}"
+    );
+    assert_eq!(ticket["scope_id"], "release:spring");
+    assert_eq!(
+        ticket["weight"],
+        4 + 2,
+        "an identifier plus the shared scope: {ticket}"
+    );
+    assert!(
+        ticket["why"]
+            .as_str()
+            .is_some_and(|why| why.contains("#469") && why.contains("release:spring")),
+        "{ticket}"
+    );
+    let valkey = by_pair(
+        "service:alpha:decision:valkey",
+        "service:beta:observation:valkey",
+    );
+    assert_eq!(
+        valkey["proposed_by"],
+        serde_json::json!(["summary", "entity"]),
+        "{valkey}"
+    );
+    assert_eq!(
+        valkey["entities"],
+        serde_json::json!(["Valkey"]),
+        "{valkey}"
+    );
+    assert!(
+        valkey["shared_terms"]
+            .as_array()
+            .is_some_and(|terms| terms.len() >= 2),
+        "{valkey}"
+    );
+    assert_eq!(valkey["weight"], 3 + 2 + 2, "{valkey}");
+    assert!(
+        !proposed
+            .iter()
+            .any(|link| link["from"] == "service:alpha:observation:canteen"),
+        "the canteen note shares only the year: {first}"
+    );
+    assert!(
+        first["declared"].as_array().is_some_and(Vec::is_empty),
+        "nothing was declared: {first}"
+    );
+    assert!(
+        first["summary"]
+            .as_str()
+            .is_some_and(|summary| summary.ends_with("2 proposed")),
+        "{first}"
+    );
+
+    let second = call(4, "kmp_relate", arguments);
+    assert_eq!(
+        second["proposed"], first["proposed"],
+        "a proposal is reproducible bit for bit"
+    );
+    assert!(
+        second["declared"].as_array().is_some_and(Vec::is_empty),
+        "a proposal is never stored: {second}"
     );
 }

@@ -2321,6 +2321,80 @@
           "items": {
             "type": "string"
           }
+        },
+        "proposed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/proposed_link"
+          }
+        }
+      }
+    },
+    "proposed_link": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "proposed_by",
+        "weight",
+        "why"
+      ],
+      "description": "Two facts of different abouts proposed as the same thing, reproducible bit for bit from what both carry and never stored.",
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "to": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "proposed_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "identifier",
+              "summary",
+              "entity"
+            ]
+          }
+        },
+        "shared": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "idf": {
+          "type": "number"
+        },
+        "shared_terms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bridged": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scope_id": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "why": {
+          "$ref": "#/$defs/non_empty_string"
         }
       }
     }

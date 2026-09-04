@@ -1846,7 +1846,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), and tensions: facts that still stand and that a declared `contradicts` joins. Nothing is ranked by a question and nothing is generated; every relation says why in one sentence a reader can check against the coordinates. Pages by position over facts, declared, coordinate and tensions in that order.",
+      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2033,7 +2033,7 @@
                 "type": "integer"
               },
               "total": {
-                "description": "How many facts, declared, coordinate and tensions, by position in that order the selection holds in total.",
+                "description": "How many facts, declared, coordinate, tensions and proposed, by position in that order the selection holds in total.",
                 "type": "integer"
               }
             },
@@ -2120,6 +2120,10 @@
               }
             },
             "type": "object"
+          },
+          "proposed": {
+            "description": "Pairs of facts of different abouts the kernel proposes are about the same thing, at most three per fact, strongest first: `from`, `to`, `proposed_by` (`identifier`, `summary`, `entity`, strongest first), the `shared` identifiers with the `idf` of the rarest across the span, the `shared_terms` and `bridged` concept pairs of matching summaries, the `entities` both name, the `scope_id` both stand in, the `weight` the signals sum to, and `why`. Reproducible bit for bit and never stored: a writer may declare one, with this as the proof.",
+            "type": "array"
           },
           "summary": {
             "description": "How many facts of how many abouts were related on which clock, and how many relations of each kind; or that nothing fell within the selection, naming the nearest fact outside it.",

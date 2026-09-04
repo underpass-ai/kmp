@@ -358,6 +358,7 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
             "declared",
             "coordinate",
             "tensions",
+            "proposed",
             "proof",
             "page",
             "warnings"

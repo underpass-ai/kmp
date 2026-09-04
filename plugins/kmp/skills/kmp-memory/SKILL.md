@@ -266,7 +266,7 @@ way, with `interval` or `as_of` beside the English rendering.
 | --- | --- |
 | `kmp_wake` | Resuming known work. Compact packet: state, decisions, open threads. |
 | `kmp_ask` | You have a semantic question. Deterministic evidence answer, or `UNKNOWN`. With a date or a range, add `interval` or `as_of`, and `axis` for a clock other than when it happened. |
-| `kmp_relate` | You want the shape of what several abouts hold in a span, not an answer to a question: facts with their lifecycle state, what each about declared, how facts of different abouts stand to each other inside the scopes they share (`before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), and the contradictions that still stand. Nothing is ranked, nothing is declared: every relation says why in a sentence you can check against the coordinates. |
+| `kmp_relate` | You want the shape of what several abouts hold in a span, not an answer to a question: facts with their lifecycle state, what each about declared, how facts of different abouts stand to each other inside the scopes they share (`before`, `after`, `during`, `concurrent`, `same_sequence`, `same_rank`), the contradictions that still stand, and proposed links between facts of different abouts that share a key (an identifier rare across the span, a matching English summary, a proper name), never stored. Nothing is ranked, nothing is declared: every relation and every proposal says why in a sentence you can check. |
 
 **Navigate time** — all four take a timestamp, a sequence number, or a ref.
 

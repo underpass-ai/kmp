@@ -208,7 +208,7 @@ impl AnswerRecallContext {
 /// English summary for a question to land on; otherwise none, which leaves
 /// every word exactly as written rather than stemmed by rules the store's
 /// text never was.
-fn search_morphology(bundle: &KmpBundle) -> Morphology {
+pub(super) fn search_morphology(bundle: &KmpBundle) -> Morphology {
     let store_language = Morphology::read_language(
         std::iter::once(bundle.root_node())
             .chain(bundle.neighbor_nodes())

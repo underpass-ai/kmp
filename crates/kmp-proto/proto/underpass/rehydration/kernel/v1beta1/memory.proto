@@ -521,6 +521,34 @@ message RelateResponse {
   Proof proof = 6;
   repeated string warnings = 7;
   PageInfo page = 8;
+  // Pairs of facts of different abouts the kernel proposes are about the
+  // same thing, each with the signals that made it say so. Never stored:
+  // a writer may declare one, with this as the proof.
+  repeated ProposedLink proposed = 9;
+}
+
+// Two facts of different abouts proposed as the same thing, reproducible
+// bit for bit from what both carry.
+message ProposedLink {
+  string from = 1;
+  string to = 2;
+  // The signals, strongest first: `identifier`, `summary`, `entity`.
+  repeated string proposed_by = 3;
+  // Identifiers both carry that are rare across the span.
+  repeated string shared = 4;
+  // The rarity of the strongest shared identifier across the span.
+  double idf = 5;
+  // Concepts both English summaries share.
+  repeated string shared_terms = 6;
+  // Concept pairs the lexical-bridge table crossed, as `a≈b`.
+  repeated string bridged = 7;
+  // Proper names both texts carry.
+  repeated string entities = 8;
+  // The scope both stand in, when they share one.
+  string scope_id = 9;
+  // The signals' weights summed, plus the shared scope.
+  uint32 weight = 10;
+  string why = 11;
 }
 
 // An entry as relate reads it: where it stands, which about placed it, and

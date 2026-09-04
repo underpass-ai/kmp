@@ -1,5 +1,5 @@
 {
-  "note": "Judged relate cases owned by KMP. Each case names the behaviour it measures; `expected` lists the facts, declared relations, coordinate relations and tensions a reader says the reading holds, the lifecycle states that must hold, and the ref the proof must name nearest outside an empty span.",
+  "note": "Judged relate cases owned by KMP. Each case names the behaviour it measures; `expected` lists the facts, declared relations, coordinate relations and tensions a reader says the reading holds, the lifecycle states that must hold, the ref the proof must name nearest outside an empty span, and the pairs the kernel must propose with the signal that reads them.",
   "cases": [
     {
       "id": "relate-shared-dimension-window",
@@ -419,6 +419,619 @@
       ],
       "expected": {
         "nearest_outside": "service:alpha:observation:february"
+      }
+    },
+    {
+      "id": "relate-proposed-by-identifier",
+      "probes": "`#469` in two abouts, `2026` in all four facts: the ticket is rare across the span and proposes the pair; the year is common to everything and joins nothing.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:decision:blocker",
+                "kind": "decision",
+                "text": "Ticket #469 blocks the 2026 release.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-10T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:observation:canteen",
+                "kind": "observation",
+                "text": "The 2026 canteen menu was posted.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-11T10:00:00Z",
+                    "sequence": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:outcome:fix",
+                "kind": "outcome",
+                "text": "The fix for #469 shipped in 2026.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-20T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              },
+              {
+                "id": "service:beta:observation:planning",
+                "kind": "observation",
+                "text": "Planning for 2026 closed.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-21T10:00:00Z",
+                    "sequence": 2
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:decision:blocker",
+          "service:alpha:observation:canteen",
+          "service:beta:outcome:fix",
+          "service:beta:observation:planning"
+        ],
+        "coordinate": [
+          [
+            "service:alpha:decision:blocker",
+            "before",
+            "service:beta:outcome:fix"
+          ],
+          [
+            "service:alpha:decision:blocker",
+            "before",
+            "service:beta:observation:planning"
+          ],
+          [
+            "service:alpha:observation:canteen",
+            "before",
+            "service:beta:outcome:fix"
+          ],
+          [
+            "service:alpha:observation:canteen",
+            "before",
+            "service:beta:observation:planning"
+          ],
+          [
+            "service:alpha:decision:blocker",
+            "same_sequence",
+            "service:beta:outcome:fix"
+          ],
+          [
+            "service:alpha:observation:canteen",
+            "same_sequence",
+            "service:beta:observation:planning"
+          ]
+        ],
+        "proposed": [
+          [
+            "service:alpha:decision:blocker",
+            "identifier",
+            "service:beta:outcome:fix"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "relate-proposed-by-summary",
+      "probes": "Two Spanish memories of different abouts whose English summaries share most of their concepts are proposed by summary; both also name Valkey inside the sentence, so the entity signal rides along.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:decision:valkey",
+                "kind": "decision",
+                "text": "Se adoptó Valkey para la caché compartida.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-10T10:00:00Z",
+                    "sequence": 1
+                  }
+                ],
+                "metadata": {
+                  "summary_en": "Valkey was adopted for the shared cache."
+                }
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:observation:valkey",
+                "kind": "observation",
+                "text": "La caché compartida corre sobre Valkey.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-12T10:00:00Z",
+                    "sequence": 1
+                  }
+                ],
+                "metadata": {
+                  "summary_en": "The shared cache runs on Valkey."
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:decision:valkey",
+          "service:beta:observation:valkey"
+        ],
+        "coordinate": [
+          [
+            "service:alpha:decision:valkey",
+            "before",
+            "service:beta:observation:valkey"
+          ],
+          [
+            "service:alpha:decision:valkey",
+            "same_sequence",
+            "service:beta:observation:valkey"
+          ]
+        ],
+        "proposed": [
+          [
+            "service:alpha:decision:valkey",
+            "summary",
+            "service:beta:observation:valkey"
+          ],
+          [
+            "service:alpha:decision:valkey",
+            "entity",
+            "service:beta:observation:valkey"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "relate-proposed-by-entity",
+      "probes": "The same proper name inside two sentences of different abouts, with no identifier and no summary, is enough to propose the pair by entity.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:observation:paged",
+                "kind": "observation",
+                "text": "The rota paged Rachel at midnight.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-04T01:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:observation:comms",
+                "kind": "observation",
+                "text": "Customer comms went to Rachel at two.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-04T02:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:observation:paged",
+          "service:beta:observation:comms"
+        ],
+        "coordinate": [
+          [
+            "service:alpha:observation:paged",
+            "before",
+            "service:beta:observation:comms"
+          ],
+          [
+            "service:alpha:observation:paged",
+            "same_sequence",
+            "service:beta:observation:comms"
+          ]
+        ],
+        "proposed": [
+          [
+            "service:alpha:observation:paged",
+            "entity",
+            "service:beta:observation:comms"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "relate-not-proposed-by-common-token",
+      "probes": "Three abouts whose every fact carries `2026` and nothing else in common: a token common to the whole span proposes nothing.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta",
+          "service:gamma"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:observation:one",
+                "kind": "observation",
+                "text": "The 2026 budget was approved.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-04T01:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:observation:two",
+                "kind": "observation",
+                "text": "Hiring for 2026 opened.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-05T01:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:gamma",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:gamma:observation:three",
+                "kind": "observation",
+                "text": "The 2026 offsite was booked.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-06T01:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:observation:one",
+          "service:beta:observation:two",
+          "service:gamma:observation:three"
+        ],
+        "coordinate": [
+          [
+            "service:alpha:observation:one",
+            "before",
+            "service:beta:observation:two"
+          ],
+          [
+            "service:alpha:observation:one",
+            "same_sequence",
+            "service:beta:observation:two"
+          ],
+          [
+            "service:alpha:observation:one",
+            "before",
+            "service:gamma:observation:three"
+          ],
+          [
+            "service:alpha:observation:one",
+            "same_sequence",
+            "service:gamma:observation:three"
+          ],
+          [
+            "service:beta:observation:two",
+            "before",
+            "service:gamma:observation:three"
+          ],
+          [
+            "service:beta:observation:two",
+            "same_sequence",
+            "service:gamma:observation:three"
+          ]
+        ],
+        "proposed": []
+      }
+    },
+    {
+      "id": "relate-declared-vs-proposed",
+      "probes": "One about declares `follows` between its own facts while `#469` joins it to another about: the reading returns the declared edge as declared and the shared key as proposed, and never confuses the two.",
+      "about": "service:alpha",
+      "dimensions": {
+        "scope": "abouts",
+        "abouts": [
+          "service:alpha",
+          "service:beta"
+        ]
+      },
+      "interval": {
+        "start": "2026-03-01T00:00:00Z",
+        "end": "2026-04-01T00:00:00Z"
+      },
+      "memories": [
+        {
+          "about": "service:alpha",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:alpha:decision:blocker",
+                "kind": "decision",
+                "text": "Ticket #469 blocks the release.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-10T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              },
+              {
+                "id": "service:alpha:outcome:unblocked",
+                "kind": "outcome",
+                "text": "The release was unblocked.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-18T10:00:00Z",
+                    "sequence": 2
+                  }
+                ]
+              }
+            ],
+            "relations": [
+              {
+                "from": "service:alpha:outcome:unblocked",
+                "to": "service:alpha:decision:blocker",
+                "rel": "follows",
+                "class": "procedural",
+                "why": "The release moved once the blocker cleared.",
+                "evidence": "Release calendar.",
+                "confidence": "high"
+              }
+            ]
+          }
+        },
+        {
+          "about": "service:beta",
+          "memory": {
+            "dimensions": [
+              {
+                "id": "release:spring",
+                "kind": "release"
+              }
+            ],
+            "entries": [
+              {
+                "id": "service:beta:outcome:fix",
+                "kind": "outcome",
+                "text": "The fix for #469 shipped.",
+                "coordinates": [
+                  {
+                    "dimension": "release",
+                    "scope_id": "release:spring",
+                    "occurred_at": "2026-03-15T10:00:00Z",
+                    "sequence": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "facts": [
+          "service:alpha:decision:blocker",
+          "service:alpha:outcome:unblocked",
+          "service:beta:outcome:fix"
+        ],
+        "declared": [
+          [
+            "service:alpha:outcome:unblocked",
+            "follows",
+            "service:alpha:decision:blocker"
+          ]
+        ],
+        "coordinate": [
+          [
+            "service:alpha:decision:blocker",
+            "before",
+            "service:beta:outcome:fix"
+          ],
+          [
+            "service:alpha:decision:blocker",
+            "same_sequence",
+            "service:beta:outcome:fix"
+          ],
+          [
+            "service:alpha:outcome:unblocked",
+            "after",
+            "service:beta:outcome:fix"
+          ]
+        ],
+        "proposed": [
+          [
+            "service:alpha:decision:blocker",
+            "identifier",
+            "service:beta:outcome:fix"
+          ]
+        ]
       }
     }
   ]

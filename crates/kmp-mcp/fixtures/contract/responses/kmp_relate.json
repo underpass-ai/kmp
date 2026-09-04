@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension",
+      "text": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension, 0 proposed",
       "type": "text"
     }
   ],
@@ -217,7 +217,8 @@
         }
       ]
     },
-    "summary": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension",
+    "proposed": [],
+    "summary": "Related 6 facts of `question:parity` on the default clock: 5 declared, 0 by coordinate, 0 in tension, 0 proposed",
     "tensions": [],
     "warnings": []
   }

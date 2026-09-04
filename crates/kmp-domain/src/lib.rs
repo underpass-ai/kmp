@@ -9,9 +9,10 @@ pub mod value_objects;
 pub use error::DomainError;
 pub use model::{
     BundleNode, BundleNodeDetail, BundleRelationship, CoordinateRelation, CoordinateRelationKind,
-    DeclaredEdge, FactState, KmpBundle, KmpStats, MAX_COORDINATE_RELATIONS, RelatedFact, Relations,
-    TemporalEntry, TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
-    Tension, compare_temporal_instants, directed_relationship_path, relate, temporal_instant_nanos,
+    DeclaredEdge, FactState, KmpBundle, KmpStats, MAX_COORDINATE_RELATIONS, MAX_PROPOSALS_PER_FACT,
+    ProposalSignal, ProposedLink, RelatedFact, Relations, TemporalEntry, TemporalMemoryTraversal,
+    TemporalTraversalRequest, TemporalTraversalResult, Tension, cap_proposals_per_fact,
+    compare_temporal_instants, directed_relationship_path, relate, temporal_instant_nanos,
 };
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,

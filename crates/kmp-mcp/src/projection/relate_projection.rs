@@ -1,7 +1,8 @@
 use serde_json::{Value, json};
 
 use kmp_proto::v1beta1::{
-    CoordinateRelation, CoordinateRelationKind, FactState, RelateResponse, RelatedFact, Tension,
+    CoordinateRelation, CoordinateRelationKind, FactState, ProposedLink, RelateResponse,
+    RelatedFact, Tension,
 };
 
 use super::rendering::*;
@@ -13,6 +14,7 @@ pub(crate) fn relate_from_response(response: RelateResponse) -> Value {
         "declared": response.declared.iter().map(memory_relation_json).collect::<Vec<_>>(),
         "coordinate": response.coordinate.iter().map(coordinate_relation_json).collect::<Vec<_>>(),
         "tensions": response.tensions.iter().map(tension_json).collect::<Vec<_>>(),
+        "proposed": response.proposed.iter().map(proposed_link_json).collect::<Vec<_>>(),
         "proof": response
             .proof
             .as_ref()
@@ -59,6 +61,22 @@ fn coordinate_relation_json(relation: &CoordinateRelation) -> Value {
         "scope_id": relation.scope_id,
         "axis": temporal_axis_label(relation.axis),
         "why": relation.why
+    })
+}
+
+fn proposed_link_json(link: &ProposedLink) -> Value {
+    json!({
+        "from": link.from,
+        "to": link.to,
+        "proposed_by": link.proposed_by,
+        "shared": link.shared,
+        "idf": link.idf,
+        "shared_terms": link.shared_terms,
+        "bridged": link.bridged,
+        "entities": link.entities,
+        "scope_id": link.scope_id,
+        "weight": link.weight,
+        "why": link.why
     })
 }
 
