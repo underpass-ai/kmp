@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-04
+
 ### Added
 
 - One relation may cross an about, and only as a declaration with proof.
@@ -1318,7 +1320,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/underpass-ai/kmp/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/underpass-ai/kmp/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/underpass-ai/kmp/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/underpass-ai/kmp/compare/v0.8.0...v0.9.0
