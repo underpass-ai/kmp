@@ -19,6 +19,9 @@ use super::relations::{NON_STRUCTURAL_RELATION_CLASSES, ResolvedRelationSpec};
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct RelationQualityInput<'a> {
+    /// The about the write belongs to: what decides whether a target is
+    /// this about's, or another's.
+    pub(super) about: &'a str,
     pub(super) from: &'a str,
     pub(super) to: &'a str,
     pub(super) rel: &'a str,
@@ -68,7 +71,34 @@ pub(super) fn relation_quality_diagnostic(
         ));
     }
 
+    // The one relation that may cross an about: an equivalence, with why and
+    // evidence, declared from a proposal `kmp_relate` returned. Anything
+    // else pointing outside the about is refused here, before the kernel
+    // sees it, with the way to do it right.
     let target_is_local = input.local_refs.contains(input.to);
+    let target_is_foreign = !target_is_local
+        && kmp_application::validate_supplied_member_ref(input.about, "connect_to[].ref", input.to)
+            .is_err();
+    if target_is_foreign {
+        let may_cross = MemoryRelationType::new(input.rel)
+            .is_ok_and(|relation_type| relation_type.may_cross_abouts());
+        if !may_cross {
+            return Err(format!(
+                "kmp_write_memory can connect to `{}` of another about only with `same_event_as` or `same_entity_as`, declared from a kmp_relate proposal; `{}` stays inside about `{}`",
+                input.to, input.rel, input.about
+            ));
+        }
+        if input
+            .read_context
+            .relate_proposal_for(input.about, input.to)
+            .is_none()
+        {
+            return Err(format!(
+                "kmp_write_memory equivalence `{}` to `{}` of another about requires the kmp_relate proposal in read_context.relate_proposals: its from, to and proposed_by as kmp_relate returned them, one of the two refs belonging to about `{}`",
+                input.rel, input.to, input.about
+            ));
+        }
+    }
     let prior_context_sources = if target_is_local {
         vec!["current_request".to_string()]
     } else {
@@ -97,6 +127,7 @@ pub(super) fn relation_quality_diagnostic(
     let requires_prior_context = spec.quality == MemoryRelationQuality::Rich && !target_is_local;
 
     Ok(json!({
+        "crosses_about": target_is_foreign,
         "from": input.from,
         "to": input.to,
         "rel": input.rel,

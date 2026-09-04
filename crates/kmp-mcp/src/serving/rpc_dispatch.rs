@@ -155,6 +155,27 @@ impl KernelMcpServer {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }
 
+        // Raw ingest keeps the about boundary whole. The kernel admits one
+        // relation across abouts — an equivalence a writer declared from a
+        // kmp_relate proposal — but only `kmp_write_memory` may declare it:
+        // a raw call is validated against the boundary here, before the
+        // backend, and the writer's compiled ingest never passes this way.
+        if name == "kmp_ingest"
+            && let Err(message) = crate::write::reject_refs_outside_about(arguments)
+        {
+            let error = ToolError::invalid_argument(message);
+            record_tool_error(
+                self.backend_name(),
+                self.grpc_tls_mode_name(),
+                name,
+                arguments,
+                ToolErrorKind::Validation,
+                &error.message,
+                start.elapsed(),
+            );
+            return jsonrpc_result(id, tool_error_result(&error));
+        }
+
         // The view tools never reach the backend's write path — they hold a
         // view registry and a read-only existence check, and nothing else.
         if crate::serving::view_tools::is_view_tool(name) {

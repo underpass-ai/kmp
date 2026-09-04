@@ -199,6 +199,7 @@ pub(crate) fn build_write_plan_with_root(
         let confidence = optional_map_string(link, "confidence").unwrap_or(DEFAULT_CONFIDENCE);
         validate_confidence(confidence)?;
         let quality = relation_quality_diagnostic(RelationQualityInput {
+            about: &about,
             from: &current_ref,
             to: target_ref,
             rel,
@@ -211,7 +212,7 @@ pub(crate) fn build_write_plan_with_root(
             local_refs: &local_refs,
         })?;
 
-        relations.push(relation(
+        let mut link_value = relation(
             &current_ref,
             target_ref,
             rel,
@@ -220,16 +221,37 @@ pub(crate) fn build_write_plan_with_root(
             why,
             relation_evidence,
             relation_sequence,
-        ));
+        );
+        // An equivalence across abouts carries the proposal it was declared
+        // from as its method, which is what the kernel admits it by.
+        let crosses_about = quality["crosses_about"] == true;
+        if crosses_about {
+            let proposal = read_context
+                .relate_proposal_for(&about, target_ref)
+                .ok_or_else(|| "cross-about equivalence without its proposal".to_string())?;
+            link_value["method"] = json!(format!(
+                "{}:{}",
+                kmp_domain::DECLARED_FROM_RELATE_METHOD,
+                proposal.proposed_by.join("+")
+            ));
+        }
+        relations.push(link_value);
         relation_names.push(rel.to_string());
         relation_quality.push(quality);
         // A structural link is exempt from evidence, and an evidence item with
         // no text is not evidence: the canonical ingest mapper requires
-        // `memory.evidence[].text`, and rightly refuses an empty one.
+        // `memory.evidence[].text`, and rightly refuses an empty one. The
+        // evidence node supports what this about owns; a ref of another
+        // about is named by the relation, never claimed by the evidence.
         if !relation_evidence.trim().is_empty() {
+            let supports = if crosses_about {
+                json!([current_ref.clone()])
+            } else {
+                json!([current_ref.clone(), target_ref])
+            };
             evidence.push(json!({
                 "id": format!("evidence:{}:relation:{}", current_ref, index + 1),
-                "supports": [current_ref.clone(), target_ref],
+                "supports": supports,
                 "text": relation_evidence,
                 "source": format!("kmp_write_memory:{actor}:relation:{rel}"),
                 "time": observed_at
@@ -269,6 +291,7 @@ pub(crate) fn build_write_plan_with_root(
             }
         }));
         let updates_state_quality = relation_quality_diagnostic(RelationQualityInput {
+            about: &about,
             from: &current_ref,
             to: &delta_ref,
             rel: "updates_state",
@@ -295,6 +318,7 @@ pub(crate) fn build_write_plan_with_root(
         if let Some(first_link) = connect_to.first().and_then(Value::as_object) {
             let target_ref = required_map_string(first_link, "ref", "connect_to[0].ref")?;
             let semantic_delta_quality = relation_quality_diagnostic(RelationQualityInput {
+                about: &about,
                 from: &delta_ref,
                 to: target_ref,
                 rel: "semantic_delta_from",

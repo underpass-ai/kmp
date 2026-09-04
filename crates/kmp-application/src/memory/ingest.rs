@@ -2,15 +2,15 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use kmp_domain::{
-    MemoryDimensionIdentity, MemoryRelationType, RelationSemanticClass, SearchSummary,
-    SearchSummaryFault, SourceKind,
+    DECLARED_FROM_RELATE_METHOD, MemoryDimensionIdentity, MemoryRelationType,
+    RelationSemanticClass, SearchSummary, SearchSummaryFault, SourceKind,
 };
 
 use crate::ApplicationError;
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
 use crate::memory::{
     MemoryAcceptedCounts, MemoryCoordinateData, MemoryData, MemoryDimensionData,
-    MemoryIngestCommand, MemoryIngestOutcome,
+    MemoryIngestCommand, MemoryIngestOutcome, MemoryRelationData,
 };
 
 use super::ref_boundary::{
@@ -22,6 +22,10 @@ use super::ref_boundary::{
 pub struct ExistingMemoryRefs {
     pub refs: BTreeSet<String>,
     pub dimensions: BTreeSet<String>,
+    /// Refs of other abouts the service verified exist before this ingest,
+    /// for the one relation that may cross an about: an equivalence a
+    /// writer declared from a `kmp_relate` proposal.
+    pub foreign: BTreeSet<String>,
     /// Highest committed sequence for each `(dimension, scope_id)` coordinate.
     /// An absent writer sequence is assigned from this frontier at ingest.
     pub max_sequences: BTreeMap<(String, String), u32>,
@@ -231,9 +235,27 @@ fn namespaced_memory(
         let target_ref = normalize_ref(&relation.target_ref, &dimension_aliases);
         validate_supplied_member_ref(about, "memory.relations[].from", &source_ref)
             .map_err(ApplicationError::Validation)?;
-        validate_supplied_member_ref(about, "memory.relations[].to", &target_ref)
-            .map_err(ApplicationError::Validation)?;
-        if !known_refs.contains(&source_ref) || !known_refs.contains(&target_ref) {
+        // The one relation that may cross an about: an equivalence a writer
+        // declared from a `kmp_relate` proposal, with why and evidence, to a
+        // ref the service verified exists. The edge lives here; the other
+        // about does not change.
+        let crosses_abouts = crosses_abouts(about, relation, &relation_type, &target_ref);
+        if crosses_abouts {
+            validate_ref_token("memory.relations[].to", &target_ref)
+                .map_err(ApplicationError::Validation)?;
+            if !existing.foreign.contains(&target_ref) {
+                return Err(ApplicationError::Validation(format!(
+                    "memory relation `{}` -> `{}` declares an equivalence with a ref no about holds",
+                    relation.source_ref, relation.target_ref
+                )));
+            }
+        } else {
+            validate_supplied_member_ref(about, "memory.relations[].to", &target_ref)
+                .map_err(ApplicationError::Validation)?;
+        }
+        if !known_refs.contains(&source_ref)
+            || (!crosses_abouts && !known_refs.contains(&target_ref))
+        {
             return Err(ApplicationError::Validation(format!(
                 "memory relation `{}` -> `{}` references unknown refs",
                 relation.source_ref, relation.target_ref
@@ -402,6 +424,36 @@ fn dimension_identity(
              namespaced for `{about}`"
         ))
     })
+}
+
+/// Whether a relation is the one that may cross an about: `same_event_as`
+/// or `same_entity_as`, evidential, with why and evidence, stamped as
+/// declared from a `kmp_relate` proposal, to a ref this about does not own.
+pub fn crosses_abouts(
+    about: &str,
+    relation: &MemoryRelationData,
+    relation_type: &MemoryRelationType,
+    target_ref: &str,
+) -> bool {
+    relation_type.may_cross_abouts()
+        && validate_supplied_member_ref(about, "memory.relations[].to", target_ref).is_err()
+        && relation.semantic_class.trim() == "evidential"
+        && !relation
+            .why
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+        && !relation
+            .evidence
+            .as_deref()
+            .unwrap_or_default()
+            .trim()
+            .is_empty()
+        && relation
+            .method
+            .as_deref()
+            .is_some_and(|method| method.starts_with(DECLARED_FROM_RELATE_METHOD))
 }
 
 fn normalize_ref(value: &str, dimension_aliases: &BTreeMap<String, String>) -> String {
@@ -1109,5 +1161,81 @@ mod tests {
             ),
             other => panic!("expected validation error, got {other:?}"),
         }
+    }
+
+    fn cross_about_relation(rel: &str, method: Option<&str>) -> MemoryRelationData {
+        MemoryRelationData {
+            source_ref: "question:830ce83f:claim:rachel-denver".to_string(),
+            target_ref: "incident:platform:outcome:freeze".to_string(),
+            rel: rel.to_string(),
+            semantic_class: "evidential".to_string(),
+            why: Some("Both record the same freeze.".to_string()),
+            evidence: Some("kmp_relate proposal by identifier.".to_string()),
+            confidence: Some("high".to_string()),
+            sequence: None,
+            motivation: None,
+            method: method.map(str::to_string),
+            decision_id: None,
+            caused_by_node_id: None,
+            coordinate: None,
+        }
+    }
+
+    /// The one relation that may cross an about: an equivalence stamped as
+    /// declared from a `kmp_relate` proposal, with why and evidence, to a
+    /// ref the service verified exists. The edge is written here; the other
+    /// about is untouched.
+    #[test]
+    fn a_declared_equivalence_crosses_the_about_and_nothing_else_does() {
+        let mut command = sample_command();
+        command.memory.relations.push(cross_about_relation(
+            "same_event_as",
+            Some("kmp_relate:identifier"),
+        ));
+        let mut existing = ExistingMemoryRefs::default();
+        existing
+            .foreign
+            .insert("incident:platform:outcome:freeze".to_string());
+        let (update, _) = translate_memory_ingest(&command, &existing)
+            .expect("a declared equivalence is written");
+        assert!(
+            update.changes.iter().any(|change| {
+                let payload = serde_json::to_string(&change.payload).unwrap_or_default();
+                payload.contains("same_event_as")
+                    && payload.contains("incident:platform:outcome:freeze")
+            }),
+            "the equivalence is among the changes"
+        );
+
+        let unverified = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
+            .expect_err("a ref no about holds is refused");
+        assert!(
+            unverified.to_string().contains("a ref no about holds"),
+            "{unverified}"
+        );
+
+        let mut unstamped = sample_command();
+        unstamped
+            .memory
+            .relations
+            .push(cross_about_relation("same_event_as", None));
+        let error = translate_memory_ingest(&unstamped, &existing)
+            .expect_err("without the proposal stamp the boundary holds");
+        assert!(
+            error.to_string().contains("does not belong to about"),
+            "{error}"
+        );
+
+        let mut follows = sample_command();
+        follows.memory.relations.push(cross_about_relation(
+            "follows",
+            Some("kmp_relate:identifier"),
+        ));
+        let error = translate_memory_ingest(&follows, &existing)
+            .expect_err("no other relation crosses an about");
+        assert!(
+            error.to_string().contains("does not belong to about"),
+            "{error}"
+        );
     }
 }

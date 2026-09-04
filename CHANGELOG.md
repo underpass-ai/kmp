@@ -11,6 +11,36 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- One relation may cross an about, and only as a declaration with proof.
+  `kmp_write_memory` accepts in `connect_to` a ref of another about only
+  with `same_event_as` or `same_entity_as`, class `evidential`, `why`,
+  `evidence`, and the proposal `kmp_relate` returned in the new
+  `read_context.relate_proposals` — its `from`, `to` and `proposed_by` as
+  they came back, one of the two refs belonging to the writing about. The
+  compiled ingest stamps the edge `method: kmp_relate:<signals>`; the
+  kernel admits a relation across abouts only when it carries that stamp
+  with why and evidence, and only to a ref it verified exists somewhere;
+  the edge lives in the writing about and the other about does not change.
+  Raw `kmp_ingest` is held to the about boundary at the MCP boundary
+  itself, before any backend, so nothing but the writer declares one, and
+  the reference boundary that refuses every foreign ref is untouched. From
+  then on `kmp_relate` shows the edge as declared while still proposing the
+  pair by its key, `kmp_ask` across the abouts cites the declaring entry
+  beside the other about's outcome as the same thing in other words
+  (`restated_from`, `restated_via: same_event_as`), and `kmp_trace` between
+  the two abouts walks it: the read gate was already reachability, and the
+  path search was already graph-wide. The identity relations' writer spec
+  says so; the two judged banks gain `writes` through `kmp_write_memory`
+  and a case each: an ask that cites across abouts through the equivalence,
+  and a relate that shows a materialized proposal as declared. The ask case
+  judges two refs, so `recall_at_1` records 0.8429 for 35 cases against
+  0.8529 for 34, by construction and not by ranking, while `recall_at_5`
+  rises. On the way, a rescued equivalence now cites the memory's own text
+  before its evidence: left to the stable key, three evidence items filled
+  the cap while the entry they support stayed out. The refusals
+  — any other relation across abouts, the equivalence without its
+  proposal, raw ingest — are pinned on the real binary.
+
 - `kmp_relate` proposes links between abouts that share a key, and stores
   none of them. On top of the reading, `proposed` lists pairs of facts of
   different abouts the kernel takes for the same thing, each with the

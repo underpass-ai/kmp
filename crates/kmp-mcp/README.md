@@ -98,6 +98,15 @@ Current status:
   signals that read it, a weight and a `why`, at most three per fact; a
   writer may declare one with this as the proof. Pages by position over
   facts, declared, coordinate, tensions and proposed in that order;
+- one relation may cross an about, and only through `kmp_write_memory`:
+  `same_event_as` or `same_entity_as` to a ref of another about, class
+  `evidential`, with `why`, `evidence` and the `kmp_relate` proposal in
+  `read_context.relate_proposals`. The edge lives in the writing about and
+  carries `method: kmp_relate:<signals>`; the kernel verifies the other ref
+  exists and admits nothing else across abouts; raw `kmp_ingest` is held to
+  the boundary before it reaches the backend. `kmp_relate` shows the edge as
+  declared, `kmp_ask` cites through it across abouts as it cites a declared
+  restatement, and `kmp_trace` between the two abouts walks it;
 - `kmp_ask` and `kmp_wake` stand where they are asked: `as_of` names an
   instant (`time`, or `ref` for that entry's own instant), `interval` a
   half-open span `[start, end)` with either side open, and `axis` the clock

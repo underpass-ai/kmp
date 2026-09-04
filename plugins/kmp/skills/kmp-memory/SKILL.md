@@ -615,6 +615,17 @@ gap. An edge between two projects would bake the link into the graph: anyone
 traversing MADE would drag KMP along whether they wanted it or not, and the
 frontier an about exists to bound would stop being bounded.
 
+There is exactly one exception, and it is a declaration with proof rather
+than a join: `same_event_as` or `same_entity_as`, written with
+`kmp_write_memory` to a ref of another about, class `evidential`, `why`,
+`evidence`, and the proposal `kmp_relate` returned in
+`read_context.relate_proposals`. The edge lives in the about that writes it;
+the other about does not change. `kmp_relate` then shows it as declared,
+`kmp_ask` cites through it across abouts the way it cites a declared
+restatement (`restated_from`, `restated_via: same_event_as`), and
+`kmp_trace` between the two abouts walks it. Raw `kmp_ingest` never crosses
+an about, and any other relation pointing outside it is refused.
+
 So the join lives with the reader, at read time, and `dimensions.scope` is
 where you make it:
 

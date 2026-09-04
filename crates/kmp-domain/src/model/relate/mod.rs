@@ -9,6 +9,12 @@
 //! abouts, and tensions between facts a `contradicts` edge joins that both
 //! still stand. Nothing here is stored and nothing is guessed.
 
+/// The `method` a writer stamps on an equivalence it declares from a
+/// `kmp_relate` proposal, followed by the signals that proposed it:
+/// `kmp_relate:identifier+entity`. The kernel admits a relation across
+/// abouts only when it carries this, with why and evidence beside it.
+pub const DECLARED_FROM_RELATE_METHOD: &str = "kmp_relate";
+
 mod coordinate_relation;
 mod declared_edge;
 mod proposal;

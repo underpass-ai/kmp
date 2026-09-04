@@ -38,6 +38,7 @@
       {
         "class": "evidential",
         "confidence": "medium",
+        "crosses_about": false,
         "fallback": true,
         "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
         "prior_context_observed": true,

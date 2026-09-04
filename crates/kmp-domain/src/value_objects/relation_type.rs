@@ -96,6 +96,14 @@ impl MemoryRelationType {
             .is_some_and(KnownMemoryRelationType::is_operand_modeling)
     }
 
+    /// Whether this is one of the two relations that may cross an about:
+    /// `same_event_as` and `same_entity_as`, declared by a writer from a
+    /// `kmp_relate` proposal and nothing else.
+    pub fn may_cross_abouts(&self) -> bool {
+        self.known
+            .is_some_and(KnownMemoryRelationType::may_cross_abouts)
+    }
+
     pub fn is_conflict(&self) -> bool {
         self.known.is_some_and(KnownMemoryRelationType::is_conflict)
     }
@@ -247,6 +255,11 @@ impl KnownMemoryRelationType {
 
     pub fn is_support_only(self) -> bool {
         matches!(self, Self::Supports | Self::SupportsAnswer)
+    }
+
+    /// The two equivalences a writer may declare across abouts.
+    pub fn may_cross_abouts(self) -> bool {
+        matches!(self, Self::SameEventAs | Self::SameEntityAs)
     }
 
     pub fn is_operand_modeling(self) -> bool {
@@ -417,14 +430,18 @@ impl KnownMemoryRelationType {
                 EVIDENTIAL_CLASSES,
                 "operand relation marks a value as an aggregate total for component values",
             )),
-            Self::SameEventAs | Self::SameEntityAs | Self::QualifiesAs => {
-                Some(MemoryRelationSpec::new(
-                    self,
-                    MemoryRelationQuality::Rich,
-                    EVIDENTIAL_CLASSES,
-                    "identity relation disambiguates whether refs describe the same item",
-                ))
-            }
+            Self::SameEventAs | Self::SameEntityAs => Some(MemoryRelationSpec::new(
+                self,
+                MemoryRelationQuality::Rich,
+                EVIDENTIAL_CLASSES,
+                "identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal",
+            )),
+            Self::QualifiesAs => Some(MemoryRelationSpec::new(
+                self,
+                MemoryRelationQuality::Rich,
+                EVIDENTIAL_CLASSES,
+                "identity relation disambiguates whether refs describe the same item",
+            )),
             Self::MatchesRequirement => Some(MemoryRelationSpec::new(
                 self,
                 MemoryRelationQuality::Rich,
