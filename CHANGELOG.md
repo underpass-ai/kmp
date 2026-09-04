@@ -9,6 +9,17 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp_wake` returns `labels`: the catalogue of the abouts it read — every
+  label their entries stand in, a coordinate's `dimension` kind read as the
+  key and its `scope_id` as the value, with `entries` and
+  `last_observed_at`, the current about first and then by use. A writer
+  reads it before naming a label on a new memory, so what exists is reused
+  instead of guessed. The most used labels are the first expansion the
+  packet fills; the rest follow the causal spine, and `truncation` reports
+  what did not fit. Nothing of the core is shortened for a label.
+
 ## [0.11.0] - 2026-09-04
 
 ### Added

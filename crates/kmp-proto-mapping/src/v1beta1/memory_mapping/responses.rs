@@ -37,6 +37,7 @@ use super::bundle_views::{
     temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
+use super::memory_catalog::labels_from_bundle;
 use super::memory_lifecycle::MemoryLifecycle;
 use super::relation_signal_index::RelationSignalIndex;
 use super::scalars::{
@@ -152,10 +153,15 @@ pub fn wake_response_from_result(
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
     let resume_cursor = newest_cursor(&relationships);
 
+    // The catalogue is the about's, not the selection's: what the memory
+    // holds is what a writer must not rename, whichever span was asked for.
+    let labels = labels_from_bundle(&result.bundle);
+
     Ok(WakeResponse {
         projection: None,
         truncation: None,
         resume_cursor,
+        labels,
         summary,
         wake: Some(WakePacket {
             objective: intent.to_string(),

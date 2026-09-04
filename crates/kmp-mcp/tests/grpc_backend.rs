@@ -692,6 +692,7 @@ impl KernelMemoryService for FakeMemoryService {
 
         let response = WakeResponse {
             summary: format!("Wake summary for {}.", request.about),
+            labels: Vec::new(),
             wake: Some(WakePacket {
                 objective: if request.intent.trim().is_empty() {
                     "continue".to_string()

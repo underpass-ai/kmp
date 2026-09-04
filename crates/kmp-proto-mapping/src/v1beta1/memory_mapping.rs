@@ -13,6 +13,7 @@ mod ingest;
 mod lexical_bridge;
 mod lexical_field;
 mod lexicon;
+mod memory_catalog;
 mod memory_lifecycle;
 mod morphology;
 mod queries;
