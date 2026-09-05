@@ -141,18 +141,13 @@ impl ReleaseRepository for GithubReleaseRepository {
     fn lexical_bridge(
         &self,
         version: &ReleaseVersion,
+        published: &str,
     ) -> Result<LexicalBridgeArtifact, LifecycleError> {
-        let published = self.lexical_bridge_checksum(version)?.ok_or_else(|| {
-            LifecycleError::Network(format!(
-                "release {} publishes no {LEXICAL_BRIDGE_ASSET}",
-                version.tag()
-            ))
-        })?;
         let bytes = self.get_bytes(&Self::download_url(version, LEXICAL_BRIDGE_ASSET))?;
-        Self::require_digest(&bytes, &published, LEXICAL_BRIDGE_ASSET)?;
+        Self::require_digest(&bytes, published, LEXICAL_BRIDGE_ASSET)?;
         Ok(LexicalBridgeArtifact::verified(
             bytes,
-            published,
+            published.to_string(),
             format!("{LEXICAL_BRIDGE_ASSET} from {}", version.tag()),
         ))
     }

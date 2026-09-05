@@ -16,6 +16,10 @@ pub enum BridgeInstallation {
         bytes: usize,
         sha256: String,
         source: String,
+        /// The digest of the table that was there before, when the machine
+        /// held a different one — an operator's own build, or an older
+        /// release's. Named so that a replacement is never silent.
+        replaced: Option<String>,
     },
     /// The installed table already had the published digest.
     AlreadyCurrent { path: PathBuf, sha256: String },
@@ -42,11 +46,17 @@ impl BridgeInstallation {
                 path,
                 bytes,
                 source,
+                replaced,
                 ..
-            } => format!(
-                "installed {source} ({bytes} bytes) at {}; ask now crosses languages",
-                path.display()
-            ),
+            } => {
+                let replaced = replaced.as_deref().map_or_else(String::new, |digest| {
+                    format!(", replacing the table that was there (sha256 {digest})")
+                });
+                format!(
+                    "installed {source} ({bytes} bytes) at {}{replaced}; ask now crosses languages",
+                    path.display()
+                )
+            }
             Self::AlreadyCurrent { path, .. } => {
                 format!("already current at {}", path.display())
             }
@@ -77,6 +87,7 @@ mod tests {
             bytes: 6_815_744,
             sha256: "abc123".to_string(),
             source: "kmp-lexical-bridge.kmpb from v0.13.0".to_string(),
+            replaced: None,
         }
     }
 
@@ -92,6 +103,39 @@ mod tests {
         assert!(
             summary.contains("/home/data/kmp/lexical-bridge.kmpb"),
             "{summary}"
+        );
+    }
+
+    /// An operator who built their own table and ran `update` without
+    /// flags must be able to read, in the receipt, that it is gone.
+    #[test]
+    fn replacing_a_table_names_the_digest_it_replaced() {
+        let BridgeInstallation::Installed {
+            path,
+            bytes,
+            sha256,
+            source,
+            ..
+        } = installed()
+        else {
+            unreachable!("the fixture is an installation");
+        };
+        let replacement = BridgeInstallation::Installed {
+            path,
+            bytes,
+            sha256,
+            source,
+            replaced: Some("operator-digest".to_string()),
+        };
+
+        let summary = replacement.summary();
+        assert!(
+            summary.contains("replacing the table that was there (sha256 operator-digest)"),
+            "{summary}"
+        );
+        assert!(
+            !installed().summary().contains("replacing"),
+            "a first installation replaced nothing"
         );
     }
 

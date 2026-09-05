@@ -510,6 +510,41 @@ fn a_machine_that_already_holds_the_published_table_downloads_nothing() {
     ));
 }
 
+/// The release's table replaces one the machine already held — an operator's
+/// own build, an older release's — and the receipt names what it replaced. A
+/// table that must outlive `update` belongs beside one store or in
+/// `KMP_LEXICAL_BRIDGE`, and the receipt is where an operator learns that.
+#[test]
+fn replacing_the_table_the_machine_held_is_named_in_the_receipt() {
+    let (hosts, engines, target) = current_release();
+    let releases = FakeReleaseRepository::publishing(target)
+        .with_lexical_bridge("table-digest", b"a table".to_vec());
+    let tables = FakeBridgeStore::holding("operator-digest");
+
+    let receipt = SetupKmp::new(
+        &hosts,
+        &releases,
+        &engines,
+        &FakePluginCache::default(),
+        &tables,
+    )
+    .execute(bridge_request(BridgeChoice::FromRelease))
+    .expect("clean setup");
+
+    assert_eq!(tables.installed_sha256().as_deref(), Some("table-digest"));
+    let installed = receipt.lexical_bridge().expect("the receipt says");
+    assert!(
+        matches!(installed, BridgeInstallation::Installed { replaced: Some(previous), .. }
+            if previous == "operator-digest"),
+        "{installed:?}"
+    );
+    assert!(
+        installed.summary().contains("operator-digest"),
+        "{}",
+        installed.summary()
+    );
+}
+
 #[test]
 fn a_release_that_publishes_no_table_still_converges() {
     let (hosts, engines, target) = current_release();

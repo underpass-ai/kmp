@@ -20,9 +20,14 @@ pub trait ReleaseRepository: Send + Sync {
         version: &ReleaseVersion,
     ) -> Result<Option<String>, LifecycleError>;
 
-    /// The table itself, verified against its published checksum.
+    /// The table itself, verified against `published` — the digest the
+    /// caller fetched with `lexical_bridge_checksum` and found the machine
+    /// did not hold. Taking it as an argument is what keeps the checksum
+    /// from being fetched twice, and what makes it impossible to fetch the
+    /// table without having decided by digest first.
     fn lexical_bridge(
         &self,
         version: &ReleaseVersion,
+        published: &str,
     ) -> Result<LexicalBridgeArtifact, LifecycleError>;
 }

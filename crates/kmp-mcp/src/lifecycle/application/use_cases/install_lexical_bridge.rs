@@ -33,7 +33,11 @@ impl<'a> InstallLexicalBridge<'a> {
         match choice {
             BridgeChoice::Declined => BridgeInstallation::Declined,
             BridgeChoice::FromFile(path) => self
-                .install(self.tables.read(path), destination)
+                .install(
+                    self.tables.read(path),
+                    self.tables.installed_digest(destination),
+                    destination,
+                )
                 .unwrap_or_else(BridgeInstallation::unavailable),
             BridgeChoice::FromRelease => self
                 .install_published(destination, version)
@@ -53,22 +57,32 @@ impl<'a> InstallLexicalBridge<'a> {
                 reason: format!("release {} publishes no table", version.tag()),
             });
         };
-        if self.tables.installed_digest(destination).as_deref() == Some(published.as_str()) {
+        let installed = self.tables.installed_digest(destination);
+        if installed.as_deref() == Some(published.as_str()) {
             return Ok(BridgeInstallation::AlreadyCurrent {
                 path: destination.table(),
                 sha256: published,
             });
         }
-        self.install(self.releases.lexical_bridge(version), destination)
+        self.install(
+            self.releases.lexical_bridge(version, &published),
+            installed,
+            destination,
+        )
     }
 
+    /// Write `artifact` over whatever the machine holds. A table already
+    /// there with another digest — an operator's own build, an older
+    /// release's — is replaced, and the receipt names it: a replacement the
+    /// operator did not ask for must at least be one they can see.
     fn install(
         &self,
         artifact: Result<LexicalBridgeArtifact, LifecycleError>,
+        installed: Option<String>,
         destination: &BridgeInstallDir,
     ) -> Result<BridgeInstallation, LifecycleError> {
         let artifact = artifact?;
-        if self.tables.installed_digest(destination).as_deref() == Some(artifact.sha256()) {
+        if installed.as_deref() == Some(artifact.sha256()) {
             return Ok(BridgeInstallation::AlreadyCurrent {
                 path: destination.table(),
                 sha256: artifact.sha256().to_string(),
@@ -80,6 +94,7 @@ impl<'a> InstallLexicalBridge<'a> {
             bytes: artifact.len(),
             sha256: artifact.sha256().to_string(),
             source: artifact.source().to_string(),
+            replaced: installed,
         })
     }
 }

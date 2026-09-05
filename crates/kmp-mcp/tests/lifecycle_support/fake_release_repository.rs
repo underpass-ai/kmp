@@ -77,10 +77,16 @@ impl ReleaseRepository for FakeReleaseRepository {
     fn lexical_bridge(
         &self,
         version: &ReleaseVersion,
+        published: &str,
     ) -> Result<LexicalBridgeArtifact, LifecycleError> {
         let (sha256, bytes) = self.lexical_bridge.as_ref().ok_or_else(|| {
             LifecycleError::Network(format!("release {} publishes no table", version.tag()))
         })?;
+        if published != sha256 {
+            return Err(LifecycleError::Network(format!(
+                "asked for a table with digest {published}; the release publishes {sha256}"
+            )));
+        }
         *self
             .bridge_downloads
             .lock()

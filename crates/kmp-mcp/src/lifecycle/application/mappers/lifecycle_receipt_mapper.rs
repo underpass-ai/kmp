@@ -80,25 +80,33 @@ impl LifecycleReceiptMapper {
     }
 
     fn bridge_dto(installation: &BridgeInstallation) -> LifecycleBridgeDto {
-        let (outcome, path, sha256) = match installation {
-            BridgeInstallation::Installed { path, sha256, .. } => (
+        let (outcome, path, sha256, replaced_sha256) = match installation {
+            BridgeInstallation::Installed {
+                path,
+                sha256,
+                replaced,
+                ..
+            } => (
                 "installed",
                 Some(path.display().to_string()),
                 Some(sha256.clone()),
+                replaced.clone(),
             ),
             BridgeInstallation::AlreadyCurrent { path, sha256 } => (
                 "already_current",
                 Some(path.display().to_string()),
                 Some(sha256.clone()),
+                None,
             ),
-            BridgeInstallation::Declined => ("declined", None, None),
-            BridgeInstallation::Unavailable { .. } => ("unavailable", None, None),
+            BridgeInstallation::Declined => ("declined", None, None, None),
+            BridgeInstallation::Unavailable { .. } => ("unavailable", None, None, None),
         };
         LifecycleBridgeDto {
             outcome: outcome.to_string(),
             detail: installation.summary(),
             path,
             sha256,
+            replaced_sha256,
             crosses_languages: installation.table_is_present(),
         }
     }

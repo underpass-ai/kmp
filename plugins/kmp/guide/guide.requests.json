@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:05728e79ac3ff86f224d",
+    "idempotency_key": "ingest:guide-sync:1:agent:f1b639d95a6b3c178a55",
     "memory": {
       "dimensions": [
         {
@@ -354,7 +354,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB setup, lexical bridge. The table that lets ask reach a memory written in another language is installed by kmp-mcp setup and kmp-mcp update, once for the machine at <user data home>/kmp/lexical-bridge.kmpb, never inside one store. Three places are read, nearest first: whatever KMP_LEXICAL_BRIDGE names, then <data dir>/lexical-bridge.kmpb for one store alone, then the machine's table. Decline it with --no-lexical-bridge, or install one built locally with --lexical-bridge FILE. It is never a gate: a release that publishes no table and a fetch that fails both leave setup successful, and the receipt says which happened under lexical_bridge. Expect: crosses_languages true once a table is in place. Without one, ask matches within one language and only doctor says so."
+          "text": "VERB setup, lexical bridge. The table that lets ask reach a memory written in another language is installed by kmp-mcp setup and kmp-mcp update, once for the machine at <user data home>/kmp/lexical-bridge.kmpb, never inside one store. Three places are read, nearest first: whatever KMP_LEXICAL_BRIDGE names, then <data dir>/lexical-bridge.kmpb for one store alone, then the machine's table. Decline it with --no-lexical-bridge, or install one built locally with --lexical-bridge FILE. The release's table replaces whatever the machine held, and the receipt names the digest it replaced under replaced_sha256; a table that must outlive update lives beside one store or is named by KMP_LEXICAL_BRIDGE. It is never a gate: a release that publishes no table and a fetch that fails both leave setup successful, and the receipt says which happened under lexical_bridge. Expect: crosses_languages true once a table is in place. Without one, ask matches within one language and only doctor says so."
         },
         {
           "coordinates": [
