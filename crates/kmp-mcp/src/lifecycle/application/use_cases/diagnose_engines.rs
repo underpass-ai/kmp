@@ -41,13 +41,22 @@ pub fn diagnose_engines(found: &[FoundEngine], target: &ReleaseVersion) -> Vec<L
                     ),
                 )
                 .with_detail(path);
+                // The repair names the one engine it is about. An unscoped
+                // `uninstall` proposes the whole installation — both engines,
+                // the memory, every plugin tree — so pointing at it from a
+                // warning about one leftover file was a foot-gun in the shape
+                // of advice (#520).
+                let removal = format!(
+                    "kmp-mcp uninstall --engine {}",
+                    engine.executable().as_path().display()
+                );
                 if engine.selected_by_path() {
-                    finding.with_detail(
+                    finding.with_detail(format!(
                         "a bare `kmp-mcp` runs this one; put the current engine's directory \
-                         earlier on PATH, or remove it with `kmp-mcp uninstall`",
-                    )
+                         earlier on PATH, or remove it with `{removal}`"
+                    ))
                 } else {
-                    finding.with_detail("remove it with `kmp-mcp uninstall` if you meant to")
+                    finding.with_detail(format!("remove it with `{removal}` if you meant to"))
                 }
             }
         })
@@ -145,5 +154,43 @@ mod tests {
         let findings = diagnose_engines(&[], &target());
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].severity(), DiagnosticSeverity::Warn);
+    }
+
+    #[test]
+    fn a_superseded_engine_is_pointed_at_a_command_scoped_to_that_engine() {
+        // Unscoped, the repair proposes the whole installation: the memory,
+        // both plugin trees and the engine a live host is still serving.
+        let findings = diagnose_engines(
+            &[engine(
+                "/home/x/.claude/plugins/cache/underpass/kmp/0.11.0/bin/kmp-mcp",
+                Some("0.11.0"),
+                false,
+            )],
+            &ReleaseVersion::parse("0.12.1").expect("target"),
+        );
+
+        let details = findings[0].detail().join(" ");
+        assert!(
+            details.contains(
+                "kmp-mcp uninstall --engine \
+                 /home/x/.claude/plugins/cache/underpass/kmp/0.11.0/bin/kmp-mcp"
+            ),
+            "{details}"
+        );
+    }
+
+    #[test]
+    fn the_engine_path_selects_still_names_the_scoped_removal_beside_the_path_fix() {
+        let findings = diagnose_engines(
+            &[engine("/home/x/.cargo/bin/kmp-mcp", Some("0.6.1"), true)],
+            &ReleaseVersion::parse("0.12.1").expect("target"),
+        );
+
+        let details = findings[0].detail().join(" ");
+        assert!(details.contains("earlier on PATH"), "{details}");
+        assert!(
+            details.contains("kmp-mcp uninstall --engine /home/x/.cargo/bin/kmp-mcp"),
+            "{details}"
+        );
     }
 }

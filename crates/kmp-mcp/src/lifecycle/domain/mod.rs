@@ -26,6 +26,7 @@ pub mod lifecycle_request;
 pub mod marketplace_source;
 pub mod memory_record;
 pub mod piece;
+pub mod piece_hold;
 pub mod piece_kind;
 pub mod plugin_engine_candidate;
 pub mod plugin_engine_resolution;

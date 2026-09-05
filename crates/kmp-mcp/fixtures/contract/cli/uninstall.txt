@@ -1,1 +1,1 @@
-Usage: kmp-mcp uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]
+Usage: kmp-mcp uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] [--purge] [--keep-memory]

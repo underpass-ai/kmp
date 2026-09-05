@@ -7,6 +7,7 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
     let mut purge = false;
     let mut keep_memory = false;
     let mut selected_store = None;
+    let mut selected_engine = None;
     let mut arguments = args.iter();
     while let Some(argument) = arguments.next() {
         match *argument {
@@ -23,10 +24,20 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
                     return 2;
                 }
             }
+            "--engine" => {
+                let Some(path) = arguments.next().filter(|path| !looks_like_option(path)) else {
+                    eprintln!("kmp-mcp uninstall: --engine requires an absolute path");
+                    return 2;
+                };
+                if selected_engine.replace(PathBuf::from(path)).is_some() {
+                    eprintln!("kmp-mcp uninstall: --engine may be given only once");
+                    return 2;
+                }
+            }
             other => {
                 eprintln!(
-                    "kmp-mcp uninstall: unknown option `{other}`; it takes --store, --apply, \
-                     --purge and --keep-memory"
+                    "kmp-mcp uninstall: unknown option `{other}`; it takes --store, --engine, \
+                     --apply, --purge and --keep-memory"
                 );
                 return 2;
             }
@@ -36,6 +47,20 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
         eprintln!(
             "kmp-mcp uninstall: --store and --keep-memory conflict; the selected store is the \
              only thing this command would remove"
+        );
+        return 2;
+    }
+    if selected_store.is_some() && selected_engine.is_some() {
+        eprintln!(
+            "kmp-mcp uninstall: --store and --engine each select the one thing to remove; give \
+             one of them"
+        );
+        return 2;
+    }
+    if selected_engine.is_some() && (keep_memory || purge) {
+        eprintln!(
+            "kmp-mcp uninstall: --engine removes no memory, so --keep-memory and --purge have \
+             nothing to say about it"
         );
         return 2;
     }
@@ -56,7 +81,7 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
     };
 
     let workspace = roots.working_dir.clone();
-    let selective = selected_store.is_some();
+    let selective = selected_store.is_some() || selected_engine.is_some();
     let installation = kmp_mcp::lifecycle::NativeInstallationCatalog;
     let store_catalog = kmp_mcp::lifecycle::FilesystemStoreCatalog::new(&roots.data_home);
     let store_index = kmp_mcp::lifecycle::JsonlStoreIndex::new(&roots.data_home);
@@ -69,12 +94,29 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
                 return 2;
             }
         }
+    } else if let Some(engine) = selected_engine.as_deref() {
+        match kmp_mcp::lifecycle::SelectEngine::new(
+            &installation,
+            &kmp_mcp::lifecycle::NativePluginEngineProbe,
+        )
+        .execute(engine, &roots.home)
+        {
+            // A selected engine is checked for a live host the same way the
+            // survey checks one, so narrowing the command never narrows the
+            // protection.
+            Ok(piece) => vec![held_if_a_host_is_reading_it(piece, &roots)],
+            Err(reason) => {
+                eprintln!("kmp-mcp uninstall: {reason}");
+                return 2;
+            }
+        }
     } else {
         kmp_mcp::lifecycle::SurveyInstallation::new(
             &installation,
             &kmp_mcp::lifecycle::NativePluginEngineProbe,
             &store_catalog,
             &store_index,
+            &kmp_mcp::lifecycle::NativeProcessLiveness,
         )
         .execute(&roots)
         .into_iter()
@@ -203,11 +245,41 @@ pub(super) async fn run_uninstall_command(args: &[&str]) -> i32 {
         return 1;
     }
     if selective {
-        println!("\nThe selected store is gone; every other KMP store and host was left alone.");
+        println!(
+            "\nThe selected piece is gone; every other KMP store, engine and host was left alone."
+        );
     } else {
         println!("\nEverything removable in the list is gone.");
     }
     0
+}
+
+/// The same hold the survey would have found, applied to a piece that was
+/// selected by path instead of surveyed.
+///
+/// `--engine` exists so a reader can act on one line of the doctor without
+/// reading the rest of the installation. That must not cost them the one
+/// check that stops a removal from landing under a running host.
+fn held_if_a_host_is_reading_it(
+    piece: kmp_mcp::lifecycle::Piece,
+    roots: &kmp_mcp::lifecycle::SurveyRoots,
+) -> kmp_mcp::lifecycle::Piece {
+    let plugin_root = roots.home.join(".claude/plugins/cache/underpass/kmp");
+    let Some(version) = piece
+        .path
+        .ancestors()
+        .find(|ancestor| ancestor.parent() == Some(plugin_root.as_path()))
+    else {
+        return piece;
+    };
+    let holds = kmp_mcp::lifecycle::SurveyHolds::new(
+        &kmp_mcp::lifecycle::NativeInstallationCatalog,
+        &kmp_mcp::lifecycle::NativeProcessLiveness,
+    );
+    kmp_mcp::lifecycle::Piece {
+        held_by: holds.execute("claude", version),
+        ..piece
+    }
 }
 
 /// Records that this data directory exists, so `info` can list it from any

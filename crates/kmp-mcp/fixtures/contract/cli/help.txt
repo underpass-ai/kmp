@@ -20,8 +20,8 @@ Usage:
   kmp-mcp document <about>        Render one about as a Markdown document
   kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots
   kmp-mcp summaries pending       List the memories that owe an English search summary
-  kmp-mcp uninstall [--store <absolute-path>] [--apply]
-  Remove one store, or preview the whole installation
+  kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]
+  Remove one store or one engine, or preview it all
   kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log
   kmp-mcp export --repair-pending Acknowledge recovery after stopping writers
   kmp-mcp import [file]           Import an event-log bundle

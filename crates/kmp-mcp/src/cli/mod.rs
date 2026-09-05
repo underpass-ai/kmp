@@ -79,7 +79,8 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
                  `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
                  [--lexical-bridge FILE | --no-lexical-bridge]` / \
-                 `uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]` / \
+                 `uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] \
+                 [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `viewer [addr]` / `--version` / `--help`"
             );
@@ -149,7 +150,8 @@ fn subcommand_usage(command: &str) -> &'static str {
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
         "summaries" => "kmp-mcp summaries pending [<about>] [--json]",
         "uninstall" => {
-            "kmp-mcp uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]"
+            "kmp-mcp uninstall [--store <absolute-path> | --engine <absolute-path>] [--apply] \
+             [--purge] [--keep-memory]"
         }
         "export" => "kmp-mcp export [file] [--about <about>]... [--repair-pending]",
         "import" => "kmp-mcp import [file]",
@@ -193,8 +195,8 @@ kmp-mcp plugin notice          Report version drift without changing the machine
 kmp-mcp document <about>        Render one about as a Markdown document\n  \
 kmp-mcp snapshot <verb>         Create, verify, read or merge named snapshots\n  \
 kmp-mcp summaries pending       List the memories that owe an English search summary\n  \
-kmp-mcp uninstall [--store <absolute-path>] [--apply]\n  \
-                                Remove one store, or preview the whole installation\n  \
+kmp-mcp uninstall [--store|--engine <absolute-path>] [--apply]\n  \
+                                Remove one store or one engine, or preview it all\n  \
 kmp-mcp export [file] [--about <about>]...  Export exact abouts or the full log\n  \
 kmp-mcp export --repair-pending Acknowledge recovery after stopping writers\n  \
 kmp-mcp import [file]           Import an event-log bundle\n  \

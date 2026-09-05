@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
+use super::piece_hold::PieceHold;
 use super::piece_kind::PieceKind;
 
 /// One thing the survey found, told what to decide about itself: whether it
@@ -21,6 +22,11 @@ pub struct Piece {
     /// surveyed may belong to a package manager or to another user, and a
     /// registration lives inside a file that is not ours.
     pub ours_to_remove: bool,
+    /// The host using it right now, when one is. Separate from ownership
+    /// because it answers a different question and has a different fix: a
+    /// piece that is not ours will never be removable here, while a held one
+    /// becomes removable as soon as its holder restarts.
+    pub held_by: Option<PieceHold>,
 }
 
 impl Piece {
@@ -28,8 +34,15 @@ impl Piece {
     ///
     /// A store is never refused here: its memory is saved first, and only a
     /// failed save keeps it. What is refused is what was never this verb's
-    /// to delete.
+    /// to delete, and what someone is using while we look at it.
+    ///
+    /// A hold is checked first because it is the more actionable answer. It
+    /// is also the temporary one, so it must not be mistaken for the verdict
+    /// that a piece is out of bounds forever.
     pub fn refusal(&self) -> Option<String> {
+        if let Some(hold) = &self.held_by {
+            return Some(hold.reason());
+        }
         if self.ours_to_remove {
             return None;
         }
@@ -38,6 +51,15 @@ impl Piece {
             PieceKind::Bundle => "committed memory belongs to the repository".to_string(),
             _ => "outside the home this surveyed".to_string(),
         })
+    }
+
+    /// Whether a host is using this piece as we look at it.
+    ///
+    /// The report needs this apart from `refusal` so it can say `held`
+    /// rather than `kept`: one asks for a restart, the other is final, and a
+    /// reader deciding what to do next is served badly by one word for both.
+    pub fn is_held(&self) -> bool {
+        self.held_by.is_some()
     }
 
     /// Where this store's memory is handed back before the store goes.
@@ -87,7 +109,7 @@ fn store_label(store: &Path) -> String {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use super::Piece;
+    use super::{Piece, PieceHold};
     use crate::lifecycle::domain::piece_kind::PieceKind;
 
     fn store_piece(path: &Path) -> Piece {
@@ -97,6 +119,7 @@ mod tests {
             detail: String::new(),
             bundled_events: None,
             ours_to_remove: true,
+            held_by: None,
         }
     }
 
@@ -153,5 +176,51 @@ mod tests {
                     name.starts_with("kmp-memory-memory-") && name.ends_with(".jsonl")
                 })
         }));
+    }
+
+    #[test]
+    fn a_held_piece_is_refused_with_the_host_to_restart_rather_than_removed() {
+        let held = Piece {
+            held_by: Some(PieceHold::new("claude", 868_141)),
+            ..store_piece(Path::new("/home/user/.local/share/kmp/default"))
+        };
+
+        assert!(held.is_held());
+        assert_eq!(
+            held.refusal().as_deref(),
+            Some("claude (pid 868141) is still using it; restart that host, then remove it")
+        );
+    }
+
+    #[test]
+    fn a_hold_is_reported_ahead_of_ownership_because_it_is_the_actionable_one() {
+        // Both are true of this piece. The reader can do something about the
+        // hold today; nothing they do will make a foreign file ours.
+        let held = Piece {
+            ours_to_remove: false,
+            held_by: Some(PieceHold::new("codex", 7)),
+            ..store_piece(Path::new("/usr/lib/kmp/default"))
+        };
+
+        assert_eq!(
+            held.refusal().as_deref(),
+            Some("codex (pid 7) is still using it; restart that host, then remove it")
+        );
+    }
+
+    #[test]
+    fn an_unheld_piece_says_so_and_keeps_the_ownership_verdict_it_had() {
+        let free = store_piece(Path::new("/home/user/.local/share/kmp/default"));
+        assert!(!free.is_held());
+        assert!(free.refusal().is_none());
+
+        let foreign = Piece {
+            ours_to_remove: false,
+            ..store_piece(Path::new("/usr/lib/kmp/default"))
+        };
+        assert_eq!(
+            foreign.refusal().as_deref(),
+            Some("outside the home this surveyed")
+        );
     }
 }
