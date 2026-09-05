@@ -66,3 +66,85 @@ impl BridgeInstallation {
         matches!(self, Self::Installed { .. } | Self::AlreadyCurrent { .. })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn installed() -> BridgeInstallation {
+        BridgeInstallation::Installed {
+            path: PathBuf::from("/home/data/kmp/lexical-bridge.kmpb"),
+            bytes: 6_815_744,
+            sha256: "abc123".to_string(),
+            source: "kmp-lexical-bridge.kmpb from v0.13.0".to_string(),
+        }
+    }
+
+    #[test]
+    fn an_installed_table_names_what_arrived_and_where() {
+        let summary = installed().summary();
+
+        assert!(
+            summary.contains("kmp-lexical-bridge.kmpb from v0.13.0"),
+            "{summary}"
+        );
+        assert!(summary.contains("6815744 bytes"), "{summary}");
+        assert!(
+            summary.contains("/home/data/kmp/lexical-bridge.kmpb"),
+            "{summary}"
+        );
+    }
+
+    #[test]
+    fn only_a_table_that_is_there_crosses_languages() {
+        let current = BridgeInstallation::AlreadyCurrent {
+            path: PathBuf::from("/home/data/kmp/lexical-bridge.kmpb"),
+            sha256: "abc123".to_string(),
+        };
+
+        assert!(installed().table_is_present());
+        assert!(current.table_is_present());
+        assert!(!BridgeInstallation::Declined.table_is_present());
+        assert!(
+            !BridgeInstallation::unavailable(LifecycleError::Network("no answer".to_string()))
+                .table_is_present()
+        );
+    }
+
+    #[test]
+    fn a_table_already_current_says_so_without_repeating_its_digest() {
+        let summary = BridgeInstallation::AlreadyCurrent {
+            path: PathBuf::from("/home/data/kmp/lexical-bridge.kmpb"),
+            sha256: "abc123".to_string(),
+        }
+        .summary();
+
+        assert_eq!(
+            summary,
+            "already current at /home/data/kmp/lexical-bridge.kmpb"
+        );
+    }
+
+    #[test]
+    fn declining_says_what_ask_will_do_instead() {
+        assert!(
+            BridgeInstallation::Declined
+                .summary()
+                .contains("matches within one language")
+        );
+    }
+
+    /// The rule this type exists for: what went wrong is carried as words,
+    /// never as a failure.
+    #[test]
+    fn a_failure_becomes_a_reason_a_reader_can_act_on() {
+        let outcome = BridgeInstallation::unavailable(LifecycleError::Io {
+            path: PathBuf::from("/home/data/kmp/lexical-bridge.kmpb"),
+            detail: "read-only file system".to_string(),
+        });
+
+        let summary = outcome.summary();
+        assert!(summary.contains("read-only file system"), "{summary}");
+        assert!(summary.contains("matches within one language"), "{summary}");
+    }
+}
