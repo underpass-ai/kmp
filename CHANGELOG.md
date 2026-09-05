@@ -9,6 +9,49 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-09-05
+
+### Fixed
+
+- `uninstall` can remove the one engine `doctor` sends you there for
+  ([#520](https://github.com/underpass-ai/kmp/issues/520),
+  [#523](https://github.com/underpass-ai/kmp/pull/523)). A superseded engine
+  earned a warning naming `kmp-mcp uninstall` as its repair, and unscoped that
+  command proposes the whole installation — both engines, the memory, every
+  plugin tree, the Codex prompts — so the narrow fix and the total one were
+  the same keystrokes. `--engine <absolute-path>` now selects one executable
+  the way `--store` selects one memory, and the warning carries the path, so
+  the advice is the command. The selection checks the file's name rather than
+  running it to ask its version: a verb whose next step is deletion must not
+  be the thing that executes an arbitrary path first.
+
+- The dry run says when a host is still reading what it lists. Claude Code
+  records the sessions reading a plugin version under `.in_use`, and a host
+  that started before an update keeps serving the engine it opened — the
+  registration moves, the process does not. Those markers are now read, each
+  process id put to the platform so a crashed host's leftover file cannot
+  refuse a removal forever, and the line reads `held`, naming the host and
+  the pid to restart, where it used to offer a live engine for deletion in
+  silence. `held` is kept distinct from `kept`: one is a restart away, the
+  other is final. Nothing here ends a process.
+
+- `leftover` separates what the retired standalone wiring left behind from
+  the plugin trees that serve you now, which a flat list of `host files` could
+  not. It also finds the shell scripts beside a standalone engine, which
+  nothing had ever mentioned: the engine survey looks in that directory for a
+  `kmp-mcp` and walks past everything else, so removing the Codex `/kmp-`
+  prompts still left the shell half of a retired install and no line saying
+  so.
+
+- Shipped guide abouts stay out of a project's committed memory bundle
+  ([#505](https://github.com/underpass-ai/kmp/issues/505),
+  [#522](https://github.com/underpass-ai/kmp/pull/522)). The same guide
+  abouts are filtered from both the live-store and committed-bundle preflight
+  comparisons, so `doctor` stops reporting divergence a repository could not
+  act on; explicit full exports are unchanged, a legacy guide-bearing bundle
+  is cleaned on the next authored write, and the diagnosis of one is now a
+  repairable warning rather than a failure.
+
 ## [0.12.1] - 2026-09-05
 
 ### Added
@@ -1459,7 +1502,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/underpass-ai/kmp/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/underpass-ai/kmp/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/underpass-ai/kmp/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/underpass-ai/kmp/compare/v0.10.0...v0.11.0
