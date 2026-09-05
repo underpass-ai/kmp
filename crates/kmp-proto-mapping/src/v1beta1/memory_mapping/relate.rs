@@ -272,10 +272,23 @@ pub fn relate_response_from_result(
         warnings.push("relate response paginated; use page.next_cursor to continue".to_string());
     }
     if relations.omitted_coordinate > 0 {
+        let cut = relations
+            .omitted_by_label
+            .iter()
+            .take(3)
+            .map(|(label, omitted)| format!("{omitted} in `{label}`"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let more = relations.omitted_by_label.len().saturating_sub(3);
         warnings.push(format!(
-            "{} coordinate relations past the cap of {} were counted and not returned; narrow the interval or the abouts",
+            "{} coordinate relations past the cap of {} were counted and not returned ({cut}{}); the widest labels are the ones cut, so narrow the interval, the abouts or that label",
             relations.omitted_coordinate,
-            kmp_domain::MAX_COORDINATE_RELATIONS
+            kmp_domain::MAX_COORDINATE_RELATIONS,
+            if more > 0 {
+                format!(" and {more} more {}", if more == 1 { "label" } else { "labels" })
+            } else {
+                String::new()
+            }
         ));
     }
 
