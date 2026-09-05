@@ -68,10 +68,21 @@ over ~86k Spanish and English word forms is 6.5 MB.
 
 ## Installing one
 
-Place it beside the store as `<data dir>/lexical-bridge.kmpb`, or point
-`KMP_LEXICAL_BRIDGE` at it. Absent, `ask` behaves exactly as before. A
-malformed table is logged and ignored; it is an aid to retrieval, not a
-condition of it.
+`kmp-mcp setup` installs the table the release publishes, once for the
+machine, at `<user data home>/kmp/lexical-bridge.kmpb`. Decline it with
+`--no-lexical-bridge`, or install one you built with `--lexical-bridge FILE`.
+The table is checked against its published digest and proved to parse before
+anything is written, and a table that cannot be fetched leaves setup
+successful and says so in the receipt.
+
+Three places are read, nearest first: whatever `KMP_LEXICAL_BRIDGE` names,
+then `<data dir>/lexical-bridge.kmpb` for one store alone, then the machine's
+table. The machine path exists because a store is selected per working
+directory — a project `.kernel/` wins over the user default — and the shipped
+table is too large to copy into every project that ever opens memory.
+
+Absent, `ask` behaves exactly as before. A malformed table is logged and
+ignored; it is an aid to retrieval, not a condition of it.
 
 ## The judged fixture
 

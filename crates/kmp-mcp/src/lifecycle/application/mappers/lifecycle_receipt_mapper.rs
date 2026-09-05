@@ -1,7 +1,9 @@
+use crate::lifecycle::application::dto::lifecycle_bridge_dto::LifecycleBridgeDto;
 use crate::lifecycle::application::dto::lifecycle_cache_dto::LifecycleCacheDto;
 use crate::lifecycle::application::dto::lifecycle_engine_dto::LifecycleEngineDto;
 use crate::lifecycle::application::dto::lifecycle_host_dto::LifecycleHostDto;
 use crate::lifecycle::application::dto::lifecycle_receipt_dto::LifecycleReceiptDto;
+use crate::lifecycle::domain::bridge_installation::BridgeInstallation;
 use crate::lifecycle::domain::convergence_status::ConvergenceStatus;
 use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
@@ -73,6 +75,31 @@ impl LifecycleReceiptMapper {
                     kept: pruning.kept().iter().map(ToString::to_string).collect(),
                 })
                 .collect(),
+            lexical_bridge: receipt.lexical_bridge().map(Self::bridge_dto),
+        }
+    }
+
+    fn bridge_dto(installation: &BridgeInstallation) -> LifecycleBridgeDto {
+        let (outcome, path, sha256) = match installation {
+            BridgeInstallation::Installed { path, sha256, .. } => (
+                "installed",
+                Some(path.display().to_string()),
+                Some(sha256.clone()),
+            ),
+            BridgeInstallation::AlreadyCurrent { path, sha256 } => (
+                "already_current",
+                Some(path.display().to_string()),
+                Some(sha256.clone()),
+            ),
+            BridgeInstallation::Declined => ("declined", None, None),
+            BridgeInstallation::Unavailable { .. } => ("unavailable", None, None),
+        };
+        LifecycleBridgeDto {
+            outcome: outcome.to_string(),
+            detail: installation.summary(),
+            path,
+            sha256,
+            crosses_languages: installation.table_is_present(),
         }
     }
 }

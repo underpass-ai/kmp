@@ -1,3 +1,6 @@
+pub mod bridge_choice;
+pub mod bridge_install_dir;
+pub mod bridge_installation;
 pub mod cache_pruning;
 pub mod convergence_status;
 pub mod diagnosis_verdict;
@@ -12,6 +15,7 @@ pub mod host_convergence;
 pub mod host_engine_proof;
 pub mod host_installation;
 pub mod host_runtime_status;
+pub mod lexical_bridge_artifact;
 pub mod lifecycle_action;
 pub mod lifecycle_diagnosis;
 pub mod lifecycle_error;

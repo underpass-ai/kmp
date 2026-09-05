@@ -1,4 +1,6 @@
+use crate::lifecycle::application::use_cases::install_lexical_bridge::InstallLexicalBridge;
 use crate::lifecycle::application::use_cases::prune_plugin_cache::PrunePluginCache;
+use crate::lifecycle::domain::bridge_installation::BridgeInstallation;
 use crate::lifecycle::domain::cache_pruning::CachePruning;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::host::Host;
@@ -11,6 +13,7 @@ use crate::lifecycle::domain::lifecycle_plan::LifecyclePlan;
 use crate::lifecycle::domain::lifecycle_receipt::LifecycleReceipt;
 use crate::lifecycle::domain::lifecycle_request::LifecycleRequest;
 use crate::lifecycle::domain::release_version::ReleaseVersion;
+use crate::lifecycle::ports::bridge_store::BridgeStore;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
 use crate::lifecycle::ports::plugin_cache::PluginCache;
@@ -22,6 +25,7 @@ pub(super) struct ConvergeLifecycle<'a> {
     releases: &'a dyn ReleaseRepository,
     engines: &'a dyn EngineStore,
     caches: &'a dyn PluginCache,
+    tables: &'a dyn BridgeStore,
 }
 
 impl<'a> ConvergeLifecycle<'a> {
@@ -30,12 +34,14 @@ impl<'a> ConvergeLifecycle<'a> {
         releases: &'a dyn ReleaseRepository,
         engines: &'a dyn EngineStore,
         caches: &'a dyn PluginCache,
+        tables: &'a dyn BridgeStore,
     ) -> Self {
         Self {
             hosts,
             releases,
             engines,
             caches,
+            tables,
         }
     }
 
@@ -128,6 +134,11 @@ impl<'a> ConvergeLifecycle<'a> {
             ));
         }
 
+        // Last, and never a gate. The engine is installed, its tools have
+        // answered and every host points at it; a retrieval aid that could
+        // not be fetched does not undo any of that (#517).
+        let lexical_bridge = self.install_lexical_bridge(&request, plan.target());
+
         Ok(LifecycleReceipt::completed(
             plan.action(),
             plan.target().clone(),
@@ -135,7 +146,27 @@ impl<'a> ConvergeLifecycle<'a> {
             proofs,
             plugin_tree,
             pruning,
+            lexical_bridge,
         ))
+    }
+
+    /// The machine's table, or a reported reason there is none.
+    fn install_lexical_bridge(
+        &self,
+        request: &LifecycleRequest,
+        target: &ReleaseVersion,
+    ) -> BridgeInstallation {
+        let Some(destination) = request.bridge_dir() else {
+            return BridgeInstallation::Unavailable {
+                reason: "this platform has no user data directory to install a table into"
+                    .to_string(),
+            };
+        };
+        InstallLexicalBridge::new(self.releases, self.tables).execute(
+            request.bridge(),
+            destination,
+            target,
+        )
     }
 
     /// Housekeeping, never a gate: a cache that will not tidy up does not

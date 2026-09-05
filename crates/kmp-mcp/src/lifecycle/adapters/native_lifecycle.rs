@@ -1,3 +1,4 @@
+use crate::lifecycle::adapters::filesystem_bridge_store::FilesystemBridgeStore;
 use crate::lifecycle::adapters::filesystem_engine_store::FilesystemEngineStore;
 use crate::lifecycle::adapters::filesystem_plugin_cache::FilesystemPluginCache;
 use crate::lifecycle::adapters::github_release_repository::GithubReleaseRepository;
@@ -31,12 +32,13 @@ impl NativeLifecycle {
         let releases = GithubReleaseRepository::new()?;
         let engines = FilesystemEngineStore;
         let caches = FilesystemPluginCache;
+        let tables = FilesystemBridgeStore;
         let receipt = match action {
             LifecycleAction::Setup => {
-                SetupKmp::new(&hosts, &releases, &engines, &caches).execute(request)?
+                SetupKmp::new(&hosts, &releases, &engines, &caches, &tables).execute(request)?
             }
             LifecycleAction::Update => {
-                UpdateKmp::new(&hosts, &releases, &engines, &caches).execute(request)?
+                UpdateKmp::new(&hosts, &releases, &engines, &caches, &tables).execute(request)?
             }
         };
         Ok(LifecycleReceiptMapper::to_dto(&receipt))

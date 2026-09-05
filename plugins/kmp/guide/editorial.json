@@ -79,6 +79,13 @@
           "evidence": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence."
         },
         {
+          "id": "verb:lexical-bridge",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "VERB setup, lexical bridge. The table that lets ask reach a memory written in another language is installed by kmp-mcp setup and kmp-mcp update, once for the machine at <user data home>/kmp/lexical-bridge.kmpb, never inside one store. Three places are read, nearest first: whatever KMP_LEXICAL_BRIDGE names, then <data dir>/lexical-bridge.kmpb for one store alone, then the machine's table. Decline it with --no-lexical-bridge, or install one built locally with --lexical-bridge FILE. It is never a gate: a release that publishes no table and a fetch that fails both leave setup successful, and the receipt says which happened under lexical_bridge. Expect: crosses_languages true once a table is in place. Without one, ask matches within one language and only doctor says so.",
+          "evidence": "The convergence installs the table last, after the engine is proved, and maps every failure onto a reported outcome rather than an error."
+        },
+        {
           "id": "advanced:scope",
           "kind": "constraint",
           "depth": "advanced",
@@ -306,6 +313,13 @@
           "depth": "basic",
           "text": "Embedded KMP runs on your machine. Codex and Claude Code can use the same local SQLite store; no KMP account or hosted memory service is required.",
           "evidence": "The embedded engine selects SQLite in WAL mode and the viewer binds to loopback."
+        },
+        {
+          "id": "basic:crossing-languages",
+          "kind": "concept",
+          "depth": "basic",
+          "text": "Asking in one language about memory written in another needs a small table that pairs words across languages. Setup installs it once for your machine; nothing runs a model when you ask. Without it KMP still works and simply matches within one language, which is why doctor tells you when it is missing.",
+          "evidence": "A citation that crossed a language names the word pairs that carried it and answers at medium confidence at most."
         },
         {
           "id": "basic:inherit",
