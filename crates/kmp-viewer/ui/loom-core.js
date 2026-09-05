@@ -104,6 +104,32 @@ const KMP_LOOM = (() => {
     return [...lanes.values()];
   }
 
+  /* A lane folded: the projection's bins and clusters come one per label
+     (key = value); folding a key sums its labels' bins over the same span
+     and merges its clusters' refs, which is exactly the picture of a lane
+     that does not tell its values apart. Order is first-appearance. */
+  function foldAggregates(items) {
+    const folded = new Map();
+    for (const item of items || []) {
+      const key = `${item.dimension}\u0000${item.from}\u0000${item.to}`;
+      let cell = folded.get(key);
+      if (!cell) {
+        cell = { ...item, total: 0, by_kind: {} };
+        delete cell.scope_id;
+        if (item.refs) cell.refs = [];
+        folded.set(key, cell);
+      }
+      cell.total += Number(item.total || 0);
+      for (const [kind, count] of Object.entries(item.by_kind || {})) {
+        cell.by_kind[kind] = (cell.by_kind[kind] || 0) + Number(count);
+      }
+      if (item.refs) {
+        for (const ref of item.refs) if (!cell.refs.includes(ref)) cell.refs.push(ref);
+      }
+    }
+    return [...folded.values()];
+  }
+
   /* ---------------- extent, bins, clusters ---------------- */
 
   function extent(models, clock) {
@@ -605,6 +631,7 @@ const KMP_LOOM = (() => {
     placedMs,
     compareModels,
     buildLanes,
+    foldAggregates,
     extent,
     projectionExtent,
     extentIncluding,

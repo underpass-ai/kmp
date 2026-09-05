@@ -144,6 +144,30 @@ test("lanes keep first-appearance order and count scope members", () => {
   assert.equal(lanes[0].scopes.get("s2"), 1);
 });
 
+test("folding a lane sums its labels' bins and merges its clusters' refs", () => {
+  const bins = loom.foldAggregates([
+    { dimension: "task", scope_id: "about:a:dimension:t-1", from: "A", to: "B", total: 2, by_kind: { decision: 2 } },
+    { dimension: "task", scope_id: "about:a:dimension:t-2", from: "A", to: "B", total: 1, by_kind: { evidence: 1 } },
+    { dimension: "task", scope_id: "about:a:dimension:t-1", from: "B", to: "C", total: 1, by_kind: { decision: 1 } },
+    { dimension: "agentic_process", scope_id: "about:a:dimension:p", from: "A", to: "B", total: 3, by_kind: { decision: 3 } },
+  ]);
+  assert.equal(bins.length, 3);
+  // The loom's objects come from another realm; compare by content.
+  assert.equal(
+    JSON.stringify(bins[0]),
+    JSON.stringify({ dimension: "task", from: "A", to: "B", total: 3, by_kind: { decision: 2, evidence: 1 } })
+  );
+  assert.equal(bins[2].dimension, "agentic_process");
+  const clusters = loom.foldAggregates([
+    { dimension: "task", scope_id: "s1", from: "A", to: "B", total: 2, refs: ["x", "y"], by_kind: { decision: 2 } },
+    { dimension: "task", scope_id: "s2", from: "A", to: "B", total: 1, refs: ["y"], by_kind: { decision: 1 } },
+  ]);
+  assert.equal(clusters.length, 1);
+  assert.equal(JSON.stringify(clusters[0].refs), JSON.stringify(["x", "y"]), "a ref standing in two labels is one ref");
+  assert.equal(clusters[0].total, 3, "memberships still count as memberships");
+  assert.equal(loom.foldAggregates(undefined).length, 0);
+});
+
 test("the extent stretches to open validity and never collapses to a point", () => {
   const models = [
     entry([{ dimension: "d", scope_id: "s", valid_from: "2026-08-31T08:00:00Z", valid_until: "2026-08-31T12:00:00Z" }]),

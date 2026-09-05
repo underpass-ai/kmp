@@ -9,6 +9,24 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- The visual projection carries the label, not only its key. `VisualBin` and
+  `VisualCluster` come one per `(dimension, scope_id)` pair, so a lane can
+  show the rows its values partition it into; `labels[]` lists every label
+  the about holds, most used first, with how many entries stand in it across
+  all time and inside the projected range — read before the read's own
+  filter narrows the bundle, so a label empty in this range is listed as
+  empty rather than left out. A coordinate now says how it came to stand on
+  its entry: `method`, `why` and `motivation` off the `contains_entry` edge,
+  empty for a label given at write and `kmp_relabel` with its why for one put
+  there later. Additive proto (`VisualLabel`, `ProjectVisualResponse.labels`,
+  `VisualBin.scope_id`, `VisualCluster.scope_id`,
+  `TemporalCoordinate.method / why / motivation`). ChronoLoom folds the
+  per-label aggregates back into one lane per key until it draws a row per
+  value; the map is
+  [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
+
 ## [0.12.2] - 2026-09-05
 
 ### Fixed

@@ -23,11 +23,11 @@ pub use memory::{
     MemoryRelabelCommand, MemoryRelabelOutcome, MemoryRelationData, RELABEL_ENTITY_KIND,
     RELABEL_METHOD, RelateMemoryQuery, RelatePageRequest, ResemblingLabelData, TemporalAxisView,
     TemporalCoordinateView, TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult,
-    TraceMemoryQuery, TracePageRequest, VisualBin, VisualCluster, VisualEntry, VisualLevelOfDetail,
-    VisualMetric, VisualProjectionPage, VisualProjectionQuery, VisualProjectionResult, VisualRange,
-    VisualRelation, WakeMemoryQuery, build_visual_projection, translate_memory_ingest,
-    translate_memory_relabel, validate_ref_token, validate_supplied_entry_ref,
-    validate_supplied_evidence_ref, validate_supplied_member_ref,
+    TraceMemoryQuery, TracePageRequest, VisualBin, VisualCluster, VisualEntry, VisualLabel,
+    VisualLevelOfDetail, VisualMetric, VisualProjectionPage, VisualProjectionQuery,
+    VisualProjectionResult, VisualRange, VisualRelation, WakeMemoryQuery, build_visual_projection,
+    translate_memory_ingest, translate_memory_relabel, validate_ref_token,
+    validate_supplied_entry_ref, validate_supplied_evidence_ref, validate_supplied_member_ref,
 };
 pub use observability::{
     ObservabilityExemplar, ObservabilityMetricPoint, ObservabilityProjection, ObservabilityQuery,

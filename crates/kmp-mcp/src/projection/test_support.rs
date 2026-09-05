@@ -148,6 +148,9 @@ pub(crate) mod fixtures {
             sequence: Some(2),
             rank: None,
             metadata: Default::default(),
+            method: String::new(),
+            why: String::new(),
+            motivation: String::new(),
         }
     }
 }

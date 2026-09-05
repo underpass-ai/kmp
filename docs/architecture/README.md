@@ -11,6 +11,9 @@ orders the findings into small behaviour-preserving PRs. The
 #404: every file's target context and layer, and the slice order. The
 [ChronoLoom layer map](chronoloom-layer-map.md) gives the viewer's view
 aggregate and browser application the same treatment ahead of the #463 fix.
+[ChronoLoom and labels](chronoloom-labels.md) is the map for drawing the
+label's value — the row inside the lane — that the v0.12.0 label series left
+for the viewer.
 
 ## System map
 

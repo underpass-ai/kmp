@@ -1,6 +1,7 @@
 pub mod bundle_metadata;
 pub mod bundle_quality_metrics;
 pub mod case_id;
+pub mod coordinate_origin;
 pub mod dimension_selection;
 pub mod entry_labels;
 pub mod kmp_mode;
@@ -26,6 +27,7 @@ pub mod temporal_selection;
 pub use bundle_metadata::BundleMetadata;
 pub use bundle_quality_metrics::BundleQualityMetrics;
 pub use case_id::CaseId;
+pub use coordinate_origin::CoordinateOrigin;
 pub use dimension_selection::{DimensionScopeMode, DimensionSelection, DimensionSelectionMode};
 pub use entry_labels::EntryLabels;
 pub use kmp_mode::KmpMode;

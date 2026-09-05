@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 use kmp_application::{
-    TemporalAxisView, TemporalCoordinateView, VisualLevelOfDetail, VisualProjectionQuery,
-    VisualProjectionResult, VisualRelation,
+    TemporalAxisView, TemporalCoordinateView, VisualLabel as ApplicationVisualLabel,
+    VisualLevelOfDetail, VisualProjectionQuery, VisualProjectionResult, VisualRelation,
 };
 use kmp_proto::v1beta1::{
     DimensionCoverage, MemoryRelation, MemorySemanticClass, PageInfo, ProjectVisualRequest,
     ProjectVisualResponse, TemporalAxis as ProtoTemporalAxis, TemporalCoordinate, TemporalCoverage,
-    TemporalEntry, VisualBin, VisualCluster, VisualLevelOfDetail as ProtoVisualLevelOfDetail,
-    VisualMetric,
+    TemporalEntry, VisualBin, VisualCluster, VisualLabel,
+    VisualLevelOfDetail as ProtoVisualLevelOfDetail, VisualMetric,
 };
 
 use super::dimensions::domain_dimension_selection;
@@ -86,6 +86,7 @@ pub fn visual_projection_response_from_result(
             .into_iter()
             .map(|bin| VisualBin {
                 dimension: bin.dimension,
+                scope_id: bin.scope_id,
                 from: timestamp_from_sort_or_rfc3339(Some(&bin.from)),
                 to: timestamp_from_sort_or_rfc3339(Some(&bin.to)),
                 entries: u32_saturating(bin.total),
@@ -99,6 +100,7 @@ pub fn visual_projection_response_from_result(
             .map(|(index, cluster)| VisualCluster {
                 id: format!("visual-cluster-{index}"),
                 dimension: cluster.dimension,
+                scope_id: cluster.scope_id,
                 from: timestamp_from_sort_or_rfc3339(Some(&cluster.from)),
                 to: timestamp_from_sort_or_rfc3339(Some(&cluster.to)),
                 entries: u32_saturating(cluster.total),
@@ -122,6 +124,7 @@ pub fn visual_projection_response_from_result(
             })
             .collect(),
         by_kind: u32_map(result.by_kind),
+        labels: result.labels.into_iter().map(proto_label).collect(),
         relations: result.relations.into_iter().map(proto_relation).collect(),
         metrics: result
             .metrics
@@ -176,6 +179,20 @@ fn proto_coordinate(value: TemporalCoordinateView) -> TemporalCoordinate {
         sequence: value.sequence,
         rank: value.rank,
         metadata: HashMap::new(),
+        method: value.method.unwrap_or_default(),
+        why: value.why.unwrap_or_default(),
+        motivation: value.motivation.unwrap_or_default(),
+    }
+}
+
+fn proto_label(value: ApplicationVisualLabel) -> VisualLabel {
+    VisualLabel {
+        dimension: value.dimension,
+        scope_id: value.scope_id,
+        value: value.value,
+        in_range: u32_saturating(value.in_range),
+        entries: u32_saturating(value.entries),
+        last_observed_at: timestamp_from_sort_or_rfc3339(value.last_observed_at.as_deref()),
     }
 }
 

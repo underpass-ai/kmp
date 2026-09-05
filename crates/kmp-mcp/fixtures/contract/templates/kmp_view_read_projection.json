@@ -21,6 +21,7 @@
         },
         "dimension": "string",
         "from": "string",
+        "scope_id": "string",
         "to": "string",
         "total": "integer"
       }
@@ -60,6 +61,16 @@
         "kind": "string",
         "ref_id": "string",
         "text": "string"
+      }
+    ],
+    "labels": [
+      {
+        "dimension": "string",
+        "entries": "integer",
+        "in_range": "integer",
+        "last_observed_at": "string",
+        "scope_id": "string",
+        "value": "string"
       }
     ],
     "level_of_detail": "string",

@@ -576,6 +576,17 @@ pub(super) fn proto_coordinate_from_domain(
         sequence: coordinate.sequence(),
         rank: coordinate.rank(),
         metadata: Default::default(),
+        method: coordinate.origin().method().unwrap_or_default().to_string(),
+        why: coordinate
+            .origin()
+            .rationale()
+            .unwrap_or_default()
+            .to_string(),
+        motivation: coordinate
+            .origin()
+            .motivation()
+            .unwrap_or_default()
+            .to_string(),
     }
 }
 

@@ -21,6 +21,7 @@
         },
         "dimension": "string",
         "from": "string",
+        "scope_id": "string",
         "to": "string",
         "total": "integer"
       }
@@ -41,6 +42,7 @@
         "refs": [
           "string"
         ],
+        "scope_id": "string",
         "to": "string",
         "total": "integer"
       }
@@ -61,6 +63,16 @@
       "missing": []
     },
     "entries": [],
+    "labels": [
+      {
+        "dimension": "string",
+        "entries": "integer",
+        "in_range": "integer",
+        "last_observed_at": "string",
+        "scope_id": "string",
+        "value": "string"
+      }
+    ],
     "level_of_detail": "string",
     "metrics": [
       {

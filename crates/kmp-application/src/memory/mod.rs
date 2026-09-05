@@ -3,6 +3,7 @@ mod ref_boundary;
 mod relabel;
 mod service;
 mod types;
+mod visual_label;
 mod visual_projection;
 
 pub use ingest::{ExistingMemoryRefs, crosses_abouts, translate_memory_ingest};
@@ -25,6 +26,7 @@ pub use types::{
     ResemblingLabelData, TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult,
     TraceMemoryQuery, TracePageRequest, WakeMemoryQuery,
 };
+pub use visual_label::VisualLabel;
 pub use visual_projection::{
     MAX_VISUAL_BINS, MAX_VISUAL_PAGE_ENTRIES, MAX_VISUAL_SOURCE_ENTRIES, TemporalAxisView,
     TemporalCoordinateView, VisualBin, VisualCluster, VisualEntry, VisualLevelOfDetail,

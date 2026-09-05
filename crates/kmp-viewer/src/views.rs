@@ -197,6 +197,14 @@ pub struct CoordinateView {
     pub valid_from: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub valid_until: Option<String>,
+    /// How the label came to stand on the entry when it was not the write:
+    /// the method (`kmp_relabel`), the why, and who did it when.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub why: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motivation: Option<String>,
 }
 
 impl CoordinateView {
@@ -211,6 +219,9 @@ impl CoordinateView {
             ingested_at: coordinate.ingested_at().map(readable_time),
             valid_from: coordinate.valid_from().map(readable_time),
             valid_until: coordinate.valid_until().map(readable_time),
+            method: coordinate.origin().method().map(ToString::to_string),
+            why: coordinate.origin().rationale().map(ToString::to_string),
+            motivation: coordinate.origin().motivation().map(ToString::to_string),
         }
     }
 }
@@ -251,6 +262,9 @@ pub fn visual_projection_view(mut result: VisualProjectionResult) -> VisualProje
     for cluster in &mut result.clusters {
         cluster.from = readable_time(&cluster.from);
         cluster.to = readable_time(&cluster.to);
+    }
+    for label in &mut result.labels {
+        label.last_observed_at = label.last_observed_at.as_deref().map(readable_time);
     }
     for entry in &mut result.entries {
         for coordinate in &mut entry.coordinates {

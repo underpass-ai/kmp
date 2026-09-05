@@ -80,6 +80,13 @@ message TemporalCoordinate {
   optional uint32 sequence = 8;
   optional uint32 rank = 9;
   map<string, string> metadata = 10;
+  // How the coordinate came to stand on its entry, read off the edge that
+  // holds it. Empty for a label given at write. A label put on the entry
+  // later carries the operation that put it there (`kmp_relabel`), the why
+  // its writer gave, and a note about who did it when.
+  string method = 11;
+  string why = 12;
+  string motivation = 13;
 }
 
 message MemoryRelation {
@@ -548,14 +555,22 @@ message ProjectVisualResponse {
   // Distinct entries by kind in the selected range. Per-bin and per-cluster
   // maps count lane memberships and must not be summed into global totals.
   map<string, uint32> by_kind = 18;
+  // Every label the about holds, most used first, with how many entries stand
+  // in it across all time and inside this range. Read before the read's own
+  // dimension filter narrowed the bundle, so a label empty in this range is
+  // listed as empty rather than left out.
+  repeated VisualLabel labels = 19;
 }
 
+// One bin of one label: `dimension` is the key, `scope_id` the value as the
+// coordinates spell it. A renderer that folds a lane sums its labels' bins.
 message VisualBin {
   string dimension = 1;
   google.protobuf.Timestamp from = 2;
   google.protobuf.Timestamp to = 3;
   uint32 entries = 4;
   map<string, uint32> by_kind = 5;
+  string scope_id = 6;
 }
 
 message VisualCluster {
@@ -566,6 +581,20 @@ message VisualCluster {
   uint32 entries = 5;
   repeated string refs = 6;
   map<string, uint32> by_kind = 7;
+  string scope_id = 8;
+}
+
+// One label the about holds, as a renderer draws it: the key and the value
+// both as the coordinates spell them (`scope_id`) and as the catalogue
+// speaks (`value`), with the entries standing in it across all time and
+// inside the projected range.
+message VisualLabel {
+  string dimension = 1;
+  string scope_id = 2;
+  string value = 3;
+  uint32 in_range = 4;
+  uint32 entries = 5;
+  google.protobuf.Timestamp last_observed_at = 6;
 }
 
 message VisualMetric {

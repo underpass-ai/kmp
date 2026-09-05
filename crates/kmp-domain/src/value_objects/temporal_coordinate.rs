@@ -1,4 +1,4 @@
-use crate::{DomainError, RelationExplanation, TemporalAxis};
+use crate::{CoordinateOrigin, DomainError, RelationExplanation, TemporalAxis};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TemporalCoordinate {
@@ -11,6 +11,7 @@ pub struct TemporalCoordinate {
     ingested_at: Option<String>,
     valid_from: Option<String>,
     valid_until: Option<String>,
+    origin: CoordinateOrigin,
 }
 
 impl TemporalCoordinate {
@@ -34,6 +35,7 @@ impl TemporalCoordinate {
             ingested_at: normalize_optional(explanation.ingested_at()),
             valid_from: normalize_optional(explanation.valid_from()),
             valid_until: normalize_optional(explanation.valid_until()),
+            origin: CoordinateOrigin::from_relation_explanation(explanation),
         }))
     }
 
@@ -55,6 +57,7 @@ impl TemporalCoordinate {
             ingested_at,
             valid_from,
             valid_until: None,
+            origin: CoordinateOrigin::default(),
         })
     }
 
@@ -74,6 +77,7 @@ impl TemporalCoordinate {
             ingested_at: None,
             valid_from: None,
             valid_until: None,
+            origin: CoordinateOrigin::default(),
         })
     }
 
@@ -111,6 +115,12 @@ impl TemporalCoordinate {
 
     pub fn valid_until(&self) -> Option<&str> {
         self.valid_until.as_deref()
+    }
+
+    /// How this coordinate came to stand on its entry: nothing for a label
+    /// given at write, the method, why and who for one put there later.
+    pub fn origin(&self) -> &CoordinateOrigin {
+        &self.origin
     }
 }
 

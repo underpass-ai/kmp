@@ -41,8 +41,10 @@ KMP_APP.data = (() => {
     model.currentLod = lod;
     model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
     model.total = Number((projection.page && projection.page.total) || 0);
-    model.bins = projection.bins || [];
-    model.clusters = projection.clusters || [];
+    // The kernel projects one bin and one cluster per label; until the loom
+    // draws a row per value, a lane is its key folded.
+    model.bins = KMP_LOOM.foldAggregates(projection.bins);
+    model.clusters = KMP_LOOM.foldAggregates(projection.clusters);
     model.entries = entries;
     model.byRef = new Map(entries.map((entry) => [entry.ref, entry]));
     model.lanes = lanesFromProjection(projection, entries);
@@ -186,7 +188,7 @@ KMP_APP.data = (() => {
       // stale data as if it belonged to the one the user selected (#421).
       model.about = about;
       model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(probe);
-      model.overviewBins = probe.bins || [];
+      model.overviewBins = KMP_LOOM.foldAggregates(probe.bins);
       if (extent) {
         const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
         view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };

@@ -140,6 +140,11 @@ fn coordinate_from_value(value: &Value, path: &str) -> Result<TemporalCoordinate
         sequence: optional_positive_u32_field(value, "sequence", &format!("{path}.sequence"))?,
         rank: optional_positive_u32_field(value, "rank", &format!("{path}.rank"))?,
         metadata: optional_metadata_field(value, "metadata", &format!("{path}.metadata"))?,
+        // An origin is what the kernel stamps on a coordinate it reads back,
+        // never something a writer sends.
+        method: String::new(),
+        why: String::new(),
+        motivation: String::new(),
     })
 }
 

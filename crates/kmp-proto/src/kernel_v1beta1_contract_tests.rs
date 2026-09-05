@@ -238,6 +238,9 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "sequence",
             "rank",
             "metadata",
+            "method",
+            "why",
+            "motivation",
         ]
     );
     assert_eq!(

@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 
 use crate::ApplicationError;
 
-use super::{TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult};
+use super::{TemporalIncludeOptions, TemporalMemoryQuery, TemporalMemoryResult, VisualLabel};
 
 pub const MAX_VISUAL_SOURCE_ENTRIES: usize = 65_536;
 pub const MAX_VISUAL_PAGE_ENTRIES: usize = 2_048;
@@ -66,9 +66,13 @@ pub struct VisualRange {
     pub to: String,
 }
 
+/// One bin of one label: the lane is the key, the row inside it the value,
+/// and a bin counts the entries standing in that pair whose position falls
+/// in its span. A renderer that folds a lane sums its rows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct VisualBin {
     pub dimension: String,
+    pub scope_id: String,
     pub from: String,
     pub to: String,
     pub total: usize,
@@ -78,6 +82,7 @@ pub struct VisualBin {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct VisualCluster {
     pub dimension: String,
+    pub scope_id: String,
     pub from: String,
     pub to: String,
     pub total: usize,
@@ -104,6 +109,14 @@ pub struct TemporalCoordinateView {
     pub valid_until: Option<String>,
     pub sequence: Option<u32>,
     pub rank: Option<u32>,
+    /// How the label came to stand on the entry, when it was not the write:
+    /// the method (`kmp_relabel`), the why, and who did it when.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub why: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub motivation: Option<String>,
 }
 
 impl From<&TemporalCoordinate> for TemporalCoordinateView {
@@ -118,6 +131,9 @@ impl From<&TemporalCoordinate> for TemporalCoordinateView {
             valid_until: value.valid_until().map(ToString::to_string),
             sequence: value.sequence(),
             rank: value.rank(),
+            method: value.origin().method().map(ToString::to_string),
+            why: value.origin().rationale().map(ToString::to_string),
+            motivation: value.origin().motivation().map(ToString::to_string),
         }
     }
 }
@@ -164,6 +180,11 @@ pub struct VisualProjectionResult {
     pub by_kind: BTreeMap<String, usize>,
     pub relations: Vec<VisualRelation>,
     pub metrics: Vec<VisualMetric>,
+    /// Every label the about holds, most used first, each with how many
+    /// entries stand in it across all time and inside this range. Read
+    /// before the read's own filter narrowed the bundle, so an empty label
+    /// is listed as empty rather than left out.
+    pub labels: Vec<VisualLabel>,
     pub included_dimensions: Vec<String>,
     pub missing_dimensions: Vec<String>,
     pub revision: u64,
@@ -200,12 +221,17 @@ struct PositionedEntry {
     entry: VisualEntry,
     position: i128,
     position_text: String,
-    dimensions: BTreeSet<String>,
+    /// The labels the entry stands in, as (key, namespaced value) pairs.
+    labels: BTreeSet<(String, String)>,
 }
 
+/// Bins, clusters and entries of one range, on one clock, one row per
+/// label. `catalogue` is the about's labels as read before the dimension
+/// filter, so the result lists a label that is empty here as empty.
 pub fn build_visual_projection(
     query: &VisualProjectionQuery,
     temporal: TemporalMemoryResult,
+    catalogue: Vec<VisualLabel>,
 ) -> Result<VisualProjectionResult, ApplicationError> {
     let from = timestamp_nanos(&query.from).ok_or_else(|| {
         ApplicationError::Validation("visual projection `from` is not a timestamp".to_string())
@@ -241,10 +267,15 @@ pub fn build_visual_projection(
             if position < from || position >= to {
                 return None;
             }
-            let dimensions = entry
+            let labels = entry
                 .coordinates()
                 .iter()
-                .map(|coordinate| coordinate.dimension().to_string())
+                .map(|coordinate| {
+                    (
+                        coordinate.dimension().to_string(),
+                        coordinate.scope_id().to_string(),
+                    )
+                })
                 .collect();
             Some(PositionedEntry {
                 entry: VisualEntry {
@@ -259,7 +290,7 @@ pub fn build_visual_projection(
                 },
                 position,
                 position_text,
-                dimensions,
+                labels,
             })
         })
         .collect::<Vec<_>>();
@@ -309,10 +340,14 @@ pub fn build_visual_projection(
     };
     let included_dimensions = positioned
         .iter()
-        .flat_map(|entry| entry.dimensions.iter().cloned())
+        .flat_map(|entry| entry.labels.iter().map(|(dimension, _)| dimension.clone()))
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
+    let labels = VisualLabel::counted(
+        catalogue,
+        positioned.iter().flat_map(|entry| entry.labels.iter()),
+    );
     let causal = causal_relation_count(&relations);
     let relation_count = relations.len();
     let source_truncated = temporal.traversal.page().has_more();
@@ -336,6 +371,7 @@ pub fn build_visual_projection(
         entries,
         by_kind,
         relations,
+        labels,
         metrics: vec![
             VisualMetric {
                 name: "entry_count".to_string(),
@@ -373,24 +409,29 @@ pub fn build_visual_projection(
 
 fn visual_bins(entries: &[PositionedEntry], from: i128, to: i128, count: usize) -> Vec<VisualBin> {
     let span = (to - from).max(1);
-    let mut bins = BTreeMap::<(String, usize), (usize, BTreeMap<String, usize>)>::new();
+    let mut bins = BTreeMap::<(String, String, usize), (usize, BTreeMap<String, usize>)>::new();
     for entry in entries {
         let index = (((entry.position - from) * count as i128) / span)
             .clamp(0, count.saturating_sub(1) as i128) as usize;
-        for dimension in &entry.dimensions {
-            let (total, by_kind) = bins.entry((dimension.clone(), index)).or_default();
+        for (dimension, scope_id) in &entry.labels {
+            let (total, by_kind) = bins
+                .entry((dimension.clone(), scope_id.clone(), index))
+                .or_default();
             *total += 1;
             *by_kind.entry(entry.entry.kind.clone()).or_default() += 1;
         }
     }
     bins.into_iter()
-        .map(|((dimension, index), (total, by_kind))| VisualBin {
-            dimension,
-            from: nanos_timestamp(from + span * index as i128 / count as i128),
-            to: nanos_timestamp(from + span * (index + 1) as i128 / count as i128),
-            total,
-            by_kind,
-        })
+        .map(
+            |((dimension, scope_id, index), (total, by_kind))| VisualBin {
+                dimension,
+                scope_id,
+                from: nanos_timestamp(from + span * index as i128 / count as i128),
+                to: nanos_timestamp(from + span * (index + 1) as i128 / count as i128),
+                total,
+                by_kind,
+            },
+        )
         .collect()
 }
 
@@ -401,20 +442,20 @@ fn visual_clusters(
     count: usize,
 ) -> Vec<VisualCluster> {
     let span = (to - from).max(1);
-    let mut clusters = BTreeMap::<(String, usize), Vec<&PositionedEntry>>::new();
+    let mut clusters = BTreeMap::<(String, String, usize), Vec<&PositionedEntry>>::new();
     for entry in entries {
         let index = (((entry.position - from) * count as i128) / span)
             .clamp(0, count.saturating_sub(1) as i128) as usize;
-        for dimension in &entry.dimensions {
+        for (dimension, scope_id) in &entry.labels {
             clusters
-                .entry((dimension.clone(), index))
+                .entry((dimension.clone(), scope_id.clone(), index))
                 .or_default()
                 .push(entry);
         }
     }
     clusters
         .into_iter()
-        .map(|((dimension, _), entries)| {
+        .map(|((dimension, scope_id, _), entries)| {
             let mut by_kind = BTreeMap::new();
             let mut refs = Vec::new();
             for entry in &entries {
@@ -423,6 +464,7 @@ fn visual_clusters(
             }
             VisualCluster {
                 dimension,
+                scope_id,
                 from: entries
                     .first()
                     .map(|entry| entry.position_text.clone())
