@@ -38,7 +38,11 @@ pub fn uninstall_report(
         let _ = writeln!(out, "  {:<12} {}", piece.kind.label(), piece.path.display());
         let _ = writeln!(out, "               {}", piece.detail);
         if let Some(reason) = piece.refusal() {
-            let _ = writeln!(out, "               kept — {reason}");
+            // `held` and `kept` are different news. One is a restart away,
+            // the other is never happening here, and a reader planning what
+            // to do next cannot act on a word that covers both (#520).
+            let verdict = if piece.is_held() { "held" } else { "kept" };
+            let _ = writeln!(out, "               {verdict} — {reason}");
         } else if let Some(rescue) = piece.rescue_path(workspace) {
             let _ = writeln!(
                 out,
@@ -58,6 +62,22 @@ pub fn uninstall_report(
     }
     out.push('\n');
 
+    // Ahead of the restore note: a hold is what stops the reader today.
+    // The memory rescue matters when something is actually being removed.
+    if pieces.iter().any(Piece::is_held) {
+        let _ = writeln!(
+            out,
+            "{}",
+            crate::banner::head_styled(style, "Held right now")
+        );
+        let _ = writeln!(
+            out,
+            "  A host that started before an update keeps serving the engine it opened,\n  \
+             so the file is still in use however current the installation looks.\n\n  \
+             Restart the host named above and run this again. Nothing here ends a\n  \
+             process for you.\n"
+        );
+    }
     if pieces.iter().any(|piece| piece.kind == PieceKind::Store) && !purge {
         let _ = writeln!(
             out,
@@ -102,6 +122,14 @@ mod tests {
         std::fs::write(path.join("store/kernel.sqlite3"), vec![0u8; 2_048]).expect("store file");
     }
 
+    struct NothingRunning;
+
+    impl crate::lifecycle::ports::process_liveness::ProcessLiveness for NothingRunning {
+        fn is_running(&self, _: u32) -> bool {
+            false
+        }
+    }
+
     struct NoEngines;
 
     impl crate::lifecycle::ports::plugin_engine_probe::PluginEngineProbe for NoEngines {
@@ -119,8 +147,14 @@ mod tests {
     fn survey(roots: &SurveyRoots) -> Vec<Piece> {
         let stores = FilesystemStoreCatalog::new(&roots.data_home);
         let index = JsonlStoreIndex::new(&roots.data_home);
-        SurveyInstallation::new(&NativeInstallationCatalog, &NoEngines, &stores, &index)
-            .execute(roots)
+        SurveyInstallation::new(
+            &NativeInstallationCatalog,
+            &NoEngines,
+            &stores,
+            &index,
+            &NothingRunning,
+        )
+        .execute(roots)
     }
 
     #[test]
@@ -197,5 +231,77 @@ mod tests {
             crate::style::Style::Plain,
         );
         assert!(empty.contains("Nothing of KMP's is on this machine."));
+    }
+
+    #[test]
+    fn a_held_piece_reads_as_held_and_says_what_would_free_it() {
+        let base = tempfile::tempdir().expect("temp");
+        let engine = base
+            .path()
+            .join("home/.claude/plugins/cache/underpass/kmp/0.11.0/bin");
+        std::fs::create_dir_all(&engine).expect("engine dir");
+        let engine = engine.join("kmp-mcp");
+        std::fs::write(&engine, vec![0u8; 16]).expect("engine");
+
+        let held = Piece {
+            kind: crate::lifecycle::domain::piece_kind::PieceKind::Engine,
+            path: engine,
+            detail: "0.11.0 · 15.9M".to_string(),
+            bundled_events: None,
+            ours_to_remove: true,
+            held_by: Some(crate::lifecycle::domain::piece_hold::PieceHold::new(
+                "claude", 868_043,
+            )),
+        };
+
+        let report = uninstall_report(
+            &[held],
+            base.path(),
+            false,
+            false,
+            crate::style::Style::Plain,
+        );
+
+        assert!(report.contains("held — claude (pid 868043)"), "{report}");
+        assert!(
+            !report.contains("kept —"),
+            "a hold is not a refusal: {report}"
+        );
+        assert!(report.contains("Held right now"), "{report}");
+        assert!(
+            report.contains("\n  Restart the host named above and run this again."),
+            "the paragraph keeps the two-space margin of every other block: {report}"
+        );
+        assert!(
+            report.contains("Nothing here ends a\n  process for you."),
+            "the reader must know uninstall will not kill it for them: {report}"
+        );
+    }
+
+    #[test]
+    fn a_piece_that_is_simply_not_ours_still_reads_as_kept() {
+        let base = tempfile::tempdir().expect("temp");
+        let foreign = Piece {
+            kind: crate::lifecycle::domain::piece_kind::PieceKind::HostWiring,
+            path: base.path().join("home/.codex/config.toml"),
+            detail: "delete the [mcp_servers.kmp] block".to_string(),
+            bundled_events: None,
+            ours_to_remove: false,
+            held_by: None,
+        };
+
+        let report = uninstall_report(
+            &[foreign],
+            base.path(),
+            false,
+            false,
+            crate::style::Style::Plain,
+        );
+
+        assert!(
+            report.contains("kept — inside a file that is not ours"),
+            "{report}"
+        );
+        assert!(!report.contains("Held right now"), "{report}");
     }
 }

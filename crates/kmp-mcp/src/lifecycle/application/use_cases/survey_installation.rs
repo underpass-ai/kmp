@@ -1,13 +1,17 @@
 use std::path::{Path, PathBuf};
 
-use crate::lifecycle::application::use_cases::survey_engines::SurveyEngines;
+use crate::lifecycle::application::use_cases::survey_engine_pieces::SurveyEnginePieces;
+use crate::lifecycle::application::use_cases::survey_holds::SurveyHolds;
+use crate::lifecycle::application::use_cases::survey_leftovers::SurveyLeftovers;
 use crate::lifecycle::application::use_cases::survey_memories::SurveyMemories;
 use crate::lifecycle::domain::piece::Piece;
+use crate::lifecycle::domain::piece_hold::PieceHold;
 use crate::lifecycle::domain::piece_kind::PieceKind;
 use crate::lifecycle::domain::store_leases_dir::store_leases_dir;
 use crate::lifecycle::domain::survey_roots::SurveyRoots;
 use crate::lifecycle::ports::installation_catalog::InstallationCatalog;
 use crate::lifecycle::ports::plugin_engine_probe::PluginEngineProbe;
+use crate::lifecycle::ports::process_liveness::ProcessLiveness;
 use crate::lifecycle::ports::store_catalog::StoreCatalog;
 use crate::lifecycle::ports::store_index::StoreIndex;
 
@@ -22,6 +26,7 @@ pub struct SurveyInstallation<'a> {
     engines: &'a dyn PluginEngineProbe,
     stores: &'a dyn StoreCatalog,
     index: &'a dyn StoreIndex,
+    liveness: &'a dyn ProcessLiveness,
 }
 
 impl<'a> SurveyInstallation<'a> {
@@ -30,41 +35,25 @@ impl<'a> SurveyInstallation<'a> {
         engines: &'a dyn PluginEngineProbe,
         stores: &'a dyn StoreCatalog,
         index: &'a dyn StoreIndex,
+        liveness: &'a dyn ProcessLiveness,
     ) -> Self {
         Self {
             installation,
             engines,
             stores,
             index,
+            liveness,
         }
     }
 
     pub fn execute(&self, roots: &SurveyRoots) -> Vec<Piece> {
         let mut pieces = Vec::new();
+        let claude_plugin = roots.home.join(".claude/plugins/cache/underpass/kmp");
 
-        for engine in SurveyEngines::new(self.installation, self.engines).execute(roots) {
-            let path = engine.executable().as_path().to_path_buf();
-            // An engine on `PATH` but outside this home may be a package
-            // manager's, or another user's. It is worth naming — a second
-            // copy is how a live session ends up older than the merged fix
-            // (#80) — and it is not this verb's to delete.
-            let ours = path.starts_with(&roots.home);
-            // The size never said which copy was ancient, which is the only
-            // thing that makes a second engine worth acting on (#450).
-            let size = self.installation.size_of(&path).human();
-            let identity = format!("{} · {size}", engine.described_version());
-            pieces.push(Piece {
-                kind: PieceKind::Engine,
-                detail: if ours {
-                    identity
-                } else {
-                    format!("{identity} — outside your home; remove it yourself if you meant to")
-                },
-                path,
-                bundled_events: None,
-                ours_to_remove: ours,
-            });
-        }
+        pieces.extend(
+            SurveyEnginePieces::new(self.installation, self.engines, self.liveness)
+                .execute(roots, &claude_plugin),
+        );
 
         for store in self.stores(roots) {
             let bundled_events = bundle_beside(&store)
@@ -76,6 +65,7 @@ impl<'a> SurveyInstallation<'a> {
                 path: store,
                 bundled_events,
                 ours_to_remove: true,
+                held_by: None,
             });
         }
 
@@ -94,6 +84,7 @@ impl<'a> SurveyInstallation<'a> {
                     path: bundle,
                     bundled_events: None,
                     ours_to_remove: false,
+                    held_by: None,
                 });
             }
         }
@@ -112,6 +103,7 @@ impl<'a> SurveyInstallation<'a> {
                 path: index,
                 bundled_events: None,
                 ours_to_remove: true,
+                held_by: None,
             });
         }
 
@@ -126,10 +118,10 @@ impl<'a> SurveyInstallation<'a> {
                 path: leases,
                 bundled_events: None,
                 ours_to_remove: true,
+                held_by: None,
             });
         }
 
-        let claude_plugin = roots.home.join(".claude/plugins/cache/underpass/kmp");
         if self.installation.is_directory(&claude_plugin) {
             pieces.push(Piece {
                 kind: PieceKind::HostFiles,
@@ -137,25 +129,14 @@ impl<'a> SurveyInstallation<'a> {
                     "Claude Code plugin — {}",
                     self.described_versions(&claude_plugin)
                 ),
+                held_by: self.hold_on_any_version(&claude_plugin),
                 path: claude_plugin,
                 bundled_events: None,
                 ours_to_remove: true,
             });
         }
 
-        let codex_prompts = roots.home.join(".codex/prompts");
-        for prompt in self.kmp_prompts(&codex_prompts) {
-            pieces.push(Piece {
-                kind: PieceKind::HostFiles,
-                detail: format!(
-                    "Codex /kmp- prompt — {}",
-                    self.installation.size_of(&prompt).human()
-                ),
-                path: prompt,
-                bundled_events: None,
-                ours_to_remove: true,
-            });
-        }
+        pieces.extend(SurveyLeftovers::new(self.installation).execute(roots));
 
         // Registrations live inside files that are not ours. This verb names
         // them and the command that removes them; it does not edit a user's
@@ -170,6 +151,7 @@ impl<'a> SurveyInstallation<'a> {
                     path: claude_config.clone(),
                     bundled_events: None,
                     ours_to_remove: false,
+                    held_by: None,
                 });
             }
         }
@@ -183,6 +165,7 @@ impl<'a> SurveyInstallation<'a> {
                     path: codex_config.clone(),
                     bundled_events: None,
                     ours_to_remove: false,
+                    held_by: None,
                 });
             }
         }
@@ -238,16 +221,14 @@ impl<'a> SurveyInstallation<'a> {
         }
     }
 
-    fn kmp_prompts(&self, directory: &Path) -> Vec<PathBuf> {
+    /// The hold on any version under a plugin root. Removing the root
+    /// removes every version in it, so one held version holds the whole tree.
+    fn hold_on_any_version(&self, plugin_root: &Path) -> Option<PieceHold> {
+        let holds = SurveyHolds::new(self.installation, self.liveness);
         self.installation
-            .files_in(directory)
+            .entry_names(plugin_root)
             .into_iter()
-            .filter(|path| {
-                path.file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| name.starts_with("kmp-") && name.ends_with(".md"))
-            })
-            .collect()
+            .find_map(|version| holds.execute("claude", &plugin_root.join(version)))
     }
 }
 
@@ -324,13 +305,120 @@ mod tests {
     }
 
     fn survey_with(roots: &SurveyRoots, probe: FakeProbe) -> Vec<Piece> {
+        survey_with_running(roots, probe, Vec::new())
+    }
+
+    struct Running(Vec<u32>);
+
+    impl crate::lifecycle::ports::process_liveness::ProcessLiveness for Running {
+        fn is_running(&self, pid: u32) -> bool {
+            self.0.contains(&pid)
+        }
+    }
+
+    fn survey_with_running(roots: &SurveyRoots, probe: FakeProbe, live: Vec<u32>) -> Vec<Piece> {
         let stores = FilesystemStoreCatalog::new(&roots.data_home);
         let index = JsonlStoreIndex::new(&roots.data_home);
-        SurveyInstallation::new(&NativeInstallationCatalog, &probe, &stores, &index).execute(roots)
+        SurveyInstallation::new(
+            &NativeInstallationCatalog,
+            &probe,
+            &stores,
+            &index,
+            &Running(live),
+        )
+        .execute(roots)
     }
 
     fn remove(piece: &Piece) -> Result<(), String> {
         RemovePiece::new(&NativeInstallationCatalog).execute(piece)
+    }
+
+    fn claude_engine_at(base: &Path, version: &str) -> PathBuf {
+        let engine = base
+            .join("home/.claude/plugins/cache/underpass/kmp")
+            .join(version)
+            .join("bin/kmp-mcp");
+        std::fs::create_dir_all(engine.parent().expect("bin")).expect("engine dir");
+        std::fs::write(&engine, vec![0u8; 4_096]).expect("engine");
+        engine
+    }
+
+    fn opened_by(base: &Path, version: &str, pid: u32) {
+        let markers = base
+            .join("home/.claude/plugins/cache/underpass/kmp")
+            .join(version)
+            .join(".in_use");
+        std::fs::create_dir_all(&markers).expect("marker dir");
+        std::fs::write(markers.join(pid.to_string()), b"{}").expect("marker");
+    }
+
+    #[test]
+    fn a_plugin_tree_is_held_when_any_version_inside_it_is_open() {
+        // Removing the tree removes the version, so the hold is on the tree.
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        claude_engine_at(base, "0.11.0");
+        claude_engine_at(base, "0.12.1");
+        opened_by(base, "0.12.1", 868_043);
+
+        let pieces = survey_with_running(
+            &roots(base),
+            FakeProbe {
+                versions: Default::default(),
+            },
+            vec![868_043],
+        );
+
+        let tree = pieces
+            .iter()
+            .find(|piece| piece.path == base.join("home/.claude/plugins/cache/underpass/kmp"))
+            .expect("the plugin tree is surveyed");
+        assert!(tree.is_held());
+        assert_eq!(tree.held_by.as_ref().map(PieceHold::pid), Some(868_043));
+    }
+
+    #[test]
+    fn the_engine_beside_those_scripts_stays_an_engine_rather_than_a_leftover() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        let bin = base.join("home/.local/share/kmp/bin");
+        std::fs::create_dir_all(&bin).expect("standalone bin");
+        std::fs::write(bin.join("kmp-doctor.sh"), b"#!/bin/sh\n").expect("script");
+        std::fs::write(bin.join("kmp-mcp"), vec![0u8; 16]).expect("engine");
+
+        let engine = survey(&roots(base))
+            .into_iter()
+            .find(|piece| piece.path == bin.join("kmp-mcp"))
+            .expect("the standalone engine is still an engine");
+
+        assert_eq!(engine.kind, PieceKind::Engine);
+    }
+
+    #[test]
+    fn a_live_plugin_tree_and_a_retired_prompt_do_not_share_one_label() {
+        let base = tempfile::tempdir().expect("temp");
+        let base = base.path();
+        claude_engine_at(base, "0.12.1");
+        let prompts = base.join("home/.codex/prompts");
+        std::fs::create_dir_all(&prompts).expect("prompts");
+        std::fs::write(prompts.join("kmp-doctor.md"), b"run the doctor").expect("prompt");
+
+        let pieces = survey(&roots(base));
+        let kind_of = |path: PathBuf| {
+            pieces
+                .iter()
+                .find(|piece| piece.path == path)
+                .map(|piece| piece.kind)
+        };
+
+        assert_eq!(
+            kind_of(base.join("home/.claude/plugins/cache/underpass/kmp")),
+            Some(PieceKind::HostFiles)
+        );
+        assert_eq!(
+            kind_of(prompts.join("kmp-doctor.md")),
+            Some(PieceKind::Leftover)
+        );
     }
 
     #[test]
@@ -431,7 +519,7 @@ mod tests {
 
         let installed = survey(&roots(base))
             .into_iter()
-            .filter(|piece| piece.kind == PieceKind::HostFiles && piece.detail.starts_with("Codex"))
+            .filter(|piece| piece.kind == PieceKind::Leftover && piece.path.starts_with(&prompts))
             .collect::<Vec<_>>();
         assert_eq!(
             installed
@@ -484,69 +572,6 @@ mod tests {
                 .iter()
                 .all(|piece| piece.detail.contains("kernel-memory"))
         );
-    }
-
-    #[test]
-    fn an_engine_outside_the_surveyed_home_is_named_and_not_touched() {
-        // A second engine on PATH is worth seeing — that is how a live
-        // session ends up older than the merged fix — but it may be a package
-        // manager's, and deleting somebody else's binary is not an uninstall.
-        let base = tempfile::tempdir().expect("temp");
-        let base = base.path();
-        let elsewhere = base.join("usr/local/bin");
-        std::fs::create_dir_all(&elsewhere).expect("bin dir");
-        std::fs::write(elsewhere.join("kmp-mcp"), b"binary").expect("engine");
-        std::fs::create_dir_all(base.join("home/.local/bin")).expect("home bin");
-        std::fs::write(base.join("home/.local/bin/kmp-mcp"), b"binary").expect("engine");
-
-        let mut roots = roots(base);
-        roots.path_entries = vec![elsewhere.clone()];
-        let engines: Vec<_> = survey(&roots)
-            .into_iter()
-            .filter(|piece| piece.kind == PieceKind::Engine)
-            .collect();
-
-        assert_eq!(engines.len(), 2, "both are worth naming: {engines:?}");
-        let outside = engines
-            .iter()
-            .find(|piece| piece.path.starts_with(&elsewhere))
-            .expect("the one outside home");
-        assert!(!outside.ours_to_remove);
-        assert!(outside.detail.contains("outside your home"));
-        assert!(remove(outside).is_err(), "even --purge does not reach it");
-        assert!(outside.path.exists());
-
-        let ours = engines
-            .iter()
-            .find(|piece| piece.path.starts_with(base.join("home")))
-            .expect("the one in this home");
-        assert!(ours.ours_to_remove);
-    }
-
-    #[test]
-    fn an_engine_line_says_which_release_it_is_beside_its_size() {
-        // The dry run listed the stale engine by size (`14.8M`), so nothing
-        // told the reader it was twenty releases old — the one fact that
-        // makes a second copy worth acting on (#450).
-        let base = tempfile::tempdir().expect("temp");
-        let base = base.path();
-        let local_bin = base.join("home/.local/bin");
-        std::fs::create_dir_all(&local_bin).expect("bin dir");
-        let engine = local_bin.join("kmp-mcp");
-        std::fs::write(&engine, b"an engine").expect("engine");
-
-        let pieces = survey_with(
-            &roots(base),
-            FakeProbe {
-                versions: std::collections::BTreeMap::from([(engine, "0.1.13")]),
-            },
-        );
-
-        let listed = pieces
-            .iter()
-            .find(|piece| piece.kind == PieceKind::Engine)
-            .expect("the engine is part of the picture");
-        assert!(listed.detail.starts_with("0.1.13 · "), "{listed:?}");
     }
 
     #[test]

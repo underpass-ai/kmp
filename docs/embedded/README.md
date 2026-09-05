@@ -115,7 +115,7 @@ Run `kmp-mcp --help` for the live command contract.
 | `snapshot create|list|verify|read|merge` | Create and inspect immutable recovery points. |
 | `document <about>` | Render one about as deterministic Markdown. |
 | `viewer [addr]` | Serve the viewer without an MCP host session. |
-| `uninstall [--store <absolute-path>] [--apply]` | Preview the whole installation or one exact store; apply refuses live owners and runs only when explicitly requested. |
+| `uninstall [--store <path> \| --engine <path>] [--apply]` | Preview the whole installation, one exact store or one exact engine; the preview marks pieces a live host still holds, apply refuses live owners, and it runs only when explicitly requested. |
 
 The ten MCP memory tools are a separate surface advertised by `tools/list`.
 
