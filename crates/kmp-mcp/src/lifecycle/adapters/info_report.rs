@@ -97,7 +97,7 @@ mod tests {
     fn info_reports_the_surface_without_judging_it() {
         let report = info();
         assert!(report.contains("Kernel Memory Protocol"));
-        assert!(report.contains("14 tools on the MCP surface"));
+        assert!(report.contains("15 tools on the MCP surface"));
         assert!(report.contains("kmp_write_memory"));
         assert!(!report.contains("Usable"), "info states, doctor judges");
     }

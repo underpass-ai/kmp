@@ -1,0 +1,48 @@
+{
+  "content": [
+    {
+      "text": "string",
+      "type": "string"
+    }
+  ],
+  "isError": "boolean",
+  "structuredContent": {
+    "accepted": "boolean",
+    "dry_run": "boolean",
+    "labels": {
+      "added": [
+        {
+          "key": "string",
+          "value": "string"
+        }
+      ],
+      "created": [
+        {
+          "key": "string",
+          "value": "string"
+        }
+      ],
+      "now": [
+        {
+          "key": "string",
+          "value": "string"
+        }
+      ],
+      "removed": [],
+      "resembling": []
+    },
+    "next_suggested_reads": [
+      {
+        "about": "string",
+        "include": {
+          "raw": "boolean"
+        },
+        "ref": "string",
+        "tool": "string"
+      }
+    ],
+    "ref": "string",
+    "summary": "string",
+    "warnings": []
+  }
+}

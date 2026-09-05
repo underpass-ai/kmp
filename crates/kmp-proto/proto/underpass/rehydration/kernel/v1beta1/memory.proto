@@ -22,6 +22,8 @@ service KernelMemoryService {
   rpc ProjectVisual(ProjectVisualRequest) returns (ProjectVisualResponse);
   rpc Trace(TraceRequest) returns (TraceResponse);
   rpc Inspect(InspectRequest) returns (InspectResponse);
+  // Change the labels one entry stands in without rewriting its text.
+  rpc Relabel(RelabelRequest) returns (RelabelResponse);
 }
 
 message IngestRequest {
@@ -160,6 +162,59 @@ message AcceptedCounts {
   uint32 entries = 1;
   uint32 relations = 2;
   uint32 evidence = 3;
+}
+
+// Change the labels one entry stands in without rewriting its text: labels
+// to add, labels to take off, and why. Read like a write — the about's
+// catalogue and the entry's coordinates come from the store — and kept in
+// the log as one change. A label added late inherits the entry's clocks,
+// since an entry's time does not depend on its latest label; the relabel's
+// own instant lives in the event and on the edge it added.
+message RelabelRequest {
+  string about = 1;
+  // The entry, a ref inside `about`.
+  string ref = 2;
+  repeated EntryLabel add = 3;
+  repeated EntryLabel remove = 4;
+  // Why the labels change; kept with the change and on every edge it adds.
+  string why = 5;
+  MemoryProvenance provenance = 6;
+  string idempotency_key = 7;
+  bool dry_run = 8;
+  LabelPolicy label_policy = 9;
+  // Label keys the writer insists are new even where the catalogue holds
+  // one that resembles them; those are left out of the resemblance check.
+  repeated string intended_new = 10;
+}
+
+// One label an entry stands in, as the pair a reader names it by: `key` is
+// the dimension kind, `value` the bare scope id.
+message EntryLabel {
+  string key = 1;
+  string value = 2;
+}
+
+message RelabelResponse {
+  string summary = 1;
+  RelabelledMemory memory = 2;
+  repeated string warnings = 3;
+}
+
+message RelabelledMemory {
+  string about = 1;
+  string ref = 2;
+  repeated EntryLabel added = 3;
+  repeated EntryLabel removed = 4;
+  // Every label the entry stands in after this relabel, by key then value.
+  repeated EntryLabel labels = 5;
+  // The dimension nodes this relabel declared for the first time, namespaced
+  // `about:{about}:dimension:{scope}`: the labels it created rather than
+  // reused.
+  repeated string created_dimensions = 6;
+  // Labels this relabel added that resemble one the about already holds,
+  // written under LABEL_POLICY_WARN; each says why in a checkable sentence.
+  repeated ResemblingLabel resembling_labels = 7;
+  bool read_after_write_ready = 8;
 }
 
 message WakeRequest {

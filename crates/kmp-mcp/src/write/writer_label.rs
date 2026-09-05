@@ -49,6 +49,12 @@ pub(super) fn validate_distinct_label_values(labels: &[WriterLabel]) -> Result<(
 /// A label key is an identifier a filter can name: lowercase letters,
 /// digits, `_`, `.` and `-`, starting with a letter, at most 64 characters.
 pub(super) fn validate_label_key(key: &str) -> Result<(), String> {
+    validate_label_key_at("labels", key)
+}
+
+/// The same check for a key given under another argument, so the refusal
+/// names the field it came from.
+pub(super) fn validate_label_key_at(field: &str, key: &str) -> Result<(), String> {
     let mut chars = key.chars();
     let first_is_letter = chars.next().is_some_and(|first| first.is_ascii_lowercase());
     let rest_is_plain = key
@@ -56,7 +62,7 @@ pub(super) fn validate_label_key(key: &str) -> Result<(), String> {
         .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || matches!(ch, '_' | '.' | '-'));
     if key.is_empty() || key.len() > 64 || !first_is_letter || !rest_is_plain {
         return Err(format!(
-            "`labels.{key}` is not a label key: use lowercase letters, digits, `_`, `.` or `-`, starting with a letter, at most 64 characters"
+            "`{field}.{key}` is not a label key: use lowercase letters, digits, `_`, `.` or `-`, starting with a letter, at most 64 characters"
         ));
     }
     Ok(())

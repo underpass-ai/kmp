@@ -52,6 +52,7 @@ to the part of the goal the wake packet did not already answer.
 | A connection between two refs is part of the claim | `kmp_trace` |
 | The user asks to see, show, open, or navigate memory — including `muéstrame`, `enséñame`, `abre` or `ver` | Finish the retrieval lane, then `kmp_view_open` and `kmp_view_apply_intent` |
 | A durable decision, constraint or outcome was reached | `kmp_write_memory` |
+| A memory that exists is catalogued wrong, or a label was decided after it was written: put a label on it or take one off, without rewriting it | `kmp_relabel` |
 
 `kmp_ask` is direct-evidence retrieval. It does not walk a period — the
 temporal verbs enumerate — but it does stand where it is asked: `as_of` and
@@ -270,7 +271,7 @@ and write the answer in the user's language. A period to enumerate is
 navigated, not asked; a semantic question with a date is asked this same
 way, with `interval` or `as_of` beside the English rendering.
 
-## The eleven memory moves
+## The twelve memory moves
 
 **Entry**
 
@@ -328,6 +329,7 @@ work.
 | --- | --- |
 | `kmp_write_memory` | **Default.** Writer-friendly: validates intent and relation quality, then commits through canonical ingest. Omit `options.dry_run` or set it to `false` for the normal single-call write. |
 | `kmp_ingest` | Canonical low-level form. Use when you are producing the exact graph yourself. |
+| `kmp_relabel` | The labels of a memory that exists: `add` and `remove` as `key: value` pairs, a `why`, and the memory's `ref`. Its text, its relations and its time do not move. |
 
 Temporal reads return a `page` object whose total is temporal entries and whose
 continuation is a memory-ref cursor. Wake and Ask return `projection.page`,
@@ -428,6 +430,20 @@ catalogue and still mean a new label, say so with `options.labels_new:
 ["component"]`; the kernel leaves that label alone. Nothing is renamed in
 silence, and nothing is guessed: the threshold forgives spelling and nothing
 else.
+
+A label decided late goes on with `kmp_relabel`, never with a rewrite: give
+the memory's `ref`, the pairs to `add` and to `remove`, and a `why` a later
+reader can check. The kernel reads what the memory stands in and refuses,
+naming it, a label it already stands in, one it does not, a value already used
+under another key, and taking its last label off — a memory stands in at
+least one, which is where its time lives. The same resemblance check runs
+against the catalogue, with the same `options.strict` and
+`options.labels_new`. The added label inherits the memory's clocks, so
+`kmp_rewind` and `kmp_forward` still find the memory where it was; the change
+itself is on the edge it added (`method: kmp_relabel`, your `why`) and in the
+event log, with who did it when. Undoing a relabel is another relabel the
+other way; nothing is deleted. Read the memory back with `kmp_inspect` and
+`include.raw` to see every label it stands in now.
 
 Write in the language of the work, and give the memory an English rendering
 for search: `current.summary_en`, plain English a reader would ask with, every

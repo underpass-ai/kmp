@@ -64,8 +64,8 @@ Current status:
 
 - exposes `kmp_ingest`, `kmp_write_memory`, `kmp_wake`, `kmp_ask`,
   `kmp_goto`, `kmp_near`, `kmp_rewind`, `kmp_forward`,
-  `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_view_open`, `kmp_view_apply_intent`, and
-  `kmp_view_get_state`;
+  `kmp_relate`, `kmp_trace`, `kmp_inspect`, `kmp_relabel`, `kmp_view_open`,
+  `kmp_view_apply_intent`, and `kmp_view_get_state`;
 - can serve explicit fixture-backed KMP responses, embedded from the
   contract's reference examples;
 - can use the live gRPC kernel when `KMP_KERNEL_GRPC_ENDPOINT` is set;
@@ -98,6 +98,17 @@ Current status:
   signals that read it, a weight and a `why`, at most three per fact; a
   writer may declare one with this as the proof. Pages by position over
   facts, declared, coordinate, tensions and proposed in that order;
+- `kmp_relabel` changes the labels one memory stands in without rewriting
+  its text: labels to add and take off as `key: value` pairs, and a `why`.
+  The kernel reads the memory's coordinates and the about's catalogue
+  itself and refuses, naming what the memory stands in, a label it already
+  stands in, one it does not, a value already used under another key, and
+  taking its last label off; a new label that resembles one the catalogue
+  holds is refused under strict and written with a warning otherwise. A
+  label added late inherits the memory's clocks — its time does not move —
+  and the edge it adds carries `method: kmp_relabel` with the why, while the
+  event log keeps who did it when. The result says what was added and
+  removed, every label the memory stands in now, and which were created;
 - one relation may cross an about, and only through `kmp_write_memory`:
   `same_event_as` or `same_entity_as` to a ref of another about, class
   `evidential`, with `why`, `evidence` and the `kmp_relate` proposal in
@@ -230,6 +241,7 @@ Live backend mapping:
 | `kmp_relate` | `KernelMemoryService.Relate` |
 | `kmp_trace` | `KernelMemoryService.Trace` |
 | `kmp_inspect` | `KernelMemoryService.Inspect` |
+| `kmp_relabel` | `KernelMemoryService.Relabel` |
 | ChronoLoom app data | `KernelMemoryService.ProjectVisual` (hidden from model tool discovery) |
 
 ## Language without flattening the evidence

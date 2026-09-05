@@ -1,0 +1,52 @@
+{
+  "content": [
+    {
+      "text": "Relabelled `question:parity:claim:denver` in question:parity: added 1 label, removed 0; it stands in 2 labels.",
+      "type": "text"
+    }
+  ],
+  "isError": false,
+  "structuredContent": {
+    "accepted": true,
+    "dry_run": false,
+    "labels": {
+      "added": [
+        {
+          "key": "issue",
+          "value": "parity-1"
+        }
+      ],
+      "created": [
+        {
+          "key": "issue",
+          "value": "parity-1"
+        }
+      ],
+      "now": [
+        {
+          "key": "conversation",
+          "value": "conversation:rachel"
+        },
+        {
+          "key": "issue",
+          "value": "parity-1"
+        }
+      ],
+      "removed": [],
+      "resembling": []
+    },
+    "next_suggested_reads": [
+      {
+        "about": "question:parity",
+        "include": {
+          "raw": true
+        },
+        "ref": "question:parity:claim:denver",
+        "tool": "kmp_inspect"
+      }
+    ],
+    "ref": "question:parity:claim:denver",
+    "summary": "Relabelled `question:parity:claim:denver` in question:parity: added 1 label, removed 0; it stands in 2 labels.",
+    "warnings": []
+  }
+}

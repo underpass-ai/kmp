@@ -91,10 +91,10 @@ surface = json.loads(
     (root / "crates/kmp-mcp/fixtures/contract/tools_list.json").read_text(encoding="utf-8")
 )
 tool_names = {tool["name"] for tool in surface["tools"]}
-# Ten moves over memory and three over the view. The count is pinned so a
+# Twelve moves over memory and three over the view. The count is pinned so a
 # tool cannot appear on the surface without the documentation that explains
 # it appearing too.
-EXPECTED_TOOLS = 14
+EXPECTED_TOOLS = 15
 if len(tool_names) != EXPECTED_TOOLS:
     sys.exit(
         f"documentation contract: expected {EXPECTED_TOOLS} tools on the reviewed surface, "
@@ -143,6 +143,7 @@ number_words = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
     "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
     "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+    "fifteen": 15, "sixteen": 16,
 }
 count_words = "|".join(number_words)
 for raw in re.findall(rf"\b(\d+|{count_words}) (?:public |typed |MCP )?tools\b", current_text, re.I):

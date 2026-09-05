@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:f5326e3596ecb0522768",
+    "idempotency_key": "ingest:guide-sync:1:agent:56c90925795baf7e1971",
     "memory": {
       "dimensions": [
         {
@@ -264,7 +264,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Label the write: scope.process always, scope.task and scope.episode as the two well-known labels, and labels {key: value} for any other facet; read the labels catalogue kmp_wake returned and reuse what exists — a value already used under another key is refused, and a new label that resembles an existing one (same identifier up to case and separators, or the same value under another key) is refused by a strict write naming both, written with labels.resembling by a lax one, and left alone when options.labels_new insists. Expect: validated relation quality, read-after-write readiness, and labels.written with labels.created after a commit. Next: inspect the generated ref when the write matters. One relation may cross an about, and only from here: same_event_as or same_entity_as to a ref of another about, class evidential, with why, evidence and the kmp_relate proposal in read_context.relate_proposals; the edge lives in the about that writes it and the other about does not change."
+          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Label the write: scope.process always, scope.task and scope.episode as the two well-known labels, and labels {key: value} for any other facet; read the labels catalogue kmp_wake returned and reuse what exists — a value already used under another key is refused, and a new label that resembles an existing one (same identifier up to case and separators, or the same value under another key) is refused by a strict write naming both, written with labels.resembling by a lax one, and left alone when options.labels_new insists. Expect: validated relation quality, read-after-write readiness, and labels.written with labels.created after a commit. Next: inspect the generated ref when the write matters. A label decided after a memory was written goes on with kmp_relabel, never with a rewrite: the memory's ref, add and remove as {key: value} pairs, and a why; the kernel reads what the memory stands in and refuses, naming it, a label it already stands in, one it does not, a value already used under another key, and taking its last label off, with the same resemblance check, strict and labels_new. The added label inherits the memory's clocks, so its time does not move; the change lives on the edge it added (method kmp_relabel, the why) and in the event log with who did it when. Undoing a relabel is another relabel the other way. One relation may cross an about, and only from here: same_event_as or same_entity_as to a ref of another about, class evidential, with why, evidence and the kmp_relate proposal in read_context.relate_proposals; the edge lives in the about that writes it and the other about does not change."
         },
         {
           "coordinates": [
@@ -802,16 +802,16 @@
               "sequence": 26
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -833,16 +833,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -864,16 +864,16 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -895,16 +895,16 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -926,16 +926,16 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -957,16 +957,16 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -988,16 +988,16 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1017,6 +1017,37 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 33
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:33:00Z",
+              "occurred_at": "2026-08-28T00:33:00Z",
+              "scope_id": "timeline",
+              "sequence": 34
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 34
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 34
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1358,6 +1389,19 @@
           "time": "2026-08-28T00:00:00Z"
         },
         {
+          "id": "evidence:guide:kmp-agent:tool:kmp_relabel",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP tools/list guide source v1",
+          "supports": [
+            "guide:kmp-agent:tool:kmp_relabel"
+          ],
+          "text": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
           "id": "evidence:guide:kmp-agent:tool:kmp_relate",
           "metadata": {
             "audience": "agent",
@@ -1696,10 +1740,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+          "from": "guide:kmp-agent:tool:kmp_relabel",
+          "rel": "uses_background",
+          "sequence": 24,
+          "to": "guide:kmp-agent:verb:write",
+          "why": "The human-readable verb rule is grounded in this exact live MCP contract."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 24,
+          "sequence": 25,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1709,7 +1763,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1719,7 +1773,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1729,7 +1783,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1739,7 +1793,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1749,7 +1803,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1759,7 +1813,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1769,7 +1823,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }

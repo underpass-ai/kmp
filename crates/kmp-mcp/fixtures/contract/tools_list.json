@@ -4509,6 +4509,166 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
+      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "about": {
+            "description": "The about the memory belongs to.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "actor": {
+            "description": "Human, agent, or component making the change.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "add": {
+            "additionalProperties": {
+              "description": "The scope id the memory now stands in under that key.",
+              "minLength": 1,
+              "type": "string"
+            },
+            "description": "Labels to add, `key: value`. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned and reuse what exists: a value already used under another key in this about is refused, naming both. A label the memory already stands in is refused too.",
+            "type": "object"
+          },
+          "idempotency_key": {
+            "description": "Optional stable idempotency key. Omit to generate one from the arguments.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "observed_at": {
+            "description": "RFC3339 timestamp in UTC for the change's provenance. It is kept on the edge each added label makes and in the event log; it never becomes the memory's time. A stamp more than five minutes ahead of the kernel's clock is refused.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "options": {
+            "additionalProperties": false,
+            "properties": {
+              "dry_run": {
+                "description": "When true, validate the relabel against the store — the memory, its labels, the catalogue — and write nothing. Defaults to false: the call commits.",
+                "type": "boolean"
+              },
+              "labels_new": {
+                "description": "Label keys you insist are new even where the catalogue holds one that resembles them: you read the catalogue and mean something else. Every other new label that resembles an existing one is refused under strict and written with a warning otherwise.",
+                "items": {
+                  "description": "A label key of this relabel.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "strict": {
+                "description": "Defaults to true: a new label that resembles one the about holds is refused, naming both. Set false to write it and be told in `labels.resembling`.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "ref": {
+            "description": "The memory to relabel: an entry ref inside this about, as a read returned it, byte for byte. Never the about anchor, an evidence id or a dimension id.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "remove": {
+            "additionalProperties": {
+              "description": "The scope id to take the memory out of under that key.",
+              "minLength": 1,
+              "type": "string"
+            },
+            "description": "Labels to take off, `key: value`, as `kmp_inspect` with `include.raw` lists them on the memory (the `dimension` is the key, the bare `scope_id` the value). A label the memory does not stand in is refused, naming the ones it does; so is taking off its last label, since a memory stands in at least one.",
+            "type": "object"
+          },
+          "source_kind": {
+            "enum": [
+              "human",
+              "agent",
+              "projection",
+              "derived"
+            ],
+            "type": "string"
+          },
+          "why": {
+            "description": "Why the labels change, in one sentence a later reader can check. Kept with the change and on every edge it adds.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "about",
+          "ref",
+          "actor",
+          "observed_at",
+          "why"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_relabel",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "description": "True when the kernel committed the change; false on a dry run.",
+            "type": "boolean"
+          },
+          "dry_run": {
+            "description": "Whether this call only validated.",
+            "type": "boolean"
+          },
+          "labels": {
+            "additionalProperties": false,
+            "description": "The labels as pairs `{ key, value }`: `added` and `removed` by this call, `now` every label the memory stands in afterwards, `created` the added labels the about had never held — vocabulary growing, so make sure it was meant — and `resembling` the added labels that resemble one the about already holds, each with why.",
+            "properties": {
+              "added": {
+                "description": "Labels added, `{ key, value }`.",
+                "type": "array"
+              },
+              "created": {
+                "description": "Added labels the about had never held before.",
+                "type": "array"
+              },
+              "now": {
+                "description": "Every label the memory stands in after the change, by key then value.",
+                "type": "array"
+              },
+              "removed": {
+                "description": "Labels taken off, `{ key, value }`.",
+                "type": "array"
+              },
+              "resembling": {
+                "description": "Added labels that resemble one the about holds: `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`.",
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "next_suggested_reads": {
+            "description": "The reads that show the change: `kmp_inspect` on the memory with `include.raw`.",
+            "type": "array"
+          },
+          "ref": {
+            "description": "The memory relabelled.",
+            "type": "string"
+          },
+          "summary": {
+            "description": "What changed and how many labels the memory stands in now.",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "_meta": {
+        "anthropic/maxResultSizeChars": 10000
+      },
       "description": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
       "inputSchema": {
         "additionalProperties": false,

@@ -13,10 +13,12 @@ use crate::ApplicationError;
 use crate::commands::CommandApplicationService;
 use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
-    MemoryIngestCommand, MemoryIngestOutcome, RelateMemoryQuery, TemporalMemoryQuery,
-    TemporalMemoryResult, TraceMemoryQuery, VisualProjectionQuery, VisualProjectionResult,
-    WakeMemoryQuery, build_visual_projection, crosses_abouts, translate_memory_ingest,
-    validate_ref_token, validate_supplied_member_ref,
+    MemoryIngestCommand, MemoryIngestOutcome, MemoryRelabelCommand, MemoryRelabelOutcome,
+    RelateMemoryQuery, TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery,
+    VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery, build_visual_projection,
+    crosses_abouts, relabel_logical_digest, replayed_relabel_outcome, translate_memory_ingest,
+    translate_memory_relabel, validate_ref_token, validate_supplied_entry_ref,
+    validate_supplied_member_ref,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
@@ -96,6 +98,80 @@ where
         outcome.read_after_write_ready = true;
         outcome.warnings.extend(accepted.warnings);
         Ok(outcome)
+    }
+
+    /// Changes the labels one entry stands in without rewriting its text.
+    /// Read like a write: the about's catalogue and the entry's coordinates
+    /// come from the store, the translation refuses what only the caller
+    /// can fix, and one `memory_relabel` change goes to the log.
+    pub async fn relabel(
+        &self,
+        command: MemoryRelabelCommand,
+    ) -> Result<MemoryRelabelOutcome, ApplicationError> {
+        let existing = self.existing_memory_refs(&command.about).await?;
+        let current = self
+            .entry_coordinates(&command.about, &command.ref_id, &existing)
+            .await?;
+        // A relabel translated after its own first apply refuses the labels
+        // that apply put there, so an accepted key is answered before the
+        // translation, the way ingest's replay is answered after it.
+        if !command.idempotency_key.trim().is_empty()
+            && let Some(accepted) = self
+                .command_application
+                .accepted_outcome(&command.idempotency_key)
+                .await?
+        {
+            if accepted.logical_digest.as_deref() != Some(relabel_logical_digest(&command).as_str())
+            {
+                return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
+                    format!(
+                        "idempotency key '{}' was already accepted with different content",
+                        command.idempotency_key
+                    ),
+                )));
+            }
+            return replayed_relabel_outcome(&command, &current);
+        }
+        let (update_context, mut outcome) =
+            translate_memory_relabel(&command, &existing, &current)?;
+        if command.dry_run {
+            outcome.warnings.push(
+                "dry_run=true; validated the relabel against the store without writing to the kernel"
+                    .to_string(),
+            );
+            return Ok(outcome);
+        }
+
+        let accepted = self
+            .command_application
+            .update_context(update_context)
+            .await?;
+        outcome.read_after_write_ready = true;
+        outcome.warnings.extend(accepted.warnings);
+        Ok(outcome)
+    }
+
+    /// The coordinates an entry stands in now, read off its `contains_entry`
+    /// edges — the same reading `kmp_inspect` returns as the raw record.
+    async fn entry_coordinates(
+        &self,
+        about: &str,
+        ref_id: &str,
+        existing: &ExistingMemoryRefs,
+    ) -> Result<Vec<TemporalCoordinate>, ApplicationError> {
+        validate_supplied_entry_ref(about, "ref", ref_id).map_err(ApplicationError::Validation)?;
+        if !existing.refs.contains(ref_id) {
+            return Err(ApplicationError::NotFound(format!(
+                "`{ref_id}` is not a memory of `{about}`"
+            )));
+        }
+        let links = self
+            .query_application
+            .get_node_relationships(GetNodeRelationshipsQuery {
+                node_id: ref_id.to_string(),
+            })
+            .await?;
+        inspect_raw_coordinates(ref_id, Some(&links))
     }
 
     /// The abouts the memory currently indexes, for consumers that render an

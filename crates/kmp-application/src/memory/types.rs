@@ -331,3 +331,49 @@ pub struct TemporalMemoryResult {
     pub include: TemporalIncludeOptions,
     pub quality: kmp_domain::BundleQualityMetrics,
 }
+
+/// One label an entry stands in, as the pair a reader names it by: `key`
+/// is the dimension kind, `value` the bare scope id.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+pub struct EntryLabelData {
+    pub key: String,
+    pub value: String,
+}
+
+/// Change the labels an entry stands in without rewriting its text: labels
+/// to add, labels to take off, and why. Translated against what the about
+/// holds, like an ingest, into one change the log keeps.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemoryRelabelCommand {
+    pub about: String,
+    pub ref_id: String,
+    pub add: Vec<EntryLabelData>,
+    pub remove: Vec<EntryLabelData>,
+    pub why: String,
+    pub provenance: Option<MemoryProvenanceData>,
+    pub idempotency_key: String,
+    pub dry_run: bool,
+    pub label_policy: LabelPolicy,
+    /// Label keys the writer insists are new even where the catalogue holds
+    /// one that resembles them: it read the catalogue and means something
+    /// else. Those labels are left out of the resemblance check.
+    pub intended_new: std::collections::BTreeSet<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemoryRelabelOutcome {
+    pub about: String,
+    pub ref_id: String,
+    pub added: Vec<EntryLabelData>,
+    pub removed: Vec<EntryLabelData>,
+    /// Every label the entry stands in after this relabel, by key then value.
+    pub labels: Vec<EntryLabelData>,
+    /// The dimension nodes this relabel declared for the first time, as
+    /// namespaced ids: the labels it created rather than reused.
+    pub created_dimensions: Vec<String>,
+    /// Labels this relabel added that resemble one the about already holds,
+    /// written under `LabelPolicy::Warn`.
+    pub resembling_labels: Vec<ResemblingLabelData>,
+    pub read_after_write_ready: bool,
+    pub warnings: Vec<String>,
+}

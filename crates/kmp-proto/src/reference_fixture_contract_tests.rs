@@ -67,6 +67,10 @@ const KMP_INSPECT_REQUEST_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/inspect.request.json");
 const KMP_INSPECT_RESPONSE_FIXTURE: &str =
     include_str!("../../../api/examples/kernel/v1beta1/kmp/inspect.response.json");
+const KMP_RELABEL_REQUEST_FIXTURE: &str =
+    include_str!("../../../api/examples/kernel/v1beta1/kmp/relabel.request.json");
+const KMP_RELABEL_RESPONSE_FIXTURE: &str =
+    include_str!("../../../api/examples/kernel/v1beta1/kmp/relabel.response.json");
 
 #[test]
 fn grpc_reference_fixtures_match_protojson_contract() {
@@ -246,6 +250,11 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
             .get("inspect_request")
             .is_some()
     );
+    assert!(
+        fixture_object_field(&schema, "$defs")
+            .get("relabel_request")
+            .is_some()
+    );
 
     assert_eq!(
         sorted_keys(object_keys(&parse_fixture(KMP_INGEST_REQUEST_FIXTURE))),
@@ -254,6 +263,38 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
     assert_eq!(
         sorted_keys(object_keys(&parse_fixture(KMP_INGEST_RESPONSE_FIXTURE))),
         sorted_strs(&["summary", "memory", "warnings"])
+    );
+    assert_eq!(
+        sorted_keys(object_keys(&parse_fixture(KMP_RELABEL_REQUEST_FIXTURE))),
+        sorted_strs(&[
+            "about",
+            "ref",
+            "add",
+            "remove",
+            "why",
+            "provenance",
+            "idempotency_key"
+        ])
+    );
+    assert_eq!(
+        sorted_keys(object_keys(&parse_fixture(KMP_RELABEL_RESPONSE_FIXTURE))),
+        sorted_strs(&["summary", "memory", "warnings"])
+    );
+    assert_eq!(
+        sorted_keys(object_keys(fixture_object_field(
+            &parse_fixture(KMP_RELABEL_RESPONSE_FIXTURE),
+            "memory"
+        ))),
+        sorted_strs(&[
+            "about",
+            "ref",
+            "added",
+            "removed",
+            "labels",
+            "created_dimensions",
+            "resembling_labels",
+            "read_after_write_ready"
+        ])
     );
     assert_eq!(
         sorted_keys(object_keys(&parse_fixture(

@@ -3,7 +3,7 @@ mod extract;
 mod position;
 mod select;
 
-pub use axis_key::{compare_temporal_instants, temporal_instant_nanos};
+pub use axis_key::{compare_temporal_instants, temporal_instant_nanos, temporal_instant_rfc3339};
 
 use std::collections::{BTreeMap, BTreeSet};
 

@@ -1,0 +1,30 @@
+{
+  "summary": "Relabelled `service:alpha:decision:rollout-canary` in service:alpha: added 1 label, removed 0; it stands in 2 labels.",
+  "memory": {
+    "about": "service:alpha",
+    "ref": "service:alpha:decision:rollout-canary",
+    "added": [
+      {
+        "key": "issue",
+        "value": "506"
+      }
+    ],
+    "removed": [],
+    "labels": [
+      {
+        "key": "issue",
+        "value": "506"
+      },
+      {
+        "key": "release",
+        "value": "spring"
+      }
+    ],
+    "created_dimensions": [
+      "about:service:alpha:dimension:506"
+    ],
+    "resembling_labels": [],
+    "read_after_write_ready": true
+  },
+  "warnings": []
+}

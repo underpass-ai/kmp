@@ -360,6 +360,23 @@ fn calls() -> Vec<(&'static str, Value)> {
             }),
         ),
         ("kmp_view_undo", json!({})),
+        // Last, so the reads above pin the store as the writes left it and
+        // no earlier fixture moves when this one changes what the claim
+        // stands in. A real commit, not a dry run: the kernel path that
+        // creates a dimension, inherits the clocks and takes an edge off is
+        // what a fixture should pin.
+        (
+            "kmp_relabel",
+            json!({
+                "about": ABOUT,
+                "ref": CLAIM,
+                "actor": "parity-test",
+                "observed_at": "2026-04-12T19:00:00Z",
+                "why": "The claim is the one the parity fixture catalogues by issue.",
+                "add": {"issue": "parity-1"},
+                "idempotency_key": "parity:relabel:1"
+            }),
+        ),
     ]
 }
 
@@ -576,8 +593,8 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
     let server = KernelMcpServer::with_embedded_backend(backend);
 
     // Negotiate MCP Apps, so the two app-only tools are callable and the
-    // surface under test is the full sixteen rather than the fourteen a plain
-    // host sees.
+    // surface under test is the full seventeen rather than the fifteen a
+    // plain host sees.
     server
         .handle_json_line(
             &json!({
@@ -644,7 +661,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 16, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 17, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         assert!(

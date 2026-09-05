@@ -11,6 +11,26 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `kmp_relabel`, the fifteenth tool: change the labels one memory stands
+  in without rewriting its text. `add` and `remove` name labels as
+  `key: value` pairs, `why` says why, and the kernel reads the memory's
+  coordinates and the about's catalogue itself. Refused, naming what the
+  memory stands in: a label it already stands in, one it does not, a value
+  already used under another key in the about, and taking its last label
+  off; a new label that resembles one the catalogue holds is refused under
+  strict and written with a warning otherwise, with `options.labels_new` to
+  insist. A label added late inherits the memory's clocks — its earliest
+  start on each clock and its latest end — so its time does not move; its
+  own instant lives on the edge it added (`method: kmp_relabel`, the why as
+  rationale, "Relabelled by <actor> at <observed_at>" as motivation) and in
+  the event log. The result says what was added and removed, every label
+  the memory stands in now, which were created, and which resemble one the
+  about holds. On the wire: `KernelMemoryService.Relabel`, `RelabelRequest`,
+  `EntryLabel`, `RelabelResponse`, `RelabelledMemory`, additive; in the
+  log, one `memory_relabel` change per call, projected as `contains_entry`
+  edges added and removed and nothing else, through the new
+  `ProjectionMutation::RemoveNodeRelation` every projection writer
+  implements.
 - `dimensions.selectors` on `kmp_wake`, `kmp_ask`, `kmp_relate`, the
   temporal verbs and `kmp_view_open`: predicates over the labels an entry
   stands in, `{ key, op, values }` with `in`, `notin`, `exists` and

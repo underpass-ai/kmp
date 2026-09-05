@@ -161,7 +161,7 @@ fn evidence_from_proto(value: MemoryEvidence) -> MemoryEvidenceData {
     }
 }
 
-fn provenance_from_proto(value: MemoryProvenance) -> MemoryProvenanceData {
+pub(super) fn provenance_from_proto(value: MemoryProvenance) -> MemoryProvenanceData {
     MemoryProvenanceData {
         source_kind: source_kind_name(value.source_kind()),
         source_agent: value.source_agent,

@@ -29,14 +29,18 @@ Schema:
 The protocol contract is intentionally framed as memory moves:
 
 ```text
-write-memory -> ingest -> wake -> ask -> goto/near/rewind/forward -> trace -> inspect
+write-memory -> ingest -> wake -> ask -> goto/near/rewind/forward -> trace -> inspect -> relabel
 ```
 
 Transport bindings:
 
 - MCP tools expose `kmp_ingest`, `kmp_write_memory`, `kmp_wake`,
   `kmp_ask`, `kmp_goto`, `kmp_near`, `kmp_rewind`,
-  `kmp_forward`, `kmp_relate`, `kmp_trace`, and `kmp_inspect`.
+  `kmp_forward`, `kmp_relate`, `kmp_trace`, `kmp_inspect`, and `kmp_relabel`.
+- `kmp_relabel` changes the labels one existing entry stands in — labels
+  added, labels taken off, and why — without rewriting its text. It binds to
+  `KernelMemoryService.Relabel`; the kernel reads the entry's coordinates and
+  the about's catalogue itself, so the caller names pairs, never coordinates.
 - `kmp_write_memory` is a writer helper, not a parallel memory model. It
   validates writer intent and relation quality, then compiles to the canonical
   `kmp_ingest` payload. With `dry_run=true` it returns that payload as

@@ -217,7 +217,9 @@ fn evidence_from_value(value: &Value) -> Result<MemoryEvidence, String> {
     })
 }
 
-fn provenance_from_object(value: &Map<String, Value>) -> Result<MemoryProvenance, String> {
+pub(super) fn provenance_from_object(
+    value: &Map<String, Value>,
+) -> Result<MemoryProvenance, String> {
     Ok(MemoryProvenance {
         source_kind: source_kind_from_field(value, "source_kind", "provenance.source_kind")?,
         source_agent: required_string_field(value, "source_agent", "provenance.source_agent")?,

@@ -33,6 +33,8 @@ const TRACE_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/trace.response.json");
 const INSPECT_RESPONSE_FIXTURE: &str =
     include_str!("../../../fixtures/kernel/v1beta1/kmp/inspect.response.json");
+const RELABEL_RESPONSE_FIXTURE: &str =
+    include_str!("../../../fixtures/kernel/v1beta1/kmp/relabel.response.json");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FixtureKernelMcpBackend;
@@ -69,6 +71,11 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
         "kmp_relate" => read_fixture_tool_result(arguments, &["about"], RELATE_RESPONSE_FIXTURE),
         "kmp_trace" => read_fixture_tool_result(arguments, &["from", "to"], TRACE_RESPONSE_FIXTURE),
         "kmp_inspect" => read_fixture_tool_result(arguments, &["ref"], INSPECT_RESPONSE_FIXTURE),
+        "kmp_relabel" => read_fixture_tool_result(
+            arguments,
+            &["about", "ref", "why", "idempotency_key"],
+            RELABEL_RESPONSE_FIXTURE,
+        ),
         "kmp_view_read_projection" => {
             visual_projection_request_from_arguments(arguments)
                 .map_err(ToolError::invalid_argument)?;

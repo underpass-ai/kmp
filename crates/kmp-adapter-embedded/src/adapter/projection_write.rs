@@ -106,6 +106,20 @@ pub(crate) fn apply_mutations_in_transaction(
                     &[],
                 )?;
             }
+            ProjectionMutation::RemoveNodeRelation {
+                source_node_id,
+                target_node_id,
+                relation_type,
+            } => {
+                tx.remove(
+                    Table::Relations,
+                    Key::Str3(&source_node_id, &target_node_id, &relation_type),
+                )?;
+                tx.remove(
+                    Table::RelationsByTarget,
+                    Key::Str3(&target_node_id, &source_node_id, &relation_type),
+                )?;
+            }
             ProjectionMutation::UpsertNodeDetail(detail) => {
                 let node_id = detail.node_id.clone();
                 let bytes = encode("node detail", &DetailRecord::from(detail))?;

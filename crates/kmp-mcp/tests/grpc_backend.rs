@@ -7,11 +7,11 @@ use kmp_proto::v1beta1::{
     ForwardResponse, GotoRequest, GotoResponse, IngestRequest, IngestResponse, IngestedMemory,
     InspectRequest, InspectResponse, InspectedLinks, InspectedObject, MemoryConfidence,
     MemoryEvidence, MemoryRelation, MemorySemanticClass, MemorySourceKind, NearRequest,
-    NearResponse, ProjectVisualRequest, ProjectVisualResponse, Proof, RawMemoryRef, RelateRequest,
-    RelateResponse, RewindRequest, RewindResponse, TemporalCoordinate, TemporalCursor,
-    TemporalDirection, TemporalEntry, TemporalMoveRequest, TemporalMoveResponse,
-    TemporalNearRequest, TemporalState, TraceRequest, TraceResponse, WakeClaim, WakePacket,
-    WakeRequest, WakeResponse,
+    NearResponse, ProjectVisualRequest, ProjectVisualResponse, Proof, RawMemoryRef, RelabelRequest,
+    RelabelResponse, RelateRequest, RelateResponse, RewindRequest, RewindResponse,
+    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalEntry, TemporalMoveRequest,
+    TemporalMoveResponse, TemporalNearRequest, TemporalState, TraceRequest, TraceResponse,
+    WakeClaim, WakePacket, WakeRequest, WakeResponse,
     kernel_memory_service_server::{KernelMemoryService, KernelMemoryServiceServer},
 };
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
@@ -624,6 +624,7 @@ struct RecordedMemoryRequests {
     nears: Arc<Mutex<Vec<TemporalNearRequest>>>,
     traces: Arc<Mutex<Vec<TraceRequest>>>,
     inspects: Arc<Mutex<Vec<InspectRequest>>>,
+    relabels: Arc<Mutex<Vec<RelabelRequest>>>,
 }
 
 impl RecordedMemoryRequests {
@@ -812,6 +813,35 @@ impl KernelMemoryService for FakeMemoryService {
         Ok(Response::new(RelateResponse {
             summary: format!("Related nothing of `{}`.", request.about),
             ..RelateResponse::default()
+        }))
+    }
+
+    async fn relabel(
+        &self,
+        request: Request<RelabelRequest>,
+    ) -> Result<Response<RelabelResponse>, Status> {
+        let request = request.into_inner();
+        self.recorded.relabels.lock().await.push(request.clone());
+        Ok(Response::new(RelabelResponse {
+            summary: format!(
+                "Relabelled `{}` in {}: added {} labels, removed {}; it stands in {} labels.",
+                request.r#ref,
+                request.about,
+                request.add.len(),
+                request.remove.len(),
+                request.add.len()
+            ),
+            memory: Some(kmp_proto::v1beta1::RelabelledMemory {
+                about: request.about,
+                r#ref: request.r#ref,
+                added: request.add.clone(),
+                removed: request.remove,
+                labels: request.add,
+                created_dimensions: vec![],
+                resembling_labels: vec![],
+                read_after_write_ready: !request.dry_run,
+            }),
+            warnings: vec![],
         }))
     }
 
