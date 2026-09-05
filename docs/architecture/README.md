@@ -118,7 +118,11 @@ writer reuses what exists instead of naming it again. A label decided late
 is put on an entry with `kmp_relabel`, which adds and removes
 `contains_entry` edges and never rewrites the text: the added label inherits
 the entry's clocks, so its time does not move, and the edge carries the why
-and `method: kmp_relabel` while the event log keeps who did it when. Temporal reads use a
+and `method: kmp_relabel` while the event log keeps who did it when. The
+visual projection carries the same pairs: one bin and one cluster per label,
+the catalogue with each label's use, and on every coordinate how it came to
+stand there, so ChronoLoom draws a lane per key with a row per value
+([ChronoLoom and labels](chronoloom-labels.md)). Temporal reads use a
 cursor and return visible pagination state; a partial page is never presented
 as a complete interval.
 

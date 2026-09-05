@@ -113,7 +113,12 @@ evidence the answer relies on. Then open that same about once with
 not replace retrieval, and the view is not itself proof.
 
 Declare meaning, never screen coordinates: clock, range, semantic zoom,
-dimensions, relation classes, selection or trace. Pass the view's current
+dimensions, labels, relation classes, selection or trace. `projection.labels`
+takes the same `{ key, op, values }` selectors every read takes under
+`dimensions.selectors` — `in`, `notin`, `exists`, `notexists` — and the loom
+draws a lane per key with a row per value, so name a label from `kmp_wake`'s
+`labels` catalogue; a key or value the about does not hold comes back as
+`unhonored`, never as an empty loom. Pass the view's current
 `revision` as `expected_revision` on every intent. If another participant has
 moved the view and the revision conflicts, get the current state and rebase
 the intent on it instead of retrying blind. Do not call `kmp_view_open` again
