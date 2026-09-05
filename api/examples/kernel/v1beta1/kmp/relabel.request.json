@@ -1,0 +1,18 @@
+{
+  "about": "service:alpha",
+  "ref": "service:alpha:decision:rollout-canary",
+  "add": [
+    {
+      "key": "issue",
+      "value": "506"
+    }
+  ],
+  "remove": [],
+  "why": "The canary decision closed issue 506; catalogued under it after the fact.",
+  "provenance": {
+    "source_kind": "agent",
+    "source_agent": "release-agent",
+    "observed_at": "2026-03-21T09:00:00Z"
+  },
+  "idempotency_key": "relabel:service-alpha:rollout-canary:issue-506"
+}

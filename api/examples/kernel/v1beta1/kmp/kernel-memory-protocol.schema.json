@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://underpass.ai/schemas/kmp/v1beta1/kernel-memory-protocol.schema.json",
   "title": "KernelMemoryProtocol",
-  "description": "Transport-neutral Kernel Memory Protocol contract fixtures for ingest, write-memory, wake, ask, goto, near, rewind, forward, trace, and inspect moves.",
+  "description": "Transport-neutral Kernel Memory Protocol contract fixtures for ingest, write-memory, wake, ask, goto, near, rewind, forward, trace, inspect, and relabel moves.",
   "oneOf": [
     {
       "$ref": "#/$defs/ingest_request"
@@ -69,6 +69,12 @@
     },
     {
       "$ref": "#/$defs/inspect_response"
+    },
+    {
+      "$ref": "#/$defs/relabel_request"
+    },
+    {
+      "$ref": "#/$defs/relabel_response"
     }
   ],
   "$defs": {
@@ -2074,6 +2080,151 @@
           "items": {
             "$ref": "#/$defs/raw_memory_ref"
           }
+        }
+      }
+    },
+    "entry_label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "value"
+      ],
+      "description": "One label an entry stands in, as the pair a reader names it by: `key` is the dimension kind, `value` the bare scope id.",
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "value": {
+          "$ref": "#/$defs/non_empty_string"
+        }
+      }
+    },
+    "relabel_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "about",
+        "ref",
+        "why",
+        "idempotency_key"
+      ],
+      "description": "Change the labels one entry stands in without rewriting its text: labels to add, labels to take off, and why. A label added late inherits the entry's clocks; the relabel's own instant lives in the event and on the edge it added.",
+      "properties": {
+        "about": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "add": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry_label"
+          }
+        },
+        "remove": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry_label"
+          }
+        },
+        "why": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "dry_run": {
+          "type": "boolean"
+        },
+        "label_policy": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "refuse"
+          ]
+        },
+        "intended_new": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/non_empty_string"
+          }
+        }
+      }
+    },
+    "relabel_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "memory",
+        "warnings"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "memory": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "about",
+            "ref",
+            "added",
+            "removed",
+            "labels",
+            "created_dimensions",
+            "resembling_labels",
+            "read_after_write_ready"
+          ],
+          "properties": {
+            "about": {
+              "$ref": "#/$defs/non_empty_string"
+            },
+            "ref": {
+              "$ref": "#/$defs/non_empty_string"
+            },
+            "added": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry_label"
+              }
+            },
+            "removed": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry_label"
+              }
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry_label"
+              }
+            },
+            "created_dimensions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/non_empty_string"
+              }
+            },
+            "resembling_labels": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "read_after_write_ready": {
+              "type": "boolean"
+            }
+          }
+        },
+        "warnings": {
+          "$ref": "#/$defs/warning_list"
         }
       }
     },

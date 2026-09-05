@@ -20,6 +20,7 @@ mod queries;
 mod question_intent;
 mod question_vocabulary;
 mod reach_graph;
+mod relabel;
 mod relate;
 mod relate_proposals;
 mod relation_direction;
@@ -42,6 +43,7 @@ pub use queries::{
     temporal_query_from_move_proto, temporal_query_from_near_proto, trace_query_from_proto,
     wake_query_from_proto,
 };
+pub use relabel::{relabel_command_from_proto, relabel_response_from_outcome};
 pub use relate::relate_response_from_result;
 pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,

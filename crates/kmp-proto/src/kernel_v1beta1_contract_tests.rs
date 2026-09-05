@@ -53,7 +53,8 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             "Forward",
             "ProjectVisual",
             "Trace",
-            "Inspect"
+            "Inspect",
+            "Relabel"
         ]
     );
     assert_eq!(
@@ -74,6 +75,7 @@ fn v1beta1_kernel_memory_service_surface_is_stable() {
             ),
             ("Trace", "TraceRequest", "TraceResponse"),
             ("Inspect", "InspectRequest", "InspectResponse"),
+            ("Relabel", "RelabelRequest", "RelabelResponse"),
         ])
     );
 }
