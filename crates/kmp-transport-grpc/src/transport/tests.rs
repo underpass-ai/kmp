@@ -1898,6 +1898,7 @@ async fn memory_service_temporal_methods_use_domain_traversal() {
                 scope: ProtoDimensionScopeMode::AllAbouts as i32,
                 abouts: Vec::new(),
                 scope_ids: vec!["about:question:830ce83f:dimension:conversation".to_string()],
+                selectors: Vec::new(),
             },
         )))
         .await

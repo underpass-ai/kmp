@@ -910,6 +910,33 @@ message DimensionSelection {
   // from MemoryDimension.id or fully namespaced ids shaped as
   // about:{about}:dimension:{dimension_id}.
   repeated string scope_ids = 6;
+  // Predicates over the labels an entry stands in, all of which must hold.
+  // `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a
+  // time and keep an entry when one of its coordinates passes; a selector
+  // reads the whole entry as key -> values, so NOT_EXISTS `task` keeps only
+  // the entries with no task label, where `exclude: [task]` keeps every
+  // entry that also stands in a process. A hard filter, never a score.
+  repeated LabelSelector selectors = 7;
+}
+
+// One label predicate: `key in values`, `key notin values`, `exists key`,
+// `notexists key`. An entry that does not carry the key satisfies NOT_IN.
+message LabelSelector {
+  // The label key: a coordinate's dimension kind (`task`, `incident`).
+  string key = 1;
+  LabelSelectorOperator op = 2;
+  // Bare label values as WakeResponse.labels lists them; a namespaced scope
+  // id is read as its bare value. Required by IN and NOT_IN, refused by
+  // EXISTS and NOT_EXISTS.
+  repeated string values = 3;
+}
+
+enum LabelSelectorOperator {
+  LABEL_SELECTOR_OPERATOR_UNSPECIFIED = 0;
+  LABEL_SELECTOR_OPERATOR_IN = 1;
+  LABEL_SELECTOR_OPERATOR_NOT_IN = 2;
+  LABEL_SELECTOR_OPERATOR_EXISTS = 3;
+  LABEL_SELECTOR_OPERATOR_NOT_EXISTS = 4;
 }
 
 message TemporalWindow {

@@ -329,6 +329,7 @@ mod tests {
                     scope: DimensionScopeMode::CurrentAbout as i32,
                     abouts: Vec::new(),
                     scope_ids: vec!["timeline:main".to_string()],
+                    selectors: Vec::new(),
                 }),
                 included: vec!["timeline".to_string()],
                 missing: Vec::new(),

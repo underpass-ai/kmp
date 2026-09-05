@@ -339,7 +339,15 @@ mod tests {
         );
         assert_eq!(
             keys(&wake_properties["dimensions"]),
-            expected(&["abouts", "exclude", "include", "mode", "scope", "scope_ids"])
+            expected(&[
+                "abouts",
+                "exclude",
+                "include",
+                "mode",
+                "scope",
+                "scope_ids",
+                "selectors"
+            ])
         );
         assert_eq!(
             keys(&wake_properties["page"]),

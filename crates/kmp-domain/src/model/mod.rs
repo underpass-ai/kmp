@@ -15,7 +15,7 @@ pub use kmp_bundle::KmpBundle;
 pub use kmp_stats::KmpStats;
 pub use labels::{
     INTENDED_NEW_LABEL_METADATA_KEY, LabelResemblance, ResemblanceKind, label_resemblances,
-    normalized_label_token,
+    labels_by_entry, normalized_label_token,
 };
 pub use relate::{
     CoordinateRelation, CoordinateRelationKind, DECLARED_FROM_RELATE_METHOD, DeclaredEdge,

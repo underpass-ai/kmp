@@ -11,6 +11,27 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- `dimensions.selectors` on `kmp_wake`, `kmp_ask`, `kmp_relate`, the
+  temporal verbs and `kmp_view_open`: predicates over the labels an entry
+  stands in, `{ key, op, values }` with `in`, `notin`, `exists` and
+  `notexists`, all of which must hold. `mode`, `include`, `exclude` and
+  `scope_ids` read one coordinate at a time and keep an entry when one of
+  its coordinates passes; a selector reads the whole entry as key -> values,
+  so `{ key: task, op: notexists }` keeps only the entries with no task
+  label, where `exclude: [task]` keeps every entry that also stands in a
+  process. The two are not duals and are documented as such. An entry
+  without the key satisfies `notin`, as in Kubernetes. A hard filter, never
+  a score. With `scope: all_abouts`, `exists` and `in` narrow the abouts
+  through the index the way `include` and `scope_ids` do, and the Neo4j
+  index now matches a dimension kind the way the embedded one already did.
+  On the wire: `DimensionSelection.selectors`, `LabelSelector`,
+  `LabelSelectorOperator`, additive.
+- The temporal verbs warn when a sequence cursor is compared across more
+  than one label, naming the labels: a sequence is a counter per label, so
+  the order across them is not one the caller defined. Pin one with
+  `dimensions.scope_ids` (with `mode: only` and `include` when the value
+  serves two kinds) and the warning goes; a selector keeps whole entries,
+  so it does not pin a counter.
 - `kmp_wake` returns `labels`: the catalogue of the abouts it read — every
   label their entries stand in, a coordinate's `dimension` kind read as the
   key and its `scope_id` as the value, with `entries` and

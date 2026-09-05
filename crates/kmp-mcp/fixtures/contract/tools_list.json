@@ -1233,6 +1233,43 @@
                   "type": "string"
                 },
                 "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
             "type": "object"
@@ -1681,6 +1718,43 @@
                   "type": "string"
                 },
                 "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
             "type": "object"
@@ -2051,6 +2125,43 @@
                   "type": "string"
                 },
                 "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
             "type": "object"
@@ -2377,6 +2488,43 @@
                   "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
                 },
                 "type": "array"
               }
@@ -2786,6 +2934,43 @@
                   "type": "string"
                 },
                 "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
               }
             },
             "type": "object"
@@ -3170,6 +3355,43 @@
                   "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
                 },
                 "type": "array"
               }
@@ -3577,6 +3799,43 @@
                   "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
                   "minLength": 1,
                   "type": "string"
+                },
+                "type": "array"
+              },
+              "selectors": {
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
                 },
                 "type": "array"
               }

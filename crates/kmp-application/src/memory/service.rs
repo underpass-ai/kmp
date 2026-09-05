@@ -3,10 +3,10 @@ use std::sync::Arc;
 
 use kmp_domain::{
     BundleNode, BundleRelationship, ContextEventStore, DimensionScopeMode, DimensionSelection,
-    DimensionSelectionMode, GraphNeighborhoodReader, KmpBundle, KmpMode, MemoryAboutIndexReader,
-    MemoryDimensionIdentity, MemoryRelationType, NodeDetailReader, NodeRelationshipReader,
-    ProjectionWriter, ResolutionTier, SnapshotStore, TemporalCoordinate, TemporalMemoryTraversal,
-    TemporalTraversalRequest,
+    DimensionSelectionMode, EntryLabels, GraphNeighborhoodReader, KmpBundle, KmpMode,
+    LabelSelector, MemoryAboutIndexReader, MemoryDimensionIdentity, MemoryRelationType,
+    NodeDetailReader, NodeRelationshipReader, ProjectionWriter, ResolutionTier, SnapshotStore,
+    TemporalCoordinate, TemporalMemoryTraversal, TemporalTraversalRequest, labels_by_entry,
 };
 
 use crate::ApplicationError;
@@ -439,14 +439,11 @@ where
         }
 
         let roots = if should_filter_all_abouts_by_dimensions(selection) {
-            // Kinds from `include`, exact ids from `scope_ids`: the index
-            // resolves either, and the filter that follows reads both.
-            let dimension_ids = selection
-                .dimensions()
-                .iter()
-                .chain(selection.scope_ids().iter())
-                .cloned()
-                .collect::<Vec<_>>();
+            // Kinds from `include`, exact ids from `scope_ids`, keys and
+            // values from the positive selectors: the index resolves any of
+            // them, and the filter that follows reads them all. The union is
+            // a superset of what the conjoined filter keeps, never less.
+            let dimension_ids = index_dimension_ids(selection);
             self.query_application
                 .list_memory_abouts_by_dimensions(&dimension_ids)
                 .await?
@@ -488,7 +485,18 @@ fn should_filter_all_abouts_by_dimensions(selection: &DimensionSelection) -> boo
     selection.scope_mode() == DimensionScopeMode::AllAbouts
         && ((selection.mode() == DimensionSelectionMode::Only
             && !selection.dimensions().is_empty())
-            || !selection.scope_ids().is_empty())
+            || !selection.scope_ids().is_empty()
+            || selection.selectors().iter().any(LabelSelector::is_positive))
+}
+
+fn index_dimension_ids(selection: &DimensionSelection) -> Vec<String> {
+    let mut dimension_ids = Vec::new();
+    if selection.mode() == DimensionSelectionMode::Only {
+        dimension_ids.extend(selection.dimensions().iter().cloned());
+    }
+    dimension_ids.extend(selection.scope_ids().iter().cloned());
+    dimension_ids.extend(selection.positive_selector_ids());
+    dimension_ids
 }
 
 fn inspect_raw_coordinates(
@@ -656,17 +664,14 @@ fn filter_bundle_by_memory_dimensions(
     let mut included_node_ids = BTreeSet::from([bundle.root_node().node_id().to_string()]);
     let mut selected_entry_ids = BTreeSet::new();
     let node_kinds = bundle_node_kinds(bundle);
+    let labels = labels_by_entry(bundle);
 
     for relationship in bundle
         .relationships()
         .iter()
         .filter(|relationship| relationship.relationship_type() == "contains_entry")
     {
-        let explanation = relationship.explanation();
-        if dimensions.includes_coordinate(
-            explanation.dimension().unwrap_or_default(),
-            explanation.scope_id().unwrap_or_default(),
-        ) {
+        if contains_entry_selected(relationship, dimensions, &labels) {
             included_node_ids.insert(relationship.source_node_id().to_string());
             included_node_ids.insert(relationship.target_node_id().to_string());
             selected_entry_ids.insert(relationship.target_node_id().to_string());
@@ -694,11 +699,7 @@ fn filter_bundle_by_memory_dimensions(
         .iter()
         .filter(|relationship| {
             if relationship.relationship_type() == "contains_entry" {
-                let explanation = relationship.explanation();
-                return dimensions.includes_coordinate(
-                    explanation.dimension().unwrap_or_default(),
-                    explanation.scope_id().unwrap_or_default(),
-                );
+                return contains_entry_selected(relationship, dimensions, &labels);
             }
             included_node_ids.contains(relationship.source_node_id())
                 && included_node_ids.contains(relationship.target_node_id())
@@ -722,6 +723,28 @@ fn filter_bundle_by_memory_dimensions(
         bundle.metadata().clone(),
     )
     .map_err(Into::into)
+}
+
+/// A `contains_entry` edge survives when its coordinate passes the
+/// coordinate filters and the entry it points at passes every selector:
+/// the first reads one coordinate, the second the entry's whole label map.
+fn contains_entry_selected(
+    relationship: &BundleRelationship,
+    dimensions: &DimensionSelection,
+    labels: &BTreeMap<String, EntryLabels>,
+) -> bool {
+    let explanation = relationship.explanation();
+    let coordinate_passes = dimensions.includes_coordinate(
+        explanation.dimension().unwrap_or_default(),
+        explanation.scope_id().unwrap_or_default(),
+    );
+    coordinate_passes
+        && (!dimensions.has_selectors()
+            || dimensions.admits(
+                labels
+                    .get(relationship.target_node_id())
+                    .unwrap_or(&EntryLabels::default()),
+            ))
 }
 
 fn bundle_node_kinds(bundle: &KmpBundle) -> BTreeMap<&str, &str> {
@@ -1060,6 +1083,88 @@ mod tests {
                 "question:z".to_string()
             ]
         );
+    }
+
+    #[test]
+    fn bundle_filter_reads_selectors_over_the_entry_not_the_coordinate() {
+        use kmp_domain::LabelSelectorOperator;
+
+        let bundle = scoped_conversation_bundle();
+        let keeps = |selection: DimensionSelection| {
+            filter_bundle_by_memory_dimensions(&bundle, &selection)
+                .expect("bundle should filter")
+                .relationships()
+                .iter()
+                .filter(|relationship| relationship.relationship_type() == "contains_entry")
+                .map(|relationship| relationship.target_node_id().to_string())
+                .collect::<Vec<_>>()
+        };
+        let selector = |key: &str, operator: LabelSelectorOperator, values: &[&str]| {
+            LabelSelector::new(key, operator, values.iter().copied()).expect("selector")
+        };
+
+        assert_eq!(
+            keeps(DimensionSelection::all().with_selectors([selector(
+                "conversation",
+                LabelSelectorOperator::In,
+                &["conversation:alpha"]
+            )])),
+            vec!["claim:alpha"]
+        );
+        assert_eq!(
+            keeps(DimensionSelection::all().with_selectors([selector(
+                "conversation",
+                LabelSelectorOperator::NotIn,
+                &["conversation:alpha"]
+            )])),
+            vec!["claim:beta"]
+        );
+        assert!(
+            keeps(DimensionSelection::all().with_selectors([selector(
+                "conversation",
+                LabelSelectorOperator::NotExists,
+                &[]
+            )]))
+            .is_empty()
+        );
+        assert_eq!(
+            keeps(DimensionSelection::all().with_selectors([selector(
+                "conversation",
+                LabelSelectorOperator::Exists,
+                &[]
+            )])),
+            vec!["claim:alpha", "claim:beta"]
+        );
+    }
+
+    #[test]
+    fn all_abouts_index_reads_positive_selectors_and_never_the_except_list() {
+        use kmp_domain::LabelSelectorOperator;
+
+        let by_selector = DimensionSelection::all()
+            .with_all_about_scope()
+            .with_selectors([
+                LabelSelector::new(
+                    "incident",
+                    LabelSelectorOperator::Exists,
+                    Vec::<String>::new(),
+                )
+                .expect("selector"),
+                LabelSelector::new("env", LabelSelectorOperator::In, ["prod"]).expect("selector"),
+            ]);
+        assert!(should_filter_all_abouts_by_dimensions(&by_selector));
+        assert_eq!(index_dimension_ids(&by_selector), vec!["incident", "prod"]);
+
+        let negative_only = DimensionSelection::except(["task"])
+            .with_all_about_scope()
+            .with_selectors([LabelSelector::new(
+                "customer",
+                LabelSelectorOperator::NotIn,
+                ["acme"],
+            )
+            .expect("selector")]);
+        assert!(!should_filter_all_abouts_by_dimensions(&negative_only));
+        assert!(index_dimension_ids(&negative_only).is_empty());
     }
 
     fn scoped_conversation_bundle() -> KmpBundle {
