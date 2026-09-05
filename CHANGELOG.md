@@ -64,6 +64,15 @@ Detailed notes from the early release cycle remain available in the
 
 ### Changed
 
+- `kmp_relate` shares its cap of 500 coordinate relations out among the
+  labels it reads, narrowest label first: each label may take an equal
+  share of what is left, and what a narrow label does not use flows to the
+  wider ones after it. A label a handful of facts stand in is always read
+  whole; a label every fact stands in is the one cut, since its pairs grow
+  with the square of its width. The warning that counts what was left out
+  now names the labels that lost it, most first, so a reader knows which
+  one to narrow. The order of `coordinate` follows: narrow labels before
+  wide ones, and the same store still reads the same way every time.
 - `kmp_relate` relates two abouts through a label, never through a bare
   scope: a coordinate relation, a tension's shared scope and a proposal's
   `+2` now require the same `dimension` kind and the same scope on both

@@ -20,6 +20,9 @@ pub struct Relations {
     pub tensions: Vec<Tension>,
     /// Coordinate relations past the cap, counted and not returned.
     pub omitted_coordinate: usize,
+    /// The same count by the label that lost them, most omitted first, so
+    /// a reader knows which label to narrow.
+    pub omitted_by_label: Vec<(SharedLabel, usize)>,
 }
 
 /// Reads what facts of different abouts have to do with each other, and
@@ -27,8 +30,15 @@ pub struct Relations {
 ///
 /// Coordinate relations are read inside each label two or more abouts
 /// share — the same dimension kind and the same scope — one per pair of
-/// facts from different abouts, ordered by label and then by the pair, so
-/// the same store reads the same way every time.
+/// facts from different abouts. Labels are read narrowest first, and the
+/// cap is shared out among them: each label may take an equal share of
+/// what is left, and what a narrow label does not use flows to the wider
+/// ones after it. So a label a handful of facts stand in is always read
+/// whole, and a label every fact stands in — `release=spring` across two
+/// projects — takes the rest rather than all of it. Pairs grow with the
+/// square of a label's width, which is why the wide one is the one cut.
+/// Within a label the pairs keep their order, so the same store reads the
+/// same way every time.
 pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAxis) -> Relations {
     let mut by_label = BTreeMap::<SharedLabel, Vec<&RelatedFact>>::new();
     for fact in facts {
@@ -36,29 +46,53 @@ pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAx
             by_label.entry(label).or_default().push(fact);
         }
     }
+    let mut labels = by_label
+        .into_iter()
+        .map(|(label, mut placed)| {
+            placed.sort_by(|left, right| {
+                (left.about(), left.ref_id()).cmp(&(right.about(), right.ref_id()))
+            });
+            placed.dedup_by(|left, right| left.ref_id() == right.ref_id());
+            (label, placed)
+        })
+        .collect::<Vec<_>>();
+    labels.sort_by(|(left_label, left), (right_label, right)| {
+        left.len()
+            .cmp(&right.len())
+            .then_with(|| left_label.cmp(right_label))
+    });
 
     let mut coordinate = Vec::new();
     let mut omitted_coordinate = 0usize;
-    for (label, mut placed) in by_label {
-        placed.sort_by(|left, right| {
-            (left.about(), left.ref_id()).cmp(&(right.about(), right.ref_id()))
-        });
-        placed.dedup_by(|left, right| left.ref_id() == right.ref_id());
+    let mut omitted_by_label = Vec::new();
+    for (position, (label, placed)) in labels.iter().enumerate() {
+        let remaining = MAX_COORDINATE_RELATIONS.saturating_sub(coordinate.len());
+        let share = remaining / (labels.len() - position);
+        let mut taken = 0usize;
+        let mut omitted = 0usize;
         for (index, first) in placed.iter().enumerate() {
             for second in &placed[index + 1..] {
                 if first.about() == second.about() {
                     continue;
                 }
-                for relation in pair_relations(first, second, &label, axis) {
-                    if coordinate.len() < MAX_COORDINATE_RELATIONS {
+                for relation in pair_relations(first, second, label, axis) {
+                    if taken < share {
                         coordinate.push(relation);
+                        taken += 1;
                     } else {
-                        omitted_coordinate += 1;
+                        omitted += 1;
                     }
                 }
             }
         }
+        if omitted > 0 {
+            omitted_coordinate += omitted;
+            omitted_by_label.push((label.clone(), omitted));
+        }
     }
+    omitted_by_label.sort_by(|(left_label, left), (right_label, right)| {
+        right.cmp(left).then_with(|| left_label.cmp(right_label))
+    });
 
     let by_ref = facts
         .iter()
@@ -95,6 +129,7 @@ pub fn relate(facts: &[RelatedFact], declared: &[DeclaredEdge], axis: TemporalAx
         coordinate,
         tensions,
         omitted_coordinate,
+        omitted_by_label,
     }
 }
 
@@ -647,6 +682,130 @@ mod tests {
         assert_eq!(
             relations.omitted_coordinate,
             40 * 40 - MAX_COORDINATE_RELATIONS
+        );
+        assert_eq!(
+            relations.omitted_by_label,
+            [(
+                SharedLabel::new("incident", "work:main"),
+                40 * 40 - MAX_COORDINATE_RELATIONS
+            )]
+        );
+    }
+
+    /// Forty facts per about in one wide label, and one fact per about in a
+    /// narrow one that sorts after it. Read alphabetically the wide label
+    /// would fill the cap and the narrow one would never be seen; read
+    /// narrowest first the narrow one is whole and the wide one is what is
+    /// cut, and the reading says which.
+    #[test]
+    fn a_narrow_label_is_read_whole_and_the_wide_one_is_the_one_cut() {
+        let mut facts = Vec::new();
+        for index in 0..40 {
+            for about in ["project:alpha", "project:beta"] {
+                facts.push(fact(
+                    &format!("{about}:e{index}"),
+                    about,
+                    vec![coordinate_of_kind(
+                        "alpha",
+                        &format!("about:{about}:dimension:main"),
+                        Some("2026-03-04T01:00:00Z"),
+                        (None, None),
+                        None,
+                    )],
+                    FactState::Current,
+                ));
+            }
+        }
+        for about in ["project:alpha", "project:beta"] {
+            facts.push(fact(
+                &format!("{about}:north"),
+                about,
+                vec![coordinate_of_kind(
+                    "zeta",
+                    &format!("about:{about}:dimension:north"),
+                    Some("2026-03-04T02:00:00Z"),
+                    (None, None),
+                    None,
+                )],
+                FactState::Current,
+            ));
+        }
+        let relations = relate(&facts, &[], TemporalAxis::Default);
+        assert_eq!(relations.coordinate.len(), MAX_COORDINATE_RELATIONS);
+        assert_eq!(
+            relations.coordinate[0].scope_id(),
+            "north",
+            "the narrow label comes first: {:?}",
+            relations.coordinate[0]
+        );
+        assert_eq!(
+            relations
+                .coordinate
+                .iter()
+                .filter(|relation| relation.scope_id() == "north")
+                .count(),
+            1,
+            "and it is read whole"
+        );
+        assert_eq!(
+            relations.omitted_by_label,
+            [(
+                SharedLabel::new("alpha", "main"),
+                40 * 40 - (MAX_COORDINATE_RELATIONS - 1)
+            )],
+            "only the wide label lost anything"
+        );
+        assert_eq!(
+            relations.omitted_coordinate,
+            40 * 40 - (MAX_COORDINATE_RELATIONS - 1)
+        );
+    }
+
+    /// Three labels of one, thirty and sixteen hundred pairs: the narrow
+    /// two take what they need and the wide one takes the rest, so the cap
+    /// is spent whole and nothing narrow waits behind something wide.
+    #[test]
+    fn what_a_narrow_label_does_not_use_flows_to_the_wider_ones() {
+        let mut facts = Vec::new();
+        let mut place = |kind: &str, scope: &str, per_about: usize| {
+            for index in 0..per_about {
+                for about in ["project:alpha", "project:beta"] {
+                    facts.push(fact(
+                        &format!("{about}:{kind}:e{index}"),
+                        about,
+                        vec![coordinate_of_kind(
+                            kind,
+                            &format!("about:{about}:dimension:{scope}"),
+                            Some("2026-03-04T01:00:00Z"),
+                            (None, None),
+                            None,
+                        )],
+                        FactState::Current,
+                    ));
+                }
+            }
+        };
+        place("wide", "main", 40);
+        place("medium", "mid", 5);
+        place("narrow", "one", 1);
+        let relations = relate(&facts, &[], TemporalAxis::Default);
+        let count = |scope: &str| {
+            relations
+                .coordinate
+                .iter()
+                .filter(|relation| relation.scope_id() == scope)
+                .count()
+        };
+        assert_eq!(count("one"), 1);
+        assert_eq!(count("mid"), 25);
+        assert_eq!(count("main"), MAX_COORDINATE_RELATIONS - 26);
+        assert_eq!(relations.coordinate.len(), MAX_COORDINATE_RELATIONS);
+        assert_eq!(
+            relations.omitted_by_label,
+            [(
+                SharedLabel::new("wide", "main"),
+                1600 - (MAX_COORDINATE_RELATIONS - 26)
+            )]
         );
     }
 }
