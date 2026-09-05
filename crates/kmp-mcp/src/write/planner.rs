@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
 use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
-use kmp_domain::MemoryRelationType;
+use kmp_domain::{INTENDED_NEW_LABEL_METADATA_KEY, MemoryRelationType};
 
 use super::arguments::*;
 use super::coordinates::*;
@@ -84,6 +84,34 @@ pub(crate) fn build_write_plan_with_root(
         .and_then(|value| u32::try_from(value).ok())
         .filter(|value| *value > 0);
     let relation_sequence = sequence.unwrap_or(1);
+    // A writer that read the catalogue and still means a new label says so
+    // per key; the kernel then leaves that label out of the resemblance
+    // check instead of refusing or warning.
+    let labels_new = options
+        .and_then(|options| options.get("labels_new"))
+        .map(|value| {
+            value
+                .as_array()
+                .ok_or_else(|| "options.labels_new must be an array of label keys".to_string())
+                .and_then(|keys| {
+                    keys.iter()
+                        .map(|key| {
+                            key.as_str().map(str::to_string).ok_or_else(|| {
+                                "options.labels_new must be an array of label keys".to_string()
+                            })
+                        })
+                        .collect::<Result<BTreeSet<_>, _>>()
+                })
+        })
+        .transpose()?
+        .unwrap_or_default();
+    for key in &labels_new {
+        if !labels.iter().any(|label| label.key == *key) {
+            return Err(format!(
+                "options.labels_new names `{key}`, which is not a label of this write"
+            ));
+        }
+    }
     // The logical write identity is also the uniqueness component of every
     // generated entry ref. A readable summary slug is useful to humans, but
     // it cannot be an identity: repeated observations legitimately have the
@@ -125,7 +153,11 @@ pub(crate) fn build_write_plan_with_root(
     let mut dimensions = Vec::new();
     let mut coordinates = Vec::new();
     for label in &labels {
-        dimensions.push(dimension(&label.value, &label.key, label.title));
+        let mut declared = dimension(&label.value, &label.key, label.title);
+        if labels_new.contains(&label.key) {
+            declared["metadata"] = json!({ INTENDED_NEW_LABEL_METADATA_KEY: "true" });
+        }
+        dimensions.push(declared);
         coordinates.push(coordinate(&label.key, &label.value, sequence, clocks));
     }
 
@@ -338,6 +370,7 @@ pub(crate) fn build_write_plan_with_root(
         "about": about.clone(),
         "idempotency_key": idempotency_key.clone(),
         "dry_run": dry_run,
+        "label_policy": if strict { "refuse" } else { "warn" },
         "memory": {
             "dimensions": dimensions,
             "entries": entries,

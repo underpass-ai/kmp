@@ -88,6 +88,7 @@ fn corpus() -> MemoryIngestCommand {
         provenance: None,
         idempotency_key: "viewer-smoke-1".to_string(),
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 
@@ -518,6 +519,7 @@ fn sub_second_corpus(
         provenance: None,
         idempotency_key: format!("{about}-1"),
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 

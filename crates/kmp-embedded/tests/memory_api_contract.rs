@@ -51,6 +51,7 @@ fn corpus() -> MemoryIngestCommand {
         provenance: None,
         idempotency_key: "memory-api-test".to_string(),
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 

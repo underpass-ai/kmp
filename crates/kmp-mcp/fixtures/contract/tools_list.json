@@ -49,6 +49,14 @@
             "minLength": 1,
             "type": "string"
           },
+          "label_policy": {
+            "description": "What to do with a dimension that resembles a label the about already holds — the same identifier up to case and separators, or the same value under another key. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`.",
+            "enum": [
+              "warn",
+              "refuse"
+            ],
+            "type": "string"
+          },
           "memory": {
             "additionalProperties": true,
             "properties": {
@@ -477,6 +485,10 @@
               "read_after_write_ready": {
                 "description": "Whether a read issued now is guaranteed to observe this write.",
                 "type": "boolean"
+              },
+              "resembling_labels": {
+                "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently` or `value_under_another_key`) and `why`.",
+                "type": "array"
               }
             },
             "type": "object"
@@ -769,13 +781,22 @@
                 "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits.",
                 "type": "boolean"
               },
+              "labels_new": {
+                "description": "Label keys the writer insists are new even where the catalogue holds one that resembles them: it read the catalogue and means something else. The kernel leaves those labels out of the resemblance check; every other new label that resembles an existing one is refused under strict and written with a warning otherwise.",
+                "items": {
+                  "description": "A label key of this write.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "sequence": {
                 "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate.",
                 "minimum": 1,
                 "type": "integer"
               },
               "strict": {
-                "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint. Defaults to true.",
+                "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint, and a new label that resembles one the about already holds. Defaults to true.",
                 "type": "boolean"
               }
             },
@@ -1020,6 +1041,10 @@
             "properties": {
               "created": {
                 "description": "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.",
+                "type": "array"
+              },
+              "resembling": {
+                "description": "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.",
                 "type": "array"
               },
               "written": {

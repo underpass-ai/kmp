@@ -251,6 +251,7 @@ mod tests {
                 "about",
                 "dry_run",
                 "idempotency_key",
+                "label_policy",
                 "memory",
                 "provenance"
             ])

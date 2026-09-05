@@ -27,12 +27,16 @@ pub(crate) fn write_commit_result(
     orphaned_bundle: Option<&kmp_embedded::OrphanedProjectBundle>,
 ) -> Value {
     let created = created_labels(plan, &ingest_result);
+    let resembling = ingest_result
+        .pointer("/memory/resembling_labels")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
     let mut result = json!({
         "accepted": true,
         "dry_run": false,
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,
-        "labels": { "written": plan.labels, "created": created },
+        "labels": { "written": plan.labels, "created": created, "resembling": resembling },
         "relations": plan.relations,
         "relation_quality": plan.relation_quality,
         "relation_quality_metrics": plan.relation_quality_metrics,

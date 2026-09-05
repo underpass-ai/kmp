@@ -29,6 +29,17 @@ Detailed notes from the early release cycle remain available in the
   about did not hold before, so vocabulary grows in the open.
 - `kmp_ingest` reports `memory.created_dimensions`, the namespaced
   dimension nodes an ingest declared for the first time.
+- Does one resemble it? A new label is folded — case and separators
+  forgiven, nothing else — and compared against the about's catalogue. The
+  kernel never renames in silence: under `kmp_ingest`'s `label_policy:
+  refuse` (what a strict `kmp_write_memory` sends) the ingest is refused
+  naming both labels; under `warn` (the default, and a lax write) it is
+  written and said in `warnings` and `memory.resembling_labels`, which the
+  writer returns as `labels.resembling`. `options.labels_new` on the
+  writer, or the dimension metadata `writer_intended_new: "true"` on a
+  raw ingest, insists on a label the writer read the catalogue for. The
+  threshold lives in a bench of label pairs in `kmp-domain`; it is lowered
+  by adding pairs there and reading what moves.
 
 ### Changed
 

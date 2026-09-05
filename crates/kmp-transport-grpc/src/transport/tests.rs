@@ -2346,6 +2346,7 @@ fn valid_memory_ingest_request(dry_run: bool) -> IngestRequest {
         }),
         idempotency_key: "ingest:transport-test".to_string(),
         dry_run,
+        label_policy: 0,
     }
 }
 

@@ -108,6 +108,7 @@ fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
         provenance: None,
         idempotency_key: idempotency_key.to_string(),
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 

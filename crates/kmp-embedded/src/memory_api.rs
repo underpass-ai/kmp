@@ -197,6 +197,7 @@ fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
         }),
         idempotency_key: request.idempotency_key,
         dry_run: false,
+        label_policy: Default::default(),
     }
 }
 

@@ -20,6 +20,32 @@ pub struct MemoryIngestCommand {
     pub provenance: Option<MemoryProvenanceData>,
     pub idempotency_key: String,
     pub dry_run: bool,
+    pub label_policy: LabelPolicy,
+}
+
+/// What an ingest does with a dimension that resembles a label the about
+/// already holds: the same identifier up to case and separators, or the
+/// same value under another key.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LabelPolicy {
+    /// Write it and say so: `warnings` and `resembling_labels` name the
+    /// match, so vocabulary drift is seen when it happens.
+    #[default]
+    Warn,
+    /// Refuse the ingest naming the match, unless the dimension carries the
+    /// metadata that says the writer read the catalogue and insists.
+    Refuse,
+}
+
+/// A label a write named beside the existing label it resembles.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResemblingLabelData {
+    pub key: String,
+    pub value: String,
+    pub existing_key: String,
+    pub existing_value: String,
+    pub kind: String,
+    pub why: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -140,6 +166,9 @@ pub struct MemoryIngestOutcome {
     /// The dimension nodes this ingest declares for the first time, as
     /// namespaced ids: the labels the write created rather than reused.
     pub created_dimensions: Vec<String>,
+    /// Labels this ingest declared that resemble one the about already
+    /// holds, written under `LabelPolicy::Warn`.
+    pub resembling_labels: Vec<ResemblingLabelData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

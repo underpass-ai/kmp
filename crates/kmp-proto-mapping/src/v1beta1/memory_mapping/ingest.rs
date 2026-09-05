@@ -1,10 +1,12 @@
 use kmp_application::{
-    MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData, MemoryEvidenceData,
-    MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData, MemoryRelationData,
+    LabelPolicy, MemoryCoordinateData, MemoryData, MemoryDimensionData, MemoryEntryData,
+    MemoryEvidenceData, MemoryIngestCommand, MemoryIngestOutcome, MemoryProvenanceData,
+    MemoryRelationData,
 };
 use kmp_proto::v1beta1::{
-    AcceptedCounts, IngestRequest, IngestResponse, IngestedMemory, MemoryDimension, MemoryEvidence,
-    MemoryProvenance, MemoryRelation, TemporalCoordinate as ProtoTemporalCoordinate,
+    AcceptedCounts, IngestRequest, IngestResponse, IngestedMemory, LabelPolicy as ProtoLabelPolicy,
+    MemoryDimension, MemoryEvidence, MemoryProvenance, MemoryRelation, ResemblingLabel,
+    TemporalCoordinate as ProtoTemporalCoordinate,
 };
 
 use super::scalars::{
@@ -42,6 +44,10 @@ pub fn ingest_command_from_proto(
         provenance: request.provenance.map(provenance_from_proto),
         idempotency_key: request.idempotency_key,
         dry_run: request.dry_run,
+        label_policy: match ProtoLabelPolicy::try_from(request.label_policy) {
+            Ok(ProtoLabelPolicy::Refuse) => LabelPolicy::Refuse,
+            _ => LabelPolicy::Warn,
+        },
     })
 }
 
@@ -67,6 +73,18 @@ pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestRespo
             }),
             read_after_write_ready: outcome.read_after_write_ready,
             created_dimensions: outcome.created_dimensions,
+            resembling_labels: outcome
+                .resembling_labels
+                .into_iter()
+                .map(|label| ResemblingLabel {
+                    key: label.key,
+                    value: label.value,
+                    existing_key: label.existing_key,
+                    existing_value: label.existing_value,
+                    kind: label.kind,
+                    why: label.why,
+                })
+                .collect(),
         }),
         warnings: outcome.warnings,
     }

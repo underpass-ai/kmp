@@ -103,6 +103,7 @@
     "about": "incident:mobile-login",
     "idempotency_key": "write:incident-mobile-login-decision-v1",
     "dry_run": true,
+    "label_policy": "refuse",
     "memory": {
       "dimensions": [
         {

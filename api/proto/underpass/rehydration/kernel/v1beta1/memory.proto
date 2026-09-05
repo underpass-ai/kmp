@@ -30,6 +30,19 @@ message IngestRequest {
   MemoryProvenance provenance = 3;
   string idempotency_key = 4;
   bool dry_run = 5;
+  // What to do with a dimension that resembles a label the about already
+  // holds — the same identifier up to case and separators, or the same
+  // value under another key. Unspecified reads as WARN.
+  LabelPolicy label_policy = 6;
+}
+
+enum LabelPolicy {
+  LABEL_POLICY_UNSPECIFIED = 0;
+  // Write it and say so in `warnings` and `memory.resembling_labels`.
+  LABEL_POLICY_WARN = 1;
+  // Refuse the ingest and name the match, unless the dimension carries
+  // the metadata `writer_intended_new: "true"`.
+  LABEL_POLICY_REFUSE = 2;
 }
 
 message Memory {
@@ -127,6 +140,20 @@ message IngestedMemory {
   // `about:{about}:dimension:{scope}`: the labels the write created rather
   // than reused.
   repeated string created_dimensions = 5;
+  // Labels this ingest declared that resemble one the about already holds,
+  // written under LABEL_POLICY_WARN; each says why in a checkable sentence.
+  repeated ResemblingLabel resembling_labels = 6;
+}
+
+// A label a write named beside the existing label it resembles: `kind` is
+// `same_label_spelled_differently` or `value_under_another_key`.
+message ResemblingLabel {
+  string key = 1;
+  string value = 2;
+  string existing_key = 3;
+  string existing_value = 4;
+  string kind = 5;
+  string why = 6;
 }
 
 message AcceptedCounts {
