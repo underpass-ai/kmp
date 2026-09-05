@@ -144,8 +144,17 @@ table may be distributed under, and every input was checked at its source:
 - The MUSE Spanish–English dictionary the numbers are measured on is
   CC BY-NC 4.0. It measures; it is not in the repository and no word from it
   seeds the vocabulary — which would also leak the test into the table.
-- Candidates checked and not used: Google Books Ngrams (CC BY 3.0, attribution
-  only) and RLA-ES, the Spanish spelling dictionary (GPL / LGPL / MPL 1.1+),
-  either of which would add a second licence to the artifact for the
-  inflected forms the tokenizer vocabularies lack. Whether an attribution-only
-  list is acceptable is a product decision, not a build option.
+- Sources checked for the inflected forms the tokenizer vocabularies lack:
+  Google Books Ngrams (CC BY 3.0, attribution only) and RLA-ES, the Spanish
+  spelling dictionary (GPL / LGPL / MPL 1.1+). Either adds a licence to the
+  artifact beyond the product's own.
+
+The policy, decided on 2026-09-05 and recorded beside the shipped table in
+[`distribution/lexical-bridge/README.md`](../../distribution/lexical-bridge/README.md):
+permissive (Apache-2.0, MIT, BSD, CC0) and attribution-only (CC BY) sources
+may enter the shipped list, with attribution carried beside the asset;
+share-alike, non-commercial and copyleft-on-data sources may not; MPL only
+with the derived list published under MPL, and not while an attribution-only
+source carries the same forms. Google Books Ngrams is the first source that
+admits. Whatever enters, the table that ships is re-measured and its numbers
+recorded before anything is claimed about it.

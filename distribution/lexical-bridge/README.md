@@ -29,7 +29,7 @@ Built on 2026-09-05 with
 [`kmp-lexical-bridge.kmpb.sha256`](kmp-lexical-bridge.kmpb.sha256). The
 header's provenance field names the teacher model.
 
-No other source enters the table. The teacher's model card lists training
+No other source enters this table. The teacher's model card lists training
 sets under other terms (MUSE under CC BY-NC 4.0, StackExchange duplicates
 under CC BY-SA, OpenSubtitles); this artifact relies on the licence the
 weights are published under, as every downstream use of a released model
@@ -37,6 +37,40 @@ does, and records that reliance here rather than leaving it implied. The
 licence of this artifact is therefore the product's own, Apache-2.0, with
 attribution to the two model releases above; `THIRD_PARTY_NOTICES.md` carries
 the same line.
+
+## Licence policy
+
+Decided by the maintainers on 2026-09-05, once the chain above had been
+checked at every source, and recorded here because this is where the
+artifact's licence lives:
+
+- **The vectors' licence is the teacher's declared Apache-2.0.** Its training
+  sets under other terms do not reach the table. Relying on the licence a
+  released model is published under is accepted, and stated rather than
+  implied.
+- **A word list may enter the shipped table under a permissive licence**
+  (Apache-2.0, MIT, BSD, CC0) **or an attribution-only licence** (CC BY 3.0
+  or 4.0). Attribution travels beside the asset — this file,
+  `THIRD_PARTY_NOTICES.md`, the release notes — because the `.kmpb` format
+  has one provenance field and it names the model. A table that carries a
+  CC BY source is still distributed as a whole under Apache-2.0; the
+  attribution obligation is met beside it, not inside it.
+- **Share-alike and non-commercial sources do not enter**: CC BY-SA
+  (`wordfreq`, FrequencyWords, Wiktionary) would carry into the artifact,
+  and CC BY-NC (MUSE) would forbid the product's use. MUSE stays an
+  evaluation set and nothing from it seeds the list. Copyleft on data (GPL,
+  LGPL) does not enter either. MPL's file-level terms (RLA-ES) would be
+  acceptable only with the derived list published under MPL beside the
+  release, and are not needed while an attribution-only source carries the
+  same forms.
+- **Whatever enters, the numbers are re-measured on the table that ships**
+  and recorded in this file before anything is claimed about it, and
+  `THIRD_PARTY_NOTICES.md` names every source the table was built from.
+
+The first source this policy admits beyond the two vocabularies above is
+Google Books Ngrams (CC BY 3.0), Spanish and English 1-grams, for the
+inflected forms this table lacks. A table built from it replaces this one
+only with its provenance, its attribution and its numbers recorded here.
 
 ## Measured
 
@@ -68,10 +102,12 @@ types the judged cases use, 570 (82 %) are in this table.
 What is not in it, by name, so nobody is surprised: inflected verb forms
 (`congelaron`, `adelantó`, `froze`), some plurals (`auditores`, `auditors`)
 and some domain nouns (`despliegue`, `canteen`, `backlog`). A question that
-hinges on one of those matches within one language for that word. Widening
-the list means a second source and, with every permissive one checked so far
-(Google Books Ngrams under CC BY 3.0, RLA-ES under MPL), a second licence on
-the artifact; that is a product decision recorded in #517, not a build flag.
+hinges on one of those matches within one language for that word. Closing
+that gap takes a second source, and every source checked that carries
+inflected forms comes under a licence other than the product's own — Google
+Books Ngrams under CC BY 3.0, RLA-ES under MPL 1.1+. The licence policy
+above says which may enter; this table predates that decision and carries
+Apache-2.0 alone.
 
 ## Rebuilding
 
