@@ -9,6 +9,48 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- `kmp-mcp setup` and `kmp-mcp update` install the lexical-bridge table,
+  once for the machine, at `<user data home>/kmp/lexical-bridge.kmpb`
+  ([#517](https://github.com/underpass-ai/kmp/issues/517),
+  [#518](https://github.com/underpass-ai/kmp/pull/518)). `0.9.0` shipped
+  the mechanism that lets `kmp_ask` reach a memory written in another
+  language and never shipped the table it reads, so the feature was off for
+  every installation, and off silently. Every release now publishes
+  `kmp-lexical-bridge.kmpb` with its `.sha256` as its twenty-first and
+  twenty-second assets. `setup` fetches the checksum first and downloads
+  nothing when the machine already holds that table, verifies the bytes
+  against the published digest and proves they parse before writing them,
+  and reports what it did under `lexical_bridge` in the receipt —
+  `installed`, `already_current`, `declined` or `unavailable`, with
+  `crosses_languages` saying what `ask` can do now. It is never a gate: a
+  release that publishes no table, a network that will not answer and a
+  filesystem that refuses the write all leave a converged installation
+  behind and say so. `--no-lexical-bridge` declines; `--lexical-bridge FILE`
+  installs a table built with `scripts/lexical-bridge/`, and when the
+  release's table later replaces one the machine held, the receipt names
+  the digest it replaced as `replaced_sha256`.
+- The shipped table: 177,388 Latin-script words, 13.3 MB, built from the
+  teacher model's `bert-base-multilingual-uncased` tokenizer vocabulary
+  joined with LaBSE's, both Apache-2.0, so the artifact carries the
+  product's licence and no other. Measured on the MUSE Spanish–English
+  dictionary it holds 70 % of the pairs and bridges 0.87 of those at the
+  kernel's 0.45 bar with 0.001 random pairs crossing it; on the judged
+  collection every recorded floor holds and one known-failing case closes.
+  Its provenance, the licence policy the vocabulary is chosen under and
+  every number measured on it are recorded beside it in
+  `distribution/lexical-bridge/README.md`.
+
+### Changed
+
+- The lexical-bridge loader reads three places, nearest first: whatever
+  `KMP_LEXICAL_BRIDGE` names, `<data dir>/lexical-bridge.kmpb` for one
+  store alone, then the machine's table. A store that carries its own table
+  means to, and a malformed one there is reported rather than reached past.
+  `kmp-mcp info` and `doctor` say which table a store would read and, when
+  there is none, name `kmp-mcp setup` as the way to get one.
+
 ## [0.12.0] - 2026-09-05
 
 ### Added
