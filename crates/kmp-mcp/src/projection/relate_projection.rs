@@ -58,6 +58,7 @@ fn coordinate_relation_json(relation: &CoordinateRelation) -> Value {
         "from": relation.from,
         "to": relation.to,
         "kind": coordinate_relation_kind_label(relation.kind),
+        "dimension": relation.dimension,
         "scope_id": relation.scope_id,
         "axis": temporal_axis_label(relation.axis),
         "why": relation.why
@@ -74,6 +75,7 @@ fn proposed_link_json(link: &ProposedLink) -> Value {
         "shared_terms": link.shared_terms,
         "bridged": link.bridged,
         "entities": link.entities,
+        "dimension": link.dimension,
         "scope_id": link.scope_id,
         "weight": link.weight,
         "why": link.why
@@ -84,6 +86,7 @@ fn tension_json(tension: &Tension) -> Value {
     json!({
         "ref": tension.r#ref,
         "other": tension.other,
+        "dimension": tension.dimension,
         "scope_id": tension.scope_id,
         "why": tension.why,
         "evidence": tension.evidence

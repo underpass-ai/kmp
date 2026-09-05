@@ -1,5 +1,7 @@
 use crate::TemporalAxis;
 
+use super::shared_label::SharedLabel;
+
 /// How two facts of different abouts stand to each other inside a scope
 /// they share. Read off their coordinates; declared by nobody.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -36,6 +38,7 @@ pub struct CoordinateRelation {
     from: String,
     to: String,
     kind: CoordinateRelationKind,
+    dimension: String,
     scope_id: String,
     axis: TemporalAxis,
 }
@@ -45,14 +48,15 @@ impl CoordinateRelation {
         from: impl Into<String>,
         to: impl Into<String>,
         kind: CoordinateRelationKind,
-        scope_id: impl Into<String>,
+        label: &SharedLabel,
         axis: TemporalAxis,
     ) -> Self {
         Self {
             from: from.into(),
             to: to.into(),
             kind,
-            scope_id: scope_id.into(),
+            dimension: label.key().to_string(),
+            scope_id: label.value().to_string(),
             axis,
         }
     }
@@ -69,6 +73,12 @@ impl CoordinateRelation {
         self.kind
     }
 
+    /// The dimension kind of the scope: with `scope_id`, the label both
+    /// facts stand in.
+    pub fn dimension(&self) -> &str {
+        &self.dimension
+    }
+
     pub fn scope_id(&self) -> &str {
         &self.scope_id
     }
@@ -79,7 +89,7 @@ impl CoordinateRelation {
 
     /// The sentence a reader gets, deterministic from the relation itself.
     pub fn why(&self) -> String {
-        let scope = &self.scope_id;
+        let scope = format!("{}={}", self.dimension, self.scope_id);
         let clock = clock_name(self.axis);
         match self.kind {
             CoordinateRelationKind::SharesScope => format!(

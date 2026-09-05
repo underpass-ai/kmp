@@ -1,7 +1,8 @@
 //! Relating memories across abouts without declaring anything.
 //!
 //! Abouts are never joined by relations, so what two abouts have to do
-//! with each other is read off what they share: a dimension scope, and
+//! with each other is read off what they share: a label — a dimension kind
+//! and a scope, the same pair in both — and
 //! where on one clock each memory stands inside it. This module turns a set
 //! of facts — entries placed in time, with the lifecycle state they had
 //! where the read stood — and the edges each about declared into two
@@ -20,6 +21,7 @@ mod declared_edge;
 mod proposal;
 mod related_fact;
 mod relations;
+mod shared_label;
 mod tension;
 
 pub use coordinate_relation::{CoordinateRelation, CoordinateRelationKind};
@@ -27,4 +29,5 @@ pub use declared_edge::DeclaredEdge;
 pub use proposal::{MAX_PROPOSALS_PER_FACT, ProposalSignal, ProposedLink, cap_proposals_per_fact};
 pub use related_fact::{FactState, RelatedFact};
 pub use relations::{MAX_COORDINATE_RELATIONS, Relations, relate};
+pub use shared_label::SharedLabel;
 pub use tension::Tension;

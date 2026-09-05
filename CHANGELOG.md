@@ -20,6 +20,17 @@ Detailed notes from the early release cycle remain available in the
   packet fills; the rest follow the causal spine, and `truncation` reports
   what did not fit. Nothing of the core is shortened for a label.
 
+### Changed
+
+- `kmp_relate` relates two abouts through a label, never through a bare
+  scope: a coordinate relation, a tension's shared scope and a proposal's
+  `+2` now require the same `dimension` kind and the same scope on both
+  sides, and each carries the kind in a new `dimension` field beside
+  `scope_id`. `owner=kmp` and `repo=kmp` share a value and relate nothing.
+  Within an about a scope id names one label and keeps the kind of its
+  first use, which the ingest already enforced; the writer's message now
+  says so.
+
 ## [0.11.0] - 2026-09-04
 
 ### Added

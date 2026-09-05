@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:a3591b88ae260883c89a",
+    "idempotency_key": "ingest:guide-sync:1:agent:efe9b1a80ebee50b3da2",
     "memory": {
       "dimensions": [
         {
@@ -174,7 +174,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the dimension scopes they share, what each about declared between its own facts, and which declared contradictions still stand. Abouts are never joined by relations, so this is read off the coordinates and declared by nobody. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, proposed links between facts of different abouts that share a key — an identifier rare across the span, a matching English summary, a proper name — with the signals that read them and never stored, and a proof that says which abouts were read and which had nothing inside. A proposal a writer declares with kmp_write_memory as same_event_as or same_entity_as comes back declared, and from then on ask cites through it across abouts and trace walks it. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened."
+          "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the labels they share (the same dimension kind and scope; a scope under two kinds is two labels), what each about declared between its own facts, and which declared contradictions still stand. Abouts are never joined by relations, so this is read off the coordinates and declared by nobody. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, proposed links between facts of different abouts that share a key — an identifier rare across the span, a matching English summary, a proper name — with the signals that read them and never stored, and a proof that says which abouts were read and which had nothing inside. A proposal a writer declares with kmp_write_memory as same_event_as or same_entity_as comes back declared, and from then on ask cites through it across abouts and trace walks it. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened."
         },
         {
           "coordinates": [

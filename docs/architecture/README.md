@@ -117,7 +117,8 @@ as a complete interval.
 
 `kmp_goto`, `kmp_near`, `kmp_rewind` and `kmp_forward` move through stored
 time. `kmp_relate` reads what the memories of several abouts have to do with
-each other inside a span, off the dimension scopes and clocks they share,
+each other inside a span, off the labels they share — the same dimension
+kind and the same scope — and the clocks they read,
 since abouts are never joined by relations. `kmp_trace` and `kmp_inspect`
 audit graph structure and evidence. Semantic
 Ask is not a substitute for temporal navigation: it enumerates nothing. It
