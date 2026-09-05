@@ -62,9 +62,13 @@ above the bar / random pairs at or above it:
 | mrl @64 int8       | 0.90 / 0.003 | 0.87 / 0.001 | 0.84 / 0.001 |
 | mrl @128 int8      | 0.89 / 0.001 | 0.86 / 0.001 | 0.82 / 0.001 |
 | potion-multilingual-128M @256 | 0.83 / 0.003 | 0.79 / 0.001 | 0.76 / 0.001 |
+| shipped table, mrl @64 int8, pairs it holds | 0.90 / 0.003 | 0.87 / 0.001 | 0.85 / 0.001 |
 
 Signed bytes cost nothing against f32 at any width. A 64-dimension table
-over ~86k Spanish and English word forms is 6.5 MB.
+over ~86k Spanish and English word forms is 6.5 MB; the shipped table, over
+177k Latin-script words, is 13.3 MB and holds 70 % of the MUSE pairs — its
+provenance and every number measured on it are recorded beside it in
+`distribution/lexical-bridge/README.md`.
 
 ## Installing one
 
@@ -80,6 +84,12 @@ then `<data dir>/lexical-bridge.kmpb` for one store alone, then the machine's
 table. The machine path exists because a store is selected per working
 directory — a project `.kernel/` wins over the user default — and the shipped
 table is too large to copy into every project that ever opens memory.
+
+The machine's table converges to the release's: the next `setup` or `update`
+without flags replaces whatever `--lexical-bridge FILE` installed there, and
+the receipt names the digest it replaced (`replaced_sha256`). A table you
+built and want to keep belongs beside one store, or wherever
+`KMP_LEXICAL_BRIDGE` points.
 
 Absent, `ask` behaves exactly as before. A malformed table is logged and
 ignored; it is an aid to retrieval, not a condition of it.
@@ -97,12 +107,45 @@ Rebuild it whenever a case gains a word:
   --output crates/kmp-testkit/judged/lexical-bridge.kmpb
 ```
 
-## Licensing the shipped vocabulary
+## The shipped table
 
-The vectors derive from an Apache-2.0 model. The word list decides what the
-table may be distributed under: a list drawn from `wordfreq` is CC-BY-SA and
-would carry that licence into the artifact, so the prototype table built from
-it is for local use. A shipped table should draw its list from a permissive
-source — SCOWL for English, an MPL-licensed Spanish spelling dictionary — or
-from the teacher's own tokenizer vocabulary. That decision is recorded beside
-the released artifact, not here.
+`distribution/lexical-bridge/kmp-lexical-bridge.kmpb` is the table every
+release publishes, built with `--shipped-vocabulary` and committed with its
+checksum; [its README](../../distribution/lexical-bridge/README.md) records
+the exact inputs, the licence and the numbers measured on it. Rebuild it only
+on purpose — a rebuilt table is a release candidate that no longer matches —
+and re-measure before claiming anything about it:
+
+```bash
+.venv/bin/python scripts/lexical-bridge/build.py --shipped-vocabulary \
+  --output distribution/lexical-bridge/kmp-lexical-bridge.kmpb
+(cd distribution/lexical-bridge && sha256sum kmp-lexical-bridge.kmpb > kmp-lexical-bridge.kmpb.sha256)
+```
+
+## Licensing the vocabulary
+
+The vectors derive from an Apache-2.0 model; the word list decides what the
+table may be distributed under, and every input was checked at its source:
+
+- `sentence-transformers/static-similarity-mrl-multilingual-v1` is Apache-2.0.
+  Its card lists training sets under other terms (MUSE under CC BY-NC,
+  StackExchange under CC BY-SA, OpenSubtitles); the table relies on the
+  licence the weights are published under, as every downstream use of a
+  released model does, and says so rather than leaving it implied.
+- The teacher's `bert-base-multilingual-uncased` tokenizer vocabulary and the
+  `sentence-transformers/LaBSE` tokenizer vocabulary are Apache-2.0 releases
+  from Google. They are the shipped word list: no other source enters the
+  table, so the artifact carries one licence, the product's own.
+- `wordfreq`, which the prototype's 86k-word list came from, publishes its
+  data under CC BY-SA 4.0 with further credits owed (SUBTLEX, OpenSubtitles,
+  Google Books); ShareAlike would travel into the table, and its author states
+  that a format with no room for attribution does not satisfy the licence. A
+  table built from it stays local.
+- The MUSE Spanish–English dictionary the numbers are measured on is
+  CC BY-NC 4.0. It measures; it is not in the repository and no word from it
+  seeds the vocabulary — which would also leak the test into the table.
+- Candidates checked and not used: Google Books Ngrams (CC BY 3.0, attribution
+  only) and RLA-ES, the Spanish spelling dictionary (GPL / LGPL / MPL 1.1+),
+  either of which would add a second licence to the artifact for the
+  inflected forms the tokenizer vocabularies lack. Whether an attribution-only
+  list is acceptable is a product decision, not a build option.

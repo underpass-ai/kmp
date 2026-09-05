@@ -104,8 +104,8 @@ where
         ))
     }
 
-    /// Poll until the release carries exactly the twenty checksummed assets a
-    /// candidate carries. Anything less is a release still uploading, and the
+    /// Poll until the release carries exactly the twenty-two checksummed
+    /// assets a candidate carries. Anything less is a release still uploading, and the
     /// catalog must not point at it.
     fn await_public_assets(&self, version: &ReleaseVersion) -> Result<(), ReleaseError> {
         let expected = CandidateAssetSet::for_version(version);

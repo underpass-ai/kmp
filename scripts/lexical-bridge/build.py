@@ -31,12 +31,18 @@ pairs do; int8 costs nothing against f32.
 
 Usage:
 
+    build.py --shipped-vocabulary --output kmp-lexical-bridge.kmpb [--dims 64]
     build.py --vocabulary words.txt --output lexical-bridge.kmpb [--dims 64]
     build.py --fixture-from crates/kmp-testkit/judged/retrieval_cases.json \
              --output crates/kmp-testkit/judged/lexical-bridge.kmpb
 
-`--vocabulary` is one word per line, any language the teacher covers. Which
-list ships is a licensing decision recorded beside the artifact, not here.
+`--shipped-vocabulary` builds the table the release ships: every Latin-script
+whole word that the teacher's own tokenizer or LaBSE's tokenizer knows. Both
+vocabularies are Apache-2.0 releases from Google, so the table adds no
+source and no licence beyond the model the vectors already come from; the
+record beside the shipped artifact says so. `--vocabulary` is one word per
+line, any language the teacher covers, for a table an operator builds; the
+licence of that list travels with the table it builds.
 """
 
 from __future__ import annotations
@@ -52,6 +58,13 @@ from pathlib import Path
 MAGIC = b"KMPBRIDG"
 VERSION = 1
 TEACHER = "sentence-transformers/static-similarity-mrl-multilingual-v1"
+# Pinned so the shipped table is rebuilt from the same bytes it was measured on.
+TEACHER_REVISION = "b68f4122911bcffcd6e1f695f2d99cd6788972d8"
+# Tokenizer vocabularies the shipped word list is drawn from, beside the
+# teacher's own: (repository, revision, file). Apache-2.0, like the teacher.
+SHIPPED_VOCABULARIES = (
+    ("sentence-transformers/LaBSE", "836121a0533e5664b21c7aacc5d22951f2b8b25b", "vocab.txt"),
+)
 STOP_WORDS = set(
     "a against an and are as at be because by came did do does earlier for from he how i "
     "if in is it me more my of on one or plus same should than the this to us use used uses "
@@ -97,10 +110,45 @@ def load_teacher():
     from safetensors.numpy import load_file
     from tokenizers import Tokenizer
 
-    root = snapshot_download(TEACHER)
+    root = snapshot_download(TEACHER, revision=TEACHER_REVISION)
     table = load_file(f"{root}/0_StaticEmbedding/model.safetensors")["embedding.weight"]
     tokenizer = Tokenizer.from_file(f"{root}/0_StaticEmbedding/tokenizer.json")
     return table, tokenizer
+
+
+def is_latin(word: str) -> bool:
+    return all("LATIN" in unicodedata.name(character, "") for character in word)
+
+
+def shipped_vocabulary() -> tuple[list[str], list[str]]:
+    """The word list the release ships, keyed by folded form.
+
+    Every whole word the teacher's tokenizer knows comes first — those are
+    single-piece vectors, the best the teacher has — then every whole word in
+    the LaBSE vocabulary, which is five times larger and carries the
+    inflected forms the teacher's does not. Continuation pieces (`##ing`),
+    special tokens (`[CLS]`), anything that is not letters and anything
+    outside the Latin script are left out: the table is measured on Spanish
+    and English, and a word from a script it was never measured on is weight
+    the download pays for nothing.
+    """
+    from huggingface_hub import hf_hub_download
+
+    _, tokenizer = load_teacher()
+    vocabulary = tokenizer.get_vocab()
+    tokens = sorted(vocabulary, key=vocabulary.get)
+    for repository, revision, file in SHIPPED_VOCABULARIES:
+        path = Path(hf_hub_download(repository, file, revision=revision))
+        tokens.extend(path.read_text(encoding="utf-8").split("\n"))
+    seen: dict[str, str] = {}
+    for token in tokens:
+        if token.startswith("##") or token.startswith("[") or len(token) < 2 or not token.isalpha():
+            continue
+        key = fold(token)
+        if key and key not in STOP_WORDS and key not in seen and len(key) >= 2 and is_latin(key):
+            seen[key] = token
+    keys = list(seen)
+    return keys, [seen[key] for key in keys]
 
 
 def embed(words: list[str], dims: int):
@@ -150,6 +198,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--vocabulary", type=Path, help="one word per line")
+    source.add_argument(
+        "--shipped-vocabulary",
+        action="store_true",
+        help="the list the release ships: Latin-script whole words the teacher's and LaBSE's tokenizers know",
+    )
     source.add_argument("--fixture-from", type=Path, help="judged cases whose words form the vocabulary")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--dims", type=int, default=64, choices=(32, 64, 128, 256))
@@ -167,6 +220,8 @@ def main() -> int:
                 seen[key] = word
         keys = list(seen)
         surface = [seen[key] for key in keys]
+    elif arguments.shipped_vocabulary:
+        keys, surface = shipped_vocabulary()
     else:
         keys = fixture_vocabulary(arguments.fixture_from)
         surface = keys
