@@ -77,6 +77,10 @@
       "description": "Inspect one reference and its evidence"
     },
     {
+      "name": "kmp_relabel",
+      "description": "Change the labels a memory stands in without rewriting it"
+    },
+    {
       "name": "kmp_view_open",
       "description": "Open or rehydrate a ChronoLoom view over an about, so a person and an agent look at the same loom. Read-only with respect to memory."
     },
