@@ -21,7 +21,7 @@ pub use adapter::{
     BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, EVENT_FORMAT_VERSION,
     EmbeddedKernelStore, ImportReport, ProjectionRebuildReport, QualityTelemetryRetention,
     SUPPORTED_FORMAT_VERSION, SqliteQualityTelemetryReader, SqliteQualityTelemetryWriter,
-    StorageEngine, StoreMigrationReceipt, format_version_path, merge_bundles,
-    quality_telemetry_path, read_stamped_version, store_file_path_for, validate_store_layout,
-    verify_bundle,
+    StorageEngine, StoreMigrationReceipt, bundle_excluding_abouts, format_version_path,
+    merge_bundles, quality_telemetry_path, read_stamped_version, store_file_path_for,
+    validate_store_layout, verify_bundle,
 };

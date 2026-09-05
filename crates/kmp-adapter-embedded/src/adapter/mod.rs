@@ -19,8 +19,8 @@ pub use format_version::{
 };
 pub use migration::StoreMigrationReceipt;
 pub use portability::{
-    BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, merge_bundles,
-    verify_bundle,
+    BUNDLE_FORMAT_VERSION, BundleEventRange, BundleHeader, ImportReport, bundle_excluding_abouts,
+    merge_bundles, verify_bundle,
 };
 pub use replay::ProjectionRebuildReport;
 pub use store::EmbeddedKernelStore;

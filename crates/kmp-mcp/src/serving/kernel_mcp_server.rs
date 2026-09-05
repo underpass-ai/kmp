@@ -217,7 +217,10 @@ impl KernelMcpServer {
                     let index = crate::lifecycle::JsonlStoreIndex::new(&data_home);
                     crate::lifecycle::RememberStore::new(&catalog, &index).execute(resolved.path());
                 }
-                let commit_native = kmp_embedded::CommitNativeBundle::for_resolved(&resolved);
+                let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
+                    &resolved,
+                    crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts::owned(),
+                );
                 let server = Self::with_retrying_embedded_backend(
                     crate::serving::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
                         resolved.path(),

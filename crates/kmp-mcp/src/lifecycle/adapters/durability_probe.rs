@@ -9,9 +9,9 @@ use super::embedded_memory_probe::store_file_on_disk;
 /// Whether the machine state has a current, verifiable git-native copy.
 ///
 /// What is compared is this project's authored memory. The store also holds
-/// the shipped guide, which setup syncs on its own and which no committed
-/// bundle has ever carried, so the guide's abouts are left out of the live
-/// side before the two are weighed against each other.
+/// the shipped guide, which setup syncs on its own. Both sides are projected
+/// through the same authored-memory policy so a legacy guide-bearing bundle
+/// cannot be mistaken for a divergent project history.
 pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<LifecycleFinding> {
     if let Some(orphaned) = resolved.orphaned_bundle() {
         return Some(orphaned_bundle_finding(orphaned));
@@ -80,12 +80,37 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
             );
         }
     };
+    let authored_text =
+        match kmp_embedded::bundle_excluding_abouts(&text, &ShippedGuideAbouts::owned()) {
+            Ok(bundle) => bundle,
+            Err(error) => {
+                return Some(
+                    LifecycleFinding::new(
+                        DiagnosticSeverity::Fail,
+                        "the committed memory cannot be projected as authored memory",
+                    )
+                    .with_detail(error.to_string()),
+                );
+            }
+        };
+    let authored_header = match kmp_embedded::verify_bundle(&authored_text) {
+        Ok(header) => header,
+        Err(error) => {
+            return Some(
+                LifecycleFinding::new(
+                    DiagnosticSeverity::Fail,
+                    "the authored memory projection does not verify",
+                )
+                .with_detail(error.to_string()),
+            );
+        }
+    };
+    let contains_shipped_guides = header.event_count != authored_header.event_count;
     if store.is_some() {
         // The bundle carries this project's authored memory. The store also
-        // holds the shipped guide, which setup syncs on its own and which no
-        // committed bundle has ever contained — comparing the whole store
-        // against the bundle would report the guide as drift the moment setup
-        // ran, which is to say always.
+        // holds the shipped guide, which setup syncs on its own. Filter both
+        // sides before comparison: older commit-native writers could publish
+        // those release-owned events into the project bundle.
         let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
             store.export_bundle_excluding_abouts_blocking(&ShippedGuideAbouts::owned())
         });
@@ -113,7 +138,9 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                 );
             }
         };
-        if let Err(error) = kmp_embedded::merge_bundles(&text, &live, "doctor-history-audit") {
+        if let Err(error) =
+            kmp_embedded::merge_bundles(&authored_text, &live, "doctor-history-audit")
+        {
             return Some(
                 LifecycleFinding::new(
                     DiagnosticSeverity::Fail,
@@ -125,22 +152,24 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                 ),
             );
         }
-        if header.event_count != live_header.event_count
-            || header.content_digest != live_header.content_digest
+        if authored_header.event_count != live_header.event_count
+            || authored_header.content_digest != live_header.content_digest
         {
             // The merge above already proved these histories are compatible,
             // so this is a store running ahead of its last checkpoint — the
             // ordinary state after any write, and not a reason to call the
             // installation unusable. Divergence is the failure, and it has
             // already returned.
-            let behind = live_header.event_count.saturating_sub(header.event_count);
+            let behind = live_header
+                .event_count
+                .saturating_sub(authored_header.event_count);
             let mut finding = LifecycleFinding::new(
                 DiagnosticSeverity::Warn,
                 "the committed memory is behind the live store",
             )
             .with_detail(format!(
                 "live events: {}; committed events: {}",
-                live_header.event_count, header.event_count
+                live_header.event_count, authored_header.event_count
             ));
             if behind > 0 {
                 finding = finding.with_detail(format!(
@@ -157,6 +186,26 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
                     .with_detail("run `kmp-mcp export` to checkpoint them, then commit the bundle"),
             );
         }
+        if contains_shipped_guides {
+            return Some(
+                LifecycleFinding::new(
+                    DiagnosticSeverity::Warn,
+                    "the committed memory contains release-owned shipped guides",
+                )
+                .with_detail(format!(
+                    "{} guide {} will be removed from the project bundle",
+                    header.event_count - authored_header.event_count,
+                    if header.event_count - authored_header.event_count == 1 {
+                        "event"
+                    } else {
+                        "events"
+                    }
+                ))
+                .with_detail(
+                    "run `kmp-mcp export`, inspect the diff, and commit the authored bundle",
+                ),
+            );
+        }
     }
     // A store file touched more recently than its bundle used to be a failure
     // on its own. It is not evidence: syncing the guide or merely opening the
@@ -171,7 +220,7 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
             )
             .with_detail(format!(
                 "{} events · no snapshot identity or digest",
-                header.event_count
+                authored_header.event_count
             ))
             .with_detail("run `kmp-mcp export` to upgrade it without changing the events"),
         );
@@ -182,9 +231,9 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
             DiagnosticSeverity::Ok,
             format!(
                 "snapshot {} protects {} {}",
-                header.snapshot_id,
-                header.event_count,
-                if header.event_count == 1 {
+                authored_header.snapshot_id,
+                authored_header.event_count,
+                if authored_header.event_count == 1 {
                     "event"
                 } else {
                     "events"
@@ -192,8 +241,8 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
             ),
         )
         .with_detail(format!("bundle: {}", bundle.display()))
-        .with_detail(format!("digest: {}", header.content_digest))
-        .with_detail(format!("abouts: {}", header.abouts.join(" "))),
+        .with_detail(format!("digest: {}", authored_header.content_digest))
+        .with_detail(format!("abouts: {}", authored_header.abouts.join(" "))),
     )
 }
 

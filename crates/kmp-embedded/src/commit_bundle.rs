@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use kmp_adapter_embedded::{BundleHeader, EmbeddedKernelStore, merge_bundles, verify_bundle};
+use kmp_adapter_embedded::{
+    BundleHeader, EmbeddedKernelStore, bundle_excluding_abouts, merge_bundles, verify_bundle,
+};
 use kmp_domain::PortError;
 
 use crate::{ResolvedDataDir, project_bundle_path};
@@ -28,6 +30,7 @@ static UNIQUE_FILE: AtomicU64 = AtomicU64::new(0);
 pub struct CommitNativeBundle {
     data_dir: PathBuf,
     bundle_path: PathBuf,
+    excluded_abouts: Vec<String>,
 }
 
 impl CommitNativeBundle {
@@ -35,16 +38,35 @@ impl CommitNativeBundle {
     /// stores do not: exporting either beside the caller's cwd would recreate
     /// the wrong-directory backup bug under another name.
     pub fn for_resolved(resolved: &ResolvedDataDir) -> Option<Self> {
+        Self::for_resolved_excluding_abouts(resolved, Vec::new())
+    }
+
+    /// Builds a project bundle that carries authored memory while leaving
+    /// release-owned abouts in the machine store only.
+    pub fn for_resolved_excluding_abouts(
+        resolved: &ResolvedDataDir,
+        excluded_abouts: Vec<String>,
+    ) -> Option<Self> {
         project_bundle_path(resolved).map(|bundle_path| Self {
             data_dir: resolved.path().to_path_buf(),
             bundle_path,
+            excluded_abouts,
         })
     }
 
     pub fn new(data_dir: impl Into<PathBuf>, bundle_path: impl Into<PathBuf>) -> Self {
+        Self::new_excluding_abouts(data_dir, bundle_path, Vec::new())
+    }
+
+    pub fn new_excluding_abouts(
+        data_dir: impl Into<PathBuf>,
+        bundle_path: impl Into<PathBuf>,
+        excluded_abouts: Vec<String>,
+    ) -> Self {
         Self {
             data_dir: data_dir.into(),
             bundle_path: bundle_path.into(),
+            excluded_abouts,
         }
     }
 
@@ -100,22 +122,24 @@ impl CommitNativeBundle {
             )));
         }
 
-        let live_before = store.export_bundle().await?;
+        let live_before = self.export_authored_bundle(store).await?;
         let live_header = verify_bundle(&live_before)?;
         let canonical_before = match fs::read_to_string(&self.bundle_path) {
             Ok(bundle) => {
-                let canonical_header = verify_bundle(&bundle).map_err(|error| {
+                verify_bundle(&bundle).map_err(|error| {
                     PortError::InvalidState(format!(
                         "committed memory bundle `{}` is invalid: {error}",
                         self.bundle_path.display()
                     ))
                 })?;
+                let authored_bundle = bundle_excluding_abouts(&bundle, &self.excluded_abouts)?;
+                let canonical_header = verify_bundle(&authored_bundle)?;
                 // Equal-length histories can still be different branches, so
                 // compare their decoded event streams rather than trusting
                 // metadata alone. Prefixes are valid bundles but not a safe
                 // base for a new project write: Git and SQLite must agree
                 // exactly before either can advance.
-                merge_bundles(&bundle, &live_before, "commit-native-preflight")?;
+                merge_bundles(&authored_bundle, &live_before, "commit-native-preflight")?;
                 if canonical_header.event_count != live_header.event_count {
                     return Err(PortError::Conflict(format!(
                         "committed memory bundle `{}` has {} events while the live store has {}; \
@@ -187,7 +211,7 @@ impl CommitNativeBundle {
         store: &EmbeddedKernelStore,
         pending: &PendingBundleExport,
     ) -> Result<BundleHeader, PortError> {
-        let bundle = store.export_bundle().await?;
+        let bundle = self.export_authored_bundle(store).await?;
         let header = verify_bundle(&bundle)?;
         merge_bundles(
             &pending.live_before,
@@ -221,6 +245,19 @@ impl CommitNativeBundle {
         }
         write_bundle_atomically(&self.bundle_path, &bundle)?;
         Ok(header)
+    }
+
+    async fn export_authored_bundle(
+        &self,
+        store: &EmbeddedKernelStore,
+    ) -> Result<String, PortError> {
+        if self.excluded_abouts.is_empty() {
+            store.export_bundle().await
+        } else {
+            store
+                .export_bundle_excluding_abouts(&self.excluded_abouts)
+                .await
+        }
     }
 }
 

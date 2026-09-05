@@ -1655,12 +1655,12 @@ fn doctor_warns_rather_than_fails_when_the_bundle_is_behind_authored_memory() {
     );
 }
 
-/// The synced guide is not this project's memory. Setup puts it in the store
-/// on its own, and no committed bundle has ever carried it, so a store holding
-/// nothing but the guide is a store with nothing to checkpoint — not drift, and
-/// not a reason to call the installation unusable.
+/// Legacy commit-native publication could put the synced guide into the
+/// project bundle. Doctor applies the authored-memory policy to both sides,
+/// recognizes that there is no project-history divergence, and names the safe
+/// cleanup instead of making the installation unusable.
 #[test]
-fn doctor_does_not_read_the_synced_guide_as_uncommitted_project_memory() {
+fn doctor_treats_a_legacy_guide_bearing_bundle_as_repairable() {
     let workspace = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .and_then(std::path::Path::parent)
@@ -1686,13 +1686,14 @@ fn doctor_does_not_read_the_synced_guide_as_uncommitted_project_memory() {
         .expect("guide import");
     assert!(imported.status.success(), "{imported:?}");
 
-    let empty_store = project.path().join("empty-store");
+    let legacy_export = project.path().join("legacy-full.jsonl");
     let exported = Command::new(binary)
-        .args(["export", committed.to_str().expect("bundle path")])
-        .env("KMP_MCP_DATA_DIR", empty_store)
+        .args(["export", legacy_export.to_str().expect("bundle path")])
+        .env("KMP_MCP_DATA_DIR", &data_dir)
         .output()
-        .expect("empty export");
+        .expect("legacy full export");
     assert!(exported.status.success(), "{exported:?}");
+    std::fs::copy(&legacy_export, &committed).expect("install legacy project bundle");
 
     let doctor = Command::new(binary)
         .arg("doctor")
@@ -1712,6 +1713,10 @@ fn doctor_does_not_read_the_synced_guide_as_uncommitted_project_memory() {
     assert!(
         !report.contains("behind the live store"),
         "the guide is not uncommitted project memory: {report}"
+    );
+    assert!(
+        report.contains("contains release-owned shipped guides"),
+        "the legacy bundle cleanup must be named: {report}"
     );
 }
 

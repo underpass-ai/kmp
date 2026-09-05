@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:88d9677458e5d9a9dbbc",
+    "idempotency_key": "ingest:guide-sync:1:person:9943bf18b045cfd5b93f",
     "memory": {
       "dimensions": [
         {
@@ -2055,7 +2055,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A repository can publish selected project memory in .kmp/memory.jsonl. A clone inherits that reviewed bundle; private abouts in a shared user store stay out unless explicitly exported."
+          "text": "A repository can publish selected project memory in .kmp/memory.jsonl. A clone inherits that reviewed bundle; private abouts in a shared user store stay out unless explicitly exported, and release-owned KMP guides stay local because the installed plugin supplies them."
         },
         {
           "coordinates": [
@@ -2391,7 +2391,7 @@
           "supports": [
             "guide:kmp:basic:inherit"
           ],
-          "text": "Format-2 filtered export names exact abouts and import replays only the committed event stream.",
+          "text": "Commit-native publication and Doctor apply the same authored-memory projection, excluding guide:kmp and guide:kmp-agent while explicit backup export retains the full store.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
