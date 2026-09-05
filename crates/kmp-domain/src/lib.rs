@@ -14,7 +14,7 @@ pub use model::{
     ProposalSignal, ProposedLink, RelatedFact, Relations, ResemblanceKind, TemporalEntry,
     TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult, Tension,
     cap_proposals_per_fact, compare_temporal_instants, directed_relationship_path,
-    label_resemblances, normalized_label_token, relate, temporal_instant_nanos,
+    label_resemblances, labels_by_entry, normalized_label_token, relate, temporal_instant_nanos,
 };
 pub use projection::{
     ContextPathNeighborhood, GraphNodeMaterializedData, GraphNodeMaterializedEvent,
@@ -33,9 +33,10 @@ pub use repositories::{
 };
 pub use value_objects::{
     BundleMetadata, BundleQualityMetrics, CaseId, DimensionScopeMode, DimensionSelection,
-    DimensionSelectionMode, MemoryDimensionIdentity, Provenance, Role, SourceKind, TemporalAxis,
-    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection,
-    TemporalWindow,
+    DimensionSelectionMode, EntryLabels, LabelSelector, LabelSelectorOperator,
+    MemoryDimensionIdentity, Provenance, Role, SourceKind, TemporalAxis, TemporalCoordinate,
+    TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection, TemporalWindow,
+    bare_label_value,
 };
 pub use value_objects::{KmpMode, ResolutionTier, TierBudget};
 pub use value_objects::{

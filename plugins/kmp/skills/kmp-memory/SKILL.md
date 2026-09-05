@@ -699,6 +699,55 @@ unscoped sweep buries the answer you wanted — but scoping to the two or three
 abouts that actually bear on the question costs almost nothing and is the
 whole point of the mechanism.
 
+### Selectors: filter by what an entry is catalogued as
+
+`dimensions.selectors` reads the labels an entry stands in as a map from
+key to values and keeps the entries that satisfy every predicate:
+
+```json
+{
+  "about": "project:kmp",
+  "question": "What did the north outage teach about the store?",
+  "dimensions": {
+    "selectors": [
+      { "key": "incident", "op": "in", "values": ["north-outage"] },
+      { "key": "task", "op": "notexists" }
+    ]
+  }
+}
+```
+
+Four operators: `in` (one of the entry's values under `key` is listed),
+`notin` (none is — and an entry without the key passes, as in Kubernetes),
+`exists`, `notexists` (the key is present or absent; `values` stays empty).
+Values are the bare label values `kmp_wake` lists in `labels`; a namespaced
+scope id is read as its bare value.
+
+This is a different grain from `mode`, `include`, `exclude` and
+`scope_ids`, which read one coordinate at a time and keep an entry when
+*one* of its coordinates passes. `exclude: ["task"]` keeps every entry that
+also stands in a process, because the process coordinate passes;
+`{ "key": "task", "op": "notexists" }` keeps only the entries with no task
+label at all. The two are not duals. Reach for `exclude` to drop a lane
+from a picture; reach for a selector when the question is about what an
+entry is catalogued as. Both are hard filters: what they hide is invisible,
+never ranked low, so read the catalogue first.
+
+With `scope: all_abouts`, `exists` and `in` narrow the anchors through the
+index the way `include` and `scope_ids` do; `notin` and `notexists` cannot
+name anything to pick by, so alone they sweep every anchor and exclude
+afterwards.
+
+One thing a selector is not for. A `sequence` is a counter **per label**:
+`sequence: 3` in `task=a` and `sequence: 3` in `task=b` are two different
+places. A sequence cursor over more than one label still moves, so page
+continuations keep working, but the order it walks across labels is not one
+you defined; the temporal verbs say so in `warnings`, naming the labels.
+Pin one with `scope_ids` — adding `mode: only` and `include` when the same
+value serves two kinds in the about — and the order is defined. A selector
+does not pin it: it keeps whole entries, and an entry's other coordinates
+keep their own counters.
+
 ## When the tools are not there
 
 If the kmp tools are missing from your inventory, do not silently

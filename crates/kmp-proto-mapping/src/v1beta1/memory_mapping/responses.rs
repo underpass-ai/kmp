@@ -700,6 +700,8 @@ pub fn temporal_response_from_result(
         ));
     }
 
+    warnings.extend(traversal.warnings().iter().cloned());
+
     let dimensions = temporal_dimension_coverage(
         &entries,
         traversal.included_dimensions(),

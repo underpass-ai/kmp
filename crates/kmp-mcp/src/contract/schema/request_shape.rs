@@ -31,6 +31,27 @@ pub(crate) fn dimensions_schema() -> Value {
                 "type": "array",
                 "items": string_schema("Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.")
             },
+            "selectors": {
+                "type": "array",
+                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["key", "op"],
+                    "properties": {
+                        "key": string_schema("Label key: the dimension kind (`task`, `agentic_process`, `incident`)."),
+                        "op": {
+                            "type": "string",
+                            "enum": ["in", "notin", "exists", "notexists"],
+                            "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty."
+                        },
+                        "values": {
+                            "type": "array",
+                            "items": string_schema("Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.")
+                        }
+                    }
+                }
+            },
             "scope": {
                 "type": "string",
                 "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",

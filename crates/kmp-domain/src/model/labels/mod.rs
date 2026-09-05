@@ -6,6 +6,7 @@
 //! value, or to insist. The threshold is high on purpose: only case and
 //! separators are forgiven, so a flag is never a guess.
 
+mod entry_labels;
 mod resemblance;
 
 /// The metadata key a writer sets on a dimension to insist on a new label
@@ -13,6 +14,7 @@ mod resemblance;
 /// catalogue and means something else. The kernel strips it before storing.
 pub const INTENDED_NEW_LABEL_METADATA_KEY: &str = "writer_intended_new";
 
+pub use entry_labels::labels_by_entry;
 pub use resemblance::{
     LabelResemblance, ResemblanceKind, label_resemblances, normalized_label_token,
 };

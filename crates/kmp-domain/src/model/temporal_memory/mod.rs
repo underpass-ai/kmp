@@ -8,10 +8,12 @@ pub use axis_key::{compare_temporal_instants, temporal_instant_nanos};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    DimensionSelection, DimensionSelectionMode, DomainError, KmpBundle, TemporalAxis,
-    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalWindow,
+    DimensionSelection, DimensionSelectionMode, DomainError, EntryLabels, KmpBundle, TemporalAxis,
+    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalWindow, bare_label_value,
+    labels_by_entry,
 };
 
+use self::axis_key::TemporalKeyKind;
 use self::extract::{bundle_nodes_by_id, temporal_positions};
 use self::position::TemporalPosition;
 use self::select::{coordinates_by_ref, ordered_unique_ref_ids, resolve_cursor, select_positions};
@@ -138,9 +140,16 @@ pub struct TemporalTraversalResult {
     entries: Vec<TemporalEntry>,
     page: TemporalTraversalPage,
     missing: Vec<String>,
+    warnings: Vec<String>,
 }
 
 impl TemporalTraversalResult {
+    /// What the traversal wants said beside its entries: today, that a
+    /// sequence cursor was compared across more than one label.
+    pub fn warnings(&self) -> &[String] {
+        &self.warnings
+    }
+
     pub fn direction(&self) -> TemporalDirection {
         self.direction
     }
@@ -219,16 +228,21 @@ impl TemporalMemoryTraversal {
         request: &TemporalTraversalRequest,
     ) -> Result<TemporalTraversalResult, DomainError> {
         let nodes = bundle_nodes_by_id(bundle);
+        let labels = labels_by_entry(bundle);
+        let no_labels = EntryLabels::default();
         let mut positions = temporal_positions(bundle, &nodes, request.axis())?
             .into_iter()
             .filter(|position| {
                 request.dimensions.includes_coordinate(
                     position.coordinate.dimension(),
                     position.coordinate.scope_id(),
-                )
+                ) && request
+                    .dimensions
+                    .admits(labels.get(&position.ref_id).unwrap_or(&no_labels))
             })
             .collect::<Vec<_>>();
         positions.sort();
+        let warnings = sequence_cursor_warnings(request.cursor(), &positions);
         let available_dimensions = dimensions_from_positions(&positions);
 
         let cursor = resolve_cursor(&positions, request.cursor(), request.axis())?;
@@ -281,9 +295,59 @@ impl TemporalMemoryTraversal {
             entries,
             page,
             missing,
+            warnings,
         })
     }
 }
+
+/// A sequence is a counter per label: `sequence: 3` in `task=a` and
+/// `sequence: 3` in `task=b` are two different places. A sequence cursor
+/// over positions from more than one label still moves, so page
+/// continuations keep working, but the order it walks is not one the
+/// caller defined; the warning names the labels so the caller can pin one
+/// with `scope_ids`. A selector does not pin: it keeps whole entries, and an
+/// entry's other coordinates keep their own counters.
+fn sequence_cursor_warnings(
+    cursor: &TemporalCursor,
+    positions: &[TemporalPosition],
+) -> Vec<String> {
+    let TemporalCursor::Sequence(value) = cursor else {
+        return Vec::new();
+    };
+    let labels = positions
+        .iter()
+        .filter(|position| position.axis_key.axis() == TemporalKeyKind::Sequence)
+        .map(|position| {
+            format!(
+                "{}={}",
+                position.coordinate.dimension(),
+                bare_label_value(position.coordinate.scope_id())
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    if labels.len() <= 1 {
+        return Vec::new();
+    }
+    let total = labels.len();
+    let mut named = labels
+        .into_iter()
+        .take(SEQUENCE_WARNING_NAMED_LABELS)
+        .collect::<Vec<_>>();
+    if total > SEQUENCE_WARNING_NAMED_LABELS {
+        named.push(format!(
+            "and {} more",
+            total - SEQUENCE_WARNING_NAMED_LABELS
+        ));
+    }
+    vec![format!(
+        "sequence cursor {value} compares counters from {total} labels ({}); a sequence is per label, so pin one with `dimensions.scope_ids` (with `mode: only` and `include` when the value serves two kinds) to get a defined order",
+        named.join(", ")
+    )]
+}
+
+/// How many labels a sequence-cursor warning names before it counts the
+/// rest: enough to recognise the mix, not enough to crowd out the entries.
+const SEQUENCE_WARNING_NAMED_LABELS: usize = 5;
 
 fn build_entries(
     selected_ref_ids: Vec<String>,
@@ -918,6 +982,104 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["decision-old", "decision-new"]
         );
+    }
+
+    #[test]
+    fn selectors_keep_whole_entries_by_their_label_map() {
+        use crate::{LabelSelector, LabelSelectorOperator};
+
+        let bundle = temporal_bundle(&[
+            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
+            ("entry-1", "env", "about:question:a:dimension:prod", 1),
+            ("entry-2", "task", "about:question:a:dimension:t-2", 2),
+            ("entry-3", "env", "about:question:a:dimension:prod", 3),
+        ]);
+        let rewind = |selection: DimensionSelection| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    TemporalDirection::Rewind,
+                    TemporalCursor::sequence(10).expect("sequence cursor"),
+                )
+                .with_dimensions(selection),
+            )
+            .expect("rewind")
+            .entries()
+            .iter()
+            .map(TemporalEntry::ref_id)
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+        };
+        let selector = |key: &str, operator: LabelSelectorOperator, values: &[&str]| {
+            LabelSelector::new(key, operator, values.iter().copied()).expect("selector")
+        };
+
+        assert_eq!(
+            rewind(DimensionSelection::all().with_selectors([selector(
+                "env",
+                LabelSelectorOperator::In,
+                &["prod"]
+            )])),
+            ["entry-3", "entry-1"]
+        );
+        assert_eq!(
+            rewind(DimensionSelection::all().with_selectors([selector(
+                "task",
+                LabelSelectorOperator::NotExists,
+                &[]
+            )])),
+            ["entry-3"]
+        );
+        assert_eq!(
+            rewind(DimensionSelection::all().with_selectors([selector(
+                "env",
+                LabelSelectorOperator::NotIn,
+                &["prod"]
+            )])),
+            ["entry-2"]
+        );
+    }
+
+    #[test]
+    fn a_sequence_cursor_across_labels_is_warned_about_and_pinning_one_silences_it() {
+        let bundle = temporal_bundle(&[
+            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
+            ("entry-2", "task", "about:question:a:dimension:t-2", 1),
+            ("entry-3", "task", "about:question:a:dimension:t-1", 2),
+        ]);
+        let rewind = |selection: DimensionSelection| {
+            TemporalMemoryTraversal::traverse(
+                &bundle,
+                &TemporalTraversalRequest::new(
+                    TemporalDirection::Rewind,
+                    TemporalCursor::sequence(10).expect("sequence cursor"),
+                )
+                .with_dimensions(selection),
+            )
+            .expect("rewind")
+        };
+
+        let across = rewind(DimensionSelection::all());
+        assert_eq!(across.warnings().len(), 1, "{:?}", across.warnings());
+        assert!(
+            across.warnings()[0].contains("2 labels (task=t-1, task=t-2)"),
+            "{:?}",
+            across.warnings()
+        );
+
+        let pinned = rewind(DimensionSelection::all().with_scope_ids(["t-1"]));
+        assert!(pinned.warnings().is_empty(), "{:?}", pinned.warnings());
+        assert_eq!(pinned.entries().len(), 2);
+
+        let by_time = TemporalMemoryTraversal::traverse(
+            &bundle,
+            &TemporalTraversalRequest::new(
+                TemporalDirection::Rewind,
+                TemporalCursor::time("2026-09-05T00:00:00Z").expect("time cursor"),
+            ),
+        )
+        .expect("rewind by time");
+        assert!(by_time.warnings().is_empty());
     }
 
     fn polytemporal_bundle() -> KmpBundle {

@@ -13,10 +13,10 @@
 //! so unifying them is a public-surface change and not this refactor's.
 
 use kmp_proto::v1beta1::{
-    DimensionScopeMode, DimensionSelection, DimensionSelectionMode, ExpiredMemory,
-    MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, RawMemoryRef,
-    SupersededMemory, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalDirection,
-    TemporalEntry,
+    DimensionScopeMode, DimensionSelection, DimensionSelectionMode, ExpiredMemory, LabelSelector,
+    LabelSelectorOperator, MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass,
+    RawMemoryRef, SupersededMemory, TemporalAxis, TemporalCoordinate, TemporalCursor,
+    TemporalDirection, TemporalEntry,
 };
 use prost_types::Timestamp;
 use serde_json::{Map, Value, json};
@@ -269,12 +269,43 @@ pub(super) fn dimension_selection_json(selection: &DimensionSelection) -> Value 
     if !selection.scope_ids.is_empty() {
         object.insert("scope_ids".to_string(), json!(selection.scope_ids));
     }
+    if !selection.selectors.is_empty() {
+        object.insert(
+            "selectors".to_string(),
+            Value::Array(
+                selection
+                    .selectors
+                    .iter()
+                    .map(label_selector_json)
+                    .collect(),
+            ),
+        );
+    }
     object.insert(
         "scope".to_string(),
         json!(dimension_scope_mode_label(selection.scope)),
     );
     if !selection.abouts.is_empty() {
         object.insert("abouts".to_string(), json!(selection.abouts));
+    }
+    Value::Object(object)
+}
+
+fn label_selector_json(selector: &LabelSelector) -> Value {
+    let mut object = Map::new();
+    object.insert("key".to_string(), json!(selector.key));
+    object.insert(
+        "op".to_string(),
+        json!(match LabelSelectorOperator::try_from(selector.op) {
+            Ok(LabelSelectorOperator::In) => "in",
+            Ok(LabelSelectorOperator::NotIn) => "notin",
+            Ok(LabelSelectorOperator::Exists) => "exists",
+            Ok(LabelSelectorOperator::NotExists) => "notexists",
+            Ok(LabelSelectorOperator::Unspecified) | Err(_) => "unspecified",
+        }),
+    );
+    if !selector.values.is_empty() {
+        object.insert("values".to_string(), json!(selector.values));
     }
     Value::Object(object)
 }
