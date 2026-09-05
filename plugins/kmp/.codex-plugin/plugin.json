@@ -1,6 +1,6 @@
 {
   "name": "kmp",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Local-first agent memory that preserves what happened, when and why: wires the kmp MCP server, teaches the memory moves, opens memory in ChronoLoom, and diagnoses setup.",
   "author": {
     "name": "Underpass AI"
