@@ -143,6 +143,32 @@ KMP_APP.panels = (() => {
     }
   }
 
+  /* ---------------- label chips ----------------
+     The predicates the kernel filters the projection by, as the person and
+     the agent both see them. A chip reads `key op values`; its cross takes
+     it off and asks the projection again. */
+
+  function renderChips() {
+    const strip = $("label-chips");
+    strip.textContent = "";
+    const selectors = KMP_LOOM.normalizeSelectors(view.selectors);
+    strip.hidden = !selectors.length;
+    for (const selector of selectors) {
+      const chip = el("li", "label-chip");
+      chip.append(el("span", "chip-key", selector.key), el("span", "chip-op", selector.op));
+      if (selector.values.length) chip.append(el("span", "chip-values mono", selector.values.join(" | ")));
+      const remove = el("button", "chip-remove", "×");
+      remove.title = "take this filter off";
+      remove.addEventListener("click", () => {
+        KMP_APP.data.setSelectors(
+          view.selectors.filter((s) => !(s.key === selector.key && s.op === selector.op))
+        );
+      });
+      chip.append(remove);
+      strip.append(chip);
+    }
+  }
+
   /* ---------------- status line ---------------- */
 
   function renderStats() {
@@ -608,6 +634,7 @@ KMP_APP.panels = (() => {
   return {
     renderAbouts,
     renderRail,
+    renderChips,
     setSearch,
     searchText,
     hideTraceBox,

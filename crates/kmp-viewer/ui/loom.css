@@ -298,6 +298,24 @@ select, input {
 .legend-dash.contradiction::before { left: -3px; }
 .legend-dash.contradiction::after { right: -3px; }
 
+/* label chips: the kernel's filter, worn where both faces can read it */
+.chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip-list[hidden] { display: none; }
+.label-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 1px 4px 1px 8px; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--text-primary); background: var(--surface-1);
+  max-width: 100%; overflow: hidden;
+}
+.chip-key { font-weight: 600; }
+.chip-op { color: var(--accent); font-size: 11px; }
+.chip-values { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-remove {
+  font: inherit; line-height: 1; padding: 0 4px; border: 0; background: none;
+  color: var(--text-muted); cursor: pointer; border-radius: 999px;
+}
+.chip-remove:hover { color: var(--danger); background: var(--surface-3); }
+
 /* ---- stage ---- */
 
 #stage {

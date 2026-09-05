@@ -16,9 +16,9 @@ pub(crate) use crate::serving::unhonored_projection::UnhonoredProjection;
 use serde_json::{Value, json};
 
 use kmp_viewer::{
-    ApplyIntentCommand, Clock, DEFAULT_VIEW_ID, FocusDto, OpenViewCommand, ProjectionDto,
-    SemanticZoom, TimeRangeDto, TraceSelectionDto, ViewError, ViewIntentDto, ViewRegistry,
-    ViewState, logical_digest, view_state_dto,
+    ApplyIntentCommand, Clock, DEFAULT_VIEW_ID, FocusDto, LabelSelectorDto, OpenViewCommand,
+    ProjectionDto, SemanticZoom, TimeRangeDto, TraceSelectionDto, ViewError, ViewIntentDto,
+    ViewRegistry, ViewState, logical_digest, view_state_dto,
 };
 
 use crate::serving::ToolError;
@@ -212,6 +212,7 @@ fn intent_from(arguments: &Value) -> Result<(ViewIntentDto, Vec<String>), ToolEr
                 .and_then(Value::as_str)
                 .map(str::to_string),
             dimensions: strings("dimensions"),
+            labels: label_selectors(projection)?,
             relation_classes: strings("relation_classes"),
             overlays: strings("overlays"),
         });
@@ -261,6 +262,45 @@ fn intent_from(arguments: &Value) -> Result<(ViewIntentDto, Vec<String>), ToolEr
     Ok((intent, refs))
 }
 
+/// `projection.labels` as `{ key, op, values }` objects — the shape is this
+/// boundary's to check, the vocabulary the view context's to refuse.
+fn label_selectors(projection: &Value) -> Result<Option<Vec<LabelSelectorDto>>, ToolError> {
+    let Some(labels) = projection.get("labels") else {
+        return Ok(None);
+    };
+    let Some(items) = labels.as_array() else {
+        return Err(ToolError::invalid_argument(
+            "projection.labels is an array of `{ key, op, values }` selectors",
+        ));
+    };
+    items
+        .iter()
+        .map(|item| {
+            let key = item.get("key").and_then(Value::as_str).map(str::trim);
+            let op = item.get("op").and_then(Value::as_str).map(str::trim);
+            let (Some(key), Some(op)) = (key, op) else {
+                return Err(ToolError::invalid_argument(
+                    "every projection.labels selector needs `key` and `op`",
+                ));
+            };
+            let values = item
+                .get("values")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect();
+            Ok(LabelSelectorDto {
+                key: key.to_string(),
+                op: op.to_string(),
+                values,
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
 pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {
     let values = |key: &str| {
         arguments
@@ -275,6 +315,12 @@ pub(crate) fn projection_names(arguments: &Value) -> ProjectionNames {
     ProjectionNames {
         dimensions: values("dimensions"),
         overlays: values("overlays"),
+        labels: arguments
+            .pointer("/projection")
+            .map(label_selectors)
+            .and_then(Result::ok)
+            .flatten()
+            .unwrap_or_default(),
     }
 }
 
@@ -306,6 +352,22 @@ fn omit_unhonored_projection(intent: &mut ViewIntentDto, unavailable: &Unhonored
     }
     if let Some(overlays) = projection.overlays.as_mut() {
         overlays.retain(|name| !unavailable.overlays.contains(name));
+    }
+    if let Some(labels) = projection.labels.as_mut() {
+        // A selector on a key the catalogue lacks is dropped whole; an `in`
+        // naming values the key does not hold keeps the ones it does.
+        labels.retain_mut(|selector| {
+            if unavailable.label_keys.contains(&selector.key) {
+                return false;
+            }
+            if let Some(missing) = unavailable.label_values.get(&selector.key) {
+                selector.values.retain(|value| !missing.contains(value));
+                if selector.op == "in" && selector.values.is_empty() {
+                    return false;
+                }
+            }
+            true
+        });
     }
 }
 
@@ -354,10 +416,12 @@ pub(crate) fn apply_intent(
     // remains the same intent even if the mounted catalog changed.
     let intent_digest = logical_digest(&intent);
     omit_unhonored_projection(&mut intent, &unavailable);
+    let label_notes = unavailable.label_notes();
     let mut unhonored: Vec<String> = unavailable
         .dimensions
         .into_iter()
         .chain(unavailable.overlays)
+        .chain(label_notes)
         .collect();
     if arguments.get("trace").is_some_and(|trace| !trace.is_null())
         && has_explicit_time_range(arguments)

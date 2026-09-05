@@ -87,7 +87,8 @@ KMP_APP.data = (() => {
         new Date(Math.round(view.t0)).toISOString(),
         new Date(Math.round(view.t1)).toISOString(),
         level,
-        bins
+        bins,
+        KMP_LOOM.labelQuery(view.selectors)
       );
     try {
       let projection = await fetchAt(lod);
@@ -113,6 +114,17 @@ KMP_APP.data = (() => {
     } catch (error) {
       if (generation === model.loadGeneration) showError(error.message);
     }
+  }
+
+  /* A chip changed: the kernel filters, so the projection is asked again,
+     and both faces hear about it. */
+  async function setSelectors(selectors) {
+    view.selectors = KMP_LOOM.normalizeSelectors(selectors);
+    KMP_APP.panels.renderChips();
+    if (!model.about) return;
+    // The extent may move under a filter; re-probe like a fresh about.
+    await KMP_APP.data.loadAbout(model.about, false);
+    KMP_APP.sync.reportView();
   }
 
   function scheduleProjection() {
@@ -173,13 +185,18 @@ KMP_APP.data = (() => {
       // Episode carries exact cluster endpoints without downloading entry
       // bodies. It is the cheap extent probe; the next request uses that
       // exact visible range and the rung the screen can actually display.
+      // A chip belongs to the about whose catalogue named it; a fresh
+      // about starts without any, unless the caller is applying a snapshot
+      // that carries them.
+      if (about !== model.about && !sync.applying) view.selectors = [];
       const probe = await fetchProjection(
         about,
         view.clock,
         KMP_APP.api.EXTENT_FROM,
         KMP_APP.api.EXTENT_TO,
         "episode",
-        128
+        128,
+        KMP_LOOM.labelQuery(view.selectors)
       );
       if (generation !== model.loadGeneration) return;
       const extent = KMP_LOOM.projectionExtent(probe);
@@ -201,6 +218,7 @@ KMP_APP.data = (() => {
       view.trace = null;
       view.searchHits = new Set();
       view.hiddenLanes = new Set();
+      KMP_APP.panels.renderChips();
       view.pinA = null;
       view.pinB = null;
       view.diff = null;
@@ -240,6 +258,7 @@ KMP_APP.data = (() => {
   return {
     lanesFromProjection,
     applyProjection,
+    setSelectors,
     loadProjection,
     scheduleProjection,
     cancelScheduledProjection,

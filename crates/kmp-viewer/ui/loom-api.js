@@ -27,7 +27,7 @@ KMP_APP.api = (() => {
   const EXTENT_FROM = "1900-01-01T00:00:00Z";
   const EXTENT_TO = "2100-01-01T00:00:00Z";
 
-  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128) {
+  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "") {
     const params = {
       about,
       from: from || EXTENT_FROM,
@@ -37,6 +37,7 @@ KMP_APP.api = (() => {
       limit: 2048,
     };
     if (axis) params.axis = axis;
+    if (labels) params.labels = labels;
     return call("/api/projection", params);
   }
 

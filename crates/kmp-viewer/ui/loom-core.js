@@ -584,6 +584,68 @@ const KMP_LOOM = (() => {
     };
   }
 
+  /* ---------------- label selectors ----------------
+     A selector is a predicate over the labels an entry stands in, in the
+     kernel's four operators. The view state carries them as objects; the
+     query string carries them as `key op value|value`, joined by `;` — the
+     one grammar the projection read and the human's report share. */
+
+  const LABEL_OPERATORS = ["in", "notin", "exists", "notexists"];
+
+  function normalizeSelectors(list) {
+    const seen = new Set();
+    const out = [];
+    for (const item of list || []) {
+      const key = String((item && item.key) || "").trim();
+      const op = String((item && item.op) || "").trim();
+      if (!key || !LABEL_OPERATORS.includes(op)) continue;
+      const values = [...new Set((item.values || []).map((v) => String(v).trim()).filter(Boolean))].sort();
+      if ((op === "in" || op === "notin") && !values.length) continue;
+      const selector = { key, op, values: op === "in" || op === "notin" ? values : [] };
+      const id = JSON.stringify(selector);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(selector);
+    }
+    // Selectors conjoin, so their order carries no meaning: sorted, two
+    // filters that mean the same thing read the same on the wire.
+    const rank = (s) => `${s.key}\u0000${LABEL_OPERATORS.indexOf(s.op)}\u0000${s.values.join("|")}`;
+    return out.sort((a, b) => (rank(a) < rank(b) ? -1 : rank(a) > rank(b) ? 1 : 0));
+  }
+
+  function labelQuery(selectors) {
+    return normalizeSelectors(selectors)
+      .map((s) => (s.values.length ? `${s.key} ${s.op} ${s.values.join("|")}` : `${s.key} ${s.op}`))
+      .join(";");
+  }
+
+  function parseLabelQuery(text) {
+    return normalizeSelectors(
+      String(text || "")
+        .split(";")
+        .map((clause) => clause.trim())
+        .filter(Boolean)
+        .map((clause) => {
+          const [key, op, ...rest] = clause.split(/\s+/);
+          return { key, op, values: rest.join(" ").split("|") };
+        })
+    );
+  }
+
+  /* Adds one predicate: a second `in`/`notin` on the same key merges its
+     values; `exists`/`notexists` replace whatever stood on that key. */
+  function withSelector(selectors, next) {
+    const current = normalizeSelectors(selectors);
+    const [candidate] = normalizeSelectors([next]);
+    if (!candidate) return current;
+    const same = current.find((s) => s.key === candidate.key && s.op === candidate.op);
+    if (same && candidate.values.length) {
+      same.values = [...new Set([...same.values, ...candidate.values])].sort();
+      return current;
+    }
+    return [...current.filter((s) => s.key !== candidate.key || s.op !== candidate.op), candidate];
+  }
+
   /* ---------------- search ---------------- */
 
   function parseQuery(raw) {
@@ -651,5 +713,10 @@ const KMP_LOOM = (() => {
     parseQuery,
     matchesQuery,
     agentStateFacets,
+    LABEL_OPERATORS,
+    normalizeSelectors,
+    labelQuery,
+    parseLabelQuery,
+    withSelector,
   };
 })();

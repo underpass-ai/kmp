@@ -78,6 +78,8 @@ impl ViewState {
         }
         if let Some(projection) = patch.projection {
             self.projection = projection;
+        } else if let Some(labels) = patch.projection_labels {
+            self.projection.labels = labels;
         }
         if let Some(selection) = patch.selection {
             self.selection = selection;

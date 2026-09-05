@@ -371,3 +371,33 @@ test("the known extent grows to include refs newer than the cached probe", () =>
   assert.equal(fresh.t1, fresh.t0 + 1, "a single instant never collapses the extent");
   assert.equal(loom.extentIncluding(current, NaN, 3000), current, "an unreadable stamp changes nothing");
 });
+
+/* ---------------- label selectors ---------------- */
+
+test("the selector grammar round-trips and refuses what means nothing", () => {
+  const selectors = loom.parseLabelQuery("task in launch|other; incident notexists ;env notin prod;bad like x;task in");
+  assert.equal(
+    JSON.stringify(selectors),
+    JSON.stringify([
+      { key: "env", op: "notin", values: ["prod"] },
+      { key: "incident", op: "notexists", values: [] },
+      { key: "task", op: "in", values: ["launch", "other"] },
+    ])
+  );
+  assert.equal(loom.labelQuery(selectors), "env notin prod;incident notexists;task in launch|other", "sorted: order carries no meaning");
+  assert.equal(loom.labelQuery(loom.parseLabelQuery(loom.labelQuery(selectors))), loom.labelQuery(selectors));
+  assert.equal(loom.labelQuery([]), "");
+  assert.equal(loom.labelQuery([{ key: "task", op: "exists", values: ["stray"] }]), "task exists", "exists carries no values");
+});
+
+test("adding a selector merges values on the same key and operator", () => {
+  let selectors = loom.withSelector([], { key: "task", op: "in", values: ["a"] });
+  selectors = loom.withSelector(selectors, { key: "task", op: "in", values: ["b"] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b");
+  selectors = loom.withSelector(selectors, { key: "task", op: "notin", values: ["c"] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c");
+  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
+  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c;task exists");
+  assert.equal(loom.labelQuery(loom.withSelector(selectors, { key: "", op: "in", values: ["x"] })), loom.labelQuery(selectors));
+});

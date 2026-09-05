@@ -2,6 +2,7 @@
 //! a view is a camera position, not a record — but every ref an intent
 //! names is checked against the store through the same read an agent uses.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
 use kmp_viewer::ViewRegistry;
@@ -143,11 +144,25 @@ impl KernelMcpServer {
         let mut unhonored = crate::serving::view_tools::UnhonoredProjection::default();
         let about = crate::serving::view_tools::about_for_intent(arguments);
 
-        if !requested.dimensions.is_empty() {
+        if !requested.dimensions.is_empty() || !requested.labels.is_empty() {
             let Some(about) = about else {
                 unhonored.dimensions = requested.dimensions;
+                unhonored.label_keys = requested
+                    .labels
+                    .iter()
+                    .map(|selector| selector.key.clone())
+                    .collect();
                 return Ok(unhonored);
             };
+            // One atlas over all time answers both questions: which of the
+            // named lanes the about holds (`coverage.missing`) and which
+            // labels it holds at all (`labels`), the catalogue the projection
+            // reads before its own filter.
+            let mut dimensions = serde_json::json!({ "scope": "current_about" });
+            if !requested.dimensions.is_empty() {
+                dimensions["mode"] = serde_json::json!("only");
+                dimensions["include"] = serde_json::json!(requested.dimensions);
+            }
             let response = self
                 .backend
                 .call_tool(
@@ -157,11 +172,7 @@ impl KernelMcpServer {
                         "from": "0001-01-01T00:00:00Z",
                         "to": "9999-12-31T23:59:59Z",
                         "lod": "atlas",
-                        "dimensions": {
-                            "mode": "only",
-                            "include": requested.dimensions,
-                            "scope": "current_about"
-                        }
+                        "dimensions": dimensions
                     }),
                 )
                 .await
@@ -179,6 +190,28 @@ impl KernelMcpServer {
                 .filter_map(Value::as_str)
                 .map(str::to_string)
                 .collect();
+            let catalogue = label_catalogue(&response);
+            for selector in &requested.labels {
+                let Some(values) = catalogue.get(&selector.key) else {
+                    if !unhonored.label_keys.contains(&selector.key) {
+                        unhonored.label_keys.push(selector.key.clone());
+                    }
+                    continue;
+                };
+                let missing = selector
+                    .values
+                    .iter()
+                    .filter(|value| !values.contains(*value))
+                    .cloned()
+                    .collect::<Vec<_>>();
+                if !missing.is_empty() {
+                    unhonored
+                        .label_values
+                        .entry(selector.key.clone())
+                        .or_default()
+                        .extend(missing);
+                }
+            }
         }
         for overlay in requested.overlays {
             if !ViewRegistry::shared().overlay_available(&overlay) {
@@ -187,4 +220,28 @@ impl KernelMcpServer {
         }
         Ok(unhonored)
     }
+}
+
+/// The about's labels as the projection lists them: key to the bare values
+/// it holds, which is how a selector names them.
+fn label_catalogue(response: &Value) -> BTreeMap<String, BTreeSet<String>> {
+    let mut catalogue = BTreeMap::<String, BTreeSet<String>>::new();
+    for label in response
+        .pointer("/structuredContent/labels")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let (Some(key), Some(value)) = (
+            label.get("dimension").and_then(Value::as_str),
+            label.get("value").and_then(Value::as_str),
+        ) else {
+            continue;
+        };
+        catalogue
+            .entry(key.to_string())
+            .or_default()
+            .insert(value.to_string());
+    }
+    catalogue
 }

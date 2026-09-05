@@ -9,10 +9,13 @@
 use std::time::Duration;
 
 use crate::http::{HttpRequest, HttpResponse};
+use crate::query_params::label_selector_params;
 use crate::view::ViewRegistry;
 use crate::view::adapters::view_error_status::view_error_response;
 use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
-use crate::view::application::dto::{TimeRangeDto, TraceSelectionDto, ViewIntentDto};
+use crate::view::application::dto::{
+    LabelSelectorDto, TimeRangeDto, TraceSelectionDto, ViewIntentDto,
+};
 use crate::view::application::mappers::view_state_dto;
 use crate::view::domain::DEFAULT_VIEW_ID;
 
@@ -85,6 +88,22 @@ pub(crate) fn view_report(request: &HttpRequest) -> HttpResponse {
         })),
         _ => Some(None),
     };
+    // The chips a person holds, as labels alone: a report says where they
+    // are looking and never wipes the overlays or lanes an agent prepared.
+    let labels = match label_selector_params(request) {
+        Ok(params) if params.is_empty() => Some(None),
+        Ok(params) => Some(Some(
+            params
+                .into_iter()
+                .map(|param| LabelSelectorDto {
+                    key: param.key,
+                    op: param.op,
+                    values: param.values,
+                })
+                .collect(),
+        )),
+        Err(response) => return response,
+    };
     let intent = ViewIntentDto {
         about: request.param("about").map(str::to_string),
         clock: request.param("clock").map(str::to_string),
@@ -99,6 +118,7 @@ pub(crate) fn view_report(request: &HttpRequest) -> HttpResponse {
         trace,
         search: Some(request.param("search").map(str::to_string)),
         projection: None,
+        projection_labels: labels,
     };
     let command = ApplyIntentCommand {
         view_id: Some(id),
@@ -176,12 +196,16 @@ mod tests {
                 ("selection", "decision:one"),
                 ("trace_from", "decision:one"),
                 ("trace_to", "success:two"),
+                ("labels", "task in launch;incident notexists"),
             ],
         )));
         assert_eq!(reported["clock"], "observed");
         assert_eq!(reported["search"], "attempt-000005");
         assert_eq!(reported["trace"]["to"], "success:two");
         assert_eq!(reported["last_change"]["actor"], "human");
+        assert_eq!(reported["projection"]["labels"][0]["key"], "task");
+        assert_eq!(reported["projection"]["labels"][0]["values"][0], "launch");
+        assert_eq!(reported["projection"]["labels"][1]["op"], "notexists");
 
         let since = reported["view_revision"].as_u64().expect("revision");
         let polled = view_get(&request(
@@ -201,6 +225,22 @@ mod tests {
         assert!(undone["view_revision"].as_u64() > Some(since));
         let undo_actor = undone["last_change"]["actor"].as_str();
         assert_eq!(undo_actor, Some("human"));
+
+        // The chips: an operator outside the vocabulary is refused, and a
+        // report without chips clears them.
+        let garbled = view_report(&request(
+            "/api/view/report",
+            &[("id", "routes-loom"), ("labels", "task like launch")],
+        ));
+        assert_eq!(garbled.status, 400);
+        let cleared = body(view_report(&request(
+            "/api/view/report",
+            &[("id", "routes-loom"), ("about", "about:routes")],
+        )));
+        assert!(
+            cleared["projection"].get("labels").is_none(),
+            "a report without chips clears them: {cleared}"
+        );
     }
 
     /// A report onto a view nobody opened first opens it — the browser must

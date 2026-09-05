@@ -27,6 +27,19 @@ Detailed notes from the early release cycle remain available in the
   value; the map is
   [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
 
+- The view speaks the whole selection. `/api/projection` takes `scope_ids`
+  and `labels` — the latter as `key op value|value`, joined by `;`, with the
+  kernel's four operators — so the viewer asks with the same
+  `DimensionSelection` every read fills, where it used to know `dims` and
+  `scope` alone. The view state gains `projection.labels` in the selector
+  shape every read takes under `dimensions.selectors`: `kmp_view_apply_intent`
+  accepts it, resolves each key and `in` value against the about's catalogue
+  the way it resolves dimensions, and reports what the about does not hold as
+  unhonored rather than drawing an empty loom; the browser's report carries
+  a person's chips as labels alone, so it never wipes the overlays an agent
+  aligned. ChronoLoom adopts a snapshot's labels, asks the projection through
+  them, and wears them as chips a person can take off.
+
 ## [0.12.2] - 2026-09-05
 
 ### Fixed

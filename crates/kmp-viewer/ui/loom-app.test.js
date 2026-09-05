@@ -89,6 +89,7 @@ function loom(stubs = {}) {
     syncFocusButton: spy("panels.syncFocusButton"),
     syncClockChips: spy("panels.syncClockChips"),
     hideTraceBox: spy("panels.hideTraceBox"),
+    renderChips: spy("panels.renderChips"),
     setSearch: (text) => {
       calls.push({ name: "panels.setSearch", args: [text] });
       searchBox.value = text;
@@ -681,4 +682,100 @@ test("undoing an agent move applies the stepped-back snapshot", async () => {
   await app.sync.undoAgentMove();
   assert.equal(app.state.sync.revision, 4);
   assert.ok(calls.some((call) => call.name === "panels.renderProvenance"));
+});
+
+/* ---------------- label selectors ---------------- */
+
+test("a snapshot's labels become the loom's selectors and re-probe the about", async () => {
+  const { app, calls } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 10 };
+  app.data.loadAbout = async (about, announce) => calls.push({ name: "data.loadAbout", args: [about, announce] });
+  await app.sync.applyAgentState({
+    view_revision: 5,
+    about: "project:x",
+    clock: "occurred",
+    focus: {},
+    projection: { labels: [{ key: "task", op: "in", values: ["launch", "launch"] }, { key: "incident", op: "notexists" }] },
+    can_undo: true,
+  });
+  assert.equal(
+    JSON.stringify(view.selectors),
+    JSON.stringify([{ key: "incident", op: "notexists", values: [] }, { key: "task", op: "in", values: ["launch"] }])
+  );
+  const reload = calls.find((call) => call.name === "data.loadAbout");
+  assert.ok(reload, "a changed filter asks the kernel again");
+  assert.equal(reload.args[1], false, "without announcing a fresh open");
+  assert.ok(calls.some((call) => call.name === "panels.renderChips"));
+  calls.length = 0;
+  await app.sync.applyAgentState({
+    view_revision: 6,
+    about: "project:x",
+    clock: "occurred",
+    focus: {},
+    projection: { labels: [{ key: "incident", op: "notexists" }, { key: "task", op: "in", values: ["launch"] }] },
+    can_undo: true,
+  });
+  assert.ok(!calls.some((call) => call.name === "data.loadAbout"), "the same filter in another order is the same filter");
+});
+
+test("the projection is asked through the selectors and the report carries them", async () => {
+  const loomInstance = loom();
+  const { app, context } = loomInstance;
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 200000 };
+  view.t0 = 0;
+  view.t1 = 200000;
+  view.selectors = [{ key: "task", op: "in", values: ["launch", "other"] }];
+  app.sync.reportView = () => {};
+  const asked = [];
+  app.api = {
+    ...app.api,
+    fetchProjection: async (about, axis, from, to, lod, bins, labels) => {
+      asked.push(labels);
+      return { entries: [], bins: [], clusters: [], relations: [], page: { total: 0 } };
+    },
+  };
+  await app.data.loadProjection();
+  assert.equal(asked[0], "task in launch|other");
+
+  context.setTimeout = (fn) => {
+    fn();
+    return 0;
+  };
+  context.clearTimeout = () => {};
+  const posted = [];
+  app.api = { ...app.api, call: async (path, params) => (posted.push(params), { view_revision: 2 }) };
+  app.sync.reportView = Object.getPrototypeOf(app.sync).reportView || app.sync.reportView;
+  // reportView was replaced above for loadProjection; rebuild a fresh loom to read the real one.
+  const fresh = loom();
+  fresh.context.setTimeout = (fn) => {
+    fn();
+    return 0;
+  };
+  fresh.context.clearTimeout = () => {};
+  fresh.app.state.model.about = "project:x";
+  fresh.app.state.view.full = { t0: 0, t1: 10 };
+  fresh.app.state.view.selectors = [{ key: "incident", op: "notexists", values: [] }];
+  const reported = [];
+  fresh.app.api = { ...fresh.app.api, call: async (path, params) => (reported.push(params), { view_revision: 3 }) };
+  fresh.app.sync.reportView();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(reported[0].labels, "incident notexists");
+});
+
+test("setSelectors normalizes, redraws the chips, re-probes and reports", async () => {
+  const { app, calls } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  app.data.loadAbout = async (about, announce) => calls.push({ name: "data.loadAbout", args: [about, announce] });
+  app.sync.reportView = () => calls.push({ name: "sync.reportView" });
+  await app.data.setSelectors([{ key: "task", op: "like", values: ["x"] }, { key: "task", op: "exists" }]);
+  assert.equal(JSON.stringify(view.selectors), JSON.stringify([{ key: "task", op: "exists", values: [] }]));
+  const names = calls.map((call) => call.name);
+  assert.ok(names.includes("panels.renderChips"));
+  assert.ok(names.includes("data.loadAbout"));
+  assert.ok(names.includes("sync.reportView"));
 });

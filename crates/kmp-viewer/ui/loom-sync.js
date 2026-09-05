@@ -66,14 +66,23 @@ KMP_APP.sync = (() => {
   async function applyAgentState(state) {
     sync.applying = true;
     try {
+      // The labels the snapshot carries are the kernel's filter; they are
+      // adopted before any projection is asked for, and a change reloads.
+      const projection = state.projection || {};
+      const selectors = KMP_LOOM.normalizeSelectors(projection.labels);
+      const selectorsChanged =
+        KMP_LOOM.labelQuery(selectors) !== KMP_LOOM.labelQuery(view.selectors);
+      view.selectors = selectors;
+      if (selectorsChanged) KMP_APP.panels.renderChips();
       if (state.about && state.about !== model.about) {
         await KMP_APP.data.loadAbout(state.about);
+      } else if (selectorsChanged && model.about) {
+        await KMP_APP.data.loadAbout(model.about, false);
       }
       if (state.clock && state.clock !== view.clock) {
         KMP_APP.viewport.setClock(state.clock, false);
       }
 
-      const projection = state.projection || {};
       if (projection.overlays) await KMP_APP.data.loadObservability(projection.overlays);
       if (projection.dimensions) {
         const keep = new Set(projection.dimensions);
@@ -177,6 +186,8 @@ KMP_APP.sync = (() => {
         to: new Date(Math.round(view.t1)).toISOString(),
       });
       if (view.selectedRef) params.set("selection", view.selectedRef);
+      const labels = KMP_LOOM.labelQuery(view.selectors);
+      if (labels) params.set("labels", labels);
       const search = KMP_APP.panels.searchText();
       if (search) params.set("search", search);
       if (tracePick.from && tracePick.to) {

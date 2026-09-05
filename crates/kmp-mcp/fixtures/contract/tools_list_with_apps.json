@@ -4846,6 +4846,43 @@
                 },
                 "type": "array"
               },
+              "labels": {
+                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. A lane is a key and the rows inside it are its values; a predicate keeps or drops whole entries by the labels they stand in. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "op": {
+                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "enum": [
+                        "in",
+                        "notin",
+                        "exists",
+                        "notexists"
+                      ],
+                      "type": "string"
+                    },
+                    "values": {
+                      "items": {
+                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "op"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
               "overlays": {
                 "description": "Exact observability series to align above the loom on its current time axis. Missing backend series are reported by the viewer without inventing replacements.",
                 "items": {

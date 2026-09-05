@@ -6,6 +6,9 @@
   let currentAbout = null;
   let currentViewId = "default";
   let reportSequence = 0;
+  // The last snapshot seen, so a report can carry the whole projection —
+  // an intent replaces it — with only the labels changed.
+  let lastProjection = {};
   const pending = new Map();
   const aboutWaiters = [];
 
@@ -91,7 +94,15 @@
     limit: Number(params.limit || 2048),
     ...(params.axis ? { axis: params.axis } : {}),
     ...(params.cursor ? { cursor: params.cursor } : {}),
+    ...(params.labels
+      ? { dimensions: { selectors: globalThis.KMP_LOOM.parseLabelQuery(params.labels) } }
+      : {}),
   });
+
+  const rememberProjection = (state) => {
+    if (state && state.projection) lastProjection = state.projection;
+    return state;
+  };
 
   const nodeFromEntry = (entry) => ({
     id: entry.ref_id,
@@ -190,7 +201,7 @@
         result = await callTool("kmp_view_get_state", args);
         state = result.state || result;
       }
-      return state;
+      return rememberProjection(state);
     }
     if (path === "/api/view/open") {
       const result = await callTool("kmp_view_open", {
@@ -198,10 +209,12 @@
         view_id: params.id || currentViewId,
         expected_revision: Number(params.expected_revision) || undefined,
       });
-      return result.state || result;
+      return rememberProjection(result.state || result);
     }
     if (path === "/api/view/report") {
-      const result = await callTool("kmp_view_apply_intent", {
+      const labels = globalThis.KMP_LOOM.parseLabelQuery(params.labels);
+      const hadLabels = Array.isArray(lastProjection.labels) && lastProjection.labels.length > 0;
+      const intent = {
         view_id: params.id || currentViewId,
         idempotency_key: `chronoloom-human-${Date.now()}-${reportSequence++}`,
         actor: "human",
@@ -210,8 +223,21 @@
         selection: params.selection || null,
         trace: params.trace_from && params.trace_to ? { from: params.trace_from, to: params.trace_to } : null,
         search: params.search || null,
-      });
-      return result.state || result;
+      };
+      if (labels.length || hadLabels) {
+        // The intent has no labels-only facet; carry the projection as it
+        // stands so the person's chips never wipe what the agent aligned.
+        const { semantic_zoom, dimensions, relation_classes, overlays } = lastProjection;
+        intent.projection = {
+          ...(semantic_zoom ? { semantic_zoom } : {}),
+          ...(dimensions ? { dimensions } : {}),
+          ...(relation_classes ? { relation_classes } : {}),
+          ...(overlays ? { overlays } : {}),
+          labels,
+        };
+      }
+      const result = await callTool("kmp_view_apply_intent", intent);
+      return rememberProjection(result.state || result);
     }
     if (path === "/api/view/undo") {
       const result = await callTool("kmp_view_undo", { view_id: params.id || currentViewId });

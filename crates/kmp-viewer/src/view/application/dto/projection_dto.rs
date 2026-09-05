@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::view::application::dto::label_selector_dto::LabelSelectorDto;
+
 /// The projection settings as the wire spells them — also the shape an
 /// intent's `projection` block arrives in, before its vocabulary is checked
 /// by the mapper.
@@ -13,6 +15,9 @@ pub struct ProjectionDto {
     /// The dimensions to keep as lanes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<Vec<String>>,
+    /// The label predicates to filter by, in the kernel's selector shape.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub labels: Option<Vec<LabelSelectorDto>>,
     /// The relation classes to draw.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub relation_classes: Option<Vec<String>>,

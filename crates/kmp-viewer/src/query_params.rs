@@ -4,7 +4,8 @@
 //! 2026-08-28 conformance audit prescribed.
 
 use kmp_domain::{
-    DimensionSelection, ResolutionTier, TemporalAxis, TemporalCursor, TemporalDirection,
+    DimensionSelection, LabelSelector, LabelSelectorOperator, ResolutionTier, TemporalAxis,
+    TemporalCursor, TemporalDirection,
 };
 
 use crate::http::{HttpRequest, HttpResponse};
@@ -54,12 +55,96 @@ pub(crate) fn window_param(request: &HttpRequest, key: &str) -> Result<usize, Ht
     Ok(numeric_param(request, key, DEFAULT_WINDOW_ENTRIES)?.min(MAX_WINDOW_ENTRIES))
 }
 
+/// One label predicate as a query parameter spells it: `key op value|value`,
+/// several joined by `;`. The same grammar carries a person's chips in the
+/// view report and a projection read's filter, so the loom speaks one
+/// selector language on the wire it does not have a JSON body for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct LabelSelectorParam {
+    pub(crate) key: String,
+    pub(crate) op: String,
+    pub(crate) values: Vec<String>,
+}
+
+/// `labels=task in launch|other;incident notexists` — every predicate the
+/// caller sent, its shape checked here and its vocabulary by whoever builds
+/// the selector. An empty parameter is no predicate.
+pub(crate) fn label_selector_params(
+    request: &HttpRequest,
+) -> Result<Vec<LabelSelectorParam>, HttpResponse> {
+    let Some(raw) = request.param("labels") else {
+        return Ok(Vec::new());
+    };
+    raw.split(';')
+        .map(str::trim)
+        .filter(|clause| !clause.is_empty())
+        .map(|clause| {
+            let mut words = clause.split_whitespace();
+            let (Some(key), Some(op)) = (words.next(), words.next()) else {
+                return Err(HttpResponse::error(
+                    400,
+                    &format!(
+                        "label selector `{clause}` needs a key and an operator: `key in a|b`, `key notin a`, `key exists`, `key notexists`"
+                    ),
+                ));
+            };
+            let values = words
+                .flat_map(|word| word.split('|'))
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToString::to_string)
+                .collect();
+            Ok(LabelSelectorParam {
+                key: key.to_string(),
+                op: op.to_string(),
+                values,
+            })
+        })
+        .collect()
+}
+
 /// `scope=all` widens recall to every about the kernel indexes — the global
-/// graph. `dims=a,b` restricts to those dimension kinds. Defaults mirror
-/// `kmp_wake`: the current about, all dimensions.
+/// graph. `dims=a,b` restricts to those dimension kinds. `scope_ids=a,b`
+/// keeps only those values, coordinate by coordinate. `labels=…` filters by
+/// the entry's whole label map with the kernel's four operators. Defaults
+/// mirror `kmp_wake`: the current about, all dimensions, no predicate. The
+/// whole of `DimensionSelection` is reachable here, because the kernel
+/// already fills it and a viewer that asked with a smaller spoon drew fewer
+/// labels than the store held.
 pub(crate) fn dimension_selection(
     request: &HttpRequest,
 ) -> Result<DimensionSelection, HttpResponse> {
+    let selectors = label_selector_params(request)?
+        .into_iter()
+        .map(|param| {
+            let operator = match param.op.as_str() {
+                "in" => LabelSelectorOperator::In,
+                "notin" => LabelSelectorOperator::NotIn,
+                "exists" => LabelSelectorOperator::Exists,
+                "notexists" => LabelSelectorOperator::NotExists,
+                other => {
+                    return Err(HttpResponse::error(
+                        400,
+                        &format!(
+                            "unknown label operator `{other}`; expected `in`, `notin`, `exists` or `notexists`"
+                        ),
+                    ));
+                }
+            };
+            LabelSelector::new(param.key, operator, param.values)
+                .map_err(|error| HttpResponse::error(400, &error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let scope_ids = request
+        .param("scope_ids")
+        .map(|ids| {
+            ids.split(',')
+                .map(str::trim)
+                .filter(|id| !id.is_empty())
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let selection = match request.param("dims") {
         Some(dims) => {
             let kinds: Vec<String> = dims
@@ -74,7 +159,9 @@ pub(crate) fn dimension_selection(
             DimensionSelection::only(kinds)
         }
         None => DimensionSelection::all(),
-    };
+    }
+    .with_scope_ids(scope_ids)
+    .with_selectors(selectors);
     Ok(match request.param("scope") {
         Some("all") => selection.with_all_about_scope(),
         Some("current") | None => selection,
@@ -200,6 +287,44 @@ mod tests {
         assert!(dimension_selection(&request(&[("dims", " , ")])).is_err());
         assert!(dimension_selection(&request(&[("scope", "all")])).is_ok());
         assert!(dimension_selection(&request(&[("scope", "galaxy")])).is_err());
+    }
+
+    /// The whole selection the kernel takes is reachable from the query
+    /// string: values by `scope_ids`, predicates by `labels`, in one
+    /// grammar the view report shares.
+    #[test]
+    fn scope_ids_and_label_selectors_reach_the_kernel_selection() {
+        let selection = dimension_selection(&request(&[
+            ("scope_ids", "task:launch, task:other"),
+            (
+                "labels",
+                "task in launch|other; incident notexists ;env notin prod",
+            ),
+        ]))
+        .expect("a full selection");
+        assert_eq!(selection.scope_ids().len(), 2);
+        let selectors = selection.selectors();
+        assert_eq!(selectors.len(), 3);
+        let by_key = |key: &str| selectors.iter().find(|s| s.key() == key).expect(key);
+        assert_eq!(by_key("task").operator(), LabelSelectorOperator::In);
+        assert_eq!(by_key("task").values().len(), 2);
+        assert_eq!(
+            by_key("incident").operator(),
+            LabelSelectorOperator::NotExists
+        );
+        assert_eq!(by_key("env").operator(), LabelSelectorOperator::NotIn);
+        assert!(
+            !dimension_selection(&request(&[]))
+                .expect("default")
+                .has_selectors()
+        );
+
+        for broken in ["task", "task like launch", "task in", "task exists launch"] {
+            assert!(
+                dimension_selection(&request(&[("labels", broken)])).is_err(),
+                "`{broken}` is refused, not guessed"
+            );
+        }
     }
 
     #[test]

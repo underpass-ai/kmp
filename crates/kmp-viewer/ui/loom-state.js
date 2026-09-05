@@ -48,6 +48,7 @@ KMP_APP.state = (() => {
     dimmedKinds: new Set(),
     searchHits: new Set(),
     trace: null, // {refs:Set, edgeKeys:Set}
+    selectors: [], // [{key, op, values}] — the kernel filters by them
     overlays: [],
     lensMode: "elapsed",
     focusRange: null,

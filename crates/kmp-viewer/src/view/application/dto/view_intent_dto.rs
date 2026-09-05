@@ -3,6 +3,7 @@
 use serde::Serialize;
 
 use crate::view::application::dto::focus_dto::FocusDto;
+use crate::view::application::dto::label_selector_dto::LabelSelectorDto;
 use crate::view::application::dto::projection_dto::ProjectionDto;
 use crate::view::application::dto::time_range_dto::TimeRangeDto;
 use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
@@ -25,6 +26,9 @@ pub struct ViewIntentDto {
     pub focus_window: Option<TimeRangeDto>,
     /// Replace the projection settings.
     pub projection: Option<ProjectionDto>,
+    /// Replace only the label predicates, leaving the rest of the projection
+    /// alone; `Some(None)` clears them. Ignored when `projection` is present.
+    pub projection_labels: Option<Option<Vec<LabelSelectorDto>>>,
     /// `Some(None)` clears the selection; `None` leaves it alone.
     pub selection: Option<Option<String>>,
     /// `Some(None)` clears the trace; `None` leaves it alone.

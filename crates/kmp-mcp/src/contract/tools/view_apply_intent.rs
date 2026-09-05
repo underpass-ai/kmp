@@ -67,6 +67,11 @@ pub(crate) fn definition() -> Value {
                             "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
                         },
                         "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
+                        "labels": {
+                            "type": "array",
+                            "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. A lane is a key and the rows inside it are its values; a predicate keeps or drops whole entries by the labels they stand in. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                            "items": label_selector_schema()
+                        },
                         "relation_classes": {"type": "array", "items": semantic_class_schema()},
                         "overlays": {
                             "type": "array",
