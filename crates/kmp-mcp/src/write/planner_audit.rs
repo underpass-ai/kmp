@@ -3,7 +3,7 @@
 //! can fix.
 #![cfg(test)]
 
-mod tests {
+pub(crate) mod tests {
     #[allow(unused_imports)]
     use crate::write::generated_ref::{GENERATED_REF_HASH_LEN, GENERATED_REF_SEGMENT_MAX};
     #[allow(unused_imports)]
@@ -472,7 +472,7 @@ mod tests {
         );
     }
 
-    fn sample_write_request() -> Value {
+    pub(crate) fn sample_write_request() -> Value {
         json!({
             "about": "incident:mobile-login",
             "intent": "record_decision",

@@ -41,32 +41,6 @@ pub(super) fn coordinate(
     coordinate
 }
 
-pub(super) fn validate_distinct_scope_ids(
-    process: &str,
-    task: Option<&str>,
-    episode: Option<&str>,
-) -> Result<(), String> {
-    let scopes = [
-        ("process", Some(process)),
-        ("task", task),
-        ("episode", episode),
-    ];
-    for left in 0..scopes.len() {
-        let Some(left_id) = scopes[left].1 else {
-            continue;
-        };
-        for right in (left + 1)..scopes.len() {
-            if scopes[right].1 == Some(left_id) {
-                return Err(format!(
-                    "scope.{} and scope.{} reuse `{left_id}`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds",
-                    scopes[left].0, scopes[right].0
-                ));
-            }
-        }
-    }
-    Ok(())
-}
-
 pub(super) fn shifted_coordinates(coordinates: &Value, offset: u32) -> Value {
     let mut shifted = coordinates.clone();
     if let Some(coordinates) = shifted.as_array_mut() {

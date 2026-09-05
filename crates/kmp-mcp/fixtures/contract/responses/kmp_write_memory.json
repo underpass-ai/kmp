@@ -21,11 +21,28 @@
           "evidence": 2,
           "relations": 1
         },
+        "created_dimensions": [
+          "about:question:parity:dimension:parity"
+        ],
         "memory_id": "memory:write:f44bcf5cd628fba5",
         "read_after_write_ready": true
       },
       "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
       "warnings": []
+    },
+    "labels": {
+      "created": [
+        {
+          "key": "agentic_process",
+          "value": "parity"
+        }
+      ],
+      "written": [
+        {
+          "key": "agentic_process",
+          "value": "parity"
+        }
+      ]
     },
     "next_suggested_reads": [
       {

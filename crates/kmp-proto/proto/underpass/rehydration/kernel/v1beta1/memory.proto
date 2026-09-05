@@ -123,6 +123,10 @@ message IngestedMemory {
   string memory_id = 2;
   AcceptedCounts accepted = 3;
   bool read_after_write_ready = 4;
+  // The dimension nodes this ingest declared for the first time, namespaced
+  // `about:{about}:dimension:{scope}`: the labels the write created rather
+  // than reused.
+  repeated string created_dimensions = 5;
 }
 
 message AcceptedCounts {

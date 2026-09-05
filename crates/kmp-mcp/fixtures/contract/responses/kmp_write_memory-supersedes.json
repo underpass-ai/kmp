@@ -22,11 +22,21 @@
           "evidence": 3,
           "relations": 3
         },
+        "created_dimensions": [],
         "memory_id": "memory:write:756d82ab906b9c4d",
         "read_after_write_ready": true
       },
       "summary": "Ingested 2 entries, 3 relations, and 3 evidence items for question:parity.",
       "warnings": []
+    },
+    "labels": {
+      "created": [],
+      "written": [
+        {
+          "key": "agentic_process",
+          "value": "parity"
+        }
+      ]
     },
     "next_suggested_reads": [
       {

@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use serde_json::{Value, json};
 
 use super::plan::KernelWritePlan;
@@ -8,6 +10,7 @@ pub(crate) fn write_dry_run_result(plan: &KernelWritePlan) -> Value {
         "dry_run": true,
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,
+        "labels": { "written": plan.labels },
         "relations": plan.relations,
         "relation_quality": plan.relation_quality,
         "relation_quality_metrics": plan.relation_quality_metrics,
@@ -23,11 +26,13 @@ pub(crate) fn write_commit_result(
     viewer_url: Option<&str>,
     orphaned_bundle: Option<&kmp_embedded::OrphanedProjectBundle>,
 ) -> Value {
+    let created = created_labels(plan, &ingest_result);
     let mut result = json!({
         "accepted": true,
         "dry_run": false,
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,
+        "labels": { "written": plan.labels, "created": created },
         "relations": plan.relations,
         "relation_quality": plan.relation_quality,
         "relation_quality_metrics": plan.relation_quality_metrics,
@@ -42,6 +47,32 @@ pub(crate) fn write_commit_result(
         result["durability"] = orphaned_bundle_notice(orphaned);
     }
     result
+}
+
+/// The labels of the plan the kernel declared for the first time, read off
+/// the namespaced dimension ids the ingest reports as created.
+fn created_labels(plan: &KernelWritePlan, ingest_result: &Value) -> Vec<Value> {
+    let created = ingest_result
+        .pointer("/memory/created_dimensions")
+        .and_then(Value::as_array)
+        .map(|ids| {
+            ids.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect::<BTreeSet<_>>()
+        })
+        .unwrap_or_default();
+    plan.labels
+        .iter()
+        .filter(|label| {
+            let value = label["value"].as_str().unwrap_or_default();
+            !value.is_empty()
+                && created
+                    .iter()
+                    .any(|id| id == value || id.ends_with(&format!(":dimension:{value}")))
+        })
+        .cloned()
+        .collect()
 }
 
 pub(super) fn orphaned_bundle_notice(orphaned: &kmp_embedded::OrphanedProjectBundle) -> Value {

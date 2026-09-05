@@ -463,6 +463,13 @@
                 },
                 "type": "object"
               },
+              "created_dimensions": {
+                "description": "Dimension nodes this ingest declared for the first time, namespaced `about:{about}:dimension:{scope}`: the labels the write created rather than reused.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
               "memory_id": {
                 "description": "Stable id of the accepted memory event.",
                 "type": "string"
@@ -736,6 +743,15 @@
             ],
             "type": "string"
           },
+          "labels": {
+            "additionalProperties": {
+              "description": "The scope id this memory stands in under that key.",
+              "minLength": 1,
+              "type": "string"
+            },
+            "description": "Any other label this memory stands in, `key: value`: `component`, `release`, `customer`, whatever catalogues this about. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned before naming one and reuse what exists. Within an about a scope id names one label and keeps the kind of its first use, so a value already used under another key is refused, naming both. Each label becomes a coordinate with the same clocks; `scope.process`, `scope.task` and `scope.episode` are the same thing under their well-known keys and cannot be given twice.",
+            "type": "object"
+          },
           "observed_at": {
             "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
             "minLength": 1,
@@ -881,17 +897,17 @@
             "additionalProperties": false,
             "properties": {
               "episode": {
-                "description": "Optional agentic episode dimension scope id.",
+                "description": "Optional agentic episode scope id: the well-known `agentic_episode` label.",
                 "minLength": 1,
                 "type": "string"
               },
               "process": {
-                "description": "Caller-defined stable id for the agentic process this memory belongs to. Unknown values intentionally create or attach that process dimension; this is an identifier, not an enum.",
+                "description": "Caller-defined stable id for the agentic process this memory belongs to: the `agentic_process` label every write carries. Unknown values intentionally create or attach that dimension; this is an identifier, not an enum.",
                 "minLength": 1,
                 "type": "string"
               },
               "task": {
-                "description": "Optional task dimension scope id.",
+                "description": "Optional task scope id: the well-known `task` label.",
                 "minLength": 1,
                 "type": "string"
               }
@@ -997,6 +1013,20 @@
           },
           "ingest_result": {
             "description": "Canonical kmp_ingest result. Present only after a committed write.",
+            "type": "object"
+          },
+          "labels": {
+            "additionalProperties": false,
+            "properties": {
+              "created": {
+                "description": "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.",
+                "type": "array"
+              },
+              "written": {
+                "description": "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted.",
+                "type": "array"
+              }
+            },
             "type": "object"
           },
           "next_suggested_reads": {

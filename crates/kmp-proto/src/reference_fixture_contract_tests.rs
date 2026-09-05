@@ -282,6 +282,7 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
             "dry_run",
             "summary",
             "generated_refs",
+            "labels",
             "relations",
             "relation_quality",
             "relation_quality_metrics",

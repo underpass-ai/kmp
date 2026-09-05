@@ -129,6 +129,11 @@ Current status:
   naming a label on a new memory; the most used labels are the first
   expansion the packet fills, the rest follow the causal spine, and
   `truncation` says what did not fit;
+- `kmp_write_memory` takes `labels`, `key: value` pairs for any facet that
+  catalogues the about beside the well-known `scope.process`, `scope.task`
+  and `scope.episode`; each becomes a coordinate with the write's clocks, a
+  value reused under another key is refused, and the response lists the
+  labels written and, after a commit, the labels created;
 - dimension scope defaults to `current_about`; `abouts` requires a non-empty
   about list; `all_abouts` is explicit and uses the kernel memory about index,
   which resolves `include` by dimension kind and `scope_ids` by exact id; the
