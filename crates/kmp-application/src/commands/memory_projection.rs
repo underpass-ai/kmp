@@ -9,6 +9,7 @@ use serde_json::Value;
 use kmp_domain::ContextUpdatedEvent;
 
 use crate::commands::{UpdateContextChange, UpdateContextCommand};
+use crate::memory::{RELABEL_ENTITY_KIND, RELABEL_METHOD};
 
 /// Derives the projection mutations for an already-accepted context event.
 ///
@@ -93,6 +94,9 @@ pub(crate) fn memory_projection_mutations(
                     content_hash,
                     provenance.clone(),
                 )?);
+            }
+            RELABEL_ENTITY_KIND => {
+                mutations.extend(memory_relabel_mutations(change)?);
             }
             _ => {}
         }
@@ -358,6 +362,70 @@ fn memory_evidence_mutations(
     Ok(mutations)
 }
 
+/// A relabel projects as edges around one entry and nothing else: a
+/// `contains_entry` edge per label added, carrying the relabel's why, its
+/// method and who did it when, and one removal per label taken off. The
+/// entry node, its detail and its other relations are not touched.
+fn memory_relabel_mutations(
+    change: &UpdateContextChange,
+) -> Result<Vec<ProjectionMutation>, PortError> {
+    let payload = payload(change)?;
+    let entry_id = required_payload_string(&payload, "ref", change)?;
+    let why = payload_string(&payload, "why");
+    let relabelled_by = match (
+        payload_string(&payload, "actor"),
+        payload_string(&payload, "observed_at"),
+    ) {
+        (Some(actor), Some(observed_at)) => {
+            Some(format!("Relabelled by {actor} at {observed_at}."))
+        }
+        (Some(actor), None) => Some(format!("Relabelled by {actor}.")),
+        (None, Some(observed_at)) => Some(format!("Relabelled at {observed_at}.")),
+        (None, None) => None,
+    };
+
+    let mut mutations = Vec::new();
+    for coordinate in payload
+        .get("add")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(scope_id) = payload_string(coordinate, "scope_id") else {
+            continue;
+        };
+        let explanation = RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_rationale(
+                why.clone()
+                    .unwrap_or_else(|| "Memory scope contains this entry.".to_string()),
+            )
+            .with_method(RELABEL_METHOD)
+            .with_optional_motivation(relabelled_by.clone());
+        mutations.push(contains_entry_relation_with(
+            &scope_id,
+            &entry_id,
+            coordinate,
+            explanation,
+        ));
+    }
+    for removed in payload
+        .get("remove")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(scope_id) = payload_string(removed, "scope_id") else {
+            continue;
+        };
+        mutations.push(ProjectionMutation::RemoveNodeRelation {
+            source_node_id: scope_id,
+            target_node_id: entry_id.clone(),
+            relation_type: "contains_entry".to_string(),
+        });
+    }
+    Ok(mutations)
+}
+
 fn structural_relation(
     source: &str,
     target: &str,
@@ -380,12 +448,29 @@ fn contains_entry_relation(
     entry_id: &str,
     coordinate: &Value,
 ) -> ProjectionMutation {
+    contains_entry_relation_with(
+        scope_id,
+        entry_id,
+        coordinate,
+        RelationExplanation::new(RelationSemanticClass::Structural)
+            .with_rationale("Memory scope contains this entry."),
+    )
+}
+
+/// The `contains_entry` edge one coordinate projects to, over the
+/// explanation the caller starts from: the coordinate's clocks, sequence
+/// and rank go on top of it.
+fn contains_entry_relation_with(
+    scope_id: &str,
+    entry_id: &str,
+    coordinate: &Value,
+    explanation: RelationExplanation,
+) -> ProjectionMutation {
     ProjectionMutation::UpsertNodeRelation(Box::new(NodeRelationProjection {
         source_node_id: scope_id.to_string(),
         target_node_id: entry_id.to_string(),
         relation_type: "contains_entry".to_string(),
-        explanation: RelationExplanation::new(RelationSemanticClass::Structural)
-            .with_rationale("Memory scope contains this entry.")
+        explanation: explanation
             .with_optional_dimension(payload_string(coordinate, "dimension"))
             .with_scope_id(scope_id)
             .with_optional_occurred_at(payload_string(coordinate, "occurred_at"))
@@ -585,6 +670,77 @@ mod tests {
             ProjectionMutation::UpsertNodeDetail(detail) if detail.node_id == "claim:replayed"
                 && detail.revision == 3
         )));
+    }
+
+    #[test]
+    fn a_relabel_projects_as_edges_around_the_entry_and_nothing_else() {
+        let command = UpdateContextCommand {
+            root_node_id: "question:r".to_string(),
+            role: "memory".to_string(),
+            work_item_id: "relabel:1".to_string(),
+            changes: vec![UpdateContextChange {
+                operation: "UPSERT".to_string(),
+                entity_kind: "memory_relabel".to_string(),
+                entity_id: "question:r:claim:replayed".to_string(),
+                payload_json: serde_json::json!({
+                    "ref": "question:r:claim:replayed",
+                    "add": [{
+                        "dimension": "issue",
+                        "scope_id": "about:question:r:dimension:506",
+                        "occurred_at": "2026-07-01T10:00:00Z",
+                        "sequence": 1
+                    }],
+                    "remove": [{
+                        "dimension": "conversation",
+                        "scope_id": "about:question:r:dimension:conversation:s1"
+                    }],
+                    "why": "It closed the issue.",
+                    "actor": "agent-r",
+                    "observed_at": "2026-09-05T12:00:00Z"
+                })
+                .to_string(),
+                reason: "It closed the issue.".to_string(),
+                scopes: vec![],
+            }],
+            expected_revision: None,
+            expected_content_hash: None,
+            idempotency_key: Some("relabel:1".to_string()),
+            logical_digest: None,
+            requested_by: Some("agent-r".to_string()),
+        };
+
+        let mutations =
+            memory_projection_mutations(&command, 4, "hash-4").expect("a relabel projects");
+
+        // The anchor is ensured, then one edge in and one edge out; no node,
+        // detail or status is touched.
+        assert_eq!(mutations.len(), 3, "{mutations:?}");
+        let ProjectionMutation::UpsertNodeRelation(added) = &mutations[1] else {
+            panic!("an added edge: {:?}", mutations[1]);
+        };
+        assert_eq!(added.source_node_id, "about:question:r:dimension:506");
+        assert_eq!(added.target_node_id, "question:r:claim:replayed");
+        assert_eq!(added.relation_type, "contains_entry");
+        assert_eq!(added.explanation.rationale(), Some("It closed the issue."));
+        assert_eq!(added.explanation.method(), Some("kmp_relabel"));
+        assert_eq!(
+            added.explanation.motivation(),
+            Some("Relabelled by agent-r at 2026-09-05T12:00:00Z.")
+        );
+        assert_eq!(added.explanation.dimension(), Some("issue"));
+        assert_eq!(
+            added.explanation.occurred_at(),
+            Some("2026-07-01T10:00:00Z")
+        );
+        assert_eq!(added.explanation.sequence(), Some(1));
+        assert_eq!(
+            mutations[2],
+            ProjectionMutation::RemoveNodeRelation {
+                source_node_id: "about:question:r:dimension:conversation:s1".to_string(),
+                target_node_id: "question:r:claim:replayed".to_string(),
+                relation_type: "contains_entry".to_string(),
+            }
+        );
     }
 
     #[test]

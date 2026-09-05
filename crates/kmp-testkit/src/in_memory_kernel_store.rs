@@ -68,6 +68,10 @@ impl KernelStoreState {
         );
     }
 
+    fn remove_relation(&mut self, source: String, target: String, relation_type: String) {
+        self.relations.remove(&(source, target, relation_type));
+    }
+
     fn relations_among(&self, selected: &BTreeSet<String>) -> Vec<NodeRelationProjection> {
         self.relations
             .iter()
@@ -207,6 +211,11 @@ impl ProjectionWriter for InMemoryKernelStore {
                 ProjectionMutation::UpsertNodeRelation(relation) => {
                     state.upsert_relation(*relation);
                 }
+                ProjectionMutation::RemoveNodeRelation {
+                    source_node_id,
+                    target_node_id,
+                    relation_type,
+                } => state.remove_relation(source_node_id, target_node_id, relation_type),
                 ProjectionMutation::UpsertNodeDetail(detail) => {
                     state.details.insert(detail.node_id.clone(), detail);
                 }

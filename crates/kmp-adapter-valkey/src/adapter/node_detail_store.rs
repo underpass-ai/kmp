@@ -72,6 +72,15 @@ impl ProjectionWriter for ValkeyNodeDetailStore {
                         relation.source_node_id, relation.target_node_id
                     )));
                 }
+                ProjectionMutation::RemoveNodeRelation {
+                    source_node_id,
+                    target_node_id,
+                    ..
+                } => {
+                    return Err(PortError::InvalidState(format!(
+                        "valkey detail store does not persist graph relation `{source_node_id} -> {target_node_id}`"
+                    )));
+                }
             }
         }
 

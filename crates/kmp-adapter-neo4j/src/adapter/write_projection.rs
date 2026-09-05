@@ -3,8 +3,8 @@ use neo4rs::Graph;
 
 use super::projection_store::Neo4jProjectionStore;
 use super::queries::{
-    ensure_node_projection_query, update_node_status_query, upsert_node_projection_query,
-    upsert_relation_projection_query,
+    ensure_node_projection_query, remove_relation_projection_query, update_node_status_query,
+    upsert_node_projection_query, upsert_relation_projection_query,
 };
 
 impl Neo4jProjectionStore {
@@ -73,6 +73,24 @@ impl ProjectionWriter for Neo4jProjectionStore {
                 }
                 ProjectionMutation::UpsertNodeRelation(relation) => {
                     self.apply_relation_projection(&graph, &relation).await?;
+                }
+                ProjectionMutation::RemoveNodeRelation {
+                    source_node_id,
+                    target_node_id,
+                    relation_type,
+                } => {
+                    self.run_query(
+                        &graph,
+                        remove_relation_projection_query(
+                            &source_node_id,
+                            &target_node_id,
+                            &relation_type,
+                        ),
+                        &format!(
+                            "remove relation projection for `{source_node_id} -> {target_node_id}`"
+                        ),
+                    )
+                    .await?;
                 }
                 ProjectionMutation::UpsertNodeDetail(detail) => {
                     return Err(PortError::InvalidState(format!(
