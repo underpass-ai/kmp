@@ -115,7 +115,7 @@ flowchart LR
 ```
 
 The plugin installs the skills and declares one local MCP process. The skill
-turns intent into one or more of fourteen typed tools. `kmp-mcp` validates the
+turns intent into one or more of fifteen typed tools. `kmp-mcp` validates the
 request, and the kernel reads or writes the local graph-temporal store. The
 agent—not KMP—turns returned evidence into conversational prose.
 
@@ -136,7 +136,7 @@ pan or undo at any time.
 |:--|:--|:--|
 | Plugin | Installation, host discovery, skills and the single MCP declaration. | Memory semantics or a second tool vocabulary. |
 | Skills | When to recover, ask, navigate, audit, write, diagnose, save or restore. | Persistence. |
-| <code>kmp&#8209;mcp</code> | The schema-checked fourteen-tool boundary over local stdio. | Choosing a workflow from user prose. |
+| <code>kmp&#8209;mcp</code> | The schema-checked fifteen-tool boundary over local stdio. | Choosing a workflow from user prose. |
 | Kernel | Validation, temporal storage, traversal, deterministic retrieval and proof. | Generating prose or inventing rationale. |
 
 Human workflows such as `kmp-setup`, `kmp-doctor`, `kmp-info`, `kmp-catchup`,
@@ -145,9 +145,9 @@ not extra memory verbs. The machine-checked ownership map is
 [`plugins/kmp/capabilities.json`](plugins/kmp/capabilities.json).
 
 <details>
-<summary><strong>The fourteen MCP moves</strong></summary>
+<summary><strong>The fifteen MCP moves</strong></summary>
 
-Eleven over memory, three over the view a person is looking at.
+Twelve over memory, three over the view a person is looking at.
 
 | Tool | Purpose |
 |:--|:--|
@@ -162,6 +162,7 @@ Eleven over memory, three over the view a person is looking at.
 | `kmp_inspect` | Inspect one object inside an explicit `about`, with its links and evidence. |
 | `kmp_write_memory` | Validate and record a decision, constraint or outcome. |
 | `kmp_ingest` | Ingest an exact canonical memory graph. |
+| `kmp_relabel` | Change the labels a memory stands in — add, take off, and why — without rewriting its text. |
 | `kmp_view_open` | Open or rehydrate a ChronoLoom view over an about. |
 | `kmp_view_apply_intent` | Move that view by declaring meaning — focus, clock, zoom, filters, selection — under optimistic concurrency. |
 | `kmp_view_get_state` | Read the view's semantic state, never its pixels. |

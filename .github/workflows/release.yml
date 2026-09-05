@@ -208,6 +208,7 @@ jobs:
               "kmp_forward",
               "kmp_trace",
               "kmp_inspect",
+              "kmp_relabel",
               "kmp_view_open",
               "kmp_view_apply_intent",
               "kmp_view_get_state",
@@ -219,7 +220,7 @@ jobs:
               raise SystemExit(
                   f"MCPB smoke tool mismatch: missing={missing}, unexpected={unexpected}"
               )
-          print("MCPB launcher started all ten memory and three view tools")
+          print("MCPB launcher started all twelve memory and three view tools")
           PY
 
       - name: Download the four candidate plugin packages

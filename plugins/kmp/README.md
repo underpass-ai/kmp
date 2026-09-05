@@ -211,8 +211,8 @@ field-by-field model, safe fallbacks and worked examples.
 Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
 Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
 commands. [`capabilities.json`](capabilities.json) is the machine-checked
-inventory that maps each workflow to its owner and exposure; the ten memory
-tools sit inside the separate fourteen-tool MCP contract. [VOICE.md](VOICE.md)
+inventory that maps each workflow to its owner and exposure; the twelve memory
+tools sit inside the separate fifteen-tool MCP contract. [VOICE.md](VOICE.md)
 remains the source of truth
 for how the host workflows talk.
 

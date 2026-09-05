@@ -19,7 +19,7 @@ real requirement.
 | Security | No memory network boundary | TLS/mTLS, identity and authorization boundaries |
 | Observability | Local logs and quality journal | Structured logs and optional OTLP pipeline |
 
-The agent-facing MCP server still advertises the same fourteen tools. The plugin
+The agent-facing MCP server still advertises the same fifteen tools. The plugin
 and skills do not become a second protocol.
 
 ## Architecture

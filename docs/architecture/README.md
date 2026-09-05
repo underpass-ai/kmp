@@ -36,7 +36,7 @@ flowchart TB
 
 The plugin is not a kernel adapter. It packages discovery and orchestration.
 `kmp-mcp` is the protocol boundary. Both composition roots call the same
-application use cases and expose the same fourteen MCP tools.
+application use cases and expose the same fifteen MCP tools.
 
 ## Layer ownership
 
@@ -111,7 +111,11 @@ Every recorded entry has an `observed_at` coordinate. Dimensions group entries
 by task, process, episode or another explicit scope. Read as labels, a
 coordinate's `dimension` kind is the key and its `scope_id` the value, and
 `kmp_wake` returns the catalogue of labels the abouts it read carry, so a
-writer reuses what exists instead of naming it again. Temporal reads use a
+writer reuses what exists instead of naming it again. A label decided late
+is put on an entry with `kmp_relabel`, which adds and removes
+`contains_entry` edges and never rewrites the text: the added label inherits
+the entry's clocks, so its time does not move, and the edge carries the why
+and `method: kmp_relabel` while the event log keeps who did it when. Temporal reads use a
 cursor and return visible pagination state; a partial page is never presented
 as a complete interval.
 
