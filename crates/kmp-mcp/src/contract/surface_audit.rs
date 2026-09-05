@@ -143,7 +143,7 @@ mod tests {
             .as_array()
             .expect("tools should be an array");
 
-        assert_eq!(tools.len(), 14, "eleven memory tools and three view tools");
+        assert_eq!(tools.len(), 15, "twelve memory tools and three view tools");
         assert_eq!(tools[0]["name"], "kmp_ingest");
         assert_eq!(tools[0]["inputSchema"]["required"][1], "memory");
         assert_eq!(tools[1]["name"], "kmp_write_memory");
@@ -196,6 +196,12 @@ mod tests {
         );
         assert_eq!(tools[4]["name"], "kmp_relate");
         assert_eq!(tools[4]["inputSchema"]["required"][0], "about");
+        assert_eq!(tools[11]["name"], "kmp_relabel");
+        assert_eq!(
+            tools[11]["inputSchema"]["required"],
+            serde_json::json!(["about", "ref", "actor", "observed_at", "why"])
+        );
+        assert_eq!(tools[12]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
         assert_eq!(tools[5]["inputSchema"]["required"][1], "at");
         assert!(tools[5]["description"].as_str().is_some_and(|description| {

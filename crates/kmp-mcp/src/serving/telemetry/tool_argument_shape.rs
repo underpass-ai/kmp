@@ -61,7 +61,7 @@ impl ToolArgumentShape {
 
 fn tool_dry_run(name: &str, arguments: &Value) -> Option<bool> {
     match canonical_move(name) {
-        "kmp_write_memory" => arguments
+        "kmp_write_memory" | "kmp_relabel" => arguments
             .get("options")
             .and_then(|options| options.get("dry_run"))
             .and_then(Value::as_bool),

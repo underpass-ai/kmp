@@ -10,7 +10,10 @@ pub use ref_boundary::{
     validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
     validate_supplied_member_ref,
 };
-pub use relabel::{RELABEL_ENTITY_KIND, RELABEL_METHOD, translate_memory_relabel};
+pub use relabel::{
+    RELABEL_ENTITY_KIND, RELABEL_METHOD, relabel_logical_digest, replayed_relabel_outcome,
+    translate_memory_relabel,
+};
 pub use service::KernelMemoryApplicationService;
 pub use types::{
     AskMemoryQuery, DEFAULT_RELATE_PAGE_ENTRIES, DEFAULT_TRACE_PAGE_ENTRIES, EntryLabelData,

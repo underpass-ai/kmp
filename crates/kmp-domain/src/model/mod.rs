@@ -25,5 +25,5 @@ pub use relate::{
 pub use relationship_path::directed_relationship_path;
 pub use temporal_memory::{
     TemporalEntry, TemporalMemoryTraversal, TemporalTraversalRequest, TemporalTraversalResult,
-    compare_temporal_instants, temporal_instant_nanos,
+    compare_temporal_instants, temporal_instant_nanos, temporal_instant_rfc3339,
 };

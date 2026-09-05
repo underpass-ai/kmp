@@ -240,6 +240,7 @@ async fn tools_list_exposes_read_only_kmp_tools() {
             "kmp_forward",
             "kmp_trace",
             "kmp_inspect",
+            "kmp_relabel",
             // The view half: an agent moves what a person is looking at by
             // declaring intent, and none of these three can write memory.
             "kmp_view_open",

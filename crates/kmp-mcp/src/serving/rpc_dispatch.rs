@@ -155,6 +155,13 @@ impl KernelMcpServer {
             return self.handle_kmp_write_memory(id, arguments, start).await;
         }
 
+        // A relabel is a write the kernel validates against the store, so it
+        // is planned from the caller's pairs and committed through the
+        // backend's own relabel, never through ingest.
+        if name == "kmp_relabel" {
+            return self.handle_kmp_relabel(id, arguments, start).await;
+        }
+
         // Raw ingest keeps the about boundary whole. The kernel admits one
         // relation across abouts — an equivalence a writer declared from a
         // kmp_relate proposal — but only `kmp_write_memory` may declare it:

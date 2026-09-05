@@ -19,7 +19,7 @@ pub fn kernel_operator_allowed_read_tools() -> Vec<String> {
 }
 
 pub fn kernel_operator_allowed_write_tools() -> Vec<String> {
-    ["kmp_ingest", "kmp_write_memory"]
+    ["kmp_ingest", "kmp_write_memory", "kmp_relabel"]
         .iter()
         .map(ToString::to_string)
         .collect()
@@ -178,6 +178,7 @@ fn validate_tool_call_shape(action: &Value) -> Result<(), String> {
         "kmp_inspect" => validate_inspect_arguments(arguments),
         "kmp_write_memory" => validate_write_memory_arguments(arguments),
         "kmp_ingest" => validate_ingest_arguments(arguments),
+        "kmp_relabel" => validate_relabel_arguments(arguments),
         other => Err(format!("unsupported tool `{other}`")),
     }
 }
@@ -405,6 +406,44 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
         "action.arguments.options",
     )?;
     validate_optional_non_empty_string(arguments, "source_kind", "action.arguments")?;
+    Ok(())
+}
+
+fn validate_relabel_arguments(arguments: &Value) -> Result<(), String> {
+    exact_keys(
+        arguments,
+        "action.arguments",
+        &["about", "ref", "actor", "observed_at", "why", "options"],
+        &["add", "remove", "source_kind", "idempotency_key"],
+    )?;
+    required_non_empty_string(arguments, "about", "action.arguments")?;
+    required_non_empty_string(arguments, "ref", "action.arguments")?;
+    required_non_empty_string(arguments, "actor", "action.arguments")?;
+    required_non_empty_string(arguments, "observed_at", "action.arguments")?;
+    required_non_empty_string(arguments, "why", "action.arguments")?;
+    let mut labels = 0usize;
+    for field in ["add", "remove"] {
+        if let Some(value) = arguments.get(field) {
+            let object = object(value, &format!("action.arguments.{field}"))?;
+            for (key, value) in object {
+                if value.as_str().is_none_or(|value| value.trim().is_empty()) {
+                    return Err(format!(
+                        "action.arguments.{field}.{key} must be a non-empty scope id"
+                    ));
+                }
+            }
+            labels += object.len();
+        }
+    }
+    if labels == 0 {
+        return Err("action.arguments must add or remove at least one label".to_string());
+    }
+    validate_write_options(
+        required_value(arguments, "options", "action.arguments")?,
+        "action.arguments.options",
+    )?;
+    validate_optional_non_empty_string(arguments, "source_kind", "action.arguments")?;
+    validate_optional_non_empty_string(arguments, "idempotency_key", "action.arguments")?;
     Ok(())
 }
 

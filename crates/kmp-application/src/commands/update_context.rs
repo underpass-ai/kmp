@@ -96,6 +96,19 @@ where
         }
     }
 
+    /// What an idempotency key was already accepted with, if anything: the
+    /// question a write asks before translating against a store its own
+    /// first apply has already changed.
+    pub async fn accepted_outcome(
+        &self,
+        idempotency_key: &str,
+    ) -> Result<Option<kmp_domain::IdempotentOutcome>, ApplicationError> {
+        Ok(self
+            .event_store
+            .find_by_idempotency_key(idempotency_key)
+            .await?)
+    }
+
     pub async fn execute(
         &self,
         command: UpdateContextCommand,

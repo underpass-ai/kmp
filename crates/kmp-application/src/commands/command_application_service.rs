@@ -27,4 +27,12 @@ where
     ) -> Result<UpdateContextOutcome, ApplicationError> {
         self.update_context.execute(command).await
     }
+
+    /// What an idempotency key was already accepted with, if anything.
+    pub async fn accepted_outcome(
+        &self,
+        idempotency_key: &str,
+    ) -> Result<Option<kmp_domain::IdempotentOutcome>, ApplicationError> {
+        self.update_context.accepted_outcome(idempotency_key).await
+    }
 }

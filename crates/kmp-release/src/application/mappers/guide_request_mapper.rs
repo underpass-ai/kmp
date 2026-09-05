@@ -231,7 +231,7 @@ impl GuideRequestMapper {
 
     fn tool_verb(name: &str) -> Result<&'static str, ReleaseError> {
         match name {
-            "kmp_ingest" | "kmp_write_memory" => Ok("verb:write"),
+            "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" => Ok("verb:write"),
             "kmp_wake" => Ok("verb:wake"),
             "kmp_ask" => Ok("verb:ask"),
             "kmp_relate" => Ok("verb:relate"),

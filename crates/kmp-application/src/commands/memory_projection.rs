@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use kmp_domain::{
     MemoryRelationType, NodeDetailProjection, NodeProjection, NodeRelationProjection, PortError,
     ProjectionMutation, Provenance, RelationExplanation, RelationSemanticClass, SourceKind,
+    temporal_instant_rfc3339,
 };
 use serde_json::Value;
 
@@ -374,7 +375,8 @@ fn memory_relabel_mutations(
     let why = payload_string(&payload, "why");
     let relabelled_by = match (
         payload_string(&payload, "actor"),
-        payload_string(&payload, "observed_at"),
+        payload_string(&payload, "observed_at")
+            .map(|instant| temporal_instant_rfc3339(&instant).unwrap_or(instant)),
     ) {
         (Some(actor), Some(observed_at)) => {
             Some(format!("Relabelled by {actor} at {observed_at}."))
@@ -696,7 +698,7 @@ mod tests {
                     }],
                     "why": "It closed the issue.",
                     "actor": "agent-r",
-                    "observed_at": "2026-09-05T12:00:00Z"
+                    "observed_at": "unix:101788609600:000000000"
                 })
                 .to_string(),
                 reason: "It closed the issue.".to_string(),

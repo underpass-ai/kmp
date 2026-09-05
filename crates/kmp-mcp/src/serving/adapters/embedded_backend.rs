@@ -6,24 +6,26 @@ use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, projec
 use kmp_proto_mapping::v1beta1::{
     LexicalBridge, ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
     ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
-    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
-    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
-    trace_response_from_result, visual_projection_query_from_proto,
-    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
+    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
+    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
+    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
+    visual_projection_query_from_proto, visual_projection_response_from_result,
+    wake_query_from_proto, wake_response_from_result,
 };
 use serde_json::Value;
 
 use crate::projection::{
     ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
     enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
-    relate_from_response, temporal_from_response, trace_from_response,
+    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
     visual_projection_from_response, wake_from_response,
 };
 use crate::serving::adapters::grpc::requests::{
     ask_request_from_arguments, ingest_request_from_arguments, inspect_request_from_arguments,
-    relate_request_from_arguments, temporal_move_request_from_arguments,
-    temporal_near_request_from_arguments, trace_request_from_arguments,
-    visual_projection_request_from_arguments, wake_request_from_arguments,
+    relabel_request_from_arguments, relate_request_from_arguments,
+    temporal_move_request_from_arguments, temporal_near_request_from_arguments,
+    trace_request_from_arguments, visual_projection_request_from_arguments,
+    wake_request_from_arguments,
 };
 use crate::serving::{KernelMcpToolBackend, KernelMcpToolFuture};
 use crate::serving::{ToolError, ToolErrorCode};
@@ -260,6 +262,7 @@ async fn embedded_tool_result(
         "kmp_relate" => embedded_relate(service, observer, bridge, arguments).await,
         "kmp_trace" => embedded_trace(service, observer, arguments).await,
         "kmp_inspect" => embedded_inspect(service, arguments).await,
+        "kmp_relabel" => embedded_relabel(service, arguments).await,
         "kmp_view_read_projection" => embedded_visual_projection(service, arguments).await,
         other => Err(ToolError::unknown_tool(format!(
             "unknown KMP tool `{other}`"
@@ -302,6 +305,22 @@ async fn embedded_ingest(
         .map_err(kernel_error("ingest", &about))?;
     Ok(tool_success_result(ingest_from_response(
         ingest_response_from_outcome(outcome),
+    )))
+}
+
+async fn embedded_relabel(
+    service: &EmbeddedMemoryService,
+    arguments: &Value,
+) -> Result<Value, ToolError> {
+    let request = relabel_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
+    let command = relabel_command_from_proto(request);
+    let about = command.about.clone();
+    let outcome = service
+        .relabel(command)
+        .await
+        .map_err(kernel_error("relabel", &about))?;
+    Ok(tool_success_result(relabel_from_response(
+        relabel_response_from_outcome(outcome),
     )))
 }
 

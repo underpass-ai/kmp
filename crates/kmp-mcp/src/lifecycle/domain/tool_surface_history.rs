@@ -2,9 +2,15 @@ use std::collections::BTreeSet;
 
 use super::release_version::ReleaseVersion;
 
-/// The last release whose surface had no `kmp_relate`. Every release after
-/// it answers the fourteenth tool; every release up to it answered thirteen.
-const LAST_RELEASE_WITHOUT_RELATE: &str = "0.10.0";
+/// Each tool that joined the surface after the first release, beside the
+/// last release whose surface had none of it. Every release after that one
+/// answers the tool; every release up to it did not, and is not held to it.
+const TOOLS_ADDED_LATER: &[(&str, &str)] = &[
+    // The fourteenth tool: every release up to 0.10.0 answered thirteen.
+    ("kmp_relate", "0.10.0"),
+    // The fifteenth: every release up to 0.11.0 answered fourteen.
+    ("kmp_relabel", "0.11.0"),
+];
 
 /// The tool surface an engine of `target` is held to.
 ///
@@ -23,16 +29,19 @@ pub fn expected_tool_surface(
     if target.represents_same_release(&ReleaseVersion::current()) {
         return current;
     }
-    let last_without_relate =
-        ReleaseVersion::parse(LAST_RELEASE_WITHOUT_RELATE).expect("a release version");
-    if target.is_newer_than(&last_without_relate) {
-        current
-    } else {
-        current
-            .into_iter()
-            .filter(|name| name != "kmp_relate")
-            .collect()
-    }
+    let not_yet = TOOLS_ADDED_LATER
+        .iter()
+        .filter(|(_, last_release_without)| {
+            let last_without =
+                ReleaseVersion::parse(last_release_without).expect("a release version");
+            !target.is_newer_than(&last_without)
+        })
+        .map(|(tool, _)| *tool)
+        .collect::<BTreeSet<_>>();
+    current
+        .into_iter()
+        .filter(|name| !not_yet.contains(name.as_str()))
+        .collect()
 }
 
 #[cfg(test)]
@@ -45,7 +54,7 @@ mod tests {
 
     #[test]
     fn an_older_engine_is_held_to_the_surface_it_shipped_with() {
-        let current = surface(&["kmp_ask", "kmp_relate", "kmp_wake"]);
+        let current = surface(&["kmp_ask", "kmp_relate", "kmp_relabel", "kmp_wake"]);
         // Not the last release without relate itself: until the next
         // release bumps the crate, this build carries its version and
         // answers the whole surface, and the same-release rule says so.
@@ -56,22 +65,42 @@ mod tests {
                 !expected.contains("kmp_relate"),
                 "{older} shipped before relate"
             );
+            assert!(
+                !expected.contains("kmp_relabel"),
+                "{older} shipped before relabel"
+            );
             assert!(expected.contains("kmp_ask"));
         }
     }
 
     #[test]
-    fn a_release_after_relate_and_this_build_answer_the_whole_surface() {
-        let current = surface(&["kmp_ask", "kmp_relate", "kmp_wake"]);
-        for newer in ["0.10.1", "0.11.0", "1.0.0"] {
+    fn a_release_between_the_two_additions_answers_relate_and_not_relabel() {
+        let current = surface(&["kmp_ask", "kmp_relate", "kmp_relabel", "kmp_wake"]);
+        // Not 0.11.0 itself: until the next release bumps the crate, this
+        // build carries that version and answers the whole surface.
+        let between = "0.10.1";
+        let expected =
+            expected_tool_surface(&ReleaseVersion::parse(between).expect("v"), current.clone());
+        assert!(expected.contains("kmp_relate"), "{between} carries relate");
+        assert!(
+            !expected.contains("kmp_relabel"),
+            "{between} shipped before relabel"
+        );
+    }
+
+    #[test]
+    fn a_release_after_relabel_and_this_build_answer_the_whole_surface() {
+        let current = surface(&["kmp_ask", "kmp_relate", "kmp_relabel", "kmp_wake"]);
+        for newer in ["0.12.0", "1.0.0"] {
             let expected =
                 expected_tool_surface(&ReleaseVersion::parse(newer).expect("v"), current.clone());
             assert!(expected.contains("kmp_relate"), "{newer} carries relate");
+            assert!(expected.contains("kmp_relabel"), "{newer} carries relabel");
         }
         let this_build = expected_tool_surface(&ReleaseVersion::current(), current.clone());
         assert_eq!(
             this_build.len(),
-            3,
+            4,
             "this build answers everything it declares"
         );
     }

@@ -28,7 +28,7 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
         .unwrap_or(&Value::Null);
 
     match name {
-        "kmp_ingest" | "kmp_write_memory" => require_scope(identity, WRITE_SCOPE)?,
+        "kmp_ingest" | "kmp_write_memory" | "kmp_relabel" => require_scope(identity, WRITE_SCOPE)?,
         "kmp_wake" | "kmp_ask" | "kmp_relate" | "kmp_goto" | "kmp_near" | "kmp_rewind"
         | "kmp_forward" | "kmp_trace" | "kmp_inspect" => require_scope(identity, READ_SCOPE)?,
         _ => return Ok(()),
@@ -54,6 +54,13 @@ fn authorize_tool_call(identity: &Identity, request: &Value) -> Result<(), Autho
         }
         "kmp_inspect" => {
             authorize_ref(identity, arguments.get("ref").and_then(Value::as_str), None)?;
+        }
+        "kmp_relabel" => {
+            authorize_ref(
+                identity,
+                arguments.get("ref").and_then(Value::as_str),
+                arguments.get("about").and_then(Value::as_str),
+            )?;
         }
         "kmp_write_memory" => {
             authorize_ref(
@@ -92,6 +99,7 @@ fn canonical_tool_name(name: &str) -> &str {
             "forward" => "kmp_forward",
             "trace" => "kmp_trace",
             "inspect" => "kmp_inspect",
+            "relabel" => "kmp_relabel",
             _ => name,
         })
         .unwrap_or(name)
@@ -120,6 +128,13 @@ fn authorize_write_scope_ids(
         "kmp_write_memory" => {
             if let Some(scope) = arguments.get("scope").and_then(Value::as_object) {
                 requested.extend(scope.values().filter_map(Value::as_str));
+            }
+        }
+        // A label added is a scope id written; one taken off names a scope
+        // the memory already stood in, which the read grant covers.
+        "kmp_relabel" => {
+            if let Some(add) = arguments.get("add").and_then(Value::as_object) {
+                requested.extend(add.values().filter_map(Value::as_str));
             }
         }
         _ => return Ok(()),

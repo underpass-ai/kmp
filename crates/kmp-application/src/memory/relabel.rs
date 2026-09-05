@@ -149,7 +149,7 @@ pub fn translate_memory_relabel(
             expected_revision: None,
             expected_content_hash: None,
             idempotency_key: Some(command.idempotency_key.clone()),
-            logical_digest: Some(logical_digest(command)),
+            logical_digest: Some(relabel_logical_digest(command)),
             requested_by: provenance.map(|provenance| provenance.source_agent.clone()),
         },
         outcome,
@@ -478,9 +478,45 @@ fn require_non_empty(value: &str, field: &str) -> Result<(), ApplicationError> {
     }
 }
 
+/// The outcome a replay of an already-accepted relabel returns: what the
+/// caller asked for, read against what the entry stands in now, without
+/// translating — a translation after the first apply would refuse the
+/// labels the first apply put there.
+pub fn replayed_relabel_outcome(
+    command: &MemoryRelabelCommand,
+    current: &[TemporalCoordinate],
+) -> Result<MemoryRelabelOutcome, ApplicationError> {
+    let pairs = |labels: &[EntryLabelData], field: &str| {
+        labels
+            .iter()
+            .map(|label| {
+                let label = normalized_label(label, field)?;
+                Ok(EntryLabelData {
+                    key: label.key,
+                    value: bare_value(&label.value),
+                })
+            })
+            .collect::<Result<Vec<_>, ApplicationError>>()
+    };
+    Ok(MemoryRelabelOutcome {
+        about: command.about.clone(),
+        ref_id: command.ref_id.clone(),
+        added: pairs(&command.add, "add[]")?,
+        removed: pairs(&command.remove, "remove[]")?,
+        labels: standing_labels(current).into_keys().collect(),
+        created_dimensions: Vec::new(),
+        resembling_labels: Vec::new(),
+        read_after_write_ready: true,
+        warnings: vec![format!(
+            "idempotency_key `{}` was already accepted with this relabel; returning its success without writing again",
+            command.idempotency_key
+        )],
+    })
+}
+
 /// Digest of the logical relabel, taken before translation: what the caller
 /// said, which is what a replay under the same idempotency key must equal.
-fn logical_digest(command: &MemoryRelabelCommand) -> String {
+pub fn relabel_logical_digest(command: &MemoryRelabelCommand) -> String {
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(command.about.as_bytes());
@@ -814,6 +850,27 @@ mod tests {
             translate_memory_relabel(&command(&[("issue", "506")], &[]), &existing, &current())
                 .expect_err("not found");
         assert!(matches!(error, ApplicationError::NotFound(_)), "{error}");
+    }
+
+    #[test]
+    fn a_replay_answers_from_what_the_entry_stands_in_without_translating() {
+        let mut current = current();
+        current.push(coordinate(
+            "issue",
+            "about:project:kmp:dimension:506",
+            "2026-09-01T10:00:00Z",
+            1,
+        ));
+        let outcome = super::replayed_relabel_outcome(&command(&[("issue", "506")], &[]), &current)
+            .expect("a replay answers");
+        assert_eq!(outcome.added, [label("issue", "506")]);
+        assert_eq!(outcome.labels.len(), 3);
+        assert!(outcome.read_after_write_ready);
+        assert!(
+            outcome.warnings[0].contains("already accepted"),
+            "{:?}",
+            outcome.warnings
+        );
     }
 
     #[test]

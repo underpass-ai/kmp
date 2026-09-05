@@ -12,6 +12,7 @@ pub(crate) mod json_rpc;
 pub(crate) mod kernel_mcp_server;
 pub(crate) mod ports;
 pub(crate) mod projection_names;
+mod relabel_dispatch;
 mod rpc_dispatch;
 pub(crate) mod telemetry;
 pub mod tool_error;

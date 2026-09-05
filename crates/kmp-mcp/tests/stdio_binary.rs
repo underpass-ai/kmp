@@ -142,8 +142,8 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
             .as_array()
             .expect("a tool list")
             .len(),
-        14,
-        "eleven memory tools and three view tools"
+        15,
+        "twelve memory tools and three view tools"
     );
     let log_entries = std::fs::read_dir(data_dir.path().join("logs"))
         .expect("the implicit embedded backend creates its session journal")
@@ -167,8 +167,8 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
 
     let mut first = LiveMcp::start(&first_store, &data_home, &home);
     let mut second = LiveMcp::start(&second_store, &data_home, &home);
-    assert_eq!(first.tool_count(), 14);
-    assert_eq!(second.tool_count(), 14);
+    assert_eq!(first.tool_count(), 15);
+    assert_eq!(second.tool_count(), 15);
 
     let refused = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
         .args(["uninstall", "--store"])
@@ -186,10 +186,10 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(refusal.contains("Nothing was removed"), "{refusal}");
     assert!(first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(first.tool_count(), 14, "uninstall must not kill its owner");
+    assert_eq!(first.tool_count(), 15, "uninstall must not kill its owner");
     assert_eq!(
         second.tool_count(),
-        14,
+        15,
         "an unrelated host must stay fully usable"
     );
 
@@ -214,7 +214,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     assert!(report.contains("every other KMP store and host was left alone"));
     assert!(!first_store.exists());
     assert!(second_store.exists());
-    assert_eq!(second.tool_count(), 14);
+    assert_eq!(second.tool_count(), 15);
 
     let rescues = std::fs::read_dir(&workspace)
         .expect("workspace listing")

@@ -16,8 +16,9 @@ use crate::memory::{
     MemoryIngestCommand, MemoryIngestOutcome, MemoryRelabelCommand, MemoryRelabelOutcome,
     RelateMemoryQuery, TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery,
     VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery, build_visual_projection,
-    crosses_abouts, translate_memory_ingest, translate_memory_relabel, validate_ref_token,
-    validate_supplied_entry_ref, validate_supplied_member_ref,
+    crosses_abouts, relabel_logical_digest, replayed_relabel_outcome, translate_memory_ingest,
+    translate_memory_relabel, validate_ref_token, validate_supplied_entry_ref,
+    validate_supplied_member_ref,
 };
 use crate::queries::{
     ContextRenderOptions, EndpointHint, GetContextPathQuery, GetContextPathResult, GetContextQuery,
@@ -111,6 +112,26 @@ where
         let current = self
             .entry_coordinates(&command.about, &command.ref_id, &existing)
             .await?;
+        // A relabel translated after its own first apply refuses the labels
+        // that apply put there, so an accepted key is answered before the
+        // translation, the way ingest's replay is answered after it.
+        if !command.idempotency_key.trim().is_empty()
+            && let Some(accepted) = self
+                .command_application
+                .accepted_outcome(&command.idempotency_key)
+                .await?
+        {
+            if accepted.logical_digest.as_deref() != Some(relabel_logical_digest(&command).as_str())
+            {
+                return Err(ApplicationError::Ports(kmp_domain::PortError::Conflict(
+                    format!(
+                        "idempotency key '{}' was already accepted with different content",
+                        command.idempotency_key
+                    ),
+                )));
+            }
+            return replayed_relabel_outcome(&command, &current);
+        }
         let (update_context, mut outcome) =
             translate_memory_relabel(&command, &existing, &current)?;
         if command.dry_run {
