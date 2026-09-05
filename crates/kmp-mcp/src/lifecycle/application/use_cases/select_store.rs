@@ -53,6 +53,9 @@ impl<'a> SelectStore<'a> {
             bundled_events: bundle_event_count_beside(self.installation, &path),
             path,
             ours_to_remove: true,
+            // A selected store proves it is free by taking its lease at
+            // apply, which is a stronger answer than a marker file.
+            held_by: None,
         })
     }
 }

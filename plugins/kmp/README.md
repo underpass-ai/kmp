@@ -206,7 +206,7 @@ field-by-field model, safe fallbacks and worked examples.
 | `/kmp:save` | Commits this project's memory to the repository, and shows the diff |
 | `/kmp:restore` | Loads the memory committed in the repository back into the store |
 | `/kmp:revert` | Reverts a decision without deleting it, so both states survive |
-| `/kmp:uninstall` | Previews whole-install or one-store removal, refuses live owners, protects memory first, and only applies when explicitly asked |
+| `/kmp:uninstall` | Previews whole-install, one-store or one-engine removal, names the host still holding a piece, protects memory first, and only applies when explicitly asked |
 
 Codex gets all ten as native `kmp-setup`, `kmp-doctor` and so on. Standalone
 Codex keeps the equivalent `/kmp-*` prompts. Claude Code keeps `/kmp:*`
