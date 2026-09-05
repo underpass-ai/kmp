@@ -182,6 +182,24 @@ pub fn verify_bundle(bundle: &str) -> Result<BundleHeader, PortError> {
     parse_bundle(bundle).map(|verified| verified.header)
 }
 
+/// Re-encodes a verified bundle without events rooted at `excluded_abouts`.
+///
+/// This is the bundle-side counterpart to
+/// [`EmbeddedKernelStore::export_bundle_excluding_abouts`]. Operational
+/// comparisons must apply the same authored-memory policy to a legacy bundle
+/// and to the live store; otherwise release-owned guide events can look like a
+/// divergent project history even when both streams are identical.
+pub fn bundle_excluding_abouts(
+    bundle: &str,
+    excluded_abouts: &[String],
+) -> Result<String, PortError> {
+    let verified = parse_bundle(bundle)?;
+    encode_bundle(
+        &filter_events_excluding_abouts(verified.events, excluded_abouts),
+        None,
+    )
+}
+
 /// Merges only histories that have a deterministic answer: identical streams
 /// or one exact prefix of the other. Two branches that both appended at the
 /// same position are a semantic conflict, so KMP refuses to invent an order.
@@ -580,6 +598,34 @@ mod tests {
 
         assert_eq!(kept.len(), 1);
         assert_eq!(kept[0].root_node_id, "project:a");
+    }
+
+    #[test]
+    fn verified_bundle_exclusion_applies_the_same_policy_to_legacy_bundles() {
+        let bundle = encode_bundle(
+            &[
+                event("project:a", 1, "a1"),
+                event("guide:kmp-agent", 1, "g1"),
+                event("project:a", 2, "a2"),
+            ],
+            None,
+        )
+        .expect("bundle");
+
+        let filtered = bundle_excluding_abouts(&bundle, &["guide:kmp-agent".to_string()])
+            .expect("filtered verified bundle");
+        let verified = parse_bundle(&filtered).expect("verified filtered bundle");
+
+        assert_eq!(verified.header.event_count, 2);
+        assert_eq!(verified.header.abouts, ["project:a"]);
+        assert_eq!(
+            verified
+                .events
+                .iter()
+                .map(|event| event.content_hash.as_str())
+                .collect::<Vec<_>>(),
+            ["a1", "a2"]
+        );
     }
 
     #[test]

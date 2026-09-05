@@ -90,6 +90,14 @@ fn distinct_ingest_arguments(suffix: &str) -> Value {
     serde_json::from_str(&body).expect("distinct ingest fixture")
 }
 
+fn ingest_arguments_for_about(about: &str, suffix: &str) -> Value {
+    let body = ingest_arguments()
+        .to_string()
+        .replace("question:e3", about)
+        .replace("ingest:e3-accept", &format!("ingest:{suffix}"));
+    serde_json::from_str(&body).expect("about-specific ingest fixture")
+}
+
 #[tokio::test]
 async fn a_project_write_maintains_its_commit_native_bundle() {
     let project = tempfile::tempdir().expect("project");
@@ -132,6 +140,69 @@ async fn a_project_write_maintains_its_commit_native_bundle() {
         .await
         .expect_err("snapshot attachment is read-only");
     assert!(refused.contains("could mutate memory"));
+}
+
+#[tokio::test]
+async fn commit_native_excludes_release_owned_abouts_and_cleans_a_legacy_bundle() {
+    let project = tempfile::tempdir().expect("project");
+    let data_dir = project.path().join(".kernel");
+    let bundle_path = project.path().join(".kmp/memory.jsonl");
+    let excluded = vec!["guide:kmp".to_string(), "guide:kmp-agent".to_string()];
+    let commit_native =
+        kmp_embedded::CommitNativeBundle::new_excluding_abouts(&data_dir, &bundle_path, excluded);
+    let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
+        &data_dir,
+        None,
+        Some(commit_native),
+    )
+    .expect("embedded backend");
+    let server = KernelMcpServer::with_embedded_backend(backend);
+
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    call(
+        &server,
+        2,
+        "kmp_ingest",
+        ingest_arguments_for_about("guide:kmp-agent", "guide"),
+    )
+    .await;
+
+    let maintained = std::fs::read_to_string(&bundle_path).expect("maintained bundle");
+    let maintained_header = kmp_embedded::verify_bundle(&maintained).expect("header");
+    assert_eq!(maintained_header.event_count, 1);
+    assert_eq!(maintained_header.abouts, ["question:e3"]);
+
+    // Model a bundle published by the legacy commit-native path: it contains
+    // exactly the same full stream as SQLite, including the shipped guide.
+    let kernel = kmp_embedded::EmbeddedKernel::open(&data_dir).expect("kernel");
+    let legacy = kernel.store().export_bundle().await.expect("full export");
+    let legacy_header = kmp_embedded::verify_bundle(&legacy).expect("legacy header");
+    assert_eq!(legacy_header.event_count, 2);
+    assert_eq!(legacy_header.abouts, ["guide:kmp-agent", "question:e3"]);
+    std::fs::write(&bundle_path, legacy).expect("legacy bundle");
+
+    call(
+        &server,
+        3,
+        "kmp_ingest",
+        distinct_ingest_arguments("second"),
+    )
+    .await;
+
+    let cleaned = std::fs::read_to_string(&bundle_path).expect("cleaned authored bundle");
+    let cleaned_header = kmp_embedded::verify_bundle(&cleaned).expect("cleaned header");
+    assert_eq!(cleaned_header.event_count, 2);
+    assert_eq!(cleaned_header.abouts, ["question:e3", "question:e3-second"]);
+    assert!(kmp_embedded::pending_bundle_exports(&data_dir).is_empty());
+
+    let full = kernel
+        .store()
+        .export_bundle()
+        .await
+        .expect("full backup export");
+    let full_header = kmp_embedded::verify_bundle(&full).expect("full header");
+    assert_eq!(full_header.event_count, 3);
+    assert!(full_header.abouts.contains(&"guide:kmp-agent".to_string()));
 }
 
 #[tokio::test]
