@@ -155,6 +155,49 @@ fn stdio_binary_serves_and_journals_the_embedded_kernel_when_nothing_is_configur
 }
 
 #[test]
+fn scoped_engine_uninstall_reports_the_host_still_reading_it_and_removes_nothing() {
+    // The operator path for #520: doctor warns about one superseded engine and
+    // names this command. It must reach that engine and nothing else, and it
+    // must say when a session is still being served from it.
+    let root = tempfile::tempdir().expect("test root");
+    let home = root.path().join("home");
+    let version = home.join(".claude/plugins/cache/underpass/kmp/0.11.0");
+    std::fs::create_dir_all(version.join("bin")).expect("plugin bin");
+    std::fs::create_dir_all(version.join(".in_use")).expect("marker dir");
+    let engine = version.join("bin/kmp-mcp");
+    std::fs::write(&engine, vec![0u8; 2_048]).expect("engine");
+    // A process that is certainly alive: this test.
+    std::fs::write(
+        version.join(".in_use").join(std::process::id().to_string()),
+        b"{}",
+    )
+    .expect("marker");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
+        .args(["uninstall", "--engine"])
+        .arg(&engine)
+        .current_dir(root.path())
+        .env("HOME", &home)
+        .env("XDG_DATA_HOME", root.path().join("data"))
+        .env("KMP_VIEWER_ADDR", "off")
+        .output()
+        .expect("scoped engine preview");
+
+    assert!(output.status.success(), "{output:?}");
+    let report = String::from_utf8(output.stdout).expect("uninstall output");
+    assert!(
+        report.contains(&format!("held — claude (pid {})", std::process::id())),
+        "{report}"
+    );
+    assert!(report.contains("Held right now"), "{report}");
+    assert!(
+        !report.contains("memory  "),
+        "a scoped engine preview reaches no store: {report}"
+    );
+    assert!(engine.exists(), "a dry run removes nothing");
+}
+
+#[test]
 fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
     let root = tempfile::tempdir().expect("test root");
     let home = root.path().join("home");
@@ -211,7 +254,7 @@ fn selective_uninstall_refuses_one_live_store_and_preserves_the_other_host() {
         String::from_utf8_lossy(&removed.stderr)
     );
     let report = String::from_utf8(removed.stdout).expect("uninstall output");
-    assert!(report.contains("every other KMP store and host was left alone"));
+    assert!(report.contains("every other KMP store, engine and host was left alone"));
     assert!(!first_store.exists());
     assert!(second_store.exists());
     assert_eq!(second.tool_count(), 15);
