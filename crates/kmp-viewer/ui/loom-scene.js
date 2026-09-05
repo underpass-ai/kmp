@@ -160,14 +160,60 @@ KMP_APP.scene = (() => {
      simply refusing to grow. */
   const LABEL_POOL_MAX = 400;
 
+  /* Rows. A lane is a block of rows: one per value when unfolded, one when
+     folded — the picture the loom always drew. Rows are budgeted to the
+     height, never scrolled; the pure kit decides which fibres get a row and
+     which fold into `+n more`, so nothing is hidden without a row saying so. */
+  const ROW_MIN = 14;
+  const ROW_MAX = 44;
+  /* Every lane opens with a header strip that names the key; its rows hang
+     under it like a tree, each named at the left. */
+  const LANE_HEAD_H = 16;
+
   function laneGeometry() {
     const lanes = visibleLanes();
     const pulse = view.overlays.length ? PULSE_H : 0;
-    const height = loomCanvas.clientHeight - AXIS_H - pulse - NAV_RESERVED;
-    const laneH = lanes.length ? Math.max(44, Math.min(150, height / lanes.length)) : height;
+    const height = loomCanvas.clientHeight - AXIS_H - pulse - NAV_RESERVED - lanes.length * LANE_HEAD_H;
+    const budget = Math.max(lanes.length, Math.floor(height / ROW_MIN));
+    const layout = KMP_LOOM.laneRows(lanes, { folded: view.foldedLanes, pinned: view.pinnedFibres, budget });
+    const rows = layout.flatMap((group) => group.rows);
+    const rowH = rows.length ? Math.max(ROW_MIN, Math.min(ROW_MAX, height / rows.length)) : height;
     const tops = new Map();
-    lanes.forEach((lane, i) => tops.set(lane.name, AXIS_H + pulse + i * laneH));
-    return { lanes, laneH, tops, pulse };
+    const blocks = new Map(); // lane -> {top, height, group}
+    let y = AXIS_H + pulse;
+    for (const group of layout) {
+      blocks.set(group.lane.name, { top: y, height: LANE_HEAD_H + group.rows.length * rowH, group });
+      y += LANE_HEAD_H;
+      for (const row of group.rows) {
+        tops.set(row.key, y);
+        y += rowH;
+      }
+    }
+    const index = KMP_LOOM.rowIndex(layout);
+    // A pair the catalogue does not list (or a kernel that lists no value)
+    // lands on its lane's first row rather than nowhere.
+    const rowOf = (dimension, scope) => {
+      const row = index.get(KMP_LOOM.fibreId(dimension, scope));
+      if (row) return row;
+      const block = blocks.get(dimension);
+      return block ? block.group.rows[0] : null;
+    };
+    const rowMid = (row) => (row && tops.has(row.key) ? tops.get(row.key) + rowH / 2 : null);
+    return { lanes, layout, rows, rowH, tops, blocks, pulse, rowOf, rowMid };
+  }
+
+  /* The aggregates of one projection sorted onto rows: a fibre row takes its
+     own label's; a folded or `more` row sums its fibres' over each span. */
+  function rowAggregates(geometry, items) {
+    const grouped = new Map();
+    for (const item of items || []) {
+      const row = geometry.rowOf(item.dimension, item.scope_id);
+      if (!row) continue;
+      if (!grouped.has(row.key)) grouped.set(row.key, []);
+      grouped.get(row.key).push(item);
+    }
+    for (const [key, list] of grouped) grouped.set(key, KMP_LOOM.foldAggregates(list));
+    return grouped;
   }
 
   function laneText(key, text, size, color, alpha) {
@@ -303,20 +349,71 @@ KMP_APP.scene = (() => {
 
     renderObservability(p, width, geometry.pulse);
 
-    // Lanes: alternating quiet bands + name.
-    geometry.lanes.forEach((lane, i) => {
-      const top = geometry.tops.get(lane.name);
+    // Lanes are blocks: a header strip with the key and its fold glyph, a
+    // quiet band, a line under it; inside, a row per value named at the
+    // left with its use — here · ever — dim when empty here, never dropped.
+    geometry.layout.forEach((group, i) => {
+      const block = geometry.blocks.get(group.lane.name);
       if (i % 2 === 1) {
-        laneGfx.rect(0, top, width, geometry.laneH).fill({ color: p.surface2, alpha: 0.35 });
+        laneGfx.rect(0, block.top, width, block.height).fill({ color: p.surface2, alpha: 0.35 });
       }
       laneGfx
-        .moveTo(0, top + geometry.laneH)
-        .lineTo(width, top + geometry.laneH)
-        .stroke({ width: 1, color: p.laneLine, alpha: 0.8 });
-      const key = `lane:${lane.name}`;
+        .moveTo(0, block.top + block.height)
+        .lineTo(width, block.top + block.height)
+        .stroke({ width: 1, color: p.laneLine, alpha: 0.9 });
+      const key = `lane:${group.lane.name}`;
       wanted.add(key);
-      const label = laneText(key, lane.name, 11, p.textMuted, 0.9);
-      label.position.set(8, top + 6);
+      const glyph = group.folded ? "▸" : "▾";
+      const note = group.auto ? " · folded to fit" : "";
+      const label = laneText(
+        key,
+        `${glyph} ${group.lane.name}  ${group.lane.count} · ${group.lane.total}${note}`,
+        11,
+        p.textMuted,
+        0.95
+      );
+      label.anchor.set(0, 0.5);
+      label.position.set(8, block.top + LANE_HEAD_H / 2);
+      hitList.push({
+        kind: "lane",
+        lane: group.lane.name,
+        folded: group.folded,
+        count: group.lane.count,
+        total: group.lane.total,
+        x0: 4,
+        y0: block.top,
+        x1: 12 + label.width,
+        y1: block.top + LANE_HEAD_H,
+      });
+      group.rows.forEach((row) => {
+        const top = geometry.tops.get(row.key);
+        laneGfx.moveTo(0, top).lineTo(width, top).stroke({ width: 1, color: p.laneLine, alpha: 0.35 });
+        if (row.kind === "folded") return;
+        const rowKey = `row:${row.key}`;
+        wanted.add(rowKey);
+        const empty = !row.count;
+        const focused = row.kind === "fibre" && view.focusFibre === row.key;
+        const text = `${row.pinned ? "◆ " : ""}${row.label}  ${row.count} · ${row.total}`;
+        const rowLabel = laneText(rowKey, text, 10, focused ? p.accent : empty ? p.textMuted : p.text, empty ? 0.55 : 0.9);
+        rowLabel.anchor.set(0, 0.5);
+        rowLabel.position.set(22, top + geometry.rowH / 2);
+        if (row.kind === "fibre") {
+          hitList.push({
+            kind: "fibre",
+            lane: row.lane,
+            id: row.key,
+            value: row.label,
+            count: row.count,
+            total: row.total,
+            lastObserved: row.fibres[0].lastObserved,
+            pinned: row.pinned,
+            x0: 18,
+            y0: top,
+            x1: 26 + rowLabel.width,
+            y1: top + geometry.rowH,
+          });
+        }
+      });
     });
 
     // Axis: gridlines through the lanes, labels in the strip above.
@@ -369,15 +466,10 @@ KMP_APP.scene = (() => {
         .stroke({ width: 2, color, alpha: 0.7 });
     }
 
-    const laneMid = (name) => {
-      const top = geometry.tops.get(name);
-      return top === undefined ? null : top + geometry.laneH / 2;
-    };
-
     if (lod === "atlas") {
       renderAtlas(p, geometry, width);
     } else {
-      renderWeave(p, geometry, width, lod, msPerPx, laneMid);
+      renderWeave(p, geometry, width, lod, msPerPx);
     }
 
     const clocked = model.entries.filter((entry) => KMP_LOOM.strictMs(entry, view.clock) !== null).length;
@@ -448,13 +540,16 @@ KMP_APP.scene = (() => {
       .stroke({ width: 1, color: p.laneLine, alpha: 0.8 });
   }
 
-  /* Atlas: density ribbons per lane — the shape of the memory, no nodes. */
+  /* Atlas: density ribbons per row — the shape of the memory, no nodes. A
+     fibre row is one label's ribbon; a folded lane's is its fibres' summed. */
   function renderAtlas(p, geometry, width) {
-    const max = Math.max(1, ...model.bins.map((bin) => Number(bin.total || 0)));
-    for (const lane of geometry.lanes) {
-      const base = geometry.tops.get(lane.name) + geometry.laneH - 6;
-      const maxH = geometry.laneH - 16;
-      for (const bin of model.bins.filter((item) => item.dimension === lane.name)) {
+    const perRow = rowAggregates(geometry, model.bins);
+    const max = Math.max(1, ...[...perRow.values()].flat().map((bin) => Number(bin.total || 0)));
+    for (const row of geometry.rows) {
+      const top = geometry.tops.get(row.key);
+      const base = top + geometry.rowH - 3;
+      const maxH = geometry.rowH - 6;
+      for (const bin of perRow.get(row.key) || []) {
         const from = Date.parse(bin.from);
         const to = Date.parse(bin.to);
         if (!Number.isFinite(from) || !Number.isFinite(to) || !bin.total) continue;
@@ -485,33 +580,52 @@ KMP_APP.scene = (() => {
     }
   }
 
-  /* Episode & moment: entries (or tight clusters) on their lanes, braided. */
-  function renderWeave(p, geometry, width, lod, msPerPx, laneMid) {
+  /* Episode & moment: entries (or tight clusters) on their rows, braided.
+     An entry standing in three labels is drawn once per row its labels land
+     on; the braid joins its marks. A label stitched on after the write, by
+     kmp_relabel, wears a stitch — a quarter ring — on that row's mark. */
+  function renderWeave(p, geometry, width, lod, msPerPx) {
     const minGap = lod === "episode" ? 18 * msPerPx : 0;
-    const clusters = new Map();
+    const perRow = new Map(); // row.key -> [{refs, total, t, from, to, strictCount, byKind, stitch}]
+    const push = (row, item) => {
+      if (!perRow.has(row.key)) perRow.set(row.key, []);
+      perRow.get(row.key).push(item);
+    };
     if (lod === "episode") {
-      for (const cluster of model.clusters) {
-        const from = Date.parse(cluster.from);
-        const to = Date.parse(cluster.to);
-        if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
-        if (!clusters.has(cluster.dimension)) clusters.set(cluster.dimension, []);
-        clusters.get(cluster.dimension).push({
-          refs: cluster.refs || [],
-          total: Number(cluster.total || 0),
-          t: (from + to) / 2,
-          from,
-          to,
-          strictCount: Number(cluster.total || 0),
-          byKind: new Map(Object.entries(cluster.by_kind || {})),
-        });
+      for (const [key, clusters] of rowAggregates(geometry, model.clusters)) {
+        const row = geometry.rows.find((candidate) => candidate.key === key);
+        if (!row) continue;
+        for (const cluster of clusters) {
+          const from = Date.parse(cluster.from);
+          const to = Date.parse(cluster.to);
+          if (!Number.isFinite(from) || !Number.isFinite(to)) continue;
+          push(row, {
+            refs: cluster.refs || [],
+            total: Number(cluster.total || 0),
+            t: (from + to) / 2,
+            from,
+            to,
+            strictCount: Number(cluster.total || 0),
+            byKind: new Map(Object.entries(cluster.by_kind || {})),
+            stitch: null,
+          });
+        }
       }
     } else {
       for (const entry of model.entries) {
         const t = KMP_LOOM.placedMs(entry, view.clock);
         if (t === null || t < view.t0 || t > view.t1) continue;
-        for (const dimension of new Set(entry.coords.map((coordinate) => coordinate.dimension))) {
-          if (!clusters.has(dimension)) clusters.set(dimension, []);
-          clusters.get(dimension).push({
+        const landed = new Map(); // row.key -> {row, stitch}
+        for (const coordinate of entry.coords) {
+          const row = geometry.rowOf(coordinate.dimension, coordinate.scope);
+          if (!row) continue;
+          const held = landed.get(row.key);
+          const stitch = KMP_LOOM.stitched(coordinate) ? coordinate : null;
+          if (!held) landed.set(row.key, { row, stitch });
+          else if (!held.stitch && stitch) held.stitch = stitch;
+        }
+        for (const { row, stitch } of landed.values()) {
+          push(row, {
             refs: [entry.ref],
             total: 1,
             t,
@@ -519,6 +633,7 @@ KMP_APP.scene = (() => {
             to: t,
             strictCount: KMP_LOOM.strictMs(entry, view.clock) === null ? 0 : 1,
             byKind: new Map([[entry.kind, 1]]),
+            stitch,
           });
         }
       }
@@ -526,16 +641,15 @@ KMP_APP.scene = (() => {
     const drawnAt = new Map(); // ref -> [{x, y}]
     const wantedBubbles = new Set();
 
-    for (const lane of geometry.lanes) {
-      const laneClusters = clusters.get(lane.name) || [];
-      const y = laneMid(lane.name);
+    for (const row of geometry.rows) {
+      const y = geometry.rowMid(row);
       if (y === null) continue;
-      for (const cluster of laneClusters) {
+      for (const cluster of perRow.get(row.key) || []) {
         const x = xOf(cluster.t);
         if (x < -40 || x > width + 40) continue;
         if (lod === "episode" || cluster.total > 1) {
           // A bundle of memory too tight to split at this zoom.
-          const r = Math.min(18, 7 + 2.5 * Math.log2(cluster.refs.length + 1));
+          const r = Math.min(Math.max(5, geometry.rowH / 2 - 2), 7 + 2.5 * Math.log2(cluster.refs.length + 1));
           const slices = [...cluster.byKind.entries()].sort((a, c) => c[1] - a[1]);
           const allFallback = cluster.strictCount === 0;
           if (allFallback) {
@@ -555,7 +669,7 @@ KMP_APP.scene = (() => {
               .stroke({ width: 3, color: kindColor(kind), alpha: 0.95 });
             angle += sweep;
           }
-          const key = `bubble:${lane.name}:${Math.round(x)}`;
+          const key = `bubble:${row.key}:${Math.round(x)}`;
           wantedBubbles.add(key);
           let label = textPools.bubble.get(key);
           if (!label) {
@@ -588,12 +702,19 @@ KMP_APP.scene = (() => {
           const a = entryAlpha(m);
           if (a <= 0.02) continue;
           const strict = KMP_LOOM.strictMs(m, view.clock) !== null;
-          const r = view.selectedRef === ref ? 7 : 5.5;
+          const r = Math.min(view.selectedRef === ref ? 7 : 5.5, Math.max(3, geometry.rowH / 2 - 2));
           if (strict) {
             marksGfx.circle(x, y, r).fill({ color: kindColor(m.kind), alpha: a });
           } else {
             // Hollow: sitting at its precedence fallback, not its own clock.
             marksGfx.circle(x, y, r).stroke({ width: 2, color: kindColor(m.kind), alpha: a });
+          }
+          if (cluster.stitch) {
+            // The stitch: this label was put on the entry after the write.
+            marksGfx
+              .moveTo(x, y - r - 2.5)
+              .arc(x, y, r + 2.5, -Math.PI / 2, Math.PI / 6)
+              .stroke({ width: 1.5, color: p.accent, alpha: a });
           }
           if (model.contradictedRefs.has(m.ref)) {
             marksGfx
@@ -603,12 +724,12 @@ KMP_APP.scene = (() => {
           let bucket = drawnAt.get(ref);
           if (!bucket) drawnAt.set(ref, (bucket = []));
           bucket.push({ x, y });
-          hitList.push({ x, y, r: r + 4, kind: "entry", ref });
+          hitList.push({ x, y, r: r + 4, kind: "entry", ref, stitch: cluster.stitch });
         }
       }
     }
 
-    // Braids: one entry woven through several lanes — a vertical thread.
+    // Braids: one entry woven through several rows — a vertical thread.
     for (const [ref, spots] of drawnAt) {
       if (spots.length < 2) continue;
       const a = entryAlpha(model.byRef.get(ref)) * 0.7;
@@ -630,9 +751,10 @@ KMP_APP.scene = (() => {
         const until = m.clocks.validUntil ?? view.t1;
         const seen = new Set();
         for (const coord of m.coords) {
-          if (seen.has(coord.dimension)) continue;
-          seen.add(coord.dimension);
-          const y = laneMid(coord.dimension);
+          const row = geometry.rowOf(coord.dimension, coord.scope);
+          if (!row || seen.has(row.key)) continue;
+          seen.add(row.key);
+          const y = geometry.rowMid(row);
           if (y === null) continue;
           validityGfx
             .rect(xOf(from), y - 2, Math.max(2, xOf(until) - xOf(from)), 4)
@@ -691,7 +813,7 @@ KMP_APP.scene = (() => {
     }
 
     // Entry labels, only when there is room to own the words.
-    const showLabels = msPerPx < 4000;
+    const showLabels = msPerPx < 4000 && geometry.rowH >= 22;
     for (const [key, label] of textPools.mark) label.visible = false;
     if (showLabels) {
       for (const item of hitList) {
@@ -816,6 +938,12 @@ KMP_APP.scene = (() => {
     let best = null;
     let bestDist = Infinity;
     for (const item of hitList) {
+      if (item.x0 !== undefined) {
+        // A label: a rectangle, hit when the pointer is inside it, and
+        // never preferred over a mark the pointer is on.
+        if (x >= item.x0 && x <= item.x1 && y >= item.y0 && y <= item.y1 && bestDist === Infinity) best = item;
+        continue;
+      }
       const dist = Math.hypot(item.x - x, item.y - y);
       if (dist <= item.r + 3 && dist < bestDist) {
         best = item;
@@ -835,6 +963,15 @@ KMP_APP.scene = (() => {
     if (hit.kind === "cluster") {
       tooltip.append(el("div", "tt-title", `${hit.count} entries`));
       tooltip.append(el("div", "tt-sub", "click to open this stretch of the weave"));
+    } else if (hit.kind === "lane") {
+      tooltip.append(el("div", "tt-title", hit.lane));
+      tooltip.append(el("div", "tt-sub", `${hit.count} here · ${hit.total} ever · ${hit.folded ? "folded" : "unfolded"}`));
+      tooltip.append(el("div", "tt-quote", "click folds or unfolds · ⇧ click keeps entries with this key · ⌥ click keeps entries without it"));
+    } else if (hit.kind === "fibre") {
+      tooltip.append(el("div", "tt-title", `${hit.lane} = ${hit.value}`));
+      const seen = hit.lastObserved ? ` · last seen ${fmtMsFull(hit.lastObserved)}` : "";
+      tooltip.append(el("div", "tt-sub", `${hit.count} here · ${hit.total} ever${seen}`));
+      tooltip.append(el("div", "tt-quote", "click focuses this label · ⇧ click keeps only entries in it · ⌥ click keeps entries not in it"));
     } else if (hit.kind === "exemplar") {
       tooltip.append(
         el(
@@ -859,6 +996,10 @@ KMP_APP.scene = (() => {
       );
       const t = KMP_LOOM.placedMs(m, view.clock);
       if (t !== null) tooltip.append(el("div", "tt-sub", fmtMsFull(t)));
+      if (hit.stitch) {
+        const who = hit.stitch.motivation ? ` · ${hit.stitch.motivation}` : "";
+        tooltip.append(el("div", "tt-quote", `labelled later by ${hit.stitch.method}${who}${hit.stitch.why ? " — " + hit.stitch.why : ""}`));
+      }
       if (model.supersededRefs.has(m.ref)) tooltip.append(el("div", "tt-quote", "superseded — history, still true then"));
       if (model.contradictedRefs.has(m.ref)) tooltip.append(el("div", "tt-quote", "contradicted — both claims still alive"));
     }

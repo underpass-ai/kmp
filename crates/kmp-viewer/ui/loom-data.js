@@ -14,6 +14,9 @@ KMP_APP.data = (() => {
   const showError = (message) => KMP_APP.dom.showError(message);
 
   function lanesFromProjection(projection, entries) {
+    // The catalogue names every label the about holds, empty ones too; the
+    // entries are the fallback for a kernel that does not list it.
+    if ((projection.labels || []).length) return KMP_LOOM.lanesFromLabels(projection.labels);
     if (entries.length) return KMP_LOOM.buildLanes(entries);
     const counts = new Map();
     const source = (projection.clusters || []).length
@@ -29,7 +32,9 @@ KMP_APP.data = (() => {
       name,
       index,
       count,
+      total: count,
       scopes: new Map(),
+      fibres: [],
     }));
   }
 
@@ -41,10 +46,11 @@ KMP_APP.data = (() => {
     model.currentLod = lod;
     model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
     model.total = Number((projection.page && projection.page.total) || 0);
-    // The kernel projects one bin and one cluster per label; until the loom
-    // draws a row per value, a lane is its key folded.
-    model.bins = KMP_LOOM.foldAggregates(projection.bins);
-    model.clusters = KMP_LOOM.foldAggregates(projection.clusters);
+    // One bin and one cluster per label, as the kernel projects them; the
+    // scene folds them into whatever row the pair lands on.
+    model.bins = projection.bins || [];
+    model.clusters = projection.clusters || [];
+    model.labels = projection.labels || [];
     model.entries = entries;
     model.byRef = new Map(entries.map((entry) => [entry.ref, entry]));
     model.lanes = lanesFromProjection(projection, entries);
@@ -114,6 +120,50 @@ KMP_APP.data = (() => {
     } catch (error) {
       if (generation === model.loadGeneration) showError(error.message);
     }
+  }
+
+  /* ---------------- the label moves ----------------
+     What a click on a key or a value means, shared by the rail and the
+     stage: a plain click folds a lane or focuses a fibre (emphasis, local);
+     with ⇧ or ⌥ it becomes a predicate the kernel filters by (a chip, shared). */
+
+  function toggleFold(lane) {
+    if (view.foldedLanes.has(lane)) view.foldedLanes.delete(lane);
+    else view.foldedLanes.add(lane);
+    KMP_APP.panels.renderRail();
+    KMP_APP.scene.requestDraw();
+  }
+
+  function focusFibre(id) {
+    view.focusFibre = view.focusFibre === id ? null : id;
+    KMP_APP.panels.renderRail();
+    KMP_APP.scene.requestDraw();
+  }
+
+  function pinFibre(lane, id) {
+    if (view.pinnedFibres.has(id)) view.pinnedFibres.delete(id);
+    else {
+      view.pinnedFibres.add(id);
+      view.foldedLanes.delete(lane);
+    }
+    KMP_APP.panels.renderRail();
+    KMP_APP.scene.requestDraw();
+  }
+
+  function selectByLabel(key, op, values = []) {
+    return setSelectors(KMP_LOOM.withSelector(view.selectors, { key, op, values }));
+  }
+
+  function pickLane(lane, { shiftKey = false, altKey = false } = {}) {
+    if (shiftKey) return selectByLabel(lane, "exists");
+    if (altKey) return selectByLabel(lane, "notexists");
+    return toggleFold(lane);
+  }
+
+  function pickFibre(lane, id, value, { shiftKey = false, altKey = false } = {}) {
+    if (shiftKey) return selectByLabel(lane, "in", [value]);
+    if (altKey) return selectByLabel(lane, "notin", [value]);
+    return focusFibre(id);
   }
 
   /* A chip changed: the kernel filters, so the projection is asked again,
@@ -205,7 +255,7 @@ KMP_APP.data = (() => {
       // stale data as if it belonged to the one the user selected (#421).
       model.about = about;
       model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(probe);
-      model.overviewBins = KMP_LOOM.foldAggregates(probe.bins);
+      model.overviewBins = probe.bins || [];
       if (extent) {
         const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
         view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
@@ -218,6 +268,9 @@ KMP_APP.data = (() => {
       view.trace = null;
       view.searchHits = new Set();
       view.hiddenLanes = new Set();
+      view.foldedLanes = new Set();
+      view.pinnedFibres = new Set();
+      view.focusFibre = null;
       KMP_APP.panels.renderChips();
       view.pinA = null;
       view.pinB = null;
@@ -259,6 +312,12 @@ KMP_APP.data = (() => {
     lanesFromProjection,
     applyProjection,
     setSelectors,
+    toggleFold,
+    focusFibre,
+    pinFibre,
+    selectByLabel,
+    pickLane,
+    pickFibre,
     loadProjection,
     scheduleProjection,
     cancelScheduledProjection,

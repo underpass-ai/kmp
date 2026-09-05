@@ -40,6 +40,20 @@ Detailed notes from the early release cycle remain available in the
   aligned. ChronoLoom adopts a snapshot's labels, asks the projection through
   them, and wears them as chips a person can take off.
 
+- ChronoLoom draws the value. A lane is still a key; inside it every value is
+  a row — the entries standing in that pair — so an entry labelled with a
+  task, a process and an episode is one mark on each of those rows, joined by
+  its braid, and two lanes that used to look identical now show which values
+  partition them. Rows come from the about's catalogue, so a label empty in
+  this range is drawn dim rather than dropped; they are budgeted to the
+  height, a lane folds to one row on a click, a value pins to a row of its
+  own, and what does not fit is one `+n more` row that says so. The rail is
+  the catalogue and the filter: ⇧ and ⌥ clicks on a key or value become chips
+  in the kernel's four selector operators, and focusing a value shows how
+  many of its entries every other value shares. A label put on after the
+  write wears a stitch on its mark, and the entry's record lists every label
+  with how it got there — at write, or relabelled by whom, when and why.
+
 ## [0.12.2] - 2026-09-05
 
 ### Fixed

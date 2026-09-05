@@ -298,6 +298,29 @@ select, input {
 .legend-dash.contradiction::before { left: -3px; }
 .legend-dash.contradiction::after { right: -3px; }
 
+/* the catalogue rail: keys as lanes, values as rows */
+.lane-list li.lane-row { display: block; padding: 0; cursor: default; }
+.lane-list li.lane-row:hover { background: none; }
+.lane-head { display: flex; align-items: center; gap: 5px; padding: 2px var(--space-1); border-radius: var(--radius-1); }
+.lane-head:hover { background: var(--surface-3); }
+.lane-name { cursor: pointer; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fold-glyph, .lane-hide, .fibre-pin {
+  font: inherit; font-size: 11px; line-height: 1; padding: 0 3px; border: 0; background: none;
+  color: var(--text-muted); cursor: pointer; border-radius: var(--radius-1);
+}
+.fold-glyph:hover, .lane-hide:hover, .fibre-pin:hover { color: var(--accent); background: var(--surface-1); }
+.lane-hide { font-size: 10px; }
+.fibre-list { list-style: none; margin: 0 0 3px; padding: 0 0 0 14px; }
+.fibre-row { display: flex; align-items: center; gap: 5px; padding: 1px var(--space-1); border-radius: var(--radius-1); font-size: 12px; color: var(--text-secondary); }
+.fibre-row:hover { background: var(--surface-3); }
+.fibre-row.empty { opacity: 0.55; }
+.fibre-row.focused { color: var(--accent); background: var(--surface-1); }
+.fibre-value { cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fibre-overlap { font-size: 11px; color: var(--accent); white-space: nowrap; }
+.focus-note { font-size: 11px; margin: 0 0 2px; }
+.focus-note[hidden] { display: none; }
+.label-list li.stitched { border-left: 3px solid var(--accent); }
+
 /* label chips: the kernel's filter, worn where both faces can read it */
 .chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
 .chip-list[hidden] { display: none; }

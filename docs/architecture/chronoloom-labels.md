@@ -121,10 +121,16 @@ what the about does not hold as unhonored.
 
 | # | Slice | Proof |
 |:--|:--|:--|
-| 1 | Kernel and contract: the pair on bins and clusters, the catalogue, the origin on the coordinate; the browser folds until rows land | application tests; the HTTP smoke with a real relabel; contract gate; re-blessed fixtures |
+| 1 | Kernel and contract: the pair on bins and clusters, the catalogue, the origin on the coordinate; the browser folds until rows land | application tests; the HTTP smoke with a real relabel; contract gate; re-blessed fixtures — landed in [#527](https://github.com/underpass-ai/kmp/pull/527) |
 | 2 | Adapters, view context and intent: `labels` on the wire, `LabelSelection` in the domain, `projection.labels` in the tool with unhonored keys | crate tests; tool-surface parity |
 | 3 | The browser: rows per fibre, the rail, chips, focus, the stitch, the Labels section | `node --test`; MCP App contracts; a browser pass over a copy of the real store |
 | 4 | Docs: this map closed, the viewer README, the skill and guide | documentation spine |
+
+A fibre's identity is the pair, never the value alone: the real store holds
+two values that stand under two keys each (`project:kmp:launch-campaign-0.6.1`
+under `task` and under `agentic_process`), written before v0.12.0 fixed one
+key per value. They are two rows, and focusing one counts only its own
+entries.
 
 Out of scope, on purpose: the 2.5D "about as depth" prototype (the backend is
 one about per projection), and the Occurred axis dropping entries that carry

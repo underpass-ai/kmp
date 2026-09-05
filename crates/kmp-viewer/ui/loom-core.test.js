@@ -401,3 +401,107 @@ test("adding a selector merges values on the same key and operator", () => {
   assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c;task exists");
   assert.equal(loom.labelQuery(loom.withSelector(selectors, { key: "", op: "in", values: ["x"] })), loom.labelQuery(selectors));
 });
+
+/* ---------------- lanes, fibres, rows ---------------- */
+
+const catalogue = [
+  { dimension: "task", scope_id: "about:a:dimension:t-1", value: "t-1", in_range: 5, entries: 11, last_observed_at: "2026-09-05T06:00:00Z" },
+  { dimension: "task", scope_id: "about:a:dimension:t-2", value: "t-2", in_range: 0, entries: 9 },
+  { dimension: "task", scope_id: "about:a:dimension:t-3", value: "t-3", in_range: 2, entries: 2 },
+  { dimension: "agentic_process", scope_id: "about:a:dimension:p-1", value: "p-1", in_range: 7, entries: 40 },
+  { dimension: "agentic_episode", scope_id: "about:a:dimension:e-1", value: "e-1", in_range: 1, entries: 1 },
+  { dimension: "agentic_episode", scope_id: "about:a:dimension:e-2", value: "e-2", in_range: 0, entries: 3 },
+];
+
+test("lanes come from the catalogue with a fibre per value, empty ones included", () => {
+  const lanes = loom.lanesFromLabels(catalogue);
+  assert.equal(JSON.stringify(lanes.map((lane) => lane.name)), JSON.stringify(["task", "agentic_process", "agentic_episode"]));
+  const task = lanes[0];
+  assert.equal(task.count, 7, "a lane's use here is the sum of its fibres'");
+  assert.equal(task.total, 22);
+  assert.equal(JSON.stringify(task.fibres.map((f) => f.value)), JSON.stringify(["t-1", "t-3", "t-2"]), "by use here, then ever");
+  assert.equal(task.fibres[2].count, 0, "an empty fibre is a fibre");
+  assert.equal(task.fibres[0].lastObserved, Date.parse("2026-09-05T06:00:00Z"));
+  assert.equal(loom.bareValue("about:a:dimension:conversation:rachel"), "conversation:rachel");
+  assert.equal(loom.bareValue("plain"), "plain");
+});
+
+test("rows are a fibre each when they fit, and fold to a budget without hiding", () => {
+  const lanes = loom.lanesFromLabels(catalogue);
+  const roomy = loom.laneRows(lanes, { budget: 100 });
+  assert.equal(JSON.stringify(roomy.map((l) => l.rows.map((r) => r.kind))), JSON.stringify([["fibre", "fibre", "fibre"], ["fibre"], ["fibre", "fibre"]]));
+  assert.equal(roomy[1].rows[0].label, "p-1", "a lane with one value shows the value");
+
+  const folded = loom.laneRows(lanes, { budget: 100, folded: new Set(["task"]) });
+  assert.equal(folded[0].rows.length, 1);
+  assert.equal(folded[0].rows[0].kind, "folded");
+  assert.equal(folded[0].rows[0].fibres.length, 3, "a folded row still knows its fibres");
+
+  const tight = loom.laneRows(lanes, { budget: 4 });
+  // task needs 3, episode 2, process 1 = 6 > 4: the biggest folds, the rest fit.
+  assert.equal(tight[0].folded, true);
+  assert.equal(tight[0].auto, true, "folded to fit, and says so");
+  assert.equal(tight[2].rows.length, 2);
+
+  const squeezed = loom.laneRows(lanes, { budget: 5 });
+  // 5 - 1 fixed = 4 spare for task (3) and episode (2): two rows each.
+  const task = squeezed[0];
+  assert.equal(task.folded, false);
+  assert.equal(task.rows.length, 2);
+  assert.equal(task.rows[0].kind, "fibre");
+  assert.equal(task.rows[1].kind, "more");
+  assert.equal(task.rows[1].label, "+2 more");
+  assert.equal(task.rows[1].count, 2, "the more row counts what it folds");
+
+  const pinned = loom.laneRows(lanes, { budget: 5, pinned: new Set([loom.fibreId("task", "about:a:dimension:t-2")]) });
+  assert.equal(pinned[0].rows[0].label, "t-2", "a pinned fibre keeps a row of its own");
+  assert.equal(pinned[0].rows[0].pinned, true);
+
+  const index = loom.rowIndex(squeezed);
+  const at = (lane, scope) => index.get(loom.fibreId(lane, scope));
+  assert.equal(at("task", "about:a:dimension:t-3").kind, "more");
+  assert.equal(at("task", "about:a:dimension:t-1").kind, "fibre");
+  assert.equal(at("agentic_process", "about:a:dimension:p-1").kind, "fibre");
+});
+
+test("fibre overlap counts shared refs at Moment and at Episode, nothing at Atlas", () => {
+  const e = (ref, scopes) => entry(scopes.map((s) => ({ dimension: "d", scope_id: s })), { ref });
+  const id = (scope) => loom.fibreId("d", scope);
+  const atMoment = loom.fibreOverlap(id("t-1"), { entries: [e("a", ["t-1", "p-1"]), e("b", ["t-1"]), e("c", ["p-1", "e-1"])] });
+  assert.equal(atMoment.size, 2);
+  assert.equal(atMoment.overlap.get(id("p-1")), 1);
+  assert.equal(atMoment.overlap.get(id("e-1")), 0);
+  const atEpisode = loom.fibreOverlap(id("t-1"), {
+    clusters: [
+      { dimension: "d", scope_id: "t-1", refs: ["a", "b"] },
+      { dimension: "d", scope_id: "p-1", refs: ["a", "c"] },
+    ],
+  });
+  assert.equal(atEpisode.size, 2);
+  assert.equal(atEpisode.overlap.get(id("p-1")), 1);
+  const atAtlas = loom.fibreOverlap(id("t-1"), {});
+  assert.equal(atAtlas.size, 0);
+  // The same value under two keys — an about written before v0.12.0 fixed
+  // one key per value — is two fibres, never one.
+  const twoKeys = loom.lanesFromLabels([
+    { dimension: "task", scope_id: "s", value: "s", in_range: 2, entries: 2 },
+    { dimension: "agentic_process", scope_id: "s", value: "s", in_range: 1, entries: 1 },
+  ]);
+  assert.notEqual(twoKeys[0].fibres[0].id, twoKeys[1].fibres[0].id);
+  const both = entry([{ dimension: "task", scope_id: "s" }, { dimension: "agentic_process", scope_id: "s" }], { ref: "x" });
+  const only = entry([{ dimension: "task", scope_id: "s" }], { ref: "y" });
+  const split = loom.fibreOverlap(loom.fibreId("task", "s"), { entries: [both, only] });
+  assert.equal(split.size, 2);
+  assert.equal(split.overlap.get(loom.fibreId("agentic_process", "s")), 1);
+});
+
+test("a coordinate stitched on by kmp_relabel says so, and carries its why", () => {
+  const m = entry([
+    { dimension: "task", scope_id: "s1" },
+    { dimension: "task", scope_id: "s2", method: "kmp_relabel", why: "belongs here", motivation: "Relabelled by agent at T." },
+  ]);
+  assert.equal(loom.stitched(m.coords[0]), false);
+  assert.equal(loom.stitched(m.coords[1]), true);
+  assert.equal(m.coords[1].why, "belongs here");
+  assert.equal(m.coords[0].why, null);
+});

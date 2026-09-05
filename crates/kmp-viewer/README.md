@@ -7,10 +7,27 @@ a human. Same facade, same semantics, no parallel read model.
 
 ## Memory you can see
 
-ChronoLoom places memory on stable dimension lanes and offers three semantic
-zoom levels: Atlas bins, Episode clusters and Moment entries. The
-application owns this bounded, paginated projection; the browser never walks a
-whole about or a depth-four graph to manufacture it.
+ChronoLoom places memory on the about's labels and offers three semantic
+zoom levels: Atlas bins, Episode clusters and Moment entries. A label is a
+`key = value` pair: the key is a lane, and inside it every value is a row —
+a fibre, the entries standing in that pair — so an entry labelled with a
+task, a process and an episode is one mark on each of those rows, joined by
+its braid. Rows come from the catalogue, not from the window: a label with
+nothing in this range is drawn as an empty row, never left out. Rows are
+budgeted to the height rather than scrolled; a lane folds to one row on a
+click, a value pins to a row of its own, and what does not fit is one
+`+n more` row that says so. A label put on an entry after the write by
+`kmp_relabel` wears a stitch on its mark, and the entry's record lists every
+label with how it got there — at write, or relabelled by whom, when and why.
+The application owns this bounded, paginated projection; the browser never
+walks a whole about or a depth-four graph to manufacture it.
+
+The catalogue rail is also the filter: ⇧ click on a value keeps only the
+entries in it, ⌥ click keeps the entries not in it, and the same on a key
+keeps entries with or without it. Each becomes a chip in the kernel's own
+selector vocabulary (`in`, `notin`, `exists`, `notexists`), travels to the
+kernel as a hard filter, and is shared with the agent as `projection.labels`.
+Focusing a value shows how many of its entries every other value shares.
 
 Ask Codex or Claude to show the memory behind a decision: the agent can focus
 the relevant evidence and light up its proof path in ChronoLoom. The view stays

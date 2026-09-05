@@ -52,23 +52,83 @@ KMP_APP.panels = (() => {
     }
   }
 
+  /* The rail is the catalogue: every key the about holds, and under it every
+     value with its use — here · ever — empty ones dim, never left out. It is
+     also the selector surface: a click folds a key or focuses a value; ⇧ and
+     ⌥ turn either into a chip the kernel filters by. With a value focused,
+     every other value shows how many of its entries it shares with it. */
   function renderRail() {
-    const lanes = $("lane-list");
-    lanes.textContent = "";
+    const list = $("lane-list");
+    list.textContent = "";
+    const overlap = view.focusFibre
+      ? KMP_LOOM.fibreOverlap(view.focusFibre, { entries: model.entries, clusters: model.clusters })
+      : null;
     for (const lane of model.lanes) {
       const hidden = view.hiddenLanes.has(lane.name);
-      const item = el("li", hidden ? "dimmed" : "");
+      const folded = view.foldedLanes.has(lane.name);
+      const item = el("li", `lane-row${hidden ? " dimmed" : ""}`);
+      const head = el("div", "lane-head");
+      const glyph = el("button", "fold-glyph", folded ? "▸" : "▾");
+      glyph.title = folded ? "unfold: one row per value" : "fold: one row for the key";
+      glyph.addEventListener("click", (event) => {
+        event.stopPropagation();
+        KMP_APP.data.toggleFold(lane.name);
+      });
       const dot = el("span", "legend-dot");
       dot.style.background = kindColor("memory_dimension");
-      item.append(dot, el("span", "", `${lane.name} `), el("span", "muted", String(lane.count)));
-      item.title = hidden ? "hidden — click to show this lane" : "click to hide this lane";
-      item.addEventListener("click", () => {
+      const name = el("span", "lane-name", lane.name);
+      name.title = "click: fold or unfold · ⇧ click: keep entries with this key · ⌥ click: keep entries without it";
+      name.addEventListener("click", (event) => KMP_APP.data.pickLane(lane.name, event));
+      const count = el("span", "muted legend-count", `${lane.count} · ${lane.total}`);
+      const hide = el("button", "lane-hide", hidden ? "show" : "hide");
+      hide.title = hidden ? "draw this lane again" : "take this lane off the stage (entries stay)";
+      hide.addEventListener("click", (event) => {
+        event.stopPropagation();
         if (hidden) view.hiddenLanes.delete(lane.name);
         else view.hiddenLanes.add(lane.name);
         renderRail();
         KMP_APP.scene.requestDraw();
       });
-      lanes.append(item);
+      head.append(glyph, dot, name, count, hide);
+      item.append(head);
+      if (!folded && !hidden && lane.fibres.length) {
+        const values = el("ul", "fibre-list");
+        for (const fibre of lane.fibres) {
+          const focused = view.focusFibre === fibre.id;
+          const row = el("li", `fibre-row${fibre.count ? "" : " empty"}${focused ? " focused" : ""}`);
+          const pin = el("button", "fibre-pin", view.pinnedFibres.has(fibre.id) ? "◆" : "◇");
+          pin.title = view.pinnedFibres.has(fibre.id) ? "unpin: let this value fold with the rest" : "pin: keep this value on a row of its own";
+          pin.addEventListener("click", (event) => {
+            event.stopPropagation();
+            KMP_APP.data.pinFibre(lane.name, fibre.id);
+          });
+          const value = el("span", "fibre-value mono", fibre.value);
+          value.title = "click: focus this label · ⇧ click: keep only entries in it · ⌥ click: keep entries not in it";
+          value.addEventListener("click", (event) => KMP_APP.data.pickFibre(lane.name, fibre.id, fibre.value, event));
+          const shared =
+            overlap && !focused && overlap.overlap.has(fibre.id)
+              ? el("span", "fibre-overlap", `∩ ${overlap.overlap.get(fibre.id)}`)
+              : null;
+          const use = el("span", "muted legend-count", `${fibre.count} · ${fibre.total}`);
+          row.append(pin, value);
+          if (shared) row.append(shared);
+          row.append(use);
+          values.append(row);
+        }
+        item.append(values);
+      }
+      list.append(item);
+    }
+    const focusNote = $("focus-note");
+    if (focusNote) {
+      focusNote.hidden = !overlap;
+      if (overlap) {
+        const lane = model.lanes.find((candidate) => candidate.fibres.some((fibre) => fibre.id === view.focusFibre));
+        const fibre = lane && lane.fibres.find((candidate) => candidate.id === view.focusFibre);
+        focusNote.textContent = fibre
+          ? `focused ${lane.name} = ${fibre.value}: ${overlap.size} ${overlap.size === 1 ? "entry" : "entries"}${model.currentLod === "atlas" ? " · overlap counts at Episode" : ""}`
+          : "";
+      }
     }
 
     const kinds = new Map();
@@ -174,6 +234,7 @@ KMP_APP.panels = (() => {
   function renderStats() {
     $("s-entries").textContent = String(model.total);
     $("s-lanes").textContent = String(model.lanes.length);
+    $("s-labels").textContent = String(model.lanes.reduce((sum, lane) => sum + lane.fibres.length, 0));
     $("s-relations").textContent =
       model.currentLod === "moment"
         ? String(model.edges.length + model.supersessions.length + model.contradictions.length)
@@ -332,18 +393,21 @@ KMP_APP.panels = (() => {
     $("d-detail").textContent =
       (inspect.detail && inspect.detail.detail) || "(no detail recorded)";
 
-    const coords = $("d-coords");
-    coords.textContent = "";
+    // Every label the entry stands in, with how it got there: at write, or
+    // stitched on later by kmp_relabel with its why and who did it when.
+    const labels = $("d-labels");
+    labels.textContent = "";
     for (const c of m.coords) {
-      coords.append(
-        el(
-          "li",
-          "",
-          `${c.dimension} / ${c.scope}` +
-            (c.sequence !== null ? ` · #${c.sequence}` : "") +
-            (c.rank !== null ? ` · rank ${c.rank}` : "")
-        )
-      );
+      const item = el("li", KMP_LOOM.stitched(c) ? "stitched" : "");
+      const head = el("div", "rel-head");
+      head.append(el("span", "rel-type", `${c.dimension} = ${KMP_LOOM.bareValue(c.scope)}`));
+      if (c.sequence !== null) head.append(el("span", "pill pill-muted", `#${c.sequence}`));
+      if (c.rank !== null) head.append(el("span", "pill pill-muted", `rank ${c.rank}`));
+      head.append(el("span", "pill pill-muted", KMP_LOOM.stitched(c) ? c.method : "at write"));
+      item.append(head);
+      if (c.motivation) item.append(el("p", "rel-evidence", c.motivation));
+      if (c.why) item.append(el("p", "rel-why", c.why));
+      labels.append(item);
     }
 
     renderRelationList($("d-incoming"), inspect.incoming, "source");

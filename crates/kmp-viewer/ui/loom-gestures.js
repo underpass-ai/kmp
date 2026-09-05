@@ -140,6 +140,14 @@ KMP_APP.gestures = (() => {
         scene().requestDraw();
         return;
       }
+      if (hit.kind === "lane") {
+        KMP_APP.data.pickLane(hit.lane, event);
+        return;
+      }
+      if (hit.kind === "fibre") {
+        KMP_APP.data.pickFibre(hit.lane, hit.id, hit.value, event);
+        return;
+      }
       if (hit.kind === "cluster") {
         // Open the weave: zoom into the bundle's span.
         const pad = Math.max(1000, (hit.t1 - hit.t0) * 0.35);

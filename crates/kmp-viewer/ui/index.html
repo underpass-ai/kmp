@@ -49,8 +49,9 @@
     <ul id="label-chips" class="chip-list" aria-label="Label filters the projection is read through" hidden></ul>
     <h2 class="pane-title">Abouts</h2>
     <ul id="about-list" class="item-list"></ul>
-    <h2 class="pane-title">Lanes <span class="muted">(dimension)</span></h2>
-    <ul id="lane-list" class="legend-list"></ul>
+    <h2 class="pane-title">Labels <span class="muted">(key = value)</span></h2>
+    <p id="focus-note" class="muted focus-note" hidden></p>
+    <ul id="lane-list" class="legend-list lane-list"></ul>
     <h2 class="pane-title">Kinds</h2>
     <ul id="kind-legend" class="legend-list"></ul>
     <h2 class="pane-title">Relations</h2>
@@ -59,7 +60,7 @@
   </aside>
 
   <main id="stage">
-    <canvas id="loom-canvas" aria-label="The loom: memory over time, dimensions as lanes">
+    <canvas id="loom-canvas" aria-label="The loom: memory over time, label keys as lanes and their values as rows">
       Memory over time. Use the panels to inspect entries.
     </canvas>
     <div id="pulse-legend" class="pulse-legend" aria-label="Observability pulse legend" hidden></div>
@@ -94,7 +95,8 @@
       <div id="prism"></div>
       <p id="d-summary"></p>
       <details open><summary>Detail</summary><pre id="d-detail" class="rendered mono"></pre></details>
-      <details><summary>Coordinates</summary><ul id="d-coords" class="coord-list mono"></ul></details>
+      <h3 class="pane-title">Labels</h3>
+      <ul id="d-labels" class="rel-list label-list"></ul>
       <h3 class="pane-title">Incoming</h3>
       <ul id="d-incoming" class="rel-list"></ul>
       <h3 class="pane-title">Outgoing</h3>
@@ -110,6 +112,7 @@
   <footer id="statusbar">
     <div class="stat"><span class="stat-label">entries</span><span id="s-entries" class="stat-value">–</span></div>
     <div class="stat"><span class="stat-label">lanes</span><span id="s-lanes" class="stat-value">–</span></div>
+    <div class="stat" title="every key = value the about holds; rows the stage draws or folds"><span class="stat-label">labels</span><span id="s-labels" class="stat-value">–</span></div>
     <div class="stat"><span class="stat-label">relations</span><span id="s-relations" class="stat-value">–</span></div>
     <div class="stat" title="entries carrying the selected clock themselves; the rest sit at their precedence fallback, hollow">
       <span class="stat-label">on this clock</span><span id="s-clocked" class="stat-value">–</span>

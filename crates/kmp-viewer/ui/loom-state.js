@@ -25,8 +25,9 @@ KMP_APP.state = (() => {
     loadGeneration: 0,
     entries: [], // entryModels, ordered
     byRef: new Map(),
-    lanes: [], // [{name, index, count, scopes}]
+    lanes: [], // [{name, index, count, total, scopes, fibres}]
     laneIndex: new Map(),
+    labels: [], // the catalogue as the projection lists it
     edges: [], // explanatory arcs (classified)
     supersessions: [],
     contradictions: [],
@@ -45,6 +46,9 @@ KMP_APP.state = (() => {
     windowStack: [],
     selectedRef: null,
     hiddenLanes: new Set(),
+    foldedLanes: new Set(), // keys drawn as one row
+    pinnedFibres: new Set(), // fibre ids kept on a row of their own
+    focusFibre: null, // fibre id whose entries are emphasised
     dimmedKinds: new Set(),
     searchHits: new Set(),
     trace: null, // {refs:Set, edgeKeys:Set}
@@ -77,6 +81,10 @@ KMP_APP.state = (() => {
     if (view.dimmedKinds.has(m.kind)) a = Math.min(a, 0.15);
     if (view.searchHits.size) a = view.searchHits.has(m.ref) ? 1 : Math.min(a, 0.15);
     if (view.trace) a = view.trace.refs.has(m.ref) ? 1 : Math.min(a, 0.12);
+    if (view.focusFibre) {
+      const inFibre = (m.coords || []).some((coord) => KMP_LOOM.fibreId(coord.dimension, coord.scope) === view.focusFibre);
+      a = inFibre ? Math.max(a, 1) : Math.min(a, 0.15);
+    }
     return a;
   }
 

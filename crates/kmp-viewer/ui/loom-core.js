@@ -19,6 +19,9 @@ const KMP_LOOM = (() => {
     const coords = (entry.coordinates || []).map((c) => ({
       dimension: c.dimension,
       scope: c.scope_id,
+      method: c.method || null,
+      why: c.why || null,
+      motivation: c.motivation || null,
       sequence: c.sequence === undefined ? null : c.sequence,
       rank: c.rank === undefined ? null : c.rank,
       occurred: parseMs(c.occurred_at),
@@ -85,9 +88,12 @@ const KMP_LOOM = (() => {
     return a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0;
   }
 
-  /* ---------------- lanes ----------------
-     Dimensions are stable lanes; scopes group inside their dimension. Order
-     is first-appearance so the map does not reshuffle underfoot. */
+  /* ---------------- lanes and fibres ----------------
+     A label is a key = value pair. The lane is the key; the rows inside it
+     are its values — the fibres, in the study's word: the entries standing
+     in one pair. Lanes and fibres come from the about's catalogue, not from
+     the window, so a fibre with nothing here is drawn as empty rather than
+     not at all, and the map does not reshuffle as the window moves. */
 
   function buildLanes(models) {
     const lanes = new Map(); // dimension -> {name, index, count, scopes: Map(scope -> count)}
@@ -101,8 +107,188 @@ const KMP_LOOM = (() => {
         lane.scopes.set(coord.scope, (lane.scopes.get(coord.scope) || 0) + 1);
       }
     }
+    return [...lanes.values()].map((lane) => ({
+      ...lane,
+      total: lane.count,
+      fibres: [...lane.scopes].map(([scope, count], index) => ({
+        id: fibreId(lane.name, scope),
+        scope,
+        value: bareValue(scope),
+        count,
+        total: count,
+        index,
+        lastObserved: null,
+      })),
+    }));
+  }
+
+  /* A fibre's identity is the pair: the same scope id can stand under two
+     keys in an about written before v0.12.0 fixed one key per value. */
+  const fibreId = (lane, scope) => `${lane}\u0000${scope}`;
+
+  /* `about:<about>:dimension:<value>` as the catalogue speaks it. */
+  function bareValue(scope) {
+    const text = String(scope || "");
+    const marker = ":dimension:";
+    const at = text.indexOf(marker);
+    return at >= 0 ? text.slice(at + marker.length) : text;
+  }
+
+  /* The lanes a projection's catalogue describes. A fibre's `count` is its
+     use inside the window on this clock, `total` across all time; a lane's
+     are the sums. Lanes keep the catalogue's order (most used first, then
+     key); fibres go by use here, then use ever, then value. */
+  function lanesFromLabels(labels) {
+    const lanes = new Map();
+    for (const label of labels || []) {
+      const key = label.dimension;
+      if (!key) continue;
+      let lane = lanes.get(key);
+      if (!lane) lanes.set(key, (lane = { name: key, index: lanes.size, count: 0, total: 0, scopes: new Map(), fibres: [] }));
+      const count = Number(label.in_range || 0);
+      const total = Number(label.entries || 0);
+      lane.count += count;
+      lane.total += total;
+      lane.scopes.set(label.scope_id, count);
+      lane.fibres.push({
+        id: fibreId(key, label.scope_id),
+        scope: label.scope_id,
+        value: label.value || bareValue(label.scope_id),
+        count,
+        total,
+        index: 0,
+        lastObserved: parseMs(label.last_observed_at),
+      });
+    }
+    for (const lane of lanes.values()) {
+      lane.fibres.sort(
+        (a, b) => b.count - a.count || b.total - a.total || (a.value < b.value ? -1 : a.value > b.value ? 1 : 0)
+      );
+      lane.fibres.forEach((fibre, index) => (fibre.index = index));
+    }
     return [...lanes.values()];
   }
+
+  /* ---------------- rows ----------------
+     What the stage draws: a lane folded is one row that does not tell its
+     values apart — the picture the loom always drew. A lane unfolded is a
+     row per fibre. Rows are budgeted, never scrolled: they are shared out
+     among the unfolded lanes in proportion to their fibres, a lane that gets
+     fewer rows than fibres shows its most used ones (pinned first) and one
+     `+n more` row that folds the rest, and a lane that cannot get two rows
+     folds whole and says so. Nothing is hidden without a row saying so. */
+
+  function laneRows(lanes, { folded = new Set(), pinned = new Set(), budget = Infinity } = {}) {
+    const wants = lanes.map((lane) => (folded.has(lane.name) || lane.fibres.length <= 1 ? 1 : lane.fibres.length));
+    const fixed = wants.filter((want) => want === 1).length;
+    const flexible = lanes.filter((_, index) => wants[index] > 1);
+    let spare = Math.max(0, (Number.isFinite(budget) ? budget : Infinity) - fixed);
+    const allotted = wants.slice();
+    if (flexible.length && Number.isFinite(budget)) {
+      // Every unfolded lane needs at least two rows to say anything; a lane
+      // that cannot have them folds, largest first, until the rest fit.
+      let open = flexible.slice();
+      while (open.length && spare < open.length * 2) {
+        const biggest = open.reduce((a, b) => (b.fibres.length > a.fibres.length ? b : a));
+        open = open.filter((lane) => lane !== biggest);
+        allotted[lanes.indexOf(biggest)] = 1;
+        spare -= 1;
+      }
+      const demand = open.reduce((sum, lane) => sum + lane.fibres.length, 0);
+      let given = 0;
+      open.forEach((lane, order) => {
+        const share = Math.max(2, Math.floor((spare * lane.fibres.length) / Math.max(1, demand)));
+        const rows = Math.min(lane.fibres.length, order === open.length - 1 ? Math.max(2, spare - given) : share);
+        allotted[lanes.indexOf(lane)] = rows;
+        given += rows;
+      });
+    }
+    return lanes.map((lane, index) => {
+      const rows = allotted[index];
+      if (rows <= 1 && lane.fibres.length > 1) {
+        return {
+          lane,
+          folded: true,
+          auto: !folded.has(lane.name) && lane.fibres.length > 1,
+          rows: [{ kind: "folded", key: `lane:${lane.name}`, lane: lane.name, label: lane.name, count: lane.count, total: lane.total, fibres: lane.fibres }],
+        };
+      }
+      if (!lane.fibres.length) {
+        return {
+          lane,
+          folded: true,
+          auto: false,
+          rows: [{ kind: "folded", key: `lane:${lane.name}`, lane: lane.name, label: lane.name, count: lane.count, total: lane.total, fibres: [] }],
+        };
+      }
+      const ordered = [...lane.fibres].sort((a, b) => (pinned.has(b.id) ? 1 : 0) - (pinned.has(a.id) ? 1 : 0) || a.index - b.index);
+      const shown = rows >= lane.fibres.length ? ordered : ordered.slice(0, rows - 1);
+      const rest = ordered.slice(shown.length);
+      const list = shown.map((fibre) => ({
+        kind: "fibre",
+        key: fibre.id,
+        lane: lane.name,
+        label: fibre.value,
+        count: fibre.count,
+        total: fibre.total,
+        fibres: [fibre],
+        pinned: pinned.has(fibre.id),
+      }));
+      if (rest.length) {
+        list.push({
+          kind: "more",
+          key: `more:${lane.name}`,
+          lane: lane.name,
+          label: `+${rest.length} more`,
+          count: rest.reduce((sum, fibre) => sum + fibre.count, 0),
+          total: rest.reduce((sum, fibre) => sum + fibre.total, 0),
+          fibres: rest,
+        });
+      }
+      return { lane, folded: false, auto: false, rows: list };
+    });
+  }
+
+  /* Where a (key, value) pair lands: the fibre's own row, the row that folds
+     the rest, or the lane's single row. */
+  function rowIndex(laneRowList) {
+    const index = new Map();
+    for (const { rows } of laneRowList) {
+      for (const row of rows) {
+        for (const fibre of row.fibres) index.set(fibre.id, row);
+      }
+    }
+    return index;
+  }
+
+  /* ---------------- coincidence ----------------
+     How many of a fibre's entries also stand in each other fibre — relate's
+     comparability by fibre, on screen. Entries at Moment, cluster refs at
+     Episode; nothing at Atlas, where no ref is known. */
+  function fibreOverlap(id, { entries = [], clusters = [] } = {}) {
+    const members = new Map(); // fibre id -> Set(ref)
+    const add = (s, ref) => {
+      if (!members.has(s)) members.set(s, new Set());
+      members.get(s).add(ref);
+    };
+    if (entries.length) {
+      for (const entry of entries) for (const coord of entry.coords) add(fibreId(coord.dimension, coord.scope), entry.ref);
+    } else {
+      for (const cluster of clusters) for (const ref of cluster.refs || []) add(fibreId(cluster.dimension, cluster.scope_id), ref);
+    }
+    const focus = members.get(id) || new Set();
+    const overlap = new Map();
+    for (const [other, refs] of members) {
+      if (other === id) continue;
+      let shared = 0;
+      for (const ref of refs) if (focus.has(ref)) shared += 1;
+      overlap.set(other, shared);
+    }
+    return { size: focus.size, overlap };
+  }
+
+  /* A coordinate stitched on after the write, by kmp_relabel. */
+  const stitched = (coord) => Boolean(coord && coord.method);
 
   /* A lane folded: the projection's bins and clusters come one per label
      (key = value); folding a key sums its labels' bins over the same span
@@ -693,6 +879,13 @@ const KMP_LOOM = (() => {
     placedMs,
     compareModels,
     buildLanes,
+    fibreId,
+    bareValue,
+    lanesFromLabels,
+    laneRows,
+    rowIndex,
+    fibreOverlap,
+    stitched,
     foldAggregates,
     extent,
     projectionExtent,
