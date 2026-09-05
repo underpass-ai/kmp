@@ -43,6 +43,12 @@ We are grateful to their authors and contributors.
 |---------|---------|---------|
 | [pixi.js](https://pixijs.com) 8.19.0 | MIT | WebGL renderer for the embedded memory viewer; vendored bundle, hash-pinned and supply-chain-verified in `crates/kmp-viewer/ui/vendor/VENDOR.md` |
 
+## Shipped Assets
+
+| Asset | License | Purpose |
+|-------|---------|---------|
+| [`distribution/lexical-bridge/kmp-lexical-bridge.kmpb`](./distribution/lexical-bridge/README.md) | Apache-2.0 | The lexical-bridge table `kmp-mcp setup` installs: vectors derived from [`sentence-transformers/static-similarity-mrl-multilingual-v1`](https://huggingface.co/sentence-transformers/static-similarity-mrl-multilingual-v1) (Apache-2.0); word list drawn from that model's [`bert-base-multilingual-uncased`](https://huggingface.co/google-bert/bert-base-multilingual-uncased) tokenizer vocabulary and from the [`sentence-transformers/LaBSE`](https://huggingface.co/sentence-transformers/LaBSE) tokenizer vocabulary (both Apache-2.0, Google). Provenance, revisions and measurements are recorded beside the file. |
+
 ## Dev/Test Dependencies
 
 | Crate | License | Purpose |

@@ -202,8 +202,9 @@ user's own words as `asked_as`. The kernel searches the rendering as given,
 echoes `asked_as` on the answer, and warns when the rendering dropped an
 identifier or leans to another language. It accepts a question in any
 language, so if the English one returns `UNKNOWN` the agent re-asks once in
-the user's own words and stops. With a lexical-bridge table beside the store
-(`<data dir>/lexical-bridge.kmpb`, built by `scripts/lexical-bridge/`),
+the user's own words and stops. With a lexical-bridge table installed —
+`kmp-mcp setup` installs the one the release publishes, once for the machine,
+and `scripts/lexical-bridge/` builds your own —
 `kmp_ask` also reaches memory written in another language on its own: a
 citation that crossed a language names the word pairs that carried it
 (`valvula≈valve 0.51`) and answers at medium confidence at most. Either way,

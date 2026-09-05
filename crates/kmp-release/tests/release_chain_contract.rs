@@ -272,7 +272,7 @@ fn a_release_that_never_finishes_uploading_leaves_the_catalog_where_it_is() {
     // assets nobody can download.
     let all = CandidateAssetSet::for_version(&version()).all().to_vec();
     let workspace = RecordingWorkspace::on("main").already_tagged();
-    let releases = UploadingRelease::revealing(vec![all[..19].to_vec()]);
+    let releases = UploadingRelease::revealing(vec![all[..21].to_vec()]);
     let root = RepositoryRoot::discover().expect("root");
 
     let error = RunReleasePublication::new(
@@ -286,7 +286,7 @@ fn a_release_that_never_finishes_uploading_leaves_the_catalog_where_it_is() {
     .execute(&version())
     .expect_err("an incomplete release is not publishable");
 
-    assert!(error.to_string().contains("19 of 20 assets"), "{error}");
+    assert!(error.to_string().contains("21 of 22 assets"), "{error}");
     assert!(
         workspace.log().is_empty(),
         "nothing moved: {:?}",

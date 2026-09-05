@@ -1,5 +1,12 @@
 use crate::domain::release_version::ReleaseVersion;
 
+/// The one lexical-bridge table every release publishes, unversioned in its
+/// name because it is the same bytes for every platform and most releases
+/// republish it unchanged; `kmp-mcp setup` decides by digest, not by name.
+pub const LEXICAL_BRIDGE_ASSET: &str = "kmp-lexical-bridge.kmpb";
+
+/// The exact files a release publishes: five engines, one MCPB, four plugin
+/// packages and one lexical-bridge table, each with its `.sha256` beside it.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CandidateAssetSet {
     names: Vec<String>,
@@ -36,6 +43,10 @@ impl CandidateAssetSet {
             let name = format!("kmp-plugin-{version}-{label}.tar.gz");
             names.extend([name.clone(), format!("{name}.sha256")]);
         }
+        names.extend([
+            LEXICAL_BRIDGE_ASSET.to_string(),
+            format!("{LEXICAL_BRIDGE_ASSET}.sha256"),
+        ]);
         names.sort();
         Self { names }
     }
@@ -53,5 +64,33 @@ impl CandidateAssetSet {
 
     pub fn matches(&self, actual: &[String]) -> bool {
         self.names == actual
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `kmp-mcp setup` downloads this exact name from every release; the
+    /// publication waits for exactly this many files.
+    #[test]
+    fn a_release_publishes_twenty_two_files_including_the_lexical_bridge() {
+        let version = ReleaseVersion::parse("0.13.0").expect("version");
+        let assets = CandidateAssetSet::for_version(&version);
+
+        assert_eq!(assets.all().len(), 22);
+        assert!(
+            assets
+                .all()
+                .iter()
+                .any(|name| name == "kmp-lexical-bridge.kmpb")
+        );
+        assert!(
+            assets
+                .all()
+                .iter()
+                .any(|name| name == "kmp-lexical-bridge.kmpb.sha256")
+        );
+        assert_eq!(assets.payloads().count(), 11);
     }
 }

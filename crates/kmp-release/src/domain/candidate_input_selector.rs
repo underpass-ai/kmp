@@ -22,10 +22,11 @@ impl CandidateInputSelector {
         "scripts/ci/install-rust-toolchain.sh",
     ];
 
-    const PREFIXES: [&'static str; 6] = [
+    const PREFIXES: [&'static str; 7] = [
         "crates/",
         "api/",
         ".github/actions/install-rust/",
+        "distribution/lexical-bridge/",
         "distribution/mcpb/",
         "plugins/kmp/",
         "scripts/plugin/",
@@ -63,6 +64,15 @@ mod tests {
         assert!(
             CandidateInputSelector::new().includes(Path::new(".claude-plugin/marketplace.json"))
         );
+    }
+
+    /// The table a release publishes is copied from the tree, so a rebuilt
+    /// table is a candidate that no longer matches.
+    #[test]
+    fn the_shipped_lexical_bridge_is_a_candidate_input() {
+        assert!(CandidateInputSelector::new().includes(Path::new(
+            "distribution/lexical-bridge/kmp-lexical-bridge.kmpb"
+        )));
     }
 
     #[test]

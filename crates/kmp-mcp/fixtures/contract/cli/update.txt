@@ -1,1 +1,3 @@
-Usage: kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] [--dry-run]
+Usage: kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]
+
+The lexical-bridge table lets `ask` answer a question written in one language from a memory written in another. It is installed once for this machine, beside the stores rather than inside one, and every store reads it unless it carries a table of its own. Without it `ask` matches within one language.

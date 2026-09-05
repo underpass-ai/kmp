@@ -30,6 +30,7 @@ pub enum ReleaseCommandDto {
         binaries: PathBuf,
         plugins: PathBuf,
         mcpb: PathBuf,
+        lexical_bridge: PathBuf,
         output: PathBuf,
     },
     VerifyCandidate {

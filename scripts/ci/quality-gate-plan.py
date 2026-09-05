@@ -232,6 +232,11 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path.startswith("distribution/mcpb/"):
             known.add(path)
             plan["actions"] = True
+        elif path.startswith("distribution/lexical-bridge/"):
+            # The shipped table is proved readable by the kernel in a Rust test.
+            known.add(path)
+            plan["rust"] = True
+            plan["docs"] = plan["docs"] or path.endswith(".md")
         elif path == "Dockerfile" or path == ".dockerignore" or path.startswith("e2e/"):
             known.add(path)
             plan["container"] = True

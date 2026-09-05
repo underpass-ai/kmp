@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:56c90925795baf7e1971",
+    "idempotency_key": "ingest:guide-sync:1:agent:f1b639d95a6b3c178a55",
     "memory": {
       "dimensions": [
         {
@@ -346,15 +346,15 @@
               "sequence": 11
             }
           ],
-          "id": "guide:kmp-agent:advanced:scope",
-          "kind": "constraint",
+          "id": "guide:kmp-agent:verb:lexical-bridge",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep, narrowed by dimension kind with mode=only and include, or by exact scope with scope_ids. The proof names the abouts a recall read in abouts_selected, the current one first, and, bounded by as_of or interval, the ones with nothing inside it in abouts_empty_in_selection. Abouts are opaque identifiers and are never joined by relations."
+          "text": "VERB setup, lexical bridge. The table that lets ask reach a memory written in another language is installed by kmp-mcp setup and kmp-mcp update, once for the machine at <user data home>/kmp/lexical-bridge.kmpb, never inside one store. Three places are read, nearest first: whatever KMP_LEXICAL_BRIDGE names, then <data dir>/lexical-bridge.kmpb for one store alone, then the machine's table. Decline it with --no-lexical-bridge, or install one built locally with --lexical-bridge FILE. The release's table replaces whatever the machine held, and the receipt names the digest it replaced under replaced_sha256; a table that must outlive update lives beside one store or is named by KMP_LEXICAL_BRIDGE. It is never a gate: a release that publishes no table and a fetch that fails both leave setup successful, and the receipt says which happened under lexical_bridge. Expect: crosses_languages true once a table is in place. Without one, ask matches within one language and only doctor says so."
         },
         {
           "coordinates": [
@@ -376,7 +376,7 @@
               "sequence": 12
             }
           ],
-          "id": "guide:kmp-agent:advanced:relations",
+          "id": "guide:kmp-agent:advanced:scope",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -384,7 +384,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema. Declaring that two memories say one thing, with restates, same_event_as or same_entity_as carrying why and evidence, is what makes the second citable beside the first when a question matches only one of them."
+          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep, narrowed by dimension kind with mode=only and include, or by exact scope with scope_ids. The proof names the abouts a recall read in abouts_selected, the current one first, and, bounded by as_of or interval, the ones with nothing inside it in abouts_empty_in_selection. Abouts are opaque identifiers and are never joined by relations."
         },
         {
           "coordinates": [
@@ -406,7 +406,7 @@
               "sequence": 13
             }
           ],
-          "id": "guide:kmp-agent:advanced:idempotency",
+          "id": "guide:kmp-agent:advanced:relations",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -414,7 +414,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry."
+          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema. Declaring that two memories say one thing, with restates, same_event_as or same_entity_as carrying why and evidence, is what makes the second citable beside the first when a question matches only one of them."
         },
         {
           "coordinates": [
@@ -436,7 +436,7 @@
               "sequence": 14
             }
           ],
-          "id": "guide:kmp-agent:advanced:pagination",
+          "id": "guide:kmp-agent:advanced:idempotency",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -444,7 +444,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
+          "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry."
         },
         {
           "coordinates": [
@@ -466,7 +466,7 @@
               "sequence": 15
             }
           ],
-          "id": "guide:kmp-agent:advanced:budgets",
+          "id": "guide:kmp-agent:advanced:pagination",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -474,7 +474,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed."
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
         },
         {
           "coordinates": [
@@ -496,15 +496,15 @@
               "sequence": 16
             }
           ],
-          "id": "guide:kmp-agent:advanced:lifecycle",
-          "kind": "instruction",
+          "id": "guide:kmp-agent:advanced:budgets",
+          "kind": "constraint",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement."
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed."
         },
         {
           "coordinates": [
@@ -526,7 +526,7 @@
               "sequence": 17
             }
           ],
-          "id": "guide:kmp-agent:advanced:reach",
+          "id": "guide:kmp-agent:advanced:lifecycle",
           "kind": "instruction",
           "metadata": {
             "audience": "agent",
@@ -534,7 +534,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched."
+          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement."
         },
         {
           "coordinates": [
@@ -556,15 +556,15 @@
               "sequence": 18
             }
           ],
-          "id": "guide:kmp-agent:advanced:language",
-          "kind": "constraint",
+          "id": "guide:kmp-agent:advanced:reach",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "The question is asked in English; the answer is given in the user's language. The kernel matches words and never translates, and what reaches a memory written in any language is its English summary_en, so a semantic question is rendered in plain English with every number, identifier and acronym kept exactly, and the user's own words travel as asked_as: searched never, echoed on the answer, and read against the question so a rendering that lost an identifier or leans to another language draws a warning while the question is still searched. The kernel accepts any language: a question in the store's own language reaches the stored text directly, and with a lexical-bridge table installed a citation that crossed a language names its word pairs in bridged_terms at medium confidence at most. If the English rendering returns UNKNOWN or the evidence does not answer, re-ask at most once in the user's own words and stop. Evidence text, refs, relation why and source metadata are cited byte for byte. There is no language setting."
+          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched."
         },
         {
           "coordinates": [
@@ -586,7 +586,7 @@
               "sequence": 19
             }
           ],
-          "id": "guide:kmp-agent:advanced:summary",
+          "id": "guide:kmp-agent:advanced:language",
           "kind": "constraint",
           "metadata": {
             "audience": "agent",
@@ -594,7 +594,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach each with kmp_write_memory, intent record_summary, current.ref and current.summary_en only, and the stored text stays exactly as it was."
+          "text": "The question is asked in English; the answer is given in the user's language. The kernel matches words and never translates, and what reaches a memory written in any language is its English summary_en, so a semantic question is rendered in plain English with every number, identifier and acronym kept exactly, and the user's own words travel as asked_as: searched never, echoed on the answer, and read against the question so a rendering that lost an identifier or leans to another language draws a warning while the question is still searched. The kernel accepts any language: a question in the store's own language reaches the stored text directly, and with a lexical-bridge table installed a citation that crossed a language names its word pairs in bridged_terms at medium confidence at most. If the English rendering returns UNKNOWN or the evidence does not answer, re-ask at most once in the user's own words and stop. Evidence text, refs, relation why and source metadata are cited byte for byte. There is no language setting."
         },
         {
           "coordinates": [
@@ -616,16 +616,15 @@
               "sequence": 20
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:advanced:summary",
+          "kind": "constraint",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
+          "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach each with kmp_write_memory, intent record_summary, current.ref and current.summary_en only, and the stored text stays exactly as it was."
         },
         {
           "coordinates": [
@@ -647,16 +646,16 @@
               "sequence": 21
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
         },
         {
           "coordinates": [
@@ -678,16 +677,16 @@
               "sequence": 22
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -709,16 +708,16 @@
               "sequence": 23
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -740,16 +739,16 @@
               "sequence": 24
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -771,16 +770,16 @@
               "sequence": 25
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -802,16 +801,16 @@
               "sequence": 26
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -833,16 +832,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -864,16 +863,16 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -895,16 +894,16 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -926,16 +925,16 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -957,16 +956,16 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -988,16 +987,16 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1019,16 +1018,16 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1048,6 +1047,37 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 34
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:34:00Z",
+              "occurred_at": "2026-08-28T00:34:00Z",
+              "scope_id": "timeline",
+              "sequence": 35
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 35
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 35
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1191,6 +1221,19 @@
             "guide:kmp-agent:verb:guide-sync"
           ],
           "text": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:verb:lexical-bridge",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:verb:lexical-bridge"
+          ],
+          "text": "The convergence installs the table last, after the engine is proved, and maps every failure onto a reported outcome rather than an error.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1839,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:cd6cfad6a50a19605e69",
+    "idempotency_key": "ingest:guide-sync:1:person:88d9677458e5d9a9dbbc",
     "memory": {
       "dimensions": [
         {
@@ -1974,7 +2017,7 @@
               "sequence": 4
             }
           ],
-          "id": "guide:kmp:basic:inherit",
+          "id": "guide:kmp:basic:crossing-languages",
           "kind": "concept",
           "metadata": {
             "audience": "person",
@@ -1982,7 +2025,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A repository can publish selected project memory in .kmp/memory.jsonl. A clone inherits that reviewed bundle; private abouts in a shared user store stay out unless explicitly exported."
+          "text": "Asking in one language about memory written in another needs a small table that pairs words across languages. Setup installs it once for your machine; nothing runs a model when you ask. Without it KMP still works and simply matches within one language, which is why doctor tells you when it is missing."
         },
         {
           "coordinates": [
@@ -2004,15 +2047,15 @@
               "sequence": 5
             }
           ],
-          "id": "guide:kmp:basic:open",
-          "kind": "instruction",
+          "id": "guide:kmp:basic:inherit",
+          "kind": "concept",
           "metadata": {
             "audience": "person",
             "depth": "basic",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Say: show me the memory behind this decision. The agent retrieves the evidence, opens ChronoLoom and moves the shared view to the relevant entry or proof path. You can click, filter, pan, undo or take control."
+          "text": "A repository can publish selected project memory in .kmp/memory.jsonl. A clone inherits that reviewed bundle; private abouts in a shared user store stay out unless explicitly exported."
         },
         {
           "coordinates": [
@@ -2030,19 +2073,19 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 6
             }
           ],
-          "id": "guide:kmp:advanced:clocks",
-          "kind": "concept",
+          "id": "guide:kmp:basic:open",
+          "kind": "instruction",
           "metadata": {
             "audience": "person",
-            "depth": "advanced",
+            "depth": "basic",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "The difference between occurred and observed time is the event boundary versus the knowledge boundary. KMP keeps four clocks because they answer different questions. Occurred time is when the event happened. Observed time is when a source or agent learned it. Ingested time is when the kernel committed it. Validity is the interval in which a state applies."
+          "text": "Say: show me the memory behind this decision. The agent retrieves the evidence, opens ChronoLoom and moves the shared view to the relevant entry or proof path. You can click, filter, pan, undo or take control."
         },
         {
           "coordinates": [
@@ -2064,7 +2107,7 @@
               "sequence": 7
             }
           ],
-          "id": "guide:kmp:advanced:budgets",
+          "id": "guide:kmp:advanced:clocks",
           "kind": "concept",
           "metadata": {
             "audience": "person",
@@ -2072,7 +2115,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail."
+          "text": "The difference between occurred and observed time is the event boundary versus the knowledge boundary. KMP keeps four clocks because they answer different questions. Occurred time is when the event happened. Observed time is when a source or agent learned it. Ingested time is when the kernel committed it. Validity is the interval in which a state applies."
         },
         {
           "coordinates": [
@@ -2094,7 +2137,7 @@
               "sequence": 8
             }
           ],
-          "id": "guide:kmp:advanced:supersession",
+          "id": "guide:kmp:advanced:budgets",
           "kind": "concept",
           "metadata": {
             "audience": "person",
@@ -2102,7 +2145,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Supersession is not contradiction. A superseding memory replaces an older state and keeps the old reasoning as history. A contradiction leaves two live claims in tension until something resolves them."
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail."
         },
         {
           "coordinates": [
@@ -2124,7 +2167,7 @@
               "sequence": 9
             }
           ],
-          "id": "guide:kmp:advanced:snapshots",
+          "id": "guide:kmp:advanced:supersession",
           "kind": "concept",
           "metadata": {
             "audience": "person",
@@ -2132,7 +2175,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Named snapshots are deliberate recovery points. Content-addressed exports are deterministic heads. Bundle merge only fast-forwards identical history or an exact prefix; KMP refuses to invent order for divergent branches."
+          "text": "Supersession is not contradiction. A superseding memory replaces an older state and keeps the old reasoning as history. A contradiction leaves two live claims in tension until something resolves them."
         },
         {
           "coordinates": [
@@ -2154,7 +2197,7 @@
               "sequence": 10
             }
           ],
-          "id": "guide:kmp:advanced:shared-store",
+          "id": "guide:kmp:advanced:snapshots",
           "kind": "concept",
           "metadata": {
             "audience": "person",
@@ -2162,7 +2205,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Two hosts can share one embedded store. SQLite WAL allows independent Codex and Claude processes to read and write while optimistic revisions and idempotency protect semantic updates."
+          "text": "Named snapshots are deliberate recovery points. Content-addressed exports are deterministic heads. Bundle merge only fast-forwards identical history or an exact prefix; KMP refuses to invent order for divergent branches."
         },
         {
           "coordinates": [
@@ -2184,15 +2227,15 @@
               "sequence": 11
             }
           ],
-          "id": "guide:kmp:advanced:publish",
-          "kind": "constraint",
+          "id": "guide:kmp:advanced:shared-store",
+          "kind": "concept",
           "metadata": {
             "audience": "person",
             "depth": "advanced",
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Committing a bundle publishes the selected abouts to everyone who can read the repository. Export exact abouts deliberately; a full export from a shared user store can contain unrelated or private memory."
+          "text": "Two hosts can share one embedded store. SQLite WAL allows independent Codex and Claude processes to read and write while optimistic revisions and idempotency protect semantic updates."
         },
         {
           "coordinates": [
@@ -2214,7 +2257,7 @@
               "sequence": 12
             }
           ],
-          "id": "guide:kmp:advanced:viewer",
+          "id": "guide:kmp:advanced:publish",
           "kind": "constraint",
           "metadata": {
             "audience": "person",
@@ -2222,7 +2265,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "ChronoLoom is local and capability-protected. The process binds to loopback, exchanges a random one-session URL capability for an HttpOnly cookie, and removes the token from the address. Moving the view never writes memory."
+          "text": "Committing a bundle publishes the selected abouts to everyone who can read the repository. Export exact abouts deliberately; a full export from a shared user store can contain unrelated or private memory."
         },
         {
           "coordinates": [
@@ -2242,6 +2285,36 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 13
+            }
+          ],
+          "id": "guide:kmp:advanced:viewer",
+          "kind": "constraint",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "ChronoLoom is local and capability-protected. The process binds to loopback, exchanges a random one-session URL capability for an HttpOnly cookie, and removes the token from the address. Moving the view never writes memory."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:13:00Z",
+              "occurred_at": "2026-08-28T00:13:00Z",
+              "scope_id": "timeline",
+              "sequence": 14
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 14
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 14
             }
           ],
           "id": "guide:kmp:advanced:plain-file",
@@ -2293,6 +2366,19 @@
             "guide:kmp:basic:local"
           ],
           "text": "The embedded engine selects SQLite in WAL mode and the viewer binds to loopback.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:basic:crossing-languages",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:basic:crossing-languages"
+          ],
+          "text": "A citation that crossed a language names the word pairs that carried it and answers at medium confidence at most.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

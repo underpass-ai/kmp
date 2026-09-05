@@ -28,7 +28,7 @@ Then merge — that is the full gate's decision, not this script's — update lo
 bash scripts/release.sh publish X.Y.Z
 ```
 
-That tags the reviewed candidate, waits until the GitHub release and all twenty
+That tags the reviewed candidate, waits until the GitHub release and all twenty-two
 of its checksummed assets are public, and only then advances the protected
 `marketplace` branch to that exact commit. It does not re-tag a version already
 tagged, so a publication interrupted at the branch advance can finish.
@@ -89,7 +89,7 @@ from the tree it is tagging. A catalog fixed at tagging time costs two
 fifteen-minute builds.
 
 Commit and push the version branch, then let the release helper dispatch and
-watch `release.yml`, download and verify its twenty-file candidate, stamp the
+watch `release.yml`, download and verify its twenty-two-file candidate, stamp the
 exact MCPB digest into `server.json`, and validate the registry metadata:
 
 ```bash
@@ -102,7 +102,7 @@ git push
 Pass an existing workflow run ID as the optional second argument to resume a
 candidate whose build was already dispatched. The helper fails closed when the
 working tree is dirty, the branch was not pushed, the candidate inputs differ,
-any of its twenty files is invalid, or the resulting Registry metadata fails.
+any of its twenty-two files is invalid, or the resulting Registry metadata fails.
 There is no separate digest-stamping step to remember.
 
 ## Before tagging
@@ -137,12 +137,12 @@ bash scripts/release.sh release X.Y.Z
 The release command verifies both co-located catalogs and refuses a tag whose
 tree differs from the reviewed snapshot. It also locates the newest successful
 candidate whose version and release-input digest match `main`, verifies all
-twenty files and records the reviewed candidate in the annotated tag. If no
+twenty-two files and records the reviewed candidate in the annotated tag. If no
 candidate matches, tagging fails closed and names the release inputs that moved
 since that candidate was built.
 
-Wait until the GitHub release and its checksummed engine and plugin assets are
-public. Only then advance the protected `marketplace` branch to that exact
+Wait until the GitHub release and its checksummed engine, plugin and
+lexical-bridge assets are public. Only then advance the protected `marketplace` branch to that exact
 release commit. Its check repeats Claude's literal `git clone --branch vX.Y.Z`
 operation against the now-public annotated tag and verifies Codex/Claude tree
 parity before the branch can move.

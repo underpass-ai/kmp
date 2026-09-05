@@ -15,7 +15,7 @@ pub struct ReleaseCommandMapper;
 impl ReleaseCommandMapper {
     pub fn map(arguments: Vec<String>) -> Result<ReleaseCommandDto, ReleaseError> {
         let root = RepositoryRoot::discover()?;
-        let usage = "usage: kmp-release version current|prepare [VERSION] [--root DIR]\n       kmp-release changelog prepare|check VERSION [--path FILE] [--date YYYY-MM-DD]\n       kmp-release readme sync [--source FILE] [--target FILE ...]\n       kmp-release guide sync VERSION --binary PATH [--root DIR]\n       kmp-release guide assets write|apply --binary PATH [--root DIR]\n       kmp-release plugin package --binary PATH [--output DIR] [--root DIR] [--release]\n       kmp-release mcpb package VERSION --input DIR [--output DIR] [--root DIR]\n       kmp-release mcpb stamp ARCHIVE [--server FILE] [--root DIR]\n       kmp-release marketplace verify VERSION [--root DIR] [--repository URL] [--expected-commit SHA] [--allow-unpublished-tag]\n       kmp-release candidate inputs [--github-output FILE]\n       kmp-release candidate assemble --version X.Y.Z --binaries DIR --plugins DIR --mcpb DIR --output DIR\n       kmp-release candidate verify --version X.Y.Z --directory DIR [--input-sha256 SHA256] [--run-id ID]";
+        let usage = "usage: kmp-release version current|prepare [VERSION] [--root DIR]\n       kmp-release changelog prepare|check VERSION [--path FILE] [--date YYYY-MM-DD]\n       kmp-release readme sync [--source FILE] [--target FILE ...]\n       kmp-release guide sync VERSION --binary PATH [--root DIR]\n       kmp-release guide assets write|apply --binary PATH [--root DIR]\n       kmp-release plugin package --binary PATH [--output DIR] [--root DIR] [--release]\n       kmp-release mcpb package VERSION --input DIR [--output DIR] [--root DIR]\n       kmp-release mcpb stamp ARCHIVE [--server FILE] [--root DIR]\n       kmp-release marketplace verify VERSION [--root DIR] [--repository URL] [--expected-commit SHA] [--allow-unpublished-tag]\n       kmp-release candidate inputs [--github-output FILE]\n       kmp-release candidate assemble --version X.Y.Z --binaries DIR --plugins DIR --mcpb DIR --lexical-bridge DIR --output DIR\n       kmp-release candidate verify --version X.Y.Z --directory DIR [--input-sha256 SHA256] [--run-id ID]";
         let command = arguments.first().map(String::as_str).unwrap_or_default();
         let action = arguments.get(1).map(String::as_str).unwrap_or_default();
         match (command, action) {
@@ -165,6 +165,7 @@ impl ReleaseCommandMapper {
                     binaries: PathBuf::from(Self::required(&options, "--binaries")?),
                     plugins: PathBuf::from(Self::required(&options, "--plugins")?),
                     mcpb: PathBuf::from(Self::required(&options, "--mcpb")?),
+                    lexical_bridge: PathBuf::from(Self::required(&options, "--lexical-bridge")?),
                     output: PathBuf::from(Self::required(&options, "--output")?),
                 })
             }

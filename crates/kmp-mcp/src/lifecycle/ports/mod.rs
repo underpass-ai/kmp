@@ -1,3 +1,4 @@
+pub mod bridge_store;
 pub mod engine_store;
 pub mod host_gateway;
 pub mod installation_catalog;

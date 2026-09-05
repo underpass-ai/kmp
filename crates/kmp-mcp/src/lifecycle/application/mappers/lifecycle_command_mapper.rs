@@ -1,6 +1,8 @@
 use std::collections::BTreeSet;
 
 use crate::lifecycle::application::dto::lifecycle_command_dto::LifecycleCommandDto;
+use crate::lifecycle::domain::bridge_choice::BridgeChoice;
+use crate::lifecycle::domain::bridge_install_dir::BridgeInstallDir;
 use crate::lifecycle::domain::engine_install_dir::EngineInstallDir;
 use crate::lifecycle::domain::host::Host;
 use crate::lifecycle::domain::lifecycle_action::LifecycleAction;
@@ -33,12 +35,19 @@ impl LifecycleCommandMapper {
             .as_deref()
             .map(ReleaseVersion::parse)
             .transpose()?;
+        let bridge = match (dto.decline_bridge, dto.lexical_bridge) {
+            (true, _) => BridgeChoice::Declined,
+            (false, Some(path)) => BridgeChoice::FromFile(path),
+            (false, None) => BridgeChoice::FromRelease,
+        };
+        let bridge_dir = dto.bridge_dir.map(BridgeInstallDir::new).transpose()?;
         Ok(LifecycleRequest::new(
             action,
             hosts,
             version,
             EngineInstallDir::new(dto.install_dir)?,
             dto.dry_run,
-        ))
+        )
+        .with_bridge(bridge, bridge_dir))
     }
 }

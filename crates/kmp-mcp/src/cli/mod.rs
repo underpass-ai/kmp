@@ -77,7 +77,8 @@ pub(crate) async fn run_cli_command(command: &str, args: &[&str]) -> i32 {
                  `config [memory-routing <mode>]` / \
                  `guide sync --plugin-root DIR [--dry-run]` / \
                  `plugin resolve-engine|notice --plugin-root DIR ...` / \
-                 `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR]` / \
+                 `setup|update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+                 [--lexical-bridge FILE | --no-lexical-bridge]` / \
                  `uninstall [--store <absolute-path>] [--apply] [--purge] [--keep-memory]` / \
                  `export <file>` / `import <file>` / \
                  `viewer [addr]` / `--version` / `--help`"
@@ -138,10 +139,12 @@ fn subcommand_usage(command: &str) -> &'static str {
         "guide" => "kmp-mcp guide sync --plugin-root DIR [--dry-run]",
         "plugin" => "kmp-mcp plugin resolve-engine|notice --plugin-root DIR",
         "setup" => {
-            "kmp-mcp setup [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] [--dry-run]"
+            "kmp-mcp setup [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+             [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]"
         }
         "update" => {
-            "kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] [--dry-run]"
+            "kmp-mcp update [--claude] [--codex] [--version X.Y.Z] [--engine-dir DIR] \
+             [--lexical-bridge FILE | --no-lexical-bridge] [--dry-run]"
         }
         "snapshot" => "kmp-mcp snapshot create|list|verify|read|merge ...",
         "summaries" => "kmp-mcp summaries pending [<about>] [--json]",
@@ -157,6 +160,14 @@ fn subcommand_usage(command: &str) -> &'static str {
 
 fn print_subcommand_help(command: &str) {
     println!("Usage: {}", subcommand_usage(command));
+    if command == "setup" || command == "update" {
+        println!(
+            "\nThe lexical-bridge table lets `ask` answer a question written in one language \
+             from a memory written in another. It is installed once for this machine, beside \
+             the stores rather than inside one, and every store reads it unless it carries a \
+             table of its own. Without it `ask` matches within one language."
+        );
+    }
     if command == "export" {
         println!(
             "\n--about matches an opaque about exactly and may be repeated. Filtered bundles \

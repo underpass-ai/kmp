@@ -2,6 +2,7 @@ use crate::lifecycle::application::use_cases::converge_lifecycle::ConvergeLifecy
 use crate::lifecycle::domain::lifecycle_error::LifecycleError;
 use crate::lifecycle::domain::lifecycle_receipt::LifecycleReceipt;
 use crate::lifecycle::domain::lifecycle_request::LifecycleRequest;
+use crate::lifecycle::ports::bridge_store::BridgeStore;
 use crate::lifecycle::ports::engine_store::EngineStore;
 use crate::lifecycle::ports::host_gateway::HostGateway;
 use crate::lifecycle::ports::plugin_cache::PluginCache;
@@ -18,9 +19,10 @@ impl<'a> UpdateKmp<'a> {
         releases: &'a dyn ReleaseRepository,
         engines: &'a dyn EngineStore,
         caches: &'a dyn PluginCache,
+        tables: &'a dyn BridgeStore,
     ) -> Self {
         Self {
-            convergence: ConvergeLifecycle::new(hosts, releases, engines, caches),
+            convergence: ConvergeLifecycle::new(hosts, releases, engines, caches, tables),
         }
     }
 

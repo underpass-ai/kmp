@@ -115,14 +115,20 @@ where
                 binaries,
                 plugins,
                 mcpb,
+                lexical_bridge,
                 output,
             } => {
                 let root = crate::domain::repository_root::RepositoryRoot::discover()?;
                 let manifest =
                     AssembleCandidate::new(&self.file_system, &self.repository, &self.environment)
-                        .execute(&root, &version, &[binaries, plugins, mcpb], &output)?;
+                        .execute(
+                            &root,
+                            &version,
+                            &[binaries, plugins, mcpb, lexical_bridge],
+                            &output,
+                        )?;
                 Ok(format!(
-                    "release candidate assembled: 20 files, inputs {}, run {}",
+                    "release candidate assembled: 22 files, inputs {}, run {}",
                     manifest.input_sha256, manifest.run_id
                 ))
             }
@@ -141,7 +147,7 @@ where
                     run_id.as_deref(),
                 )?;
                 Ok(format!(
-                    "release candidate verified: version {version}, run {}, 20 files, inputs {}",
+                    "release candidate verified: version {version}, run {}, 22 files, inputs {}",
                     manifest.run_id, manifest.input_sha256
                 ))
             }

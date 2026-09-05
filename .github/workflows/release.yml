@@ -239,6 +239,7 @@ jobs:
             --binaries dist/binaries \
             --plugins dist/plugins \
             --mcpb dist/mcpb \
+            --lexical-bridge distribution/lexical-bridge \
             --output dist/candidate
 
       - name: Upload MCPB as workflow artifact
