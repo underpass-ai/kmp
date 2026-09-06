@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-09-06
+
 ### Added
 
 - ChronoLoom shows loading feedback while changing clocks, adding or removing
@@ -1543,7 +1545,8 @@ Detailed notes from the early release cycle remain available in the
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.12.2...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/underpass-ai/kmp/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/underpass-ai/kmp/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/underpass-ai/kmp/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/underpass-ai/kmp/compare/v0.11.0...v0.12.0
