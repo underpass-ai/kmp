@@ -289,6 +289,21 @@ test("frameRefs reaches refs ingested after the cached extent probe", async () =
   assert.ok(view.t0 <= oldStamp, "and still holds the older one");
 });
 
+test("undoing to an unframed snapshot restores All and clears stale dimensions", async () => {
+  const { app } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 100000 };
+  view.t0 = 20000;
+  view.t1 = 30000;
+  view.hiddenLanes = new Set(["topic"]);
+  app.data.loadProjection = async () => {};
+  await app.sync.applyAgentState({ about: model.about, clock: view.clock, focus: null, projection: {} });
+  assert.equal(view.t0, 0);
+  assert.equal(view.t1, 100000);
+  assert.equal(view.hiddenLanes.size, 0);
+});
+
 test("an explicit agent search lands in the input and re-runs it", async () => {
   const { app, searchBox } = loom();
   const { model, view } = app.state;
@@ -590,7 +605,7 @@ test("a view-sync failure keeps the loom drawing", async () => {
   );
 });
 
-test("an explicit agent range becomes the focus lens over the whole extent", async () => {
+test("an explicit agent range is the exact shared brush window", async () => {
   const { app, calls } = loom();
   const { model, view } = app.state;
   model.about = "project:x";
@@ -605,13 +620,13 @@ test("an explicit agent range becomes the focus lens over the whole extent", asy
     projection: { overlays: ["noise_ratio"], dimensions: ["keep"], semantic_zoom: "moment" },
     can_undo: true,
   });
-  assert.equal(view.focusRange.from, Date.parse("2026-08-31T16:49:00Z"));
-  assert.equal(view.t0, view.full.t0, "the lens keeps both contexts visible");
+  assert.equal(view.focusRange, null);
+  assert.equal(view.t0, Date.parse("2026-08-31T16:49:00Z"));
   assert.ok(view.hiddenLanes.has("drop"), "a keep-list hides the other lanes");
   assert.ok(!view.hiddenLanes.has("keep"));
   assert.ok(calls.some((call) => call.name === "data.loadObservability"));
   // The intent named its own window; the rung is a fallback, not an override.
-  assert.equal(view.t1, view.full.t1);
+  assert.equal(view.t1, Date.parse("2026-08-31T17:39:00Z"));
 });
 
 test("an agent selection is selected and centered", async () => {
@@ -778,4 +793,14 @@ test("setSelectors normalizes, redraws the chips, re-probes and reports", async 
   assert.ok(names.includes("panels.renderChips"));
   assert.ok(names.includes("data.loadAbout"));
   assert.ok(names.includes("sync.reportView"));
+});
+
+test("changing a populated clock re-probes its own extent before reporting", async () => {
+  const {app,calls}=loom();
+  app.state.model.about="project:clocks";
+  app.state.view.full={t0:0,t1:1000};
+  app.data.loadAbout=async (about,announce)=>{calls.push({name:"clock.probe",about,announce});};
+  app.sync.reportView=()=>calls.push({name:"clock.report"});
+  await app.viewport.setClock("observed",false);
+  assert.deepEqual(calls.filter(call=>call.name.startsWith("clock.")).map(call=>call.name),["clock.probe","clock.report"]);
 });

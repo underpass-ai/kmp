@@ -17,7 +17,7 @@ test("semantic zoom separates dense and sparse windows at the same time scale", 
   const width = 2_784;
 
   assert.equal(loom.lodFor(msPerPx, width, 400), "atlas");
-  assert.equal(loom.lodFor(msPerPx, width, 4), "episode");
+  assert.equal(loom.lodFor(msPerPx, width, 4), "moment");
   assert.notEqual(
     loom.lodFor(msPerPx, width, 400),
     loom.lodFor(msPerPx, width, 4)
@@ -25,7 +25,7 @@ test("semantic zoom separates dense and sparse windows at the same time scale", 
 });
 
 test("a nearly empty long window does not use Atlas", () => {
-  assert.equal(loom.lodFor(2_000_000, 2_784, 3), "episode");
+  assert.equal(loom.lodFor(2_000_000, 2_784, 3), "moment");
 });
 
 test("projection density uses the busiest lane", () => {

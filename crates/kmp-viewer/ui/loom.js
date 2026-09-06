@@ -1,14 +1,6 @@
-/* KMP ChronoLoom — the composition root.
-   Time is the primary geometry: a horizontal clock you choose (occurred,
-   observed, ingested, validity), memory dimensions as stable lanes, entries
-   as marks joining lanes with braids, explanatory relations as class-styled
-   arcs, and a semantic-zoom ladder — atlas, episode, moment — that changes
-   representation, not just size. Evidence is a selection, not a zoom.
-
-   Vanilla JS + the vendored pixi bundle, in script-tag modules: pure logic
-   in loom-core.js; state, the backend port, the use cases and the adapters
-   each in their own loom-*.js file, all registered on KMP_APP. This file
-   only wires them together and starts the loom. */
+/* ChronoLoom composition root. The semantic view and bounded projections
+   are shared between human and agent. About planes, the WebGL camera and
+   DOM panels are adapters; this file only wires them and joins the view. */
 "use strict";
 
 (() => {
@@ -19,6 +11,10 @@
   async function init() {
     KMP_APP.scene.wire();
     KMP_APP.panels.wire();
+    KMP_APP.catalogue.wire();
+    KMP_APP.evidence.wire();
+    KMP_APP.timeControls.wire();
+    KMP_APP.provenance.wire();
     KMP_APP.gestures.wire();
     KMP_APP.scene.applyTheme();
     try {

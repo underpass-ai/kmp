@@ -11,6 +11,8 @@ use crate::view::domain::semantic_zoom::SemanticZoom;
 /// explicit lists is meaningful.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectionSettings {
+    /// Additional about planes beside the primary context.
+    pub abouts: Option<super::AboutLayers>,
     /// The requested rung of the semantic-zoom ladder.
     pub semantic_zoom: Option<SemanticZoom>,
     /// The dimensions to keep as lanes.

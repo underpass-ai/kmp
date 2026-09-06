@@ -251,9 +251,12 @@ const KMP_LOOM = (() => {
     if (marksPerLane === 0) return "moment";
     const pixelsPerMark = widthPx / marksPerLane;
     if (pixelsPerMark < 12) return "atlas";
+    // Sparse abouts fit as individual memories even over long periods.
+    // Seven collision tracks on each about plane keep this bounded; time
+    // alone must not turn fourteen readable memories into label aggregates.
+    if (marksPerLane <= 64 || pixelsPerMark >= 36) return "moment";
     if (msPerPx > 600e3 && pixelsPerMark < 80) return "atlas";
-    if (msPerPx > 20e3 || pixelsPerMark < 36) return "episode";
-    return "moment";
+    return "episode";
   }
 
   /* Observability shares the temporal axis but not a value axis. Each series

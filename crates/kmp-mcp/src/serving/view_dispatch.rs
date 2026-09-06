@@ -30,6 +30,7 @@ impl KernelMcpServer {
                 crate::serving::view_tools::get_state(arguments, self.viewer_url.as_deref())
             }
             "kmp_view_undo" => crate::serving::view_tools::undo(arguments),
+            "kmp_view_take_control" => crate::serving::view_tools::take_control(arguments),
             "kmp_view_open" => {
                 let about = arguments.get("about").and_then(Value::as_str).unwrap_or("");
                 match self.memory_ref_exists(about, about).await {
@@ -55,6 +56,27 @@ impl KernelMcpServer {
                         Err(error) => {
                             failure = Some(error);
                             break;
+                        }
+                    }
+                }
+                if let Some(layers) = arguments
+                    .pointer("/projection/abouts")
+                    .and_then(Value::as_array)
+                {
+                    for layer in layers {
+                        let Some(name) = layer.as_str() else {
+                            failure = Some(ToolError::invalid_argument(
+                                "projection.abouts holds about identifiers",
+                            ));
+                            break;
+                        };
+                        match self.memory_ref_exists(name, name).await {
+                            Ok(true) => {}
+                            Ok(false) => missing.push(name.to_string()),
+                            Err(error) => {
+                                failure = Some(error);
+                                break;
+                            }
                         }
                     }
                 }

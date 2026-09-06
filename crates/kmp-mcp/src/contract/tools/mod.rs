@@ -1,3 +1,4 @@
+pub(crate) mod app_view_take_control;
 pub(crate) mod app_view_undo;
 pub(crate) mod app_visual_projection;
 pub(crate) mod ask;

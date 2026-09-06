@@ -18,7 +18,7 @@ KMP_APP.viewport = (() => {
 
   function updateAxisLens() {
     const entryEvents = model.entries
-      .map((entry) => KMP_LOOM.placedMs(entry, view.clock))
+      .map((entry) => KMP_LOOM.strictMs(entry, view.clock))
       .filter((time) => time !== null);
     const clusterEvents = model.clusters
       .map((cluster) => {
@@ -44,6 +44,14 @@ KMP_APP.viewport = (() => {
     const changed = view.clock !== clock;
     view.clock = clock;
     KMP_APP.panels.syncClockChips(clock);
+    if (changed && refresh && model.about && view.full) {
+      const selected = view.selectedRef;
+      return Promise.resolve(data().loadAbout(model.about, false)).then(async () => {
+        if (selected && model.byRef.has(selected)) await KMP_APP.selection.selectEntry(selected);
+        sync().reportView();
+      });
+    }
+
     if (!view.full) {
       if (changed && model.about) {
         // The empty state must not be a trap: an about with nothing on this
@@ -72,6 +80,7 @@ KMP_APP.viewport = (() => {
   }
 
   function setWindow(t0, t1, remember = true) {
+    if (!view.full) return;
     const clamped = clampWindow(view.full, t0, t1);
     if (remember) view.windowStack.push([view.t0, view.t1]);
     view.t0 = clamped.t0;
@@ -99,7 +108,7 @@ KMP_APP.viewport = (() => {
   function centerOn(ref) {
     const m = model.byRef.get(ref);
     if (!m) return;
-    const t = KMP_LOOM.placedMs(m, view.clock);
+    const t = KMP_LOOM.strictMs(m, view.clock);
     if (t === null) return;
     const span = view.t1 - view.t0;
     if (t < view.t0 || t > view.t1) setWindow(t - span / 2, t + span / 2);

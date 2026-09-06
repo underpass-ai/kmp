@@ -104,7 +104,23 @@ pub(crate) fn view_report(request: &HttpRequest) -> HttpResponse {
         )),
         Err(response) => return response,
     };
+    let projection_abouts = match request.param("layer_abouts") {
+        Some(raw) => match serde_json::from_str::<Vec<String>>(raw) {
+            Ok(names) => Some(Some(names)),
+            Err(_) => {
+                return HttpResponse::error(
+                    400,
+                    "layer_abouts must be a JSON array of about identifiers",
+                );
+            }
+        },
+        None => None,
+    };
     let intent = ViewIntentDto {
+        projection_zoom: request
+            .param("zoom")
+            .map(|zoom| (zoom != "auto").then(|| zoom.to_string())),
+        projection_abouts,
         about: request.param("about").map(str::to_string),
         clock: request.param("clock").map(str::to_string),
         // Only the window: the refs an agent asked to frame are its intent,
@@ -197,9 +213,11 @@ mod tests {
                 ("trace_from", "decision:one"),
                 ("trace_to", "success:two"),
                 ("labels", "task in launch;incident notexists"),
+                ("zoom", "moment"),
             ],
         )));
         assert_eq!(reported["clock"], "observed");
+        assert_eq!(reported["projection"]["semantic_zoom"], "moment");
         assert_eq!(reported["search"], "attempt-000005");
         assert_eq!(reported["trace"]["to"], "success:two");
         assert_eq!(reported["last_change"]["actor"], "human");

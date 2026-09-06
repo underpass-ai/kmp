@@ -16,6 +16,10 @@ use crate::view::domain::trace_selection::TraceSelection;
 /// it alone" from "clear it" — the distinction #463 lives and dies on.
 #[derive(Clone, Debug, Default)]
 pub struct ViewPatch {
+    /// Replaces only the requested detail level; Some(None) selects automatic detail.
+    pub projection_zoom: Option<Option<super::SemanticZoom>>,
+    /// Replaces additional about planes alone, preserving other projection facets.
+    pub projection_abouts: Option<Option<super::AboutLayers>>,
     /// Reopen the loom over this memory.
     pub about: Option<AboutId>,
     /// Read this axis.
@@ -44,7 +48,9 @@ impl ViewPatch {
     /// Whether the patch asks for anything at all. An empty patch is a read
     /// wearing a write's clothes, and is answered without moving the view.
     pub fn touches_anything(&self) -> bool {
-        self.about.is_some()
+        self.projection_zoom.is_some()
+            || self.projection_abouts.is_some()
+            || self.about.is_some()
             || self.clock.is_some()
             || self.focus.is_some()
             || self.focus_window.is_some()

@@ -230,6 +230,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
+      - name: Test ChronoLoom domain and adapter behavior
+        run: node --test crates/kmp-viewer/ui/loom-*.test.js
+
       - name: Install Rust toolchain
         if: needs.impact.outputs.rust == 'true'
         uses: ./.github/actions/install-coverage

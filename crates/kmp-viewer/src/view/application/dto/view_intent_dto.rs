@@ -15,6 +15,10 @@ use crate::view::application::dto::trace_selection_dto::TraceSelectionDto;
 /// retry remains the same intent even if the mounted catalog changed.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct ViewIntentDto {
+    /// Replace only the detail level; Some(None) selects automatic detail.
+    pub projection_zoom: Option<Option<String>>,
+    /// Replace only additional about planes; Some(None) clears them.
+    pub projection_abouts: Option<Option<Vec<String>>>,
     /// Reopen the loom over this memory.
     pub about: Option<String>,
     /// Read this axis.

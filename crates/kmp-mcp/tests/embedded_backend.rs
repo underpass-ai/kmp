@@ -7,6 +7,9 @@ use kmp_domain::TokenEstimator;
 use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpServer};
 use serde_json::{Value, json};
 
+#[path = "support/unbridged_server.rs"]
+mod unbridged_server;
+
 fn tool_call(id: u64, name: &str, arguments: Value) -> String {
     json!({
         "jsonrpc": "2.0",
@@ -857,7 +860,7 @@ async fn a_question_in_the_stored_language_reaches_evidence_the_users_words_miss
         "We chose a single-writer store because one writer matched one agent per project.";
     const WHY: &str = "The single-writer model matches the product's per-project agent ownership.";
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let server = unbridged_server::open(data_dir.path());
     call(&server, 1, "kmp_ingest", language_fallback_seed_arguments()).await;
 
     let spanish = call(
@@ -1211,7 +1214,7 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
 #[tokio::test]
 async fn ask_recalls_supported_constraint_across_morphology_and_clause_reordering() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let server = unbridged_server::open(data_dir.path());
     call(
         &server,
         1,

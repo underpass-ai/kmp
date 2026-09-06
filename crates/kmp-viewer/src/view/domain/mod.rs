@@ -8,6 +8,8 @@
 //! names a JSON key.
 
 mod about_id;
+mod about_layers;
+pub use about_layers::AboutLayers;
 mod actor;
 mod clock;
 mod dimension_name;

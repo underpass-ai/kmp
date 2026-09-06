@@ -124,8 +124,10 @@ impl KernelMcpServer {
         let arguments = params.get("arguments").unwrap_or(&Value::Null);
         let start = Instant::now();
 
-        if matches!(name, "kmp_view_read_projection" | "kmp_view_undo")
-            && !self.apps_negotiated.load(Ordering::SeqCst)
+        if matches!(
+            name,
+            "kmp_view_read_projection" | "kmp_view_undo" | "kmp_view_take_control"
+        ) && !self.apps_negotiated.load(Ordering::SeqCst)
         {
             return jsonrpc_result(
                 id,

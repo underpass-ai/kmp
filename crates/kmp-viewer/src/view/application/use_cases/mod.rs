@@ -5,10 +5,12 @@ mod apply_view_intent;
 mod await_view_change;
 mod get_view_state;
 mod open_view;
+mod take_view_control;
 mod undo_view_move;
 
 pub use apply_view_intent::ApplyViewIntent;
 pub use await_view_change::AwaitViewChange;
 pub use get_view_state::GetViewState;
 pub use open_view::OpenView;
+pub use take_view_control::TakeViewControl;
 pub use undo_view_move::UndoViewMove;

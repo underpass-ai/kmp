@@ -30,7 +30,7 @@ pub(crate) const VIEW_TOOLS: [&str; 3] = [
 ];
 
 pub(crate) fn is_view_tool(name: &str) -> bool {
-    VIEW_TOOLS.contains(&name) || name == "kmp_view_undo"
+    VIEW_TOOLS.contains(&name) || matches!(name, "kmp_view_undo" | "kmp_view_take_control")
 }
 
 fn view_id_of(arguments: &Value) -> String {
@@ -139,6 +139,20 @@ pub(crate) fn get_state(arguments: &Value, viewer_url: Option<&str>) -> Result<V
     ))
 }
 
+/// The app's human handoff uses the same aggregate as the loopback button.
+pub(crate) fn take_control(arguments: &Value) -> Result<Value, ToolError> {
+    let expected = arguments
+        .get("expected_revision")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| {
+            ToolError::invalid_argument("expected_revision must be an unsigned integer")
+        })?;
+    let state = ViewRegistry::shared()
+        .take_control(Some(&view_id_of(arguments)), expected)
+        .map_err(view_error)?;
+    Ok(state_result(&state, json!({"human_control": true}), None))
+}
+
 /// MCP App transport for the aggregate's existing reversible operation. It
 /// is never advertised to the model-facing tool surface.
 pub(crate) fn undo(arguments: &Value) -> Result<Value, ToolError> {
@@ -207,6 +221,7 @@ fn intent_from(arguments: &Value) -> Result<(ViewIntentDto, Vec<String>), ToolEr
             })
         };
         intent.projection = Some(ProjectionDto {
+            abouts: strings("abouts"),
             semantic_zoom: projection
                 .get("semantic_zoom")
                 .and_then(Value::as_str)

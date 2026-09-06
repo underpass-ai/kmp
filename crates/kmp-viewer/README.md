@@ -7,29 +7,34 @@ a human. Same facade, same semantics, no parallel read model.
 
 ## Memory you can see
 
-ChronoLoom places memory on stable dimension lanes and offers three semantic
-zoom levels: Atlas bins, Episode clusters and Moment entries. The
+ChronoLoom places each memory once on its owning about plane. Perspective orbit
+and a flat camera share the same exact UTC window and selection. Up to five
+additional abouts can be explicitly compared; ordinary labels filter entries.
+The three semantic detail levels remain: Atlas bins, Episode clusters and Moment entries. The
 application owns this bounded, paginated projection; the browser never walks a
 whole about or a depth-four graph to manufacture it.
 
 Ask Codex or Claude to show the memory behind a decision: the agent can focus
 the relevant evidence and light up its proof path in ChronoLoom. The view stays
-shared — you can click, filter, pan, undo or take control yourself at any time.
+shared. A prominent human/agent panel names the last actor and the reason for
+its move. Taking control checks the revision you saw, keeps the frame and
+preserves undo of the actual semantic move. This attribution is not an exclusive
+lock or a claim that an agent is connected.
 
 Four reading moves sit on top of the loom:
 
-- **Travel** — the whole timeline on a density strip; scrub it and the graph
-  shows the memory as of that instant, the future simply not there yet.
+- **Travel** — a shared time window on the density strip; move or resize it
+  to compare the same interval across abouts on the selected clock.
 - **Audit** — two clicks pick a claim and where it should lead; every hop of
   the kernel's trace renders with its why, evidence and confidence, the path
-  glowing gradient ink from violet to green.
+  highlighted in the scene.
 - **Search** — plain words or `kind:` / `dim:` / `id:`; Enter frames the
   hits and steps everything else back.
 - **Lens and compare** — elapsed time remains proportional; event-density
-  compresses silence with explicit scale breaks. Two pinned instants remain on
+  compresses silence on a non-uniform axis. Two pinned instants remain on
   screen with entry, relation, validity and evidence diffs.
 
-Optional observability series share the same range, cursor and zoom. Every
+Optional observability series share the same time range. Every
 series retains its exact unit and scope, and exemplars resolve to the operation
 that emitted them; the viewer does not infer health or causality from temporal
 alignment.
@@ -68,11 +73,14 @@ is required, and the bulk visual chunks stay in app structured content.
 
 A hand-rolled HTTP/1.1 GET server bound to loopback, a UI compiled into the
 binary with `include_str!`, and no dependency the embedded edition does not
-already carry: no HTTP framework, no bundler, no CDN, nothing fetched at
-runtime. The render engine is vendored and hash-verified in
+already carry: no HTTP framework, no runtime bundler, no CDN, nothing fetched at
+runtime. Three.js and OrbitControls are vendored as one pinned bundle. The render engine is vendored and hash-verified in
 `ui/vendor/VENDOR.md`.
 
-Read-only means read-only: the viewer serves GETs and cannot write memory.
+Memory reads use GET. Explicit POST routes mutate only the shared view aggregate,
+including human handoff and undo; the viewer cannot write memory.
+
+See the [architecture and verification map](../../docs/architecture/chronoloom-shared-scene.md).
 
 ## License
 

@@ -4838,6 +4838,16 @@
           "projection": {
             "additionalProperties": false,
             "properties": {
+              "abouts": {
+                "description": "Explicit additional contexts, at most five. Omit for the primary about alone.",
+                "items": {
+                  "description": "Additional about to compare as a plane beside target.about; must exist in the store.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
               "dimensions": {
                 "items": {
                   "description": "Memory dimension to keep as a lane.",
@@ -4847,7 +4857,7 @@
                 "type": "array"
               },
               "labels": {
-                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. A lane is a key and the rows inside it are its values; a predicate keeps or drops whole entries by the labels they stand in. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -5320,6 +5330,42 @@
         "type": "object"
       },
       "name": "kmp_view_undo"
+    },
+    {
+      "_meta": {
+        "ui": {
+          "resourceUri": "ui://kmp/chronoloom.html",
+          "visibility": [
+            "app"
+          ]
+        }
+      },
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Take human control of the current frame without moving it. Refuses a stale revision. App-only adapter over the shared view aggregate.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "view_id": {
+            "description": "The shared view. Omit for the default view.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "type": "object"
+      },
+      "name": "kmp_view_take_control"
     }
   ]
 }

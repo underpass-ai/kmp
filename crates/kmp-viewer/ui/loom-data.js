@@ -20,7 +20,10 @@ KMP_APP.data = (() => {
       ? projection.clusters
       : projection.bins || [];
     for (const item of source) {
-      counts.set(item.dimension, (counts.get(item.dimension) || 0) + Number(item.total || 0));
+      counts.set(
+        item.dimension,
+        (counts.get(item.dimension) || 0) + Number(item.total || 0),
+      );
     }
     for (const dimension of projection.included_dimensions || []) {
       if (!counts.has(dimension)) counts.set(dimension, 0);
@@ -41,29 +44,38 @@ KMP_APP.data = (() => {
     model.currentLod = lod;
     model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
     model.total = Number((projection.page && projection.page.total) || 0);
-    // The kernel projects one bin and one cluster per label; until the loom
-    // draws a row per value, a lane is its key folded.
+    // Label aggregates stay distinct from individual memories.
     model.bins = KMP_LOOM.foldAggregates(projection.bins);
     model.clusters = KMP_LOOM.foldAggregates(projection.clusters);
     model.entries = entries;
     model.byRef = new Map(entries.map((entry) => [entry.ref, entry]));
     model.lanes = lanesFromProjection(projection, entries);
-    model.laneIndex = new Map(model.lanes.map((lane) => [lane.name, lane.index]));
+    model.laneIndex = new Map(
+      model.lanes.map((lane) => [lane.name, lane.index]),
+    );
     model.proofEdges = (projection.relations || []).map((edge) => ({
       ...edge,
       source: edge.from,
       target: edge.to,
     }));
-    const classified = KMP_LOOM.classifyEdges(model.proofEdges, (ref) => model.byRef.has(ref));
+    const classified = KMP_LOOM.classifyEdges(model.proofEdges, (ref) =>
+      model.byRef.has(ref),
+    );
     model.edges = classified.arcs;
     model.supersessions = classified.supersessions;
     model.contradictions = classified.contradictions;
-    model.supersededRefs = new Set(classified.supersessions.map((edge) => edge.target));
+    model.supersededRefs = new Set(
+      classified.supersessions.map((edge) => edge.target),
+    );
     model.contradictedRefs = new Set(
-      classified.contradictions.flatMap((edge) => [edge.source, edge.target])
+      classified.contradictions.flatMap((edge) => [edge.source, edge.target]),
     );
     const fullSpan = view.full && view.full.t1 - view.full.t0;
-    if (fullSpan && view.t1 - view.t0 >= fullSpan * 0.999) {
+    if (
+      !view.layerAbouts.length &&
+      fullSpan &&
+      view.t1 - view.t0 >= fullSpan * 0.999
+    ) {
       model.overviewBins = model.bins;
     }
     KMP_APP.viewport.updateAxisLens();
@@ -71,14 +83,18 @@ KMP_APP.data = (() => {
     KMP_APP.panels.renderStats();
     KMP_APP.scene.requestDraw();
     KMP_APP.scene.drawNavigator();
+    KMP_APP.layers?.load();
   }
 
   async function loadProjection() {
     if (!model.about || !view.full) return;
+    KMP_APP.layers?.invalidate();
     const generation = ++model.loadGeneration;
     const width = Math.max(1, KMP_APP.scene.canvas().clientWidth || 1);
     const msPerPx = (view.t1 - view.t0) / width;
-    let lod = KMP_LOOM.lodFor(msPerPx, width, model.maxMarksPerLane);
+    let lod =
+      view.requestedLod ||
+      KMP_LOOM.lodFor(msPerPx, width, model.maxMarksPerLane);
     const bins = Math.max(24, Math.min(512, Math.floor(width / 7)));
     const fetchAt = (level) =>
       fetchProjection(
@@ -88,7 +104,7 @@ KMP_APP.data = (() => {
         new Date(Math.round(view.t1)).toISOString(),
         level,
         bins,
-        KMP_LOOM.labelQuery(view.selectors)
+        KMP_LOOM.labelQuery(view.selectors),
       );
     try {
       let projection = await fetchAt(lod);
@@ -96,9 +112,9 @@ KMP_APP.data = (() => {
       const resolvedLod = KMP_LOOM.lodFor(
         msPerPx,
         width,
-        KMP_LOOM.maxMarksPerLane(projection)
+        KMP_LOOM.maxMarksPerLane(projection),
       );
-      if (resolvedLod !== lod) {
+      if (!view.requestedLod && resolvedLod !== lod) {
         lod = resolvedLod;
         projection = await fetchAt(lod);
         if (generation !== model.loadGeneration) return;
@@ -106,7 +122,7 @@ KMP_APP.data = (() => {
       applyProjection(projection, lod);
       if (projection.truncated) {
         showError(
-          `projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`
+          `projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`,
         );
       } else {
         showError("");
@@ -155,7 +171,9 @@ KMP_APP.data = (() => {
         limit: 4096,
       });
       if (model.observability.missing && model.observability.missing.length) {
-        showError(`telemetry series unavailable: ${model.observability.missing.join(", ")}`);
+        showError(
+          `telemetry series unavailable: ${model.observability.missing.join(", ")}`,
+        );
       }
       KMP_APP.panels.renderPulseLegend();
       KMP_APP.scene.requestDraw();
@@ -188,7 +206,7 @@ KMP_APP.data = (() => {
       // A chip belongs to the about whose catalogue named it; a fresh
       // about starts without any, unless the caller is applying a snapshot
       // that carries them.
-      if (about !== model.about && !sync.applying) view.selectors = [];
+      if (about !== model.about && !previouslyApplying) view.selectors = [];
       const probe = await fetchProjection(
         about,
         view.clock,
@@ -196,8 +214,12 @@ KMP_APP.data = (() => {
         KMP_APP.api.EXTENT_TO,
         "episode",
         128,
-        KMP_LOOM.labelQuery(view.selectors)
+        KMP_LOOM.labelQuery(view.selectors),
       );
+      if (generation !== model.loadGeneration) return;
+      const combined = KMP_APP.layers
+        ? await KMP_APP.layers.extent(about, view.clock, view.selectors, probe)
+        : null;
       if (generation !== model.loadGeneration) return;
       const extent = KMP_LOOM.projectionExtent(probe);
       // The clicked about becomes the current about even when this clock is
@@ -205,10 +227,16 @@ KMP_APP.data = (() => {
       // stale data as if it belonged to the one the user selected (#421).
       model.about = about;
       model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(probe);
-      model.overviewBins = KMP_LOOM.foldAggregates(probe.bins);
-      if (extent) {
-        const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
-        view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
+      model.overviewBins = combined
+        ? combined.bins
+        : KMP_LOOM.foldAggregates(probe.bins);
+      const hasExtent = combined ? Boolean(combined.full) : Boolean(extent);
+      if (hasExtent) {
+        if (combined) view.full = combined.full;
+        else {
+          const pad = Math.max(1, (extent.t1 - extent.t0) * 0.02);
+          view.full = { t0: extent.t0 - pad, t1: extent.t1 + pad };
+        }
         view.t0 = view.full.t0;
         view.t1 = view.full.t1;
         view.windowStack = [];
@@ -227,14 +255,23 @@ KMP_APP.data = (() => {
       KMP_APP.panels.renderDiffPanel();
       KMP_APP.panels.hideTraceBox();
       KMP_APP.panels.renderDetailEmpty();
-      if (!extent) {
+      if (!hasExtent) {
         // An explicit empty state for the active clock: zero entries, lanes
         // and relations, a cleared canvas and navigator, and the
         // empty-clock explanation — nothing announced, because there is no
         // range to share.
         view.full = null;
         view.windowStack = [];
-        applyProjection({ entries: [], page: { total: 0 }, bins: [], clusters: [], relations: [] }, "atlas");
+        applyProjection(
+          {
+            entries: [],
+            page: { total: 0 },
+            bins: [],
+            clusters: [],
+            relations: [],
+          },
+          "atlas",
+        );
         KMP_APP.viewport.setClock(view.clock, true, false);
         KMP_APP.panels.renderAbouts();
         KMP_APP.panels.renderRail();

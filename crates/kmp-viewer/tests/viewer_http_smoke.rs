@@ -309,7 +309,7 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     // The UI itself is served, and unknown paths and hosts are refused.
     let (status, _) = get(port, "/").await;
     assert_eq!(status, 200);
-    let (status, _) = get(port, "/assets/pixi.min.js").await;
+    let (status, _) = get(port, "/assets/three.min.js").await;
     assert_eq!(status, 200);
     let (status, _) = get(port, "/assets/loom-core.js").await;
     assert_eq!(status, 200, "the pure-logic asset is served");

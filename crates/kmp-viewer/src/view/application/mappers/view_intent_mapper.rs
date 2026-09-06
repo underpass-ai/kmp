@@ -4,9 +4,9 @@ use crate::view::application::dto::{
     FocusDto, LabelSelectorDto, ProjectionDto, TimeRangeDto, ViewIntentDto,
 };
 use crate::view::domain::{
-    AboutId, Clock, DimensionName, Focus, FocusWindow, LabelOperator, LabelSelection, MemoryRef,
-    OverlayName, ProjectionSettings, RelationClass, SearchQuery, SemanticZoom, Timestamp,
-    TraceSelection, ViewError, ViewPatch,
+    AboutId, AboutLayers, Clock, DimensionName, Focus, FocusWindow, LabelOperator, LabelSelection,
+    MemoryRef, OverlayName, ProjectionSettings, RelationClass, SearchQuery, SemanticZoom,
+    Timestamp, TraceSelection, ViewError, ViewPatch,
 };
 
 /// Turns one arrived intent into a domain patch, refusing vocabulary the
@@ -41,7 +41,40 @@ pub fn view_patch_from_intent(intent: &ViewIntentDto) -> Result<ViewPatch, ViewE
         (None, Some(window)) => Some(window_from(window)?),
         _ => None,
     };
+    let projection_abouts = if intent.projection.is_none() {
+        intent
+            .projection_abouts
+            .as_ref()
+            .map(|abouts| {
+                abouts
+                    .as_ref()
+                    .map(|names| AboutLayers::new(names.clone()))
+                    .transpose()
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    let projection_zoom = if intent.projection.is_none() {
+        intent
+            .projection_zoom
+            .as_ref()
+            .map(|zoom| {
+                zoom.as_ref()
+                    .map(|name| {
+                        SemanticZoom::parse(name).ok_or_else(|| {
+                            ViewError::Invalid(format!("`{name}` is not a semantic zoom level"))
+                        })
+                    })
+                    .transpose()
+            })
+            .transpose()?
+    } else {
+        None
+    };
     Ok(ViewPatch {
+        projection_zoom,
+        projection_abouts,
         about: intent.about.clone().map(AboutId::new),
         clock,
         focus,
@@ -92,6 +125,11 @@ fn projection_settings(projection: &ProjectionDto) -> Result<ProjectionSettings,
         ),
     };
     Ok(ProjectionSettings {
+        abouts: projection
+            .abouts
+            .as_ref()
+            .map(|names| AboutLayers::new(names.clone()))
+            .transpose()?,
         semantic_zoom,
         dimensions: projection
             .dimensions
@@ -150,6 +188,8 @@ mod tests {
     #[test]
     fn a_full_intent_maps_every_facet_into_the_domain() {
         let patch = view_patch_from_intent(&ViewIntentDto {
+            projection_abouts: None,
+            projection_zoom: None,
             about: Some("about:x".into()),
             clock: Some("validity".into()),
             focus: Some(FocusDto {
@@ -161,6 +201,7 @@ mod tests {
             }),
             focus_window: None,
             projection: Some(ProjectionDto {
+                abouts: None,
                 semantic_zoom: Some("atlas".into()),
                 dimensions: Some(vec!["timeline".into()]),
                 labels: Some(vec![LabelSelectorDto {

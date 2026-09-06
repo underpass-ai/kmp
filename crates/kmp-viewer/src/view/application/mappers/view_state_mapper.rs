@@ -56,6 +56,13 @@ fn time_range_dto(window: &FocusWindow) -> TimeRangeDto {
 
 fn projection_dto(projection: &ProjectionSettings) -> ProjectionDto {
     ProjectionDto {
+        abouts: projection.abouts.as_ref().map(|layers| {
+            layers
+                .abouts()
+                .iter()
+                .map(|about| about.as_str().to_string())
+                .collect()
+        }),
         semantic_zoom: projection
             .semantic_zoom
             .map(|zoom| zoom.as_str().to_string()),
@@ -137,6 +144,7 @@ mod tests {
             refs: vec![MemoryRef::new("decision:new")],
         };
         state.projection = ProjectionSettings {
+            abouts: None,
             semantic_zoom: Some(SemanticZoom::Moment),
             dimensions: Some(vec![DimensionName::new("timeline")]),
             labels: Some(vec![

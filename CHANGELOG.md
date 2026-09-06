@@ -11,6 +11,14 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- ChronoLoom's shared-control panel names the human or agent behind the last
+  move and its explanation. Revision-checked human takeover preserves the
+  frame and undo history, over both loopback HTTP and the negotiated MCP App.
+- One 3D scene with about planes, a flat camera, ordinary label filters and a
+  shared UTC brush with exact dates. `projection.abouts` explicitly compares
+  up to five additional contexts through the existing bounded projection API.
+  The bundled Three.js renderer replaces PixiJS; no runtime network dependency.
+
 - The visual projection carries the label, not only its key. `VisualBin` and
   `VisualCluster` come one per `(dimension, scope_id)` pair, so a lane can
   show the rows its values partition it into; `labels[]` lists every label
@@ -22,9 +30,8 @@ Detailed notes from the early release cycle remain available in the
   empty for a label given at write and `kmp_relabel` with its why for one put
   there later. Additive proto (`VisualLabel`, `ProjectVisualResponse.labels`,
   `VisualBin.scope_id`, `VisualCluster.scope_id`,
-  `TemporalCoordinate.method / why / motivation`). ChronoLoom folds the
-  per-label aggregates back into one lane per key until it draws a row per
-  value; the map is
+  `TemporalCoordinate.method / why / motivation`). ChronoLoom uses this
+  catalogue for ordinary label filters within about planes; the projection map is
   [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
 
 - The view speaks the whole selection. `/api/projection` takes `scope_ids`
