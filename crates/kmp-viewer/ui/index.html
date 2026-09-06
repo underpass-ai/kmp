@@ -7,6 +7,7 @@
 <title>KMP ChronoLoom</title>
 <link rel="stylesheet" href="/assets/loom.css">
 <link rel="stylesheet" href="/assets/loom-shell.css">
+<link rel="stylesheet" href="/assets/loom-loading.css">
 </head>
 <body>
 <div id="app">
@@ -45,13 +46,14 @@
 <main id="stage">
  <div class="scene-toolbar"><div class="mode" aria-label="Scene camera"><button data-scene-mode="3d" aria-pressed="true">3D</button><button data-scene-mode="flat" aria-pressed="false">Flat</button></div><label>Separation<input id="layer-gap" type="range" min="0" max="300" value="130"></label><label>Opacity<input id="layer-opacity" type="range" min="5" max="80" value="23"></label><button id="camera-reset">Frame scene</button></div>
  <div class="scene-summary"><span id="scene-count" aria-live="polite"></span><span id="lod-chip">—</span><select id="lod-mode" aria-label="Projection detail"><option value="">Automatic detail</option><option value="moment">Memories</option><option value="episode">Clusters</option><option value="atlas">Atlas</option></select><label>Scale<select id="lens-mode"><option value="elapsed">Elapsed time</option><option value="event_density">Event density</option></select></label></div>
- <div id="scene-world" role="region" aria-label="Memory scene: time horizontal, one plane per about"><canvas id="loom-canvas" aria-label="Drag to orbit, wheel to zoom, right drag to pan. Select a memory to inspect its evidence." tabindex="0">Use search results to inspect memories.</canvas><div id="scene-labels"></div><div id="tooltip" class="tooltip" hidden></div><p id="scene-empty" hidden>No memory in this window on the selected clock.</p><div class="camera-pad" aria-label="Camera controls"><button data-camera="left" aria-label="Orbit left">←</button><button data-camera="up" aria-label="Orbit up">↑</button><button data-camera="down" aria-label="Orbit down">↓</button><button data-camera="right" aria-label="Orbit right">→</button><button data-camera="in" aria-label="Zoom camera in">+</button><button data-camera="out" aria-label="Zoom camera out">−</button></div></div>
+ <div id="scene-world" role="region" aria-label="Memory scene: time horizontal, one plane per about"><div id="scene-loading" class="loom-loading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"><span class="loading-threads" aria-hidden="true"><i></i><i></i><i></i></span><span id="scene-loading-label"></span></div><canvas id="loom-canvas" aria-label="Drag to orbit, wheel to zoom, right drag to pan. Select a memory to inspect its evidence." tabindex="0">Use search results to inspect memories.</canvas><div id="scene-labels"></div><div id="tooltip" class="tooltip" hidden></div><p id="scene-empty" hidden>No memory in this window on the selected clock.</p><div class="camera-pad" aria-label="Camera controls"><button data-camera="left" aria-label="Orbit left">←</button><button data-camera="up" aria-label="Orbit up">↑</button><button data-camera="down" aria-label="Orbit down">↓</button><button data-camera="right" aria-label="Orbit right">→</button><button data-camera="in" aria-label="Zoom camera in">+</button><button data-camera="out" aria-label="Zoom camera out">−</button></div></div>
  <div class="scene-footer"><span>Drag: orbit · wheel: zoom · right drag: pan</span><span>Depth = about · colour = memory type</span></div>
  <div id="pulse-chart" aria-label="Telemetry on the shared time window" hidden></div>
  <div id="pulse-legend" class="pulse-legend" aria-label="Observability pulse legend" hidden></div>
  <div class="evidence-tools"><button id="pin-a">Pin A</button><button id="pin-b">Pin B</button><button id="clear-diff">Clear A/B</button></div><section id="diff-panel" aria-label="Comparison between pinned instants" hidden></section>
 </main>
   <aside id="detail" aria-label="Evidence">
+    <div id="detail-loading" class="loom-loading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"><span class="loading-threads" aria-hidden="true"><i></i><i></i><i></i></span><span id="detail-loading-label"></span></div>
     <label class="sr-only" for="memory-picker">Inspect a memory</label><select id="memory-picker" aria-label="Inspect a memory"></select>
     <p id="detail-empty" class="muted">Pick an entry. Its record opens here.</p>
     <div id="detail-body" hidden>
@@ -102,6 +104,8 @@
 <script src="/assets/three.min.js" defer></script>
 <script src="/assets/loom-core.js" defer></script>
 <script src="/assets/loom-state.js" defer></script>
+<script src="/assets/loom-loading.js" defer></script>
+<script src="/assets/loom-loading-view.js" defer></script>
 <script src="/assets/loom-api.js" defer></script>
 <script src="/assets/loom-panels.js" defer></script>
 <script src="/assets/loom-viewport.js" defer></script>

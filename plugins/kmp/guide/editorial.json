@@ -332,7 +332,7 @@
           "id": "basic:open",
           "kind": "instruction",
           "depth": "basic",
-          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera.",
+          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera. A loading indicator stays visible while clocks, layers or evidence update; the content dims and fades back in when ready. Reduced motion keeps the status without animation.",
           "evidence": "The three semantic view tools share one revisioned ChronoLoom state between agent and person."
         },
         {

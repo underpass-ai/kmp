@@ -1,7 +1,8 @@
 use std::sync::OnceLock;
 
 use crate::routes::{
-    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_MODULES, LOOM_SHELL_CSS, THREE_JS,
+    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_LOADING_CSS, LOOM_MODULES, LOOM_SHELL_CSS,
+    THREE_JS,
 };
 
 const MCP_APP_BRIDGE: &str = include_str!("../ui/mcp-app-bridge.js");
@@ -40,6 +41,10 @@ pub fn mcp_app_html() -> &'static str {
                 "<script src=\"/assets/loom.js\" defer></script>",
                 &script(LOOM_JS),
             );
+        html = html.replace(
+            "<link rel=\"stylesheet\" href=\"/assets/loom-loading.css\">",
+            &format!("<style>{LOOM_LOADING_CSS}</style>"),
+        );
         for (name, source) in LOOM_MODULES {
             html = html.replace(
                 &format!("<script src=\"/assets/{name}\" defer></script>"),

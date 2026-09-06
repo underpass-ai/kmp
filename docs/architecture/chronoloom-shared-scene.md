@@ -16,12 +16,22 @@ Neither labels nor camera coordinates become memory semantics.
 | About ownership, strict clock placement and scene topology | Pure scene model | Projection values; no browser APIs |
 | Camera, meshes, picking and resource disposal | Three.js adapter | Scene model; selection callback |
 | Human/agent status, explanation and undo | DOM adapter | Authoritative view snapshot |
+| Pending content reads and superseded completion tokens | Browser activity tracker | State publisher; no DOM, clock or transport |
+| Loading status, busy content and paint transitions | DOM adapter | Activity snapshots and animation frames |
 
 The existing view aggregate remains the authority. “Human” and “agent” identify
 the last actor, not an exclusive lock or a promise that an agent is connected.
 Taking control is an explicit revision-checked operation: it preserves the
 semantic frame and changes provenance. Merely reasserting an unchanged ordinary
 intent remains a no-op. Undo retains its existing history semantics.
+
+Loading is transient browser activity, not part of the shared view aggregate.
+The backend port brackets content reads in both HTTP and MCP Apps; view polling
+and control commands do not create loading activity. Layer changes also bracket
+their extent and projection work so adding or removing a plane keeps one status
+through chained reads. Completion tokens prevent superseded requests from
+clearing newer activity. The DOM adapter settles after the next paint, fades
+the content and respects reduced motion; no artificial wait is added to reads.
 
 ## Read budget and evidence
 

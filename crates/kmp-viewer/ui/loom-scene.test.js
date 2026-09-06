@@ -318,6 +318,7 @@ test("adding an about expands All while retaining a focused window", async () =>
   Object.assign(app.state.view, app.state.view.full);
   app.panels = { renderAbouts() {} };
   app.dom = { showError: (error) => assert.fail(error) };
+  app.data = { cancelScheduledProjection() {}, async loadProjection() {} };
   app.api = {
     fetchProjection: async (about) => ({
       clusters: [

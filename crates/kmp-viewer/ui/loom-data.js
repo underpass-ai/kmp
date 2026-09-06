@@ -83,7 +83,7 @@ KMP_APP.data = (() => {
     KMP_APP.panels.renderStats();
     KMP_APP.scene.requestDraw();
     KMP_APP.scene.drawNavigator();
-    KMP_APP.layers?.load();
+    return KMP_APP.layers?.load();
   }
 
   async function loadProjection() {
@@ -119,7 +119,8 @@ KMP_APP.data = (() => {
         projection = await fetchAt(lod);
         if (generation !== model.loadGeneration) return;
       }
-      applyProjection(projection, lod);
+      await applyProjection(projection, lod);
+      if (generation !== model.loadGeneration) return;
       if (projection.truncated) {
         showError(
           `projection is partial (${projection.page.returned}/${projection.page.total}); zoom into a smaller range for detail`,

@@ -51,7 +51,7 @@ pub(crate) const LOOM_CORE_JS: &str = include_str!("../ui/loom-core.js");
 /// The script-tag modules of the browser application, in the exact order
 /// `index.html` loads them and `mcp_app` inlines them: state, the backend
 /// port, the use cases, then the adapters, with the composition root last.
-pub(crate) const LOOM_MODULES: [(&str, &str); 21] = [
+pub(crate) const LOOM_MODULES: [(&str, &str); 23] = [
     (
         "loom-provenance.js",
         include_str!("../ui/loom-provenance.js"),
@@ -77,6 +77,11 @@ pub(crate) const LOOM_MODULES: [(&str, &str); 21] = [
         include_str!("../ui/loom-time-controls.js"),
     ),
     ("loom-state.js", include_str!("../ui/loom-state.js")),
+    ("loom-loading.js", include_str!("../ui/loom-loading.js")),
+    (
+        "loom-loading-view.js",
+        include_str!("../ui/loom-loading-view.js"),
+    ),
     ("loom-api.js", include_str!("../ui/loom-api.js")),
     ("loom-panels.js", include_str!("../ui/loom-panels.js")),
     ("loom-viewport.js", include_str!("../ui/loom-viewport.js")),
@@ -88,6 +93,7 @@ pub(crate) const LOOM_MODULES: [(&str, &str); 21] = [
 ];
 /// Vendored render engine, pinned and hash-verified in `ui/vendor/VENDOR.md`.
 pub(crate) const THREE_JS: &str = include_str!("../ui/vendor/three.min.js");
+pub(crate) const LOOM_LOADING_CSS: &str = include_str!("../ui/loom-loading.css");
 pub(crate) const LOOM_SHELL_CSS: &str = include_str!("../ui/loom-shell.css");
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
@@ -150,6 +156,7 @@ where
             "/assets/loom.js" => HttpResponse::javascript(LOOM_JS),
             "/assets/loom-core.js" => HttpResponse::javascript(LOOM_CORE_JS),
             "/assets/three.min.js" => HttpResponse::javascript(THREE_JS),
+            "/assets/loom-loading.css" => HttpResponse::css(LOOM_LOADING_CSS),
             "/assets/loom-shell.css" => HttpResponse::css(LOOM_SHELL_CSS),
             "/api/info" => self.info(),
             "/api/abouts" => self.abouts().await,

@@ -113,6 +113,7 @@ KMP_APP.layers = (() => {
       to = view.t1;
     const wasFull =
       !view.full || (from === view.full.t0 && to === view.full.t1);
+    const finish = KMP_APP.loading?.begin("layers", "scene", "Updating layers…", 1);
     try {
       const result = await extent(primary, clock, view.selectors);
       if (
@@ -135,8 +136,12 @@ KMP_APP.layers = (() => {
         expand ? view.full.t0 : view.t0,
         expand ? view.full.t1 : view.t1,
       );
+      KMP_APP.data.cancelScheduledProjection();
+      await KMP_APP.data.loadProjection();
     } catch (error) {
       KMP_APP.dom.showError(error.message);
+    } finally {
+      finish?.();
     }
   }
   async function activate(about) {

@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:c28c10bba794b0062aa2",
+    "idempotency_key": "ingest:guide-sync:1:person:1a3deec7e8d143b750da",
     "memory": {
       "dimensions": [
         {
@@ -2085,7 +2085,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera."
+          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera. A loading indicator stays visible while clocks, layers or evidence update; the content dims and fades back in when ready. Reduced motion keeps the status without animation."
         },
         {
           "coordinates": [

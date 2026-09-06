@@ -21,6 +21,11 @@ its move. Taking control checks the revision you saw, keeps the frame and
 preserves undo of the actual semantic move. This attribution is not an exclusive
 lock or a claim that an agent is connected.
 
+Loading feedback covers clock changes, added or removed about layers, and
+evidence reads. The previous content dims while reads finish, then fades into
+the updated scene. Reduced-motion preferences disable the animation; the
+status remains visible and is announced to assistive technology.
+
 Four reading moves sit on top of the loom:
 
 - **Travel** — a shared time window on the density strip; move or resize it

@@ -11,6 +11,9 @@ Detailed notes from the early release cycle remain available in the
 
 ### Added
 
+- ChronoLoom shows loading feedback while changing clocks, adding or removing
+  about layers, and reading evidence. Content fades between updates, with
+  accessible status announcements and reduced-motion support.
 - ChronoLoom's shared-control panel names the human or agent behind the last
   move and its explanation. Revision-checked human takeover preserves the
   frame and undo history, over both loopback HTTP and the negotiated MCP App.

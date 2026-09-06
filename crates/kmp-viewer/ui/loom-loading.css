@@ -1,0 +1,102 @@
+/* Read feedback belongs to the content; the shared human/agent control stays visible. */
+#detail {
+  position: relative;
+}
+.loom-loading {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 32px #0002;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 160ms ease,
+    visibility 160ms;
+}
+.loading-threads {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+.loading-threads i {
+  width: 3px;
+  height: 12px;
+  background: #a78bfa;
+  border-radius: 2px;
+}
+.loading-threads i:nth-child(2) {
+  height: 20px;
+  background: #76a6ed;
+  animation-delay: 120ms;
+}
+.loading-threads i:nth-child(3) {
+  height: 15px;
+  background: #69cfaf;
+  animation-delay: 240ms;
+}
+[data-loading="true"] > .loom-loading,
+#stage[data-loading="true"] #scene-loading {
+  opacity: 1;
+  visibility: visible;
+}
+[data-loading="true"] .loading-threads i {
+  animation: loom-loading-pulse 900ms ease-in-out infinite alternate;
+}
+[data-loading="true"] .loading-threads i:nth-child(2) {
+  animation-delay: 120ms;
+}
+[data-loading="true"] .loading-threads i:nth-child(3) {
+  animation-delay: 240ms;
+}
+#loom-canvas,
+#scene-labels,
+#detail-body,
+#detail-empty {
+  transition: opacity 180ms ease;
+}
+#stage[data-loading="true"] #loom-canvas,
+#stage[data-loading="true"] #scene-labels,
+#detail[data-loading="true"] #detail-body,
+#detail[data-loading="true"] #detail-empty {
+  opacity: 0.3;
+  pointer-events: none;
+}
+#stage[data-loading="true"] #scene-empty,
+#stage[data-loading="true"] #tooltip {
+  visibility: hidden;
+}
+@keyframes loom-loading-pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loom-loading,
+  #loom-canvas,
+  #scene-labels,
+  #detail-body,
+  #detail-empty {
+    transition: none;
+  }
+  [data-loading="true"] .loading-threads i {
+    animation: none;
+  }
+}
