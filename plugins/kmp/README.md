@@ -8,7 +8,9 @@ semantic view tools over a shared ChronoLoom view.
 
 Ask **“Show me the memory behind this decision.”** The agent retrieves the
 evidence, opens ChronoLoom at the relevant moment and lights up the proof path.
-You can click, filter, pan, undo or take control of the same view at any time.
+ChronoLoom names who is guiding, shows why the agent moved, and lets you take
+control without losing the frame or its undo. A shared time window crosses real
+3D about layers; a flat camera shows the same memory, with labels as filters.
 <!-- kmp:public-overview:end -->
 
 Without this plugin, using KMP means installing a binary, copying an MCP

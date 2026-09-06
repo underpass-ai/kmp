@@ -24,7 +24,7 @@ KMP_APP.sync = (() => {
           about: model.about || "",
           expected_revision: sync.revision,
         },
-        "POST"
+        "POST",
       );
       sync.revision = state.view_revision || 0;
       KMP_APP.panels.renderProvenance(state);
@@ -44,15 +44,28 @@ KMP_APP.sync = (() => {
   async function pollView() {
     for (;;) {
       try {
-        const state = await api("/api/view", { id: VIEW_ID, since: sync.revision });
+        const requestedRevision = sync.revision;
+        const state = await api("/api/view", {
+          id: VIEW_ID,
+          since: requestedRevision,
+        });
+        // A long poll opened before a human report can return after its
+        // acknowledgement. That is an old response, not a server restart.
+        if (
+          state.view_revision < sync.revision &&
+          state.view_revision >= requestedRevision
+        )
+          continue;
+        if (sync.humanPending) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          continue;
+        }
         // Any revision that is not ours is news — including a *lower* one,
         // which means the view server restarted and began counting again.
         // Waiting only for a higher number left the browser deaf for good.
         if (state.view_revision !== sync.revision) {
-          const restarted = state.view_revision < sync.revision;
           sync.revision = state.view_revision;
-          const actor = state.last_change && state.last_change.actor;
-          if (restarted || (actor && actor !== "human")) await applyAgentState(state);
+          await applyAgentState(state);
           KMP_APP.panels.renderProvenance(state);
         }
       } catch (error) {
@@ -64,23 +77,46 @@ KMP_APP.sync = (() => {
   /* An intent is meaning, not geometry: this is where meaning becomes a
      window, a clock, a set of lanes. */
   async function applyAgentState(state) {
+    clearTimeout(sync.reportTimer);
+    sync.humanPending = false;
+    sync.reportGeneration = (sync.reportGeneration || 0) + 1;
     sync.applying = true;
     try {
+      // The labels the snapshot carries are the kernel's filter; they are
+      // adopted before any projection is asked for, and a change reloads.
+      const projection = state.projection || {};
+      const layersChanged =
+        JSON.stringify(view.layerAbouts) !==
+        JSON.stringify(projection.abouts || []);
+      view.layerAbouts = [...(projection.abouts || [])];
+      view.requestedLod = projection.semantic_zoom || null;
+      view.relationClasses = projection.relation_classes || null;
+      KMP_APP.layers?.invalidate();
+      const selectors = KMP_LOOM.normalizeSelectors(projection.labels);
+      const selectorsChanged =
+        KMP_LOOM.labelQuery(selectors) !== KMP_LOOM.labelQuery(view.selectors);
+      view.selectors = selectors;
+      if (selectorsChanged) KMP_APP.panels.renderChips();
       if (state.about && state.about !== model.about) {
         await KMP_APP.data.loadAbout(state.about);
+      } else if ((selectorsChanged || layersChanged) && model.about) {
+        await KMP_APP.data.loadAbout(model.about, false);
       }
       if (state.clock && state.clock !== view.clock) {
-        KMP_APP.viewport.setClock(state.clock, false);
+        await KMP_APP.viewport.setClock(state.clock, false);
       }
 
-      const projection = state.projection || {};
-      if (projection.overlays) await KMP_APP.data.loadObservability(projection.overlays);
+      await KMP_APP.data.loadObservability(projection.overlays || []);
       if (projection.dimensions) {
         const keep = new Set(projection.dimensions);
         view.hiddenLanes = new Set(
-          model.lanes.map((lane) => lane.name).filter((name) => !keep.has(name))
+          model.lanes
+            .map((lane) => lane.name)
+            .filter((name) => !keep.has(name)),
         );
         KMP_APP.panels.renderRail();
+      } else {
+        view.hiddenLanes = new Set();
       }
 
       const facets = KMP_LOOM.agentStateFacets(state);
@@ -90,9 +126,12 @@ KMP_APP.sync = (() => {
         const from = Date.parse(range.from);
         const to = Date.parse(range.to);
         if (Number.isFinite(from) && Number.isFinite(to)) {
-          view.focusRange = { from, to };
+          view.focusRange = null;
           KMP_APP.panels.syncFocusButton();
-          KMP_APP.viewport.setWindow(view.full.t0, view.full.t1);
+          view.full = KMP_LOOM.extentIncluding(view.full, from, to);
+          KMP_APP.viewport.setWindow(from, to);
+          KMP_APP.data.cancelScheduledProjection();
+          await KMP_APP.data.loadProjection();
           framed = true;
         }
       } else {
@@ -102,6 +141,11 @@ KMP_APP.sync = (() => {
         view.focusRange = null;
         KMP_APP.panels.syncFocusButton();
         if (refs.length) framed = await frameRefs(refs);
+        else if (view.full) {
+          KMP_APP.viewport.setWindow(view.full.t0, view.full.t1);
+          KMP_APP.data.cancelScheduledProjection();
+          await KMP_APP.data.loadProjection();
+        }
       }
       // A rung is a density to fall back on, not an override: an intent that
       // named its own window asked for that window.
@@ -110,11 +154,22 @@ KMP_APP.sync = (() => {
       }
 
       KMP_APP.panels.setSearch(facets.search);
+      view.trace = null;
+      tracePick.from = null;
+      tracePick.to = null;
+      KMP_APP.panels.hideTraceBox();
       if (state.trace) {
         tracePick.from = state.trace.from;
         tracePick.to = state.trace.to;
-        await KMP_APP.selection.runTrace({ framePath: !explicitRange, preserveWindow: explicitRange });
+        await KMP_APP.selection.runTrace({
+          framePath: !explicitRange,
+          preserveWindow: explicitRange,
+        });
       }
+      KMP_APP.layers?.load();
+      KMP_APP.panels.renderAbouts();
+      view.selectedRef = null;
+      KMP_APP.panels.renderDetailEmpty();
       if (state.selection) {
         if (await KMP_APP.selection.selectEntry(state.selection)) {
           KMP_APP.viewport.centerOn(state.selection);
@@ -132,7 +187,11 @@ KMP_APP.sync = (() => {
     for (const ref of refs) {
       let entry = model.byRef.get(ref);
       if (!entry) {
-        const inspect = await api("/api/node", { about: model.about, id: ref, raw: "1" });
+        const inspect = await api("/api/node", {
+          about: model.about,
+          id: ref,
+          raw: "1",
+        });
         entry = KMP_LOOM.entryModel({
           ref_id: inspect.node.id,
           kind: inspect.node.kind,
@@ -140,7 +199,7 @@ KMP_APP.sync = (() => {
           coordinates: inspect.raw_coordinates || [],
         });
       }
-      const stamp = KMP_LOOM.placedMs(entry, view.clock);
+      const stamp = KMP_LOOM.strictMs(entry, view.clock);
       if (stamp !== null) stamps.push(stamp);
     }
     if (!stamps.length) return false;
@@ -166,7 +225,10 @@ KMP_APP.sync = (() => {
      while the loom is busy obeying an intent — otherwise the two would
      echo. */
   function reportView() {
-    if (sync.applying || !model.about) return;
+    if (sync.applying || !model.about || !view.full) return;
+    sync.humanPending = true;
+    const reportGeneration = (sync.reportGeneration =
+      (sync.reportGeneration || 0) + 1);
     clearTimeout(sync.reportTimer);
     sync.reportTimer = setTimeout(async () => {
       const params = new URLSearchParams({
@@ -176,7 +238,11 @@ KMP_APP.sync = (() => {
         from: new Date(Math.round(view.t0)).toISOString(),
         to: new Date(Math.round(view.t1)).toISOString(),
       });
+      params.set("layer_abouts", JSON.stringify(view.layerAbouts));
+      params.set("zoom", view.requestedLod || "auto");
       if (view.selectedRef) params.set("selection", view.selectedRef);
+      const labels = KMP_LOOM.labelQuery(view.selectors);
+      if (labels) params.set("labels", labels);
       const search = KMP_APP.panels.searchText();
       if (search) params.set("search", search);
       if (tracePick.from && tracePick.to) {
@@ -184,14 +250,27 @@ KMP_APP.sync = (() => {
         params.set("trace_to", tracePick.to);
       }
       const signature = params.toString();
-      if (signature === sync.lastReport) return;
-      sync.lastReport = signature;
+      if (signature === sync.lastReport) {
+        sync.humanPending = false;
+        return;
+      }
       try {
-        const state = await api("/api/view/report", Object.fromEntries(params), "POST");
-        if (state.view_revision) sync.revision = state.view_revision;
-        KMP_APP.panels.renderProvenance(state);
+        const state = await api(
+          "/api/view/report",
+          Object.fromEntries(params),
+          "POST",
+        );
+        if (reportGeneration !== sync.reportGeneration) return;
+        sync.lastReport = signature;
+        if (state.view_revision >= sync.revision) {
+          sync.revision = state.view_revision;
+          KMP_APP.panels.renderProvenance(state);
+        }
       } catch (error) {
-        // The loom keeps working even when nobody is listening to it.
+        KMP_APP.control?.unavailable();
+      } finally {
+        if (reportGeneration === sync.reportGeneration)
+          sync.humanPending = false;
       }
     }, 400);
   }

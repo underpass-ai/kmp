@@ -1,9 +1,12 @@
 //! Wire intent → domain patch, with the vocabulary refusals.
 
-use crate::view::application::dto::{FocusDto, ProjectionDto, TimeRangeDto, ViewIntentDto};
+use crate::view::application::dto::{
+    FocusDto, LabelSelectorDto, ProjectionDto, TimeRangeDto, ViewIntentDto,
+};
 use crate::view::domain::{
-    AboutId, Clock, DimensionName, Focus, FocusWindow, MemoryRef, OverlayName, ProjectionSettings,
-    RelationClass, SearchQuery, SemanticZoom, Timestamp, TraceSelection, ViewError, ViewPatch,
+    AboutId, AboutLayers, Clock, DimensionName, Focus, FocusWindow, LabelOperator, LabelSelection,
+    MemoryRef, OverlayName, ProjectionSettings, RelationClass, SearchQuery, SemanticZoom,
+    Timestamp, TraceSelection, ViewError, ViewPatch,
 };
 
 /// Turns one arrived intent into a domain patch, refusing vocabulary the
@@ -24,6 +27,13 @@ pub fn view_patch_from_intent(intent: &ViewIntentDto) -> Result<ViewPatch, ViewE
         .as_ref()
         .map(projection_settings)
         .transpose()?;
+    // Labels beside a whole-projection replacement are ignored by the
+    // aggregate, so they are not validated either — the same rule as the
+    // window beside a whole focus.
+    let projection_labels = match (&intent.projection, intent.projection_labels.as_ref()) {
+        (None, Some(labels)) => Some(labels.as_deref().map(label_selections).transpose()?),
+        _ => None,
+    };
     let focus = intent.focus.as_ref().map(focus_from).transpose()?;
     // A window beside a whole-focus replacement is ignored by the aggregate,
     // so it is not validated either — exactly as it always was.
@@ -31,12 +41,46 @@ pub fn view_patch_from_intent(intent: &ViewIntentDto) -> Result<ViewPatch, ViewE
         (None, Some(window)) => Some(window_from(window)?),
         _ => None,
     };
+    let projection_abouts = if intent.projection.is_none() {
+        intent
+            .projection_abouts
+            .as_ref()
+            .map(|abouts| {
+                abouts
+                    .as_ref()
+                    .map(|names| AboutLayers::new(names.clone()))
+                    .transpose()
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    let projection_zoom = if intent.projection.is_none() {
+        intent
+            .projection_zoom
+            .as_ref()
+            .map(|zoom| {
+                zoom.as_ref()
+                    .map(|name| {
+                        SemanticZoom::parse(name).ok_or_else(|| {
+                            ViewError::Invalid(format!("`{name}` is not a semantic zoom level"))
+                        })
+                    })
+                    .transpose()
+            })
+            .transpose()?
+    } else {
+        None
+    };
     Ok(ViewPatch {
+        projection_zoom,
+        projection_abouts,
         about: intent.about.clone().map(AboutId::new),
         clock,
         focus,
         focus_window,
         projection,
+        projection_labels,
         selection: intent
             .selection
             .clone()
@@ -81,17 +125,45 @@ fn projection_settings(projection: &ProjectionDto) -> Result<ProjectionSettings,
         ),
     };
     Ok(ProjectionSettings {
+        abouts: projection
+            .abouts
+            .as_ref()
+            .map(|names| AboutLayers::new(names.clone()))
+            .transpose()?,
         semantic_zoom,
         dimensions: projection
             .dimensions
             .as_ref()
             .map(|dimensions| dimensions.iter().cloned().map(DimensionName::new).collect()),
+        labels: projection
+            .labels
+            .as_deref()
+            .map(label_selections)
+            .transpose()?,
         relation_classes,
         overlays: projection
             .overlays
             .as_ref()
             .map(|overlays| overlays.iter().cloned().map(OverlayName::new).collect()),
     })
+}
+
+/// The kernel's four operators and nothing else; a selector whose shape
+/// means nothing is refused by the value object itself.
+fn label_selections(selectors: &[LabelSelectorDto]) -> Result<Vec<LabelSelection>, ViewError> {
+    selectors
+        .iter()
+        .map(|selector| {
+            let operator = LabelOperator::parse(&selector.op).ok_or_else(|| {
+                ViewError::Invalid(format!(
+                    "`{}` is not a label operator; KMP reads {}",
+                    selector.op,
+                    LabelOperator::NAMES.join(", ")
+                ))
+            })?;
+            LabelSelection::new(&selector.key, operator, selector.values.iter().cloned())
+        })
+        .collect()
 }
 
 fn focus_from(focus: &FocusDto) -> Result<Focus, ViewError> {
@@ -116,6 +188,8 @@ mod tests {
     #[test]
     fn a_full_intent_maps_every_facet_into_the_domain() {
         let patch = view_patch_from_intent(&ViewIntentDto {
+            projection_abouts: None,
+            projection_zoom: None,
             about: Some("about:x".into()),
             clock: Some("validity".into()),
             focus: Some(FocusDto {
@@ -127,11 +201,18 @@ mod tests {
             }),
             focus_window: None,
             projection: Some(ProjectionDto {
+                abouts: None,
                 semantic_zoom: Some("atlas".into()),
                 dimensions: Some(vec!["timeline".into()]),
+                labels: Some(vec![LabelSelectorDto {
+                    key: "task".into(),
+                    op: "in".into(),
+                    values: vec!["launch".into()],
+                }]),
                 relation_classes: Some(vec!["causal".into(), "structural".into()]),
                 overlays: Some(vec!["noise_ratio".into()]),
             }),
+            projection_labels: None,
             selection: Some(Some("decision:new".into())),
             trace: Some(Some(TraceSelectionDto {
                 from: "decision:new".into(),
@@ -154,6 +235,10 @@ mod tests {
             projection.relation_classes.map(|classes| classes.len()),
             Some(2)
         );
+        let labels = projection.labels.expect("labels");
+        assert_eq!(labels[0].key(), "task");
+        assert_eq!(labels[0].operator(), LabelOperator::In);
+        assert_eq!(labels[0].values(), &["launch"]);
         assert_eq!(patch.selection, Some(Some(MemoryRef::new("decision:new"))));
         assert_eq!(patch.search, Some(None), "an explicit null clears");
         assert!(!ViewPatch::default().touches_anything());
@@ -202,6 +287,67 @@ mod tests {
             ..ViewIntentDto::default()
         });
         assert!(matches!(refused, Err(ViewError::Invalid(_))));
+    }
+
+    #[test]
+    fn a_label_operator_outside_the_vocabulary_is_refused() {
+        let refused = view_patch_from_intent(&ViewIntentDto {
+            projection: Some(ProjectionDto {
+                labels: Some(vec![LabelSelectorDto {
+                    key: "task".into(),
+                    op: "like".into(),
+                    values: vec!["launch".into()],
+                }]),
+                ..ProjectionDto::default()
+            }),
+            ..ViewIntentDto::default()
+        });
+        assert!(matches!(refused, Err(ViewError::Invalid(_))));
+        let shapeless = view_patch_from_intent(&ViewIntentDto {
+            projection_labels: Some(Some(vec![LabelSelectorDto {
+                key: "task".into(),
+                op: "exists".into(),
+                values: vec!["launch".into()],
+            }])),
+            ..ViewIntentDto::default()
+        });
+        assert!(matches!(shapeless, Err(ViewError::Invalid(_))));
+    }
+
+    /// A person's chips travel as `projection_labels`: they land as the
+    /// labels alone, and beside a whole projection they are ignored rather
+    /// than validated — the window's rule, applied to labels.
+    #[test]
+    fn a_persons_chips_replace_only_the_labels() {
+        let patch = view_patch_from_intent(&ViewIntentDto {
+            projection_labels: Some(Some(vec![LabelSelectorDto {
+                key: "task".into(),
+                op: "notexists".into(),
+                values: Vec::new(),
+            }])),
+            ..ViewIntentDto::default()
+        })
+        .expect("chips map");
+        assert!(patch.projection.is_none());
+        let labels = patch.projection_labels.expect("labels facet").expect("set");
+        assert_eq!(labels[0].operator(), LabelOperator::NotExists);
+        let cleared = view_patch_from_intent(&ViewIntentDto {
+            projection_labels: Some(None),
+            ..ViewIntentDto::default()
+        })
+        .expect("clearing maps");
+        assert_eq!(cleared.projection_labels, Some(None));
+        let ignored = view_patch_from_intent(&ViewIntentDto {
+            projection: Some(ProjectionDto::default()),
+            projection_labels: Some(Some(vec![LabelSelectorDto {
+                key: "task".into(),
+                op: "like".into(),
+                values: Vec::new(),
+            }])),
+            ..ViewIntentDto::default()
+        })
+        .expect("the ignored labels do not fail the intent");
+        assert!(ignored.projection_labels.is_none());
     }
 
     #[test]

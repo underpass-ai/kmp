@@ -34,23 +34,7 @@ pub(crate) fn dimensions_schema() -> Value {
             "selectors": {
                 "type": "array",
                 "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["key", "op"],
-                    "properties": {
-                        "key": string_schema("Label key: the dimension kind (`task`, `agentic_process`, `incident`)."),
-                        "op": {
-                            "type": "string",
-                            "enum": ["in", "notin", "exists", "notexists"],
-                            "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty."
-                        },
-                        "values": {
-                            "type": "array",
-                            "items": string_schema("Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.")
-                        }
-                    }
-                }
+                "items": label_selector_schema()
             },
             "scope": {
                 "type": "string",
@@ -65,6 +49,29 @@ pub(crate) fn dimensions_schema() -> Value {
         }
     })
 }
+/// One label predicate, the shape every read's `dimensions.selectors` and the
+/// view's `projection.labels` share, so an agent that filters a read filters
+/// the loom with the same words.
+pub(crate) fn label_selector_schema() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "op"],
+        "properties": {
+            "key": string_schema("Label key: the dimension kind (`task`, `agentic_process`, `incident`)."),
+            "op": {
+                "type": "string",
+                "enum": ["in", "notin", "exists", "notexists"],
+                "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty."
+            },
+            "values": {
+                "type": "array",
+                "items": string_schema("Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.")
+            }
+        }
+    })
+}
+
 pub(crate) fn temporal_coordinate_schema() -> Value {
     json!({
         "type": "object",

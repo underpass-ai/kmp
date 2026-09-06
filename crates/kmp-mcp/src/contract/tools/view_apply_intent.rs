@@ -66,7 +66,13 @@ pub(crate) fn definition() -> Value {
                             "enum": ["atlas", "episode", "moment"],
                             "description": "Which rung of the ladder to show. The zoom changes representation, not just size."
                         },
+                        "abouts": {"type": "array", "maxItems": 5, "items": string_schema("Additional about to compare as a plane beside target.about; must exist in the store."), "description": "Explicit additional contexts, at most five. Omit for the primary about alone."},
                         "dimensions": {"type": "array", "items": string_schema("Memory dimension to keep as a lane.")},
+                        "labels": {
+                            "type": "array",
+                            "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                            "items": label_selector_schema()
+                        },
                         "relation_classes": {"type": "array", "items": semantic_class_schema()},
                         "overlays": {
                             "type": "array",

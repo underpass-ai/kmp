@@ -78,6 +78,16 @@ impl ViewState {
         }
         if let Some(projection) = patch.projection {
             self.projection = projection;
+        } else {
+            if let Some(zoom) = patch.projection_zoom {
+                self.projection.semantic_zoom = zoom;
+            }
+            if let Some(labels) = patch.projection_labels {
+                self.projection.labels = labels;
+            }
+            if let Some(abouts) = patch.projection_abouts {
+                self.projection.abouts = abouts;
+            }
         }
         if let Some(selection) = patch.selection {
             self.selection = selection;

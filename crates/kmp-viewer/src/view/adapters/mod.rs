@@ -1,7 +1,9 @@
 //! The edge of the view context: the in-process implementations of its
 //! ports, and the HTTP face the browser talks to.
 
+mod http_take_control;
 mod http_view_routes;
+pub(crate) use http_take_control::view_take_control;
 mod in_memory_sessions;
 mod static_overlay_catalog;
 mod system_wall_clock;

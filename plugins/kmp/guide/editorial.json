@@ -68,7 +68,7 @@
           "id": "verb:view",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state.",
+          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state. ChronoLoom renders one plane per about, with a real 3D orbit or flat camera and one exact time window. projection.abouts names at most five additional abouts to compare; projection.labels uses ordinary label predicates, not privileged lanes. Human takeover preserves the frame, advances its revision and retains undo of the semantic move. Read the new revision before continuing; the actor panel describes provenance, not an exclusive lock or a live-agent connection.",
           "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory."
         },
         {
@@ -332,7 +332,7 @@
           "id": "basic:open",
           "kind": "instruction",
           "depth": "basic",
-          "text": "Say: show me the memory behind this decision. The agent retrieves the evidence, opens ChronoLoom and moves the shared view to the relevant entry or proof path. You can click, filter, pan, undo or take control.",
+          "text": "Say: show me the memory behind this decision. Your agent retrieves the evidence and guides the same view you see. ChronoLoom names who moved it and why. Take control keeps the current frame; Undo reverses the last memory-view move. Compare abouts as 3D planes or flatten the same scene, filter by labels, and move or resize the shared time window in either camera.",
           "evidence": "The three semantic view tools share one revisioned ChronoLoom state between agent and person."
         },
         {

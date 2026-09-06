@@ -7,6 +7,9 @@ use kmp_domain::TokenEstimator;
 use kmp_mcp::{EmbeddedKernelMcpBackend, KernelMcpServer};
 use serde_json::{Value, json};
 
+#[path = "support/unbridged_server.rs"]
+mod unbridged_server;
+
 fn tool_call(id: u64, name: &str, arguments: Value) -> String {
     json!({
         "jsonrpc": "2.0",
@@ -857,7 +860,7 @@ async fn a_question_in_the_stored_language_reaches_evidence_the_users_words_miss
         "We chose a single-writer store because one writer matched one agent per project.";
     const WHY: &str = "The single-writer model matches the product's per-project agent ownership.";
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let server = unbridged_server::open(data_dir.path());
     call(&server, 1, "kmp_ingest", language_fallback_seed_arguments()).await;
 
     let spanish = call(
@@ -1211,7 +1214,7 @@ async fn large_recall_keeps_the_strongest_answer_and_semantic_wake_state() {
 #[tokio::test]
 async fn ask_recalls_supported_constraint_across_morphology_and_clause_reordering() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
-    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    let server = unbridged_server::open(data_dir.path());
     call(
         &server,
         1,
@@ -2201,6 +2204,77 @@ async fn embedded_backend_serves_kmp_tools_and_memory_survives_sessions() {
     assert!(
         recovered.to_string().contains("claim:e3"),
         "second session must recover memory written by the first"
+    );
+}
+
+/// A label predicate in an intent is resolved against the about's catalogue
+/// the way a dimension is: a key the about does not hold is dropped and
+/// named, an `in` value it does not hold under a key it does is dropped and
+/// named, and what remains is the view's filter, in the kernel's own shape.
+#[tokio::test]
+async fn view_intents_resolve_label_selectors_against_the_catalogue() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+
+    let opened = call(
+        &server,
+        2,
+        "kmp_view_open",
+        json!({"view_id": "label-validation", "about": "question:e3"}),
+    )
+    .await;
+    let applied = call(
+        &server,
+        3,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id": "label-validation",
+            "expected_revision": opened["state"]["view_revision"],
+            "idempotency_key": "label-validation-1",
+            "projection": {
+                "labels": [
+                    {"key": "conversation", "op": "in", "values": ["conversation:s1", "conversation:nobody"]},
+                    {"key": "incident", "op": "exists"},
+                    {"key": "conversation", "op": "notexists"}
+                ]
+            }
+        }),
+    )
+    .await;
+
+    assert_eq!(
+        applied["unhonored"],
+        json!([
+            "label key `incident` is not in this about's catalogue",
+            "label `conversation` holds no value `conversation:nobody` in this about"
+        ]),
+        "{applied}"
+    );
+    assert_eq!(
+        applied["state"]["projection"]["labels"],
+        json!([
+            {"key": "conversation", "op": "in", "values": ["conversation:s1"]},
+            {"key": "conversation", "op": "notexists"}
+        ]),
+        "{applied}"
+    );
+
+    let shapeless = server
+        .handle_json_line(&tool_call(
+            4,
+            "kmp_view_apply_intent",
+            json!({
+                "view_id": "label-validation",
+                "idempotency_key": "label-validation-2",
+                "projection": {"labels": [{"key": "conversation", "op": "like", "values": ["x"]}]}
+            }),
+        ))
+        .await
+        .expect("responds");
+    assert!(
+        shapeless.contains("is not a label operator"),
+        "an operator outside the vocabulary is refused: {shapeless}"
     );
 }
 

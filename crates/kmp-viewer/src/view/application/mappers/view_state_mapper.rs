@@ -1,10 +1,12 @@
 //! Domain state → wire snapshot.
 
 use crate::view::application::dto::{
-    FocusDto, ProjectionDto, ProvenanceDto, TimeRangeDto, TraceSelectionDto, ViewStateDto,
+    FocusDto, LabelSelectorDto, ProjectionDto, ProvenanceDto, TimeRangeDto, TraceSelectionDto,
+    ViewStateDto,
 };
 use crate::view::domain::{
-    Focus, FocusWindow, ProjectionSettings, Provenance, Timestamp, TraceSelection, ViewState,
+    Focus, FocusWindow, LabelSelection, ProjectionSettings, Provenance, Timestamp, TraceSelection,
+    ViewState,
 };
 
 /// Renders one view state as the wire snapshot both faces receive. This is
@@ -54,6 +56,13 @@ fn time_range_dto(window: &FocusWindow) -> TimeRangeDto {
 
 fn projection_dto(projection: &ProjectionSettings) -> ProjectionDto {
     ProjectionDto {
+        abouts: projection.abouts.as_ref().map(|layers| {
+            layers
+                .abouts()
+                .iter()
+                .map(|about| about.as_str().to_string())
+                .collect()
+        }),
         semantic_zoom: projection
             .semantic_zoom
             .map(|zoom| zoom.as_str().to_string()),
@@ -63,6 +72,10 @@ fn projection_dto(projection: &ProjectionSettings) -> ProjectionDto {
                 .map(|dimension| dimension.as_str().to_string())
                 .collect()
         }),
+        labels: projection
+            .labels
+            .as_ref()
+            .map(|labels| labels.iter().map(label_selector_dto).collect()),
         relation_classes: projection.relation_classes.as_ref().map(|classes| {
             classes
                 .iter()
@@ -75,6 +88,14 @@ fn projection_dto(projection: &ProjectionSettings) -> ProjectionDto {
                 .map(|overlay| overlay.as_str().to_string())
                 .collect()
         }),
+    }
+}
+
+fn label_selector_dto(selection: &LabelSelection) -> LabelSelectorDto {
+    LabelSelectorDto {
+        key: selection.key().to_string(),
+        op: selection.operator().as_str().to_string(),
+        values: selection.values().to_vec(),
     }
 }
 
@@ -101,8 +122,8 @@ fn provenance_dto(provenance: &Provenance) -> ProvenanceDto {
 mod tests {
     use super::*;
     use crate::view::domain::{
-        AboutId, Actor, Clock, DimensionName, IdempotencyKey, MemoryRef, OverlayName,
-        RelationClass, SearchQuery, SemanticZoom, ViewId,
+        AboutId, Actor, Clock, DimensionName, IdempotencyKey, LabelOperator, LabelSelection,
+        MemoryRef, OverlayName, RelationClass, SearchQuery, SemanticZoom, ViewId,
     };
 
     /// The whole populated snapshot, byte for byte. This is the wire both
@@ -123,8 +144,14 @@ mod tests {
             refs: vec![MemoryRef::new("decision:new")],
         };
         state.projection = ProjectionSettings {
+            abouts: None,
             semantic_zoom: Some(SemanticZoom::Moment),
             dimensions: Some(vec![DimensionName::new("timeline")]),
+            labels: Some(vec![
+                LabelSelection::new("task", LabelOperator::In, ["launch"]).expect("selector"),
+                LabelSelection::new("incident", LabelOperator::NotExists, Vec::<String>::new())
+                    .expect("selector"),
+            ]),
             relation_classes: Some(vec![RelationClass::Causal, RelationClass::Evidential]),
             overlays: Some(vec![OverlayName::new("noise_ratio")]),
         };
@@ -159,6 +186,10 @@ mod tests {
                 "projection": {
                     "semantic_zoom": "moment",
                     "dimensions": ["timeline"],
+                    "labels": [
+                        { "key": "task", "op": "in", "values": ["launch"] },
+                        { "key": "incident", "op": "notexists" }
+                    ],
                     "relation_classes": ["causal", "evidential"],
                     "overlays": ["noise_ratio"]
                 },

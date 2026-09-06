@@ -25,7 +25,7 @@ KMP_APP.selection = (() => {
       text: inspect.node.summary || inspect.node.title || "",
       coordinates: inspect.raw_coordinates || [],
     });
-    const instant = KMP_LOOM.placedMs(entry, view.clock);
+    const instant = KMP_LOOM.strictMs(entry, view.clock);
     if (instant === null) {
       throw new Error(`cannot reveal ${ref}: it carries no temporal coordinate`);
     }
