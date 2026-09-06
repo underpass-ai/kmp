@@ -8,6 +8,8 @@
 //! names a JSON key.
 
 mod about_id;
+mod about_layers;
+pub use about_layers::AboutLayers;
 mod actor;
 mod clock;
 mod dimension_name;
@@ -17,6 +19,8 @@ mod idempotency_claim;
 mod idempotency_key;
 mod idempotency_record;
 mod intent_digest;
+mod label_operator;
+mod label_selection;
 mod memory_ref;
 mod overlay_name;
 mod projection_settings;
@@ -45,6 +49,8 @@ pub use idempotency_claim::IdempotencyClaim;
 pub use idempotency_key::IdempotencyKey;
 pub use idempotency_record::IdempotencyRecord;
 pub use intent_digest::IntentDigest;
+pub use label_operator::LabelOperator;
+pub use label_selection::LabelSelection;
 pub use memory_ref::MemoryRef;
 pub use overlay_name::OverlayName;
 pub use projection_settings::ProjectionSettings;

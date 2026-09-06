@@ -309,7 +309,7 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     // The UI itself is served, and unknown paths and hosts are refused.
     let (status, _) = get(port, "/").await;
     assert_eq!(status, 200);
-    let (status, _) = get(port, "/assets/pixi.min.js").await;
+    let (status, _) = get(port, "/assets/three.min.js").await;
     assert_eq!(status, 200);
     let (status, _) = get(port, "/assets/loom-core.js").await;
     assert_eq!(status, 200, "the pure-logic asset is served");
@@ -1081,4 +1081,163 @@ fn urlencode(value: &str) -> String {
             other => format!("%{other:02X}"),
         })
         .collect()
+}
+
+/// A label put on an entry after the write is a row of its own on the loom.
+/// The projection lists every label the about holds — the one the relabel
+/// created included — bins and clusters come one per (key, value) rather
+/// than one per key, and the coordinate the relabel added says so: its
+/// method, the why, and who did it when.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_relabelled_entry_stands_in_its_own_row_and_says_why() {
+    use kmp_application::{EntryLabelData, MemoryProvenanceData, MemoryRelabelCommand};
+
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    kernel
+        .service()
+        .ingest(corpus())
+        .await
+        .expect("memory ingests");
+    let relabelled = kernel
+        .service()
+        .relabel(MemoryRelabelCommand {
+            about: ABOUT.to_string(),
+            ref_id: "project:viewer-smoke:decision:second".to_string(),
+            add: vec![EntryLabelData {
+                key: "task".to_string(),
+                value: "viewer-labels".to_string(),
+            }],
+            remove: Vec::new(),
+            why: "The viewer decision belongs to the labels task.".to_string(),
+            provenance: Some(MemoryProvenanceData {
+                source_kind: "agent".to_string(),
+                source_agent: "agent:smoke".to_string(),
+                observed_at: "2026-07-04T10:00:00Z".to_string(),
+                correlation_id: None,
+                causation_id: None,
+            }),
+            idempotency_key: "viewer-smoke-relabel-1".to_string(),
+            dry_run: false,
+            label_policy: Default::default(),
+            intended_new: Default::default(),
+        })
+        .await
+        .expect("relabel lands");
+    assert_eq!(relabelled.added.len(), 1);
+
+    let viewer = Arc::new(
+        MemoryViewerServer::new(
+            kernel.service(),
+            Some(data_dir.path().display().to_string()),
+        )
+        .expect("viewer creates capability"),
+    );
+    let listener = bind_loopback("127.0.0.1:0").await.expect("ephemeral bind");
+    let port = listener.local_addr().expect("local addr").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+    tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
+
+    let (status, moment) = get(
+        port,
+        &format!(
+            "/api/projection?about={}&axis=occurred&from={}&to={}&lod=moment&bins=4&limit=8",
+            urlencode(ABOUT),
+            urlencode("2026-07-01T00:00:00Z"),
+            urlencode("2026-07-03T00:00:00Z")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "visual projection failed: {moment}");
+
+    // The catalogue: two labels, each with its use across all time and in
+    // this range, the namespaced id beside the bare value.
+    let labels = moment["labels"].as_array().expect("labels");
+    let summary = labels
+        .iter()
+        .map(|label| {
+            format!(
+                "{}={} {}/{}",
+                label["dimension"].as_str().unwrap_or_default(),
+                label["value"].as_str().unwrap_or_default(),
+                label["in_range"],
+                label["entries"]
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        summary,
+        vec!["timeline=timeline:work 2/2", "task=viewer-labels 1/1"],
+        "the about's labels, most used first: {moment}"
+    );
+    assert!(
+        labels[1]["scope_id"]
+            .as_str()
+            .is_some_and(|scope| scope.ends_with(":dimension:viewer-labels")),
+        "the namespaced id travels beside the bare value: {labels:?}"
+    );
+
+    // Bins come one per (key, value): the relabelled label has its own.
+    let bins = moment["bins"].as_array().expect("bins");
+    assert!(
+        bins.iter()
+            .any(|bin| bin["dimension"] == "task" && bin["scope_id"] == labels[1]["scope_id"]),
+        "a bin per label pair: {bins:?}"
+    );
+
+    // The coordinate the relabel added says how it got there.
+    let second = moment["entries"]
+        .as_array()
+        .expect("entries")
+        .iter()
+        .find(|entry| entry["ref_id"] == "project:viewer-smoke:decision:second")
+        .expect("the relabelled entry is in the range");
+    let stitched = second["coordinates"]
+        .as_array()
+        .expect("coordinates")
+        .iter()
+        .find(|coordinate| coordinate["dimension"] == "task")
+        .expect("the added label is a coordinate");
+    assert_eq!(stitched["method"], "kmp_relabel");
+    assert_eq!(
+        stitched["why"],
+        "The viewer decision belongs to the labels task."
+    );
+    assert!(
+        stitched["motivation"]
+            .as_str()
+            .is_some_and(|note| note.contains("agent:smoke")),
+        "who did it when: {stitched}"
+    );
+    let at_write = second["coordinates"]
+        .as_array()
+        .expect("coordinates")
+        .iter()
+        .find(|coordinate| coordinate["dimension"] == "timeline")
+        .expect("the write-time label is a coordinate");
+    assert!(
+        at_write.get("method").is_none(),
+        "a label given at write is its own origin: {at_write}"
+    );
+
+    // The same origin reaches the entry's record.
+    let (status, node) = get(
+        port,
+        &format!(
+            "/api/node?about={}&id={}&raw=1",
+            urlencode(ABOUT),
+            urlencode("project:viewer-smoke:decision:second")
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "node failed: {node}");
+    assert!(
+        node["raw_coordinates"]
+            .as_array()
+            .expect("raw coordinates")
+            .iter()
+            .any(|coordinate| coordinate["method"] == "kmp_relabel"),
+        "the record names the relabel: {node}"
+    );
 }

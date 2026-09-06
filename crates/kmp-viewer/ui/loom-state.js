@@ -14,6 +14,7 @@ KMP_APP.state = (() => {
      lanes, relations and telemetry. */
   const model = {
     about: null,
+    layerProjections: [],
     abouts: [],
     projection: null,
     currentLod: "atlas",
@@ -39,6 +40,13 @@ KMP_APP.state = (() => {
   /* What the person is holding: clock, window, filters, selection, trace. */
   const view = {
     clock: "occurred",
+    layerAbouts: [],
+    sceneMode: "3d",
+    layerGap: 130,
+    layerOpacity: 23,
+    relationMode: "selection",
+    requestedLod: null,
+    relationClasses: null,
     full: null, // {t0, t1} extent on the current clock
     t0: 0, // window
     t1: 1,
@@ -48,6 +56,7 @@ KMP_APP.state = (() => {
     dimmedKinds: new Set(),
     searchHits: new Set(),
     trace: null, // {refs:Set, edgeKeys:Set}
+    selectors: [], // [{key, op, values}] — the kernel filters by them
     overlays: [],
     lensMode: "elapsed",
     focusRange: null,

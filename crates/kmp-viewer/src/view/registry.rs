@@ -9,7 +9,7 @@ use crate::view::adapters::{
 use crate::view::application::Applied;
 use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
 use crate::view::application::use_cases::{
-    ApplyViewIntent, AwaitViewChange, GetViewState, OpenView, UndoViewMove,
+    ApplyViewIntent, AwaitViewChange, GetViewState, OpenView, TakeViewControl, UndoViewMove,
 };
 use crate::view::domain::{OverlayName, ViewError, ViewState};
 use crate::view::ports::OverlayCatalog;
@@ -104,6 +104,20 @@ impl ViewRegistry {
         .execute(command)
     }
 
+    /// Claims the frame the human actually saw; camera and selection stay put.
+    pub fn take_control(
+        &self,
+        view_id: Option<&str>,
+        expected: u64,
+    ) -> Result<ViewState, ViewError> {
+        TakeViewControl {
+            store: &self.sessions,
+            bell: &self.bell,
+            wall_clock: &self.wall_clock,
+        }
+        .execute(view_id, expected)
+    }
+
     /// Steps back one change.
     pub fn undo(&self, view_id: Option<&str>, actor: &str) -> Result<ViewState, ViewError> {
         UndoViewMove {
@@ -149,6 +163,126 @@ mod tests {
             actor: "agent:test".to_string(),
             ..ApplyIntentCommand::default()
         }
+    }
+
+    #[test]
+    fn handoff_preserves_the_frame_refuses_stale_claims_and_does_not_consume_undo() {
+        let registry = registry();
+        assert!(registry.take_control(Some("missing"), 1).is_err());
+        let moved = registry
+            .apply_intent(intent_command(ViewIntentDto {
+                clock: Some("observed".into()),
+                search: Some(Some("chosen evidence".into())),
+                selection: Some(Some("entry:chosen".into())),
+                projection: Some(ProjectionDto {
+                    abouts: Some(vec!["about:comparison".into()]),
+                    overlays: Some(vec!["noise_ratio".into()]),
+                    ..ProjectionDto::default()
+                }),
+                ..ViewIntentDto::default()
+            }))
+            .expect("agent move")
+            .state;
+        assert!(
+            registry
+                .take_control(Some("t"), moved.view_revision.value() - 1)
+                .is_err()
+        );
+        let held = registry
+            .take_control(Some("t"), moved.view_revision.value())
+            .expect("handoff");
+        assert_eq!(held.about, moved.about);
+        assert_eq!(held.clock, moved.clock);
+        assert_eq!(held.focus, moved.focus);
+        assert_eq!(held.projection, moved.projection);
+        assert_eq!(held.selection, moved.selection);
+        assert_eq!(held.search, moved.search);
+        assert_eq!(held.trace, moved.trace);
+        assert!(
+            held.last_change
+                .as_ref()
+                .expect("handoff provenance")
+                .actor
+                .is_human()
+        );
+        assert!(held.view_revision > moved.view_revision);
+        assert_eq!(
+            registry
+                .take_control(Some("t"), held.view_revision.value())
+                .expect("valid view operation"),
+            held
+        );
+        let undone = registry
+            .undo(Some("t"), "human")
+            .expect("undo actual agent move");
+        assert_eq!(undone.clock.as_str(), "occurred");
+        assert!(undone.selection.is_none());
+        assert!(undone.search.is_none());
+        assert!(!undone.can_undo);
+    }
+
+    #[test]
+    fn a_layer_report_preserves_other_projection_facets_and_is_reversible() {
+        let registry = registry();
+        registry
+            .apply_intent(intent_command(ViewIntentDto {
+                projection: Some(ProjectionDto {
+                    overlays: Some(vec!["noise_ratio".into()]),
+                    ..ProjectionDto::default()
+                }),
+                ..ViewIntentDto::default()
+            }))
+            .expect("valid view operation");
+        let changed = registry
+            .apply_intent(intent_command(ViewIntentDto {
+                projection_abouts: Some(Some(vec!["about:b".into(), "about:b".into()])),
+                projection_zoom: Some(Some("moment".into())),
+                ..ViewIntentDto::default()
+            }))
+            .expect("valid view operation")
+            .state;
+        assert_eq!(
+            changed
+                .projection
+                .abouts
+                .as_ref()
+                .expect("additional abouts")
+                .abouts()
+                .len(),
+            1
+        );
+        assert_eq!(
+            changed
+                .projection
+                .overlays
+                .as_ref()
+                .expect("preserved overlays")[0]
+                .as_str(),
+            "noise_ratio"
+        );
+        let cleared = registry
+            .apply_intent(intent_command(ViewIntentDto {
+                projection_abouts: Some(None),
+                ..ViewIntentDto::default()
+            }))
+            .expect("valid view operation")
+            .state;
+        assert!(cleared.projection.abouts.is_none());
+        assert_eq!(
+            cleared
+                .projection
+                .semantic_zoom
+                .expect("preserved zoom")
+                .as_str(),
+            "moment"
+        );
+        assert_eq!(
+            registry
+                .undo(Some("t"), "human")
+                .expect("valid view operation")
+                .projection,
+            changed.projection
+        );
     }
 
     #[test]

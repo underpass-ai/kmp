@@ -21,6 +21,7 @@
         },
         "dimension": "agentic_process",
         "from": "2026-04-12T15:45:00Z",
+        "scope_id": "about:question:parity:dimension:parity",
         "to": "2026-04-12T16:07:30Z",
         "total": 1
       },
@@ -30,6 +31,7 @@
         },
         "dimension": "agentic_process",
         "from": "2026-04-12T16:52:30Z",
+        "scope_id": "about:question:parity:dimension:parity",
         "to": "2026-04-12T17:15:00Z",
         "total": 2
       },
@@ -39,6 +41,7 @@
         },
         "dimension": "conversation",
         "from": "2026-04-12T15:00:00Z",
+        "scope_id": "about:question:parity:dimension:conversation:rachel",
         "to": "2026-04-12T15:22:30Z",
         "total": 2
       },
@@ -48,6 +51,7 @@
         },
         "dimension": "conversation",
         "from": "2026-04-12T18:00:00Z",
+        "scope_id": "about:question:parity:dimension:conversation:rachel",
         "to": "2026-04-12T18:22:30Z",
         "total": 1
       }
@@ -170,6 +174,24 @@
         "kind": "claim",
         "ref_id": "question:parity:claim:boulder-current",
         "text": "The Boulder start date is the one that stands."
+      }
+    ],
+    "labels": [
+      {
+        "dimension": "agentic_process",
+        "entries": 3,
+        "in_range": 3,
+        "last_observed_at": "2026-04-12T17:00:00Z",
+        "scope_id": "about:question:parity:dimension:parity",
+        "value": "parity"
+      },
+      {
+        "dimension": "conversation",
+        "entries": 3,
+        "in_range": 3,
+        "last_observed_at": "2026-04-12T18:00:00Z",
+        "scope_id": "about:question:parity:dimension:conversation:rachel",
+        "value": "conversation:rachel"
       }
     ],
     "level_of_detail": "moment",

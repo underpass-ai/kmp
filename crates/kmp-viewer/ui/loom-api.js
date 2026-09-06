@@ -9,25 +9,30 @@ globalThis.KMP_APP = globalThis.KMP_APP || {};
 
 KMP_APP.api = (() => {
   async function call(path, params, method = "GET") {
-    if (globalThis.KMP_APP_API) return globalThis.KMP_APP_API(path, params || {}, method);
-    const query = params
-      ? "?" +
-        Object.entries(params)
-          .filter(([, v]) => v !== undefined && v !== null && v !== "")
-          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-          .join("&")
-      : "";
-    const response = await fetch(path + query, { method });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || `${path} failed with ${response.status}`);
-    return body;
+    const finish = KMP_APP.loading?.beginRequest(path, params, method);
+    try {
+      if (globalThis.KMP_APP_API) return await globalThis.KMP_APP_API(path, params || {}, method);
+      const query = params
+        ? "?" +
+          Object.entries(params)
+            .filter(([, v]) => v !== undefined && v !== null && v !== "")
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join("&")
+        : "";
+      const response = await fetch(path + query, { method });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || `${path} failed with ${response.status}`);
+      return body;
+    } finally {
+      finish?.();
+    }
   }
 
   /* The whole span the kernel could ever hold; the extent probe's frame. */
   const EXTENT_FROM = "1900-01-01T00:00:00Z";
   const EXTENT_TO = "2100-01-01T00:00:00Z";
 
-  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128) {
+  async function fetchProjection(about, axis, from, to, lod = "atlas", bins = 128, labels = "") {
     const params = {
       about,
       from: from || EXTENT_FROM,
@@ -37,6 +42,7 @@ KMP_APP.api = (() => {
       limit: 2048,
     };
     if (axis) params.axis = axis;
+    if (labels) params.labels = labels;
     return call("/api/projection", params);
   }
 

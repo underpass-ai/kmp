@@ -38,7 +38,8 @@ pub use crate::view::ViewRegistry;
 pub use crate::view::application::Applied;
 pub use crate::view::application::commands::{ApplyIntentCommand, OpenViewCommand};
 pub use crate::view::application::dto::{
-    FocusDto, ProjectionDto, TimeRangeDto, TraceSelectionDto, ViewIntentDto, ViewStateDto,
+    FocusDto, LabelSelectorDto, ProjectionDto, TimeRangeDto, TraceSelectionDto, ViewIntentDto,
+    ViewStateDto,
 };
 pub use crate::view::application::mappers::{logical_digest, view_state_dto};
 pub use crate::view::domain::{Clock, DEFAULT_VIEW_ID, SemanticZoom, ViewError, ViewState};

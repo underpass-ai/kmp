@@ -251,6 +251,9 @@ pub(super) fn temporal_coordinate_json(coordinate: &TemporalCoordinate) -> Value
     if !coordinate.metadata.is_empty() {
         object.insert("metadata".to_string(), json!(coordinate.metadata));
     }
+    insert_optional_string(&mut object, "method", &coordinate.method);
+    insert_optional_string(&mut object, "why", &coordinate.why);
+    insert_optional_string(&mut object, "motivation", &coordinate.motivation);
     Value::Object(object)
 }
 

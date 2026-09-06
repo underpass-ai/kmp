@@ -6,6 +6,10 @@
   let currentAbout = null;
   let currentViewId = "default";
   let reportSequence = 0;
+  // The last snapshot seen, so a report can carry the whole projection —
+  // an intent replaces it — with only the labels changed.
+  let lastProjection = {};
+  let lastFocus = {};
   const pending = new Map();
   const aboutWaiters = [];
 
@@ -21,6 +25,7 @@
   }
 
   window.addEventListener("message", (event) => {
+    if (event.source !== window.parent) return;
     const message = event.data;
     if (!message || message.jsonrpc !== "2.0") return;
     if (message.id !== undefined && pending.has(message.id)) {
@@ -91,7 +96,15 @@
     limit: Number(params.limit || 2048),
     ...(params.axis ? { axis: params.axis } : {}),
     ...(params.cursor ? { cursor: params.cursor } : {}),
+    ...(params.labels
+      ? { dimensions: { selectors: KMP_LOOM.parseLabelQuery(params.labels) } }
+      : {}),
   });
+
+  const rememberProjection = (state) => {
+    if (state) { lastProjection = state.projection || {}; lastFocus = state.focus || {}; }
+    return state;
+  };
 
   const nodeFromEntry = (entry) => ({
     id: entry.ref_id,
@@ -153,6 +166,9 @@
         outgoing: ((inspect.links && inspect.links.outgoing) || []).map(edgeFromRelation),
         evidence: inspect.evidence || [],
         raw: inspect.raw || [],
+        raw_coordinates: ((inspect.links && inspect.links.incoming) || [])
+          .filter(edge => edge.rel === "contains_entry" && edge.coordinate)
+          .map(edge => edge.coordinate),
       };
     }
     if (path === "/api/nodes") {
@@ -171,7 +187,7 @@
       return {
         from: params.from,
         to: params.to,
-        nodes: [params.from, params.to].map((id) => ({ id, title: id, kind: "memory" })),
+        nodes: [...new Set([params.from, params.to, ...(trace.trace || []).flatMap(edge => [edge.from, edge.to])])].filter(Boolean).map((id) => ({ id, title: id, kind: "memory" })),
         edges: (trace.trace || []).map(edgeFromRelation),
         rendered: { content: trace.summary || "", token_count: 0 },
         quality: trace.quality || {},
@@ -190,7 +206,7 @@
         result = await callTool("kmp_view_get_state", args);
         state = result.state || result;
       }
-      return state;
+      return rememberProjection(state);
     }
     if (path === "/api/view/open") {
       const result = await callTool("kmp_view_open", {
@@ -198,24 +214,44 @@
         view_id: params.id || currentViewId,
         expected_revision: Number(params.expected_revision) || undefined,
       });
-      return result.state || result;
+      return rememberProjection(result.state || result);
     }
     if (path === "/api/view/report") {
-      const result = await callTool("kmp_view_apply_intent", {
+      const labels = KMP_LOOM.parseLabelQuery(params.labels);
+      const hadLabels = Array.isArray(lastProjection.labels) && lastProjection.labels.length > 0;
+      const intent = {
         view_id: params.id || currentViewId,
         idempotency_key: `chronoloom-human-${Date.now()}-${reportSequence++}`,
         actor: "human",
         target: { about: params.about || currentAbout },
-        focus: { time_range: { axis: params.clock, from: params.from, to: params.to } },
+        focus: { ...lastFocus, time_range: { axis: params.clock, from: params.from, to: params.to } },
         selection: params.selection || null,
         trace: params.trace_from && params.trace_to ? { from: params.trace_from, to: params.trace_to } : null,
         search: params.search || null,
-      });
-      return result.state || result;
+      };
+      if (labels.length || hadLabels || params.layer_abouts !== undefined) {
+        // The intent has no labels-only facet; carry the projection as it
+        // stands so the person's chips never wipe what the agent aligned.
+        const { semantic_zoom, dimensions, relation_classes, overlays } = lastProjection;
+        intent.projection = {
+          abouts: params.layer_abouts ? JSON.parse(params.layer_abouts) : (lastProjection.abouts || []),
+          ...((params.zoom ? params.zoom !== "auto" : semantic_zoom) ? { semantic_zoom: params.zoom || semantic_zoom } : {}),
+          ...(dimensions ? { dimensions } : {}),
+          ...(relation_classes ? { relation_classes } : {}),
+          ...(overlays ? { overlays } : {}),
+          labels,
+        };
+      }
+      const result = await callTool("kmp_view_apply_intent", intent);
+      return rememberProjection(result.state || result);
+    }
+    if (path === "/api/view/take-control") {
+      const result = await callTool("kmp_view_take_control", { view_id: params.id || currentViewId, expected_revision: Number(params.expected_revision) });
+      return rememberProjection(result.state || result);
     }
     if (path === "/api/view/undo") {
       const result = await callTool("kmp_view_undo", { view_id: params.id || currentViewId });
-      return result.state || result;
+      return rememberProjection(result.state || result);
     }
     throw new Error(`MCP App route ${path} is not implemented`);
   }

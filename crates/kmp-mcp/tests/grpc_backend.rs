@@ -1123,7 +1123,7 @@ fn coordinate(sequence: u32) -> TemporalCoordinate {
         valid_until: None,
         sequence: Some(sequence),
         rank: None,
-        metadata: Default::default(),
+        ..Default::default()
     }
 }
 

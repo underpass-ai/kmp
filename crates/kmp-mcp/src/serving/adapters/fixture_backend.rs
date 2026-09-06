@@ -85,7 +85,7 @@ pub(crate) fn fixture_tool_result(name: &str, arguments: &Value) -> Result<Value
                 "axis": arguments.get("axis").and_then(Value::as_str).unwrap_or("occurred"),
                 "level_of_detail": arguments.get("lod").and_then(Value::as_str).unwrap_or("atlas"),
                 "range": {"from": arguments["from"], "to": arguments["to"]},
-                "bins": [], "clusters": [], "entries": [], "relations": [], "metrics": [],
+                "bins": [], "clusters": [], "entries": [], "relations": [], "metrics": [], "labels": [],
                 "included_dimensions": [], "missing_dimensions": [],
                 "revision": 0, "content_hash": "",
                 "page": {"returned": 0, "total": 0, "has_more": false, "next_cursor": null},

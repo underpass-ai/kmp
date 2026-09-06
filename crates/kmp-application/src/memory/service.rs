@@ -14,7 +14,7 @@ use crate::commands::CommandApplicationService;
 use crate::memory::{
     AskMemoryQuery, ExistingMemoryRefs, InspectMemoryQuery, InspectMemoryResult, InspectedEvidence,
     MemoryIngestCommand, MemoryIngestOutcome, MemoryRelabelCommand, MemoryRelabelOutcome,
-    RelateMemoryQuery, TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery,
+    RelateMemoryQuery, TemporalMemoryQuery, TemporalMemoryResult, TraceMemoryQuery, VisualLabel,
     VisualProjectionQuery, VisualProjectionResult, WakeMemoryQuery, build_visual_projection,
     crosses_abouts, relabel_logical_digest, replayed_relabel_outcome, translate_memory_ingest,
     translate_memory_relabel, validate_ref_token, validate_supplied_entry_ref,
@@ -224,6 +224,17 @@ where
         &self,
         query: TemporalMemoryQuery,
     ) -> Result<TemporalMemoryResult, ApplicationError> {
+        let read = self.temporal_read(&query).await?;
+        temporal_result(query, read)
+    }
+
+    /// The context a temporal read traverses, as the graph returned it:
+    /// the read's dimension filter has not narrowed it yet, so the whole
+    /// catalogue of the about is still in the bundle.
+    async fn temporal_read(
+        &self,
+        query: &TemporalMemoryQuery,
+    ) -> Result<TemporalRead, ApplicationError> {
         let render_options = memory_render_options(
             query.token_budget,
             query.max_tier,
@@ -240,27 +251,9 @@ where
                 &render_options,
             )
             .await?;
-        let quality = context.rendered.quality.clone();
-        let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
-
-        let request = TemporalTraversalRequest::new(query.direction, query.cursor)
-            .with_axis(query.axis)
-            .with_dimensions(dimensions.clone())
-            .with_requested_dimensions(query.dimensions.clone())
-            .with_window(query.window);
-        let request = if let Some(limit_entries) = query.limit_entries {
-            request.with_limit_entries(limit_entries)?
-        } else {
-            request
-        };
-
-        let traversal = TemporalMemoryTraversal::traverse(&source_bundle, &request)?;
-
-        Ok(TemporalMemoryResult {
-            traversal,
-            source_bundle,
-            include: query.include,
-            quality,
+        Ok(TemporalRead {
+            context,
+            dimensions,
         })
     }
 
@@ -275,8 +268,14 @@ where
         query: VisualProjectionQuery,
     ) -> Result<VisualProjectionResult, ApplicationError> {
         let temporal_query = query.temporal_query()?;
-        let temporal = self.temporal(temporal_query).await?;
-        build_visual_projection(&query, temporal)
+        let read = self.temporal_read(&temporal_query).await?;
+        // The catalogue is read before the filter: a renderer draws the
+        // about's labels, and says which are empty in this range. Under
+        // `scope_ids` the graph read itself is narrowed to those scopes, so
+        // the catalogue is what that read reached.
+        let catalogue = VisualLabel::catalogue(&read.context.bundle);
+        let temporal = temporal_result(temporal_query, read)?;
+        build_visual_projection(&query, temporal, catalogue)
     }
 
     /// The neighbourhood `relate` reads: the same load as `ask` over the
@@ -535,6 +534,46 @@ where
         }
         Ok(roots)
     }
+}
+
+/// One temporal read before its filter: the context the graph returned and
+/// the selection resolved against the current about.
+struct TemporalRead {
+    context: GetContextResult,
+    dimensions: DimensionSelection,
+}
+
+/// Narrows the read to its selection and traverses it.
+fn temporal_result(
+    query: TemporalMemoryQuery,
+    read: TemporalRead,
+) -> Result<TemporalMemoryResult, ApplicationError> {
+    let TemporalRead {
+        context,
+        dimensions,
+    } = read;
+    let quality = context.rendered.quality.clone();
+    let source_bundle = filter_bundle_by_memory_dimensions(&context.bundle, &dimensions)?;
+
+    let request = TemporalTraversalRequest::new(query.direction, query.cursor)
+        .with_axis(query.axis)
+        .with_dimensions(dimensions.clone())
+        .with_requested_dimensions(query.dimensions.clone())
+        .with_window(query.window);
+    let request = if let Some(limit_entries) = query.limit_entries {
+        request.with_limit_entries(limit_entries)?
+    } else {
+        request
+    };
+
+    let traversal = TemporalMemoryTraversal::traverse(&source_bundle, &request)?;
+
+    Ok(TemporalMemoryResult {
+        traversal,
+        source_bundle,
+        include: query.include,
+        quality,
+    })
 }
 
 fn bundle_node_ids(bundle: &KmpBundle) -> BTreeSet<String> {

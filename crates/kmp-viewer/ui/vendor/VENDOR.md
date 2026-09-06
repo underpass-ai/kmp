@@ -1,46 +1,35 @@
-# Vendored third-party assets
+# Vendored render engine
 
-The viewer embeds its UI into the binary; nothing is fetched at runtime and
-`npm` is never invoked — vendored files are obtained as plain registry
-artifacts (no lifecycle scripts execute, which was the propagation vector of
-the 2025–2026 "Shai-Hulud" npm worm waves) and pinned here by hash.
+ChronoLoom embeds its renderer in the binary and MCP App resource. No CDN,
+network dependency, package installation or build step runs at viewer startup.
+Three.js replaces PixiJS because orbiting about planes requires a depth buffer,
+a perspective camera, ray casting and transparent surfaces in actual 3D.
+The flat camera uses the same geometry.
 
-## pixi.js 8.19.0 — `pixi.min.js`
+| Artifact | Pin |
+| --- | --- |
+| Package | three 0.180.0 |
+| Source | https://registry.npmjs.org/three/-/three-0.180.0.tgz |
+| Registry and reproduced integrity | `sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w==` |
+| Bundle | `three.min.js`, 720493 bytes |
+| Bundle SHA-256 | `45d8f97107302c103faebbe44ac4f1f3b2124e8ac1163998603dc3d8f452cc73` |
+| License | MIT, `THREE-LICENSE` (matches the registry tarball) |
+| Bundler | esbuild 0.25.9 |
+| Entry | `three-entry.js`: Three.js and its OrbitControls adapter |
 
-| Field | Value |
-|:------|:------|
-| Package | `pixi.js` 8.19.0 (published 2026-06-04) |
-| Source | `https://registry.npmjs.org/pixi.js/-/pixi.js-8.19.0.tgz` |
-| Tarball integrity (registry-declared, reproduced locally) | `sha512-pq1O6emA/GFjjeF+8d3Pb5t7knD8FsnfWGqQcRjYjsqFZ7QdzG1XgjLDUu0DFJRbafjV5+g8iNLFBx0b9649lg==` |
-| File | `package/dist/pixi.min.js` → `ui/vendor/pixi.min.js` |
-| File hash | `sha256 83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7` |
-| File | `package/dist/packages/unsafe-eval.min.js` → `ui/vendor/pixi-unsafe-eval.min.js` (no-eval shader path; the viewer's CSP forbids `unsafe-eval`) |
-| File hash | `sha256 37bb398ade979f9fa0251c66a5f3093bdc1318b4b21887e0aad6cc3ae0368193` |
-| License | MIT (`PIXI-LICENSE`) |
+On 2026-09-06 the registry tarball's SHA-512 and all 1,117 package files used
+as bundle inputs were verified against the installed source, including its license.
+OSV's npm/three/0.180.0 query returned [].
 
-### Supply-chain verification (2026-08-06)
+To reproduce, obtain the pinned registry artifacts without lifecycle scripts,
+verify their integrity, and run esbuild 0.25.9 with three 0.180.0 on its module
+search path:
 
-Checked before vendoring, all clean:
+```sh
+esbuild three-entry.js --bundle --format=iife --global-name=KMP_THREE --minify --outfile=three.min.js
+sha256sum three.min.js
+```
 
-- **OSV.dev**: zero records for `pixi.js` (all versions), for `pixi.js@8.19.0`,
-  and for the `pixijs` name — OSV aggregates the `MAL-*` malicious-package
-  database that catalogued every version compromised by the Shai-Hulud waves
-  (2025-09, 2025-11, 2026 Keyv wave).
-- **GitHub Advisory Database**: zero advisories affecting `pixi.js`.
-- **Package manifest**: no `install`/`preinstall`/`postinstall` scripts.
-- **Published compromised-package lists** (CISA 2025-09-23, Wiz, Datadog,
-  Unit 42, Aikido): `pixi.js`/`pixijs` absent from all waves.
-- **Tarball integrity**: the downloaded artifact reproduces the
-  registry-declared sha512 exactly (recorded above).
-- **Bundle inspection**: plain ASCII IIFE assigning the `PIXI` global; no
-  `eval(`; no network calls added by us — the viewer's CSP
-  (`default-src 'none'; script-src 'self'; connect-src 'self'`) would block
-  any egress a compromised bundle attempted anyway.
-
-### To upgrade
-
-1. Pick the target version; re-run the OSV + GitHub advisory queries and
-   re-check the wave lists for that version.
-2. `curl` the tarball, verify the registry `dist.integrity` sha512 locally.
-3. Extract `package/dist/pixi.min.js`, record its sha256 here, replace the
-   file, update this table.
+`node --test ui/loom-scene.test.js` checks the embedded bundle digest and actual
+camera geometry. The source uses no shader eval; the loopback CSP continues to
+refuse `unsafe-eval`. The same bundle is inlined for the negotiated MCP App.

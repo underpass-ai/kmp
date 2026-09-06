@@ -33,8 +33,8 @@ pub use repositories::{
     SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
 pub use value_objects::{
-    BundleMetadata, BundleQualityMetrics, CaseId, DimensionScopeMode, DimensionSelection,
-    DimensionSelectionMode, EntryLabels, LabelSelector, LabelSelectorOperator,
+    BundleMetadata, BundleQualityMetrics, CaseId, CoordinateOrigin, DimensionScopeMode,
+    DimensionSelection, DimensionSelectionMode, EntryLabels, LabelSelector, LabelSelectorOperator,
     MemoryDimensionIdentity, Provenance, Role, SourceKind, TemporalAxis, TemporalCoordinate,
     TemporalCursor, TemporalDirection, TemporalInterval, TemporalSelection, TemporalWindow,
     bare_label_value,

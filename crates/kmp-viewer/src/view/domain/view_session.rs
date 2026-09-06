@@ -180,6 +180,40 @@ impl ViewSession {
         })
     }
 
+    /// Attributes the unchanged frame to the human who explicitly takes it.
+    /// This is a handoff, not an ordinary no-op intent or an exclusive lease.
+    pub fn take_control(
+        &mut self,
+        expected: ViewRevision,
+        at: Timestamp,
+    ) -> Result<ViewState, ViewError> {
+        if expected != self.state.view_revision {
+            return Err(ViewError::Conflict {
+                expected,
+                actual: self.state.view_revision,
+                current: Box::new(self.state.clone()),
+            });
+        }
+        if self
+            .state
+            .last_change
+            .as_ref()
+            .is_none_or(|change| change.actor.is_human())
+        {
+            return Ok(self.state.clone());
+        }
+        // Keep the last semantic move undoable: a handoff changes its
+        // attribution, not the frame, and must not consume an undo step.
+        self.state.view_revision = self.state.view_revision.next();
+        self.state.last_change = Some(Provenance {
+            actor: Actor::human(),
+            explanation: Some("took control, keeping the current frame".to_string()),
+            idempotency_key: None,
+            at,
+        });
+        Ok(self.state.clone())
+    }
+
     /// Steps back one change. Every visual action is reversible, including
     /// the agent's — that is what makes handing it the wheel safe.
     pub fn undo(&mut self, actor: Actor, at: Timestamp) -> Result<ViewState, ViewError> {

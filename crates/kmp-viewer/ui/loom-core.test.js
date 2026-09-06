@@ -17,7 +17,7 @@ test("semantic zoom separates dense and sparse windows at the same time scale", 
   const width = 2_784;
 
   assert.equal(loom.lodFor(msPerPx, width, 400), "atlas");
-  assert.equal(loom.lodFor(msPerPx, width, 4), "episode");
+  assert.equal(loom.lodFor(msPerPx, width, 4), "moment");
   assert.notEqual(
     loom.lodFor(msPerPx, width, 400),
     loom.lodFor(msPerPx, width, 4)
@@ -25,7 +25,7 @@ test("semantic zoom separates dense and sparse windows at the same time scale", 
 });
 
 test("a nearly empty long window does not use Atlas", () => {
-  assert.equal(loom.lodFor(2_000_000, 2_784, 3), "episode");
+  assert.equal(loom.lodFor(2_000_000, 2_784, 3), "moment");
 });
 
 test("projection density uses the busiest lane", () => {
@@ -142,6 +142,30 @@ test("lanes keep first-appearance order and count scope members", () => {
   assert.equal(JSON.stringify(lanes.map((lane) => lane.name)), JSON.stringify(["alpha", "beta"]));
   assert.equal(lanes[0].count, 2);
   assert.equal(lanes[0].scopes.get("s2"), 1);
+});
+
+test("folding a lane sums its labels' bins and merges its clusters' refs", () => {
+  const bins = loom.foldAggregates([
+    { dimension: "task", scope_id: "about:a:dimension:t-1", from: "A", to: "B", total: 2, by_kind: { decision: 2 } },
+    { dimension: "task", scope_id: "about:a:dimension:t-2", from: "A", to: "B", total: 1, by_kind: { evidence: 1 } },
+    { dimension: "task", scope_id: "about:a:dimension:t-1", from: "B", to: "C", total: 1, by_kind: { decision: 1 } },
+    { dimension: "agentic_process", scope_id: "about:a:dimension:p", from: "A", to: "B", total: 3, by_kind: { decision: 3 } },
+  ]);
+  assert.equal(bins.length, 3);
+  // The loom's objects come from another realm; compare by content.
+  assert.equal(
+    JSON.stringify(bins[0]),
+    JSON.stringify({ dimension: "task", from: "A", to: "B", total: 3, by_kind: { decision: 2, evidence: 1 } })
+  );
+  assert.equal(bins[2].dimension, "agentic_process");
+  const clusters = loom.foldAggregates([
+    { dimension: "task", scope_id: "s1", from: "A", to: "B", total: 2, refs: ["x", "y"], by_kind: { decision: 2 } },
+    { dimension: "task", scope_id: "s2", from: "A", to: "B", total: 1, refs: ["y"], by_kind: { decision: 1 } },
+  ]);
+  assert.equal(clusters.length, 1);
+  assert.equal(JSON.stringify(clusters[0].refs), JSON.stringify(["x", "y"]), "a ref standing in two labels is one ref");
+  assert.equal(clusters[0].total, 3, "memberships still count as memberships");
+  assert.equal(loom.foldAggregates(undefined).length, 0);
 });
 
 test("the extent stretches to open validity and never collapses to a point", () => {
@@ -346,4 +370,34 @@ test("the known extent grows to include refs newer than the cached probe", () =>
   const fresh = loom.extentIncluding(null, 4000, 4000);
   assert.equal(fresh.t1, fresh.t0 + 1, "a single instant never collapses the extent");
   assert.equal(loom.extentIncluding(current, NaN, 3000), current, "an unreadable stamp changes nothing");
+});
+
+/* ---------------- label selectors ---------------- */
+
+test("the selector grammar round-trips and refuses what means nothing", () => {
+  const selectors = loom.parseLabelQuery("task in launch|other; incident notexists ;env notin prod;bad like x;task in");
+  assert.equal(
+    JSON.stringify(selectors),
+    JSON.stringify([
+      { key: "env", op: "notin", values: ["prod"] },
+      { key: "incident", op: "notexists", values: [] },
+      { key: "task", op: "in", values: ["launch", "other"] },
+    ])
+  );
+  assert.equal(loom.labelQuery(selectors), "env notin prod;incident notexists;task in launch|other", "sorted: order carries no meaning");
+  assert.equal(loom.labelQuery(loom.parseLabelQuery(loom.labelQuery(selectors))), loom.labelQuery(selectors));
+  assert.equal(loom.labelQuery([]), "");
+  assert.equal(loom.labelQuery([{ key: "task", op: "exists", values: ["stray"] }]), "task exists", "exists carries no values");
+});
+
+test("adding a selector merges values on the same key and operator", () => {
+  let selectors = loom.withSelector([], { key: "task", op: "in", values: ["a"] });
+  selectors = loom.withSelector(selectors, { key: "task", op: "in", values: ["b"] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b");
+  selectors = loom.withSelector(selectors, { key: "task", op: "notin", values: ["c"] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c");
+  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
+  selectors = loom.withSelector(selectors, { key: "task", op: "exists", values: [] });
+  assert.equal(loom.labelQuery(selectors), "task in a|b;task notin c;task exists");
+  assert.equal(loom.labelQuery(loom.withSelector(selectors, { key: "", op: "in", values: ["x"] })), loom.labelQuery(selectors));
 });

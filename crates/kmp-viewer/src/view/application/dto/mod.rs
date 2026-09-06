@@ -3,6 +3,7 @@
 //! byte, and a change to a derive attribute here is a wire change.
 
 mod focus_dto;
+mod label_selector_dto;
 mod projection_dto;
 mod provenance_dto;
 mod time_range_dto;
@@ -11,6 +12,7 @@ mod view_intent_dto;
 mod view_state_dto;
 
 pub use focus_dto::FocusDto;
+pub use label_selector_dto::LabelSelectorDto;
 pub use projection_dto::ProjectionDto;
 pub use provenance_dto::ProvenanceDto;
 pub use time_range_dto::TimeRangeDto;

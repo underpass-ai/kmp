@@ -1,7 +1,8 @@
 use std::sync::OnceLock;
 
 use crate::routes::{
-    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_MODULES, PIXI_JS, PIXI_UNSAFE_EVAL_JS,
+    INDEX_HTML, LOOM_CORE_JS, LOOM_CSS, LOOM_JS, LOOM_LOADING_CSS, LOOM_MODULES, LOOM_SHELL_CSS,
+    THREE_JS,
 };
 
 const MCP_APP_BRIDGE: &str = include_str!("../ui/mcp-app-bridge.js");
@@ -25,12 +26,12 @@ pub fn mcp_app_html() -> &'static str {
                 &format!("<style>{LOOM_CSS}</style>"),
             )
             .replace(
-                "<script src=\"/assets/pixi.min.js\" defer></script>",
-                &format!("{}{}", script(MCP_APP_BRIDGE), script(PIXI_JS)),
+                "<script src=\"/assets/three.min.js\" defer></script>",
+                &format!("{}{}", script(MCP_APP_BRIDGE), script(THREE_JS)),
             )
             .replace(
-                "<script src=\"/assets/pixi-unsafe-eval.min.js\" defer></script>",
-                &script(PIXI_UNSAFE_EVAL_JS),
+                "<link rel=\"stylesheet\" href=\"/assets/loom-shell.css\">",
+                &format!("<style>{LOOM_SHELL_CSS}</style>"),
             )
             .replace(
                 "<script src=\"/assets/loom-core.js\" defer></script>",
@@ -40,6 +41,10 @@ pub fn mcp_app_html() -> &'static str {
                 "<script src=\"/assets/loom.js\" defer></script>",
                 &script(LOOM_JS),
             );
+        html = html.replace(
+            "<link rel=\"stylesheet\" href=\"/assets/loom-loading.css\">",
+            &format!("<style>{LOOM_LOADING_CSS}</style>"),
+        );
         for (name, source) in LOOM_MODULES {
             html = html.replace(
                 &format!("<script src=\"/assets/{name}\" defer></script>"),
@@ -67,10 +72,10 @@ mod tests {
     #[test]
     fn the_shared_loom_always_names_who_controls_the_view() {
         let html = mcp_app_html();
-        assert!(html.contains("human-controlled view"));
-        assert!(html.contains("moved the loom"));
-        assert!(html.contains("undo.hidden = true"));
-        assert!(html.contains("undo.hidden = false"));
+        assert!(html.contains("shared-control"));
+        assert!(html.contains("kmp_view_take_control"));
+        assert!(html.contains("Agent guiding"));
+        assert!(html.contains("state.can_undo"));
     }
 
     #[test]
@@ -85,9 +90,8 @@ mod tests {
             html.contains("view.full = KMP_LOOM.extentIncluding(view.full, lo - pad, hi + pad)")
         );
         assert!(html.contains("await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id))"));
-        assert!(
-            html.contains("runTrace({ framePath: !explicitRange, preserveWindow: explicitRange })")
-        );
+        assert!(html.contains("framePath: !explicitRange"));
+        assert!(html.contains("preserveWindow: explicitRange"));
     }
 
     /// #463: the shared loom's browser half reconciles a full snapshot — it

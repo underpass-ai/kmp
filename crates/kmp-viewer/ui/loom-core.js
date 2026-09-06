@@ -104,6 +104,32 @@ const KMP_LOOM = (() => {
     return [...lanes.values()];
   }
 
+  /* A lane folded: the projection's bins and clusters come one per label
+     (key = value); folding a key sums its labels' bins over the same span
+     and merges its clusters' refs, which is exactly the picture of a lane
+     that does not tell its values apart. Order is first-appearance. */
+  function foldAggregates(items) {
+    const folded = new Map();
+    for (const item of items || []) {
+      const key = `${item.dimension}\u0000${item.from}\u0000${item.to}`;
+      let cell = folded.get(key);
+      if (!cell) {
+        cell = { ...item, total: 0, by_kind: {} };
+        delete cell.scope_id;
+        if (item.refs) cell.refs = [];
+        folded.set(key, cell);
+      }
+      cell.total += Number(item.total || 0);
+      for (const [kind, count] of Object.entries(item.by_kind || {})) {
+        cell.by_kind[kind] = (cell.by_kind[kind] || 0) + Number(count);
+      }
+      if (item.refs) {
+        for (const ref of item.refs) if (!cell.refs.includes(ref)) cell.refs.push(ref);
+      }
+    }
+    return [...folded.values()];
+  }
+
   /* ---------------- extent, bins, clusters ---------------- */
 
   function extent(models, clock) {
@@ -225,9 +251,12 @@ const KMP_LOOM = (() => {
     if (marksPerLane === 0) return "moment";
     const pixelsPerMark = widthPx / marksPerLane;
     if (pixelsPerMark < 12) return "atlas";
+    // Sparse abouts fit as individual memories even over long periods.
+    // Seven collision tracks on each about plane keep this bounded; time
+    // alone must not turn fourteen readable memories into label aggregates.
+    if (marksPerLane <= 64 || pixelsPerMark >= 36) return "moment";
     if (msPerPx > 600e3 && pixelsPerMark < 80) return "atlas";
-    if (msPerPx > 20e3 || pixelsPerMark < 36) return "episode";
-    return "moment";
+    return "episode";
   }
 
   /* Observability shares the temporal axis but not a value axis. Each series
@@ -558,6 +587,68 @@ const KMP_LOOM = (() => {
     };
   }
 
+  /* ---------------- label selectors ----------------
+     A selector is a predicate over the labels an entry stands in, in the
+     kernel's four operators. The view state carries them as objects; the
+     query string carries them as `key op value|value`, joined by `;` — the
+     one grammar the projection read and the human's report share. */
+
+  const LABEL_OPERATORS = ["in", "notin", "exists", "notexists"];
+
+  function normalizeSelectors(list) {
+    const seen = new Set();
+    const out = [];
+    for (const item of list || []) {
+      const key = String((item && item.key) || "").trim();
+      const op = String((item && item.op) || "").trim();
+      if (!key || !LABEL_OPERATORS.includes(op)) continue;
+      const values = [...new Set((item.values || []).map((v) => String(v).trim()).filter(Boolean))].sort();
+      if ((op === "in" || op === "notin") && !values.length) continue;
+      const selector = { key, op, values: op === "in" || op === "notin" ? values : [] };
+      const id = JSON.stringify(selector);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push(selector);
+    }
+    // Selectors conjoin, so their order carries no meaning: sorted, two
+    // filters that mean the same thing read the same on the wire.
+    const rank = (s) => `${s.key}\u0000${LABEL_OPERATORS.indexOf(s.op)}\u0000${s.values.join("|")}`;
+    return out.sort((a, b) => (rank(a) < rank(b) ? -1 : rank(a) > rank(b) ? 1 : 0));
+  }
+
+  function labelQuery(selectors) {
+    return normalizeSelectors(selectors)
+      .map((s) => (s.values.length ? `${s.key} ${s.op} ${s.values.join("|")}` : `${s.key} ${s.op}`))
+      .join(";");
+  }
+
+  function parseLabelQuery(text) {
+    return normalizeSelectors(
+      String(text || "")
+        .split(";")
+        .map((clause) => clause.trim())
+        .filter(Boolean)
+        .map((clause) => {
+          const [key, op, ...rest] = clause.split(/\s+/);
+          return { key, op, values: rest.join(" ").split("|") };
+        })
+    );
+  }
+
+  /* Adds one predicate: a second `in`/`notin` on the same key merges its
+     values; `exists`/`notexists` replace whatever stood on that key. */
+  function withSelector(selectors, next) {
+    const current = normalizeSelectors(selectors);
+    const [candidate] = normalizeSelectors([next]);
+    if (!candidate) return current;
+    const same = current.find((s) => s.key === candidate.key && s.op === candidate.op);
+    if (same && candidate.values.length) {
+      same.values = [...new Set([...same.values, ...candidate.values])].sort();
+      return current;
+    }
+    return [...current.filter((s) => s.key !== candidate.key || s.op !== candidate.op), candidate];
+  }
+
   /* ---------------- search ---------------- */
 
   function parseQuery(raw) {
@@ -605,6 +696,7 @@ const KMP_LOOM = (() => {
     placedMs,
     compareModels,
     buildLanes,
+    foldAggregates,
     extent,
     projectionExtent,
     extentIncluding,
@@ -624,5 +716,10 @@ const KMP_LOOM = (() => {
     parseQuery,
     matchesQuery,
     agentStateFacets,
+    LABEL_OPERATORS,
+    normalizeSelectors,
+    labelQuery,
+    parseLabelQuery,
+    withSelector,
   };
 })();

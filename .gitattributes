@@ -8,3 +8,6 @@
 # evidence. Their producer-owned trailing blanks and carriage returns are
 # data, not source formatting to normalize during review.
 campaign/embedded-launch/evidence-pack/capture/runs/** whitespace=-blank-at-eol
+
+# Preserve shader literals in the pinned, hash-verified vendor bundle.
+crates/kmp-viewer/ui/vendor/three.min.js whitespace=-blank-at-eol

@@ -19,14 +19,15 @@ KMP_APP.gestures = (() => {
   const NAV_HANDLE = 6;
 
   function wireNavigator() {
-    $("nav-all").addEventListener("click", () => viewport().setWindow(view.full.t0, view.full.t1));
+    $("nav-all").addEventListener("click", () => { if (view.full) viewport().setWindow(view.full.t0, view.full.t1); });
     $("nav-back").addEventListener("click", () => {
       const previous = view.windowStack.pop();
       if (previous) viewport().setWindow(previous[0], previous[1], false);
     });
-    $("btn-fit").addEventListener("click", () => viewport().setWindow(view.full.t0, view.full.t1));
+    $("btn-fit").addEventListener("click", () => { if (view.full) viewport().setWindow(view.full.t0, view.full.t1); });
 
     $("nav-canvas").addEventListener("pointerdown", (event) => {
+      if (!view.full) return;
       $("nav-canvas").setPointerCapture(event.pointerId);
       const width = $("nav-canvas").clientWidth || 1;
       const span = view.full.t1 - view.full.t0;
@@ -94,98 +95,11 @@ KMP_APP.gestures = (() => {
     $("nav-canvas").addEventListener("pointercancel", () => (navDrag = null));
   }
 
-  /* ---------------- loom gestures ---------------- */
-
-  let loomDrag = null;
-
-  function wireLoom() {
-    const canvas = scene().canvas();
-
-    canvas.addEventListener("pointerdown", (event) => {
-      canvas.setPointerCapture(event.pointerId);
-      canvas.classList.add("dragging");
-      loomDrag = { x0: event.offsetX, t0: view.t0, t1: view.t1, moved: false };
-    });
-
-    canvas.addEventListener("pointermove", (event) => {
-      if (loomDrag) {
-        const dx = event.offsetX - loomDrag.x0;
-        if (loomDrag.moved || Math.abs(dx) > 4) {
-          loomDrag.moved = true;
-          const span = loomDrag.t1 - loomDrag.t0;
-          const delta = (-dx / Math.max(1, canvas.clientWidth)) * span;
-          let t0 = loomDrag.t0 + delta;
-          t0 = Math.max(view.full.t0, Math.min(view.full.t1 - span, t0));
-          viewport().setWindow(t0, t0 + span, false);
-        }
-        return;
-      }
-      if (view.overlays.length) {
-        KMP_APP.panels.renderPulseLegend(viewport().tOf(event.offsetX));
-      }
-      const hit = scene().hitAt(event.offsetX, event.offsetY);
-      scene().updateTooltip(hit, event.offsetX, event.offsetY);
-    });
-
-    canvas.addEventListener("pointerup", (event) => {
-      canvas.classList.remove("dragging");
-      if (!loomDrag) return;
-      const drag = loomDrag;
-      loomDrag = null;
-      if (drag.moved) return;
-      const hit = scene().hitAt(event.offsetX, event.offsetY);
-      if (!hit) {
-        view.selectedRef = null;
-        KMP_APP.panels.renderDetailEmpty();
-        scene().requestDraw();
-        return;
-      }
-      if (hit.kind === "cluster") {
-        // Open the weave: zoom into the bundle's span.
-        const pad = Math.max(1000, (hit.t1 - hit.t0) * 0.35);
-        viewport().setWindow(hit.t0 - pad, hit.t1 + pad);
-        return;
-      }
-      if (hit.kind === "exemplar") {
-        const ref = hit.exemplar && hit.exemplar.bundle_ref;
-        if (ref && model.byRef.has(ref)) {
-          KMP_APP.selection.selectEntry(ref);
-        } else if (hit.exemplar) {
-          const revision = hit.exemplar.revision == null ? "revision unavailable" : `revision ${hit.exemplar.revision}`;
-          KMP_APP.dom.showError(`${hit.exemplar.operation} · ${hit.exemplar.about || "unknown bundle"} · ${revision}; temporal window preserved`);
-        }
-        return;
-      }
-      KMP_APP.selection.selectEntry(hit.ref);
-    });
-
-    canvas.addEventListener("pointerleave", () => {
-      $("tooltip").hidden = true;
-      KMP_APP.panels.renderPulseLegend();
-    });
-
-    canvas.addEventListener(
-      "wheel",
-      (event) => {
-        event.preventDefault();
-        const factor = Math.exp(event.deltaY * 0.0014);
-        const span = (view.t1 - view.t0) * factor;
-        const fullSpan = view.full.t1 - view.full.t0;
-        const clampedSpan = Math.max(1000, Math.min(fullSpan, span));
-        const anchor = viewport().tOf(event.offsetX);
-        const ratio = (anchor - view.t0) / (view.t1 - view.t0);
-        let t0 = anchor - clampedSpan * ratio;
-        t0 = Math.max(view.full.t0, Math.min(view.full.t1 - clampedSpan, t0));
-        viewport().setWindow(t0, t0 + clampedSpan, false);
-      },
-      { passive: false }
-    );
-  }
-
   function wireKeyboard() {
     addEventListener("keydown", (event) => {
       const target = event.target;
       if (target && (target.tagName === "INPUT" || target.tagName === "SELECT" || target.tagName === "TEXTAREA")) return;
+      if (!view.full) return;
       const span = view.t1 - view.t0;
       if (event.key === "f" || event.key === "F") viewport().setWindow(view.full.t0, view.full.t1);
       else if (event.key === "ArrowLeft") viewport().setWindow(view.t0 - span * 0.25, view.t1 - span * 0.25, false);
@@ -197,7 +111,7 @@ KMP_APP.gestures = (() => {
 
   function wire() {
     wireNavigator();
-    wireLoom();
+
     wireKeyboard();
   }
 

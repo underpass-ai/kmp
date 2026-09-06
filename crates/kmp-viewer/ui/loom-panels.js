@@ -42,34 +42,10 @@ KMP_APP.panels = (() => {
 
   /* ---------------- abouts, lanes, legends ---------------- */
 
-  function renderAbouts() {
-    const list = $("about-list");
-    list.textContent = "";
-    for (const about of model.abouts) {
-      const item = el("li", about === model.about ? "active" : "", about);
-      item.addEventListener("click", () => KMP_APP.data.loadAbout(about));
-      list.append(item);
-    }
-  }
+  function renderAbouts() { KMP_APP.catalogue.renderAbouts(); }
 
   function renderRail() {
-    const lanes = $("lane-list");
-    lanes.textContent = "";
-    for (const lane of model.lanes) {
-      const hidden = view.hiddenLanes.has(lane.name);
-      const item = el("li", hidden ? "dimmed" : "");
-      const dot = el("span", "legend-dot");
-      dot.style.background = kindColor("memory_dimension");
-      item.append(dot, el("span", "", `${lane.name} `), el("span", "muted", String(lane.count)));
-      item.title = hidden ? "hidden — click to show this lane" : "click to hide this lane";
-      item.addEventListener("click", () => {
-        if (hidden) view.hiddenLanes.delete(lane.name);
-        else view.hiddenLanes.add(lane.name);
-        renderRail();
-        KMP_APP.scene.requestDraw();
-      });
-      lanes.append(item);
-    }
+    KMP_APP.catalogue.renderLabels();
 
     const kinds = new Map();
     const projectedKinds = Object.entries((model.projection && model.projection.by_kind) || {});
@@ -143,11 +119,38 @@ KMP_APP.panels = (() => {
     }
   }
 
+  /* ---------------- label chips ----------------
+     The predicates the kernel filters the projection by, as the person and
+     the agent both see them. A chip reads `key op values`; its cross takes
+     it off and asks the projection again. */
+
+  function renderChips() {
+    const strip = $("label-chips");
+    strip.textContent = "";
+    const selectors = KMP_LOOM.normalizeSelectors(view.selectors);
+    strip.hidden = !selectors.length;
+    for (const selector of selectors) {
+      const chip = el("li", "label-chip");
+      chip.append(el("span", "chip-key", selector.key), el("span", "chip-op", selector.op));
+      if (selector.values.length) chip.append(el("span", "chip-values mono", selector.values.join(" | ")));
+      const remove = el("button", "chip-remove", "×");
+      remove.title = "take this filter off";
+      remove.addEventListener("click", () => {
+        KMP_APP.data.setSelectors(
+          view.selectors.filter((s) => !(s.key === selector.key && s.op === selector.op))
+        );
+      });
+      chip.append(remove);
+      strip.append(chip);
+    }
+  }
+
   /* ---------------- status line ---------------- */
 
   function renderStats() {
     $("s-entries").textContent = String(model.total);
-    $("s-lanes").textContent = String(model.lanes.length);
+    $("s-lanes").textContent = String((model.projection?.labels || []).length);
+    KMP_APP.evidence?.renderPicker();
     $("s-relations").textContent =
       model.currentLod === "moment"
         ? String(model.edges.length + model.supersessions.length + model.contradictions.length)
@@ -171,6 +174,7 @@ KMP_APP.panels = (() => {
   /* ---------------- pulse legend ---------------- */
 
   function renderPulseLegend(atMillis = null) {
+    KMP_APP.observability?.render();
     const legend = $("pulse-legend");
     const series = model.observability.series || [];
     legend.textContent = "";
@@ -213,6 +217,9 @@ KMP_APP.panels = (() => {
   /* ---------------- diff panel ---------------- */
 
   function pinComparison(side) {
+    if (model.currentLod !== "moment" || model.projection?.truncated) {
+      KMP_APP.dom.showError("Choose a complete Memories window before pinning a comparison."); return;
+    }
     const selected = view.selectedRef && model.byRef.get(view.selectedRef);
     const instant =
       (selected && KMP_LOOM.placedMs(selected, view.clock)) ?? (view.t0 + view.t1) / 2;
@@ -286,11 +293,14 @@ KMP_APP.panels = (() => {
   /* ---------------- evidence: detail + prism ---------------- */
 
   function renderDetailEmpty() {
+    if ($("memory-picker")) $("memory-picker").value = "";
     $("detail-empty").hidden = false;
     $("detail-body").hidden = true;
   }
 
   function renderDetail(inspect, m) {
+    if ($("memory-picker")) $("memory-picker").value = m.ref;
+    KMP_APP.timeControls?.refresh();
     const { node } = inspect;
     $("detail-empty").hidden = true;
     $("detail-body").hidden = false;
@@ -358,80 +368,7 @@ KMP_APP.panels = (() => {
   /* The polytemporal prism: reality, perception, persistence, order — with
      a gradient thread from occurred to ingested making late observation and
      backfill visible. Absent clocks stay visibly absent. */
-  function renderPrism(m) {
-    const box = $("prism");
-    box.textContent = "";
-    const prism = KMP_LOOM.prism(m);
-    const palette = KMP_APP.scene.palette();
-    const rails = [
-      ["reality", prism.rails.occurred, "occurred"],
-      ["perception", prism.rails.observed, "observed"],
-      ["persistence", prism.rails.ingested, "ingested"],
-    ];
-    const span = prism.span;
-    const posOf = (t) => (span ? ((t - span.t0) / (span.t1 - span.t0)) * 100 : 50);
-    const dots = [];
-    for (const [name, t] of rails) {
-      const row = el("div", "prism-rail");
-      row.append(el("span", "prism-name", name));
-      const track = el("span", "prism-track");
-      track.append(el("span", "prism-line"));
-      if (t !== null) {
-        const dot = el("span", "prism-dot");
-        dot.style.left = `${posOf(t)}%`;
-        dot.style.background =
-          name === "reality" ? palette.cls.causal : name === "perception" ? palette.cls.constraint : palette.cls.evidential;
-        track.append(dot);
-        dots.push(posOf(t));
-        row.append(track, el("span", "prism-when mono", fmtMsFull(t).slice(5)));
-      } else {
-        row.append(track, el("span", "prism-absent", "not recorded"));
-      }
-      box.append(row);
-    }
-    // The thread: occurred → ingested, the distance between "it was true"
-    // and "KMP knew it".
-    if (dots.length >= 2) {
-      const thread = el("div", "prism-rail");
-      thread.append(el("span", "prism-name", "thread"));
-      const track = el("span", "prism-track");
-      const line = el("span", "prism-thread");
-      const lo = Math.min(...dots);
-      const hi = Math.max(...dots);
-      line.style.left = `${lo}%`;
-      line.style.width = `${Math.max(1, hi - lo)}%`;
-      track.append(line);
-      thread.append(track, el("span", "prism-when", ""));
-      box.append(thread);
-    }
-    if (prism.rails.validity) {
-      const row = el("div", "prism-rail");
-      row.append(el("span", "prism-name", "validity"));
-      const track = el("span", "prism-track");
-      track.append(el("span", "prism-line"));
-      const band = el("span", "prism-band");
-      const from = prism.rails.validity.from;
-      const until = prism.rails.validity.until;
-      band.style.left = `${from !== null ? posOf(from) : 0}%`;
-      band.style.width = `${Math.max(4, (until !== null ? posOf(until) : 100) - (from !== null ? posOf(from) : 0))}%`;
-      band.style.background = palette.accent;
-      track.append(band);
-      row.append(track, el("span", "prism-when mono", until === null ? "open" : fmtMsFull(until).slice(5)));
-      box.append(row);
-    }
-    for (const order of prism.order) {
-      const row = el("div", "prism-rail");
-      row.append(el("span", "prism-name", "order"));
-      row.append(
-        el(
-          "span",
-          "mono muted",
-          `${order.dimension}${order.sequence !== null ? " #" + order.sequence : ""}${order.rank !== null ? " · rank " + order.rank : ""}`
-        )
-      );
-      box.append(row);
-    }
-  }
+  function renderPrism(m) { KMP_APP.evidence.renderPrism(m); }
 
   /* ---------------- trace box ---------------- */
 
@@ -460,23 +397,7 @@ KMP_APP.panels = (() => {
 
   /* ---------------- provenance chip ---------------- */
 
-  function renderProvenance(state) {
-    const chip = $("agent-chip");
-    const undo = $("agent-undo");
-    const change = state.last_change;
-    if (!change || change.actor === "human") {
-      chip.classList.add("human-owned");
-      $("agent-chip-text").textContent = "human-controlled view";
-      undo.hidden = true;
-      chip.hidden = false;
-      return;
-    }
-    chip.classList.remove("human-owned");
-    undo.hidden = false;
-    const why = change.explanation ? ` · ${change.explanation}` : "";
-    $("agent-chip-text").textContent = `${change.actor} moved the loom${why}`;
-    chip.hidden = false;
-  }
+  function renderProvenance(state) { KMP_APP.control.render(state); }
 
   /* ---------------- search ---------------- */
 
@@ -608,6 +529,7 @@ KMP_APP.panels = (() => {
   return {
     renderAbouts,
     renderRail,
+    renderChips,
     setSearch,
     searchText,
     hideTraceBox,

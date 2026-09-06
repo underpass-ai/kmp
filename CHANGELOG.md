@@ -9,6 +9,47 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- ChronoLoom shows loading feedback while changing clocks, adding or removing
+  about layers, and reading evidence. Content fades between updates, with
+  accessible status announcements and reduced-motion support.
+- ChronoLoom's shared-control panel names the human or agent behind the last
+  move and its explanation. Revision-checked human takeover preserves the
+  frame and undo history, over both loopback HTTP and the negotiated MCP App.
+- One 3D scene with about planes, a flat camera, ordinary label filters and a
+  shared UTC brush with exact dates. `projection.abouts` explicitly compares
+  up to five additional contexts through the existing bounded projection API.
+  The bundled Three.js renderer replaces PixiJS; no runtime network dependency.
+
+- The visual projection carries the label, not only its key. `VisualBin` and
+  `VisualCluster` come one per `(dimension, scope_id)` pair, so a lane can
+  show the rows its values partition it into; `labels[]` lists every label
+  the about holds, most used first, with how many entries stand in it across
+  all time and inside the projected range — read before the read's own
+  filter narrows the bundle, so a label empty in this range is listed as
+  empty rather than left out. A coordinate now says how it came to stand on
+  its entry: `method`, `why` and `motivation` off the `contains_entry` edge,
+  empty for a label given at write and `kmp_relabel` with its why for one put
+  there later. Additive proto (`VisualLabel`, `ProjectVisualResponse.labels`,
+  `VisualBin.scope_id`, `VisualCluster.scope_id`,
+  `TemporalCoordinate.method / why / motivation`). ChronoLoom uses this
+  catalogue for ordinary label filters within about planes; the projection map is
+  [docs/architecture/chronoloom-labels.md](docs/architecture/chronoloom-labels.md).
+
+- The view speaks the whole selection. `/api/projection` takes `scope_ids`
+  and `labels` — the latter as `key op value|value`, joined by `;`, with the
+  kernel's four operators — so the viewer asks with the same
+  `DimensionSelection` every read fills, where it used to know `dims` and
+  `scope` alone. The view state gains `projection.labels` in the selector
+  shape every read takes under `dimensions.selectors`: `kmp_view_apply_intent`
+  accepts it, resolves each key and `in` value against the about's catalogue
+  the way it resolves dimensions, and reports what the about does not hold as
+  unhonored rather than drawing an empty loom; the browser's report carries
+  a person's chips as labels alone, so it never wipes the overlays an agent
+  aligned. ChronoLoom adopts a snapshot's labels, asks the projection through
+  them, and wears them as chips a person can take off.
+
 ## [0.12.2] - 2026-09-05
 
 ### Fixed

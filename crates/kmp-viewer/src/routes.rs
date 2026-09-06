@@ -51,8 +51,37 @@ pub(crate) const LOOM_CORE_JS: &str = include_str!("../ui/loom-core.js");
 /// The script-tag modules of the browser application, in the exact order
 /// `index.html` loads them and `mcp_app` inlines them: state, the backend
 /// port, the use cases, then the adapters, with the composition root last.
-pub(crate) const LOOM_MODULES: [(&str, &str); 9] = [
+pub(crate) const LOOM_MODULES: [(&str, &str); 23] = [
+    (
+        "loom-provenance.js",
+        include_str!("../ui/loom-provenance.js"),
+    ),
+    ("loom-evidence.js", include_str!("../ui/loom-evidence.js")),
+    (
+        "loom-observability.js",
+        include_str!("../ui/loom-observability.js"),
+    ),
+    ("loom-theme.js", include_str!("../ui/loom-theme.js")),
+    ("loom-navigator.js", include_str!("../ui/loom-navigator.js")),
+    ("loom-camera.js", include_str!("../ui/loom-camera.js")),
+    ("loom-three.js", include_str!("../ui/loom-three.js")),
+    (
+        "loom-scene-model.js",
+        include_str!("../ui/loom-scene-model.js"),
+    ),
+    ("loom-layers.js", include_str!("../ui/loom-layers.js")),
+    ("loom-control.js", include_str!("../ui/loom-control.js")),
+    ("loom-catalogue.js", include_str!("../ui/loom-catalogue.js")),
+    (
+        "loom-time-controls.js",
+        include_str!("../ui/loom-time-controls.js"),
+    ),
     ("loom-state.js", include_str!("../ui/loom-state.js")),
+    ("loom-loading.js", include_str!("../ui/loom-loading.js")),
+    (
+        "loom-loading-view.js",
+        include_str!("../ui/loom-loading-view.js"),
+    ),
     ("loom-api.js", include_str!("../ui/loom-api.js")),
     ("loom-panels.js", include_str!("../ui/loom-panels.js")),
     ("loom-viewport.js", include_str!("../ui/loom-viewport.js")),
@@ -63,10 +92,9 @@ pub(crate) const LOOM_MODULES: [(&str, &str); 9] = [
     ("loom-gestures.js", include_str!("../ui/loom-gestures.js")),
 ];
 /// Vendored render engine, pinned and hash-verified in `ui/vendor/VENDOR.md`.
-pub(crate) const PIXI_JS: &str = include_str!("../ui/vendor/pixi.min.js");
-/// Pixi's no-eval shader path, required because the viewer's CSP forbids
-/// `unsafe-eval`; same provenance record as the engine itself.
-pub(crate) const PIXI_UNSAFE_EVAL_JS: &str = include_str!("../ui/vendor/pixi-unsafe-eval.min.js");
+pub(crate) const THREE_JS: &str = include_str!("../ui/vendor/three.min.js");
+pub(crate) const LOOM_LOADING_CSS: &str = include_str!("../ui/loom-loading.css");
+pub(crate) const LOOM_SHELL_CSS: &str = include_str!("../ui/loom-shell.css");
 
 impl<G, D, S, E, W> MemoryViewerServer<G, D, S, E, W>
 where
@@ -88,7 +116,7 @@ where
         // POST is the honest method for changing one.
         let view_control = matches!(
             request.path.as_str(),
-            "/api/view/report" | "/api/view/undo" | "/api/view/open"
+            "/api/view/report" | "/api/view/undo" | "/api/view/open" | "/api/view/take-control"
         );
         if view_control {
             // A GET has to be safe. Letting one through here would let any
@@ -127,8 +155,9 @@ where
             "/assets/loom.css" => HttpResponse::css(LOOM_CSS),
             "/assets/loom.js" => HttpResponse::javascript(LOOM_JS),
             "/assets/loom-core.js" => HttpResponse::javascript(LOOM_CORE_JS),
-            "/assets/pixi.min.js" => HttpResponse::javascript(PIXI_JS),
-            "/assets/pixi-unsafe-eval.min.js" => HttpResponse::javascript(PIXI_UNSAFE_EVAL_JS),
+            "/assets/three.min.js" => HttpResponse::javascript(THREE_JS),
+            "/assets/loom-loading.css" => HttpResponse::css(LOOM_LOADING_CSS),
+            "/assets/loom-shell.css" => HttpResponse::css(LOOM_SHELL_CSS),
             "/api/info" => self.info(),
             "/api/abouts" => self.abouts().await,
             "/api/graph" => self.graph(request).await,
@@ -142,6 +171,7 @@ where
             "/api/view/open" => view::adapters::view_open(request),
             "/api/view/report" => view::adapters::view_report(request),
             "/api/view/undo" => view::adapters::view_undo(request),
+            "/api/view/take-control" => view::adapters::view_take_control(request),
             _ => HttpResponse::error(404, "unknown path"),
         }
     }

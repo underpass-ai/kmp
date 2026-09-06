@@ -359,6 +359,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "to": "2026-04-13T00:00:00Z"
             }),
         ),
+        ("kmp_view_take_control", json!({"expected_revision": 2})),
         ("kmp_view_undo", json!({})),
         // Last, so the reads above pin the store as the writes left it and
         // no earlier fixture moves when this one changes what the claim
@@ -661,7 +662,7 @@ fn the_pinned_calls_cover_every_advertised_tool() {
         .iter()
         .map(|tool| tool["name"].as_str().expect("name").to_string())
         .collect::<Vec<_>>();
-    assert_eq!(advertised.len(), 17, "advertised tools: {advertised:?}");
+    assert_eq!(advertised.len(), 18, "advertised tools: {advertised:?}");
 
     for tool in &advertised {
         assert!(

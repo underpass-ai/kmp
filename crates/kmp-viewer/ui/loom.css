@@ -113,148 +113,6 @@ body {
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
 .muted { color: var(--text-muted); }
 
-#app {
-  display: grid;
-  height: 100vh;
-  grid-template-rows: auto 1fr auto;
-  grid-template-columns: 230px 1fr 360px;
-  grid-template-areas:
-    "topbar topbar topbar"
-    "rail stage detail"
-    "status status status";
-}
-
-/* ---- top bar ---- */
-
-#topbar {
-  grid-area: topbar;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 6px var(--space-3);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.brand { display: flex; align-items: baseline; gap: var(--space-2); min-width: 0; }
-.brand-lockup {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-weight: 700; font-size: 15px; white-space: nowrap;
-}
-.lockup-block { color: var(--accent); }
-.lockup-word {
-  background: linear-gradient(90deg, var(--grad-1), var(--grad-3), var(--grad-6));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.brand-name { font-weight: 600; }
-.brand-motto { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
-
-.chips { display: flex; gap: 4px; }
-.chip {
-  font: inherit;
-  font-size: 13px;
-  color: var(--text-secondary);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px 12px;
-  cursor: pointer;
-  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
-    border-color var(--dur-1) var(--ease);
-}
-.chip:hover { background: var(--surface-3); }
-.chip.active {
-  color: var(--accent);
-  border-color: var(--accent);
-  font-weight: 600;
-}
-
-/* An agent moved the loom: who, why, and the way back. It is never
-   anonymous and never one-way. */
-.agent-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 12px;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 3px 6px 3px 12px;
-  max-width: 480px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-.agent-chip[hidden] { display: none; }
-#agent-chip-text { overflow: hidden; text-overflow: ellipsis; }
-.agent-chip.human-owned {
-  color: var(--text-secondary);
-  border-color: var(--border);
-}
-.agent-undo {
-  font: inherit;
-  font-size: 11px;
-  color: var(--text-secondary);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 1px 8px;
-  cursor: pointer;
-}
-.agent-undo:hover { background: var(--surface-3); }
-
-#lod-chip {
-  font-size: 12px;
-  color: var(--text-muted);
-  border: 1px dashed var(--border);
-  border-radius: 999px;
-  padding: 3px 12px;
-  white-space: nowrap;
-}
-
-.top-controls { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
-.compact-control { display: inline-flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 12px; }
-.btn {
-  font: inherit;
-  color: var(--text-primary);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  padding: 4px 10px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
-}
-.btn:hover { background: var(--surface-3); }
-.btn-primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-select, input {
-  font: inherit;
-  color: var(--text-primary);
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  padding: 3px 6px;
-}
-
-/* ---- left rail ---- */
-
-#rail {
-  grid-area: rail;
-  border-right: 1px solid var(--border);
-  background: var(--surface-2);
-  padding: 10px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-#search { width: 100%; }
-.pane-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin: var(--space-2) 0 2px;
-  font-weight: 600;
-}
 .item-list, .legend-list { list-style: none; margin: 0; padding: 0; }
 .item-list li {
   padding: var(--space-1) var(--space-2);
@@ -298,18 +156,23 @@ select, input {
 .legend-dash.contradiction::before { left: -3px; }
 .legend-dash.contradiction::after { right: -3px; }
 
-/* ---- stage ---- */
-
-#stage {
-  grid-area: stage;
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(1100px 640px at 50% 30%, rgba(129, 91, 240, 0.05), transparent 70%),
-    var(--surface-1);
+/* label chips: the kernel's filter, worn where both faces can read it */
+.chip-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip-list[hidden] { display: none; }
+.label-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; padding: 1px 4px 1px 8px; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--text-primary); background: var(--surface-1);
+  max-width: 100%; overflow: hidden;
 }
-#loom-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
-#loom-canvas.dragging { cursor: grabbing; }
+.chip-key { font-weight: 600; }
+.chip-op { color: var(--accent); font-size: 11px; }
+.chip-values { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-remove {
+  font: inherit; line-height: 1; padding: 0 4px; border: 0; background: none;
+  color: var(--text-muted); cursor: pointer; border-radius: 999px;
+}
+.chip-remove:hover { color: var(--danger); background: var(--surface-3); }
 
 .pulse-legend {
   position: absolute;
@@ -379,25 +242,6 @@ select, input {
   padding-left: 6px;
   margin-top: 3px;
 }
-
-/* ---- the navigator (full extent + windowpane) ---- */
-
-#navigator {
-  position: absolute;
-  left: var(--space-3);
-  right: var(--space-3);
-  bottom: var(--space-3);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  padding: 4px 8px 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  z-index: 5;
-}
-#nav-canvas { display: block; width: 100%; height: 42px; cursor: crosshair; border-radius: var(--radius-1); }
-.nav-row { display: flex; align-items: center; gap: var(--space-2); margin-bottom: 2px; }
-.nav-row .mono { font-size: 11px; }
-.nav-row .btn { padding: 1px 8px; font-size: 12px; }
 
 /* ---- detail: evidence + prism ---- */
 
@@ -498,9 +342,6 @@ summary { cursor: pointer; color: var(--text-secondary); }
 .stat-value { font-weight: 600; font-variant-numeric: tabular-nums; }
 .error { color: var(--danger); margin-left: auto; overflow: hidden; text-overflow: ellipsis; }
 
-@media (max-width: 1100px) {
-  #app { grid-template-columns: 190px 1fr 300px; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

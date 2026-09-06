@@ -228,6 +228,15 @@
         },
         "metadata": {
           "$ref": "#/$defs/metadata"
+        },
+        "method": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "why": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "motivation": {
+          "$ref": "#/$defs/non_empty_string"
         }
       }
     },

@@ -89,6 +89,7 @@ function loom(stubs = {}) {
     syncFocusButton: spy("panels.syncFocusButton"),
     syncClockChips: spy("panels.syncClockChips"),
     hideTraceBox: spy("panels.hideTraceBox"),
+    renderChips: spy("panels.renderChips"),
     setSearch: (text) => {
       calls.push({ name: "panels.setSearch", args: [text] });
       searchBox.value = text;
@@ -286,6 +287,21 @@ test("frameRefs reaches refs ingested after the cached extent probe", async () =
   assert.ok(view.full.t1 > newStamp, "the known extent grew past the stale probe");
   assert.ok(view.t1 >= newStamp, "the window reaches the newer endpoint");
   assert.ok(view.t0 <= oldStamp, "and still holds the older one");
+});
+
+test("undoing to an unframed snapshot restores All and clears stale dimensions", async () => {
+  const { app } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 100000 };
+  view.t0 = 20000;
+  view.t1 = 30000;
+  view.hiddenLanes = new Set(["topic"]);
+  app.data.loadProjection = async () => {};
+  await app.sync.applyAgentState({ about: model.about, clock: view.clock, focus: null, projection: {} });
+  assert.equal(view.t0, 0);
+  assert.equal(view.t1, 100000);
+  assert.equal(view.hiddenLanes.size, 0);
 });
 
 test("an explicit agent search lands in the input and re-runs it", async () => {
@@ -589,7 +605,7 @@ test("a view-sync failure keeps the loom drawing", async () => {
   );
 });
 
-test("an explicit agent range becomes the focus lens over the whole extent", async () => {
+test("an explicit agent range is the exact shared brush window", async () => {
   const { app, calls } = loom();
   const { model, view } = app.state;
   model.about = "project:x";
@@ -604,13 +620,13 @@ test("an explicit agent range becomes the focus lens over the whole extent", asy
     projection: { overlays: ["noise_ratio"], dimensions: ["keep"], semantic_zoom: "moment" },
     can_undo: true,
   });
-  assert.equal(view.focusRange.from, Date.parse("2026-08-31T16:49:00Z"));
-  assert.equal(view.t0, view.full.t0, "the lens keeps both contexts visible");
+  assert.equal(view.focusRange, null);
+  assert.equal(view.t0, Date.parse("2026-08-31T16:49:00Z"));
   assert.ok(view.hiddenLanes.has("drop"), "a keep-list hides the other lanes");
   assert.ok(!view.hiddenLanes.has("keep"));
   assert.ok(calls.some((call) => call.name === "data.loadObservability"));
   // The intent named its own window; the rung is a fallback, not an override.
-  assert.equal(view.t1, view.full.t1);
+  assert.equal(view.t1, Date.parse("2026-08-31T17:39:00Z"));
 });
 
 test("an agent selection is selected and centered", async () => {
@@ -681,4 +697,110 @@ test("undoing an agent move applies the stepped-back snapshot", async () => {
   await app.sync.undoAgentMove();
   assert.equal(app.state.sync.revision, 4);
   assert.ok(calls.some((call) => call.name === "panels.renderProvenance"));
+});
+
+/* ---------------- label selectors ---------------- */
+
+test("a snapshot's labels become the loom's selectors and re-probe the about", async () => {
+  const { app, calls } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 10 };
+  app.data.loadAbout = async (about, announce) => calls.push({ name: "data.loadAbout", args: [about, announce] });
+  await app.sync.applyAgentState({
+    view_revision: 5,
+    about: "project:x",
+    clock: "occurred",
+    focus: {},
+    projection: { labels: [{ key: "task", op: "in", values: ["launch", "launch"] }, { key: "incident", op: "notexists" }] },
+    can_undo: true,
+  });
+  assert.equal(
+    JSON.stringify(view.selectors),
+    JSON.stringify([{ key: "incident", op: "notexists", values: [] }, { key: "task", op: "in", values: ["launch"] }])
+  );
+  const reload = calls.find((call) => call.name === "data.loadAbout");
+  assert.ok(reload, "a changed filter asks the kernel again");
+  assert.equal(reload.args[1], false, "without announcing a fresh open");
+  assert.ok(calls.some((call) => call.name === "panels.renderChips"));
+  calls.length = 0;
+  await app.sync.applyAgentState({
+    view_revision: 6,
+    about: "project:x",
+    clock: "occurred",
+    focus: {},
+    projection: { labels: [{ key: "incident", op: "notexists" }, { key: "task", op: "in", values: ["launch"] }] },
+    can_undo: true,
+  });
+  assert.ok(!calls.some((call) => call.name === "data.loadAbout"), "the same filter in another order is the same filter");
+});
+
+test("the projection is asked through the selectors and the report carries them", async () => {
+  const loomInstance = loom();
+  const { app, context } = loomInstance;
+  const { model, view } = app.state;
+  model.about = "project:x";
+  view.full = { t0: 0, t1: 200000 };
+  view.t0 = 0;
+  view.t1 = 200000;
+  view.selectors = [{ key: "task", op: "in", values: ["launch", "other"] }];
+  app.sync.reportView = () => {};
+  const asked = [];
+  app.api = {
+    ...app.api,
+    fetchProjection: async (about, axis, from, to, lod, bins, labels) => {
+      asked.push(labels);
+      return { entries: [], bins: [], clusters: [], relations: [], page: { total: 0 } };
+    },
+  };
+  await app.data.loadProjection();
+  assert.equal(asked[0], "task in launch|other");
+
+  context.setTimeout = (fn) => {
+    fn();
+    return 0;
+  };
+  context.clearTimeout = () => {};
+  const posted = [];
+  app.api = { ...app.api, call: async (path, params) => (posted.push(params), { view_revision: 2 }) };
+  app.sync.reportView = Object.getPrototypeOf(app.sync).reportView || app.sync.reportView;
+  // reportView was replaced above for loadProjection; rebuild a fresh loom to read the real one.
+  const fresh = loom();
+  fresh.context.setTimeout = (fn) => {
+    fn();
+    return 0;
+  };
+  fresh.context.clearTimeout = () => {};
+  fresh.app.state.model.about = "project:x";
+  fresh.app.state.view.full = { t0: 0, t1: 10 };
+  fresh.app.state.view.selectors = [{ key: "incident", op: "notexists", values: [] }];
+  const reported = [];
+  fresh.app.api = { ...fresh.app.api, call: async (path, params) => (reported.push(params), { view_revision: 3 }) };
+  fresh.app.sync.reportView();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(reported[0].labels, "incident notexists");
+});
+
+test("setSelectors normalizes, redraws the chips, re-probes and reports", async () => {
+  const { app, calls } = loom();
+  const { model, view } = app.state;
+  model.about = "project:x";
+  app.data.loadAbout = async (about, announce) => calls.push({ name: "data.loadAbout", args: [about, announce] });
+  app.sync.reportView = () => calls.push({ name: "sync.reportView" });
+  await app.data.setSelectors([{ key: "task", op: "like", values: ["x"] }, { key: "task", op: "exists" }]);
+  assert.equal(JSON.stringify(view.selectors), JSON.stringify([{ key: "task", op: "exists", values: [] }]));
+  const names = calls.map((call) => call.name);
+  assert.ok(names.includes("panels.renderChips"));
+  assert.ok(names.includes("data.loadAbout"));
+  assert.ok(names.includes("sync.reportView"));
+});
+
+test("changing a populated clock re-probes its own extent before reporting", async () => {
+  const {app,calls}=loom();
+  app.state.model.about="project:clocks";
+  app.state.view.full={t0:0,t1:1000};
+  app.data.loadAbout=async (about,announce)=>{calls.push({name:"clock.probe",about,announce});};
+  app.sync.reportView=()=>calls.push({name:"clock.report"});
+  await app.viewport.setClock("observed",false);
+  assert.deepEqual(calls.filter(call=>call.name.startsWith("clock.")).map(call=>call.name),["clock.probe","clock.report"]);
 });

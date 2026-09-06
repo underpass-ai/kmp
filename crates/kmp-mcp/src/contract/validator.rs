@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 use crate::contract::registry::tools_list_result;
-use crate::contract::tools::{app_view_undo, app_visual_projection};
+use crate::contract::tools::{app_view_take_control, app_view_undo, app_visual_projection};
 use crate::serving::ToolError;
 
 pub(crate) fn reject_unknown_arguments(tool: &str, arguments: &Value) -> Result<(), ToolError> {
@@ -21,6 +21,12 @@ fn tool_input_schema(tool: &str) -> Option<&'static Value> {
     if tool == "kmp_view_read_projection" {
         static APP_VISUAL_SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
         return Some(APP_VISUAL_SCHEMA.get_or_init(app_visual_projection::input_schema));
+    }
+    if tool == "kmp_view_take_control" {
+        static SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
+        return Some(
+            SCHEMA.get_or_init(|| app_view_take_control::definition()["inputSchema"].clone()),
+        );
     }
     if tool == "kmp_view_undo" {
         static APP_UNDO_SCHEMA: std::sync::OnceLock<Value> = std::sync::OnceLock::new();
