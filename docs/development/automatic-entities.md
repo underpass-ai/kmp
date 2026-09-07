@@ -3,7 +3,8 @@
 Experimental component in `scripts/kmp_entities`, outside the deterministic
 kernel. It proposes and verifies identity between bounded mentions, then produces
 a canonical ingest over a frozen source/formed payload. It does not run on
-ordinary writes or change a personal store. Retrieval utility is not yet measured.
+ordinary writes or change a personal store. Retrieval utility must be measured
+separately on each evaluation corpus.
 Version `entities-v2-distinct-referents` explicitly separates identity from
 ownership, employment and account use. A transferred account does not make its
 users the same person. Those relationships need their own representation.
@@ -80,8 +81,8 @@ This integration explicitly uses the occurred/report clock: source coordinates,
 mention links, identity relation and proof timestamps must fit the cutoff.
 `kmp_inspect` does not apply that cutoff itself. Other axes and online resolution
 as known at an earlier ingestion time are not supported by this helper. It has
-contract tests and an actual-MCP synthetic check; automatic identity quality and
-the end-to-end comparison remain unmeasured.
+contract tests and an actual-MCP synthetic check; these checks do not measure
+automatic identity quality or end-to-end answer improvement.
 
 ```bash
 PYTHONPATH=scripts PYTHONDONTWRITEBYTECODE=1 \
