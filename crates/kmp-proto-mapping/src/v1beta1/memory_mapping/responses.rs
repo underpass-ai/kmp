@@ -334,7 +334,12 @@ pub fn ask_response_from_result(
         .as_ref()
         .map(|ranking| ranker.semantic_candidates(ranking, &candidate_evidence))
         .unwrap_or_default();
-    let semantic_count = semantic.len();
+    let semantic_count = semantic
+        .iter()
+        .flatten()
+        .map(|item| &item.id)
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
     let relevant_evidence = super::hybrid_evidence::fuse_evidence(
         ranker.rank(question, policy, candidate_evidence),
         semantic,

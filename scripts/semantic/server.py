@@ -8,7 +8,7 @@ import time
 from encoder import Encoder
 from retriever import Retriever
 from vector_cache import VectorCache
-from lexical_ranking import POLICY
+from lexical_ranking import POLICY, SEPARATE_POLICY
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--cache', type=Path, required=True)
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8001)
-    parser.add_argument('--ranking-policy', choices=['dense', POLICY], default='dense')
+    parser.add_argument('--ranking-policy', choices=['dense', POLICY, SEPARATE_POLICY], default='dense')
     args = parser.parse_args()
     args.cache.parent.mkdir(parents=True, exist_ok=True)
     server = HTTPServer((args.host, args.port), Handler)

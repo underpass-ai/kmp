@@ -6,7 +6,7 @@ import numpy as np
 
 from retriever import Retriever
 from vector_cache import VectorCache
-from lexical_ranking import POLICY
+from lexical_ranking import POLICY, SEPARATE_POLICY
 
 
 class FakeEncoder:
@@ -26,6 +26,21 @@ def source(ref, text):
 
 
 class RetrieverTests(unittest.TestCase):
+    def test_separate_channels_keep_original_ranks_and_reject_cached_scope_leaks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = VectorCache(Path(directory)/'vectors.sqlite', 'm@r')
+            retriever = Retriever(FakeEncoder(), cache, 'm@r', SEPARATE_POLICY)
+            query = {'question': 'plane', 'model_revision': retriever.revision, 'top_k': 2,
+                     'sources': [source('a', 'car'), source('b', 'plane'), source('b', 'plane')]}
+            result, _ = retriever.rank(query)
+            self.assertEqual([ref for ref, _ in result['candidates']], ['a', 'b'])
+            self.assertEqual([ref for ref, _ in result['lexical_candidates']], ['b'])
+            scoped, metrics = retriever.rank({**query, 'sources': query['sources'][:1]})
+            self.assertEqual([ref for ref, _ in scoped['candidates']], ['a'])
+            self.assertEqual(scoped['lexical_candidates'], [])
+            self.assertEqual(metrics['encoded_sources'], 0)
+            cache.db.close()
+
     def test_hybrid_uses_same_encoder_cache_and_cannot_restore_an_absent_source(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = VectorCache(Path(directory)/'vectors.sqlite', 'm@r')

@@ -181,3 +181,81 @@ fn a_ranking_cannot_be_replayed_for_a_different_question() {
     );
     assert!(result.is_err());
 }
+
+#[test]
+fn separate_lexical_channel_obeys_admission_and_never_establishes_an_answer() {
+    let cases = [
+        (
+            context(false),
+            TemporalSelection::Frontier,
+            "entry:a",
+            TEXT,
+            true,
+        ),
+        (
+            context(false),
+            TemporalSelection::Frontier,
+            "foreign:entry:a",
+            TEXT,
+            false,
+        ),
+        (
+            context(false),
+            TemporalSelection::Frontier,
+            "entry:a",
+            "changed text",
+            false,
+        ),
+        (
+            context(false),
+            TemporalSelection::as_of(
+                TemporalCursor::time("2026-01-01T00:00:00Z").expect("time"),
+                TemporalAxis::Occurred,
+            )
+            .expect("selection"),
+            "entry:a",
+            TEXT,
+            false,
+        ),
+        (
+            context(true),
+            TemporalSelection::as_of(
+                TemporalCursor::time("2026-01-04T00:00:00Z").expect("time"),
+                TemporalAxis::Occurred,
+            )
+            .expect("selection"),
+            "entry:a",
+            TEXT,
+            false,
+        ),
+    ];
+    for (ctx, temporal, entry_ref, text, expected) in cases {
+        let ranking = SemanticCandidateRanking::new(
+            "encoder@immutable-revision/separate-bm25-v1".into(),
+            "mechanic fixed car",
+            Vec::new(),
+        )
+        .expect("dense channel")
+        .with_lexical_candidates(vec![(
+            entry_ref.into(),
+            format!("{:x}", Sha256::digest(text.as_bytes())),
+        )])
+        .expect("lexical channel");
+        let response = ask(
+            AskRetrievalContext::from(ctx).with_semantic_candidates(ranking),
+            &temporal,
+            None,
+        );
+        assert_eq!(response.answer, "UNKNOWN");
+        assert!(response.because.is_empty());
+        let proof = response.proof.expect("proof");
+        assert_eq!(
+            proof.evidence.iter().any(|item| item
+                .metadata
+                .get("retrieval_channel")
+                .map(String::as_str)
+                == Some("bm25")),
+            expected
+        );
+    }
+}

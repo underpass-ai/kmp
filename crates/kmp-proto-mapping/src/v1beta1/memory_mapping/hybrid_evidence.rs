@@ -10,9 +10,9 @@ use super::answer_selection::was_reached_indirectly;
 /// indirect-retrieval mark and cannot enter `because` or raise confidence.
 pub(super) fn fuse_evidence(
     lexical: Vec<MemoryEvidence>,
-    semantic: Vec<MemoryEvidence>,
+    supplemental: Vec<Vec<MemoryEvidence>>,
 ) -> Vec<MemoryEvidence> {
-    if semantic.is_empty() {
+    if supplemental.iter().all(Vec::is_empty) {
         return lexical;
     }
     let core = lexical
@@ -29,7 +29,7 @@ pub(super) fn fuse_evidence(
     let mut scores = BTreeMap::<String, f64>::new();
     // Insert lexical objects first, retaining their existing provenance when
     // both channels return the same stored item.
-    for ranking in [lexical, semantic] {
+    for ranking in std::iter::once(lexical).chain(supplemental) {
         let mut seen = BTreeSet::new();
         for item in ranking {
             if !seen.insert(item.id.clone()) {
@@ -73,7 +73,7 @@ mod tests {
             .map(|n| item(&n.to_string(), false))
             .collect::<Vec<_>>();
         let semantic = vec![item("new", true), item("6", true), item("6", true)];
-        let combined = fuse_evidence(lexical, semantic);
+        let combined = fuse_evidence(lexical, vec![semantic]);
         assert_eq!(
             combined
                 .iter()
@@ -91,5 +91,37 @@ mod tests {
                 .find(|i| i.id == "new")
                 .expect("valid test fixture")
         ));
+    }
+
+    #[test]
+    fn independent_channels_vote_once_without_fusing_their_ranks_first() {
+        let graph = vec![item("association", true)];
+        let dense = vec![item("dense-only", true), item("agreement", true)];
+        let bm25 = vec![item("agreement", true), item("lexical-only", true)];
+        let ranked = fuse_evidence(graph.clone(), vec![dense.clone(), bm25.clone()]);
+        assert_eq!(ranked[0].id, "agreement");
+        assert!(ranked.iter().all(was_reached_indirectly));
+        let mut duplicated = bm25;
+        duplicated.insert(0, item("agreement", true));
+        let repeated = fuse_evidence(graph, vec![dense, duplicated]);
+        assert_eq!(
+            ranked, repeated,
+            "duplicate transport rows cannot add channel votes"
+        );
+        assert_eq!(ranked.len(), 4);
+    }
+
+    #[test]
+    fn additional_lexical_proof_does_not_displace_the_answer_core() {
+        let core = (0..5)
+            .map(|n| item(&format!("core{n}"), false))
+            .collect::<Vec<_>>();
+        let ranked = fuse_evidence(
+            core.clone(),
+            vec![vec![item("other", true)], vec![item("other", true)]],
+        );
+        assert_eq!(&ranked[..5], core.as_slice());
+        assert_eq!(ranked[5].id, "other");
+        assert!(was_reached_indirectly(&ranked[5]));
     }
 }

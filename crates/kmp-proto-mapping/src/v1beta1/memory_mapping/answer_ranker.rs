@@ -69,14 +69,14 @@ impl Default for AnswerEvidenceRanker<'_> {
 }
 
 impl<'a> AnswerEvidenceRanker<'a> {
-    /// Semantic similarity can extend proof but cannot establish an answer.
+    /// Optional dense and lexical proposals can extend proof, never establish an answer.
     /// Proposals resolve only against the current scoped/time-bounded pool;
     /// expired and superseded claims cannot be rescued as current evidence.
     pub(super) fn semantic_candidates(
         &self,
         ranking: &super::semantic_candidate_ranking::SemanticCandidateRanking,
         evidence: &[MemoryEvidence],
-    ) -> Vec<MemoryEvidence> {
+    ) -> Vec<Vec<MemoryEvidence>> {
         let live = evidence
             .iter()
             .filter(|item| {
@@ -84,7 +84,7 @@ impl<'a> AnswerEvidenceRanker<'a> {
             })
             .cloned()
             .collect::<Vec<_>>();
-        ranking.resolve(&live)
+        ranking.resolve_channels(&live)
     }
 
     /// A ranker over a bundle with no table, which is what the tests of

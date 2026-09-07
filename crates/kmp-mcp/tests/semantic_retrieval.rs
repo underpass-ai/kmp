@@ -33,7 +33,7 @@ fn ingest(about: &str, count: usize) -> Value {
 
 /// One HTTP request only. The listener then disappears: any model call on a
 /// continuation would fail instead of silently generating another selection.
-fn sidecar() -> (String, std::thread::JoinHandle<Value>) {
+fn sidecar(separate_channels: bool) -> (String, std::thread::JoinHandle<Value>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("loopback bind");
     let endpoint = format!("http://{}/rank", listener.local_addr().expect("address"));
     let handle = std::thread::spawn(move || {
@@ -69,8 +69,13 @@ fn sidecar() -> (String, std::thread::JoinHandle<Value>) {
             .iter()
             .map(|s| json!([s["entry_ref"], s["text_sha256"]]))
             .collect::<Vec<_>>();
-        let response = json!({"model_revision":"test@revision",
-            "question_sha256":format!("{:x}", Sha256::digest(question.as_bytes())), "candidates":candidates}).to_string();
+        let mut response = json!({"model_revision":"test@revision",
+            "question_sha256":format!("{:x}", Sha256::digest(question.as_bytes())), "candidates":candidates});
+        if separate_channels {
+            response["lexical_candidates"] = response["candidates"].clone();
+            response["candidates"] = json!([]);
+        }
+        let response = response.to_string();
         write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", response.len(), response).expect("response");
         request
     });
@@ -79,8 +84,17 @@ fn sidecar() -> (String, std::thread::JoinHandle<Value>) {
 
 #[tokio::test]
 async fn real_mcp_semantics_admit_before_encoding_and_freeze_pagination() {
+    verify_admission_and_pagination(false).await;
+}
+
+#[tokio::test]
+async fn real_mcp_accepts_independent_lexical_proof_and_freezes_it_between_pages() {
+    verify_admission_and_pagination(true).await;
+}
+
+async fn verify_admission_and_pagination(separate_channels: bool) {
     let data = tempfile::tempdir().expect("store");
-    let (endpoint, sidecar) = sidecar();
+    let (endpoint, sidecar) = sidecar(separate_channels);
     std::fs::write(
         data.path().join("semantic-retrieval.json"),
         json!({
@@ -108,6 +122,9 @@ async fn real_mcp_semantics_admit_before_encoding_and_freeze_pagination() {
         assert!(serde_json::to_vec(&response).expect("JSON").len() <= 4000);
         for item in response["proof"]["evidence"].as_array().expect("proof") {
             if item["metadata"]["reached_by"] == "semantic" {
+                if separate_channels {
+                    assert_eq!(item["metadata"]["retrieval_channel"], "bm25");
+                }
                 found.insert(item["supports"][0].as_str().expect("ref").to_string());
             }
         }

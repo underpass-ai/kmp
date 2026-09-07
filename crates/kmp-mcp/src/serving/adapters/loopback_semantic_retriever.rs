@@ -90,8 +90,15 @@ impl LoopbackSemanticRetriever {
         {
             return Err("semantic response model or question mismatch".into());
         }
-        SemanticCandidateRanking::new(response.model_revision, question, response.candidates)
-            .map_err(|_| "invalid semantic candidate identities".to_string())
+        let ranking =
+            SemanticCandidateRanking::new(response.model_revision, question, response.candidates)
+                .map_err(|_| "invalid semantic candidate identities".to_string())?;
+        match response.lexical_candidates {
+            Some(lexical) => ranking
+                .with_lexical_candidates(lexical)
+                .map_err(|_| "invalid lexical candidate identities".to_string()),
+            None => Ok(ranking),
+        }
     }
 }
 

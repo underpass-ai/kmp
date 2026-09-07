@@ -4,6 +4,7 @@ import math
 import re
 
 POLICY = 'bm25-rrf-v1'
+SEPARATE_POLICY = 'separate-bm25-v1'
 K1, B, RRF_CONSTANT, WINDOW = 1.5, 0.75, 60, 100
 
 
@@ -18,7 +19,7 @@ def bm25(question, sources):
     if not average:
         return []
     df = Counter(word for row in terms.values() for word in row)
-    query = set(re.findall(r'\w+', question.lower()))
+    query = sorted(set(re.findall(r'\w+', question.lower())))
     scored = []
     for key, row in terms.items():
         score = 0.0
@@ -50,6 +51,17 @@ def fuse(rankings, top_k):
 
 
 def revision(encoder_revision, policy):
-    if policy not in ('dense', POLICY):
+    if policy not in ('dense', POLICY, SEPARATE_POLICY):
         raise ValueError('unknown ranking policy')
     return encoder_revision if policy == 'dense' else encoder_revision + '/' + policy
+
+
+def unique_refs(ranking, top_k):
+    result, seen = [], set()
+    for ref, fingerprint in ranking:
+        if ref not in seen:
+            seen.add(ref)
+            result.append((ref, fingerprint))
+        if len(result) == top_k:
+            break
+    return result

@@ -17,7 +17,7 @@ process to opt in:
 Only literal loopback HTTP addresses are accepted. Redirects and HTTP proxies
 are disabled. The client sends only the live source texts already admitted by
 the application's scope and temporal selection. The adapter proposes at most
-100 refs and SHA-256 fingerprints, tied to the exact question and configured
+100 refs per channel and SHA-256 fingerprints, tied to the exact question and configured
 model revision. KMP resolves them against its stored text and keeps source
 identity, provenance and lifecycle checks. The encoder supplies no answer text.
 
@@ -86,3 +86,36 @@ requirements. No policy is promoted solely by an individual repaired example.
 Formula references: [Lucene BM25Similarity](https://lucene.apache.org/core/9_12_1/core/org/apache/lucene/search/similarities/BM25Similarity.html)
 and [Elastic RRF](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion).
 k1=1.5 preserves this evaluation's earlier baseline; it is not Lucene's default.
+
+
+## One native fusion with independent channels
+
+`--ranking-policy separate-bm25-v1` retains the same encoder, BM25 parameters,
+source snapshot, cache and candidate limits. Its response carries `candidates`
+in dense order and `lexical_candidates` in BM25 order, with at most 100 unique
+refs and matching fingerprints each. The sidecar does not fuse them. Configure
+`model_revision` with the `/separate-bm25-v1` suffix; an older binary rejects
+this expanded response and declares a fallback instead of silently ignoring it.
+
+KMP validates both channels against the same admitted live text, then performs
+one RRF over its ordinary ranking and the two supplemental rankings. Its five
+eligible core citations keep priority. Repeated canonical evidence identities
+vote once per channel. The source and literal text remain unchanged. An item
+found only through the adapter still carries `reached_by=semantic`; on split
+channels, `retrieval_channel=dense|bm25` identifies the supplemental object
+retained by fusion. This is retrieval provenance, never proof of answer support
+or searchable source content. Ordinary provenance remains when it supplied the
+same evidence first. An empty dense channel can still return BM25 proof without
+establishing an answer.
+
+Legacy responses without `lexical_candidates` retain single-channel behavior.
+Either malformed channel causes an explicit ordinary fallback. Both rankings
+are frozen together for pagination, subject to the existing source-snapshot,
+model revision, byte limits and selection lifetime. Distinct text fingerprints
+for one ref remain distinct stored representations; this change does not
+consolidate memories, merge entities or deduplicate a source against its derived
+claim. Those need separate quality measurements.
+
+This policy is an experimental candidate. Compare it against the same binary
+with the default dense adapter, keep failures, and record coverage and answer
+fidelity separately. Do not promote it just because a selected query improves.

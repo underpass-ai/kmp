@@ -1,7 +1,7 @@
 """Rank only the explicit source snapshot submitted by KMP."""
 import hashlib
 import numpy as np
-from lexical_ranking import POLICY, WINDOW, bm25, fuse, revision
+from lexical_ranking import POLICY, SEPARATE_POLICY, WINDOW, bm25, fuse, revision, unique_refs
 
 
 class Retriever:
@@ -55,7 +55,10 @@ class Retriever:
                 break
         if self.policy == POLICY:
             ranked = fuse([ranked, bm25(question, sources)], top_k)
-        return {'model_revision': self.revision,
-                'question_sha256': hashlib.sha256(question.encode()).hexdigest(), 'candidates': ranked}, {
+        response = {'model_revision': self.revision,
+                    'question_sha256': hashlib.sha256(question.encode()).hexdigest(), 'candidates': ranked}
+        if self.policy == SEPARATE_POLICY:
+            response['lexical_candidates'] = unique_refs(bm25(question, sources), top_k)
+        return response, {
                 'sources': len(sources), 'encoded_sources': len(missing), 'cache_hits': len(unique)-len(missing),
                 'ranking_policy': self.policy}

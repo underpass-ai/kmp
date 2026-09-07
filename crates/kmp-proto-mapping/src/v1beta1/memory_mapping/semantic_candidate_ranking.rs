@@ -17,6 +17,7 @@ pub struct SemanticCandidateRanking {
     model_revision: String,
     question_digest: [u8; 32],
     fingerprints: Vec<(String, String)>,
+    lexical_fingerprints: Option<Vec<(String, String)>>,
 }
 
 impl SemanticCandidateRanking {
@@ -27,17 +28,9 @@ impl SemanticCandidateRanking {
         question: &str,
         fingerprints: Vec<(String, String)>,
     ) -> ProtoMappingResult<Self> {
-        let mut refs = BTreeSet::new();
         if model_revision.trim().is_empty()
             || model_revision.len() > 256
-            || fingerprints.len() > 100
-            || fingerprints.iter().any(|(entry_ref, fingerprint)| {
-                entry_ref.is_empty()
-                    || entry_ref.len() > 4096
-                    || !refs.insert(entry_ref)
-                    || fingerprint.len() != 64
-                    || !fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
-            })
+            || !valid_fingerprints(&fingerprints)
         {
             return Err(invalid_argument("invalid semantic candidate ranking"));
         }
@@ -48,11 +41,30 @@ impl SemanticCandidateRanking {
                 .into_iter()
                 .map(|(entry_ref, hash)| (entry_ref, hash.to_ascii_lowercase()))
                 .collect(),
+            lexical_fingerprints: None,
         })
     }
 
+    /// A second, unfused BM25 channel. Each channel may propose at most 100
+    /// unique refs; neither its scores nor its text are accepted as evidence.
+    pub fn with_lexical_candidates(
+        mut self,
+        fingerprints: Vec<(String, String)>,
+    ) -> ProtoMappingResult<Self> {
+        if !valid_fingerprints(&fingerprints) {
+            return Err(invalid_argument("invalid lexical candidate ranking"));
+        }
+        self.lexical_fingerprints = Some(
+            fingerprints
+                .into_iter()
+                .map(|(entry_ref, hash)| (entry_ref, hash.to_ascii_lowercase()))
+                .collect(),
+        );
+        Ok(self)
+    }
+
     /// Only the already scoped, temporally admitted and live pool is supplied.
-    pub(super) fn resolve(&self, admitted: &[MemoryEvidence]) -> Vec<MemoryEvidence> {
+    pub(super) fn resolve_channels(&self, admitted: &[MemoryEvidence]) -> Vec<Vec<MemoryEvidence>> {
         let mut by_identity = BTreeMap::new();
         for item in admitted {
             let fingerprint = format!("{:x}", Sha256::digest(item.text.as_bytes()));
@@ -67,16 +79,29 @@ impl SemanticCandidateRanking {
                     .or_insert(item);
             }
         }
-        self.fingerprints
-            .iter()
-            .filter_map(|key| by_identity.get(key))
-            .map(|item| {
-                let mut item = mark_reached_by((*item).clone(), "semantic");
-                item.metadata.insert(
-                    "semantic_model_revision".to_string(),
-                    self.model_revision.clone(),
-                );
-                item
+        let mut channels = vec![(&self.fingerprints, "dense")];
+        if let Some(lexical) = &self.lexical_fingerprints {
+            channels.push((lexical, "bm25"));
+        }
+        channels
+            .into_iter()
+            .map(|(fingerprints, channel)| {
+                fingerprints
+                    .iter()
+                    .filter_map(|key| by_identity.get(key))
+                    .map(|item| {
+                        let mut item = mark_reached_by((*item).clone(), "semantic");
+                        item.metadata.insert(
+                            "semantic_model_revision".to_string(),
+                            self.model_revision.clone(),
+                        );
+                        if self.lexical_fingerprints.is_some() {
+                            item.metadata
+                                .insert("retrieval_channel".into(), channel.into());
+                        }
+                        item
+                    })
+                    .collect()
             })
             .collect()
     }
@@ -86,8 +111,24 @@ impl SemanticCandidateRanking {
     }
 
     pub(super) fn len(&self) -> usize {
-        self.fingerprints.len()
+        self.fingerprints
+            .iter()
+            .chain(self.lexical_fingerprints.iter().flatten())
+            .collect::<BTreeSet<_>>()
+            .len()
     }
+}
+
+fn valid_fingerprints(fingerprints: &[(String, String)]) -> bool {
+    let mut refs = BTreeSet::new();
+    fingerprints.len() <= 100
+        && fingerprints.iter().all(|(entry_ref, fingerprint)| {
+            !entry_ref.is_empty()
+                && entry_ref.len() <= 4096
+                && refs.insert(entry_ref)
+                && fingerprint.len() == 64
+                && fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
+        })
 }
 
 #[cfg(test)]
@@ -116,15 +157,15 @@ mod tests {
             )],
         )
         .expect("valid test fixture");
-        let resolved = ranking.resolve(std::slice::from_ref(&original));
+        let resolved = &ranking.resolve_channels(std::slice::from_ref(&original))[0];
         assert_eq!(resolved.len(), 1);
         assert_eq!(resolved[0].text, original.text);
         assert_eq!(resolved[0].source, original.source);
         assert_eq!(resolved[0].metadata["reached_by"], "semantic");
-        assert!(ranking.resolve(&[]).is_empty());
+        assert!(ranking.resolve_channels(&[])[0].is_empty());
         let mut changed = original;
         changed.text = "The launch was not postponed.".into();
-        assert!(ranking.resolve(&[changed]).is_empty());
+        assert!(ranking.resolve_channels(&[changed])[0].is_empty());
     }
 
     #[test]
@@ -146,6 +187,59 @@ mod tests {
                 (0..101).map(|n| (n.to_string(), "a".repeat(64))).collect()
             )
             .is_err()
+        );
+    }
+
+    #[test]
+    fn each_channel_is_validated_and_resolved_against_the_same_stored_text() {
+        let original = evidence();
+        let fingerprint = format!("{:x}", Sha256::digest(original.text.as_bytes()));
+        let pair = ("entry:a".into(), fingerprint);
+        let dense = SemanticCandidateRanking::new("m@r".into(), "q", vec![pair.clone()])
+            .expect("valid test fixture");
+        assert!(
+            dense
+                .clone()
+                .with_lexical_candidates(vec![pair.clone(), pair.clone()])
+                .is_err()
+        );
+        assert!(
+            dense
+                .clone()
+                .with_lexical_candidates(vec![("x".into(), "bad".into())])
+                .is_err()
+        );
+        assert!(
+            dense
+                .clone()
+                .with_lexical_candidates(
+                    (0..101).map(|n| (n.to_string(), "a".repeat(64))).collect()
+                )
+                .is_err()
+        );
+        let ranking = dense
+            .with_lexical_candidates(vec![pair])
+            .expect("valid test fixture");
+        assert_eq!(
+            ranking.len(),
+            1,
+            "same ref and text is one proposed identity"
+        );
+        let channels = ranking.resolve_channels(std::slice::from_ref(&original));
+        assert_eq!(channels.len(), 2);
+        for (items, channel) in channels.iter().zip(["dense", "bm25"]) {
+            assert_eq!(items[0].text, original.text);
+            assert_eq!(items[0].source, original.source);
+            assert_eq!(items[0].metadata["retrieval_channel"], channel);
+            assert_eq!(items[0].metadata["reached_by"], "semantic");
+        }
+        let mut changed = original;
+        changed.text = "The launch was not postponed.".into();
+        assert!(
+            ranking
+                .resolve_channels(&[changed])
+                .iter()
+                .all(Vec::is_empty)
         );
     }
 }
