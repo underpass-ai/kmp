@@ -110,7 +110,7 @@
           "id": "advanced:pagination",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly. Ask keeps cited evidence in the stable core and preserves retrieval rank among additional evidence across pages. A changed candidate order invalidates an old cursor.",
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly. Ask keeps cited evidence in the stable core and preserves retrieval rank among additional evidence across pages. A changed candidate order invalidates an old cursor. If a wake or Ask page returns zero expansion items while has_more is true, follow its no-progress guidance: increase budget.max_bytes for the same cursor, or report the selection as partial when the budget is fixed. Repeating that cursor at the same byte ceiling cannot advance.",
           "evidence": "Every bounded live read reports its own page unit, continuation and byte-budget guidance."
         },
         {
@@ -346,7 +346,7 @@
           "id": "advanced:budgets",
           "kind": "concept",
           "depth": "advanced",
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages.",
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages. If a page cannot fit the next item, KMP says that it cannot advance: allow a larger response or keep the result explicitly partial.",
           "evidence": "The shipped read contracts preserve a stable response floor and make every byte-budget exception visible as a warning."
         },
         {
