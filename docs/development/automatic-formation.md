@@ -65,6 +65,13 @@ experimental formulation. This increment does not provide a store-writing CLI.
   retrieval, answer accuracy, unsupported claims, coverage, citations, latency
   and tokens, keeping sources, readers and question sets fixed.
 
+Pipeline `formation-v2` tightens the model instructions after the first source
+controls: form self-contained memories from explicit antecedents, preserve
+reporting anchors and temporal restrictions, and accept uncertain statements
+when they faithfully retain the source's uncertainty. These are instructions to
+be measured, not additional deterministic guarantees. Earlier `formation-v1`
+artifacts remain a separate baseline; the version changes the logical write key.
+
 Run the boundary tests without loading a model:
 
 ```bash
