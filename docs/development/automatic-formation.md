@@ -120,6 +120,26 @@ does not repair source omissions, unsupported claims, categories or verdict
 judgment; those remain separate measured quality requirements. A server that
 ignores the schema must still pass the adapter's strict validation.
 
+`formation-v7-source-framing` adds a shared quality instruction to extraction,
+coverage revision and verification. Claims inside a draft, quotation, fictional
+example or document submitted for editing must keep that frame in every retained
+memory, with quotes supporting both the frame and content. An assistant rewrite
+does not prove a message was sent or the described action occurred. Supported
+editing requests, ownership and task-scoped preferences remain eligible.
+
+The same instruction distinguishes adopted decisions from tentative plans,
+unresolved choices and goals; the latter may be retained as qualified facts.
+An event category must not turn an unsent draft or intention into an occurrence.
+The schema and deterministic kernel remain unchanged. These instructions require
+measured fidelity and coverage; the model can still misclassify or omit a frame.
+
+This candidate follows the Sol V6 real-session control in the local evaluator:
+four episodes completed and original records survived, but three memories turned
+an email submitted for rewriting into Mazars statements/requests without the
+draft frame. Tentative meal-prep choices also received decision categories.
+V7 must preserve those sources and useful details while correcting the framing;
+more accepted memories or passing boundary tests alone do not establish that.
+
 Run the boundary tests without loading a model:
 
 ```bash

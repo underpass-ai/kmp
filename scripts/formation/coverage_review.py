@@ -1,7 +1,7 @@
 """One bounded source-coverage revision, still an untrusted model proposal."""
 import json
 from contracts import episode, fields, string
-from prompts import EXTRACTION_SCHEMA, TEXT, obj
+from prompts import EXTRACTION_SCHEMA, FORMATION_SEMANTICS, TEXT, obj
 
 REVIEW_SCHEMA = obj({'memories': EXTRACTION_SCHEMA['properties']['memories'],
                      'review_notes': TEXT})
@@ -28,7 +28,7 @@ Keep relative expressions AND their source reporting date from observed_at in me
 Do not compute event dates. Keep historical preferences historical and restrictions explicit.
 Do not infer aliases, merge entities, invent causes, supersede records or use outside knowledge.
 Use at most 24 atomic memories. Review notes are diagnostic, never supporting evidence.
-All corrected candidates undergo literal citation checks and a separate whole-claim verifier.'''},
+All corrected candidates undergo literal citation checks and a separate whole-claim verifier.''' + FORMATION_SEMANTICS},
             {'role': 'user', 'content': json.dumps({'sources': source_episode['sources'],
                 'draft': proposed, 'draft_rejections': rejected}, ensure_ascii=False)}]
 
