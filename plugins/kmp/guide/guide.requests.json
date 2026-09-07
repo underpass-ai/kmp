@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:16e885168ee5c2063d45",
+    "idempotency_key": "ingest:guide-sync:1:agent:ecccbcfb794d144645fb",
     "memory": {
       "dimensions": [
         {
@@ -474,7 +474,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly. Ask keeps cited evidence in the stable core and preserves retrieval rank among additional evidence across pages. A changed candidate order invalidates an old cursor. If a wake or Ask page returns zero expansion items while has_more is true, follow its no-progress guidance: increase budget.max_bytes for the same cursor, or report the selection as partial when the budget is fixed. Repeating that cursor at the same byte ceiling cannot advance."
         },
         {
           "coordinates": [
@@ -564,7 +564,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched. With the optional local semantic retriever enabled on an embedded store, reached_by=semantic identifies a candidate proposed by an encoder; semantic_model_revision records its version. KMP accepts only a matching stored ref and text fingerprint inside the selected scope, time and lifecycle. These candidates also remain proof rather than citations or answers; UNKNOWN may still be correct. A warning declares a fallback when the optional encoder is unavailable."
+          "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched. With the optional local semantic retriever enabled on an embedded store, reached_by=semantic identifies a candidate proposed by the optional local retrieval adapter; semantic_model_revision records its version, including the ranking policy when the optional sidecar fuses BM25 and dense candidates. The default sidecar remains dense; a policy-qualified revision is required to opt in to lexical/dense fusion. The separate-bm25-v1 policy returns independent dense and BM25 channels for one native fusion; retrieval_channel identifies the supplemental representation retained, while similarity or a lexical score still does not prove an answer. KMP accepts only a matching stored ref and text fingerprint inside the selected scope, time and lifecycle. These candidates also remain proof rather than citations or answers; UNKNOWN may still be correct. A warning declares a fallback when the optional encoder is unavailable."
         },
         {
           "coordinates": [
@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:a59e6a0a6ecab95f60dc",
+    "idempotency_key": "ingest:guide-sync:1:person:a2e073f6130f2c854e54",
     "memory": {
       "dimensions": [
         {
@@ -2145,7 +2145,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text. An optional local semantic encoder can help the embedded engine find differently worded sources. Similarity is shown as retrieval evidence and never establishes an answer on its own; an unavailable encoder leaves ordinary retrieval available with a warning."
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text. An optional local semantic encoder can help the embedded engine find differently worded sources. Similarity is shown as retrieval evidence and never establishes an answer on its own; an unavailable encoder leaves ordinary retrieval available with a warning. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages. If a page cannot fit the next item, KMP says that it cannot advance: allow a larger response or keep the result explicitly partial."
         },
         {
           "coordinates": [

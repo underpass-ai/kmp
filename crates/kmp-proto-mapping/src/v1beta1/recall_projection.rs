@@ -729,7 +729,14 @@ fn attach_metadata(
         || excluded_by_detail > 0
         || plan.selection_omitted > 0
         || core_text_shortened;
-    let next_action = if planning || has_more {
+    let stalled = !planning && has_more && selected.is_empty();
+    let next_action = if stalled {
+        format!(
+            "This page cannot advance at the current byte budget. Increase budget.max_bytes \
+             and continue with page.cursor=\"{cursor}\", keeping other bound arguments unchanged; \
+             or retain this selection as partial if the budget is fixed."
+        )
+    } else if planning || has_more {
         format!(
             "Call the same recall tool with identical bound arguments and page.cursor=\"{cursor}\"; budget.tokens, budget.max_bytes, and page.entries may change."
         )
@@ -774,6 +781,9 @@ fn attach_metadata(
         });
         let warning = if planning {
             PLANNING_WARNING
+        } else if stalled {
+            "recall expansion cannot advance at this byte budget; repeating the same cursor \
+             with unchanged budget.max_bytes returns no additional evidence"
         } else if has_more {
             "pageable recall projection has more expansion items; follow the non-null projection.page.next_cursor with identical bound arguments"
         } else if excluded_by_detail > 0 {
@@ -1955,6 +1965,55 @@ mod tests {
     use kmp_application::queries::cl100k_estimator::Cl100kEstimator;
 
     use super::*;
+
+    #[test]
+    fn oversized_expansion_explains_stall_and_resumes_at_larger_budget() {
+        let mut packet = fixture();
+        packet["proof"]["evidence"][1]["text"] = json!("large literal source ".repeat(800));
+        let mut args = json!({
+            "about": "project:kmp", "question": "What is current?",
+            "budget": {"max_bytes": 10_000, "detail": "full"},
+            "page": {"entries": 1}
+        });
+        // The causal path precedes the oversized evidence, giving a real
+        // nonzero continuation offset rather than only a stalled first page.
+        let first = projected(packet.clone(), args.clone());
+        assert_eq!(first["projection"]["page"]["returned"], 1);
+        let cursor = first["projection"]["page"]["next_cursor"].clone();
+        args["page"]["cursor"] = cursor.clone();
+        let stalled = projected(packet.clone(), args.clone());
+        assert!(serialized_bytes(&stalled) <= 10_000);
+        assert_eq!(stalled["projection"]["page"]["offset"], 1);
+        assert_eq!(stalled["projection"]["page"]["returned"], 0);
+        assert_eq!(stalled["projection"]["page"]["has_more"], true);
+        assert_eq!(stalled["projection"]["page"]["next_cursor"], cursor);
+        assert_eq!(stalled["because"], packet["because"]);
+        assert!(
+            stalled["projection"]["next_action"]
+                .as_str()
+                .expect("continuation guidance")
+                .contains("Increase budget.max_bytes")
+        );
+        assert!(
+            stalled["warnings"]
+                .as_array()
+                .expect("warnings")
+                .iter()
+                .any(|w| w.as_str().is_some_and(|w| w.contains("cannot advance")))
+        );
+
+        args["budget"]["max_bytes"] = json!(30_000);
+        let resumed = projected(packet.clone(), args);
+        assert_eq!(resumed["projection"]["page"]["offset"], 1);
+        assert_eq!(resumed["projection"]["page"]["returned"], 1);
+        assert_ne!(resumed["projection"]["page"]["next_cursor"], cursor);
+        assert!(
+            resumed["proof"]["evidence"]
+                .as_array()
+                .expect("resumed evidence")
+                .contains(&packet["proof"]["evidence"][1])
+        );
+    }
 
     #[test]
     fn cursor_rejects_changed_bound_arguments() {
