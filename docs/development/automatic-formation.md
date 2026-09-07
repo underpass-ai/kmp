@@ -98,6 +98,13 @@ episode, or two when the final revision contains no admissible candidates.
 These choices require measured coverage, lineage and cost controls; another
 call to the same model is not independent validation or a completeness guarantee.
 
+`formation-v5-review-sampling` changes only the reasoning review's sampling to
+temperature 1.0 and top-p 1.0, with seed 0 and the same output limit. This follows
+the [pinned model's reasoning guidance](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-FP8).
+The non-thinking extraction and verification remain greedy. The twelve local
+V4 controls exposed omissions and incomplete antecedent citations; this is a
+controlled candidate to measure, not a claimed fix for those model failures.
+
 Run the boundary tests without loading a model:
 
 ```bash

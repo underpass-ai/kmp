@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 
-VERSION = 'formation-v4-coverage-review'
+VERSION = 'formation-v5-review-sampling'
 CATEGORIES = ('fact', 'preference', 'decision', 'constraint', 'event')
 
 

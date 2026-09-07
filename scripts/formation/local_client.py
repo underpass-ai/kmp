@@ -8,7 +8,8 @@ from contracts import digest
 
 GENERATION = {'temperature': 0, 'seed': 0, 'max_tokens': 4096,
               'chat_template_kwargs': {'enable_thinking': False}}
-PHASE_GENERATION = {'formation_review': {'chat_template_kwargs': {'enable_thinking': True}}}
+PHASE_GENERATION = {'formation_review': {'temperature': 1.0, 'top_p': 1.0,
+                                       'chat_template_kwargs': {'enable_thinking': True}}}
 GENERATION_PROFILE = {'default': GENERATION, 'phase_overrides': PHASE_GENERATION}
 
 

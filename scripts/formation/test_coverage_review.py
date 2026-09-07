@@ -74,6 +74,8 @@ class CoverageTests(unittest.TestCase):
         generated = {phase: body for phase, body in calls if not phase.endswith('_tokenize')}
         self.assertEqual([generated[p]['chat_template_kwargs']['enable_thinking'] for p in generated],
                          [False, True, False])
+        self.assertEqual([generated[p]['temperature'] for p in generated], [0, 1.0, 0])
+        self.assertEqual(generated['formation_review']['top_p'], 1.0)
         self.assertTrue(all(b['max_tokens'] == 4096 for b in generated.values()))
 
 
