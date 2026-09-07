@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:d07ac49cf639b1a2d67e",
+    "idempotency_key": "ingest:guide-sync:1:agent:4a8ecefdebe3264c7633",
     "memory": {
       "dimensions": [
         {
@@ -504,7 +504,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed."
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed. A shortened proof body retains its identity and provenance. core_text_shortened can remain true after the last expansion page: inspect the explicitly cited memory ref to read its full stored text; do not treat a shortened body as complete evidence."
         },
         {
           "coordinates": [
@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:1a3deec7e8d143b750da",
+    "idempotency_key": "ingest:guide-sync:1:person:0f4f3baf7bb76ae8b9d7",
     "memory": {
       "dimensions": [
         {
@@ -2145,7 +2145,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail."
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text."
         },
         {
           "coordinates": [
