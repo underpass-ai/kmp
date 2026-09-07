@@ -52,8 +52,8 @@ experimental formulation. This increment does not provide a store-writing CLI.
 - Entire turns remain intact. Over 24,000 source characters or 128 sources is
   refused; oversized prompts are refused before generation. There is no silent
   truncation. The optional session planner below packs longer sessions before
-  formation. Context across sessions and deduplicated session ingestion remain
-  separate work.
+  formation. The paired session compiler below deduplicates originals; context
+  across sessions remains separate work.
 - Generated memories retain source roles, source hashes, model revision, literal
   quotes and a rationale per derivation. Original source text remains verbatim.
   A literal quote is a mechanical check, **not proof that the claim follows**.
@@ -141,8 +141,33 @@ not a guarantee that a draft plus sources will fit.
 Episode IDs bind the complete session and segmentation policy. Plans are for
 preparing independent formation attempts, not for blindly concatenating their
 ingests: the current episode planner scopes original-source refs per episode,
-so overlapping sources require a separate deduplicated session-store adapter.
+so overlapping sources require the session compiler below.
 No retrieval or quality benefit is claimed from segmentation alone.
+
+## Compile paired session stores
+
+`session_plan.compile_session(session, attempts, **policy)` rebuilds the episode
+boundaries and requires exactly one terminal outcome per episode. A completed
+attempt contains `episode_id`, `status`, `version`, `model_revision`,
+`observed_at`, `extracted` and `verified`. A failed attempt has the same identity,
+model and clock fields, with `error` instead of version and model outputs.
+Completed attempts must match the running writer version; their candidates and
+verdicts are validated again before any ingest is compiled.
+
+The result contains `baseline` and `formed` payloads for **separate stores**.
+Each nonblank original appears exactly once in both variants with identical
+ref, text, metadata and coordinates. Only the formed variant adds accepted
+memories, quotes and derivations, translating episode source refs to the shared
+session originals. Failed episodes remain in `results`, mark the plan partial,
+and never remove original sources. An all-blank session returns no ingest.
+Blank originals stay in the caller's saved session and are listed explicitly.
+
+This function does not call a model or write a store. Save and replay the exact
+payload; regenerating a different result with the same session, policy, writer
+version and model set intentionally reuses the write key and may conflict.
+Original sources are deduplicated by identity, while repeated derived claims
+are retained for later measurement. This is not automatic entity resolution,
+consolidation, or evidence that the generated memories improve retrieval.
 
 Design references: [Hindsight retain](https://hindsight.vectorize.io/developer/api/retain)
 describes fact extraction and timestamp/context conditioning;
