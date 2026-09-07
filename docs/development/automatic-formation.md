@@ -51,8 +51,9 @@ experimental formulation. This increment does not provide a store-writing CLI.
   exclude evaluation labels from source text and identifiers.
 - Entire turns remain intact. Over 24,000 source characters or 128 sources is
   refused; oversized prompts are refused before generation. There is no silent
-  truncation. Splitting longer histories and preserving cross-episode context
-  remain future work.
+  truncation. The optional session planner below packs longer sessions before
+  formation. Context across sessions and deduplicated session ingestion remain
+  separate work.
 - Generated memories retain source roles, source hashes, model revision, literal
   quotes and a rationale per derivation. Original source text remains verbatim.
   A literal quote is a mechanical check, **not proof that the claim follows**.
@@ -110,6 +111,38 @@ Run the boundary tests without loading a model:
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/formation -p 'test_*.py' -v
 ```
+
+## Prepare a longer session
+
+`segment.py` accepts exactly `about`, `session_id` and `sources`, with the same
+source fields as an episode. A session has one reporting timestamp. Split
+different reporting sessions explicitly; the planner never carries a later
+session back into an earlier episode.
+
+```bash
+python3 scripts/formation/segment.py --session session.json --output segments.json
+```
+
+The `whole-turn-session-v1` plan packs up to 8,000 source characters and 32
+sources per episode by default. It keeps a larger single turn intact up to the
+writer's hard 24,000-character limit and marks it as exceeding the target.
+Larger turns fail the complete planning operation. Blank turns are listed as
+excluded from generation; callers retain the complete original session.
+There is no source truncation or model call in planning.
+
+When it fits, an episode includes the preceding turn from the same session.
+The plan distinguishes these context sources from newly covered sources and
+records every omitted overlap. Each nonblank input turn is newly covered once,
+in input order and with unchanged text, identity, role and timestamp. This
+single-turn overlap cannot preserve every distant antecedent. The model client
+still checks token admission for every generation phase; character packing is
+not a guarantee that a draft plus sources will fit.
+
+Episode IDs bind the complete session and segmentation policy. Plans are for
+preparing independent formation attempts, not for blindly concatenating their
+ingests: the current episode planner scopes original-source refs per episode,
+so overlapping sources require a separate deduplicated session-store adapter.
+No retrieval or quality benefit is claimed from segmentation alone.
 
 Design references: [Hindsight retain](https://hindsight.vectorize.io/developer/api/retain)
 describes fact extraction and timestamp/context conditioning;
