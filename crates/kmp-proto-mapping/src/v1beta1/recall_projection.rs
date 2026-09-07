@@ -1007,6 +1007,14 @@ fn max_text_chars(value: &Value) -> usize {
 }
 
 fn truncate_json_text(value: &mut Value, max_chars: usize) -> usize {
+    // A proof item's provenance is data, not prose. Keep its source, clock,
+    // metadata and supports unchanged so typed projection can preserve it.
+    if value.get("id").is_some()
+        && value.get("supports").is_some()
+        && let Some(text) = value.get_mut("text")
+    {
+        return truncate_json_text(text, max_chars);
+    }
     match value {
         Value::String(text) => {
             let total = text.chars().count();
@@ -1312,7 +1320,7 @@ fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    proof.evidence = select_projected(&proof.evidence, &evidence, memory_evidence_value);
+    proof.evidence = select_projected_evidence(&proof.evidence, &evidence);
     let superseded = value
         .get("superseded")
         .and_then(Value::as_array)
@@ -1340,6 +1348,30 @@ fn apply_proof_value(proof: &mut kmp_proto::v1beta1::Proof, value: &Value) {
             .and_then(Value::as_str)
             .unwrap_or("unknown"),
     );
+}
+
+// Evidence bodies may be shortened in the stable core. Reconstruct the
+// planned body while requiring every identity/provenance field to still match;
+// equality against the unshortened body would silently drop a cited object.
+fn select_projected_evidence(
+    originals: &[MemoryEvidence],
+    projected: &[Value],
+) -> Vec<MemoryEvidence> {
+    let mut used = BTreeSet::new();
+    projected
+        .iter()
+        .filter_map(|wanted| {
+            let id = wanted.get("id")?.as_str()?;
+            let text = wanted.get("text")?.as_str()?;
+            let original = originals.iter().find(|item| item.id == id)?;
+            let mut selected = original.clone();
+            selected.text = text.to_string();
+            if memory_evidence_value(&selected) != *wanted || !used.insert(id.to_string()) {
+                return None;
+            }
+            Some(selected)
+        })
+        .collect()
 }
 
 fn select_projected<T: Clone>(
@@ -2333,6 +2365,59 @@ mod tests {
             assert!(path >= previous_path, "larger byte budget lost proof path");
             previous_path = path;
         }
+    }
+
+    #[test]
+    fn shortened_typed_evidence_keeps_identity_text_and_budget() {
+        let mut response = typed_ask_fixture(24);
+        for evidence in &mut response.proof.as_mut().expect("proof").evidence {
+            evidence.text = "No change to the 32 verified records. ".repeat(40);
+            evidence.metadata.insert(
+                "source_id".to_string(),
+                "opaque-source-identity".to_string(),
+            );
+        }
+        let mut request = AskRequest {
+            about: "project:kmp".to_string(),
+            question: "Which storage engine is current?".to_string(),
+            budget: Some(kmp_proto::v1beta1::MemoryBudget {
+                max_bytes: 8_000,
+                detail: MemoryDetailLevel::Full as i32,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let mut seen = BTreeSet::new();
+        for _ in 0..100 {
+            let generic = projected(ask_value(&response), ask_arguments(&request));
+            let result = project_ask_response(response.clone(), &request).expect("typed page");
+            let actual = ask_value(&result);
+            assert_eq!(actual["proof"]["evidence"], generic["proof"]["evidence"]);
+            assert!(
+                actual["projection"]["core_text_shortened"]
+                    .as_bool()
+                    .expect("shortened")
+            );
+            for reason in &result.because {
+                let proof = result.proof.as_ref().expect("proof");
+                let evidence = proof
+                    .evidence
+                    .iter()
+                    .find(|item| item.id == reason.r#ref)
+                    .expect("a cited evidence must never disappear when its body is shortened");
+                assert_eq!(evidence.metadata["source_id"], "opaque-source-identity");
+                assert!(!evidence.text.is_empty());
+            }
+            assert!(serde_json::to_vec(&actual).expect("bytes").len() <= 8_000);
+            let page = result.projection.expect("projection").page.expect("page");
+            if !page.has_more {
+                return;
+            }
+            let cursor = page.next_cursor.expect("cursor");
+            assert!(seen.insert(cursor.clone()), "cursor must advance");
+            request.page = Some(kmp_proto::v1beta1::PageRequest { cursor, entries: 0 });
+        }
+        panic!("continuation did not terminate");
     }
 
     #[test]

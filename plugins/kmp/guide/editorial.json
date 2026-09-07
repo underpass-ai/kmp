@@ -117,7 +117,7 @@
           "id": "advanced:budgets",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed.",
+          "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed. A shortened proof body retains its identity and provenance. core_text_shortened can remain true after the last expansion page: inspect the explicitly cited memory ref to read its full stored text; do not treat a shortened body as complete evidence.",
           "evidence": "The live read schemas and projections guarantee one stable response floor plus an explicit warning when a valid max_bytes ceiling cannot contain a smaller honest response."
         },
         {
@@ -346,7 +346,7 @@
           "id": "advanced:budgets",
           "kind": "concept",
           "depth": "advanced",
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail.",
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text.",
           "evidence": "The shipped read contracts preserve a stable response floor and make every byte-budget exception visible as a warning."
         },
         {
