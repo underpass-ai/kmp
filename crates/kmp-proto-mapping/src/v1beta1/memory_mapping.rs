@@ -3,12 +3,14 @@ mod answer_candidate_terms;
 mod answer_ranker;
 mod answer_recall_context;
 mod answer_selection;
+mod ask_retrieval_context;
 mod association_index;
 mod bridged_key;
 mod bridged_term;
 mod bundle_views;
 mod candidate_temporal_state;
 mod dimensions;
+mod hybrid_evidence;
 mod ingest;
 mod lexical_bridge;
 mod lexical_field;
@@ -31,10 +33,14 @@ mod relevance_key;
 mod responses;
 mod scalars;
 mod search_terms;
+mod semantic_candidate_ranking;
+#[cfg(test)]
+mod semantic_recall_tests;
 mod temporal_admission;
 mod term_counts;
 mod visual_projection;
 
+pub use ask_retrieval_context::AskRetrievalContext;
 pub use bundle_views::abouts_in_bundle;
 pub use ingest::{ingest_command_from_proto, ingest_response_from_outcome};
 pub use lexical_bridge::LexicalBridge;
@@ -49,6 +55,7 @@ pub use responses::{
     ask_response_from_result, inspect_response_from_result, temporal_response_from_result,
     trace_response_from_result, wake_response_from_result,
 };
+pub use semantic_candidate_ranking::SemanticCandidateRanking;
 pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };

@@ -303,10 +303,21 @@ pub fn ask_response_from_result(
     asked_as: Option<&str>,
     policy: MemoryAnswerPolicy,
     max_entries: Option<usize>,
-    result: GetContextResult,
+    retrieval: impl Into<super::ask_retrieval_context::AskRetrievalContext>,
     bridge: &LexicalBridge,
     temporal: &TemporalSelection,
 ) -> ProtoMappingResult<AskResponse> {
+    let retrieval = retrieval.into();
+    if retrieval
+        .semantic
+        .as_ref()
+        .is_some_and(|ranking| !ranking.matches_question(question))
+    {
+        return Err(super::scalars::invalid_argument(
+            "semantic ranking belongs to a different question",
+        ));
+    }
+    let result = retrieval.result;
     let admission = TemporalAdmission::read(&result.bundle, temporal)?;
     let bounded = admission.bound(&result.bundle);
     let lifecycle = lifecycle_for(&bounded, &admission);
@@ -318,7 +329,16 @@ pub fn ask_response_from_result(
         answer_evidence_from_bundle(&result.bundle)
             .into_iter()
             .partition(|item| admission.admits(item));
-    let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
+    let semantic = retrieval
+        .semantic
+        .as_ref()
+        .map(|ranking| ranker.semantic_candidates(ranking, &candidate_evidence))
+        .unwrap_or_default();
+    let semantic_count = semantic.len();
+    let relevant_evidence = super::hybrid_evidence::fuse_evidence(
+        ranker.rank(question, policy, candidate_evidence),
+        semantic,
+    );
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
     // A candidate the graph reached is proof, not an answer. It travels in
     // `proof.evidence` with the hop that produced it, and the answer core is
@@ -460,6 +480,13 @@ pub fn ask_response_from_result(
         })
         .unwrap_or_default();
 
+    let mut warnings = question_rendering_warnings(question, asked_as);
+    if let Some(ranking) = &retrieval.semantic {
+        warnings.push(format!(
+            "semantic retrieval resolved {semantic_count}/{} proposed entries against admitted live text; similarity extends proof and does not establish an answer",
+            ranking.len()
+        ));
+    }
     Ok(AskResponse {
         projection: None,
         truncation: None,
@@ -468,7 +495,11 @@ pub fn ask_response_from_result(
             // things that do not answer this" lead to different next moves:
             // one is a memory that has not been written yet, the other is a
             // question this memory cannot settle.
-            if retrieved == 0 {
+            if retrieved == 0 && semantic_count > 0 {
+                format!(
+                    "Resolved {semantic_count} semantic candidates; none establishes an answer for: {question}{nearest_outside_note}"
+                )
+            } else if retrieved == 0 {
                 format!(
                     "Nothing in this memory was retrieved for: {question}{nearest_outside_note}"
                 )
@@ -488,7 +519,7 @@ pub fn ask_response_from_result(
         answer,
         because,
         proof: Some(answer_proof),
-        warnings: question_rendering_warnings(question, asked_as),
+        warnings,
         asked_as: asked_as.unwrap_or_default().to_string(),
     })
 }

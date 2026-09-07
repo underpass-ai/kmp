@@ -46,6 +46,7 @@ const RETRIEVAL_PROVENANCE_KEYS: &[&str] = &[
     RESTATED_VIA_KEY,
     MATCHED_VIA_KEY,
     SUMMARY_TERMS_KEY,
+    "semantic_model_revision",
 ];
 
 const MAX_RERANK_CANDIDATES: usize = 64;
