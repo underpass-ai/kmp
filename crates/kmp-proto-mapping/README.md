@@ -28,9 +28,9 @@ provenance. It does not establish a citation, raise confidence or turn UNKNOWN
 into an answer. Entry caps and the existing transport byte projection still
 apply. Replaying a ranking for another question is rejected.
 
-This is an experimental integration boundary on `work/sota-gaps`. MCP and gRPC
-still use their existing retrieval until an optional encoder/index adapter is
-wired in; this crate makes no model or network calls. The boundary tests verify
+This is an experimental integration boundary on `work/sota-gaps`. The embedded MCP backend now supports an [optional loopback encoder/index
+adapter](../../docs/development/semantic-retrieval.md); remote gRPC still uses
+its existing retrieval. This crate makes no model or network calls. The boundary tests verify
 paraphrase retrieval and isolation, not benchmark accuracy. The separate
 evaluation project records the fixed local dense/BM25/fusion comparison.
 

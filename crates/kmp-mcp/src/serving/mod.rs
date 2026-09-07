@@ -14,6 +14,7 @@ pub(crate) mod ports;
 pub(crate) mod projection_names;
 mod relabel_dispatch;
 mod rpc_dispatch;
+pub(crate) mod semantic_retrieval_outcome;
 pub(crate) mod telemetry;
 pub mod tool_error;
 pub(crate) mod tool_error_code;

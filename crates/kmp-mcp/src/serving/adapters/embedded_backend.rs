@@ -1,16 +1,19 @@
+use super::loopback_semantic_retriever::LoopbackSemanticRetriever;
+use crate::serving::ports::semantic_candidate_provider::SemanticCandidateProvider;
 use std::path::Path;
+use std::sync::Arc;
 
 use kmp_domain::{PortError, QualityMetricsObserver, QualityObservationContext, TemporalDirection};
 use kmp_embedded::{CommitNativeBundle, EmbeddedKernel, EmbeddedMemoryService};
 use kmp_proto_mapping::v1beta1::recall_projection::{project_ask_response, project_wake_response};
 use kmp_proto_mapping::v1beta1::{
-    LexicalBridge, ask_query_from_proto, ask_response_from_result, ingest_command_from_proto,
-    ingest_response_from_outcome, inspect_query_from_proto, inspect_response_from_result,
-    relabel_command_from_proto, relabel_response_from_outcome, relate_query_from_proto,
-    relate_response_from_result, temporal_query_from_move_proto, temporal_query_from_near_proto,
-    temporal_response_from_result, trace_query_from_proto, trace_response_from_result,
-    visual_projection_query_from_proto, visual_projection_response_from_result,
-    wake_query_from_proto, wake_response_from_result,
+    AskRetrievalContext, LexicalBridge, ask_query_from_proto, ask_response_from_result,
+    ingest_command_from_proto, ingest_response_from_outcome, inspect_query_from_proto,
+    inspect_response_from_result, relabel_command_from_proto, relabel_response_from_outcome,
+    relate_query_from_proto, relate_response_from_result, temporal_query_from_move_proto,
+    temporal_query_from_near_proto, temporal_response_from_result, trace_query_from_proto,
+    trace_response_from_result, visual_projection_query_from_proto,
+    visual_projection_response_from_result, wake_query_from_proto, wake_response_from_result,
 };
 use serde_json::Value;
 
@@ -45,6 +48,7 @@ pub struct EmbeddedKernelMcpBackend {
     /// The word table `ask` bridges languages with, read once beside the
     /// store. Silent when none is installed.
     lexical_bridge: LexicalBridge,
+    semantic: Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
 }
 
 impl EmbeddedKernelMcpBackend {
@@ -76,6 +80,7 @@ impl EmbeddedKernelMcpBackend {
             data_dir: data_dir.display().to_string(),
             commit_native,
             lexical_bridge: load_lexical_bridge(data_dir),
+            semantic: LoopbackSemanticRetriever::load(data_dir),
         })
     }
 
@@ -115,6 +120,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
         let commit_native = self.commit_native.as_ref();
         let store = self.kernel.store();
         let bridge = &self.lexical_bridge;
+        let semantic = &self.semantic;
         Box::pin(async move {
             let writes = matches!(
                 name,
@@ -128,6 +134,7 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                     &service,
                     quality_observer.as_ref(),
                     bridge,
+                    semantic,
                     name,
                     arguments,
                 )
@@ -137,9 +144,15 @@ impl KernelMcpToolBackend for EmbeddedKernelMcpBackend {
                 .begin_write(store)
                 .await
                 .map_err(commit_native_preflight_error)?;
-            let result =
-                embedded_tool_result(&service, quality_observer.as_ref(), bridge, name, arguments)
-                    .await;
+            let result = embedded_tool_result(
+                &service,
+                quality_observer.as_ref(),
+                bridge,
+                semantic,
+                name,
+                arguments,
+            )
+            .await;
             match result {
                 Ok(result) => {
                     let header = commit_native.publish(store, &pending).await.map_err(|error| {
@@ -219,6 +232,7 @@ async fn embedded_tool_result(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     bridge: &LexicalBridge,
+    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
     name: &str,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
@@ -227,7 +241,7 @@ async fn embedded_tool_result(
             embedded_ingest(service, arguments).await
         }
         "kmp_wake" => embedded_wake(service, observer, arguments).await,
-        "kmp_ask" => embedded_ask(service, observer, bridge, arguments).await,
+        "kmp_ask" => embedded_ask(service, observer, bridge, semantic, arguments).await,
         "kmp_goto" => {
             embedded_temporal(
                 service,
@@ -360,6 +374,7 @@ async fn embedded_ask(
     service: &EmbeddedMemoryService,
     observer: &dyn QualityMetricsObserver,
     bridge: &LexicalBridge,
+    semantic: &Result<Option<Arc<dyn SemanticCandidateProvider>>, String>,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = ask_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
@@ -382,20 +397,47 @@ async fn embedded_ask(
         result.bundle.metadata().revision,
         &result.rendered.quality,
     );
-    let response = project_ask_response(
-        ask_response_from_result(
-            &question,
-            asked_as.as_deref(),
-            policy,
-            max_entries,
-            result,
-            bridge,
-            &temporal,
-        )
-        .map_err(|status| mapping_error(&status))?,
-        &request,
+    let mut retrieval = AskRetrievalContext::from(result);
+    let mut warning = None;
+    match semantic {
+        Ok(Some(provider)) => {
+            let sources = retrieval
+                .semantic_sources(&temporal)
+                .map_err(|status| mapping_error(&status))?;
+            let outcome = provider
+                .rank(
+                    &question,
+                    &sources,
+                    arguments
+                        .get("page")
+                        .and_then(|p| p.get("cursor"))
+                        .is_some(),
+                )
+                .await
+                .map_err(ToolError::invalid_argument)?;
+            if let Some(ranking) = outcome.ranking {
+                retrieval = retrieval.with_semantic_candidates(ranking);
+            }
+            warning = outcome.warning;
+        }
+        Err(error) => warning = Some(format!("semantic retrieval disabled: {error}")),
+        Ok(None) => {}
+    }
+    let mut response = ask_response_from_result(
+        &question,
+        asked_as.as_deref(),
+        policy,
+        max_entries,
+        retrieval,
+        bridge,
+        &temporal,
     )
-    .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
+    .map_err(|status| mapping_error(&status))?;
+    if let Some(warning) = warning {
+        response.warnings.push(warning);
+    }
+    let response = project_ask_response(response, &request)
+        .map_err(|error| ToolError::invalid_argument(error.to_string()))?;
     Ok(tool_success_result(ask_from_response(response)))
 }
 

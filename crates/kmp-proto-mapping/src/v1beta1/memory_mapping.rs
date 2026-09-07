@@ -36,6 +36,7 @@ mod search_terms;
 mod semantic_candidate_ranking;
 #[cfg(test)]
 mod semantic_recall_tests;
+mod semantic_source;
 mod temporal_admission;
 mod term_counts;
 mod visual_projection;
@@ -56,6 +57,7 @@ pub use responses::{
     trace_response_from_result, wake_response_from_result,
 };
 pub use semantic_candidate_ranking::SemanticCandidateRanking;
+pub use semantic_source::SemanticSource;
 pub use visual_projection::{
     visual_projection_query_from_proto, visual_projection_response_from_result,
 };
