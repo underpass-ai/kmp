@@ -19,8 +19,8 @@ class Model:
             return {'memories': self.draft}
         if phase == 'formation_review':
             return {'memories': self.revised, 'review_notes': 'Source-based revision for this fixture.'}
-        return {'verdicts': [{'id': m['id'], 'supported': m['text'] == GOOD['text'],
-                             'reason': 'The source explicitly rejects PostgreSQL.'} for m in data['candidates']]}
+        return {'verdicts': {m['id']: {'supported': m['text'] == GOOD['text'],
+                             'reason': 'The source explicitly rejects PostgreSQL.'} for m in data['candidates']}}
 
 
 class CoverageTests(unittest.TestCase):

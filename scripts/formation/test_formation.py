@@ -110,8 +110,8 @@ class BoundaryTests(unittest.TestCase):
                 if phase == 'formation_review':
                     return {'memories': [GOOD], 'review_notes': 'The draft preserves the explicit choice.'}
                 data = json.loads(messages[1]['content'])
-                return {'verdicts': [{'id': data['candidates'][0]['id'], 'supported': True,
-                                     'reason': 'The user explicitly chose SQLite.'}]}
+                return {'verdicts': {data['candidates'][0]['id']: {'supported': True,
+                                     'reason': 'The user explicitly chose SQLite.'}}}
         model = Model()
         extracted, verified = form(SOURCE, model)
         self.assertEqual(extracted['memories'], [GOOD])

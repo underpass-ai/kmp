@@ -106,6 +106,20 @@ The non-thinking extraction and verification remain greedy. The twelve local
 V4 controls exposed omissions and incomplete antecedent citations; this is a
 controlled candidate to measure, not a claimed fix for those model failures.
 
+`formation-v6-bound-verdict-ids` binds verifier output to the candidate ID set
+through required JSON object keys. Each key has a boolean support judgment and
+reason; no free-form ID field is generated. The adapter validates the complete
+key set and each verdict, then normalizes to the existing internal verdict list.
+Raw verification remains in the trace and `verification-raw.json` stage output.
+Extraction, coverage review, sampling and the internal ingest contract stay the
+same. The verifier prompt changes only its output-format instruction.
+
+This addresses an observed real-session output where a 64-character candidate
+hash lost characters. The kernel correctly rejected that output. Binding IDs
+does not repair source omissions, unsupported claims, categories or verdict
+judgment; those remain separate measured quality requirements. A server that
+ignores the schema must still pass the adapter's strict validation.
+
 Run the boundary tests without loading a model:
 
 ```bash

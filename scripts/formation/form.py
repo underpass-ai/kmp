@@ -8,7 +8,8 @@ from contracts import VERSION, candidates, digest, episode
 from local_client import GENERATION_PROFILE, LocalClient
 from coverage_review import REVIEW_SCHEMA, review_messages, reviewed_extraction
 from planner import compile_plan
-from prompts import EXTRACTION_SCHEMA, VERIFICATION_SCHEMA, extract_messages, verify_messages
+from prompts import EXTRACTION_SCHEMA, extract_messages, verify_messages
+from verification import normalize_verification, verification_schema
 
 
 def save(path, value):
@@ -27,8 +28,13 @@ def form(source_episode, model, record_stage=lambda name, value: None):
     record_stage('coverage-review', reviewed)
     extracted = reviewed_extraction(reviewed)
     proposed, _ = candidates(extracted, source_episode)
-    verified = (model.generate(verify_messages(source_episode, proposed), VERIFICATION_SCHEMA,
-                              'formation_verify') if proposed else {'verdicts': []})
+    if proposed:
+        raw_verification = model.generate(verify_messages(source_episode, proposed), verification_schema(proposed),
+                                          'formation_verify')
+        record_stage('verification-raw', raw_verification)
+        verified = normalize_verification(raw_verification, proposed)
+    else:
+        verified = {'verdicts': []}
     return extracted, verified
 
 
