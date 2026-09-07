@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 from contracts import VERSION, candidates, digest, episode
-from local_client import LocalClient
+from local_client import GENERATION, LocalClient
 from planner import compile_plan
 from prompts import EXTRACTION_SCHEMA, VERIFICATION_SCHEMA, extract_messages, verify_messages
 
@@ -37,7 +37,7 @@ def main():
     save(args.output / 'episode.json', source)
     manifest = {'version': VERSION, 'status': 'running', 'observed_at': observed_at,
                 'source_sha256': digest(source), 'model_revision': args.model_revision,
-                'model': args.model, 'api_cost_usd': 0, 'store_modified': False}
+                'model': args.model, 'generation': GENERATION, 'api_cost_usd': 0, 'store_modified': False}
     save(args.output / 'manifest.json', manifest)
     try:
         with (args.output / 'model-calls.jsonl').open('w') as trace:

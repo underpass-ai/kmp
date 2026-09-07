@@ -6,6 +6,9 @@ import urllib.parse
 import urllib.request
 from contracts import digest
 
+GENERATION = {'temperature': 0, 'seed': 0, 'max_tokens': 4096,
+              'chat_template_kwargs': {'enable_thinking': False}}
+
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -51,8 +54,7 @@ class LocalClient:
         if type(tokens.get('count')) is not int or tokens['count'] + 1024 > self.max_prompt_tokens:
             raise ValueError('formation prompt exceeds reserved input budget')
         result = self.request(self.base + '/chat/completions', {
-            'model': self.model, 'messages': messages, 'temperature': 0, 'seed': 0, 'max_tokens': 4096,
-            'chat_template_kwargs': {'enable_thinking': True},
+            'model': self.model, 'messages': messages, **GENERATION,
             'response_format': {'type': 'json_schema', 'json_schema': {
                 'name': phase, 'strict': True, 'schema': schema}}}, phase)
         choice = result['choices'][0]

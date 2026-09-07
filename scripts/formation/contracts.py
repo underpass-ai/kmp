@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 
-VERSION = 'formation-v2'
+VERSION = 'formation-v3-no-thinking'
 CATEGORIES = ('fact', 'preference', 'decision', 'constraint', 'event')
 
 

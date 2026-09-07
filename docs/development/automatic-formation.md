@@ -72,6 +72,11 @@ when they faithfully retain the source's uncertainty. These are instructions to
 be measured, not additional deterministic guarantees. Earlier `formation-v1`
 artifacts remain a separate baseline; the version changes the logical write key.
 
+`formation-v3-no-thinking` keeps those prompts and tests the same local model
+with thinking disabled. Generation settings are recorded in the manifest and
+every request. This experimental profile must earn its fidelity in the source
+controls; disabling reasoning does not itself establish a quality improvement.
+
 Run the boundary tests without loading a model:
 
 ```bash
