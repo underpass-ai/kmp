@@ -1,11 +1,14 @@
 """Rank only the explicit source snapshot submitted by KMP."""
 import hashlib
 import numpy as np
+from lexical_ranking import POLICY, WINDOW, bm25, fuse, revision
 
 
 class Retriever:
-    def __init__(self, encoder, cache, revision):
-        self.encoder, self.cache, self.revision = encoder, cache, revision
+    def __init__(self, encoder, cache, encoder_revision, policy='dense'):
+        self.encoder, self.cache = encoder, cache
+        self.revision = revision(encoder_revision, policy)
+        self.policy = policy
 
     def rank(self, request):
         if set(request) != {'question', 'sources', 'model_revision', 'top_k'}:
@@ -48,8 +51,11 @@ class Retriever:
             if ref not in seen:
                 seen.add(ref)
                 ranked.append((ref, fingerprint))
-            if len(ranked) == top_k:
+            if len(ranked) == (WINDOW if self.policy == POLICY else top_k):
                 break
+        if self.policy == POLICY:
+            ranked = fuse([ranked, bm25(question, sources)], top_k)
         return {'model_revision': self.revision,
                 'question_sha256': hashlib.sha256(question.encode()).hexdigest(), 'candidates': ranked}, {
-                'sources': len(sources), 'encoded_sources': len(missing), 'cache_hits': len(unique)-len(missing)}
+                'sources': len(sources), 'encoded_sources': len(missing), 'cache_hits': len(unique)-len(missing),
+                'ranking_policy': self.policy}

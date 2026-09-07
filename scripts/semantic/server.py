@@ -8,6 +8,7 @@ import time
 from encoder import Encoder
 from retriever import Retriever
 from vector_cache import VectorCache
+from lexical_ranking import POLICY
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -52,9 +53,11 @@ if __name__ == '__main__':
     parser.add_argument('--cache', type=Path, required=True)
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8001)
+    parser.add_argument('--ranking-policy', choices=['dense', POLICY], default='dense')
     args = parser.parse_args()
     args.cache.parent.mkdir(parents=True, exist_ok=True)
     server = HTTPServer((args.host, args.port), Handler)
-    server.retriever = Retriever(Encoder(args.model), VectorCache(args.cache, args.model_revision), args.model_revision)
-    print(json.dumps({'status': 'ready', 'model_revision': args.model_revision}), flush=True)
+    server.retriever = Retriever(Encoder(args.model), VectorCache(args.cache, args.model_revision), args.model_revision, args.ranking_policy)
+    print(json.dumps({'status': 'ready', 'model_revision': server.retriever.revision,
+                      'encoder_revision': args.model_revision, 'ranking_policy': args.ranking_policy}), flush=True)
     server.serve_forever()

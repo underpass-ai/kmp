@@ -6,6 +6,7 @@ import numpy as np
 
 from retriever import Retriever
 from vector_cache import VectorCache
+from lexical_ranking import POLICY
 
 
 class FakeEncoder:
@@ -25,6 +26,24 @@ def source(ref, text):
 
 
 class RetrieverTests(unittest.TestCase):
+    def test_hybrid_uses_same_encoder_cache_and_cannot_restore_an_absent_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = VectorCache(Path(directory)/'vectors.sqlite', 'm@r')
+            encoder = FakeEncoder()
+            dense = Retriever(encoder, cache, 'm@r')
+            query = {'question': 'plane', 'model_revision': 'm@r', 'top_k': 2,
+                     'sources': [source('a', 'car'), source('b', 'plane')]}
+            self.assertEqual(dense.rank(query)[0]['candidates'][0][0], 'a')
+            hybrid = Retriever(encoder, cache, 'm@r', POLICY)
+            with self.assertRaises(ValueError):
+                hybrid.rank(query)
+            result, metrics = hybrid.rank({**query, 'model_revision': hybrid.revision})
+            self.assertEqual(result['candidates'][0][0], 'b')
+            self.assertEqual(metrics['encoded_sources'], 0)
+            scoped, _ = hybrid.rank({**query, 'model_revision': hybrid.revision, 'sources': query['sources'][:1]})
+            self.assertEqual([ref for ref, _ in scoped['candidates']], ['a'])
+            cache.db.close()
+
     def test_cached_vectors_never_expand_the_requested_scope_and_survive_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)/'vectors.sqlite'

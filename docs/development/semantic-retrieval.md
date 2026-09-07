@@ -60,3 +60,29 @@ so large-store indexing and cache garbage collection remain future work.
 Tests cover the real MCP boundary, byte-limited continuation with the sidecar
 gone after its first response, temporal/scope admission and unavailable-encoder
 fallback. The sidecar tests check persistent cache reuse and isolation.
+
+## Fixed lexical/dense candidate ablation
+
+The default sidecar policy remains `dense`. The explicit
+`--ranking-policy bm25-rrf-v1` adds BM25 over the exact admitted source snapshot
+and fuses its ranking with dense candidates. Parameters are fixed at k1=1.5,
+b=0.75, RRF constant 60 and 100 unique refs per channel. Tokenization is Unicode
+word splitting after lowercasing, without stemming or query expansion. No
+zero-match lexical candidate is added. Corpus statistics are recomputed only
+from the supplied snapshot; duplicate transport rows cannot add votes.
+
+For this policy, configure the store's `model_revision` as the encoder revision
+followed by `/bm25-rrf-v1`; `/health` returns the required exact value. A plain
+encoder revision is rejected by a hybrid sidecar. Vector-cache keys still use
+only the encoder revision and text hash, so the ablation reuses the same vectors.
+Freeze both the code commit and policy-qualified revision in measurement plans.
+
+The kernel keeps its existing citation priority and fusion with graph/lexical
+proof. This policy changes only the optional adapter's candidate ranking: a
+second RRF stage remains in the kernel. Its quality must be measured end to end;
+neither lexical matches nor fusion scores prove an answer or remove lineage
+requirements. No policy is promoted solely by an individual repaired example.
+
+Formula references: [Lucene BM25Similarity](https://lucene.apache.org/core/9_12_1/core/org/apache/lucene/search/similarities/BM25Similarity.html)
+and [Elastic RRF](https://www.elastic.co/docs/reference/elasticsearch/rest-apis/reciprocal-rank-fusion).
+k1=1.5 preserves this evaluation's earlier baseline; it is not Lucene's default.
