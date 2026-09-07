@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:4a8ecefdebe3264c7633",
+    "idempotency_key": "ingest:guide-sync:1:agent:cd997c8e78db5198be4f",
     "memory": {
       "dimensions": [
         {
@@ -474,7 +474,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly."
+          "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly. Ask keeps cited evidence in the stable core and preserves retrieval rank among additional evidence across pages. A changed candidate order invalidates an old cursor."
         },
         {
           "coordinates": [
@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:0f4f3baf7bb76ae8b9d7",
+    "idempotency_key": "ingest:guide-sync:1:person:732d93734e54df771d2a",
     "memory": {
       "dimensions": [
         {
@@ -2145,7 +2145,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text."
+          "text": "budget.max_bytes limits how much structured response a host receives. If a valid ceiling is smaller than KMP's minimal honest response, KMP returns that stable floor with a warning naming both sizes instead of failing or hiding the canonical object. Values below 512 bytes are invalid; raise the ceiling only when you need richer detail. A cited memory stays identifiable when its preview is shortened. Finishing the pages does not restore a shortened preview; open or inspect that cited memory to read the full text. Ask keeps cited memories first and returns additional evidence in retrieval order, including when it spans several pages."
         },
         {
           "coordinates": [
