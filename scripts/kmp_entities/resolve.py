@@ -19,6 +19,11 @@ Cite enough literal source text to support both exact mention occurrences and wh
 are the same entity, including disambiguating context. Do not equate facts or events merely
 because they concern the same person. Do not merge whole turns. Do not infer that two
 people are the same because they share a first name. Keep conflicting claims intact.
+Identity is not ownership, employment, access or account use. A person is not their
+account; a device is not its owner; a project is not its leader. A stable identifier
+may identify the same referent, but transfer of an account never merges its users.
+Connect repeated mentions of the account as an account only when justified; do not
+represent a time-dependent owner relationship using same_entity_as.
 No question, answer criterion or retrieval result is available to this resolver.
 For an entity with several mentions, use the earliest explicit full-name or unique-ID
 mention as an anchor. Propose each supported mention-to-anchor pair once rather than

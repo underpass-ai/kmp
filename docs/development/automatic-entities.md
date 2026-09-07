@@ -4,6 +4,9 @@ Experimental component in `scripts/kmp_entities`, outside the deterministic
 kernel. It proposes and verifies identity between bounded mentions, then produces
 a canonical ingest over a frozen source/formed payload. It does not run on
 ordinary writes or change a personal store. Retrieval utility is not yet measured.
+Version `entities-v2-distinct-referents` explicitly separates identity from
+ownership, employment and account use. A transferred account does not make its
+users the same person. Those relationships need their own representation.
 
 The motivating evaluation case has a stored Elena Vega/Nora equivalence that
 neither source-only nor V7 top-five retrieval admits for a full-name question.
@@ -63,7 +66,22 @@ inspect the separate mention graph from returned source refs. An integration
 must fetch the actual graph and quotes, respect the query clock and a fixed
 inspection budget, and report omissions. It must not fill missing proof from a
 local registry or assume that the presence of an identity edge ensures top-k
-admission. That retrieval integration and its measured comparison are pending.
+admission.
+
+`kmp_entities.expand.expand` implements one identity hop from original source
+refs already admitted by primary retrieval. It fetches actual source-to-mention
+links, both bounded mentions, their identity link and every proof quote. The
+frozen plan validates those responses but never fills missing text or edges.
+All inspections, source validation and pagination share a fixed call budget.
+Incomplete or stalled paths remain rejected; their partial proof is not admitted.
+The returned trace reports calls and rejected paths.
+
+This integration explicitly uses the occurred/report clock: source coordinates,
+mention links, identity relation and proof timestamps must fit the cutoff.
+`kmp_inspect` does not apply that cutoff itself. Other axes and online resolution
+as known at an earlier ingestion time are not supported by this helper. It has
+contract tests and an actual-MCP synthetic check; automatic identity quality and
+the end-to-end comparison remain unmeasured.
 
 ```bash
 PYTHONPATH=scripts PYTHONDONTWRITEBYTECODE=1 \
@@ -74,3 +92,5 @@ Tests cover source isolation, literal occurrences, missing/negative verdicts,
 duplicate pairs, relation clocks and preservation of the base. They are contract
 tests, not an entity-resolution score. Test aliases are independent of the model
 and must not be counted as successful automatic resolution.
+Expansion tests also remove proof, change returned objects, cross the cutoff and
+exhaust or stall pagination to ensure that the local plan cannot fill a gap.

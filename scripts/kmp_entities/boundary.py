@@ -1,7 +1,7 @@
 """Validate source-only contexts and literal, scoped entity proposals."""
 from formation.contracts import digest, episode, fields, string, timestamp
 
-VERSION = 'entities-v1-cited-mentions'
+VERSION = 'entities-v2-distinct-referents'
 KINDS = ('person', 'organization', 'project', 'place', 'device', 'account', 'other')
 BASES = ('explicit_alias', 'explicit_rename', 'stable_identifier', 'unambiguous_reference')
 
