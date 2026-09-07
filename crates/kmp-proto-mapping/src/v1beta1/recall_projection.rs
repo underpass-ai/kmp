@@ -16,6 +16,10 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 pub const DEFAULT_MAX_BYTES: usize = 10_000;
+
+#[cfg(test)]
+#[path = "recall_projection_rank_tests.rs"]
+mod rank_tests;
 /// The head of the catalogue: the labels most entries stand in, the current
 /// about first, up to this many and this many serialized bytes. A writer
 /// reads them before naming a label, so they are the first expansion the
@@ -516,7 +520,8 @@ impl ProjectionPlan {
             .map(|limit| limit.saturating_sub(required_count))
             .unwrap_or(usize::MAX);
         let mut extras_retained = 0usize;
-        for evidence in evidence_items {
+        let preserve_evidence_rank = value.get("because").is_some();
+        for (rank, evidence) in evidence_items.into_iter().enumerate() {
             let evidence_id = evidence
                 .get("id")
                 .and_then(Value::as_str)
@@ -524,12 +529,16 @@ impl ProjectionPlan {
             if required_refs.contains(evidence_id) {
                 push_array(&mut value, &["proof", "evidence"], evidence);
             } else if extras_retained < extra_limit {
-                items.push(ProjectionItem::new(
-                    Section::ProofEvidence,
-                    evidence,
-                    Detail::Balanced,
-                    20,
-                ));
+                let mut item =
+                    ProjectionItem::new(Section::ProofEvidence, evidence, Detail::Balanced, 20);
+                if preserve_evidence_rank {
+                    // Ask already ranked these candidates. JSON identity is
+                    // only a tie-breaker, not a second retrieval policy. Keep
+                    // the serialized value in the key so the cursor remains
+                    // bound to both this order and the exact evidence content.
+                    item.stable_key = format!("proof.evidence:{rank:020}:{}", item.stable_key);
+                }
+                items.push(item);
                 extras_retained += 1;
             } else {
                 selection_omitted += 1;
