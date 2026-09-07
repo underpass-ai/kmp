@@ -5,11 +5,13 @@ kernel and produces a canonical `kmp_ingest` payload. It does not run on ordinar
 writes, alter a personal store, or claim that the automatic-formation gap is closed.
 
 The writer receives a bounded source episode, extracts atomic memories with a
-local model, checks literal citations, asks the same model to verify each whole
-claim against the complete episode, and compiles accepted memories with their
+local model, checks draft citations, revises source coverage once, checks the
+revised citations, asks the same model to verify each whole claim against the
+complete episode, and compiles accepted memories with their
 unchanged source records and `derived_from` relations. Rejected candidates remain
 in the plan. A model error, incomplete verdict list or truncated response prevents
-plan generation. An empty extraction is a valid result.
+plan generation. An empty draft still receives a coverage review; an empty final
+review is valid and keeps the original sources without generated memories.
 
 ## Run
 
@@ -27,7 +29,8 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/formation/form.py \
 ```
 
 The output directory must be new. It contains the original episode, complete
-model requests/responses and usage, extraction, verification, plan, canonical
+model requests/responses and usage, initial draft, coverage review, final
+extraction, verification, plan, canonical
 ingest and completion/failure manifest. No paid endpoint is used. HTTP endpoints
 must be literal loopback addresses; proxies and redirects are disabled. Full
 requests contain source text, so keep these artifacts with the source's access
@@ -76,6 +79,24 @@ artifacts remain a separate baseline; the version changes the logical write key.
 with thinking disabled. Generation settings are recorded in the manifest and
 every request. This experimental profile must earn its fidelity in the source
 controls; disabling reasoning does not itself establish a quality improvement.
+The six local development controls found omissions and incomplete antecedent
+citations in that profile, despite fewer output tokens. It is not validated for
+general formation. The earlier versioned artifacts remain separate evidence.
+
+`formation-v4-coverage-review` adds one source-only revision after extraction,
+including when the draft is empty. It may retain, remove, repair or add memories
+but cannot commit them directly: literal citation admission and whole-claim
+verification still apply. An invalid or truncated review fails the attempt;
+there is no retry loop. A rejected final claim is retained as rejected, not
+repaired again. Review notes are diagnostic and never become graph evidence.
+
+This candidate uses the same model with thinking enabled only for the coverage
+review; extraction and final verification keep the faster non-thinking profile.
+The manifest records defaults and phase overrides, and each model request keeps
+its actual settings and usage. There are at most three generation calls per
+episode, or two when the final revision contains no admissible candidates.
+These choices require measured coverage, lineage and cost controls; another
+call to the same model is not independent validation or a completeness guarantee.
 
 Run the boundary tests without loading a model:
 

@@ -8,6 +8,8 @@ from contracts import digest
 
 GENERATION = {'temperature': 0, 'seed': 0, 'max_tokens': 4096,
               'chat_template_kwargs': {'enable_thinking': False}}
+PHASE_GENERATION = {'formation_review': {'chat_template_kwargs': {'enable_thinking': True}}}
+GENERATION_PROFILE = {'default': GENERATION, 'phase_overrides': PHASE_GENERATION}
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -54,7 +56,7 @@ class LocalClient:
         if type(tokens.get('count')) is not int or tokens['count'] + 1024 > self.max_prompt_tokens:
             raise ValueError('formation prompt exceeds reserved input budget')
         result = self.request(self.base + '/chat/completions', {
-            'model': self.model, 'messages': messages, **GENERATION,
+            'model': self.model, 'messages': messages, **GENERATION, **PHASE_GENERATION.get(phase, {}),
             'response_format': {'type': 'json_schema', 'json_schema': {
                 'name': phase, 'strict': True, 'schema': schema}}}, phase)
         choice = result['choices'][0]

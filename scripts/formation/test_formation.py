@@ -107,6 +107,8 @@ class BoundaryTests(unittest.TestCase):
                 self.messages.append(messages)
                 if phase == 'formation_extract':
                     return {'memories': [GOOD]}
+                if phase == 'formation_review':
+                    return {'memories': [GOOD], 'review_notes': 'The draft preserves the explicit choice.'}
                 data = json.loads(messages[1]['content'])
                 return {'verdicts': [{'id': data['candidates'][0]['id'], 'supported': True,
                                      'reason': 'The user explicitly chose SQLite.'}]}
