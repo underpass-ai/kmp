@@ -12,8 +12,8 @@ use kmp_domain::{
 use kmp_proto::v1beta1::{
     AnswerReason, AskResponse, ExpiredMemory, InspectResponse, InspectedLinks, InspectedObject,
     MemoryConfidence, MemoryEvidence, MemoryRelation, MemorySemanticClass, PageInfo, RawMemoryRef,
-    TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse, TemporalState,
-    TraceResponse, WakeClaim, WakePacket, WakeResponse,
+    RecallProjection, TemporalCursor, TemporalEntry as ProtoTemporalEntry, TemporalMoveResponse,
+    TemporalState, TraceResponse, WakeClaim, WakePacket, WakeResponse,
 };
 
 use super::answer_ranker::{ANSWER_CORE_LIMIT, AnswerEvidenceRanker};
@@ -141,8 +141,9 @@ pub fn wake_response_from_result(
         .collect::<Vec<_>>();
 
     // Opt-in entry cap: surface `max_entries` evidence entries and report the
-    // withheld sources as proof.missing so proof.frontier_size signals
-    // "near-expand to cover the rest". Unset (or not exceeded) -> every entry.
+    // withheld sources as proof.missing and preserve their omission count for
+    // the shared projection. A different cap is a new selection, not a page.
+    // Unset (or not exceeded) -> every entry.
     //
     // Which ones survive the cap used to be graph-traversal order alone. Wake
     // has no question to rank against, but it does have the judgment already
@@ -151,6 +152,7 @@ pub fn wake_response_from_result(
     // first ten are what someone proved and has not withdrawn.
     let full_evidence = prioritize_wake_evidence(full_evidence, &lifecycle, &signals);
     let (evidence, withheld) = cap_wake_evidence(full_evidence, max_entries);
+    let selection_projection = selection_cap_projection(withheld.len());
     let resume_cursor = newest_cursor(&relationships);
 
     // The catalogue is the about's, not the selection's: what the memory
@@ -158,7 +160,7 @@ pub fn wake_response_from_result(
     let labels = labels_from_bundle(&result.bundle);
 
     Ok(WakeResponse {
-        projection: None,
+        projection: selection_projection,
         truncation: None,
         resume_cursor,
         labels,
@@ -281,8 +283,9 @@ fn l0_summary_value(summary: &str, label: &str, empty_values: &[&str]) -> Vec<St
 }
 
 /// Opt-in entry cap for Wake: keep the first `max_entries` evidence items and
-/// return the withheld sources (which become `proof.missing` → `frontier_size`,
-/// signalling the client to near-expand). `None`, or a limit the evidence does
+/// return the withheld sources (which become `proof.missing` → `frontier_size`).
+/// The final projection must also retain the selection omission count.
+/// `None`, or a limit the evidence does
 /// not exceed, leaves it unbounded — the existing behavior.
 fn cap_wake_evidence(
     evidence: Vec<MemoryEvidence>,
@@ -298,6 +301,15 @@ fn cap_wake_evidence(
         }
         _ => (evidence, Vec::new()),
     }
+}
+
+/// Carry the selection-stage count into the existing projection envelope.
+/// The transport fills the remaining fields when it projects the response.
+fn selection_cap_projection(omitted: usize) -> Option<RecallProjection> {
+    (omitted > 0).then_some(RecallProjection {
+        selection_omitted: omitted as u64,
+        ..Default::default()
+    })
 }
 
 pub fn ask_response_from_result(
@@ -323,6 +335,7 @@ pub fn ask_response_from_result(
             .partition(|item| admission.admits(item));
     let relevant_evidence = ranker.rank(question, policy, candidate_evidence);
     let (evidence, withheld) = cap_wake_evidence(relevant_evidence, max_entries);
+    let selection_projection = selection_cap_projection(withheld.len());
     // A candidate the graph reached is proof, not an answer. It travels in
     // `proof.evidence` with the hop that produced it, and the answer core is
     // still built only from evidence the question matched in its own words —
@@ -467,7 +480,7 @@ pub fn ask_response_from_result(
         .unwrap_or_default();
 
     Ok(AskResponse {
-        projection: None,
+        projection: selection_projection,
         truncation: None,
         summary: if answer == UNANSWERED {
             // Say which of the two happened. "Found nothing" and "found
@@ -1870,6 +1883,181 @@ mod ask_entry_text_tests {
 #[cfg(test)]
 mod wake_cap_tests {
     use super::*;
+
+    fn cap_result() -> GetContextResult {
+        use kmp_application::queries::render_graph_bundle;
+        use kmp_domain::{
+            BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation,
+            RelationSemanticClass, Role,
+        };
+        let node = |id: &str, text: &str| {
+            BundleNode::new(
+                id,
+                "observation",
+                id,
+                text,
+                "ACTIVE",
+                Vec::new(),
+                BTreeMap::new(),
+            )
+        };
+        let bundle = KmpBundle::new(
+            CaseId::new("project:cap").expect("fixture"),
+            Role::new("reader").expect("fixture"),
+            node("project:cap", "Review packet"),
+            vec![
+                node(
+                    "report:alpha",
+                    "Offline export checksum report alpha passed.",
+                ),
+                node("report:beta", "Offline export checksum report beta passed."),
+            ],
+            ["report:alpha", "report:beta"]
+                .into_iter()
+                .map(|id| {
+                    BundleRelationship::new(
+                        "project:cap",
+                        id,
+                        "contains_entry",
+                        RelationExplanation::new(RelationSemanticClass::Structural)
+                            .with_dimension("timeline")
+                            .with_scope_id("project:cap")
+                            .with_observed_at("2026-09-01T08:00:00Z"),
+                    )
+                })
+                .collect(),
+            vec![
+                BundleNodeDetail::new(
+                    "report:alpha",
+                    "Offline export checksum report alpha passed.",
+                    "a",
+                    1,
+                ),
+                BundleNodeDetail::new(
+                    "report:beta",
+                    "Offline export checksum report beta passed.",
+                    "b",
+                    1,
+                ),
+            ],
+            BundleMetadata::initial("test"),
+        )
+        .expect("fixture");
+        GetContextResult {
+            rendered: render_graph_bundle(&bundle),
+            bundle,
+            requested_scopes: Vec::new(),
+            served_at: std::time::SystemTime::UNIX_EPOCH,
+            timing: None,
+        }
+    }
+
+    #[test]
+    fn mapped_selection_omissions_survive_typed_wake_and_ask_projection() {
+        use crate::v1beta1::recall_projection::{project_ask_response, project_wake_response};
+        use kmp_proto::v1beta1::{AskRequest, MemoryBudget, MemoryDetailLevel, WakeRequest};
+        let temporal = TemporalSelection::Frontier;
+        let question = "Which offline export checksum reports passed?";
+        let wake_count = wake_response_from_result("resume", None, cap_result(), &temporal)
+            .expect("fixture")
+            .proof
+            .expect("fixture")
+            .evidence
+            .len();
+        let ask_count = ask_response_from_result(
+            question,
+            None,
+            MemoryAnswerPolicy::EvidenceOrUnknown,
+            None,
+            cap_result(),
+            &LexicalBridge::none(),
+            &temporal,
+        )
+        .expect("fixture")
+        .proof
+        .expect("fixture")
+        .evidence
+        .len();
+        assert!(
+            wake_count > 1 && ask_count > 1,
+            "wake={wake_count}, ask={ask_count}"
+        );
+        for cap in [None, Some(1)] {
+            for detail in [MemoryDetailLevel::Compact, MemoryDetailLevel::Full] {
+                let budget = Some(MemoryBudget {
+                    max_bytes: 100_000,
+                    detail: detail as i32,
+                    max_entries: cap.map_or(0, |n| n as u32),
+                    ..Default::default()
+                });
+                let wake = wake_response_from_result("resume", cap, cap_result(), &temporal)
+                    .expect("fixture");
+                let wake = project_wake_response(
+                    wake,
+                    &WakeRequest {
+                        about: "project:cap".into(),
+                        budget,
+                        ..Default::default()
+                    },
+                )
+                .expect("fixture");
+                let ask = ask_response_from_result(
+                    question,
+                    None,
+                    MemoryAnswerPolicy::EvidenceOrUnknown,
+                    cap,
+                    cap_result(),
+                    &LexicalBridge::none(),
+                    &temporal,
+                )
+                .expect("fixture");
+                let original_answer = (
+                    ask.answer.clone(),
+                    ask.because.clone(),
+                    ask.proof.as_ref().expect("fixture").confidence,
+                );
+                let ask = project_ask_response(
+                    ask,
+                    &AskRequest {
+                        about: "project:cap".into(),
+                        question: question.into(),
+                        budget,
+                        ..Default::default()
+                    },
+                )
+                .expect("fixture");
+                assert_eq!(
+                    (
+                        ask.answer,
+                        ask.because,
+                        ask.proof.expect("fixture").confidence
+                    ),
+                    original_answer
+                );
+                for (projection, truncation, count) in [
+                    (
+                        wake.projection.expect("fixture"),
+                        wake.truncation,
+                        wake_count,
+                    ),
+                    (ask.projection.expect("fixture"), ask.truncation, ask_count),
+                ] {
+                    let omitted = cap.map_or(0, |_| count - 1) as u64;
+                    assert_eq!(
+                        projection.selection_omitted, omitted,
+                        "{detail:?}, cap={cap:?}"
+                    );
+                    assert!(!projection.page.expect("fixture").has_more);
+                    assert_eq!(
+                        truncation
+                            .and_then(|t| t.omitted)
+                            .map_or(0, |o| o.selection_items),
+                        omitted
+                    );
+                }
+            }
+        }
+    }
 
     fn ev(source: &str) -> MemoryEvidence {
         MemoryEvidence {
