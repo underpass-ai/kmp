@@ -345,9 +345,8 @@ KMP_APP.panels = (() => {
     }
     const link = (id) => {
       const anchor = el("a", "rel-target mono", id);
-      anchor.addEventListener("click", () => {
-        if (model.byRef.has(id)) {
-          KMP_APP.selection.selectEntry(id);
+      anchor.addEventListener("click", async () => {
+        if (await KMP_APP.selection.selectEntry(id)) {
           KMP_APP.viewport.centerOn(id);
         }
       });

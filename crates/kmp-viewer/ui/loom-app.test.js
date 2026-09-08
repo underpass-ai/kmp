@@ -525,6 +525,44 @@ test("selecting a projected entry inspects it and renders the evidence", async (
   assert.ok(names.includes("panels.renderDetail"));
 });
 
+test("relation links reveal entries outside the projection and center only successful selections", async () => {
+  for (const [projected, accepted] of [[false, true], [true, true], [false, false]]) {
+    const { app, context } = loom();
+    const elements = new Map();
+    const element = (tag) => ({
+      tag, children: [], listeners: {}, style: {},
+      append(...children) { this.children.push(...children); },
+      addEventListener(event, handler) { this.listeners[event] = handler; },
+    });
+    const get = (id) => {
+      if (!elements.has(id)) elements.set(id, element("div"));
+      return elements.get(id);
+    };
+    context.document = {
+      getElementById: get,
+      createElement: element,
+      createTextNode: (text) => ({ textContent: text }),
+    };
+    app.scene.kindColor = app.scene.classColor = () => "#888";
+    if (projected) app.state.model.byRef.set("later", { ref: "later" });
+    const effects = [];
+    app.selection.selectEntry = async (ref) => { effects.push(["select", ref]); return accepted; };
+    app.viewport.centerOn = (ref) => effects.push(["center", ref]);
+    const file = path.join(__dirname, "loom-panels.js");
+    vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
+    app.panels.renderDetail({
+      node: { id: "earlier", kind: "decision", title: "Earlier decision" },
+      incoming: [{ source: "later", target: "earlier", rel: "supersedes", class: "evidential" }],
+      outgoing: [],
+    }, { ref: "earlier", coords: [] });
+    const findLink = (node) => node.tag === "a" ? node : (node.children || []).map(findLink).find(Boolean);
+    const link = findLink(get("d-incoming"));
+    assert.ok(link, "the rendered relation exposes its actual counterpart");
+    await link.listeners.click();
+    assert.deepEqual(effects, accepted ? [["select", "later"], ["center", "later"]] : [["select", "later"]]);
+  }
+});
+
 test("a projected additional-about entry is selected without changing owner or explicit window", async () => {
   const { app, calls, context } = loom();
   vm.runInContext(fs.readFileSync(path.join(__dirname, "loom-layers.js"), "utf8"), context);
