@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:ecccbcfb794d144645fb",
+    "idempotency_key": "ingest:guide-sync:1:agent:ec066ab091d2c8429d22",
     "memory": {
       "dimensions": [
         {
@@ -1713,12 +1713,12 @@
         {
           "class": "constraint",
           "confidence": "high",
-          "evidence": "kmp_ask on a bridged store cites with bridged_terms and is not retried in another language; on an unbridged store the fallback list is applied once per language.",
+          "evidence": "The live tool instructions prescribe the English rendering plus at most one re-ask in the user's own words. asked_as carries the original question without being searched; bridge availability does not change the selection limit.",
           "from": "guide:kmp-agent:advanced:language",
           "rel": "qualifies_as",
           "sequence": 17,
           "to": "guide:kmp-agent:verb:ask",
-          "why": "The language rule bounds how many Ask selections a question may spend and forbids translating anything but the query; which rule applies is a property of the store, not of the agent."
+          "why": "The same selection limit applies with or without a lexical bridge: render the semantic question in English, and only if it returns UNKNOWN or irrelevant evidence re-ask at most once in the user's own words. Preserve evidence and identifiers rather than translating the stored proof."
         },
         {
           "class": "evidential",
@@ -1882,7 +1882,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:a2e073f6130f2c854e54",
+    "idempotency_key": "ingest:guide-sync:1:person:8cd4a7bfecb31dd3f903",
     "memory": {
       "dimensions": [
         {
@@ -2025,7 +2025,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Asking in one language about memory written in another needs a small table that pairs words across languages. Setup installs it once for your machine; nothing runs a model when you ask. Without it KMP still works and simply matches within one language, which is why doctor tells you when it is missing."
+          "text": "Memory keeps the words its writer stored. The writer can also add an English search summary, summary_en, so an English question can reach memory written in another language without translating the original. KMP searches a valid summary but cites the original text. An optional table of word pairs adds another way to cross languages; setup installs it once for your machine and doctor reports whether it is available. Without the table, stored text and valid summaries remain searchable. None of these search paths runs a language model."
         },
         {
           "coordinates": [
@@ -2378,7 +2378,7 @@
           "supports": [
             "guide:kmp:basic:crossing-languages"
           ],
-          "text": "A citation that crossed a language names the word pairs that carried it and answers at medium confidence at most.",
+          "text": "A citation reached through the writer's summary carries matched_via: summary and summary_terms while preserving the original text. A citation reached through a lexical bridge names its word pairs in bridged_terms, at medium confidence at most.",
           "time": "2026-08-28T00:00:00Z"
         },
         {

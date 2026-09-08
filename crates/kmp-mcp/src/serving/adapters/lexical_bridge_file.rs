@@ -95,21 +95,22 @@ fn describe_bridge_at(path: &Path, origin: BridgeOrigin) -> String {
                 path.display()
             ),
             Ok(_) => format!(
-                "lexical bridge: an empty table at {}{named}; ask matches within one language",
+                "lexical bridge: an empty table at {}{named}; stored text and valid summary_en remain searchable",
                 path.display()
             ),
             Err(reason) => format!(
-                "lexical bridge: ignored, {reason} ({}{named}); ask matches within one language",
+                "lexical bridge: ignored, {reason} ({}{named}); stored text and valid summary_en remain searchable",
                 path.display()
             ),
         },
         Err(_) if origin == BridgeOrigin::Named => format!(
-            "lexical bridge: none; {} named by {LEXICAL_BRIDGE_ENV} could not be read",
+            "lexical bridge: none; {} named by {LEXICAL_BRIDGE_ENV} could not be read; \
+             stored text and valid summary_en remain searchable",
             path.display()
         ),
         Err(_) => format!(
-            "lexical bridge: none; ask matches within one language until a table is \
-             installed — run `kmp-mcp setup` or place one at {}",
+            "lexical bridge: none; stored text and valid summary_en remain searchable; \
+             optional word pairs can be added with `kmp-mcp setup` or a table at {}",
             path.display()
         ),
     }
@@ -221,6 +222,10 @@ mod tests {
         let absent = describe_bridge_at(&table, BridgeOrigin::Store);
         assert!(absent.starts_with("lexical bridge: none"), "{absent}");
         assert!(absent.contains("lexical-bridge.kmpb"));
+        assert!(
+            absent.contains("valid summary_en remain searchable"),
+            "{absent}"
+        );
 
         let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../kmp-testkit/judged/lexical-bridge.kmpb");
@@ -237,6 +242,10 @@ mod tests {
             .expect("the fixture is valid");
         let broken = describe_bridge_at(&table, BridgeOrigin::Store);
         assert!(broken.starts_with("lexical bridge: ignored"), "{broken}");
+        assert!(
+            broken.contains("valid summary_en remain searchable"),
+            "{broken}"
+        );
     }
 
     #[test]

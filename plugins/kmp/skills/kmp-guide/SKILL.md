@@ -35,11 +35,15 @@ Then perform `open:guide`:
    - `expected_revision` set to that revision;
    - an idempotency key derived from `open:guide` and that revision;
    - `explanation: "open:guide — explore KMP from the human path"`;
-   - `projection.semantic_zoom: "atlas"`;
+   - `projection.semantic_zoom: "moment"`;
    - `projection.dimensions: ["audience", "depth"]`;
    - `selection: "guide:kmp:welcome"`.
 3. Call `kmp_view_get_state` before continuing and hand the returned
    capability URL to the person.
+
+Start at memory detail so the selected welcome text is readable. Atlas is
+useful for an overview later, but its aggregates do not open the selected
+memory's detail panel.
 
 If another participant moved the loom first, get state and rebase the intent
 on the new revision. Never retry blind and never reopen the view merely to
