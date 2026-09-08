@@ -90,7 +90,7 @@ fn inspect_budget_schema() -> Value {
                 "type": "integer",
                 "minimum": 512,
                 "default": 10_000,
-                "description": "Normative maximum bytes for structuredContent. Inspect pages expandable sections instead of overflowing the host and errors only when the stable object itself cannot fit."
+                "description": "Compact-JSON structuredContent byte ceiling. Inspect pages expandable sections. If the stable object cannot fit, return its floor with a warning naming requested and required sizes; this is a qualified success, not a tool error."
             }
         }
     })
