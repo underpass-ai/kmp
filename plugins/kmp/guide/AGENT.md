@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:462a5c889fb0a1120277`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:c79072ae34ad5e7ad1dc`.
 
 KMP is graph-temporal memory. An LLM writes typed facts with evidence and chooses how to navigate their relations through time. Recover known work with `kmp_wake`, enumerate history with the temporal verbs, compare abouts with `kmp_relate`, ask semantic questions with `kmp_ask`, and inspect or trace the proof you rely on. Write durable decisions, constraints and outcomes; catalogue them with labels that support later navigation.
 
@@ -37,11 +37,13 @@ These are exact refs in `guide:kmp-agent`, used with `kmp_inspect`; they are not
 | Write or repair search summaries | `guide:kmp-agent:advanced:summary` |
 | Repository bundles and snapshots | `guide:kmp-agent:advanced:repository` |
 | Diagnose missing tools and errors | `guide:kmp-agent:advanced:errors` |
+| Find a concrete example for a tool, kind or relation | `guide:kmp-agent:examples:by-capability` |
 
 ## Worked examples
 
 | Case | Ref |
 | --- | --- |
+| Start here: one decision and its stated reason | `guide:kmp-agent:example:first-decision` |
 | Decision history and past validity | `guide:kmp-agent:example:decision-history` |
 | Aliases, unresolved names and account assignment | `guide:kmp-agent:example:alias-ownership` |
 | Distributed incident, proposed identity and late reports | `guide:kmp-agent:example:distributed-incident` |
@@ -51,6 +53,10 @@ These are exact refs in `guide:kmp-agent`, used with `kmp_inspect`; they are not
 | Labels, synonyms and negation under explicit conditions | `guide:kmp-agent:example:labels-negation` |
 | Budgeted pages, incomplete proof and terminal UNKNOWN | `guide:kmp-agent:example:budget-proof` |
 | Fresh-session handoff and shared-view revision conflicts | `guide:kmp-agent:example:shared-resumption` |
+| Preference and explicit policy delta | `guide:kmp-agent:example:preference-delta` |
+| Authorization, dependency and measured constraints | `guide:kmp-agent:example:workflow-proof` |
+| Structure, membership and included contributions | `guide:kmp-agent:example:structure-parts` |
+| Validated canonical ingest and exact retry | `guide:kmp-agent:example:canonical-ingest` |
 
 ## Read a selected node
 

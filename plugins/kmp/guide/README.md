@@ -41,6 +41,16 @@ access. Use one source for the body; missing, empty, ambiguous and parent or
 absolute paths are rejected. The files ship with the plugin and are covered
 by the release input digest.
 
+Start with [one decision and its reason](examples/first-decision.md), then use
+[the capability index](examples/by-capability.md) to find one concrete source
+case for a tool, memory kind or relation. Basic cases are grouped in
+[preference and policy delta](examples/preference-delta.md),
+[workflow proof](examples/workflow-proof.md),
+[structure and contributions](examples/structure-parts.md), and
+[canonical ingest](examples/canonical-ingest.md). Each selected section explains
+its source, why that relation applies, the prerequisite reads and a limit.
+The index is informative and is not a CI coverage gate.
+
 The worked lessons, [decision history](examples/decision-history.md),
 [alias and account ownership](examples/alias-ownership.md),
 [distributed incident](examples/distributed-incident.md),

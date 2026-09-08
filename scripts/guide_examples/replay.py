@@ -20,12 +20,15 @@ from late_conflict_checks import check as check_late_conflict
 from labels_negation_checks import check as check_labels_negation
 from budget_proof_checks import check as check_budget_proof
 from guide_reads import prepare
+from capability_checks import check as check_capability
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
            'quantities': check_quantities, 'late-conflict': check_late_conflict,
-           'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof}
+           'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof,
+           'first-decision': check_capability, 'preference-delta': check_capability, 'workflow-proof': check_capability,
+           'structure-parts': check_capability, 'canonical-ingest': check_capability}
 
 
 def bind(value, saved):
