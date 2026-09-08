@@ -64,6 +64,9 @@ the store and cannot be supplied, no relation is written, and a rendering
 that fails the lint is refused with every fault named. Do it once per store;
 an exact retry is a no-op.
 
+Normal writes are one call: omit `options.dry_run` or set it to false.
+The relation guide documents explicit previews and validation before commit.
+
 Use one `idempotency_key` per logical write. Replaying the same accepted write
 returns its success rather than duplicating memory. A `conflict` can also mean
 the store advanced before this attempt committed: follow the error message,

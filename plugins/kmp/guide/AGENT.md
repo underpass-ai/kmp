@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:e45d448fce755d7bbc24`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:a5c21b19c66c9f219125`.
 
 KMP is graph-temporal memory. An LLM writes typed facts with evidence and chooses how to navigate their relations through time. Recover known work with `kmp_wake`, enumerate history with the temporal verbs, compare abouts with `kmp_relate`, ask semantic questions with `kmp_ask`, and inspect or trace the proof you rely on. Write durable decisions, constraints and outcomes; catalogue them with labels that support later navigation.
 
@@ -16,6 +16,7 @@ These are exact refs in `guide:kmp-agent`, used with `kmp_inspect`; they are not
 
 | Use / tools | Ref |
 | --- | --- |
+| Choose and continue a memory route | `guide:kmp-agent:gate:invocation` |
 | Resume known work: `kmp_wake` | `guide:kmp-agent:verb:wake` |
 | Ask a semantic question: `kmp_ask` | `guide:kmp-agent:verb:ask` |
 | Compare memories across abouts: `kmp_relate` | `guide:kmp-agent:verb:relate` |

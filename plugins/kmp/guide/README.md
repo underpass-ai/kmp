@@ -86,3 +86,11 @@ cargo run --locked --quiet -p kmp-release -- guide assets write --binary target/
 cargo test --locked -p kmp-adapter-embedded --test guide_bundle
 cargo test --locked -p kmp-mcp --test guide_sync
 ```
+
+## Maintaining the agent-facing surface
+
+Use [the maintenance procedure](../../../docs/development/agent-surface.md)
+when a capability or explanation changes. It covers source ownership,
+generated assets, selective guide access, native and host verification,
+context measurement and a reviewable delivery record. It is shared by human
+maintainers and agents; keep it current with the implementation.

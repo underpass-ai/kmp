@@ -19,8 +19,9 @@
           "id": "gate:invocation",
           "kind": "instruction",
           "depth": "basic",
-          "text": "GATE invocation. Enter KMP when the user asks for it in any language, when a kmp skill or command runs, when the project's own instructions opt in, or when the MCP initialize instructions report always-on memory routing. Otherwise call nothing and work from the material already in front of you. Every verb here governs a route already underway; none of them is a reason to open one.",
-          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request."
+          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request.",
+          "text_file": "topics/routing.md",
+          "guide_title": "Choose and continue a memory route"
         },
         {
           "id": "verb:wake",
