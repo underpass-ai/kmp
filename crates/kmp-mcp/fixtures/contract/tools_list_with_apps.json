@@ -515,88 +515,54 @@
       "description": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
-        "allOf": [
-          {
-            "else": {
+        "else": {
+          "if": {
+            "not": {
               "properties": {
-                "current": {
+                "options": {
+                  "properties": {
+                    "strict": {
+                      "const": false
+                    }
+                  },
                   "required": [
-                    "kind",
-                    "summary"
+                    "strict"
                   ]
-                }
-              }
-            },
-            "if": {
-              "properties": {
-                "intent": {
-                  "const": "record_summary"
                 }
               },
               "required": [
-                "intent"
+                "options"
               ]
-            },
-            "then": {
-              "properties": {
-                "current": {
-                  "required": [
-                    "ref",
-                    "summary_en"
-                  ]
-                }
-              }
             }
           },
-          {
-            "if": {
-              "allOf": [
-                {
-                  "not": {
-                    "properties": {
-                      "options": {
-                        "properties": {
-                          "strict": {
-                            "const": false
-                          }
-                        },
-                        "required": [
-                          "strict"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "options"
-                    ]
-                  }
-                },
-                {
-                  "not": {
-                    "properties": {
-                      "intent": {
-                        "const": "record_summary"
-                      }
-                    },
-                    "required": [
-                      "intent"
-                    ]
-                  }
-                }
+          "properties": {
+            "current": {
+              "required": [
+                "kind",
+                "summary"
               ]
-            },
-            "then": {
-              "properties": {
-                "current": {
-                  "required": [
-                    "kind",
-                    "summary",
-                    "evidence"
-                  ]
-                }
+            }
+          },
+          "then": {
+            "properties": {
+              "current": {
+                "required": [
+                  "evidence"
+                ]
               }
             }
           }
-        ],
+        },
+        "if": {
+          "properties": {
+            "intent": {
+              "const": "record_summary"
+            }
+          },
+          "required": [
+            "intent"
+          ]
+        },
         "properties": {
           "about": {
             "description": "Memory anchor or root ref this semantic memory event should attach to.",
@@ -1003,6 +969,16 @@
           "scope",
           "current"
         ],
+        "then": {
+          "properties": {
+            "current": {
+              "required": [
+                "ref",
+                "summary_en"
+              ]
+            }
+          }
+        },
         "type": "object"
       },
       "name": "kmp_write_memory",

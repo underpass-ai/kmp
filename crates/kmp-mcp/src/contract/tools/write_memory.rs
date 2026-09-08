@@ -158,44 +158,36 @@ pub(crate) fn write_memory_schema() -> Value {
                 }
             }
         },
-        "allOf": [{
-            "if": {
-                "properties": {"intent": {"const": "record_summary"}},
-                "required": ["intent"]
-            },
-            "then": {
-                "properties": {
-                    "current": {"required": ["ref", "summary_en"]}
-                }
-            },
-            "else": {
-                "properties": {
-                    "current": {"required": ["kind", "summary"]}
-                }
+        "if": {
+            "properties": {"intent": {"const": "record_summary"}},
+            "required": ["intent"]
+        },
+        "then": {
+            "properties": {
+                "current": {"required": ["ref", "summary_en"]}
             }
-        }, {
+        },
+        "else": {
+            "properties": {
+                "current": {"required": ["kind", "summary"]}
+            },
             "if": {
-                "allOf": [
-                    {
-                        "not": {
-                            "required": ["options"],
-                            "properties": {
-                                "options": {
-                                    "required": ["strict"],
-                                    "properties": {"strict": {"const": false}}
-                                }
-                            }
+                "not": {
+                    "required": ["options"],
+                    "properties": {
+                        "options": {
+                            "required": ["strict"],
+                            "properties": {"strict": {"const": false}}
                         }
-                    },
-                    {"not": {"properties": {"intent": {"const": "record_summary"}}, "required": ["intent"]}}
-                ]
+                    }
+                }
             },
             "then": {
                 "properties": {
-                    "current": {"required": ["kind", "summary", "evidence"]}
+                    "current": {"required": ["evidence"]}
                 }
             }
-        }]
+        }
     })
 }
 
