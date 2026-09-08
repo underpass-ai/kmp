@@ -29,6 +29,7 @@ impl PluginBootstrapHarness {
     fn execute(&self) {
         self.clean_setup();
         self.update_rejects_stale_path_engine();
+        self.lifecycle_target_handoff();
     }
 
     fn clean_setup(&self) {
@@ -212,7 +213,12 @@ exit 1
         fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("checksum");
         let curl_log = case.join("curl.log");
         let output = Command::new(plugin.join("scripts/kmp-update.sh"))
-            .args(["--claude", "--dry-run"])
+            .args([
+                "--claude",
+                "--dry-run",
+                "--version",
+                env!("CARGO_PKG_VERSION"),
+            ])
             .env("HOME", case.join("home"))
             .env("PATH", format!("{}:/usr/bin:/bin", tools.display()))
             .env("KMP_INSTALL_DIR", &install)
@@ -255,6 +261,82 @@ exit 1
             !case.join("memory").exists(),
             "software update must not select or create memory"
         );
+    }
+
+    fn lifecycle_target_handoff(&self) {
+        let engine = self.root.path().join("recording-engine");
+        self.write_executable(
+            &engine,
+            &format!(
+                "#!/bin/sh\nif [ \"$1\" = --version ]; then\n  printf 'kmp-mcp {}\\n'\nelse\n  printf '%s\\n' \"$@\"\nfi\n",
+                env!("CARGO_PKG_VERSION")
+            ),
+        );
+        let checksum = format!(
+            "{:x}",
+            Sha256::digest(fs::read(&engine).expect("recording engine"))
+        );
+        let checksum_path = self.root.path().join("recording-engine.sha256");
+        fs::write(&checksum_path, format!("{checksum}  kmp-mcp\n")).expect("recording checksum");
+        let install = self.root.path().join("recording install");
+        let install_string = install.to_str().expect("test install path");
+        let missing_engine = self.root.path().join("missing-engine");
+
+        // Exercise both handoff sites. Only the native lifecycle decides an
+        // unpinned update's destination; the bootstrap still fetches the
+        // checksummed engine belonging to this plugin's release.
+        for bootstrap in [false, true] {
+            for (input, expected) in [
+                (
+                    vec!["setup"],
+                    vec!["setup", "--version", env!("CARGO_PKG_VERSION")],
+                ),
+                (vec!["update"], vec!["update"]),
+                (
+                    vec!["update", "--version", "9.9.9"],
+                    vec!["update", "--version", "9.9.9"],
+                ),
+            ] {
+                let output = Command::new(
+                    self.root
+                        .path()
+                        .join("plugin/scripts/kmp-install-binary.sh"),
+                )
+                .args(&input)
+                .env(
+                    "PATH",
+                    format!("{}:/usr/bin:/bin", self.root.path().join("tools").display()),
+                )
+                .env(
+                    "KMP_MCP_BIN",
+                    if bootstrap { &missing_engine } else { &engine },
+                )
+                .env("KMP_INSTALL_DIR", &install)
+                .env("KMP_TEST_ASSET", &engine)
+                .env("KMP_TEST_SHA", &checksum_path)
+                .env(
+                    "KMP_TEST_CURL_LOG",
+                    self.root.path().join("handoff-curl.log"),
+                )
+                .output()
+                .expect("lifecycle handoff starts");
+                assert!(
+                    output.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                let output = String::from_utf8(output.stdout).expect("recorded arguments");
+                let mut expected = expected;
+                if bootstrap {
+                    expected.splice(1..1, ["--engine-dir", install_string]);
+                }
+                assert_eq!(
+                    output.lines().collect::<Vec<_>>(),
+                    expected,
+                    "bootstrap={bootstrap}, input={input:?}"
+                );
+            }
+        }
     }
 
     fn target() -> &'static str {
