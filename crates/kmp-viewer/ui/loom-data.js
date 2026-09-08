@@ -36,24 +36,21 @@ KMP_APP.data = (() => {
     }));
   }
 
-  function applyProjection(projection, lod) {
-    const entries = (projection.entries || [])
-      .map(KMP_LOOM.entryModel)
-      .sort(KMP_LOOM.compareModels);
-    model.projection = projection;
-    model.currentLod = lod;
-    model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
-    model.total = Number((projection.page && projection.page.total) || 0);
-    // Label aggregates stay distinct from individual memories.
-    model.bins = KMP_LOOM.foldAggregates(projection.bins);
-    model.clusters = KMP_LOOM.foldAggregates(projection.clusters);
-    model.entries = entries;
+  // Index every currently projected owner for selection and evidence panels.
+  // The individual projections still define the separate scene planes.
+  function refreshEntries() {
+    const projections = [{about: model.about, projection: model.projection || {}},
+      ...model.layerProjections];
+    const entries = projections.flatMap(({about, projection}) =>
+      (projection.entries || []).map(KMP_LOOM.entryModel).map((entry) => ({...entry, about})));
     model.byRef = new Map(entries.map((entry) => [entry.ref, entry]));
-    model.lanes = lanesFromProjection(projection, entries);
+    model.entries = [...model.byRef.values()].sort(KMP_LOOM.compareModels);
+    model.total = projections.reduce((count, {projection}) => count + Number(projection.page?.total || 0), 0);
+    model.lanes = lanesFromProjection(model.projection, model.entries);
     model.laneIndex = new Map(
       model.lanes.map((lane) => [lane.name, lane.index]),
     );
-    model.proofEdges = (projection.relations || []).map((edge) => ({
+    model.proofEdges = projections.flatMap(({ projection }) => projection.relations || []).map((edge) => ({
       ...edge,
       source: edge.from,
       target: edge.to,
@@ -70,6 +67,16 @@ KMP_APP.data = (() => {
     model.contradictedRefs = new Set(
       classified.contradictions.flatMap((edge) => [edge.source, edge.target]),
     );
+  }
+
+  function applyProjection(projection, lod) {
+    model.projection = projection;
+    model.currentLod = lod;
+    model.maxMarksPerLane = KMP_LOOM.maxMarksPerLane(projection);
+    // Label aggregates stay distinct from individual memories.
+    model.bins = KMP_LOOM.foldAggregates(projection.bins);
+    model.clusters = KMP_LOOM.foldAggregates(projection.clusters);
+    refreshEntries();
     const fullSpan = view.full && view.full.t1 - view.full.t0;
     if (
       !view.layerAbouts.length &&
@@ -296,6 +303,7 @@ KMP_APP.data = (() => {
   return {
     lanesFromProjection,
     applyProjection,
+    refreshEntries,
     setSelectors,
     loadProjection,
     scheduleProjection,

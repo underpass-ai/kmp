@@ -45,12 +45,12 @@ impl KernelMcpServer {
             "kmp_view_apply_intent" => {
                 let mut missing = Vec::new();
                 let mut failure = None;
-                let about = crate::serving::view_tools::about_for_intent(arguments);
+                let abouts = crate::serving::view_tools::abouts_for_intent(arguments);
                 for reference in crate::serving::view_tools::refs_named(arguments) {
-                    let Some(about) = about.as_deref() else {
+                    if abouts.is_empty() {
                         break;
-                    };
-                    match self.memory_ref_exists(about, &reference).await {
+                    }
+                    match self.memory_ref_exists_in_abouts(&abouts, &reference).await {
                         Ok(true) => {}
                         Ok(false) => missing.push(reference),
                         Err(error) => {
@@ -158,16 +158,44 @@ impl KernelMcpServer {
         }
     }
 
+    async fn memory_ref_exists_in_abouts(
+        &self,
+        abouts: &[String],
+        reference: &str,
+    ) -> Result<bool, ToolError> {
+        let mut scope_error = None;
+        for about in abouts {
+            match self.memory_ref_exists(about, reference).await {
+                Ok(true) => return Ok(true),
+                Ok(false) => {}
+                // Inspect rejects another owner's ref as an invalid argument.
+                // Try the other explicitly projected owners, never parse the
+                // opaque ref or widen this read to the whole store.
+                Err(error)
+                    if error.code
+                        == crate::serving::tool_error_code::ToolErrorCode::InvalidArgument =>
+                {
+                    scope_error.get_or_insert(error);
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        match scope_error {
+            Some(error) => Err(error),
+            None => Ok(false),
+        }
+    }
+
     async fn unhonored_projection(
         &self,
         arguments: &Value,
     ) -> Result<crate::serving::view_tools::UnhonoredProjection, ToolError> {
         let requested = crate::serving::view_tools::projection_names(arguments);
         let mut unhonored = crate::serving::view_tools::UnhonoredProjection::default();
-        let about = crate::serving::view_tools::about_for_intent(arguments);
+        let abouts = crate::serving::view_tools::abouts_for_intent(arguments);
 
         if !requested.dimensions.is_empty() || !requested.labels.is_empty() {
-            let Some(about) = about else {
+            let Some(about) = abouts.first() else {
                 unhonored.dimensions = requested.dimensions;
                 unhonored.label_keys = requested
                     .labels
@@ -176,11 +204,11 @@ impl KernelMcpServer {
                     .collect();
                 return Ok(unhonored);
             };
-            // One atlas over all time answers both questions: which of the
-            // named lanes the about holds (`coverage.missing`) and which
+            // One atlas over the explicitly projected owners answers which
+            // named lanes they hold (`coverage.missing`) and which
             // labels it holds at all (`labels`), the catalogue the projection
             // reads before its own filter.
-            let mut dimensions = serde_json::json!({ "scope": "current_about" });
+            let mut dimensions = serde_json::json!({ "scope": "abouts", "abouts": abouts });
             if !requested.dimensions.is_empty() {
                 dimensions["mode"] = serde_json::json!("only");
                 dimensions["include"] = serde_json::json!(requested.dimensions);

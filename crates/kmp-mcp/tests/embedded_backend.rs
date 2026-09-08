@@ -2399,6 +2399,160 @@ async fn view_intents_resolve_projection_names_against_the_mounted_store_and_rea
 }
 
 #[tokio::test]
+async fn view_intents_validate_refs_in_new_and_retained_about_layers() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    for (id, arguments) in [
+        (1, ingest_arguments()),
+        (2, distinct_ingest_arguments("layer")),
+        (3, distinct_ingest_arguments("outside")),
+    ] {
+        let seeded = call(&server, id, "kmp_ingest", arguments).await;
+        assert!(seeded.get("error").is_none(), "{seeded}");
+    }
+    let view_id = "projected-ref-validation";
+    let opened = call(
+        &server,
+        4,
+        "kmp_view_open",
+        json!({"view_id": view_id, "about": "question:e3"}),
+    )
+    .await;
+    let original = call(
+        &server,
+        5,
+        "kmp_inspect",
+        json!({"about":"question:e3-layer", "ref":"question:e3-layer:claim:e3"}),
+    )
+    .await;
+    let request = json!({
+        "view_id": view_id, "expected_revision": opened["view_revision"],
+        "idempotency_key": "layer-selection", "projection": {"abouts": ["question:e3-layer"]},
+        "selection": "question:e3-layer:claim:e3",
+        "focus": {"refs": ["question:e3-layer:claim:e3"]},
+        "trace": {"from":"question:e3-layer:claim:e3", "to":"question:e3-layer:claim:e3-detail"}
+    });
+    let selected = call(&server, 6, "kmp_view_apply_intent", request.clone()).await;
+    assert_eq!(selected["applied"], true, "{selected}");
+    assert_eq!(selected["state"]["selection"], "question:e3-layer:claim:e3");
+    assert_eq!(
+        selected["state"]["focus"]["refs"],
+        json!(["question:e3-layer:claim:e3"])
+    );
+    assert_eq!(
+        selected["state"]["trace"]["to"],
+        "question:e3-layer:claim:e3-detail"
+    );
+    let replay = call(&server, 7, "kmp_view_apply_intent", request).await;
+    assert_eq!(replay["applied"], false, "{replay}");
+    assert_eq!(replay["view_revision"], selected["view_revision"]);
+    let retained = call(
+        &server,
+        8,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id":view_id, "expected_revision":selected["view_revision"],
+            "idempotency_key":"layer-retained", "selection":"question:e3-layer:claim:e3-detail"
+        }),
+    )
+    .await;
+    assert_eq!(retained["applied"], true, "{retained}");
+    assert_eq!(
+        retained["state"]["projection"]["abouts"],
+        json!(["question:e3-layer"])
+    );
+    for (key, patch) in [
+        (
+            "outside",
+            json!({"selection":"question:e3-outside:claim:e3"}),
+        ),
+        (
+            "removed",
+            json!({"projection":{"abouts":[]}, "selection":"question:e3-layer:claim:e3"}),
+        ),
+        (
+            "replaced",
+            json!({"projection":{"semantic_zoom":"moment"}, "selection":"question:e3-layer:claim:e3"}),
+        ),
+        (
+            "missing",
+            json!({"projection":{"abouts":["no-such-about"]}}),
+        ),
+    ] {
+        let mut args = patch;
+        args["view_id"] = json!(view_id);
+        args["idempotency_key"] = json!(key);
+        let refused = call(&server, 9, "kmp_view_apply_intent", args).await;
+        assert!(refused.get("error").is_some(), "{key}: {refused}");
+        let unchanged = call(
+            &server,
+            10,
+            "kmp_view_get_state",
+            json!({"view_id":view_id}),
+        )
+        .await;
+        assert_eq!(unchanged["state"], retained["state"], "{key}");
+    }
+    let stale = call(
+        &server,
+        11,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id":view_id, "expected_revision":selected["view_revision"],
+            "idempotency_key":"stale-layer-selection", "selection":"question:e3-layer:claim:e3"
+        }),
+    )
+    .await;
+    assert_eq!(stale["error"]["code"], "conflict", "{stale}");
+    let after = call(
+        &server,
+        12,
+        "kmp_inspect",
+        json!({"about":"question:e3-layer", "ref":"question:e3-layer:claim:e3"}),
+    )
+    .await;
+    assert_eq!(after, original, "View moves must not mutate memory");
+}
+
+#[tokio::test]
+async fn view_intents_keep_dimensions_and_labels_found_only_in_an_additional_about() {
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
+    call(&server, 1, "kmp_ingest", ingest_arguments()).await;
+    let layer: Value = serde_json::from_str(
+        &distinct_ingest_arguments("catalogue")
+            .to_string()
+            .replace("conversation", "component"),
+    )
+    .expect("layer fixture");
+    call(&server, 2, "kmp_ingest", layer).await;
+    let view_id = "projected-catalogue-validation";
+    call(
+        &server,
+        3,
+        "kmp_view_open",
+        json!({"view_id":view_id, "about":"question:e3"}),
+    )
+    .await;
+    let projection = json!({
+        "abouts":["question:e3-catalogue"], "dimensions":["component"],
+        "labels":[{"key":"component","op":"in","values":["component:s1"]}]
+    });
+    let selected = call(
+        &server,
+        4,
+        "kmp_view_apply_intent",
+        json!({
+            "view_id":view_id, "idempotency_key":"layer-catalogue", "projection":projection
+        }),
+    )
+    .await;
+    assert_eq!(selected["applied"], true, "{selected}");
+    assert_eq!(selected["unhonored"], json!([]), "{selected}");
+    assert_eq!(selected["state"]["projection"], projection);
+}
+
+#[tokio::test]
 async fn view_idempotency_replays_the_same_intent_and_refuses_a_different_one() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");

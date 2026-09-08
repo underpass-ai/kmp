@@ -4827,7 +4827,7 @@
                 "type": "array"
               },
               "labels": {
-                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value absent from the primary and additional abouts' catalogues is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
