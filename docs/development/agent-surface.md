@@ -70,6 +70,14 @@ que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
 descripción. Comprobar lo que el host presenta antes de atribuirle al servidor
 una repetición añadida fuera del MCP nativo.
 
+Los campos del schema ya declaran tipos, valores admitidos, límites y defaults.
+Sus descripciones explican las decisiones que esos campos no expresan: qué
+reloj seleccionar, qué oculta un filtro, cómo continuar y qué cuenta como prueba.
+Los ejemplos y el detalle consultable pueden desarrollar esas explicaciones.
+Al acortar descripciones, comparar también el resto del schema antes y después:
+una reducción de texto no debería ocultar la pérdida de un campo o una condición.
+Esa comparación es evidencia de la revisión, no un nuevo gate editorial.
+
 Las instrucciones de initialize contienen sólo decisiones comunes entre verbos:
 activación, recuperación inicial, elección temporal/semántica, continuidad,
 identificadores, prueba y frontera de confianza. El uso específico pertenece

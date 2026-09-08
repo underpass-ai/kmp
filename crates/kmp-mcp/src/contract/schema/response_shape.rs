@@ -12,9 +12,7 @@ use serde_json::{Value, json};
 use super::primitives::{described, nullable_described, output_object, string_array};
 
 pub(crate) fn warnings_output_schema() -> Value {
-    string_array(
-        "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
-    )
+    string_array("Non-empty warnings qualify success; retain them.")
 }
 pub(crate) fn recall_envelope_properties() -> Value {
     json!({
@@ -31,12 +29,11 @@ pub(crate) fn recall_envelope_properties() -> Value {
 /// than no number, because it will be acted on.
 pub(crate) fn page_output_schema(unit: &str, cursor_description: &str) -> Value {
     output_object(json!({
-        "returned": described("integer", "How many items this response carries."),
-        "total": described("integer", &format!("How many {unit} the selection holds in total.")),
+        "returned": described("integer", "Items returned on this page."),
+        "total": described("integer", &format!("Total {unit} in the selection.")),
         "has_more": described(
             "boolean",
-            "Whether the slice was cut. A partial answer reported as a whole one is the failure \
-             this field exists to prevent."
+            "More items remain; this page is incomplete."
         ),
         "next_cursor": nullable_described("string", cursor_description)
     }))
@@ -47,93 +44,35 @@ pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
         "confidence": described("string", confidence_description),
         "evidence": described(
             "array",
-            "Stored entry text or evidence, verbatim. `text` is the canonical body and \
-             `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may \
-             also say how an item was retrieved, never what it says. `reached_by` (relation, \
-             association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks \
-             an item the question never matched on its own words: proof, not answer, and never \
-             cited in `because`. On a cited item, `bridged_terms` names the word pairs the \
-             lexical-bridge table crossed a language with (`valvula≈valve 0.51`); \
-             `restated_from` and `restated_via` name a memory a writer declared this one \
-             restates; `matched_via: summary` with `summary_terms` says the question reached it \
-             through the writer's English `summary_en` and not through its text, and names the \
-             question's words the summary supplied. Read those as the writer's words, not the \
-             memory's."
+            "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. \
+             Retrieval metadata never changes that text. reached_by items are indirect proof, \
+             never answers or citations in because; reached_from, reached_via and reached_hops \
+             identify their route. On citations, bridged_terms names cross-language word pairs; \
+             restated_from and restated_via identify a writer-declared restatement; matched_via: \
+             summary and summary_terms identify words matched through the writer's English \
+             summary_en, not the canonical text."
         ),
-        "missing": described(
-            "array",
-            "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which \
-             kind: nothing retrieved at all, or nothing that bears on the question."
-        ),
-        "superseded": described(
-            "array",
-            "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, \
-             not a disagreement: read the older entry as what was true then, not as advice."
-        ),
-        "expired": described(
-            "array",
-            "Historical entries whose exclusive `valid_until` had passed where the read \
-             stood: the cursor on a temporal move, `as_of` or the interval's end on wake and \
-             ask, else the memory's own latest instant. Expiry needs no replacement, so this \
-             is separate from `superseded`."
-        ),
-        "conflicts": described(
-            "array",
-            "Entries that explicitly contradict each other and are both still live. The tension \
-             is the information — this is deliberately not the same field as `superseded`."
-        ),
-        "matched_relations": described(
-            "array",
-            "Which typed relations contributed to the ordering. Relation prose can improve a \
-             match and can never promote unrelated evidence into an answer."
-        ),
-        "matched_terms": described("array", "Question terms that matched retrieved evidence."),
-        "path": described("array", "The traversal that connects the cited evidence."),
-        "frontier_size": described(
-            "integer",
-            "How much was reachable and not returned, which is the signal to expand."
-        ),
-        "interval": nullable_described(
-            "object",
-            "The half-open span the recall stood within, `start` and `end`, when the caller \
-             asked for one; null otherwise."
-        ),
-        "axis": nullable_described(
-            "string",
-            "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, \
-             `validity`, or `default` for the compatible precedence; null when the recall \
-             stood at the memory's own frontier."
-        ),
-        "as_of": nullable_described(
-            "string",
-            "The instant the recall stood at, when the caller asked for one; a `ref` cursor is \
-             reported as the instant it resolved to. Null otherwise."
-        ),
-        "nearest_outside": nullable_described(
-            "object",
-            "On UNKNOWN within an interval: the closest match outside it — its `ref`, its \
-             `time` and the `axis` that instant was read on — so a reader can tell \"not then\" \
-             from \"not known\". Null otherwise."
-        ),
-        "abouts_selected": described(
-            "array",
-            "The abouts this recall read together, the current one first: one when \
-             `dimensions.scope` stayed inside it, the named list or every anchor otherwise. \
-             Each cited ref already carries its about; this says which were looked at, so \
-             silence from one is distinguishable from absence."
-        ),
-        "abouts_empty_in_selection": described(
-            "array",
-            "Of the abouts read, those with no entry inside the interval or in effect at the \
-             instant, when the caller asked for one. Empty otherwise."
-        )
+        "missing": described("array", "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN."),
+        "superseded": described("array", "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice."),
+        "expired": described("array", "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement."),
+        "conflicts": described("array", "Explicit contradictions whose entries are both still live; distinct from supersession."),
+        "matched_relations": described("array", "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer."),
+        "matched_terms": described("array", "Question terms matching retrieved evidence."),
+        "path": described("array", "Traversal connecting cited evidence."),
+        "frontier_size": described("integer", "Reachable items not returned; a signal to expand."),
+        "interval": nullable_described("object", "Selected half-open [start,end) span, or null."),
+        "axis": nullable_described("string", "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier."),
+        "as_of": nullable_described("string", "Selected instant, including the time resolved from a ref cursor; null if unrequested."),
+        "nearest_outside": nullable_described("object", "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null."),
+        "abouts_selected": described("array", "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts."),
+        "abouts_empty_in_selection": described("array", "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.")
     }))
 }
 /// `projection`, the budget envelope on a recall.
 fn projection_output_schema() -> Value {
     let mut page = page_output_schema(
         "eligible expansion items",
-        "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+        "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
     );
     page["properties"]["offset"] = described(
         "integer",
@@ -145,8 +84,7 @@ fn projection_output_schema() -> Value {
         "detail": described("string", "compact | balanced | full — the detail tier that was served."),
         "excluded_by_detail": described(
             "integer",
-            "Items a richer `budget.detail` would have included. Not a truncation: they were \
-             never eligible at this tier."
+            "Excluded by detail tier, not truncation; increase budget.detail to include them."
         ),
         "next_action": nullable_described(
             "string",
@@ -173,8 +111,7 @@ pub(crate) fn quality_output_schema() -> Value {
         "details": described("integer", "Returned node-detail count."),
         "causal_density": described(
             "number",
-            "Share of returned relations that explain rather than merely connect. Low means the \
-             memory is a list; it is a property of what was written, not of this call."
+            "Share of returned relations that explain rather than merely connect; reflects the stored writing."
         ),
         "detail_coverage": described("number", "Share of returned nodes that carry stored detail."),
         "truncated": described("boolean", "Whether the rendering dropped anything.")

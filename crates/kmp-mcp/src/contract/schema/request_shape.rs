@@ -29,21 +29,21 @@ pub(crate) fn dimensions_schema() -> Value {
             },
             "scope_ids": {
                 "type": "array",
-                "items": string_schema("Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.")
+                "items": string_schema("Exact scope id: local or about:<about>:dimension:<dimension_id>.")
             },
             "selectors": {
                 "type": "array",
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": label_selector_schema()
             },
             "scope": {
                 "type": "string",
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": ["current_about", "abouts", "all_abouts"]
             },
             "abouts": {
                 "type": "array",
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": string_schema("Memory about id.")
             }
         }
@@ -62,11 +62,11 @@ pub(crate) fn label_selector_schema() -> Value {
             "op": {
                 "type": "string",
                 "enum": ["in", "notin", "exists", "notexists"],
-                "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty."
+                "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty."
             },
             "values": {
                 "type": "array",
-                "items": string_schema("Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.")
+                "items": string_schema("Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.")
             }
         }
     })
@@ -106,13 +106,13 @@ pub(crate) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
                 "type": "integer",
                 "minimum": 1,
                 "default": default_tokens,
-                "description": format!("Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to {default_tokens} for this verb. max_bytes is the normative host-safe ceiling.")
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling."
             },
             "max_bytes": {
                 "type": "integer",
                 "minimum": 512,
                 "default": 10_000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error."
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error."
             },
             "detail": {
                 "type": "string",
@@ -124,7 +124,7 @@ pub(crate) fn budget_schema(default_tokens: u32, default_depth: u32) -> Value {
                 "type": "integer",
                 "minimum": 1,
                 "default": default_depth,
-                "description": format!("Graph traversal depth; defaults to {default_depth} for this verb in both embedded and live gRPC modes.")
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes."
             },
             "max_entries": {
                 "type": "integer",
@@ -158,10 +158,10 @@ pub(crate) fn as_of_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
-        "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+        "description": "Exactly one of time/ref; exclusive with interval. Only entries effective then on axis compete. Supersession and expiry are evaluated then: later changes do not invalidate the historical state.",
         "properties": {
             "time": string_schema("ISO-8601 instant to stand at."),
-            "ref": string_schema("Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.")
+            "ref": string_schema("Memory ref whose instant on axis selects the historical state.")
         }
     })
 }
@@ -170,7 +170,7 @@ pub(crate) fn interval_schema() -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
-        "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+        "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
         "properties": {
             "start": string_schema("ISO-8601 inclusive start. Omit it to leave the span open on this side."),
             "end": string_schema("ISO-8601 exclusive end. Omit it to leave the span open on this side.")
@@ -182,6 +182,6 @@ pub(crate) fn recall_axis_schema() -> Value {
     json!({
         "type": "string",
         "enum": ["occurred", "observed", "ingested", "validity"],
-        "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`."
+        "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval."
     })
 }

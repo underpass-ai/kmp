@@ -498,7 +498,7 @@
             "type": "string"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -1089,10 +1089,10 @@
           },
           "as_of": {
             "additionalProperties": false,
-            "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+            "description": "Exactly one of time/ref; exclusive with interval. Only entries effective then on axis compete. Supersession and expiry are evaluated then: later changes do not invalidate the historical state.",
             "properties": {
               "ref": {
-                "description": "Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.",
+                "description": "Memory ref whose instant on axis selects the historical state.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -1105,7 +1105,7 @@
             "type": "object"
           },
           "axis": {
-            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
             "enum": [
               "occurred",
               "observed",
@@ -1119,7 +1119,7 @@
             "properties": {
               "depth": {
                 "default": 2,
-                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -1135,7 +1135,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -1145,7 +1145,7 @@
               },
               "tokens": {
                 "default": 1600,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 1600 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -1161,7 +1161,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -1194,7 +1194,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -1204,14 +1204,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -1221,7 +1221,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -1232,7 +1232,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -1257,7 +1257,7 @@
           },
           "interval": {
             "additionalProperties": false,
-            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
@@ -1327,7 +1327,7 @@
                 "type": "string"
               },
               "excluded_by_detail": {
-                "description": "Items a richer `budget.detail` would have included. Not a truncation: they were never eligible at this tier.",
+                "description": "Excluded by detail tier, not truncation; increase budget.detail to include them.",
                 "type": "integer"
               },
               "next_action": {
@@ -1341,11 +1341,11 @@
                 "additionalProperties": false,
                 "properties": {
                   "has_more": {
-                    "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                    "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
                   },
                   "next_cursor": {
-                    "description": "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+                    "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
                     "type": [
                       "string",
                       "null"
@@ -1356,11 +1356,11 @@
                     "type": "integer"
                   },
                   "returned": {
-                    "description": "How many items this response carries.",
+                    "description": "Items returned on this page.",
                     "type": "integer"
                   },
                   "total": {
-                    "description": "How many eligible expansion items the selection holds in total.",
+                    "description": "Total eligible expansion items in the selection.",
                     "type": "integer"
                   }
                 },
@@ -1381,22 +1381,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -1407,53 +1407,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -1535,7 +1535,7 @@
             "type": "object"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -1569,10 +1569,10 @@
           },
           "as_of": {
             "additionalProperties": false,
-            "description": "Stand at one instant. Only what was in effect then on `axis` competes, and supersession and expiry are read as they stood then, so an entry replaced or expired later is current for this question. Exactly one of `time` or `ref`; exclusive with `interval`.",
+            "description": "Exactly one of time/ref; exclusive with interval. Only entries effective then on axis compete. Supersession and expiry are evaluated then: later changes do not invalidate the historical state.",
             "properties": {
               "ref": {
-                "description": "Memory ref whose own instant on the axis the read stands at: what was in effect when that entry happened.",
+                "description": "Memory ref whose instant on axis selects the historical state.",
                 "minLength": 1,
                 "type": "string"
               },
@@ -1590,7 +1590,7 @@
             "type": "string"
           },
           "axis": {
-            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
             "enum": [
               "occurred",
               "observed",
@@ -1604,7 +1604,7 @@
             "properties": {
               "depth": {
                 "default": 2,
-                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -1620,7 +1620,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -1630,7 +1630,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -1646,7 +1646,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -1679,7 +1679,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -1689,14 +1689,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -1706,7 +1706,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -1717,7 +1717,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -1737,7 +1737,7 @@
           },
           "interval": {
             "additionalProperties": false,
-            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
@@ -1819,7 +1819,7 @@
                 "type": "string"
               },
               "excluded_by_detail": {
-                "description": "Items a richer `budget.detail` would have included. Not a truncation: they were never eligible at this tier.",
+                "description": "Excluded by detail tier, not truncation; increase budget.detail to include them.",
                 "type": "integer"
               },
               "next_action": {
@@ -1833,11 +1833,11 @@
                 "additionalProperties": false,
                 "properties": {
                   "has_more": {
-                    "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                    "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
                   },
                   "next_cursor": {
-                    "description": "Opaque selection-bound recall cursor, or null. Repeat every other bound argument unchanged as page.cursor; only page.entries and budget token/byte ceilings may vary.",
+                    "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
                     "type": [
                       "string",
                       "null"
@@ -1848,11 +1848,11 @@
                     "type": "integer"
                   },
                   "returned": {
-                    "description": "How many items this response carries.",
+                    "description": "Items returned on this page.",
                     "type": "integer"
                   },
                   "total": {
-                    "description": "How many eligible expansion items the selection holds in total.",
+                    "description": "Total eligible expansion items in the selection.",
                     "type": "integer"
                   }
                 },
@@ -1873,22 +1873,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -1899,53 +1899,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -1978,7 +1978,7 @@
             "type": "object"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -2002,7 +2002,7 @@
             "type": "string"
           },
           "axis": {
-            "description": "The clock `as_of` and `interval` read: when it happened, when it was seen, when it was written, or when it held (`validity`: the span `[valid_from, valid_until)` overlaps the interval, or contains the instant). Omit it to keep the compatible precedence (occurred, validity start, observed, ingested), which the proof names per entry. An explicit axis never substitutes another clock, and has nothing to select on without `as_of` or `interval`.",
+            "description": "Clock for as_of/interval: occurred=event, observed=seen, ingested=written; validity=[valid_from,valid_until) overlaps the interval or contains the instant. Omitted: occurred, validity start, observed, ingested precedence, reported per entry. Explicit axis never substitutes another clock; applies only with as_of or interval.",
             "enum": [
               "occurred",
               "observed",
@@ -2016,7 +2016,7 @@
             "properties": {
               "depth": {
                 "default": 2,
-                "description": "Graph traversal depth; defaults to 2 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -2032,7 +2032,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -2042,7 +2042,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -2053,7 +2053,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -2086,7 +2086,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2096,14 +2096,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -2113,7 +2113,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -2124,7 +2124,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -2144,7 +2144,7 @@
           },
           "interval": {
             "additionalProperties": false,
-            "description": "Stand within a half-open span `[start, end)`. Only what falls inside on `axis` competes, the question's words are weighed against the span's own collection, and an UNKNOWN names the closest match outside the span in `proof.nearest_outside`. At least one bound; exclusive with `as_of`.",
+            "description": "Half-open [start,end) on axis, with at least one bound; exclusive with as_of. Only entries in the span compete, scored against its own collection. UNKNOWN reports the nearest outside match in proof.nearest_outside.",
             "properties": {
               "end": {
                 "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
@@ -2201,7 +2201,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -2212,11 +2212,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many facts, declared, coordinate, tensions and proposed, by position in that order the selection holds in total.",
+                "description": "Total facts, declared, coordinate, tensions and proposed, by position in that order in the selection.",
                 "type": "integer"
               }
             },
@@ -2226,22 +2226,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -2252,53 +2252,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -2317,7 +2317,7 @@
             "type": "array"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -2376,7 +2376,7 @@
             "properties": {
               "depth": {
                 "default": 3,
-                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -2392,7 +2392,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -2402,7 +2402,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -2418,7 +2418,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -2451,7 +2451,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2461,14 +2461,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -2478,7 +2478,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -2489,7 +2489,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -2608,7 +2608,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -2619,11 +2619,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many temporal entries the selection holds in total.",
+                "description": "Total temporal entries in the selection.",
                 "type": "integer"
               }
             },
@@ -2633,22 +2633,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -2659,53 +2659,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -2716,7 +2716,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -2761,7 +2761,7 @@
             ]
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -2820,7 +2820,7 @@
             "properties": {
               "depth": {
                 "default": 3,
-                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -2836,7 +2836,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -2846,7 +2846,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -2862,7 +2862,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -2895,7 +2895,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2905,14 +2905,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -2922,7 +2922,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -2933,7 +2933,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -3052,7 +3052,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -3063,11 +3063,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many temporal entries the selection holds in total.",
+                "description": "Total temporal entries in the selection.",
                 "type": "integer"
               }
             },
@@ -3077,22 +3077,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -3103,53 +3103,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -3160,7 +3160,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -3205,7 +3205,7 @@
             ]
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -3243,7 +3243,7 @@
             "properties": {
               "depth": {
                 "default": 3,
-                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -3259,7 +3259,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -3269,7 +3269,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3285,7 +3285,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -3318,7 +3318,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -3328,14 +3328,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -3345,7 +3345,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -3356,7 +3356,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -3496,7 +3496,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -3507,11 +3507,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many temporal entries the selection holds in total.",
+                "description": "Total temporal entries in the selection.",
                 "type": "integer"
               }
             },
@@ -3521,22 +3521,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -3547,53 +3547,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -3604,7 +3604,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -3649,7 +3649,7 @@
             ]
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -3687,7 +3687,7 @@
             "properties": {
               "depth": {
                 "default": 3,
-                "description": "Graph traversal depth; defaults to 3 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -3703,7 +3703,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -3713,7 +3713,7 @@
               },
               "tokens": {
                 "default": 2400,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 2400 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3729,7 +3729,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -3762,7 +3762,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -3772,14 +3772,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -3789,7 +3789,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -3800,7 +3800,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -3940,7 +3940,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -3951,11 +3951,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many temporal entries the selection holds in total.",
+                "description": "Total temporal entries in the selection.",
                 "type": "integer"
               }
             },
@@ -3965,22 +3965,22 @@
             "additionalProperties": false,
             "properties": {
               "abouts_empty_in_selection": {
-                "description": "Of the abouts read, those with no entry inside the interval or in effect at the instant, when the caller asked for one. Empty otherwise.",
+                "description": "Searched abouts with no entry in the selected interval or effective at the selected instant; empty for an unbounded read.",
                 "type": "array"
               },
               "abouts_selected": {
-                "description": "The abouts this recall read together, the current one first: one when `dimensions.scope` stayed inside it, the named list or every anchor otherwise. Each cited ref already carries its about; this says which were looked at, so silence from one is distinguishable from absence.",
+                "description": "Abouts read under dimensions.scope, current one first. Refs retain ownership; this list distinguishes searched from unsearched abouts.",
                 "type": "array"
               },
               "as_of": {
-                "description": "The instant the recall stood at, when the caller asked for one; a `ref` cursor is reported as the instant it resolved to. Null otherwise.",
+                "description": "Selected instant, including the time resolved from a ref cursor; null if unrequested.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
               "axis": {
-                "description": "The clock `as_of` or `interval` read on — `occurred`, `observed`, `ingested`, `validity`, or `default` for the compatible precedence; null when the recall stood at the memory's own frontier.",
+                "description": "Selected occurred/observed/ingested/validity clock, or default precedence; null at the memory's own frontier.",
                 "type": [
                   "string",
                   "null"
@@ -3991,53 +3991,53 @@
                 "type": "string"
               },
               "conflicts": {
-                "description": "Entries that explicitly contradict each other and are both still live. The tension is the information — this is deliberately not the same field as `superseded`.",
+                "description": "Explicit contradictions whose entries are both still live; distinct from supersession.",
                 "type": "array"
               },
               "evidence": {
-                "description": "Stored entry text or evidence, verbatim. `text` is the canonical body and `metadata.proof_role` distinguishes the claim from its evidence. `metadata` may also say how an item was retrieved, never what it says. `reached_by` (relation, association or bridge) with `reached_from`, `reached_via` and `reached_hops` marks an item the question never matched on its own words: proof, not answer, and never cited in `because`. On a cited item, `bridged_terms` names the word pairs the lexical-bridge table crossed a language with (`valvula≈valve 0.51`); `restated_from` and `restated_via` name a memory a writer declared this one restates; `matched_via: summary` with `summary_terms` says the question reached it through the writer's English `summary_en` and not through its text, and names the question's words the summary supplied. Read those as the writer's words, not the memory's.",
+                "description": "Verbatim stored text; metadata.proof_role distinguishes claim from evidence. Retrieval metadata never changes that text. reached_by items are indirect proof, never answers or citations in because; reached_from, reached_via and reached_hops identify their route. On citations, bridged_terms names cross-language word pairs; restated_from and restated_via identify a writer-declared restatement; matched_via: summary and summary_terms identify words matched through the writer's English summary_en, not the canonical text.",
                 "type": "array"
               },
               "expired": {
-                "description": "Historical entries whose exclusive `valid_until` had passed where the read stood: the cursor on a temporal move, `as_of` or the interval's end on wake and ask, else the memory's own latest instant. Expiry needs no replacement, so this is separate from `superseded`.",
+                "description": "Entries past exclusive valid_until at the temporal cursor, recall as_of/interval end, or otherwise the memory's latest instant. Expiry needs no replacement.",
                 "type": "array"
               },
               "frontier_size": {
-                "description": "How much was reachable and not returned, which is the signal to expand.",
+                "description": "Reachable items not returned; a signal to expand.",
                 "type": "integer"
               },
               "interval": {
-                "description": "The half-open span the recall stood within, `start` and `end`, when the caller asked for one; null otherwise.",
+                "description": "Selected half-open [start,end) span, or null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "matched_relations": {
-                "description": "Which typed relations contributed to the ordering. Relation prose can improve a match and can never promote unrelated evidence into an answer.",
+                "description": "Typed relations contributing to ordering. Their prose may improve a match, never promote unrelated evidence into an answer.",
                 "type": "array"
               },
               "matched_terms": {
-                "description": "Question terms that matched retrieved evidence.",
+                "description": "Question terms matching retrieved evidence.",
                 "type": "array"
               },
               "missing": {
-                "description": "What was looked for and not found. Non-empty alongside UNKNOWN, and it says which kind: nothing retrieved at all, or nothing that bears on the question.",
+                "description": "What was sought but not found: no retrieval or no evidence bearing on the question. Non-empty with UNKNOWN.",
                 "type": "array"
               },
               "nearest_outside": {
-                "description": "On UNKNOWN within an interval: the closest match outside it — its `ref`, its `time` and the `axis` that instant was read on — so a reader can tell \"not then\" from \"not known\". Null otherwise.",
+                "description": "On interval UNKNOWN, nearest match outside it: ref, time and axis. Distinguishes not then from not known; otherwise null.",
                 "type": [
                   "object",
                   "null"
                 ]
               },
               "path": {
-                "description": "The traversal that connects the cited evidence.",
+                "description": "Traversal connecting cited evidence.",
                 "type": "array"
               },
               "superseded": {
-                "description": "Entries a later one replaced, each with `superseded_by` and the `why`. A lifecycle, not a disagreement: read the older entry as what was true then, not as advice.",
+                "description": "Replaced entries with superseded_by and why. Historical state, distinct from contradiction; not current advice.",
                 "type": "array"
               }
             },
@@ -4048,7 +4048,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -4093,7 +4093,7 @@
             ]
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -4121,7 +4121,7 @@
             "properties": {
               "depth": {
                 "default": 1,
-                "description": "Graph traversal depth; defaults to 1 for this verb in both embedded and live gRPC modes.",
+                "description": "Graph traversal depth; the default applies in embedded and live gRPC modes.",
                 "minimum": 1,
                 "type": "integer"
               },
@@ -4137,7 +4137,7 @@
               },
               "max_bytes": {
                 "default": 10000,
-                "description": "Normative maximum bytes for compact serialized structuredContent. Defaults to the host-safe 10,000-byte profile. A ceiling below the response's stable floor returns the floor with a warning naming it, never an error.",
+                "description": "Enforced compact-JSON structuredContent ceiling. Below the stable response floor, return that floor with a warning naming it, not an error.",
                 "minimum": 512,
                 "type": "integer"
               },
@@ -4147,7 +4147,7 @@
               },
               "tokens": {
                 "default": 1600,
-                "description": "Advisory cl100k planning hint retained for compatibility and reported in the response; it does not filter structuredContent. Defaults to 1600 for this verb. max_bytes is the normative host-safe ceiling.",
+                "description": "Advisory cl100k planning hint, reported for compatibility; never filters structuredContent. max_bytes is the enforced ceiling.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -4206,7 +4206,7 @@
             "additionalProperties": false,
             "properties": {
               "has_more": {
-                "description": "Whether the slice was cut. A partial answer reported as a whole one is the failure this field exists to prevent.",
+                "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
               "next_cursor": {
@@ -4217,11 +4217,11 @@
                 ]
               },
               "returned": {
-                "description": "How many items this response carries.",
+                "description": "Items returned on this page.",
                 "type": "integer"
               },
               "total": {
-                "description": "How many trace relations the selection holds in total.",
+                "description": "Total trace relations in the selection.",
                 "type": "integer"
               }
             },
@@ -4232,7 +4232,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -4270,7 +4270,7 @@
             "type": "array"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -4433,7 +4433,7 @@
             "description": "Response-shape metrics; null when the backend supplied none.",
             "properties": {
               "causal_density": {
-                "description": "Share of returned relations that explain rather than merely connect. Low means the memory is a list; it is a property of what was written, not of this call.",
+                "description": "Share of returned relations that explain rather than merely connect; reflects the stored writing.",
                 "type": "number"
               },
               "detail_coverage": {
@@ -4471,7 +4471,7 @@
             "type": "string"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -4631,7 +4631,7 @@
             "type": "string"
           },
           "warnings": {
-            "description": "Operational warnings. A non-empty list qualifies the success and must not be discarded.",
+            "description": "Non-empty warnings qualify success; retain them.",
             "items": {
               "type": "string"
             },
@@ -4843,7 +4843,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -4854,7 +4854,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
@@ -5156,7 +5156,7 @@
             "additionalProperties": false,
             "properties": {
               "abouts": {
-                "description": "The abouts to read together when `scope` is `abouts`. Include the current one if you still want it.",
+                "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
                 "items": {
                   "description": "Memory about id.",
                   "minLength": 1,
@@ -5189,7 +5189,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -5199,14 +5199,14 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact dimension scope id to include. Values may be local memory dimension ids or namespaced about:<about>:dimension:<dimension_id> ids.",
+                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "selectors": {
-                "description": "Predicates over the labels an entry stands in, all of which must hold. `mode`, `include`, `exclude` and `scope_ids` read one coordinate at a time and keep an entry when one of its coordinates passes; a selector reads the whole entry as key -> values, so `{key: task, op: notexists}` keeps only the entries with no task label, where `exclude: [task]` keeps every entry that also stands in a process. A hard filter, never a score: what it hides is invisible, so read `kmp_wake`'s `labels` first.",
+                "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {
@@ -5216,7 +5216,7 @@
                       "type": "string"
                     },
                     "op": {
-                      "description": "`in`: one of the entry's values under `key` is in `values`. `notin`: none is, and an entry without the key passes. `exists` / `notexists`: the key is present / absent; `values` must be empty.",
+                      "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
                       "enum": [
                         "in",
                         "notin",
@@ -5227,7 +5227,7 @@
                     },
                     "values": {
                       "items": {
-                        "description": "Bare label value as `kmp_wake` lists it in `labels`; a namespaced scope id is read as its bare value.",
+                        "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
                         "minLength": 1,
                         "type": "string"
                       },
