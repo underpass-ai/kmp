@@ -5,7 +5,7 @@ description: Operate KMP agent memory through the kmp MCP server — recover sto
 
 # KMP agent memory
 
-KMP is graph-temporal memory for agents, reachable over MCP as ten memory
+KMP is graph-temporal memory for agents, reachable over MCP as twelve memory
 tools plus three semantic view tools. It is a **kernel, not a model**: every
 answer is derived from stored evidence by construction. Nothing here
 generates prose. If the memory does not support an answer, `kmp_ask` returns
@@ -65,8 +65,10 @@ evidence into an answer.
 
 Route again after every response:
 
-- Empty `kmp_wake` means there is no memory for the about. Start the work and
-  write its durable shape when one exists.
+- A missing embedded about returns `not_found`. For deliberately new work in
+  the selected store, make the first write when there is a durable fact. For
+  expected existing work, check the exact about and selected store. An empty
+  bounded selection does not prove that the about has no memory.
 - A wake or Ask projection with `has_more=true` is not exhaustive. If omitted
   material may affect the goal, follow its opaque cursor before leaving KMP;
   otherwise state that the recall was partial.
@@ -138,8 +140,10 @@ decided, what is open. Call it **before** reading files to reconstruct
 context you may already have stored. Abouts are stable ids, conventionally
 `project:<name>` or `incident:<id>`.
 
-If `kmp_wake` comes back empty, there is no memory for that about yet.
-That is the signal to start writing one, not to keep guessing.
+A missing embedded about returns `not_found`, not a successful empty packet.
+Distinguish deliberately new work from an unexpected missing about or wrong
+store. A bounded wake can have no evidence within its selection while the
+about still holds memory elsewhere in time.
 
 Wake also hands back `resume_cursor` — the newest coordinate the packet
 covers. Carry it, and the next question ("what changed since I looked?") is
@@ -320,8 +324,8 @@ work.
 
 | Move | Use it when |
 | --- | --- |
-| `kmp_trace` | Prove a connection between two refs owned by the required `about`. Both endpoints are rejected before traversal if they cross that boundary. |
-| `kmp_inspect` | Examine one ref inside the required `about`: stored object, links, evidence. `include.raw=true` for audit refs; `budget.max_bytes` bounds the packet and an oversized hub is refused with narrowing guidance. |
+| `kmp_trace` | Prove a connection from the required `about`. A declared, evidenced cross-about equivalence may carry the path to another about; naming a foreign ref alone does not create that path. |
+| `kmp_inspect` | Examine one ref inside its owning `about`: stored object, links, evidence. `include.raw=true` adds audit refs. Expandable evidence and links page under `budget.max_bytes`; if the stable object itself cannot fit, read the returned budget guidance. |
 
 **Write**
 
@@ -475,15 +479,20 @@ be reused.
 
 ## `observed_at` is the real clock, in UTC
 
-Every write carries `observed_at`, and the whole read path is ordered by it.
+Every normal write carries `observed_at`: when this information was observed.
+It is distinct from `occurred_at` (when the event happened), ingestion time
+(when the kernel recorded it), and the validity interval (when it held).
+Select the clock that answers the question; reads are not all ordered by observation.
 **Read the clock; do not compose a timestamp.** Local wall-clock time with a
 `Z` on the end is valid RFC3339 and the wrong instant, and it puts the entry
 above the present — where `kmp_forward` from a correct "now" never finds
 it, and the delta comes back empty looking exactly like a quiet week.
 
-A stamp more than five minutes ahead of the kernel's clock is refused at
-write time. Earlier is fine: writing up yesterday's incident this morning is a
-backfill, and stamping when it happened is the point.
+An observation stamp more than five minutes ahead of the kernel's clock is
+refused at write time. For an incident that occurred yesterday but was first
+observed this morning, keep yesterday in `occurred_at` and this morning in
+`observed_at`. A backfill preserves a genuinely known earlier observation;
+it does not copy event time into the knowledge clock merely because it is earlier.
 
 ## Undoing is a write, not a delete
 
@@ -565,8 +574,9 @@ That gives the agent a complete read path:
 2. `kmp_ask` answers a paraphrased question from direct evidence and uses
    the graph context to keep the right citation in the core.
 3. `kmp_trace` proves the path between two refs; `kmp_inspect` shows the
-   stored object, links, and evidence verbatim. Pass the owning `about` to
-   both; neither tool has an implicit cross-about read scope.
+   stored object, links, and evidence verbatim. Inspect uses the owning
+   `about`; trace starts inside its declared about and can cross a proven
+   equivalence. Neither call silently opens an arbitrary all-abouts scope.
 
 ### Write the rationale and its proof as a pair
 
@@ -786,7 +796,7 @@ the closed set under `_meta."kmp/errorCodes"` with what each one means.
 | code | what to do |
 | --- | --- |
 | `invalid_argument` | fix the arguments — retrying unchanged cannot work |
-| `not_found` | the memory is not in this store |
+| `not_found` | the requested about or ref was not found; check the exact address and selected store before inferring absence |
 | `conflict` | inspect the message: retryable concurrency conflicts are safe to replay with the same key; a key accepted with different content must not be reused |
 | `unavailable` | the kernel was unreachable; the same call may work later |
 | `unknown_tool` | no such tool here |
