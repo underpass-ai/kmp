@@ -2,9 +2,9 @@ use std::path::PathBuf;
 
 /// What a lifecycle run was asked to do about the lexical-bridge table.
 ///
-/// Installing is the default because the alternative is the silence this
-/// choice exists to end: without a table, `ask` matches within one language
-/// and says so nowhere except `doctor`.
+/// Installing adds word pairs for retrieval across languages. Stored text
+/// and valid writer-supplied English summaries are searchable without it;
+/// lifecycle receipts and `doctor` report the table's separate availability.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum BridgeChoice {
     /// Install the table this release publishes.

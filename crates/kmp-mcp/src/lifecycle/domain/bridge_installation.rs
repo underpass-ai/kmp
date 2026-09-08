@@ -10,7 +10,7 @@ use super::lifecycle_error::LifecycleError;
 /// unsaid, which is the whole point of reporting this in the receipt.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BridgeInstallation {
-    /// The table was written; `ask` now crosses languages on this machine.
+    /// The table was written; `ask` can use its word pairs on this machine.
     Installed {
         path: PathBuf,
         bytes: usize,
@@ -53,7 +53,7 @@ impl BridgeInstallation {
                     format!(", replacing the table that was there (sha256 {digest})")
                 });
                 format!(
-                    "installed {source} ({bytes} bytes) at {}{replaced}; ask now crosses languages",
+                    "installed {source} ({bytes} bytes) at {}{replaced}; ask can use these word pairs across languages",
                     path.display()
                 )
             }
@@ -61,15 +61,17 @@ impl BridgeInstallation {
                 format!("already current at {}", path.display())
             }
             Self::Declined => {
-                "declined; ask matches within one language on this machine".to_string()
+                "declined; stored text and valid summary_en remain searchable".to_string()
             }
             Self::Unavailable { reason } => {
-                format!("not installed: {reason}; ask matches within one language")
+                format!(
+                    "not installed: {reason}; stored text and valid summary_en remain searchable"
+                )
             }
         }
     }
 
-    /// Whether `ask` can cross languages after this run. A run that declined
+    /// Whether this run confirmed a bridge table. A run that declined
     /// says nothing about a table installed earlier, so it is not an answer
     /// to this question and reports `false` only about itself.
     pub fn table_is_present(&self) -> bool {
@@ -140,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn only_a_table_that_is_there_crosses_languages() {
+    fn only_an_installed_or_current_table_is_confirmed_present() {
         let current = BridgeInstallation::AlreadyCurrent {
             path: PathBuf::from("/home/data/kmp/lexical-bridge.kmpb"),
             sha256: "abc123".to_string(),
@@ -174,7 +176,7 @@ mod tests {
         assert!(
             BridgeInstallation::Declined
                 .summary()
-                .contains("matches within one language")
+                .contains("valid summary_en remain searchable")
         );
     }
 
@@ -189,6 +191,9 @@ mod tests {
 
         let summary = outcome.summary();
         assert!(summary.contains("read-only file system"), "{summary}");
-        assert!(summary.contains("matches within one language"), "{summary}");
+        assert!(
+            summary.contains("valid summary_en remain searchable"),
+            "{summary}"
+        );
     }
 }
