@@ -3,6 +3,14 @@
 KMP uses semantic versions. A `vX.Y.Z` tag triggers the release and publishing
 workflows; released tags and registry artifacts are immutable.
 
+The `kmp-release` binary resolves the workspace from its current directory,
+walking up to the nearest directory containing `Cargo.toml` and
+`crates/kmp-release/Cargo.toml`. Reusing a binary or Cargo target directory
+between checkouts does not select the checkout where it was compiled. Outside
+a KMP workspace, supply `--root` where supported or all required file paths
+for `readme` and `changelog`. The `scripts/release.sh` wrapper selects the
+checkout containing that script before invoking the binary.
+
 ## Two commands and a gate
 
 A release is one editorial act and two words. Write the `[Unreleased]` notes,

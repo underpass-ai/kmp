@@ -33,6 +33,7 @@ fn sync_repairs_all_targets_and_is_idempotent() {
 
     assert!(
         Command::new(binary())
+            .current_dir(directory.path())
             .args(["readme", "sync"])
             .args(common)
             .status()
@@ -46,6 +47,7 @@ fn sync_repairs_all_targets_and_is_idempotent() {
     );
     assert!(
         Command::new(binary())
+            .current_dir(directory.path())
             .args(["readme", "sync"])
             .args(common)
             .status()
@@ -67,6 +69,7 @@ fn sync_rejects_a_document_without_the_marker_contract() {
     write_surface(&target, OVERVIEW);
 
     let output = Command::new(binary())
+        .current_dir(directory.path())
         .args([
             "readme",
             "sync",
