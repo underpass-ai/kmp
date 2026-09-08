@@ -28,6 +28,14 @@ explaining or demonstrating KMP. If the packet is unexpectedly empty, report
 that guide sync did not become visible to this MCP process; do not invent the
 guide from repository prose.
 
+For a worked example, inspect `guide:kmp-agent:examples:index` after that
+wake. The catalogue names exact prerequisite and lesson refs. Read the
+prerequisites and chosen lesson through `kmp_inspect`, consuming relevant
+pages, instead of expanding every lesson merely to select one. A compact
+wake is context and navigation; it is not the full text of every example.
+The examples are authored teaching cases; their deterministic replay does
+not prove that a writer LLM has learned to operate unseen history.
+
 Then perform `open:guide`:
 
 1. Call `kmp_view_open` once with `about: "guide:kmp"`.

@@ -21,19 +21,28 @@ access. Use one source for the body; missing, empty, ambiguous and parent or
 absolute paths are rejected. The files ship with the plugin and are covered
 by the release input digest.
 
-The first worked lesson, [decision history](examples/decision-history.md),
-contains explicit fictional sources, source-based writing choices, call
+The worked lessons, [decision history](examples/decision-history.md) and
+[alias and account ownership](examples/alias-ownership.md), contain explicit
+fictional sources, source-based writing choices, call
 arguments with bindings to actual returned refs, temporal reads and visual
-inspection. Its JSON envelopes are teaching notation: the replay resolves
+inspection. Their JSON envelopes are teaching notation: the replay resolves
 bindings and sends only `arguments` to the named public MCP tool.
 
-Run it against a fresh temporary store under this repository's `tmp/`:
+Run the decision lesson against a fresh temporary store under this repository's `tmp/`:
 
 ```bash
 python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
   --trace artifacts/guide-decision-history.jsonl \
   --result artifacts/guide-decision-history.json
 ```
+
+Choose `--lesson alias-ownership` for the second lesson. The default
+`--guide-mode directed` reads compact guide context, the writer prerequisites,
+the catalogue and the chosen lesson through MCP; it verifies the exact
+synchronized bodies. `--guide-mode full` retains whole-guide expansion for
+comparison. Both modes consume relevant pages with explicit bounds. The
+result records the guide calls and structured bytes separately from lesson
+execution; these are transport checks, not measured LLM token savings.
 
 Add `--hold-view` to review ChronoLoom before typing `quit`; the temporary
 store is removed when the replay exits. The trace contains real MCP requests

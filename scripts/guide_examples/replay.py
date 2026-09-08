@@ -11,10 +11,12 @@ import tempfile
 from urllib.parse import urlsplit, urlunsplit
 
 from stdio import Stdio
-from decision_history_checks import check
+from decision_history_checks import check as check_history
+from alias_ownership_checks import check as check_alias
+from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSON = ROOT / 'plugins/kmp/guide/examples/decision-history.md'
+LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias}
 
 
 def bind(value, saved):
@@ -52,6 +54,7 @@ def complete(result):
 
 def run(args):
     binary = args.binary.resolve()
+    lesson = ROOT / 'plugins/kmp/guide/examples' / (args.lesson + '.md')
     args.trace.parent.mkdir(parents=True, exist_ok=True)
     (ROOT / 'tmp').mkdir(exist_ok=True)
     saved, authored = {}, {}
@@ -70,7 +73,7 @@ def run(args):
                 trace.flush()
 
             record({'preparation': 'guide sync in isolated store', 'output': sync.stdout,
-                    'lesson_sha256': hashlib.sha256(LESSON.read_bytes()).hexdigest(),
+                    'lesson_sha256': hashlib.sha256(lesson.read_bytes()).hexdigest(),
                     'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                     'model_calls': 0})
             client = Stdio(binary, store, env, record)
@@ -78,30 +81,16 @@ def run(args):
                 client.rpc('initialize', {'protocolVersion': '2024-11-05', 'capabilities': {},
                                          'clientInfo': {'name': 'guide-example-replay', 'version': '1'}})
                 client.rpc('tools/list', {})
-                # Load the operating guide before replaying the authored interpretation.
-                guide = {'about': 'guide:kmp-agent', 'budget': {'max_bytes': 20000, 'detail': 'full'}}
-                for _ in range(100):
-                    packet = client.call('kmp_wake', guide)
-                    page = packet['projection']['page']
-                    if not page['has_more']:
-                        break
-                    if page.get('returned') == 0:
-                        ceiling = guide['budget']['max_bytes'] * 2
-                        if ceiling > 320000:
-                            raise ValueError('Guide page cannot advance within the replay ceiling')
-                        guide = {**guide, 'budget': {**guide['budget'], 'max_bytes': ceiling}}
-                    guide = {**guide, 'page': {'cursor': page['next_cursor']}}
-                else:
-                    raise ValueError('Guide recall did not complete within 100 pages')
-                calls = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', LESSON.read_text(), re.S)]
+                guide_reads = prepare(client, ROOT, lesson, args.guide_mode)
+                calls = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', lesson.read_text(), re.S)]
                 for call in calls:
                     arguments = bind(call['arguments'], saved)
                     result = client.call(call['tool'], arguments, call.get('expect_error'))
                     complete(result)
                     saved[call['save_as']] = result
                     authored[call['save_as']] = arguments
-                checks = check(saved, client, authored)
-                summary = {'lesson': str(LESSON.relative_to(ROOT)), 'calls_in_lesson': len(calls),
+                checks = LESSONS[args.lesson](saved, client, authored)
+                summary = {'lesson': str(lesson.relative_to(ROOT)), 'calls_in_lesson': len(calls), 'guide_reads': guide_reads,
                            'checks': checks, 'model_calls': 0, 'results': redact(saved)}
                 args.result.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + '\n')
                 print(json.dumps({'checks': checks, 'calls_in_lesson': len(calls), 'model_calls': 0}), flush=True)
@@ -124,4 +113,6 @@ if __name__ == '__main__':
     parser.add_argument('--trace', type=Path, required=True)
     parser.add_argument('--result', type=Path, required=True)
     parser.add_argument('--hold-view', action='store_true')
+    parser.add_argument('--lesson', choices=LESSONS, default='decision-history')
+    parser.add_argument('--guide-mode', choices=('directed', 'full'), default='directed')
     run(parser.parse_args())

@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:e629c8655a45eeec716d",
+    "idempotency_key": "ingest:guide-sync:1:agent:94fb8ebed1583a93719a",
     "memory": {
       "dimensions": [
         {
@@ -672,20 +672,19 @@
             },
             {
               "dimension": "depth",
-              "scope_id": "depth-advanced",
+              "scope_id": "depth-basic",
               "sequence": 22
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:examples:index",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
-            "depth": "advanced",
+            "depth": "basic",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
+          "text": "Worked-example catalogue. Start with a compact wake and the live tools/list contract; follow every relevant continuation. Read verb:write, advanced:relations, advanced:scope, advanced:lifecycle and advanced:summary before a writer lesson, then inspect just the selected lesson. Exact refs: guide:kmp-agent:verb:write; guide:kmp-agent:advanced:relations; guide:kmp-agent:advanced:scope; guide:kmp-agent:advanced:lifecycle; guide:kmp-agent:advanced:summary. Decision changes and past validity: guide:kmp-agent:example:decision-history. Confirmed person alias, an unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. A compact wake does not contain all proof or all lesson text; inspect the selected canonical ref and follow its pages. Keep original sources and questions separate in writer evaluations. These authored examples teach and check the contract; they do not establish that another LLM has learned. Other per-tool, per-kind, per-relation and advanced examples remain to be added."
         },
         {
           "coordinates": [
@@ -707,16 +706,15 @@
               "sequence": 23
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:alias-ownership",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
+          "text": "# Worked example: a person's alias and a reassigned account\n\nUse this lesson to distinguish identity from assignment. Two names may refer\nto the same person; an account may instead be assigned to different people at\ndifferent times. The LLM reads the source and chooses that meaning. A shared\nlabel or a matching name is not identity evidence.\n\nThis fictional registry belongs to `example:guide:alias-ownership`, never to\na real person's memory. Learn the operating guide and live tools first. Read\nthe example catalogue, then inspect the selected lesson and its prerequisites\ninstead of expanding every lesson. The repository replay accepts\n`--lesson alias-ownership`; its default directed guide read obtains the text\nthrough MCP. It invokes no model and does not measure a new writer's learning.\n\n## Sources, in the order they become available\n\n| Source | Occurred, observed and effective from (UTC) | Literal source |\n| --- | --- | --- |\n| S1, Atlas directory | 2026-09-01T08:00:00Z | Elena Vega coordina Atlas. |\n| S2, Atlas access administrator | 2026-09-01T10:00:00Z | Asignamos la cuenta @oak a Jon para operar Atlas desde ahora. |\n| S3, signed directory clarification | 2026-09-02T09:00:00Z | Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona. |\n| S4, visitor log | 2026-09-03T11:00:00Z | Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona. |\n| S5, Atlas access administrator | 2026-09-05T10:00:00Z | Asignamos la cuenta @oak a Rui desde ahora. Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas. |\n\nS1, S3 and S4 are observations from documents. S2 and S5 are decisions to\nassign an account. The S3 memory can use `same_entity_as` toward the S1 memory\nbecause their named subject is explicitly the same person. This does not\nmake their entire texts interchangeable. S5 uses `supersedes` toward S2:\nthe **assignment** changes, and neither person becomes the account or the\nother person. Both relations are evidential. `uses_background` below is an\nhonest contextual connection where the sources establish no richer meaning.\n\nDo not assign an end date to S2 before S5 arrives. These sources align their\nfirst three clocks deliberately; ingestion is the real run time. This is not\na late-evidence exercise.\n\n## Call notation and initial recovery\n\nThe JSON envelopes name a `tool`, its `arguments` and a local `save_as`\nbinding. Send only the arguments. `${name.generated_refs.0}` copies an exact\nreturned value, never a constructed ref. `expect_error` names one intentional\nnegative result. The replay stops on any other error or incomplete page;\nlarger histories require the returned pagination before claiming coverage.\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"initial\",\"expect_error\":\"not_found\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"budget\":{\"max_bytes\":20000}}}\n```\n\nA fresh missing about returns `not_found` in the embedded engine. If it\nalready exists, recover it and reuse its catalogue; do not bypass strict\nvalidation by pretending it is empty.\n\n## Record the person and the first assignment\n\n`identity-review` and `access-review` are task identifiers chosen for this\nregistry. The person label names the directory subject; the account label\nnames the account, not its owner. First write S1 without a prior relation.\n\n```json\n{\n  \"tool\":\"kmp_write_memory\", \"save_as\":\"elena\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"intent\":\"record_observation\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:elena:v1\", \"source_kind\":\"human\",\n    \"scope\":{\"process\":\"atlas-registry\",\"task\":\"identity-review\"}, \"labels\":{\"person\":\"elena-vega\"},\n    \"occurred_at\":\"2026-09-01T08:00:00Z\", \"observed_at\":\"2026-09-01T08:00:00Z\", \"valid_from\":\"2026-09-01T08:00:00Z\",\n    \"current\":{\"kind\":\"observation\",\"summary\":\"Elena Vega coordina Atlas.\",\n      \"summary_en\":\"Elena Vega coordinates the Atlas project.\",\n      \"evidence\":\"S1, Atlas directory, 2026-09-01T08:00:00Z: Elena Vega coordina Atlas.\"}\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"elena_before\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${elena.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nS2 belongs to the same registry but does not say Elena authorized the\nassignment. Preserve the context with `uses_background`; do not invent an\nauthorization, dependency or identity link.\n\n```json\n{\n  \"tool\":\"kmp_write_memory\", \"save_as\":\"jon\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"intent\":\"record_decision\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:jon:v1\", \"source_kind\":\"human\",\n    \"scope\":{\"process\":\"atlas-registry\",\"task\":\"access-review\"}, \"labels\":{\"account\":\"@oak\"},\n    \"occurred_at\":\"2026-09-01T10:00:00Z\", \"observed_at\":\"2026-09-01T10:00:00Z\", \"valid_from\":\"2026-09-01T10:00:00Z\",\n    \"current\":{\"kind\":\"decision\",\"summary\":\"Asignamos la cuenta @oak a Jon para operar Atlas.\",\n      \"summary_en\":\"We assigned the @oak account to Jon to operate Atlas.\",\n      \"evidence\":\"S2, Atlas access administrator, 2026-09-01T10:00:00Z: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora.\"},\n    \"read_context\":{\"inspected_refs\":[\"${elena.generated_refs.0}\"]},\n    \"connect_to\":[{\"ref\":\"${elena.generated_refs.0}\",\"rel\":\"uses_background\",\"class\":\"evidential\",\"confidence\":\"high\",\n      \"why\":\"La asignación y la nota de directorio pertenecen al contexto de Atlas; no hay prueba de que Elena haya autorizado esta asignación.\",\n      \"evidence\":\"S1: Elena Vega coordina Atlas. S2: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora.\"}]\n  }\n}\n```\n\n## Declare the supported alias, then catalogue it\n\nS3 supplies explicit identity evidence. The new memory's subject is Elena\nunder the alias Nora; its target's subject is Elena under her directory name.\nThe target was inspected. Both refs belong to this about, so this case does\nnot require a cross-about proposal. Across abouts the writer needs the\n`kmp_relate` proposal and the additional identity preconditions.\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"catalogue_before_alias\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"budget\":{\"max_bytes\":40000,\"detail\":\"full\"}}}\n```\n\n```json\n{\n  \"tool\":\"kmp_write_memory\", \"save_as\":\"alias\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"intent\":\"record_observation\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:nora:v1\", \"source_kind\":\"human\",\n    \"scope\":{\"process\":\"atlas-registry\",\"task\":\"identity-review\"}, \"labels\":{\"person\":\"elena-vega\",\"alias\":\"Nora\"},\n    \"occurred_at\":\"2026-09-02T09:00:00Z\", \"observed_at\":\"2026-09-02T09:00:00Z\", \"valid_from\":\"2026-09-02T09:00:00Z\",\n    \"current\":{\"kind\":\"observation\",\"summary\":\"Elena Vega firma también como Nora; ambos nombres identifican a la misma persona.\",\n      \"summary_en\":\"Elena Vega also signs as Nora; both names identify the same person.\",\n      \"evidence\":\"S3, signed directory clarification, 2026-09-02T09:00:00Z: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona.\"},\n    \"read_context\":{\"inspected_refs\":[\"${elena.generated_refs.0}\"]},\n    \"connect_to\":[{\"ref\":\"${elena.generated_refs.0}\",\"rel\":\"same_entity_as\",\"class\":\"evidential\",\"confidence\":\"high\",\n      \"why\":\"La aclaración firmada identifica expresamente al sujeto llamado Nora con Elena Vega, la persona nombrada en el directorio.\",\n      \"evidence\":\"S3: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona.\"}]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"alias_read\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${alias.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nThe relation carries the proof. Relabelling the older directory memory makes\nthe confirmed alias convenient to filter; it neither creates that identity\nproof nor rewrites the source. Its change timestamp records when the label\nwas applied, not a new occurrence time for the old memory.\n\n```json\n{\n  \"tool\":\"kmp_relabel\", \"save_as\":\"alias_label\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"ref\":\"${elena.generated_refs.0}\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:catalogue-nora:v1\", \"observed_at\":\"2026-09-02T09:00:00Z\", \"source_kind\":\"human\",\n    \"add\":{\"alias\":\"Nora\"},\n    \"why\":\"S3 identifica expresamente a Elena Vega con Nora; añadimos la etiqueta ya usada en la memoria de esa aclaración, sin cambiar el texto ni la fecha original del directorio.\"\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"elena_read\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${elena.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n## Keep a same-name mention unresolved\n\nS4 names Nora but supplies no identifying link. Record the mention, not an\nassertion that Elena visited. Reusing `alias=Nora` is appropriate for finding\nthat name; it does not authorize `same_entity_as` or `person=elena-vega`.\n\n```json\n{\n  \"tool\":\"kmp_write_memory\", \"save_as\":\"visitor\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"intent\":\"record_observation\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:unresolved-visitor:v1\", \"source_kind\":\"human\",\n    \"scope\":{\"process\":\"atlas-registry\",\"task\":\"identity-review\"}, \"labels\":{\"alias\":\"Nora\"},\n    \"occurred_at\":\"2026-09-03T11:00:00Z\", \"observed_at\":\"2026-09-03T11:00:00Z\", \"valid_from\":\"2026-09-03T11:00:00Z\",\n    \"current\":{\"kind\":\"observation\",\"summary\":\"El registro de visitas a Atlas menciona Nora sin apellidos ni identificador de persona; no permite confirmar su identidad.\",\n      \"summary_en\":\"The Atlas visitor log mentions Nora without surnames or a person identifier; it does not establish the visitor's identity.\",\n      \"evidence\":\"S4, visitor log, 2026-09-03T11:00:00Z: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona.\"},\n    \"read_context\":{\"inspected_refs\":[\"${alias.generated_refs.0}\"]},\n    \"connect_to\":[{\"ref\":\"${alias.generated_refs.0}\",\"rel\":\"uses_background\",\"class\":\"evidential\",\"confidence\":\"high\",\n      \"why\":\"La aclaración permite comparar el nombre Nora; la mención de visitante carece de los datos necesarios para vincularla a esa persona.\",\n      \"evidence\":\"S4: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona.\"}]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"visitor_read\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${visitor.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n## Replace an assignment, not a person\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"jon_read\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${jon.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\n  \"tool\":\"kmp_write_memory\", \"save_as\":\"rui\",\n  \"arguments\":{\n    \"about\":\"example:guide:alias-ownership\", \"intent\":\"record_decision\", \"actor\":\"guide-writer\",\n    \"idempotency_key\":\"guide-alias:rui:v1\", \"source_kind\":\"human\",\n    \"scope\":{\"process\":\"atlas-registry\",\"task\":\"access-review\"}, \"labels\":{\"account\":\"@oak\"},\n    \"occurred_at\":\"2026-09-05T10:00:00Z\", \"observed_at\":\"2026-09-05T10:00:00Z\", \"valid_from\":\"2026-09-05T10:00:00Z\",\n    \"current\":{\"kind\":\"decision\",\"summary\":\"Asignamos la cuenta @oak a Rui; esta asignación sustituye la anterior a Jon. Jon y Rui son personas distintas.\",\n      \"summary_en\":\"We assigned the @oak account to Rui; this assignment replaces the previous assignment to Jon. Jon and Rui are distinct people.\",\n      \"evidence\":\"S5, Atlas access administrator, 2026-09-05T10:00:00Z: Asignamos la cuenta @oak a Rui desde ahora. Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas.\"},\n    \"read_context\":{\"inspected_refs\":[\"${jon.generated_refs.0}\"]},\n    \"connect_to\":[{\"ref\":\"${jon.generated_refs.0}\",\"rel\":\"supersedes\",\"class\":\"evidential\",\"confidence\":\"high\",\n      \"why\":\"La resolución cambia el titular de la misma cuenta desde este instante y sustituye la asignación anterior; distingue expresamente a ambas personas.\",\n      \"evidence\":\"S5: Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas.\"}]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"rui_read\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"ref\":\"${rui.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n## Recover the names and walk the account history\n\nRead the label catalogue before filtering. The `alias=Nora` slice includes\nthe confirmed directory subject, the clarification, and the unresolved\nvisitor. Goto at the clarification's date only includes the first two: the\nvisitor occurs later. Near reads both sides and recovers all three in this\nsmall history. A filter selects memories, never resolves their identities. Inspect\ntheir source and relation types before making an identity claim.\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"catalogue\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"budget\":{\"max_bytes\":60000,\"detail\":\"full\"}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"name_at_alias\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"at\":{\"ref\":\"${alias.generated_refs.0}\"},\"axis\":\"occurred\",\"dimensions\":{\"selectors\":[{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"Nora\"]}]},\"window\":{\"before_entries\":5,\"after_entries\":0},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":60000}}}\n```\n\n```json\n{\"tool\":\"kmp_near\",\"save_as\":\"name_slice\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"around\":{\"ref\":\"${alias.generated_refs.0}\"},\"axis\":\"occurred\",\"dimensions\":{\"selectors\":[{\"key\":\"alias\",\"op\":\"in\",\"values\":[\"Nora\"]}]},\"window\":{\"before_entries\":5,\"after_entries\":5},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":60000}}}\n```\n\n```json\n{\"tool\":\"kmp_trace\",\"save_as\":\"identity_path\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"from\":\"${alias.generated_refs.0}\",\"to\":\"${elena.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nFollow the account's timeline with `near`, using the catalogue's exact\naccount value. The two assignment memories should remain distinct. Trace\nfrom the new one to the old one to see the explicit replacement proof.\n\n```json\n{\"tool\":\"kmp_near\",\"save_as\":\"account_history\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"around\":{\"ref\":\"${rui.generated_refs.0}\"},\"axis\":\"occurred\",\"dimensions\":{\"selectors\":[{\"key\":\"account\",\"op\":\"in\",\"values\":[\"@oak\"]}]},\"window\":{\"before_entries\":5,\"after_entries\":5},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":50000}}}\n```\n\n```json\n{\"tool\":\"kmp_trace\",\"save_as\":\"assignment_path\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"from\":\"${rui.generated_refs.0}\",\"to\":\"${jon.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nA dated question uses the validity clock and the account label explicitly.\nThe expected assignment is Jon on September 3 and Rui on September 6. The\nold assignment remains historical evidence; it is not an identity relation\nbetween Jon and Rui. These calls retrieve evidence, not generated answers.\n\n```json\n{\"tool\":\"kmp_ask\",\"save_as\":\"day3\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"question\":\"Who was assigned the @oak account?\",\"asked_as\":\"¿A quién se asignó la cuenta @oak?\",\"axis\":\"validity\",\"as_of\":{\"time\":\"2026-09-03T12:00:00Z\"},\"dimensions\":{\"selectors\":[{\"key\":\"account\",\"op\":\"in\",\"values\":[\"@oak\"]}]},\"budget\":{\"max_bytes\":40000,\"detail\":\"full\"}}}\n```\n\n```json\n{\"tool\":\"kmp_ask\",\"save_as\":\"day6\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"question\":\"Who was assigned the @oak account?\",\"asked_as\":\"¿A quién se asignó la cuenta @oak?\",\"axis\":\"validity\",\"as_of\":{\"time\":\"2026-09-06T12:00:00Z\"},\"dimensions\":{\"selectors\":[{\"key\":\"account\",\"op\":\"in\",\"values\":[\"@oak\"]}]},\"budget\":{\"max_bytes\":40000,\"detail\":\"full\"}}}\n```\n\nA later catalogue label can find an earlier memory; it does not prove the\nalias was already known on that earlier date. S3 was observed on September 2.\nThe dated question below therefore has no identity evidence on September 1,\neven after the label was added. Expect `UNKNOWN` and stop this question there.\n\n```json\n{\"tool\":\"kmp_ask\",\"save_as\":\"before_alias_known\",\"arguments\":{\"about\":\"example:guide:alias-ownership\",\"question\":\"Who signs as Nora?\",\"asked_as\":\"¿Quién firma como Nora?\",\"axis\":\"observed\",\"as_of\":{\"time\":\"2026-09-01T12:00:00Z\"},\"budget\":{\"max_bytes\":30000,\"detail\":\"full\"}}}\n```\n\n## Check the distinction in ChronoLoom\n\n```json\n{\"tool\":\"kmp_view_open\",\"save_as\":\"view\",\"arguments\":{\"about\":\"example:guide:alias-ownership\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"framed\",\"arguments\":{\"expected_revision\":\"${view.view_revision}\",\"idempotency_key\":\"guide-alias:view:v1\",\"explanation\":\"Compare the evidenced person alias with the separate account assignment history\",\"focus\":{\"time_range\":{\"axis\":\"occurred\",\"from\":\"2026-09-01T00:00:00Z\",\"to\":\"2026-09-06T00:00:00Z\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"person\",\"alias\",\"account\"],\"relation_classes\":[\"evidential\"]},\"selection\":\"${alias.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"view_state\",\"arguments\":{}}\n```\n\nInspect the selected alias, then the unresolved visitor and the two account\nassignments. Expect three observations and two decisions, one same-entity\nlink, one replacement and two background links. The sources justify these\ntypes; do not add other classes just to diversify the picture. Check the\nperson, alias and account labels, relation direction, literal evidence and\nold assignment's historical status. Re-read shared view state after a human\nmove, and rebase any later intent on that revision.\n\n## Negative cases and limits\n\n- Nora in the visitor log might be Elena or somebody else. Do not choose one\n  without evidence, silently merge the memories, or copy the known person\n  label to the visitor. The replay asserts no identity link or person label\n  was authored for that mention; it does not prove a new LLM will abstain.\n- Neither `alias=Nora` nor `account=@oak` establishes identity. The account\n  is a resource assigned to a person. S5 explicitly says Jon and Rui differ.\n- A nonempty fabricated `why` and `evidence` can satisfy structural checks.\n  KMP does not judge their truth; the LLM must justify them from the source.\n- Relabel is catalogue maintenance. It is not a temporal ownership change,\n  an authorization to edit source text, or a replacement for `supersedes`.\n- If S5 only proposed Rui as a possible owner, do not record a completed\n  reassignment. If the effective or observed time is unknown, preserve that\n  uncertainty; do not borrow this lesson's dates.\n\nCross-about proposals and following an event through multiple projects are\nthe next lesson. This same-about case does not test those preconditions.\n"
         },
         {
           "coordinates": [
@@ -738,16 +736,16 @@
               "sequence": 24
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
         },
         {
           "coordinates": [
@@ -769,16 +767,16 @@
               "sequence": 25
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -800,16 +798,16 @@
               "sequence": 26
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -831,16 +829,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -862,16 +860,16 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -893,16 +891,16 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -924,16 +922,16 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -955,16 +953,16 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -986,16 +984,16 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1017,16 +1015,16 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1048,16 +1046,16 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1079,16 +1077,16 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1108,6 +1106,68 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 36
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_view_open"
+          },
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:36:00Z",
+              "occurred_at": "2026-08-28T00:36:00Z",
+              "scope_id": "timeline",
+              "sequence": 37
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 37
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 37
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:37:00Z",
+              "occurred_at": "2026-08-28T00:37:00Z",
+              "scope_id": "timeline",
+              "sequence": 38
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 38
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 38
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1394,6 +1454,32 @@
             "guide:kmp-agent:example:decision-history"
           ],
           "text": "A fictional four-source Atlas history with executable public MCP calls, explicit semantic choices and negative limits. Replayed by scripts/guide_examples/replay.py; this teaches one history and does not measure LLM learning.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:examples:index",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:examples:index"
+          ],
+          "text": "The two shipped Markdown lessons include public MCP calls and independent evidence checks. The example replay supports directed prerequisites plus the chosen lesson, or full guide expansion for comparison.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:alias-ownership",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:alias-ownership"
+          ],
+          "text": "Five fictional dated sources distinguish an explicit person alias, an unidentified visitor and a reassigned account. Native MCP replay checks same_entity_as versus supersedes, catalogue maintenance, temporal selection and proof without invoking a model.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1776,10 +1862,30 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "It names exact prerequisite and lesson refs and distinguishes compact context from complete inspected evidence.",
+          "from": "guide:kmp-agent:examples:index",
+          "rel": "uses_background",
+          "sequence": 19,
+          "to": "guide:kmp-agent:verb:write",
+          "why": "The catalogue routes a writer from the operating contract to one source-based lesson without requiring expansion of every example."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "Its calls inspect the identity target, maintain labels separately and recover the account assignment at two dates.",
+          "from": "guide:kmp-agent:example:alias-ownership",
+          "rel": "uses_background",
+          "sequence": 20,
+          "to": "guide:kmp-agent:examples:index",
+          "why": "The alias lesson is a catalogue member that applies identity and lifecycle distinctions to sources from one registry."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 19,
+          "sequence": 21,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1789,7 +1895,7 @@
           "evidence": "Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 20,
+          "sequence": 22,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1799,7 +1905,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 21,
+          "sequence": 23,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1809,7 +1915,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 22,
+          "sequence": 24,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1819,7 +1925,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 23,
+          "sequence": 25,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1829,7 +1935,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 24,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1839,7 +1945,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1849,7 +1955,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1859,7 +1965,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1869,7 +1975,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1879,7 +1985,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1889,7 +1995,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1899,7 +2005,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1909,7 +2015,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1919,7 +2025,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -1935,7 +2041,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:fce1789073cc64555d0d",
+    "idempotency_key": "ingest:guide-sync:1:person:40a34b4d8ae43e84229a",
     "memory": {
       "dimensions": [
         {
@@ -2409,6 +2515,36 @@
             "source": "editorial"
           },
           "text": "A decision can change without losing its history. In the worked Atlas example, offline work is required on September 1; SQLite is chosen for that reason on September 2. A central shared journal is required on September 5, and a later explicit decision replaces SQLite with PostgreSQL. The agent guide entry guide:kmp-agent:example:decision-history contains the sources and complete calls. Ask your agent to run this fictional example in an isolated store and open its about example:guide:decision-history in ChronoLoom. Select the new decision at Memories detail: one evidential link explains what it replaces, and one motivational link explains why it was chosen. Follow each to its original evidence. Compare September 3 with September 6 using an explicit clock; the new choice must not be projected into the past. Two memory kinds and two relation classes are justified by these sources. This lesson does not cover every kind or relationship, nor establish that a new writer LLM has learned to use KMP."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:15:00Z",
+              "occurred_at": "2026-08-28T00:15:00Z",
+              "scope_id": "timeline",
+              "sequence": 16
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 16
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 16
+            }
+          ],
+          "id": "guide:kmp:advanced:alias-ownership",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "An alias is not an account owner. In the second worked example, a signed source identifies Elena Vega as Nora, while an unqualified visitor-log mention of Nora remains unresolved. Separately, the account @oak is assigned to Jon and later to Rui. The assignment is replaced; Jon and Rui remain distinct people. Ask your agent to open the isolated example:guide:alias-ownership story in ChronoLoom after reading guide:kmp-agent:example:alias-ownership. Follow the same_entity_as link for the proven alias and the supersedes link for the account change; inspect their sources. Filtering the label Nora also includes the unidentified visitor, so a label is not identity proof. The example uses three observations and two assignment decisions because the sources justify them. It does not measure whether a new LLM will avoid an unsupported merge."
         }
       ],
       "evidence": [
@@ -2606,6 +2742,19 @@
           ],
           "text": "The agent lesson includes four dated fictional sources, constraint and decision memories, explicit replacement and motivation links, temporal reads and a shared-view intent.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:alias-ownership",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:alias-ownership"
+          ],
+          "text": "The agent lesson preserves five literal fictional sources, the unresolved mention, separate identity and replacement links, and before/after assignment evidence.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -2738,6 +2887,16 @@
           "sequence": 13,
           "to": "guide:kmp:welcome",
           "why": "This worked history gives the person a concrete path from the human introduction to the source, decision and later change."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "The first lesson explains supersession; this one contrasts it with an explicitly evidenced person alias.",
+          "from": "guide:kmp:advanced:alias-ownership",
+          "rel": "uses_background",
+          "sequence": 14,
+          "to": "guide:kmp:advanced:decision-history",
+          "why": "This lesson builds on historical replacement to show why account reassignment differs from identity."
         }
       ]
     },
