@@ -162,6 +162,13 @@ Registrar por separado estas representaciones:
 - skill y entrada inicial;
 - consultas de guía y resultados del recorrido de trabajo.
 
+Comparar también la firma callable que ve el agente con el schema nativo.
+Un objeto válido en tools/list puede aparecer como `unknown` si el host prioriza
+una composición condicional y omite sus propiedades hermanas. Revisar ese caso
+con la representación observada, mantener las restricciones del contrato y
+registrar la comprobación después de cargar el cambio. Una proyección local no
+prueba que una sesión abierta haya renovado sus herramientas.
+
 Contar bytes y tokens con el nombre, versión y configuración del tokenizer.
 Conservar texto o trazas y hashes. Comparar primer uso, primera consulta a un
 verbo, repetición de ese verbo y recorrido completo con cobertura equivalente.
