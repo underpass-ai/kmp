@@ -1,4 +1,5 @@
 use crate::application::dto::guide_request_document_dto::GuideRequestDocumentDto;
+use crate::application::mappers::agent_guide_markdown_mapper::AgentGuideMarkdownMapper;
 use crate::application::use_cases::prepare_guide_requests::PrepareGuideRequests;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::repository_root::RepositoryRoot;
@@ -39,6 +40,15 @@ where
         {
             return Err(ReleaseError::invalid(
                 "installed guide requests do not match this engine's live tool surface",
+            ));
+        }
+        if self
+            .file_system
+            .read_text(&root.join("plugins/kmp/guide/AGENT.md"))?
+            != AgentGuideMarkdownMapper::map(&expected)?
+        {
+            return Err(ReleaseError::invalid(
+                "agent Markdown does not match this guide; regenerate guide assets",
             ));
         }
         self.engine.ingest(&requests, None)

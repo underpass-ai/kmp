@@ -114,5 +114,5 @@ if __name__ == '__main__':
     parser.add_argument('--result', type=Path, required=True)
     parser.add_argument('--hold-view', action='store_true')
     parser.add_argument('--lesson', choices=LESSONS, default='decision-history')
-    parser.add_argument('--guide-mode', choices=('directed', 'full'), default='directed')
+    parser.add_argument('--guide-mode', choices=('markdown', 'directed', 'full'), default='markdown')
     run(parser.parse_args())

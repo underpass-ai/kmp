@@ -1,6 +1,12 @@
 # KMP shipped guides
 
-KMP ships two deliberately different memories:
+KMP ships an agent Markdown entry and two deliberately different memories:
+
+- [AGENT.md](AGENT.md) is a brief entry and exact node index. It maps every
+  live tool to extended verb guidance, and indexes optional topics and
+  examples. It contains neither their long bodies nor another copy of live
+  tool descriptions. The memory and guide skills both route here and reuse
+  an entry already in context.
 
 - `guide:kmp-agent` is an operating guide for the agent. Its editorial entries
   explain when to choose each verb, when not to, the minimum input, the
@@ -13,6 +19,20 @@ Both are derived from `editorial.json`, carry stable refs and use
 content-derived idempotency keys. An exact sync is a no-op. A changed guide
 gets a new logical key and updates those stable refs through ordinary
 `kmp_ingest`.
+
+The same generation also writes `AGENT.md` from [agent-entry.md](agent-entry.md)
+and the canonical requests. `guide_title` indexes an extended verb or topic;
+`example_title` indexes an example. The live tool mapping supplies the exact
+verb refs. Extended guidance moved out of the long memory skill into `verbs/`
+and `topics/`, included as normal KMP nodes through `text_file`. Each rule has
+an editorial source; generated bundles and Markdown are build outputs.
+
+Read the matching entry once, consult a verb or example as needed, and reuse
+its body while it remains in context. Recheck after compaction, version change
+or a store switch. Documentation inspection can omit adjacent guide links;
+actual work still requires inspection and tracing of its proof. A host without
+file access can use compact guide wake plus selected inspections as an
+alternative entry, never an additional required copy.
 
 Long lessons may use `text_file` instead of inline `text`, relative to this
 directory. The release loader includes the file's exact Markdown in the
@@ -37,12 +57,14 @@ python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
 ```
 
 Choose `--lesson alias-ownership` for the second lesson. The default
-`--guide-mode directed` reads compact guide context, the writer prerequisites,
-the catalogue and the chosen lesson through MCP; it verifies the exact
-synchronized bodies. `--guide-mode full` retains whole-guide expansion for
-comparison. Both modes consume relevant pages with explicit bounds. The
-result records the guide calls and structured bytes separately from lesson
-execution; these are transport checks, not measured LLM token savings.
+`--guide-mode markdown` reads `AGENT.md`, the selected lesson and its
+explicit topic prerequisites; it consults each extended verb at first use and
+reuses it on repeated calls. Work-memory calls are never cached by this helper. `--guide-mode directed` retains compact wake and
+prerequisite inspection; `--guide-mode full` expands the whole guide for
+comparison. All modes consume relevant pages with explicit bounds. The
+result records Markdown bytes, guide calls and structured bytes separately
+from lesson execution. Tokenization can count these inputs without invoking
+a model; this does not measure LLM learning or billed usage.
 
 Add `--hold-view` to review ChronoLoom before typing `quit`; the temporary
 store is removed when the replay exits. The trace contains real MCP requests

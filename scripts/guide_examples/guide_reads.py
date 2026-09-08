@@ -1,5 +1,7 @@
 """Read guide context and one lesson without expanding the whole cookbook."""
 import json
+import hashlib
+import re
 from pathlib import Path
 
 
@@ -10,13 +12,75 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     guide = next(request for request in requests if request['about'] == 'guide:kmp-agent')
     entries = guide['memory']['entries']
     lesson_entry = next(entry for entry in entries if entry['text'] == lesson.read_text())
-    metrics = {'mode': mode, 'calls': 0, 'structured_bytes': 0, 'inspected_refs': []}
+    metrics = {'mode': mode, 'calls': 0, 'structured_bytes': 0, 'markdown_bytes': 0, 'inspected_refs': [], 'reused_guidance': 0}
+
+    native_call = client.call
 
     def read(tool, arguments):
-        result = client.call(tool, arguments)
+        result = native_call(tool, arguments)
         metrics['calls'] += 1
         metrics['structured_bytes'] += len(json.dumps(result, ensure_ascii=False, separators=(',', ':')).encode())
         return result
+
+    def inspect(entry, args):
+        for _ in range(100):
+            result = read('kmp_inspect', args)
+            # Canonical ingest trims outer whitespace; never rewrite returned proof.
+            if result['object']['text'] != entry['text'].strip():
+                raise ValueError('The synchronized guide body differs from the authored source')
+            page = result['page']
+            if not page['has_more']:
+                break
+            if page.get('returned') == 0:
+                raise ValueError('Guide inspection cannot advance at its explicit byte ceiling')
+            args = {**args, 'page': {'cursor': page['next_cursor']}}
+        else:
+            raise ValueError('Guide inspection exceeded 100 pages')
+        metrics['inspected_refs'].append(entry['id'])
+
+    if mode == 'markdown':
+        markdown = (root / 'plugins/kmp/guide/AGENT.md').read_text()
+        allowed = set(re.findall(r'^\| .* \| `(guide:kmp-agent:[^`]+)` \|$', markdown, re.M))
+        by_ref = {entry['id']: entry for entry in entries}
+        expected = {entry['id'] for entry in entries if entry['metadata'].get('guide_title') or entry['metadata'].get('example_title')}
+        if allowed != expected:
+            raise ValueError('Markdown index differs from canonical extended nodes')
+        arguments = json.loads(re.findall(r'```json\n(.*?)\n```', markdown, re.S)[0])
+        metrics['markdown_bytes'] = len(markdown.encode())
+        metrics['markdown_sha256'] = hashlib.sha256(markdown.encode()).hexdigest()
+        client.record({'preparation': 'read installed agent Markdown', 'text': markdown,
+                       'markdown_sha256': metrics['markdown_sha256'], 'model_calls': 0})
+        seen = set()
+
+        def consult(ref):
+            if ref not in allowed:
+                raise ValueError('Guide reference is absent from the installed index')
+            if ref in seen:
+                metrics['reused_guidance'] += 1
+                return
+            inspect(by_ref[ref], {**arguments, 'ref': ref})
+            seen.add(ref)
+
+        consult(lesson_entry['id'])
+        # These authored lessons explicitly teach all four topics. This is a
+        # deterministic reader contract, not a substitute for an LLM operator.
+        for ref in sorted(allowed):
+            if ref in {'guide:kmp-agent:advanced:relations', 'guide:kmp-agent:advanced:scope',
+                       'guide:kmp-agent:advanced:lifecycle', 'guide:kmp-agent:advanced:summary'}:
+                consult(ref)
+        tool_refs = {entry['metadata']['tool_name']: entry['metadata']['guide_ref']
+                     for entry in entries if entry['metadata'].get('tool_name')}
+
+        def guided_call(tool, args, expect_error=None):
+            consult(tool_refs[tool])
+            if tool in {'kmp_write_memory', 'kmp_ingest'}:
+                consult(tool_refs['kmp_goto'])  # Distinct clocks before writing.
+            return native_call(tool, args, expect_error)
+
+        # Native lesson calls ask for guidance on first use, reuse it on later
+        # calls, and never replace actual memory reads with cached work evidence.
+        client.call = guided_call
+        return metrics
 
     args = {'about': guide['about'], 'budget': {'max_bytes': 20000, 'detail': 'full' if mode == 'full' else 'compact'}}
     for _ in range(100):
@@ -40,26 +104,11 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     # The source entry IDs identify which canonical refs to copy, not how to
     # construct them. The full text must then come back through the live MCP.
     source = json.loads((root / 'plugins/kmp/guide/editorial.json').read_text())['abouts'][0]
-    selected_texts = {entry['text'] for entry in source['entries'] if entry['id'] in selected_ids}
+    selected_texts = {(root / 'plugins/kmp/guide' / entry['text_file']).read_text() if entry.get('text_file') else entry['text'] for entry in source['entries'] if entry['id'] in selected_ids}
     selected = [entry for entry in entries if entry['text'] in selected_texts or entry['id'] == lesson_entry['id']]
     if len(selected) != len(selected_ids) + 1:
         raise ValueError('Directed guide prerequisites are missing or ambiguous')
     for entry in selected:
         args = {'about': guide['about'], 'ref': entry['id'], 'budget': {'max_bytes': 40000}}
-        for _ in range(100):
-            result = read('kmp_inspect', args)
-            # Canonical ingest trims only the outer whitespace of entry text.
-            # Compare to that declared boundary normalization; never replace
-            # or normalize the actual proof returned by MCP.
-            if result['object']['text'] != entry['text'].strip():
-                raise ValueError('The synchronized guide body differs from the authored source')
-            page = result['page']
-            if not page['has_more']:
-                break
-            if page.get('returned') == 0:
-                raise ValueError('Guide inspection cannot advance at its explicit byte ceiling')
-            args = {**args, 'page': {'cursor': page['next_cursor']}}
-        else:
-            raise ValueError('Guide inspection exceeded 100 pages')
-        metrics['inspected_refs'].append(entry['id'])
+        inspect(entry, args)
     return metrics

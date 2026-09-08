@@ -46,7 +46,7 @@ another run. The repository replay resolves these bindings and records the
 actual requests and responses. `expect_error` names an intentional negative
 result; every other error or incomplete page stops this bounded replay.
 
-First read the installed `guide:kmp-agent` and live `tools/list`. The lesson
+Read the brief installed `guide/AGENT.md` and the live tool schemas first. Consult extended verbs on first use and reuse them while in context. The lesson
 starts by recovering its own about and label catalogue. On this fresh store,
 the about does not exist: the embedded engine returns `not_found`, not an
 empty successful wake packet. That expected result permits the first write.

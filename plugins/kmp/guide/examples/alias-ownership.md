@@ -6,11 +6,11 @@ different times. The LLM reads the source and chooses that meaning. A shared
 label or a matching name is not identity evidence.
 
 This fictional registry belongs to `example:guide:alias-ownership`, never to
-a real person's memory. Learn the operating guide and live tools first. Read
-the example catalogue, then inspect the selected lesson and its prerequisites
-instead of expanding every lesson. The repository replay accepts
-`--lesson alias-ownership`; its default directed guide read obtains the text
-through MCP. It invokes no model and does not measure a new writer's learning.
+a real person's memory. Read the brief agent entry and live tool schemas first. Use
+the installed guide/AGENT.md, then follow its exact node reference to this
+lesson. The Markdown indexes the writer prerequisites; read the relevant
+nodes before writing. The example body comes from MCP. The repository replay accepts `--lesson alias-ownership`
+and reads Markdown before inspecting the chosen node. It invokes no model and does not measure a new writer's learning.
 
 ## Sources, in the order they become available
 

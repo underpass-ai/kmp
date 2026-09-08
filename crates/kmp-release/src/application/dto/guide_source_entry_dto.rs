@@ -10,5 +10,7 @@ pub struct GuideSourceEntryDto {
     #[serde(default)]
     pub text: String,
     pub text_file: Option<PathBuf>,
+    pub example_title: Option<String>,
+    pub guide_title: Option<String>,
     pub evidence: String,
 }

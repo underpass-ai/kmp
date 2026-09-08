@@ -42,6 +42,15 @@ impl GuideRequestMapper {
         let mut entries = Vec::new();
         let mut evidence = Vec::new();
         for (index, entry) in about.entries.iter().enumerate() {
+            if entry
+                .example_title
+                .as_deref()
+                .is_some_and(|title| title.trim().is_empty())
+            {
+                return Err(ReleaseError::invalid(
+                    "guide example_title must not be empty",
+                ));
+            }
             Self::push_entry(
                 &mut entries,
                 &mut evidence,
@@ -55,8 +64,18 @@ impl GuideRequestMapper {
                 &entry.depth,
                 &entry.text,
                 &entry.evidence,
+                entry.example_title.as_deref(),
                 None,
             );
+            if let Some(title) = &entry.guide_title {
+                if title.trim().is_empty() || title.contains(['|', '\n', '`']) {
+                    return Err(ReleaseError::invalid(
+                        "guide_title must be a non-empty table label",
+                    ));
+                }
+                entries.last_mut().expect("just appended")["metadata"]["guide_title"] =
+                    json!(title);
+            }
         }
         if about.audience == "agent" {
             for tool in tools {
@@ -81,6 +100,7 @@ impl GuideRequestMapper {
                     "advanced",
                     &format!("LIVE TOOL {}. {}", tool.name, tool.description.trim()),
                     tool.description.trim(),
+                    None,
                     Some((&tool.name, verb)),
                 );
             }
@@ -173,6 +193,7 @@ impl GuideRequestMapper {
         depth: &str,
         text: &str,
         evidence: &str,
+        example_title: Option<&str>,
         generated_tool: Option<(&str, &str)>,
     ) {
         let source_kind = if generated_tool.is_some() {
@@ -187,8 +208,12 @@ impl GuideRequestMapper {
             "guide_version": guide_version,
             "source": source_kind,
         });
-        if let Some((tool, _)) = generated_tool {
+        if let Some((tool, verb)) = generated_tool {
             metadata["tool_name"] = Value::String(tool.to_string());
+            metadata["guide_ref"] = Value::String(format!("{about}:{verb}"));
+        }
+        if let Some(title) = example_title {
+            metadata["example_title"] = Value::String(title.to_string());
         }
         entries.push(json!({
             "id": entry_ref,

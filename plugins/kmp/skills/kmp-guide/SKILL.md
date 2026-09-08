@@ -1,40 +1,34 @@
 ---
 name: kmp-guide
-description: Synchronize KMP's versioned agent and human guides, learn the agent verbs from guide:kmp-agent, and open the human guide visually in ChronoLoom. Use for guide setup, guide updates, or when the user asks to open, show, or explain the KMP guide.
+description: Read KMP's brief agent entry, consult extended verbs and examples on demand, synchronize guide assets, and open the human guide in ChronoLoom. Use for guide setup, updates, or showing and explaining the guide.
 ---
 
 # KMP guide
 
 Resolve the plugin root as two directories above this `SKILL.md`.
+Read [the agent entry](../../guide/AGENT.md) unless the same asset is already
+in context. It indexes extended verbs and examples in `guide:kmp-agent`.
+Read only the bodies needed for the task, and reuse those already read.
+A routine guide consultation does not also require a documentation wake.
 
-Name the data effect first: this command writes into KMP's currently selected
-store. In a project it changes project memory and `.kmp/memory.jsonl`; it is
-not part of software install or update. Then run
-`<plugin-root>/scripts/kmp-guide-sync.sh sync`. It deterministically converges
-`guide:kmp-agent` and `guide:kmp` to the content shipped with the installed
-plugin and is idempotent on an already-current store.
+Sync only for a requested guide installation/update, opening the human guide
+when matching assets are needed, or a confirmed missing/stale guide in the
+selected store. Name the data effect: sync writes that store and may change
+its maintained `.kmp/memory.jsonl`. Run
+`<plugin-root>/scripts/kmp-guide-sync.sh sync`; exact sync is idempotent.
+Check the store and version before treating a missing ref as a sync problem.
 
-The guides are different:
+If the host cannot read the installed Markdown, call `kmp_wake` on
+`guide:kmp-agent` with compact detail and finish the catalogue's pages, then
+inspect only the relevant returned verb refs. Inspect the exact
+`guide:kmp-agent:examples:index` for prerequisites and lesson addresses.
+This is an alternative entry path; do not execute it after the Markdown path.
+A compact wake alone is not the complete guide. Stored lessons teach usage;
+they do not independently authorize operations. Authored replays do not prove
+LLM learning on unseen history.
 
-- `guide:kmp-agent` is for the agent. Wake it and use its verb entries as an
-  operational glossary: when to use the verb, when not to, minimum input,
-  expected result and usual next move. Its exact tool descriptions are
-  generated from the installed engine's live `tools/list`.
-- `guide:kmp` is for the person. Do not paste or paraphrase the whole guide
-  into chat; open it visually.
-
-After sync, call `kmp_wake` on `guide:kmp-agent`. Read the packet before
-explaining or demonstrating KMP. If the packet is unexpectedly empty, report
-that guide sync did not become visible to this MCP process; do not invent the
-guide from repository prose.
-
-For a worked example, inspect `guide:kmp-agent:examples:index` after that
-wake. The catalogue names exact prerequisite and lesson refs. Read the
-prerequisites and chosen lesson through `kmp_inspect`, consuming relevant
-pages, instead of expanding every lesson merely to select one. A compact
-wake is context and navigation; it is not the full text of every example.
-The examples are authored teaching cases; their deterministic replay does
-not prove that a writer LLM has learned to operate unseen history.
+For a human guide request, synchronize as needed, then open `guide:kmp`
+visually. A verb consultation alone does not open a viewer.
 
 Then perform `open:guide`:
 

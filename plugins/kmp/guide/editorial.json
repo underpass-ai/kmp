@@ -12,8 +12,8 @@
           "id": "overview",
           "kind": "instruction",
           "depth": "basic",
-          "text": "KMP agent guide. Treat KMP as evidence-backed graph-temporal memory, not a model and not a transcript store. Choose a verb from the user's intent, copy abouts and refs byte-for-byte, and let each result select the next verb.",
-          "evidence": "This is the agent-only operating contract shipped with the KMP plugin."
+          "evidence": "This is the agent-only operating contract shipped with the KMP plugin.",
+          "text_file": "agent-entry.md"
         },
         {
           "id": "gate:invocation",
@@ -26,148 +26,184 @@
           "id": "verb:wake",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB wake. Once KMP is invoked, use kmp_wake before re-deriving known work. Do not use it as an all-abouts search. Minimum input: the exact about. Optional: as_of, interval and axis bound the packet in time — its evidence, spine, resume cursor and proof stand on the selection. Expect: compact current state, causal spine, open loops, next actions, a resume cursor and labels — the catalogue of the about, each label as key=value (a coordinate's dimension kind and scope id) with how many entries stand in it and when one was last observed, the current about first and then by use. Read the labels before naming one on a new memory: reuse what exists in scope, and know that a dimensions filter hides what it misses instead of ranking it low. The most used labels come first in the packet; the rest page, so raise budget.max_bytes or follow the cursor for the whole catalogue. Next: inspect or trace consequential refs; use the cursor to move forward when catching up. On an about that does not exist, the embedded engine returns not_found rather than a successful empty packet. For a deliberately new about in the selected store, this is the starting condition for its first strict write. For expected existing work, diagnose the exact about and selected store before concluding that memory is absent; other errors are not an empty history.",
-          "evidence": "The live kmp_wake contract returns an about-scoped continuation packet, a resume cursor and the labels catalogue read off the about's coordinates."
+          "evidence": "The live kmp_wake contract returns an about-scoped continuation packet, a resume cursor and the labels catalogue read off the about's coordinates.",
+          "text_file": "verbs/wake.md",
+          "guide_title": "Resume known work"
         },
         {
           "id": "verb:ask",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN.",
-          "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer."
+          "text": "VERB ask. Use kmp_ask for a semantic question that stored evidence can answer. To enumerate a period — yesterday, since, what changed, current or latest — navigate time instead. When the semantic question carries a date or a range, it is still one Ask: pass the half-open UTC interval as interval, or the instant as as_of, and axis when the question is about when something was seen, written or held rather than when it happened; the kernel admits only what falls inside, reads supersession and expiry as they stood then, and declares where it stood in proof.interval, proof.as_of and proof.axis. Minimum input: exact about and the question rendered in plain English with every number, identifier and acronym the user wrote kept exactly, plus the user's own words as asked_as. Expect: cited stored text byte for byte or UNKNOWN, asked_as echoed, a warning when the rendering dropped an identifier or leans to another language, and on UNKNOWN within an interval the nearest match outside it in proof.nearest_outside, which is the cue to widen the interval rather than conclude the memory was never written. Next: inspect a relied-on ref, trace a relied-on connection, re-ask at most once in the user's own words, or stop honestly at UNKNOWN. After the permitted selections, a genuinely semantic UNKNOWN is terminal. Do not inspect the root, sweep all abouts, change optional arguments or traverse the graph to bypass it. Reclassify only when the original goal actually asks for temporal state. Read the language and retrieved-proof topics when their warnings or provenance matter.",
+          "evidence": "The live kmp_ask contract retrieves stored evidence and never generates a fallback answer.",
+          "guide_title": "Ask a semantic question"
         },
         {
           "id": "verb:relate",
           "kind": "instruction",
           "depth": "basic",
           "text": "VERB relate. Use kmp_relate when the question is what the memories of several abouts have to do with each other: which facts of these projects fell in the release window, how they stand to each other in time inside the labels they share (the same dimension kind and scope; a scope under two kinds is two labels), what each about declared between its own facts, and which declared contradictions still stand. Coordinate comparisons are read off the stored coordinates and do not declare links. Cross-about identity links are separate writer declarations from a relate proposal. Minimum input: the current about and dimensions.scope naming or sweeping the abouts; interval and axis bound it in time. Expect: facts with their lifecycle state at the end of the interval, declared relations within each about, coordinate relations between abouts with a why a reader can check against the coordinates, tensions, proposed links between facts of different abouts that share a key — an identifier rare across the span, a matching English summary, a proper name — with the signals that read them and never stored, and a proof that says which abouts were read and which had nothing inside. A proposal a writer declares with kmp_write_memory as same_event_as or same_entity_as comes back declared, and from then on ask cites through it across abouts and trace walks it. Next: inspect a fact before relying on it; ask when what you want is an answer to a question rather than the shape of what happened.",
-          "evidence": "The live kmp_relate contract returns facts, declared, coordinate and tensions with a proof and never ranks by a question."
+          "evidence": "The live kmp_relate contract returns facts, declared, coordinate and tensions with a proof and never ranks by a question.",
+          "guide_title": "Compare memories across abouts"
         },
         {
           "id": "verb:time",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete. Keep clocks distinct: occurred is event time, observed is when information became known, ingested is when the kernel wrote it, and validity says when it held. Backfilling an event does not justify using its occurrence as the observation time.",
-          "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. The agent memory skill uses the same distinct clocks; it does not treat every read as ordered by observation."
+          "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately.",
+          "text_file": "verbs/time.md",
+          "guide_title": "Navigate and zoom in time"
         },
         {
           "id": "verb:audit",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte.",
-          "evidence": "The live inspect and trace contracts enforce an explicit about boundary and preserve proof."
+          "text": "VERB audit. Use kmp_inspect when one ref must support a claim; use kmp_trace when the connection between two refs is itself the claim. Do not guess or rebuild refs. Minimum input: exact about and exact returned refs. Expect: canonical object, evidence and links, or an ordered proof path. Next: follow pagination and cite stored evidence byte-for-byte. Inspect uses the owning about. Trace can cross a declared, evidenced same_event_as or same_entity_as edge; naming a foreign endpoint alone creates no path. Inspect keeps the stored object stable and pages expandable evidence and links; budget guidance distinguishes the stable floor from omitted expansion. Use include.raw for audit records, not for routine lesson reading.",
+          "evidence": "The live inspect and trace contracts enforce an explicit about boundary and preserve proof.",
+          "guide_title": "Inspect evidence and trace a connection"
         },
         {
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB write. Use kmp_write_memory when a durable decision, constraint or outcome is reached. Use low-level kmp_ingest only when producing the exact graph. Do not store transcripts. Minimum input: exact about, intent, actor, observed time, scope, current fact in the language of the work, its English search summary (current.summary_en, required by a strict write when the fact is not written in English) and direct evidence. Label the write: scope.process always, scope.task and scope.episode as the two well-known labels, and labels {key: value} for any other facet; read the labels catalogue kmp_wake returned and reuse what exists — a value already used under another key is refused, and a new label that resembles an existing one (same identifier up to case and separators, or the same value under another key) is refused by a strict write naming both, written with labels.resembling by a lax one, and left alone when options.labels_new insists. Expect: validated relation quality, read-after-write readiness, and labels.written with labels.created after a commit. Next: inspect the generated ref when the write matters. A label decided after a memory was written goes on with kmp_relabel, never with a rewrite: the memory's ref, add and remove as {key: value} pairs, and a why; the kernel reads what the memory stands in and refuses, naming it, a label it already stands in, one it does not, a value already used under another key, and taking its last label off, with the same resemblance check, strict and labels_new. The added label inherits the memory's clocks, so its time does not move; the change lives on the edge it added (method kmp_relabel, the why) and in the event log with who did it when. Undoing a relabel is another relabel the other way. One relation may cross an about, and only from here: same_event_as or same_entity_as to a ref of another about, class evidential, with why, evidence and the kmp_relate proposal in read_context.relate_proposals; the edge lives in the about that writes it and the other about does not change.",
-          "evidence": "The live writer contract validates intent and relation quality before compiling to canonical ingest."
+          "evidence": "The live writer contract validates intent and relation quality before compiling to canonical ingest.",
+          "text_file": "verbs/write.md",
+          "guide_title": "Write evidence or change labels"
         },
         {
           "id": "verb:view",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB show. Retrieval comes first; then use kmp_view_open once, kmp_view_apply_intent to declare semantic focus, and kmp_view_get_state before continuing. Do not send pixels or reopen to navigate. Minimum input: exact about, then a content-derived intent key and current view revision. Expect: a shared ChronoLoom state and capability URL. Next: rebase on a revision conflict or continue from the person's latest state. ChronoLoom renders one plane per about, with a real 3D orbit or flat camera and one exact time window. projection.abouts names at most five additional abouts to compare; projection.labels uses ordinary label predicates, not privileged lanes. Human takeover preserves the frame, advances its revision and retains undo of the semantic move. Read the new revision before continuing; the actor panel describes provenance, not an exclusive lock or a live-agent connection.",
-          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory."
+          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory.",
+          "text_file": "verbs/view.md",
+          "guide_title": "Frame and share ChronoLoom"
         },
         {
           "id": "verb:guide-sync",
           "kind": "instruction",
           "depth": "basic",
-          "text": "VERB guide sync. Use the shipped kmp-guide-sync.sh when setup, update or an explicit guide request must converge the installed guide. It is lifecycle work, not an MCP memory verb. Do not improvise guide entries. Minimum input: the matching installed engine and guide assets. Expect: the fixed guide abouts applied idempotently. Next: wake guide:kmp-agent for agent guidance or run open:guide for the human view.",
-          "evidence": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence."
+          "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them.",
+          "evidence": "The plugin ships one content-addressed request set and a regular format-2 bundle for deterministic guide convergence.",
+          "guide_title": "Synchronize guide assets"
         },
         {
           "id": "verb:lexical-bridge",
           "kind": "instruction",
           "depth": "advanced",
           "text": "VERB setup, lexical bridge. The table that lets ask reach a memory written in another language is installed by kmp-mcp setup and kmp-mcp update, once for the machine at <user data home>/kmp/lexical-bridge.kmpb, never inside one store. Three places are read, nearest first: whatever KMP_LEXICAL_BRIDGE names, then <data dir>/lexical-bridge.kmpb for one store alone, then the machine's table. Decline it with --no-lexical-bridge, or install one built locally with --lexical-bridge FILE. The release's table replaces whatever the machine held, and the receipt names the digest it replaced under replaced_sha256; a table that must outlive update lives beside one store or is named by KMP_LEXICAL_BRIDGE. It is never a gate: a release that publishes no table and a fetch that fails both leave setup successful, and the receipt says which happened under lexical_bridge. Expect: crosses_languages true once a table is in place. Without the table, original text and valid summary_en remain searchable; an English summary can retrieve an original in another language. The table is an additional path, not a requirement for every cross-language retrieval. info and doctor report its availability.",
-          "evidence": "The convergence installs the table last, after the engine is proved, and maps every failure onto a reported outcome rather than an error."
+          "evidence": "The convergence installs the table last, after the engine is proved, and maps every failure onto a reported outcome rather than an error.",
+          "guide_title": "Install an optional lexical bridge"
         },
         {
           "id": "advanced:scope",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "Cross-about reads are explicit. dimensions.scope=current_about is the safe default. Use scope=abouts with a non-empty abouts list when the question deliberately combines memories; all_abouts is a real sweep, narrowed by dimension kind with mode=only and include, or by exact scope with scope_ids. The proof names the abouts a recall read in abouts_selected, the current one first, and, bounded by as_of or interval, the ones with nothing inside it in abouts_empty_in_selection. Abouts are opaque identifiers and keep separate ownership. The only writer relations allowed across that boundary are same_event_as and same_entity_as, class evidential, supported by a kmp_relate proposal and explicit why/evidence. Declaring one does not merge the abouts or authorize arbitrary cross-about links.",
-          "evidence": "The live read schemas expose current_about, abouts and all_abouts as distinct cost and isolation choices."
+          "evidence": "The live read schemas expose current_about, abouts and all_abouts as distinct cost and isolation choices.",
+          "text_file": "topics/scope.md",
+          "guide_title": "Cross abouts, labels and selectors"
         },
         {
           "id": "advanced:relations",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "Relations carry the why. A rich relation has a specific type, semantic class, why, concrete evidence and confidence. Use follows/procedural, answers/evidential or uses_background/evidential only as honest anemic fallbacks. Never invent rationale to satisfy a schema. Declaring that two memories say one thing, with restates, same_event_as or same_entity_as carrying why and evidence, is what makes the second citable beside the first when a question matches only one of them.",
-          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality."
+          "evidence": "The writer relation vocabulary distinguishes semantic meaning from fallback links and reports relation quality.",
+          "text_file": "topics/relations.md",
+          "guide_title": "Choose a relation and justify it"
         },
         {
           "id": "advanced:idempotency",
           "kind": "constraint",
           "depth": "advanced",
           "text": "One idempotency key names one logical write or view intent. An exact retry with the same key is success without a duplicate. Reusing a key for different content is a conflict and must not be worked around by blind retry.",
-          "evidence": "KMP binds idempotency keys to logical digests and preserves replay outcomes across export/import."
+          "evidence": "KMP binds idempotency keys to logical digests and preserves replay outcomes across export/import.",
+          "guide_title": "Retry one logical write"
         },
         {
           "id": "advanced:pagination",
           "kind": "constraint",
           "depth": "advanced",
           "text": "A partial read is not the whole answer. Follow page.next_cursor with every bound argument unchanged; wake and Ask page expansion items, temporal verbs page entries, trace pages relations, and inspect pages details, evidence and links. required_bytes is negotiation guidance, not a reason to probe budgets repeatedly. Ask keeps cited evidence in the stable core and preserves retrieval rank among additional evidence across pages. A changed candidate order invalidates an old cursor. If a wake or Ask page returns zero expansion items while has_more is true, follow its no-progress guidance: increase budget.max_bytes for the same cursor, or report the selection as partial when the budget is fixed. Repeating that cursor at the same byte ceiling cannot advance.",
-          "evidence": "Every bounded live read reports its own page unit, continuation and byte-budget guidance."
+          "evidence": "Every bounded live read reports its own page unit, continuation and byte-budget guidance.",
+          "guide_title": "Complete a bounded read"
         },
         {
           "id": "advanced:budgets",
           "kind": "constraint",
           "depth": "advanced",
           "text": "budget.max_bytes is the normative host-safe ceiling for serialized structuredContent. On kmp_ask, kmp_wake, temporal reads and kmp_inspect, a ceiling below the response's stable floor returns that minimal floor with a warning naming the requested and required sizes; it is a qualified success, not an error or permission to discard the stable object. Values below 512 bytes remain invalid. Raise the ceiling only when richer expansion is needed. A shortened proof body retains its identity and provenance. core_text_shortened can remain true after the last expansion page: inspect the explicitly cited memory ref to read its full stored text; do not treat a shortened body as complete evidence.",
-          "evidence": "The live read schemas and projections guarantee one stable response floor plus an explicit warning when a valid max_bytes ceiling cannot contain a smaller honest response."
+          "evidence": "The live read schemas and projections guarantee one stable response floor plus an explicit warning when a valid max_bytes ceiling cannot contain a smaller honest response.",
+          "guide_title": "Choose a byte ceiling"
         },
         {
           "id": "advanced:lifecycle",
           "kind": "instruction",
           "depth": "advanced",
-          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement.",
-          "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles."
+          "evidence": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles.",
+          "text_file": "topics/lifecycle.md",
+          "guide_title": "Replace, contradict or expire"
         },
         {
           "id": "advanced:reach",
           "kind": "instruction",
           "depth": "advanced",
           "text": "Ask proof can carry memory the question never matched. An evidence item with reached_by arrived by a route instead of by its words: relation means a proven causal or motivational edge was walked out from something the question did match, named by reached_from, reached_via and reached_hops; association means this store's own vocabulary connects the question's words to that memory's; bridge means the installed lexical-bridge table connects a few of the question's words to that memory's across a language, and reached_via lists the pairs, as valvula≈valve 0.51. Read them as proof and never as the answer. They are not cited in because, and the kernel makes no claim that they answer anything. A cited item may instead carry bridged_terms: it answered, most of the question reached it through the table rather than in the reader's own words, and confidence is medium at most for that reason. A cited item carrying restated_from and restated_via is the same thing as a cited memory in other words: a writer declared it with restates, same_event_as or same_entity_as, with why and evidence, and the kernel cites it beside the memory the question matched. With the optional local semantic retriever enabled on an embedded store, reached_by=semantic identifies a candidate proposed by the optional local retrieval adapter; semantic_model_revision records its version, including the ranking policy when the optional sidecar fuses BM25 and dense candidates. The default sidecar remains dense; a policy-qualified revision is required to opt in to lexical/dense fusion. The separate-bm25-v1 policy returns independent dense and BM25 channels for one native fusion; retrieval_channel identifies the supplemental representation retained, while similarity or a lexical score still does not prove an answer. KMP accepts only a matching stored ref and text fingerprint inside the selected scope, time and lifecycle. These candidates also remain proof rather than citations or answers; UNKNOWN may still be correct. A warning declares a fallback when the optional encoder is unavailable.",
-          "evidence": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core; a cited item that crossed a language names the word pairs that carried it, and a cited restatement names the memory it restates."
+          "evidence": "The live ask projection marks indirectly reached evidence and keeps it out of the answer core; a cited item that crossed a language names the word pairs that carried it, and a cited restatement names the memory it restates.",
+          "guide_title": "Interpret retrieved proof"
         },
         {
           "id": "advanced:language",
           "kind": "constraint",
           "depth": "advanced",
-          "text": "The question is asked in English; the answer is given in the user's language. The kernel matches words and never translates, and what reaches a memory written in any language is its English summary_en, so a semantic question is rendered in plain English with every number, identifier and acronym kept exactly, and the user's own words travel as asked_as: searched never, echoed on the answer, and read against the question so a rendering that lost an identifier or leans to another language draws a warning while the question is still searched. The kernel accepts any language: a question in the store's own language reaches the stored text directly, and with a lexical-bridge table installed a citation that crossed a language names its word pairs in bridged_terms at medium confidence at most. If the English rendering returns UNKNOWN or the evidence does not answer, re-ask at most once in the user's own words and stop. Evidence text, refs, relation why and source metadata are cited byte for byte. There is no language setting.",
-          "evidence": "kmp_ask takes asked_as, echoes it, and returns a warning per rendering fault; kmp-mcp info and doctor name the table a store reads or say there is none; the config verb takes no language setting."
+          "evidence": "kmp_ask takes asked_as, echoes it, and returns a warning per rendering fault; kmp-mcp info and doctor name the table a store reads or say there is none; the config verb takes no language setting.",
+          "text_file": "topics/language.md",
+          "guide_title": "Search language and literal evidence"
         },
         {
           "id": "advanced:summary",
           "kind": "constraint",
           "depth": "advanced",
           "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach each with kmp_write_memory, intent record_summary, current.ref and current.summary_en only, and the stored text stays exactly as it was.",
-          "evidence": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text. The summaries verb and the doctor read the same list off the store's event log; record_summary compiles to an ingest of the stored entry with the summary added to its metadata."
+          "evidence": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text. The summaries verb and the doctor read the same list off the store's event log; record_summary compiles to an ingest of the stored entry with the summary added to its metadata.",
+          "guide_title": "Write or repair search summaries"
         },
         {
           "id": "example:decision-history",
           "kind": "instruction",
           "depth": "advanced",
           "text_file": "examples/decision-history.md",
-          "evidence": "A fictional four-source Atlas history with executable public MCP calls, explicit semantic choices and negative limits. Replayed by scripts/guide_examples/replay.py; this teaches one history and does not measure LLM learning."
+          "evidence": "A fictional four-source Atlas history with executable public MCP calls, explicit semantic choices and negative limits. Replayed by scripts/guide_examples/replay.py; this teaches one history and does not measure LLM learning.",
+          "example_title": "Decision history and past validity"
         },
         {
           "id": "examples:index",
           "kind": "instruction",
           "depth": "basic",
-          "text": "Worked-example catalogue. Start with a compact wake and the live tools/list contract; follow every relevant continuation. Read verb:write, advanced:relations, advanced:scope, advanced:lifecycle and advanced:summary before a writer lesson, then inspect just the selected lesson. Exact refs: guide:kmp-agent:verb:write; guide:kmp-agent:advanced:relations; guide:kmp-agent:advanced:scope; guide:kmp-agent:advanced:lifecycle; guide:kmp-agent:advanced:summary. Decision changes and past validity: guide:kmp-agent:example:decision-history. Confirmed person alias, an unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. A compact wake does not contain all proof or all lesson text; inspect the selected canonical ref and follow its pages. Keep original sources and questions separate in writer evaluations. These authored examples teach and check the contract; they do not establish that another LLM has learned. Other per-tool, per-kind, per-relation and advanced examples remain to be added.",
-          "evidence": "The two shipped Markdown lessons include public MCP calls and independent evidence checks. The example replay supports directed prerequisites plus the chosen lesson, or full guide expansion for comparison."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites: guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added.",
+          "evidence": "The generated agent Markdown preserves the operating bodies and supplies exact kmp_inspect arguments for the two examples stored in the guide. Native replays check the paths separately from LLM learning."
         },
         {
           "id": "example:alias-ownership",
           "kind": "instruction",
           "depth": "advanced",
           "text_file": "examples/alias-ownership.md",
-          "evidence": "Five fictional dated sources distinguish an explicit person alias, an unidentified visitor and a reassigned account. Native MCP replay checks same_entity_as versus supersedes, catalogue maintenance, temporal selection and proof without invoking a model."
+          "evidence": "Five fictional dated sources distinguish an explicit person alias, an unidentified visitor and a reassigned account. Native MCP replay checks same_entity_as versus supersedes, catalogue maintenance, temporal selection and proof without invoking a model.",
+          "example_title": "Aliases, unresolved names and account assignment"
+        },
+        {
+          "id": "advanced:repository",
+          "kind": "instruction",
+          "depth": "advanced",
+          "evidence": "Operating guidance moved from the reviewed memory skill; native lifecycle and tool error contracts remain authoritative.",
+          "text_file": "topics/repository.md",
+          "guide_title": "Repository bundles and snapshots"
+        },
+        {
+          "id": "advanced:errors",
+          "kind": "instruction",
+          "depth": "advanced",
+          "evidence": "Operating guidance moved from the reviewed memory skill; native lifecycle and tool error contracts remain authoritative.",
+          "text_file": "topics/errors.md",
+          "guide_title": "Diagnose missing tools and errors"
         }
       ],
       "relations": [
@@ -330,6 +366,22 @@
           "class": "evidential",
           "why": "The alias lesson is a catalogue member that applies identity and lifecycle distinctions to sources from one registry.",
           "evidence": "Its calls inspect the identity target, maintain labels separately and recover the account assignment at two dates."
+        },
+        {
+          "from": "advanced:repository",
+          "to": "overview",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "This topic extends the entry when repository maintenance or diagnosis is needed.",
+          "evidence": "The body preserves the corresponding reviewed memory skill instructions."
+        },
+        {
+          "from": "advanced:errors",
+          "to": "overview",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "This topic extends the entry when repository maintenance or diagnosis is needed.",
+          "evidence": "The body preserves the corresponding reviewed memory skill instructions."
         }
       ]
     },
