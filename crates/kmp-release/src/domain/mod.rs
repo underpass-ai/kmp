@@ -12,7 +12,6 @@ pub mod plugin_package_target;
 pub mod plugin_package_version;
 pub mod plugin_repository;
 pub mod plugin_tree_digest;
-pub mod public_overview;
 pub mod pull_request_url;
 pub mod readiness_check;
 pub mod readiness_outcome;

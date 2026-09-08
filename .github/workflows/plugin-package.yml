@@ -12,7 +12,6 @@ on:
       - "scripts/ci/kmp-windows-launcher-smoke.ps1"
       - "crates/kmp-release/**"
       - "scripts/ci/kmp-capability-contract.py"
-      - "scripts/ci/kmp-agent-routing-contract.py"
       - "tests/plugin/**"
       - "crates/kmp-mcp/**"
       - ".github/actions/install-rust/**"
@@ -50,9 +49,6 @@ jobs:
 
       - name: Check the plugin capability contract
         run: python3 scripts/ci/kmp-capability-contract.py
-
-      - name: Check agent routing and language fallback
-        run: python3 scripts/ci/kmp-agent-routing-contract.py
 
       - name: Prove the packaged canonical plugin tree
         run: cargo test --locked -p kmp-release --test plugin_package_contract

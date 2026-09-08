@@ -1,6 +1,6 @@
 use kmp_embedded::ResolvedDataDir;
 
-use crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
+use crate::guide;
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
 use crate::summaries::pending;
@@ -19,9 +19,8 @@ pub(crate) fn search_summary_finding(resolved: &ResolvedDataDir) -> Option<Lifec
     {
         return None;
     }
-    let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
-        store.export_bundle_excluding_abouts_blocking(&ShippedGuideAbouts::owned())
-    });
+    let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
+        .and_then(|store| store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned()));
     let bundle = match bundle {
         Ok(bundle) => bundle,
         Err(error) => {

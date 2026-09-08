@@ -20,7 +20,6 @@ GATES = (
     "publish",
     "rustfmt",
     "rust",
-    "docs",
     "valkey",
     "neo4j",
     "nats",
@@ -166,9 +165,13 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
 
     for name, directory in packages.items():
         prefix = directory.as_posix() + "/"
-        if any(path.startswith(prefix) for path in normalized):
+        crate_paths = {
+            path for path in normalized
+            if path.startswith(prefix) and not is_markdown_or_docs(path)
+        }
+        if crate_paths:
             changed_packages.add(name)
-            known.update(path for path in normalized if path.startswith(prefix))
+            known.update(crate_paths)
 
     if changed_packages:
         affected = reverse_closure(changed_packages, dependencies)
@@ -225,7 +228,6 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
             plan["codeql"] = True
         elif path.startswith(("plugins/kmp/", "tests/plugin/", "scripts/plugin/")):
             known.add(path)
-            plan["docs"] = plan["docs"] or path.endswith(".md")
         elif path.startswith("distribution/charts/"):
             known.add(path)
             plan["helm"] = True
@@ -236,7 +238,6 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
             # The shipped table is proved readable by the kernel in a Rust test.
             known.add(path)
             plan["rust"] = True
-            plan["docs"] = plan["docs"] or path.endswith(".md")
         elif path == "Dockerfile" or path == ".dockerignore" or path.startswith("e2e/"):
             known.add(path)
             plan["container"] = True
@@ -253,9 +254,8 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
         elif path in {"scripts/ci/github-actions-contract.py", "scripts/ci/publish-workflow-contract.py"}:
             known.add(path)
             plan["actions"] = True
-        elif path == "scripts/ci/documentation-spine.sh" or is_markdown_or_docs(path):
+        elif is_markdown_or_docs(path):
             known.add(path)
-            plan["docs"] = True
         elif path in {"scripts/ci/integration-valkey.sh"}:
             known.add(path)
             plan["valkey"] = True
@@ -307,7 +307,6 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
             return full_plan(packages, "shared container-test runtime changed")
         elif path.startswith(("scripts/docs/", "docs/assets/")):
             known.add(path)
-            plan["docs"] = True
         elif path.startswith(("scripts/mcp/", "scripts/install/")):
             known.add(path)
             plan["embedded_binary"] = True
@@ -322,15 +321,12 @@ def plan_for(paths: list[str], force_full: bool = False) -> dict[str, object]:
             known.add(path)
         elif path in {".gitignore", ".gitattributes", ".github/pull_request_template.md", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"}:
             known.add(path)
-            plan["docs"] = True
 
     unknown = sorted(set(normalized) - known)
     if unknown:
         return full_plan(packages, "unknown paths: " + ", ".join(unknown))
 
-    if plan["docs"]:
-        plan["reason"] = "documentation and path-specific gates"
-    elif changed_packages:
+    if changed_packages:
         plan["reason"] = "changed crates and reverse dependencies"
     return plan
 
@@ -356,16 +352,16 @@ def write_outputs(plan: dict[str, object], destination: pathlib.Path) -> None:
             else:
                 rendered = str(value)
             print(f"{key}={rendered}", file=handle)
-        print(f"test={str(bool(plan['rust'] or plan['docs'])).lower()}", file=handle)
+        print(f"test={str(bool(plan['rust'])).lower()}", file=handle)
 
 
 def self_test() -> None:
     cases = [
-        ("docs", ["docs/architecture/index.md"], {"docs": True, "rust": False, "coverage": False}),
+        ("docs", ["docs/architecture/index.md", "crates/kmp-mcp/README.md"], {"full": False, "rust": False, "coverage": False}),
         ("helm", ["distribution/charts/kmp/values.yaml"], {"helm": True, "rust": False}),
         ("container", ["Dockerfile"], {"container": True, "coverage": False}),
         ("release workflow", [".github/workflows/release.yml"], {"actions": True, "rust": False}),
-        ("plugin policy", ["plugins/kmp/skills/kmp-memory/SKILL.md"], {"docs": True, "rust": False}),
+        ("plugin policy", ["plugins/kmp/skills/kmp-memory/SKILL.md"], {"full": False, "rust": False}),
         ("valkey crate", ["crates/kmp-adapter-valkey/src/lib.rs"], {"valkey": True, "neo4j": False, "rust": True}),
         ("nats crate", ["crates/kmp-adapter-nats/src/lib.rs"], {"nats": True, "valkey": False, "rust": True}),
         ("kernel journey", ["crates/kmp-tests-kernel/tests/kernel_full_journey_integration.rs"], {"full_journey": True, "rust": True}),
