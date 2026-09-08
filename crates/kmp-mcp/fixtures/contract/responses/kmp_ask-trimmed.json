@@ -7,7 +7,7 @@
   ],
   "isError": false,
   "structuredContent": {
-    "answer": "Retrieved for this question by term overlap; read proof.evidence and judge whether it answers:\n- question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe [entry:question:parity:entry:semantic_delta:rachel-is-moving-…",
+    "answer": "<budget-shortened prefix of the full answer>",
     "because": [
       {
         "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
@@ -30,7 +30,7 @@
       "budget": {
         "max_bytes": 6000,
         "tokens_advisory": 2400,
-        "used_bytes": 5728
+        "used_bytes": "<verified shortened byte count>"
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": true,

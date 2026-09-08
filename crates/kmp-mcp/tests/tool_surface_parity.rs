@@ -461,6 +461,27 @@ fn redact(value: &mut Value) {
     }
 }
 
+/// Shortening starts from the complete proof, including ingestion clocks.
+/// Their fractional precision can move the cut even when none of those clocks
+/// survives into the compact page. Pin the unchanged proof and full answer;
+/// check the shortened prefix and exact byte accounting before normalizing the
+/// two values that legitimately vary with the cut.
+fn normalize_shortened_answer(result: &mut Value, full_answer: &str) {
+    let content = &mut result["structuredContent"];
+    assert_eq!(content["projection"]["core_text_shortened"], true);
+    let answer = content["answer"].as_str().expect("a shortened answer");
+    let prefix = answer.strip_suffix('…').expect("shortening is visible");
+    assert!(!prefix.is_empty() && full_answer.starts_with(prefix));
+    let bytes = serde_json::to_vec(content)
+        .expect("content serializes")
+        .len();
+    let budget = &content["projection"]["budget"];
+    assert_eq!(budget["used_bytes"].as_u64(), Some(bytes as u64));
+    assert!(bytes as u64 <= budget["max_bytes"].as_u64().expect("byte ceiling"));
+    content["answer"] = json!("<budget-shortened prefix of the full answer>");
+    content["projection"]["budget"]["used_bytes"] = json!("<verified shortened byte count>");
+}
+
 /// The shape of an answer with its data removed: every key kept, every scalar
 /// replaced by its type, every array reduced to one representative element.
 ///
@@ -559,8 +580,8 @@ fn pin(path: &Path, actual: &Value, what: &str) {
     let expected: Value = serde_json::from_str(&raw)
         .unwrap_or_else(|error| panic!("{relative} is not JSON: {error}"));
 
-    assert!(
-        *actual == expected,
+    assert_eq!(
+        actual, &expected,
         "{what} drifted from {relative}. A refactor must not change it. Regenerate with \
          {BLESS}=1 and read the diff to see what moved."
     );
@@ -611,6 +632,7 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
         .await
         .expect("initialize answers");
 
+    let mut full_answer = None;
     for (label, arguments) in calls() {
         let tool = label.split(':').next().expect("tool name");
         let raw = server
@@ -638,11 +660,26 @@ async fn every_tool_answers_what_its_reviewed_fixture_says() {
 
         let file = format!("{}.json", label.replace(':', "-"));
         let mut result = response["result"].clone();
+        let mut template = result.clone();
+        redact(&mut template);
+        let template = shape(&template);
+        if label == "kmp_ask" {
+            full_answer = result["structuredContent"]["answer"]
+                .as_str()
+                .map(str::to_owned);
+        } else if label == "kmp_ask:trimmed" {
+            normalize_shortened_answer(
+                &mut result,
+                full_answer
+                    .as_deref()
+                    .expect("the full Ask precedes its bounded form"),
+            );
+        }
         redact(&mut result);
         pin(&responses_dir().join(&file), &result, label);
         pin(
             &templates_dir().join(&file),
-            &shape(&result),
+            &template,
             &format!("the shape of {label}"),
         );
     }
