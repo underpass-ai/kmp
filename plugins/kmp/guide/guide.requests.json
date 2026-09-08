@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:cace2543d0457f6d87e7",
+    "idempotency_key": "ingest:guide-sync:1:agent:43ef023d085898d889d0",
     "memory": {
       "dimensions": [
         {
@@ -704,7 +704,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
         },
         {
           "coordinates": [
@@ -850,17 +850,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:four-clocks",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Four clocks, interval boundaries and zoom to proof",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Worked example: four clocks and zoom to the proof\n\nUse this fictional Atlas permit to separate when a decision was signed, when\nthe reviewer received it, when KMP recorded it and when it applied. The LLM\ninterprets the sources; KMP preserves the chosen coordinates. A fact that\napplied before it was reported is not evidence that the reviewer knew it then.\n\nRead the installed guide/AGENT.md and its exact reference to this lesson in\nguide:kmp-agent. Consult time, writer, lifecycle and audit guidance when used.\nRun only in the isolated about `example:guide:four-clocks`. This authored replay\nchecks the protocol; it does not measure an LLM's judgment on unseen sources.\n\n## Resolve a real calendar before writing\n\nRead the real UTC clock once. D4 is that UTC calendar day; D1, D2 and D3 are\nthree, two and one days earlier. D5 is the following midnight. In this synthetic\ncase, the archived reports become available together on D4. Preserve the source\nreviewer's historical observation times. Ingestion is the real kernel commit\non D4, not an input the LLM fills in. If the run crosses UTC midnight, record\nthat fact and start a new isolated run with a new calendar.\n\nFor example, a run on September 8 uses September 5 as D1, September 6 as D2,\nSeptember 7 as D3 and September 9 as D5. Never send those sample dates blindly.\nThe replay reads the real clock and records the following `clock` bindings:\n\n| Binding | Resolved UTC time |\n| --- | --- |\n| day1 | D1 00:00 |\n| occurred | D1 09:00 |\n| checked | D1 09:15 |\n| day2 | D2 00:00, also the interval's exclusive end |\n| day3 | D3 00:00 |\n| observed | D3 14:00 |\n| check_observed | D3 14:15 |\n| receipt_observed | D3 14:30 |\n| day4 | D4 00:00 |\n| day5 | D5 00:00, exclusive validity end |\n\n`${clock.occurred}` is a local calendar binding, not a tool result. Other\n`${name...}` values copy returned results. Envelopes name `tool`, `arguments`\nand `save_as`; send only arguments. The sources below use the same resolved\ncalendar. `expect_error` identifies an intentional refusal. Complete every\nreturned continuation before claiming a complete selection; this tiny story\nfits its explicit limits and the replay stops if a page is incomplete.\n\n## Sources available to the writer\n\nAll source text is fictional and literal within this scenario. The writer\ngets these documents and the calendar, not the later reader's questions.\n\n| Source | Occurred | First observed by reviewer | Literal source |\n| --- | --- | --- | --- |\n| S1, signed permit | D1 09:00 | D3 14:00 | Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive. |\n| S2, signature check | D1 09:15 | D3 14:15 | CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it. |\n| S3, delivery receipt | D2 00:00 | D3 14:30 | RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox. |\n\nS1 is a decision with a stated validity interval. S2 is an observation about\nsignature verification, not an extension of that validity. S3 is feedback\nconfirming delivery, not approval of the permission or proof that the reviewer\nread it at delivery time. Only S1 gets `valid_from` and `valid_until`.\n\n## Recover, write and inspect the original sources\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"initial\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000}},\"expect_error\":\"not_found\"}\n```\n\nA fresh missing about returns not_found. An existing about requires recovery\nand catalogue reuse; do not treat it as empty.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"permit\",\n  \"arguments\": {\n    \"about\": \"example:guide:four-clocks\",\n    \"intent\": \"record_decision\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-clocks:permit:v1\",\n    \"scope\": {\n      \"process\": \"atlas-permit-review\"\n    },\n    \"labels\": {\n      \"document\": \"TEMP-4\",\n      \"record\": \"permit\"\n    },\n    \"occurred_at\": \"${clock.occurred}\",\n    \"observed_at\": \"${clock.observed}\",\n    \"valid_from\": \"${clock.day2}\",\n    \"valid_until\": \"${clock.day5}\",\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"Permit TEMP-4 allows Atlas to retry failed uploads during its stated validity interval.\",\n      \"evidence\": \"S1, signed permit: Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive.\"\n    }\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"permit_read\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"ref\":\"${permit.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"catalogue\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nReuse document=TEMP-4 and the process returned in the catalogue. New record\nvalues distinguish the permit from its verification and receipt. The signature\ncheck supports the permit document; its why explains that limited support and\nits evidence is the observed check. It does not prove permission before D2.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"signature\",\n  \"arguments\": {\n    \"about\": \"example:guide:four-clocks\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-clocks:signature:v1\",\n    \"scope\": {\n      \"process\": \"atlas-permit-review\"\n    },\n    \"labels\": {\n      \"document\": \"TEMP-4\",\n      \"record\": \"signature-check\"\n    },\n    \"occurred_at\": \"${clock.checked}\",\n    \"observed_at\": \"${clock.check_observed}\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.\",\n      \"evidence\": \"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${permit.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${permit.generated_refs.0}\",\n        \"rel\": \"supports\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.\",\n        \"evidence\": \"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"signature_read\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"ref\":\"${signature.generated_refs.0}\"}}\n```\n\nThe receipt refers to the inspected permit as background. It supplies no\nsource for a stronger authorization or causal claim.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"receipt\",\n  \"arguments\": {\n    \"about\": \"example:guide:four-clocks\",\n    \"intent\": \"record_feedback\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-clocks:receipt:v1\",\n    \"scope\": {\n      \"process\": \"atlas-permit-review\"\n    },\n    \"labels\": {\n      \"document\": \"TEMP-4\",\n      \"record\": \"delivery-receipt\"\n    },\n    \"occurred_at\": \"${clock.day2}\",\n    \"observed_at\": \"${clock.receipt_observed}\",\n    \"current\": {\n      \"kind\": \"feedback\",\n      \"summary\": \"RECEIPT-4 confirms that permit TEMP-4 reached the Atlas operations mailbox.\",\n      \"evidence\": \"S3, delivery receipt: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${permit.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${permit.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The receipt names this permit as its subject; delivery alone does not establish a new approval or the time the reviewer read it.\",\n        \"evidence\": \"S3: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"receipt_read\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"ref\":\"${receipt.generated_refs.0}\"}}\n```\n\n## Enumerate a half-open interval without losing either boundary\n\nFor occurred [D1 09:00, D2 00:00), first keep only entries exactly at the\nstart from goto. Then read strictly later entries with forward, paginate if\nneeded, merge by ref and exclude times at or after D2 00:00. Expected: S1 and\nS2; the receipt S3 lies exactly at the excluded end. Forward alone omits S1.\nRewind from the end independently checks the two earlier entries in this case.\nUse the document lane consistently so extra label coordinates do not duplicate\nentry counts. This is temporal enumeration and does not require Ask.\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"occurred_start\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.occurred}\"},\"axis\":\"occurred\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_forward\",\"save_as\":\"occurred_later\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":{\"time\":\"${clock.occurred}\"},\"axis\":\"occurred\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_rewind\",\"save_as\":\"before_end\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":{\"time\":\"${clock.day2}\"},\"axis\":\"occurred\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n## Stand at D2 with each of the four clocks\n\nFilter record=permit to ask about the same S1 memory in each read. A clock\nchanges temporal admission, not the stored text. At D2 00:00:\n\n| Axis | Expected S1 selection | Meaning |\n| --- | --- | --- |\n| occurred | Present | It was signed on D1. |\n| observed | Absent | The reviewer first received it on D3. |\n| ingested | Absent | KMP first recorded it on the real execution day D4. |\n| validity | Present | The stated permission starts exactly at D2. |\n\nValidity does not mean knowledge. A validity result at D2 must not be reported\nas evidence that the reviewer or kernel knew the permit on D2.\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"day2_occurred\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.day2}\"},\"axis\":\"occurred\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"day2_observed\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.day2}\"},\"axis\":\"observed\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"day2_ingested\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.day2}\"},\"axis\":\"ingested\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"day2_validity\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.day2}\"},\"axis\":\"validity\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"before_valid\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.occurred}\"},\"axis\":\"validity\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"expired\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.day5}\"},\"axis\":\"validity\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\nBefore D2 and at the exclusive D5 end, validity returns no permit. Its\nsource and history remain stored; expiry does not delete the decision.\nNow traverse the actual observation and ingestion timelines. Inspect gave\nall label coordinates the same ingestion time for S1; copy one returned\n`ingested_at` exactly when locating its real commit, rather than inventing it.\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"observed_start\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.observed}\"},\"axis\":\"observed\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_forward\",\"save_as\":\"observed_later\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":{\"time\":\"${clock.observed}\"},\"axis\":\"observed\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_forward\",\"save_as\":\"ingested_day4\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":{\"time\":\"${clock.day4}\"},\"axis\":\"ingested\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"ingested_exact\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${permit_read.links.incoming.0.coordinate.ingested_at}\"},\"axis\":\"ingested\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"],\"selectors\":[{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"limit\":{\"entries\":10}}}\n```\n\n## Refuse a forged ingestion clock and audit the support\n\nThe following intentional negative call copies the valid signature-write\narguments and adds an unsupported writer field. It must fail before writing.\nThe normal writer has no ingested_at input. Canonical migration/replay is a\ndifferent operation; it is not a way to backdate a new writer observation.\n\n```json\n{\"tool\":\"kmp_write_memory\",\"save_as\":\"forged_ingestion\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"intent\":\"record_observation\",\"actor\":\"guide-writer\",\"source_kind\":\"human\",\"idempotency_key\":\"guide-clocks:forged-ingestion:v1\",\"scope\":{\"process\":\"atlas-permit-review\"},\"labels\":{\"document\":\"TEMP-4\",\"record\":\"signature-check\"},\"occurred_at\":\"${clock.checked}\",\"observed_at\":\"${clock.check_observed}\",\"current\":{\"kind\":\"observation\",\"summary\":\"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.\",\"evidence\":\"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.\"},\"read_context\":{\"inspected_refs\":[\"${permit.generated_refs.0}\"]},\"connect_to\":[{\"ref\":\"${permit.generated_refs.0}\",\"rel\":\"supports\",\"class\":\"evidential\",\"confidence\":\"high\",\"why\":\"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.\",\"evidence\":\"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.\"}],\"ingested_at\":\"${clock.day1}\"},\"expect_error\":\"invalid_argument\"}\n```\n\n```json\n{\"tool\":\"kmp_forward\",\"save_as\":\"after_refusal\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":{\"time\":\"${clock.day4}\"},\"axis\":\"ingested\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_trace\",\"save_as\":\"signature_path\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"from\":\"${signature.generated_refs.0}\",\"to\":\"${permit.generated_refs.0}\"}}\n```\n\nThe final selection still has three memories. Trace must preserve the\nsignature check’s direction, why and evidence. It does not invent a proof\nthat receipt means approval.\n\n## Zoom, switch clocks and return to the evidence\n\nOpen once. Every subsequent intent uses the returned revision; on a conflict,\nread current state and rebase deliberately. Start at Atlas over all four days,\nnarrow to [D1 09:00,D2 00:00) at Episode, then choose Moment to read the\npermit and its signature proof. Zoom changes the representation. Selecting a\nref does not make a hidden memory part of a projection. The inspector reads\nthe stored object; it is not an independent historical query.\n\n```json\n{\"tool\":\"kmp_view_open\",\"save_as\":\"opened\",\"arguments\":{\"about\":\"example:guide:four-clocks\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"overview_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-overview:v1\",\"expected_revision\":\"${opened.view_revision}\",\"explanation\":\"Inspect the permit using occurred time at atlas detail\",\"focus\":{\"time_range\":{\"axis\":\"occurred\",\"from\":\"${clock.day1}\",\"to\":\"${clock.day5}\"}},\"projection\":{\"semantic_zoom\":\"atlas\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":null}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"overview_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"zoom_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-zoom:v1\",\"expected_revision\":\"${overview_state.view_revision}\",\"explanation\":\"Inspect the permit using occurred time at episode detail\",\"focus\":{\"time_range\":{\"axis\":\"occurred\",\"from\":\"${clock.occurred}\",\"to\":\"${clock.day2}\"}},\"projection\":{\"semantic_zoom\":\"episode\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":null}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"zoom_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"detail_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-detail:v1\",\"expected_revision\":\"${zoom_state.view_revision}\",\"explanation\":\"Inspect the permit using occurred time at moment detail\",\"focus\":{\"time_range\":{\"axis\":\"occurred\",\"from\":\"${clock.occurred}\",\"to\":\"${clock.day2}\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":\"${permit.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"detail_state\",\"arguments\":{}}\n```\n\nKeep the narrow window but switch to observed: it should be empty. Then\nmove the observed window to D3, where all three reports were first known.\nAn empty window is not proof that these memories were never written.\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"observed_empty_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-observed_empty:v1\",\"expected_revision\":\"${detail_state.view_revision}\",\"explanation\":\"Inspect the permit using observed time at moment detail\",\"focus\":{\"time_range\":{\"axis\":\"observed\",\"from\":\"${clock.occurred}\",\"to\":\"${clock.day2}\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":null}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"observed_empty_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"observed_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-observed:v1\",\"expected_revision\":\"${observed_empty_state.view_revision}\",\"explanation\":\"Inspect the permit using observed time at moment detail\",\"focus\":{\"time_range\":{\"axis\":\"observed\",\"from\":\"${clock.observed}\",\"to\":\"${clock.day4}\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":\"${permit.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"observed_state\",\"arguments\":{}}\n```\n\nThe ingested window is the real execution day D4. Validity on D2 instead\nfilters to record=permit and shows the permission interval. Neither move\nchanges an earlier MCP read: subsequent temporal calls still need their own\nexplicit axis, cursor, dimensions and budget.\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"ingested_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-ingested:v1\",\"expected_revision\":\"${observed_state.view_revision}\",\"explanation\":\"Inspect the permit using ingested time at moment detail\",\"focus\":{\"time_range\":{\"axis\":\"ingested\",\"from\":\"${clock.day4}\",\"to\":\"${clock.day5}\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]}]},\"selection\":\"${permit.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"ingested_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_view_apply_intent\",\"save_as\":\"validity_frame\",\"arguments\":{\"idempotency_key\":\"guide-clocks:view-validity:v1\",\"expected_revision\":\"${ingested_state.view_revision}\",\"explanation\":\"Inspect the permit using validity time at moment detail\",\"focus\":{\"time_range\":{\"axis\":\"validity\",\"from\":\"${clock.day2}\",\"to\":\"${clock.day3}\"}},\"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"document\"],\"labels\":[{\"key\":\"document\",\"op\":\"in\",\"values\":[\"TEMP-4\"]},{\"key\":\"record\",\"op\":\"in\",\"values\":[\"permit\"]}]},\"selection\":\"${permit.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"validity_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"view_state\",\"arguments\":{}}\n```\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"occurred_after_view\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"at\":{\"time\":\"${clock.occurred}\"},\"axis\":\"occurred\",\"dimensions\":{\"mode\":\"only\",\"include\":[\"document\"],\"scope_ids\":[\"TEMP-4\"]},\"limit\":{\"entries\":10}}}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"permit_after_view\",\"arguments\":{\"about\":\"example:guide:four-clocks\",\"budget\":{\"max_bytes\":30000},\"ref\":\"${permit.generated_refs.0}\"}}\n```\n\nCompare occurred_after_view with occurred_start: the explicit native read\nreturns the same S1 entry even while the viewer stands on validity. The stored\nobject is unchanged. View state is shared presentation, not an implicit query\ncontext and not a memory write.\n\nThis lesson establishes four distinct clocks, both interval boundaries, expiry\nand a proof-directed zoom using three justified memory kinds. It does not\nclaim that every aggregation level exposes every relationship, nor that an LLM\nhas learned to make these choices. Inspect the source when the picture alone\ncannot answer. Continue any incomplete native page before drawing conclusions.\n"
         },
         {
           "coordinates": [
@@ -882,17 +881,17 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -914,7 +913,7 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -922,9 +921,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -946,17 +945,17 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -978,17 +977,17 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1010,17 +1009,17 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -1042,17 +1041,17 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1074,17 +1073,17 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1106,17 +1105,17 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1138,17 +1137,17 @@
               "sequence": 36
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1170,17 +1169,17 @@
               "sequence": 37
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1202,7 +1201,7 @@
               "sequence": 38
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1210,9 +1209,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1234,7 +1233,7 @@
               "sequence": 39
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1242,9 +1241,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1266,17 +1265,17 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1296,6 +1295,38 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 41
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:41:00Z",
+              "occurred_at": "2026-08-28T00:41:00Z",
+              "scope_id": "timeline",
+              "sequence": 42
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 42
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 42
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1648,6 +1679,19 @@
             "guide:kmp-agent:example:distributed-incident"
           ],
           "text": "Four fictional sources identify two reports of outage EVT-17-F across support and project, distinguish recovery EVT-17-R, and preserve late observation times. Native calls check proposals, writer preconditions, the declared path, local and shared timelines, and three viewer stages.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:four-clocks",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:four-clocks"
+          ],
+          "text": "Three fictional permit sources resolve to an actual UTC run calendar. The native replay preserves kernel ingestion, distinguishes four axes, rejects a forged ingestion field, checks interval and validity boundaries, and frames seven clock/zoom stages without invoking a model.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2080,10 +2124,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "The source clock table and native calls compare the same permit at D2 on all four axes and capture both boundaries of a half-open occurred interval.",
+          "from": "guide:kmp-agent:example:four-clocks",
+          "rel": "uses_background",
+          "sequence": 24,
+          "to": "guide:kmp-agent:verb:time",
+          "why": "The permit lesson applies the temporal verb contract to separate signing, observation, actual ingestion and validity, then zooms to the same proof."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 24,
+          "sequence": 25,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2093,7 +2147,7 @@
           "evidence": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2103,7 +2157,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2113,7 +2167,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2123,7 +2177,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2133,7 +2187,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2143,7 +2197,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2153,7 +2207,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2163,7 +2217,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2173,7 +2227,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2183,7 +2237,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 34,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2193,7 +2247,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 35,
+          "sequence": 36,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2203,7 +2257,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 36,
+          "sequence": 37,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2213,7 +2267,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 37,
+          "sequence": 38,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2223,7 +2277,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 38,
+          "sequence": 39,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -2239,7 +2293,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:1ad7040d245afd1f6797",
+    "idempotency_key": "ingest:guide-sync:1:person:21eacd600b5fec5191aa",
     "memory": {
       "dimensions": [
         {
@@ -2773,6 +2827,36 @@
             "source": "editorial"
           },
           "text": "INC-17 contains an outage EVT-17-F and its later recovery EVT-17-R. Support reports the outage first; project later audits that same outage. Ask the agent to read guide:kmp-agent:example:distributed-incident and run it in an isolated store. Open example:guide:incident-support in ChronoLoom and add example:guide:incident-project to the projection. Compare the initial observed view on September 1 with the late audit and reconciliation on September 2. Two observations, an error path and a success path have distinct roles. Shared labels find candidate pairs; the source-backed same_event_as link identifies only the two outage reports. Select its new support declaration, follow the edge and inspect its literal evidence. The recovery remains a separate event. Switch from observed to occurred to see why evidence learned on September 2 can describe an event on September 1; do not infer earlier knowledge from the event clock. The two abouts keep their original texts and ownership. This authored native example does not measure a new LLM writer."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:17:00Z",
+              "occurred_at": "2026-08-28T00:17:00Z",
+              "scope_id": "timeline",
+              "sequence": 18
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 18
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 18
+            }
+          ],
+          "id": "guide:kmp:advanced:four-clocks",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, narrow the occurred window, then choose Moment to inspect the permit and the signature check that supports it. Change the same window to observed: it is empty until you move to day three. Ingested shows the actual run day; validity on day two shows the applicable permit, not earlier knowledge of it. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
         }
       ],
       "evidence": [
@@ -2996,6 +3080,19 @@
           ],
           "text": "The lesson preserves four fictional sources, rejects unproved crossing and unsupported relation types, and compares per-about and shared timelines before and after an explicit equivalence.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:four-clocks",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:four-clocks"
+          ],
+          "text": "The agent lesson resolves relative source dates from the actual UTC clock, keeps ingestion assigned by the kernel, and checks explicit read axes, interval boundaries and shared-view state.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -3148,6 +3245,16 @@
           "sequence": 15,
           "to": "guide:kmp:advanced:alias-ownership",
           "why": "After distinguishing person identity from account assignment, the human can inspect event identity between reports owned by two abouts."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "The same day-two cursor includes the permit on occurred and validity while excluding it on observed and ingested.",
+          "from": "guide:kmp:advanced:four-clocks",
+          "rel": "uses_background",
+          "sequence": 16,
+          "to": "guide:kmp:advanced:clocks",
+          "why": "The worked permit makes the four-clock distinction visible through a concrete source and zoom sequence."
         }
       ]
     },

@@ -15,8 +15,10 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     metrics = {'mode': mode, 'calls': 0, 'structured_bytes': 0, 'markdown_bytes': 0, 'inspected_refs': [], 'reused_guidance': 0}
 
     topics = {'advanced:relations', 'advanced:scope'}
-    if lesson.stem != 'distributed-incident':
+    if lesson.stem in {'decision-history', 'alias-ownership'}:
         topics.update({'advanced:lifecycle', 'advanced:summary'})
+    elif lesson.stem == 'four-clocks':
+        topics.add('advanced:lifecycle')
 
     native_call = client.call
 

@@ -14,11 +14,12 @@ from stdio import Stdio
 from decision_history_checks import check as check_history
 from alias_ownership_checks import check as check_alias
 from distributed_incident_checks import check as check_incident
+from four_clocks_checks import check as check_clocks, clock_bindings
 from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
-           'distributed-incident': check_incident}
+           'distributed-incident': check_incident, 'four-clocks': check_clocks}
 
 
 def bind(value, saved):
@@ -60,6 +61,8 @@ def run(args):
     args.trace.parent.mkdir(parents=True, exist_ok=True)
     (ROOT / 'tmp').mkdir(exist_ok=True)
     saved, authored = {}, {}
+    if args.lesson == 'four-clocks':
+        saved['clock'] = clock_bindings()
     with tempfile.TemporaryDirectory(prefix='guide-example-', dir=ROOT / 'tmp') as directory:
         store = Path(directory)
         env = {k: v for k, v in os.environ.items() if not k.startswith(('KMP_', 'KERNEL_'))}
@@ -78,6 +81,8 @@ def run(args):
                     'lesson_sha256': hashlib.sha256(lesson.read_bytes()).hexdigest(),
                     'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                     'model_calls': 0})
+            if 'clock' in saved:
+                record({'preparation': 'UTC calendar for synthetic sources', 'clock': saved['clock']})
             client = Stdio(binary, store, env, record)
             try:
                 client.rpc('initialize', {'protocolVersion': '2024-11-05', 'capabilities': {},
