@@ -1218,7 +1218,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -1703,7 +1703,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2016,7 +2016,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
+      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2110,7 +2110,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2475,7 +2475,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -2919,7 +2919,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -3342,7 +3342,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -3786,7 +3786,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",
@@ -4136,7 +4136,7 @@
         "additionalProperties": false,
         "properties": {
           "about": {
-            "description": "Memory anchor that owns both refs.",
+            "description": "Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path.",
             "minLength": 1,
             "type": "string"
           },
@@ -5213,7 +5213,7 @@
                 "type": "string"
               },
               "scope": {
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": [
                   "current_about",
                   "abouts",

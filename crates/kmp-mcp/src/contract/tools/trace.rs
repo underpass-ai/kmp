@@ -20,7 +20,7 @@ pub(crate) fn definition() -> Value {
             "additionalProperties": false,
             "required": ["about", "from", "to"],
             "properties": {
-                "about": string_schema("Memory anchor that owns both refs."),
+                "about": string_schema("Memory anchor for this trace. Refs normally belong to it; a trace may cross a writer-declared same_event_as or same_entity_as link backed by a kmp_relate proposal. Naming another about's ref alone does not create a path."),
                 "from": string_schema("Source memory ref. In live gRPC mode this must resolve to a kernel node id."),
                 "to": string_schema("Target memory ref. In live gRPC mode this must resolve to a kernel node id."),
                 "role": string_schema("Optional caller role."),
