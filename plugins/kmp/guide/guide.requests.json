@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:42fb8a367022981e3b2a",
+    "idempotency_key": "ingest:guide-sync:1:agent:96adb3d34619b76dd19a",
     "memory": {
       "dimensions": [
         {
@@ -204,7 +204,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete."
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete. Keep clocks distinct: occurred is event time, observed is when information became known, ingested is when the kernel wrote it, and validity says when it held. Backfilling an event does not justify using its occurrence as the observation time."
         },
         {
           "coordinates": [
@@ -1258,7 +1258,7 @@
           "supports": [
             "guide:kmp-agent:verb:time"
           ],
-          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately.",
+          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. The agent memory skill uses the same distinct clocks; it does not treat every read as ordered by observation.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
