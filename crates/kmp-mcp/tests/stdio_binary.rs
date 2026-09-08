@@ -2954,4 +2954,63 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
         path.iter().any(|hop| hop["rel"] == "same_event_as"),
         "{traced}"
     );
+
+    // The negotiated App receives the same source-owned declaration and
+    // its proposal provenance, without importing the target into its plane.
+    let initialize = serde_json::json!({
+        "jsonrpc": "2.0", "id": 11, "method": "initialize",
+        "params": {"capabilities": {"extensions": {
+            "io.modelcontextprotocol/ui": {"mimeTypes": ["text/html;profile=mcp-app"]}
+        }}}
+    });
+    let projection = serde_json::json!({
+        "jsonrpc": "2.0", "id": 12, "method": "tools/call",
+        "params": {"name": "kmp_view_read_projection", "arguments": {
+            "about": "service:alpha", "axis": "observed", "lod": "moment",
+            "from": "2026-03-01T00:00:00Z", "to": "2026-04-01T00:00:00Z"
+        }}
+    });
+    let output = run_binary(&envs, &format!("{initialize}\n{projection}\n"));
+    assert!(output.status.success());
+    let replies: Vec<Value> = String::from_utf8(output.stdout)
+        .expect("utf8")
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("reply"))
+        .collect();
+    let projected = &replies
+        .iter()
+        .find(|reply| reply["id"] == 12)
+        .expect("projection reply")["result"];
+    assert_ne!(projected["isError"], true, "{projected}");
+    let data = &projected["structuredContent"];
+    let edge = data["relations"]
+        .as_array()
+        .expect("relations")
+        .iter()
+        .find(|edge| edge["rel"] == "same_event_as")
+        .expect("App declaration");
+    let traced_edge = path
+        .iter()
+        .find(|hop| hop["rel"] == "same_event_as")
+        .expect("declared trace edge");
+    for field in [
+        "from",
+        "to",
+        "rel",
+        "class",
+        "why",
+        "evidence",
+        "confidence",
+        "method",
+    ] {
+        assert_eq!(edge[field], traced_edge[field], "App preserves {field}");
+    }
+    assert_eq!(edge["method"], "kmp_relate:identifier");
+    assert!(
+        data["entries"]
+            .as_array()
+            .expect("entries")
+            .iter()
+            .all(|entry| entry["ref_id"] != "service:beta:outcome:freeze")
+    );
 }

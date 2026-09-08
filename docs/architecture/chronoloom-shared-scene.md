@@ -49,6 +49,17 @@ fixed label taxonomy belongs in the shipped UI. Inspector and audit paths keep
 using the existing read ports. Browser and MCP App embed the same assets without
 CDN access, runtime package installation or a second memory write path.
 
+At Moment, a projection carries the equivalences declared by its returned
+source memories, including a target ref in another about. Those declarations
+come from the same bounded context read, before dimension filtering removes
+the foreign endpoint. They retain why, evidence, confidence and the writer's
+proposal method; no proposal or inferred coincidence becomes an edge. A source
+outside the selected clock, range, labels or page contributes no declaration.
+The reference does not load its target: the scene draws the arc only if both
+endpoints are present in the independently requested planes. Removing or
+filtering a plane removes that endpoint and its arc. Projection relation
+metrics count returned proof edges; the scene counts only edges it can draw.
+
 ## Verification
 
 `loom-*.test.js` runs in the required GitHub Actions test job as well as the
