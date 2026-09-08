@@ -7,12 +7,20 @@ pub struct RepositoryRoot(PathBuf);
 
 impl RepositoryRoot {
     pub fn discover() -> Result<Self, ReleaseError> {
-        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .and_then(Path::parent)
-            .ok_or_else(|| ReleaseError::invalid("kmp-release is not inside the KMP workspace"))?
-            .to_path_buf();
-        Ok(Self(root))
+        let current = std::env::current_dir().map_err(|error| {
+            ReleaseError::invalid(format!("cannot resolve current directory: {error}"))
+        })?;
+        for root in current.ancestors() {
+            if root.join("Cargo.toml").is_file()
+                && root.join("crates/kmp-release/Cargo.toml").is_file()
+            {
+                return Ok(Self(root.to_path_buf()));
+            }
+        }
+        Err(ReleaseError::invalid(format!(
+            "no KMP workspace found from `{}`; run inside a KMP checkout or provide explicit paths",
+            current.display()
+        )))
     }
 
     pub fn from_path(path: impl Into<PathBuf>) -> Result<Self, ReleaseError> {
