@@ -70,6 +70,15 @@ que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
 descripción. Comprobar lo que el host presenta antes de atribuirle al servidor
 una repetición añadida fuera del MCP nativo.
 
+Las instrucciones de initialize contienen sólo decisiones comunes entre verbos:
+activación, recuperación inicial, elección temporal/semántica, continuidad,
+identificadores, prueba y frontera de confianza. El uso específico pertenece
+al tool: Ask explica su reintento y UNKNOWN; Forward explica el límite inclusivo
+del intervalo; los campos del escritor explican resumen de búsqueda y evidencia.
+El detalle y los ejemplos viven en la guía consultable. Algunos hosts anteponen
+initialize a cada descripción: medir esa representación evita multiplicar un
+manual común. No acoplar esta distribución a tests de frases o de orden del texto.
+
 ## 3. Regenerar con el motor correspondiente
 
 Desde la raíz del repo, usar un target separado si hay un binario congelado

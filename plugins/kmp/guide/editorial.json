@@ -19,7 +19,7 @@
           "id": "gate:invocation",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The MCP initialize instructions open with a memory-routing gate whose default is on_request.",
+          "evidence": "Initialize carries common activation and routing guidance; tools teach their specific operation and this node expands how to choose and continue a route.",
           "text_file": "topics/routing.md",
           "guide_title": "Choose and continue a memory route"
         },
