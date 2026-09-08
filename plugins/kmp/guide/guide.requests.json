@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:1940b5c7600e2e17eb91",
+    "idempotency_key": "ingest:guide-sync:1:agent:575429ed3559d95e3b69",
     "memory": {
       "dimensions": [
         {
@@ -204,7 +204,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete. Keep clocks distinct: occurred is event time, observed is when information became known, ingested is when the kernel wrote it, and validity says when it held. Backfilling an event does not justify using its occurrence as the observation time. Coordinate filters choose returned lanes; label selectors evaluate the whole entry, including labels on lanes excluded from the result. Combining document=TEMP-4 with record=permit must retain the matching document coordinate without returning the record coordinate."
+          "text": "VERB navigate time. Use kmp_goto for state at a point, kmp_near for its neighborhood, kmp_rewind for earlier history and kmp_forward for later history. Enumerating a period beats Ask; a semantic question that carries a date is one Ask with as_of or interval. Minimum input: exact about plus timestamp, sequence or ref cursor. Expect: ordered entries and page.has_more. Next: consume the exact cursor with the verb named by next_action until the interval is complete. Keep clocks distinct: occurred is event time, observed is when information became known, ingested is when the kernel wrote it, and validity says when it held. Backfilling an event does not justify using its occurrence as the observation time. Coordinate filters choose returned lanes; label selectors evaluate the whole entry, including labels on lanes excluded from the result. Combining document=TEMP-4 with record=permit must retain the matching document coordinate without returning the record coordinate. Observed recall also excludes evidence whose explicit receipt time lies after as_of or at/after the exclusive interval end, even when that evidence supports an older entry. On occurred time, late proof can still describe the earlier event; it does not establish earlier knowledge."
         },
         {
           "coordinates": [
@@ -534,7 +534,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement."
+          "text": "Supersession, contradiction and expiry mean different things. supersedes says a later state replaces an older one while preserving history and why. contradicts keeps two live claims in tension. valid_until ends applicability without requiring a replacement. A contradiction whose endpoint has been superseded is no longer a live proof.conflicts marker; the original relation remains in audit paths. Read it before replacement on the observed axis to recover the earlier disagreement."
         },
         {
           "coordinates": [
@@ -1168,7 +1168,7 @@
           "supports": [
             "guide:kmp-agent:verb:time"
           ],
-          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. The agent memory skill uses the same distinct clocks; it does not treat every read as ordered by observation. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection.",
+          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. The agent memory skill uses the same distinct clocks; it does not treat every read as ordered by observation. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. A native before/write-late/after regression checks both wake and ask, inclusive instants, exclusive interval ends and event-time preservation.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1311,7 +1311,7 @@
           "supports": [
             "guide:kmp-agent:advanced:lifecycle"
           ],
-          "text": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles.",
+          "text": "KMP proof separates superseded, conflicts and expired so an agent cannot flatten distinct lifecycles. The native late-conflict regression checks an unresolved historical instant before and after a later superseding write, and the resolved later selection.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
