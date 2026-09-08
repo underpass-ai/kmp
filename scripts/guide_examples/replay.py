@@ -17,12 +17,14 @@ from distributed_incident_checks import check as check_incident
 from four_clocks_checks import check as check_clocks, clock_bindings
 from quantities_checks import check as check_quantities, clock_bindings as quantity_clock
 from late_conflict_checks import check as check_late_conflict
+from labels_negation_checks import check as check_labels_negation
 from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
-           'quantities': check_quantities, 'late-conflict': check_late_conflict}
+           'quantities': check_quantities, 'late-conflict': check_late_conflict,
+           'labels-negation': check_labels_negation}
 
 
 def bind(value, saved):

@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:f906d9d0c8da00f1bb6a",
+    "idempotency_key": "ingest:guide-sync:1:agent:4a1e7eb1376ad6de81a3",
     "memory": {
       "dimensions": [
         {
@@ -704,7 +704,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
         },
         {
           "coordinates": [
@@ -943,17 +943,16 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:labels-negation",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Labels, synonyms and negation under explicit conditions",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Worked example: labels, synonyms and negation\n\nThe fictional LEX-7 catalogue teaches three separate operations: recover a\nSpanish source through its English search summary, catalogue synonyms only\nwhen a glossary supports them, and compare opposite states at matching\nconditions. Labels help select candidates; typed relations preserve the\nwriter's semantic claim and its proof.\n\nUse `example:guide:labels-negation` in an isolated store. Read the installed\nguide/AGENT.md once and follow its exact reference to this lesson, the live\ntool schemas, scope and relation guidance, and the language/summary topic.\nThe LLM writer interprets the sources. The authored replay checks native\nbehavior and does not measure a new LLM's learning.\n\n## Sources in receipt order\n\nOnly use each source after its observed time in this teaching sequence.\nNo source resolves the RUN-7 production disagreement. The later maintenance\ndecision concerns RUN-8, and is a decision rather than an observed outcome.\nThese are reports of particular checks; do not invent validity intervals\nfor their states. Ingestion remains the real run time.\n\n| Source | Occurred (UTC) | Observed (UTC) | Literal source |\n| --- | --- | --- | --- |\n\n| S1 | 2026-09-01T08:00:00Z | 2026-09-01T08:10:00Z | S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana. |\n\n| G1 | 2026-09-01T09:00:00Z | 2026-09-01T09:00:00Z | G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable. |\n\n| S2 | 2026-09-01T08:00:00Z | 2026-09-01T09:10:00Z | S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1. |\n\n| S3 | 2026-09-01T08:00:00Z | 2026-09-01T09:20:00Z | S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1. |\n\n| S4 | 2026-09-01T08:00:00Z | 2026-09-01T09:30:00Z | S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod. |\n\n| D1 | 2026-09-02T08:00:00Z | 2026-09-02T08:00:00Z | D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes. |\n\nThe four reports are `observation`; G1 is a `constraint` because it\nprescribes a catalogue convention; D1 is a `decision`. Do not label all\nsources as observations to avoid choosing their meaning. `intent` describes\nthe writing act and differs from the memory kind and relation class.\n\nJSON envelopes name a tool, its arguments and a local `save_as` binding.\nSend only the arguments. `${name.generated_refs.0}` copies a returned ref.\nAn unexpected error or an incomplete page stops the replay; in larger\nhistories follow the returned cursor before claiming complete coverage.\n\n## Recover and record the original wording\n\nA fresh about returns `not_found`. On an existing about, recover its\ncatalogue and use the actual refs instead of pretending the history is empty.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"initial\",\n  \"expect_error\": \"not_found\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"original\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:original:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"operation-check\"\n    },\n    \"labels\": {\n      \"component\": \"bitácora\",\n      \"environment\": \"prod\",\n      \"owner\": \"ana\",\n      \"run\": \"RUN-7\",\n      \"state\": \"enabled\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-01T08:10:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana.\",\n      \"summary_en\": \"S1 reports enabled logging: component bitácora was enabled in prod under Ana during RUN-7 at 08:00 UTC on September 1.\",\n      \"evidence\": \"S1, received 2026-09-01T08:10:00Z: S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana.\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"original_before\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${original.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": true}\n  }\n}\n```\n\nAt this point the catalogue contains `component=bitácora`. The writer\ndoes not yet have G1's claim that it names the same component as journal.\nThe English summary preserves S1, RUN-7, Ana, prod and its clock while\nmaking the Spanish statement searchable. It is search text, never a new\nsource or permission to drop the original negation.\n\nThis semantic read deliberately uses English words supplied by summary_en.\nInspect its cited source and `matched_via`/`summary_terms`; a result must\nstill carry S1's Spanish text. It does not require a lexical bridge.\n\n```json\n{\n  \"tool\": \"kmp_ask\",\n  \"save_as\": \"english_summary\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"question\": \"Which logging component was enabled?\",\n    \"asked_as\": \"¿Qué componente de registro estaba habilitado?\",\n    \"budget\": {\"max_bytes\": 25000, \"detail\": \"full\"}\n  }\n}\n```\n\n## Read the glossary and relabel with evidence\n\nG1 is a scoped catalogue rule, not a global synonym dictionary. Its context\nlink says why the original record is relevant; it does not turn the glossary\ninto another enabled-state report. Read the catalogue after writing G1.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"glossary\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:glossary:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"catalogue-rule\"\n    },\n    \"labels\": {\n      \"component\": \"journal\"\n    },\n    \"occurred_at\": \"2026-09-01T09:00:00Z\",\n    \"observed_at\": \"2026-09-01T09:00:00Z\",\n    \"current\": {\n      \"kind\": \"constraint\",\n      \"summary\": \"G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\",\n      \"summary_en\": \"G1 is the LEX-7 catalogue rule: bitácora and journal name one logging component, catalogued as journal. Retain environment and owner. Enabled and disabled conflict only for the same check, instant, environment and owner.\",\n      \"evidence\": \"G1, received 2026-09-01T09:00:00Z: G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${original.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${original.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"La norma G1 explica cómo catalogar el término bitácora usado por S1 dentro de LEX-7; no verifica el estado habilitado que S1 afirma.\",\n        \"evidence\": \"G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"glossary_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${glossary.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": false}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"catalogue_before_relabel\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"budget\": {\"max_bytes\": 25000, \"detail\": \"compact\"}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_relabel\",\n  \"save_as\": \"canonical_label\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${original.generated_refs.0}\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:canonical-component:v1\",\n    \"observed_at\": \"2026-09-01T09:01:00Z\",\n    \"remove\": {\"component\": \"bitácora\"},\n    \"add\": {\"component\": \"journal\"},\n    \"why\": \"G1 identifica bitácora y journal como el mismo componente de LEX-7 y prescribe journal para el catálogo; se conserva el texto, la prueba y los relojes de S1.\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"original_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${original.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": true}\n  }\n}\n```\n\nVerify that S1's object and source did not change. The new component\ncoordinate inherits S1's occurrence and receipt clocks; the relabel edge\nrecords September 1 at 09:01 as the catalogue change. This current catalogue\ncan find older evidence; it does not prove that G1 was already known at\n08:10. Keep the glossary's own observed time when reasoning historically.\n\nDo not reuse `bitácora` under another label key such as `alias`: that value\nalready belongs to the component key in this about and strict writes refuse\nsuch a collision. The original word remains searchable in S1 and G1.\n\n## Restate a claim and retain its negation\n\nS2 explicitly restates S1 at the same RUN-7 instant, environment and owner.\nG1 supplies the scoped component equivalence. `restates` relates these\nclaims; sharing journal alone would not justify it.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"restated\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:restated:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"operation-check\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"prod\",\n      \"owner\": \"ana\",\n      \"run\": \"RUN-7\",\n      \"state\": \"enabled\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-01T09:10:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1.\",\n      \"summary_en\": \"S2 restates S1: journal logging was enabled in prod for RUN-7 at 08:00 UTC on September 1, with Ana responsible.\",\n      \"evidence\": \"S2, received 2026-09-01T09:10:00Z: S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${original.generated_refs.0}\",\n        \"${glossary.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${original.generated_refs.0}\",\n        \"rel\": \"restates\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"S2 declara que reformula S1: ambos afirman habilitado para RUN-7, prod, Ana y el mismo instante; G1 identifica los dos nombres del componente.\",\n        \"evidence\": \"S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n      },\n      {\n        \"ref\": \"${glossary.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"La equivalencia de términos de G1 permite catalogar y comparar S2 con el componente nombrado en S1, sin sustituir la prueba del estado.\",\n        \"evidence\": \"G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"restated_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${restated.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": false}\n  }\n}\n```\n\nS3 says **not enabled**, then explicitly says disabled. Retain both\nthat negation and the absence of resolving verification. Its disagreement\nwith S1 is supported by matching check, instant, component, environment and\nowner. Later receipt alone does not supersede S1 or S2.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"negative\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:negative:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"operation-check\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"prod\",\n      \"owner\": \"ana\",\n      \"run\": \"RUN-7\",\n      \"state\": \"disabled\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-01T09:20:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1.\",\n      \"summary_en\": \"S3 says journal was not enabled in prod; it was disabled for RUN-7 at 08:00 UTC on September 1 under Ana. This report supplies no verification that resolves its disagreement with S1.\",\n      \"evidence\": \"S3, received 2026-09-01T09:20:00Z: S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${original.generated_refs.0}\",\n        \"${glossary.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${original.generated_refs.0}\",\n        \"rel\": \"contradicts\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"S1 afirma habilitado y S3 lo niega para el mismo RUN-7, prod, Ana e instante; G1 prueba que bitácora y journal designan el mismo componente en este catálogo.\",\n        \"evidence\": \"S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana. S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n      },\n      {\n        \"ref\": \"${glossary.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"G1 fija las condiciones y el vocabulario usados al comparar la negación de S3 con S1; el glosario no decide cuál de los informes es correcto.\",\n        \"evidence\": \"G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"negative_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${negative.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": false}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_open\",\n  \"save_as\": \"opened\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"conflict_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${opened.view_revision}\",\n    \"idempotency_key\": \"guide-labels-negation:view-conflict:v1\",\n    \"explanation\": \"Review conflict for LEX-7\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"2026-09-02T00:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"component\"], \"labels\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"prod\"]}, {\"key\": \"owner\", \"op\": \"in\", \"values\": [\"ana\"]}, {\"key\": \"run\", \"op\": \"in\", \"values\": [\"RUN-7\"]}], \"relation_classes\": [\"evidential\", \"procedural\"]},\n    \"selection\": \"${negative.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"conflict_state\",\n  \"arguments\": {\n  }\n}\n```\n\n## Opposite words under different conditions\n\nS4 is about staging. It may share the component, owner, check and state label\nwith another report, but it does not contradict an enabled report in prod.\nThe background relation preserves the comparison and names its boundary.\nD1 is a later decision for RUN-8; it does not certify an execution or settle\nthe historical RUN-7 disagreement. `follows` records only order.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"other_environment\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:other_environment:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"operation-check\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"staging\",\n      \"owner\": \"ana\",\n      \"run\": \"RUN-7\",\n      \"state\": \"disabled\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-01T09:30:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.\",\n      \"summary_en\": \"S4 records disabled journal logging in staging for RUN-7 at 08:00 UTC on September 1 under Ana. Its scope is staging, not prod.\",\n      \"evidence\": \"S4, received 2026-09-01T09:30:00Z: S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${negative.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${negative.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"S4 permite comparar la comprobación de staging con la de prod descrita por S3; los entornos diferentes impiden tratarlas como el mismo hecho.\",\n        \"evidence\": \"S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"other_environment_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${other_environment.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": false}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"later_decision\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"intent\": \"record_decision\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-labels-negation:later_decision:v1\",\n    \"scope\": {\n      \"process\": \"lexicon-review\",\n      \"task\": \"maintenance-decision\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"prod\",\n      \"owner\": \"ana\",\n      \"run\": \"RUN-8\",\n      \"state\": \"disabled\"\n    },\n    \"occurred_at\": \"2026-09-02T08:00:00Z\",\n    \"observed_at\": \"2026-09-02T08:00:00Z\",\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.\",\n      \"summary_en\": \"D1 follows review of RUN-7 reports: disable journal in prod for RUN-8 from 08:00 UTC on September 2, with Ana responsible. This later decision does not determine the earlier RUN-7 state or replace its reports.\",\n      \"evidence\": \"D1, received 2026-09-02T08:00:00Z: D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${other_environment.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${other_environment.generated_refs.0}\",\n        \"rel\": \"follows\",\n        \"class\": \"procedural\",\n        \"confidence\": \"high\",\n        \"why\": \"La decisión D1 se registra después de revisar los informes de RUN-7; este enlace conserva el orden y no verifica ni sustituye sus estados anteriores.\",\n        \"evidence\": \"D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"later_decision_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"ref\": \"${later_decision.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 30000},\n    \"include\": {\"raw\": false}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"catalogue\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"budget\": {\"max_bytes\": 25000, \"detail\": \"compact\"}\n  }\n}\n```\n\n## Navigate the catalogue, then match all conditions\n\nRead actual label values from wake before selecting them. A component-only\ntraversal returns six memories of three kinds, not six interchangeable\nclaims. Return only component coordinates while selectors still test whole\nentries' environment, owner and run labels. This is one label's time order.\nThe start below precedes all source events, so there is no event on its\nexcluded boundary. To start exactly on an event, capture it with goto first.\n\nThe matched RUN-7 production slice contains S1, S2 and S3, with both enabled\nand disabled labels. Filtering to enabled would conceal the disagreement.\nThe staging slice contains S4. The later RUN-8 slice contains D1.\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"component_history\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"same_conditions\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"prod\"]}, {\"key\": \"owner\", \"op\": \"in\", \"values\": [\"ana\"]}, {\"key\": \"run\", \"op\": \"in\", \"values\": [\"RUN-7\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"staging_only\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"staging\"]}, {\"key\": \"owner\", \"op\": \"in\", \"values\": [\"ana\"]}, {\"key\": \"run\", \"op\": \"in\", \"values\": [\"RUN-7\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"later_only\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"prod\"]}, {\"key\": \"owner\", \"op\": \"in\", \"values\": [\"ana\"]}, {\"key\": \"run\", \"op\": \"in\", \"values\": [\"RUN-8\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n`notin` also admits memories without that key. “Not staging” therefore\nincludes G1, whose catalogue rule has no environment. Combine `exists` with\n`notin` if the intended selection requires a recorded environment. Neither\nfilter establishes a new fact or turns unknown scope into prod.\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"not_staging\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"notin\", \"values\": [\"staging\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"known_not_staging\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": {\"time\": \"2026-09-01T00:00:00Z\"},\n    \"axis\": \"occurred\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"component\"], \"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"exists\"}, {\"key\": \"environment\", \"op\": \"notin\", \"values\": [\"staging\"]}]},\n    \"budget\": {\"max_bytes\": 50000},\n    \"limit\": {\"entries\": 30}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"conflict_after_later_decision\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"axis\": \"observed\",\n    \"as_of\": {\"time\": \"2026-09-03T00:00:00Z\"},\n    \"dimensions\": {\"selectors\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"prod\"]}, {\"key\": \"owner\", \"op\": \"in\", \"values\": [\"ana\"]}, {\"key\": \"run\", \"op\": \"in\", \"values\": [\"RUN-7\"]}]},\n    \"budget\": {\"max_bytes\": 60000, \"detail\": \"full\"}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"restatement_path\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": \"${restated.generated_refs.0}\",\n    \"to\": \"${original.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 40000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"contradiction_path\",\n  \"arguments\": {\n    \"about\": \"example:guide:labels-negation\",\n    \"from\": \"${negative.generated_refs.0}\",\n    \"to\": \"${original.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 40000}\n  }\n}\n```\n\nAudit the two directed paths and compare their why/evidence with the\nsources. The later decision has no `supersedes` edge; the RUN-7 contradiction\nremains live. KMP preserves the writer's claims; accepting a write does not\nindependently verify the truth of either report.\n\n## Review the contexts in ChronoLoom\n\nFirst retain the production disagreement, then inspect staging separately,\nand finally remove the environment filter to see all six memories. Select\nG1 and S1 to audit the catalogue rule and preserved source; follow S3's\ncontradiction and S2's restatement. The panel is Current record: its current\nlinks can extend outside the scene window. Follow a relation to move to its\ntarget's recorded time; inspect the new shared state afterward.\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"staging_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${conflict_state.view_revision}\",\n    \"idempotency_key\": \"guide-labels-negation:view-staging:v1\",\n    \"explanation\": \"Review staging for LEX-7\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"2026-09-02T00:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"component\"], \"labels\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}, {\"key\": \"environment\", \"op\": \"in\", \"values\": [\"staging\"]}], \"relation_classes\": [\"evidential\", \"procedural\"]},\n    \"selection\": \"${other_environment.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"staging_state\",\n  \"arguments\": {\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"catalogue_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${staging_state.view_revision}\",\n    \"idempotency_key\": \"guide-labels-negation:view-catalogue:v1\",\n    \"explanation\": \"Review catalogue for LEX-7\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"2026-09-03T00:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"component\"], \"labels\": [{\"key\": \"component\", \"op\": \"in\", \"values\": [\"journal\"]}], \"relation_classes\": [\"evidential\", \"procedural\"]},\n    \"selection\": \"${glossary.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"catalogue_state\",\n  \"arguments\": {\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"view_state\",\n  \"arguments\": {\n  }\n}\n```\n\n## Negative cases and limits\n\n- Do not equate journal with every object called bitácora outside LEX-7.\n  G1 is explicit evidence for one component and one catalogue.\n- Do not drop “no” from S3's source or summary_en, or label it enabled simply\n  because that word occurs in its sentence.\n- Do not create a contradiction from enabled/disabled without matching all\n  conditions; S4's staging context and D1's later run are the counterexamples.\n- Do not treat a shared owner label as identity proof about a person, or a\n  component label as equivalence of entire statements.\n- Do not filter away a negative report to manufacture agreement, or infer\n  prod from a missing environment label.\n- Do not claim LLM learning from this authored replay. The independent\n  writer must later operate unseen sources without future questions or gold\n  answers, and the reader must justify its route and remaining uncertainty.\n\nRun `python3 scripts/guide_examples/replay.py --lesson labels-negation\n--guide-mode markdown --binary <development-binary> --trace <new-jsonl>\n--result <new-json>`, optionally adding `--hold-view` for human review.\nIt invokes no model and stops on incomplete pages or failed evidence checks.\n"
         },
         {
           "coordinates": [
@@ -975,17 +974,17 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -1007,7 +1006,7 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1015,9 +1014,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -1039,17 +1038,17 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -1071,17 +1070,17 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1103,17 +1102,17 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -1135,17 +1134,17 @@
               "sequence": 36
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1167,17 +1166,17 @@
               "sequence": 37
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1199,17 +1198,17 @@
               "sequence": 38
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1231,17 +1230,17 @@
               "sequence": 39
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1263,17 +1262,17 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1295,7 +1294,7 @@
               "sequence": 41
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1303,9 +1302,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1327,7 +1326,7 @@
               "sequence": 42
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1335,9 +1334,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1359,17 +1358,17 @@
               "sequence": 43
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1389,6 +1388,38 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 44
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:44:00Z",
+              "occurred_at": "2026-08-28T00:44:00Z",
+              "scope_id": "timeline",
+              "sequence": 45
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 45
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 45
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1780,6 +1811,19 @@
             "guide:kmp-agent:example:late-conflict"
           ],
           "text": "Five fictional source documents preserve contradictory shift assignments, an unresolved review, a signed record received late and an explicit final resolution. Native historical reads retain the earlier conflict after the later replacement.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:labels-negation",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:labels-negation"
+          ],
+          "text": "Six fictional LEX-7 sources distinguish glossary-backed catalogue normalization, an explicit restatement, a negative report under matching conditions, a different environment and a later decision. Native reads preserve the Spanish sources and original clocks.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2242,10 +2286,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "The six-memory component catalogue narrows to three production RUN-7 reports, one staging report or the later RUN-8 decision; exists and notin separate a missing environment from a known one.",
+          "from": "guide:kmp-agent:example:labels-negation",
+          "rel": "uses_background",
+          "sequence": 27,
+          "to": "guide:kmp-agent:advanced:scope",
+          "why": "The LEX-7 lesson uses whole-entry selectors to distinguish component synonyms from matching environment, owner and check conditions."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2255,7 +2309,7 @@
           "evidence": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2265,7 +2319,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2275,7 +2329,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2285,7 +2339,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2295,7 +2349,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2305,7 +2359,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2315,7 +2369,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 34,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2325,7 +2379,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 35,
+          "sequence": 36,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2335,7 +2389,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 36,
+          "sequence": 37,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2345,7 +2399,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 37,
+          "sequence": 38,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2355,7 +2409,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 38,
+          "sequence": 39,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2365,7 +2419,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 39,
+          "sequence": 40,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2375,7 +2429,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 40,
+          "sequence": 41,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2385,7 +2439,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 41,
+          "sequence": 42,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -2401,7 +2455,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:25b7f1557787ba1d058a",
+    "idempotency_key": "ingest:guide-sync:1:person:e767c3b0c8ae3ce2211f",
     "memory": {
       "dimensions": [
         {
@@ -3025,6 +3079,36 @@
             "source": "editorial"
           },
           "text": "SHIFT-6 has two reports assigning sole responsibility to Maya and Zoe for the same interval. Ask the agent to read guide:kmp-agent:example:late-conflict and run the isolated lesson. In ChronoLoom start with R1, then show R2 and the unresolved review P1 on observed time before September 4. Select R2 to inspect contradicts and P1 to follow its two motivational links. The supported conclusion then is that the operator cannot be determined. A signed record L1 arrives September 5 for the September 1 shift; event time can show it beside the older reports, but it was not known sooner. The later review D1 confirms Maya, verified_by L1, and supersedes only R2 and P1. Follow both replacement targets and retain their original evidence. Compare historical observed recall before and after resolution; the panel labelled Current record includes later status and links, while the scene retains its selected clock and UTC window. Receipt order alone never chooses a winner. This authored example checks native behavior, not writer LLM learning."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:20:00Z",
+              "occurred_at": "2026-08-28T00:20:00Z",
+              "scope_id": "timeline",
+              "sequence": 21
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 21
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 21
+            }
+          ],
+          "id": "guide:kmp:advanced:labels-negation",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "LEX-7 gives bitácora and journal one component meaning through an explicit glossary. Ask the agent to read guide:kmp-agent:example:labels-negation and run the isolated lesson. Review S1 before and after relabelling: its Spanish text and original clocks stay intact, and English search returns the Spanish source. In the production RUN-7 view, S2 restates S1 while S3 says not enabled under the same instant and owner. Follow both relations; later receipt does not resolve their conflict. Inspect S4 in staging separately, then show all six component memories, including glossary constraint G1 and later RUN-8 decision D1. Opposite words from different environments or times do not create a universal contradiction. Labels group candidates; source-backed relations express what the writer knows. The Current record panel can show later links while the scene uses its selected observed window. This authored review does not measure LLM learning."
         }
       ],
       "evidence": [
@@ -3287,6 +3371,19 @@
           ],
           "text": "The source-backed lesson preserves five distinct memories, the before/after conflict proof and the original R2 clocks, with four temporal view stages.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:labels-negation",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:labels-negation"
+          ],
+          "text": "The explicit glossary justifies replacing one component label, not rewriting the memory. Six native selector traversals preserve different conditions and an unresolved production disagreement.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -3469,6 +3566,16 @@
           "sequence": 18,
           "to": "guide:kmp:advanced:four-clocks",
           "why": "The late duty record concerns an earlier shift, so the human review must distinguish event time from knowledge at receipt time."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "No LEX-7 source resolves S1 versus S3; staging and the later maintenance decision remain separate contexts.",
+          "from": "guide:kmp:advanced:labels-negation",
+          "rel": "uses_background",
+          "sequence": 19,
+          "to": "guide:kmp:advanced:late-conflict",
+          "why": "After reviewing late conflict resolution, the reader distinguishes a contradiction that remains unresolved from unrelated opposite states selected by labels."
         }
       ]
     },
