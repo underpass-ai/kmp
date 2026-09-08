@@ -12,6 +12,7 @@ fn prepare_rejects_empty_unreleased_without_changing_the_file() {
     std::fs::write(&changelog, original).expect("fixture");
 
     let output = Command::new(binary())
+        .current_dir(directory.path())
         .args([
             "changelog",
             "prepare",
@@ -53,6 +54,7 @@ fn prepare_is_idempotent_and_check_accepts_the_release() {
 
     assert!(
         Command::new(binary())
+            .current_dir(directory.path())
             .args(arguments)
             .status()
             .expect("prepare")
@@ -65,6 +67,7 @@ fn prepare_is_idempotent_and_check_accepts_the_release() {
     );
     assert!(
         Command::new(binary())
+            .current_dir(directory.path())
             .args(arguments)
             .status()
             .expect("replay")
@@ -76,6 +79,7 @@ fn prepare_is_idempotent_and_check_accepts_the_release() {
     );
     assert!(
         Command::new(binary())
+            .current_dir(directory.path())
             .args([
                 "changelog",
                 "check",

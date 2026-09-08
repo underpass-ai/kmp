@@ -14,14 +14,13 @@ pub struct ReleaseCommandMapper;
 
 impl ReleaseCommandMapper {
     pub fn map(arguments: Vec<String>) -> Result<ReleaseCommandDto, ReleaseError> {
-        let root = RepositoryRoot::discover()?;
         let usage = "usage: kmp-release version current|prepare [VERSION] [--root DIR]\n       kmp-release changelog prepare|check VERSION [--path FILE] [--date YYYY-MM-DD]\n       kmp-release readme sync [--source FILE] [--target FILE ...]\n       kmp-release guide sync VERSION --binary PATH [--root DIR]\n       kmp-release guide assets write|apply --binary PATH [--root DIR]\n       kmp-release plugin package --binary PATH [--output DIR] [--root DIR] [--release]\n       kmp-release mcpb package VERSION --input DIR [--output DIR] [--root DIR]\n       kmp-release mcpb stamp ARCHIVE [--server FILE] [--root DIR]\n       kmp-release marketplace verify VERSION [--root DIR] [--repository URL] [--expected-commit SHA] [--allow-unpublished-tag]\n       kmp-release candidate inputs [--github-output FILE]\n       kmp-release candidate assemble --version X.Y.Z --binaries DIR --plugins DIR --mcpb DIR --lexical-bridge DIR --output DIR\n       kmp-release candidate verify --version X.Y.Z --directory DIR [--input-sha256 SHA256] [--run-id ID]";
         let command = arguments.first().map(String::as_str).unwrap_or_default();
         let action = arguments.get(1).map(String::as_str).unwrap_or_default();
         match (command, action) {
             ("version", "current") => {
                 let selected_root = match arguments.as_slice() {
-                    [_, _] => root,
+                    [_, _] => RepositoryRoot::discover()?,
                     [_, _, option, path] if option == "--root" => RepositoryRoot::from_path(path)?,
                     _ => {
                         return Err(ReleaseError::invalid(
@@ -39,7 +38,7 @@ impl ReleaseCommandMapper {
                     .ok_or_else(|| ReleaseError::invalid("version prepare needs a version"))
                     .and_then(|value| ReleaseVersion::parse(value.clone()))?;
                 let selected_root = match arguments.as_slice() {
-                    [_, _, _] => root,
+                    [_, _, _] => RepositoryRoot::discover()?,
                     [_, _, _, option, path] if option == "--root" => {
                         RepositoryRoot::from_path(path)?
                     }
@@ -59,18 +58,17 @@ impl ReleaseCommandMapper {
                     .get(2)
                     .ok_or_else(|| ReleaseError::invalid(usage))
                     .and_then(|value| ReleaseVersion::parse(value.clone()))?;
-                let mut path = root.join("CHANGELOG.md");
+                let mut path = None;
                 let mut date = None;
                 let mut index = 3;
                 while index < arguments.len() {
                     match arguments[index].as_str() {
                         "--path" => {
                             index += 1;
-                            path = PathBuf::from(
-                                arguments
-                                    .get(index)
-                                    .ok_or_else(|| ReleaseError::invalid("--path needs a file"))?,
-                            );
+                            path =
+                                Some(PathBuf::from(arguments.get(index).ok_or_else(|| {
+                                    ReleaseError::invalid("--path needs a file")
+                                })?));
                         }
                         "--date" if action == "prepare" => {
                             index += 1;
@@ -86,6 +84,10 @@ impl ReleaseCommandMapper {
                     }
                     index += 1;
                 }
+                let path = match path {
+                    Some(path) => path,
+                    None => RepositoryRoot::discover()?.join("CHANGELOG.md"),
+                };
                 if action == "prepare" {
                     Ok(ReleaseCommandDto::PrepareChangelog {
                         version,
@@ -100,7 +102,7 @@ impl ReleaseCommandMapper {
                 }
             }
             ("readme", "sync") => {
-                let mut source = root.join("plugins/kmp/README.md");
+                let mut source = None;
                 let mut targets = Vec::new();
                 let mut index = 2;
                 while index < arguments.len() {
@@ -108,9 +110,9 @@ impl ReleaseCommandMapper {
                         "--source" => {
                             index += 1;
                             source =
-                                PathBuf::from(arguments.get(index).ok_or_else(|| {
+                                Some(PathBuf::from(arguments.get(index).ok_or_else(|| {
                                     ReleaseError::invalid("--source needs a file")
-                                })?);
+                                })?));
                         }
                         "--target" => {
                             index += 1;
@@ -128,7 +130,12 @@ impl ReleaseCommandMapper {
                     }
                     index += 1;
                 }
+                let source = match source {
+                    Some(source) => source,
+                    None => RepositoryRoot::discover()?.join("plugins/kmp/README.md"),
+                };
                 if targets.is_empty() {
+                    let root = RepositoryRoot::discover()?;
                     targets = vec![
                         root.join("README.md"),
                         root.join("crates/kmp-mcp/README.md"),
@@ -189,7 +196,7 @@ impl ReleaseCommandMapper {
                 let options = Self::named_options(&arguments[3..])?;
                 let selected_root = match options.get("--root") {
                     Some(path) => RepositoryRoot::from_path(path)?,
-                    None => root,
+                    None => RepositoryRoot::discover()?,
                 };
                 Ok(ReleaseCommandDto::SyncGuide {
                     version,
@@ -204,7 +211,7 @@ impl ReleaseCommandMapper {
                 let options = Self::named_options(&arguments[3..])?;
                 let selected_root = match options.get("--root") {
                     Some(path) => RepositoryRoot::from_path(path)?,
-                    None => root,
+                    None => RepositoryRoot::discover()?,
                 };
                 let binary = PathBuf::from(Self::required(&options, "--binary")?);
                 match asset_action.as_str() {
@@ -222,7 +229,7 @@ impl ReleaseCommandMapper {
                 }
             }
             ("plugin", "package") => {
-                let mut selected_root = root;
+                let mut selected_root = None;
                 let mut binary = None;
                 let mut output = None;
                 let mut kind = PluginPackageKind::Development;
@@ -231,10 +238,11 @@ impl ReleaseCommandMapper {
                     match arguments[index].as_str() {
                         "--root" => {
                             index += 1;
-                            selected_root =
-                                RepositoryRoot::from_path(arguments.get(index).ok_or_else(
-                                    || ReleaseError::invalid("--root needs a directory"),
-                                )?)?;
+                            selected_root = Some(RepositoryRoot::from_path(
+                                arguments.get(index).ok_or_else(|| {
+                                    ReleaseError::invalid("--root needs a directory")
+                                })?,
+                            )?);
                         }
                         "--binary" => {
                             index += 1;
@@ -259,6 +267,10 @@ impl ReleaseCommandMapper {
                     }
                     index += 1;
                 }
+                let selected_root = match selected_root {
+                    Some(root) => root,
+                    None => RepositoryRoot::discover()?,
+                };
                 Ok(ReleaseCommandDto::PackagePlugin {
                     binary: binary.ok_or_else(|| {
                         ReleaseError::invalid("plugin package needs --binary PATH")
@@ -276,7 +288,7 @@ impl ReleaseCommandMapper {
                 let options = Self::named_options(&arguments[3..])?;
                 let selected_root = match options.get("--root") {
                     Some(path) => RepositoryRoot::from_path(path)?,
-                    None => root,
+                    None => RepositoryRoot::discover()?,
                 };
                 let output = options
                     .get("--output")
@@ -296,7 +308,7 @@ impl ReleaseCommandMapper {
                 let options = Self::named_options(&arguments[3..])?;
                 let selected_root = match options.get("--root") {
                     Some(path) => RepositoryRoot::from_path(path)?,
-                    None => root,
+                    None => RepositoryRoot::discover()?,
                 };
                 let server_manifest = options
                     .get("--server")
@@ -313,7 +325,7 @@ impl ReleaseCommandMapper {
                     .get(2)
                     .ok_or_else(|| ReleaseError::invalid("marketplace verify needs a version"))
                     .and_then(|value| ReleaseVersion::parse(value.clone()))?;
-                let mut selected_root = root;
+                let mut selected_root = None;
                 let mut repository = PluginRepository::URL.to_string();
                 let mut expected_commit = None;
                 let mut allow_unpublished_tag = false;
@@ -322,10 +334,11 @@ impl ReleaseCommandMapper {
                     match arguments[index].as_str() {
                         "--root" => {
                             index += 1;
-                            selected_root =
-                                RepositoryRoot::from_path(arguments.get(index).ok_or_else(
-                                    || ReleaseError::invalid("--root needs a directory"),
-                                )?)?;
+                            selected_root = Some(RepositoryRoot::from_path(
+                                arguments.get(index).ok_or_else(|| {
+                                    ReleaseError::invalid("--root needs a directory")
+                                })?,
+                            )?);
                         }
                         "--repository" => {
                             index += 1;
@@ -355,6 +368,10 @@ impl ReleaseCommandMapper {
                         "--allow-unpublished-tag requires --expected-commit",
                     ));
                 }
+                let selected_root = match selected_root {
+                    Some(root) => root,
+                    None => RepositoryRoot::discover()?,
+                };
                 Ok(ReleaseCommandDto::VerifyMarketplace {
                     version,
                     root: selected_root,
