@@ -45,3 +45,5 @@ The inspector is labelled **Current record**. Its status and links include
 updates outside the scene window; the clock and UTC window remain visible
 for the scene. To establish lifecycle at an earlier instant, use a dated
 `kmp_wake` or `kmp_ask` and audit that returned proof.
+
+Following an entry relation in the inspector selects its recorded memory even outside the current window, reveals it on the chosen clock and centers it after successful selection. Missing clocks or inaccessible entries produce the existing read error; the link does not broaden about scope.
