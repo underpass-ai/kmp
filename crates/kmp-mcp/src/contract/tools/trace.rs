@@ -25,7 +25,7 @@ pub(crate) fn definition() -> Value {
                 "to": string_schema("Target memory ref. In live gRPC mode this must resolve to a kernel node id."),
                 "role": string_schema("Optional caller role."),
                 "goal": string_schema("Optional trace goal."),
-                "page": page_schema(),
+                "page": page_schema("Maximum number of trace relations to return in this page."),
                 "budget": budget_schema(1_600, 1)
             }
         }),

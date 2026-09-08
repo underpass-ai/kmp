@@ -1,7 +1,7 @@
 use serde_json::{Value, json};
 
 use crate::contract::schema::primitives::*;
-pub(crate) fn page_schema() -> Value {
+pub(crate) fn page_schema(entries_description: &str) -> Value {
     json!({
         "type": "object",
         "additionalProperties": false,
@@ -9,7 +9,7 @@ pub(crate) fn page_schema() -> Value {
             "entries": {
                 "type": "integer",
                 "minimum": 1,
-                "description": "Maximum number of trace relations to return in this page."
+                "description": entries_description
             },
             "cursor": string_schema("Opaque cursor returned by page.next_cursor.")
         }
