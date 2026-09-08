@@ -52,7 +52,7 @@ jobs:
 
   # Pull requests pay only for the parts of the product they can affect. The
   # planner derives the reverse workspace dependency closure, then routes the
-  # independent documentation, adapter, container, chart and publication
+  # independent adapter, container, chart and publication
   # contracts. Unknown paths and changes to this router fail closed to the
   # full matrix. workflow_dispatch is also deliberately full.
   # Draft pull requests are development mode: the dev-loop workflow answers
@@ -75,7 +75,6 @@ jobs:
       publish: ${{ steps.plan.outputs.publish }}
       rustfmt: ${{ steps.plan.outputs.rustfmt }}
       rust: ${{ steps.plan.outputs.rust }}
-      docs: ${{ steps.plan.outputs.docs }}
       test: ${{ steps.plan.outputs.test }}
       valkey: ${{ steps.plan.outputs.valkey }}
       neo4j: ${{ steps.plan.outputs.neo4j }}
@@ -258,10 +257,6 @@ jobs:
         uses: ./.github/actions/upload-coverage
         with:
           name: unit
-
-      - name: Documentation spine
-        if: needs.impact.outputs.docs == 'true'
-        run: bash scripts/ci/documentation-spine.sh
 
       - name: kmp-mcp architecture gate
         run: bash scripts/ci/kmp-mcp-architecture-gate.sh

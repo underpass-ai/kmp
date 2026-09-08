@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail when KMP's MCP, skill, thin Claude adapters, and docs drift."""
+"""Check the packaged MCP, skill and Claude command inventories."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / "plugins" / "kmp"
 CONTRACT = json.loads((PLUGIN / "capabilities.json").read_text(encoding="utf-8"))
 
-# Eleven moves over memory, and three over the view a person is looking at.
+# Memory and semantic viewer tools exposed by the package.
 # The view tools are read-only with respect to memory by construction.
 EXPECTED_TOOLS = {
     "kmp_ingest",

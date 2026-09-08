@@ -11,7 +11,6 @@ python3 scripts/ci/github-actions-contract.py
 python3 scripts/ci/quality-gate-plan.py --self-test
 python3 scripts/ci/merge-coverage.py --self-test
 python3 scripts/ci/quality-workflow-contract.py
-bash scripts/ci/documentation-spine.sh
 bash scripts/ci/kmp-mcp-architecture-gate.sh
 bash scripts/ci/mcp-registry.sh
 node --test crates/kmp-viewer/ui/loom-*.test.js

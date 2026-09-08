@@ -9,7 +9,6 @@ Do not infer current coverage from archived testing prose.
 ```bash
 cargo fmt --all -- --check
 cargo test --workspace --locked
-bash scripts/ci/documentation-spine.sh
 python3 scripts/ci/kmp-capability-contract.py
 bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection; refresh with RETRIEVAL_BASELINE=write
 bash scripts/ci/relate-baseline.sh      # kmp_relate against the judged relate collection; refresh with RELATE_BASELINE=write
@@ -40,8 +39,9 @@ proportion to the change.
 
 CI computes changed paths once with `scripts/ci/quality-gate-plan.py`. Rust
 changes expand through the workspace's reverse dependency graph, so a crate
-and its consumers are checked without retesting unrelated crates. Docs,
-plugin, container, Helm and publication contracts have independent routes.
+and its consumers are checked without retesting unrelated crates. Plugin,
+container, Helm and publication contracts have independent routes. Prose-only
+changes have no documentation gate and do not activate the Rust test job.
 
 Rust tests run once with LLVM coverage instrumentation. Each unit or live
 integration job uploads its LCOV fragment; the final `coverage` job only merges
