@@ -327,6 +327,191 @@ async fn every_viewer_route_serves_the_ingested_memory() {
     assert_eq!(status, 404, "unknown about maps to 404: {error}");
 }
 
+/// A declaration belongs to its writing memory. Its target can be drawn
+/// when another independently filtered about plane supplies that endpoint.
+#[tokio::test(flavor = "multi_thread")]
+async fn moment_projection_keeps_the_writers_cross_about_equivalence() {
+    const OTHER: &str = "project:viewer-cross-target";
+    const TARGET: &str = "project:viewer-cross-target:decision:report";
+    const SOURCE: &str = "project:viewer-smoke:decision:second";
+    let data_dir = tempfile::tempdir().expect("temp data dir");
+    let kernel = EmbeddedKernel::open(data_dir.path()).expect("kernel opens");
+    let mut target = corpus();
+    target.about = OTHER.to_string();
+    target.idempotency_key = "viewer-cross-target".to_string();
+    target.memory.entries = vec![entry(
+        TARGET,
+        "Independent report of event EVT-17-F.",
+        "2026-07-01T10:00:00Z",
+        1,
+    )];
+    target.memory.relations.clear();
+    target.memory.evidence.clear();
+    kernel
+        .service()
+        .ingest(target)
+        .await
+        .expect("target ingests");
+
+    let mut source = corpus();
+    source.memory.entries[0].text = "Initial source log for event EVT-17-F.".to_string();
+    source.memory.entries[0].coordinates[0].observed_at = Some("2026-07-01T10:00:00Z".to_string());
+    source.memory.entries[1].text = "Reconciliation of source log for EVT-17-F.".to_string();
+    source.memory.entries[1].coordinates[0].dimension = "event".to_string();
+    source.memory.entries[1].coordinates[0].scope_id = "event:declaration".to_string();
+    source.memory.entries[1].coordinates[0].observed_at = Some("2026-07-04T10:00:00Z".to_string());
+    source.memory.dimensions.push(MemoryDimensionData {
+        id: "event:declaration".to_string(),
+        kind: "event".to_string(),
+        title: None,
+        metadata: Default::default(),
+    });
+    let declaring_entry = source.memory.entries.pop().expect("declaring memory");
+    let declaring_dimensions = source.memory.dimensions.clone();
+    source.memory.relations.clear();
+    kernel
+        .service()
+        .ingest(source)
+        .await
+        .expect("source ingests");
+    let declaration = MemoryRelationData {
+        source_ref: SOURCE.to_string(),
+        target_ref: TARGET.to_string(),
+        rel: "same_event_as".to_string(),
+        semantic_class: "evidential".to_string(),
+        why: Some("The reconciliation identifies both reports as EVT-17-F.".to_string()),
+        evidence: Some("The source log and independent report carry event EVT-17-F.".to_string()),
+        confidence: Some("high".to_string()),
+        method: Some("kmp_relate:identifier".to_string()),
+        sequence: None,
+        motivation: None,
+        decision_id: None,
+        caused_by_node_id: None,
+        coordinate: None,
+    };
+    let viewer = Arc::new(MemoryViewerServer::new(kernel.service(), None).expect("viewer"));
+    let listener = bind_loopback("127.0.0.1:0").await.expect("listener");
+    let port = listener.local_addr().expect("address").port();
+    let invitation = viewer.capability_url(&format!("http://127.0.0.1:{port}/"));
+    tokio::spawn(viewer.serve(listener));
+    authorize(port, &invitation).await;
+    let query = format!(
+        "/api/projection?about={}&axis=occurred&from=2026-07-01T00:00:00Z&to=2026-07-03T00:00:00Z&lod=moment&limit=8",
+        urlencode(ABOUT)
+    );
+    let (status, before) = get(port, &query).await;
+    assert_eq!(status, 200);
+    assert!(
+        before["relations"]
+            .as_array()
+            .expect("projection array")
+            .iter()
+            .all(|e| e["rel"] != "same_event_as"),
+        "Shared identifiers alone create no relation"
+    );
+    let mut command = corpus();
+    command.idempotency_key = "viewer-cross-declaration".to_string();
+    command.memory = MemoryData {
+        dimensions: declaring_dimensions,
+        entries: vec![declaring_entry],
+        relations: vec![declaration],
+        evidence: vec![],
+    };
+    kernel
+        .service()
+        .ingest(command)
+        .await
+        .expect("writer declaration ingests");
+    let (status, projection) = get(port, &query).await;
+    assert_eq!(status, 200, "{projection}");
+    assert_eq!(projection["entries"].as_array().expect("entries").len(), 2);
+    assert!(
+        projection["entries"]
+            .as_array()
+            .expect("projection array")
+            .iter()
+            .all(|e| e["ref_id"] != TARGET),
+        "The declaration must not fetch its target into this plane"
+    );
+    let edge = projection["relations"]
+        .as_array()
+        .expect("relations")
+        .iter()
+        .find(|e| e["from"] == SOURCE && e["to"] == TARGET && e["rel"] == "same_event_as")
+        .unwrap_or_else(|| panic!("the writer's declared link is missing: {projection}"));
+    assert_eq!(edge["class"], "evidential");
+    assert_eq!(
+        edge["why"],
+        "The reconciliation identifies both reports as EVT-17-F."
+    );
+    assert_eq!(
+        edge["evidence"],
+        "The source log and independent report carry event EVT-17-F."
+    );
+    assert_eq!(edge["confidence"], "high");
+    assert_eq!(edge["method"], "kmp_relate:identifier");
+
+    for narrowed in [
+        query.replace("to=2026-07-03T00:00:00Z", "to=2026-07-02T10:00:00Z"),
+        query.replace("axis=occurred", "axis=observed"),
+        format!("{query}&dims=timeline"),
+        format!("{query}&labels={}", urlencode("event notexists")),
+    ] {
+        let (status, hidden) = get(port, &narrowed).await;
+        assert_eq!(status, 200, "{hidden}");
+        assert!(
+            hidden["entries"]
+                .as_array()
+                .expect("projection array")
+                .iter()
+                .all(|e| e["ref_id"] != SOURCE)
+        );
+        assert!(
+            hidden["relations"]
+                .as_array()
+                .expect("projection array")
+                .iter()
+                .all(|e| e["rel"] != "same_event_as"),
+            "A source excluded by clock, half-open range or label must not supply its declaration: {hidden}"
+        );
+    }
+    let paged_query = query.replace("limit=8", "limit=1");
+    let (status, first) = get(port, &paged_query).await;
+    assert_eq!(status, 200);
+    assert_eq!(first["page"]["has_more"], true);
+    assert!(
+        first["relations"]
+            .as_array()
+            .expect("projection array")
+            .iter()
+            .all(|e| e["rel"] != "same_event_as")
+    );
+    let cursor = first["page"]["next_cursor"].as_str().expect("continuation");
+    let (status, second) = get(port, &format!("{paged_query}&cursor={}", urlencode(cursor))).await;
+    assert_eq!(status, 200, "{second}");
+    assert_eq!(second["page"]["has_more"], false);
+    assert_eq!(second["entries"][0]["ref_id"], SOURCE);
+    assert!(
+        second["relations"]
+            .as_array()
+            .expect("projection array")
+            .contains(edge)
+    );
+
+    let (status, together) = get(port, &format!("{query}&scope=all")).await;
+    assert_eq!(status, 200);
+    assert_eq!(
+        together["relations"]
+            .as_array()
+            .expect("projection array")
+            .iter()
+            .filter(|e| e["rel"] == "same_event_as")
+            .count(),
+        1,
+        "A link already in the projected subgraph must not be added twice"
+    );
+}
+
 /// The transport boundary persists protobuf timestamps in a lexicographically
 /// sortable `unix:` representation, while browsers send RFC3339 ranges. Both
 /// spellings describe the same clock and therefore have to compare on one

@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_domain::{
-    DimensionSelection, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalDirection,
-    TemporalWindow,
+    BundleRelationship, DECLARED_FROM_RELATE_METHOD, DimensionSelection, KmpBundle,
+    MemoryRelationType, RelationSemanticClass, TemporalAxis, TemporalCoordinate, TemporalCursor,
+    TemporalDirection, TemporalWindow,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -147,6 +148,8 @@ pub struct VisualRelation {
     pub why: Option<String>,
     pub evidence: Option<String>,
     pub confidence: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -497,16 +500,83 @@ fn visual_relations(
                     || (relation.relationship_type() == "supports"
                         && refs.contains(relation.target_node_id())))
         })
-        .map(|relation| VisualRelation {
-            from: relation.source_node_id().to_string(),
-            to: relation.target_node_id().to_string(),
-            rel: relation.relationship_type().to_string(),
-            class: relation.explanation().semantic_class().as_str().to_string(),
-            why: relation.explanation().rationale().map(ToString::to_string),
-            evidence: relation.explanation().evidence().map(ToString::to_string),
-            confidence: relation.explanation().confidence().map(ToString::to_string),
-        })
+        .map(visual_relation)
         .collect()
+}
+
+fn visual_relation(relation: &BundleRelationship) -> VisualRelation {
+    VisualRelation {
+        from: relation.source_node_id().to_string(),
+        to: relation.target_node_id().to_string(),
+        rel: relation.relationship_type().to_string(),
+        class: relation.explanation().semantic_class().as_str().to_string(),
+        why: relation.explanation().rationale().map(ToString::to_string),
+        evidence: relation.explanation().evidence().map(ToString::to_string),
+        confidence: relation.explanation().confidence().map(ToString::to_string),
+        method: relation.explanation().method().map(ToString::to_string),
+    }
+}
+
+/// Keep the writer's stored declaration before dimension filtering drops
+/// its foreign endpoint. This does not fetch or admit that endpoint.
+pub(super) fn declared_equivalences(bundle: &KmpBundle) -> Vec<VisualRelation> {
+    bundle
+        .relationships()
+        .iter()
+        .filter(|relation| {
+            let proof = relation.explanation();
+            MemoryRelationType::new(relation.relationship_type())
+                .is_ok_and(|kind| kind.may_cross_abouts())
+                && proof.semantic_class() == &RelationSemanticClass::Evidential
+                && proof
+                    .method()
+                    .is_some_and(|method| method.starts_with(DECLARED_FROM_RELATE_METHOD))
+                && proof.rationale().is_some_and(|why| !why.trim().is_empty())
+                && proof
+                    .evidence()
+                    .is_some_and(|evidence| !evidence.trim().is_empty())
+        })
+        .map(visual_relation)
+        .collect()
+}
+
+pub(super) fn include_owned_declarations(
+    projection: &mut VisualProjectionResult,
+    declarations: Vec<VisualRelation>,
+) {
+    let refs: BTreeSet<_> = projection
+        .entries
+        .iter()
+        .map(|entry| entry.ref_id.as_str())
+        .collect();
+    let mut keys: BTreeSet<_> = projection
+        .relations
+        .iter()
+        .map(|edge| (edge.from.clone(), edge.rel.clone(), edge.to.clone()))
+        .collect();
+    for relation in declarations {
+        if refs.contains(relation.from.as_str())
+            && keys.insert((
+                relation.from.clone(),
+                relation.rel.clone(),
+                relation.to.clone(),
+            ))
+        {
+            projection.relations.push(relation);
+        }
+    }
+    for metric in &mut projection.metrics {
+        match metric.name.as_str() {
+            "relation_count" => metric.value = projection.relations.len() as f64,
+            "causal_density" => {
+                metric.value = ratio(
+                    causal_relation_count(&projection.relations),
+                    projection.relations.len(),
+                )
+            }
+            _ => {}
+        }
+    }
 }
 
 fn axis_time(coordinate: &TemporalCoordinate, axis: TemporalAxis) -> Option<&str> {
@@ -686,6 +756,7 @@ mod tests {
             why: None,
             evidence: None,
             confidence: None,
+            method: None,
         };
         let relations = [
             relation("causal"),
