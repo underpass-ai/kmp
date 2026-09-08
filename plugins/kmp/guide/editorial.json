@@ -75,7 +75,7 @@
           "id": "verb:view",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory.",
+          "evidence": "The live view contracts make the view shared, semantic, optimistic and read-only with respect to memory. Native embedded tests cover new and retained about layers, scope refusal and catalogue values found only in an additional about.",
           "text_file": "verbs/view.md",
           "guide_title": "Frame and share ChronoLoom"
         },

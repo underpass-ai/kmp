@@ -44,7 +44,7 @@ KMP_APP.selection = (() => {
       const revealed = model.byRef.has(ref) ? null : await revealEntryAtMoment(ref);
       const m = model.byRef.get(ref);
       if (!m) throw new Error(`cannot select ${ref}: the entry is not in this projection`);
-      const inspect = revealed || (await api("/api/node", { about: model.about, id: ref, raw: "1" }));
+      const inspect = revealed || (await api("/api/node", { about: m.about || model.about, id: ref, raw: "1" }));
       view.selectedRef = ref;
       KMP_APP.scene.requestDraw();
       KMP_APP.sync.reportView();
@@ -59,7 +59,8 @@ KMP_APP.selection = (() => {
 
   async function runTrace({ framePath = false, preserveWindow = false } = {}) {
     try {
-      const trace = await api("/api/trace", { about: model.about, from: tracePick.from, to: tracePick.to });
+      const owner = model.byRef.get(tracePick.from)?.about || model.about;
+      const trace = await api("/api/trace", { about: owner, from: tracePick.from, to: tracePick.to });
       if (framePath) {
         await KMP_APP.sync.frameRefs(trace.nodes.map((node) => node.id));
       } else if (!preserveWindow) {

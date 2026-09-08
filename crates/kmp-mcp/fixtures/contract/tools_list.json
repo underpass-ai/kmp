@@ -1992,7 +1992,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
+      "description": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2168,7 +2168,7 @@
                 "type": "string"
               },
               "entries": {
-                "description": "Maximum number of trace relations to return in this page.",
+                "description": "Maximum number of items from facts, declared, coordinate, tensions and proposed, in that order, to return in this page.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -2190,7 +2190,7 @@
             "type": "array"
           },
           "declared": {
-            "description": "The relations each about declared between its own facts, cut to the selection, with class, why, evidence and confidence. Abouts declare nothing across each other, so none of these crosses an about.",
+            "description": "Stored relations cut to the selection, with class, why, evidence and confidence. Includes writer-declared same_event_as and same_entity_as across abouts; other relations remain within their owning about.",
             "type": "array"
           },
           "facts": {
@@ -2305,7 +2305,7 @@
             "type": "object"
           },
           "proposed": {
-            "description": "Pairs of facts of different abouts the kernel proposes are about the same thing, at most three per fact, strongest first: `from`, `to`, `proposed_by` (`identifier`, `summary`, `entity`, strongest first), the `shared` identifiers with the `idf` of the rarest across the span, the `shared_terms` and `bridged` concept pairs of matching summaries, the `entities` both name, the label both stand in as `dimension` and `scope_id`, the `weight` the signals sum to, and `why`. Reproducible bit for bit and never stored: a writer may declare one, with this as the proof.",
+            "description": "Pairs of facts of different abouts the kernel proposes are about the same thing, at most three per fact, strongest first: `from`, `to`, `proposed_by` (`identifier`, `summary`, `entity`, strongest first), the `shared` identifiers with the `idf` of the rarest across the span, the `shared_terms` and `bridged` concept pairs of matching summaries, the `entities` both name, the label both stand in as `dimension` and `scope_id`, the `weight` the signals sum to, and `why`. Reproducible bit for bit and never stored. These signals propose a comparison, not proven identity. A writer copies from, to and proposed_by into read_context.relate_proposals and supplies source-backed why and evidence before declaring an equivalence.",
             "type": "array"
           },
           "summary": {
@@ -4827,7 +4827,7 @@
                 "type": "array"
               },
               "labels": {
-                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value the about's catalogue does not hold is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
+                "description": "Label predicates the loom filters its projection by, all of which must hold — the same `{ key, op, values }` every read takes under `dimensions.selectors`. Labels are ordinary attributes; a predicate keeps or drops whole entries without duplicating them across planes. A key or value absent from the primary and additional abouts' catalogues is reported as unhonored, never drawn as if it were data; read `kmp_wake`'s `labels` first.",
                 "items": {
                   "additionalProperties": false,
                   "properties": {

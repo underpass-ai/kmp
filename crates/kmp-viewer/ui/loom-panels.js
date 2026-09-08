@@ -48,11 +48,13 @@ KMP_APP.panels = (() => {
     KMP_APP.catalogue.renderLabels();
 
     const kinds = new Map();
-    const projectedKinds = Object.entries((model.projection && model.projection.by_kind) || {});
-    if (projectedKinds.length) {
-      for (const [kind, count] of projectedKinds) kinds.set(kind, Number(count));
-    } else if (model.entries.length) {
-      for (const m of model.entries) kinds.set(m.kind, (kinds.get(m.kind) || 0) + 1);
+    for (const projection of [model.projection || {}, ...model.layerProjections.map((layer) => layer.projection)]) {
+      const projectedKinds = Object.entries(projection.by_kind || {});
+      if (projectedKinds.length) {
+        for (const [kind, count] of projectedKinds) kinds.set(kind, (kinds.get(kind) || 0) + Number(count));
+      } else {
+        for (const entry of projection.entries || []) kinds.set(entry.kind, (kinds.get(entry.kind) || 0) + 1);
+      }
     }
     const kindList = $("kind-legend");
     kindList.textContent = "";
@@ -217,7 +219,8 @@ KMP_APP.panels = (() => {
   /* ---------------- diff panel ---------------- */
 
   function pinComparison(side) {
-    if (model.currentLod !== "moment" || model.projection?.truncated) {
+    if (model.currentLod !== "moment" || model.projection?.truncated ||
+        model.layerProjections.some(layer => layer.error || layer.projection.truncated)) {
       KMP_APP.dom.showError("Choose a complete Memories window before pinning a comparison."); return;
     }
     const selected = view.selectedRef && model.byRef.get(view.selectedRef);
