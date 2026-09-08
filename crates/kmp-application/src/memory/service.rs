@@ -573,7 +573,10 @@ fn temporal_result(
         request
     };
 
-    let traversal = TemporalMemoryTraversal::traverse(&source_bundle, &request)?;
+    // Select against the original label map. The returned source bundle has
+    // already dropped excluded lanes, which may carry labels a selector needs.
+    // Traversal applies the same coordinate and entry filters before paging.
+    let traversal = TemporalMemoryTraversal::traverse(&context.bundle, &request)?;
 
     Ok(TemporalMemoryResult {
         traversal,
