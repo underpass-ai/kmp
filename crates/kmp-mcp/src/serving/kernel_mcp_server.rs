@@ -219,7 +219,7 @@ impl KernelMcpServer {
                 }
                 let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
                     &resolved,
-                    crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts::owned(),
+                    crate::guide::abouts_owned(),
                 );
                 let server = Self::with_retrying_embedded_backend(
                     crate::serving::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(

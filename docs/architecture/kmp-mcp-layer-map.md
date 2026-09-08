@@ -91,9 +91,9 @@ an audit finding demotes a file back into this table.
 Small PRs, iterated as drafts on the dev loop, each landing through the full
 gate. A slice is one bounded context step, never one big file split for its
 own sake. Before moving any file, check who reads it by name:
-`documentation-spine.sh`, `mcp-registry.sh` and `kmp-agent-routing-contract.py`
-read `protocol.rs` as text today and switch to
-`fixtures/contract/tools_list.json` in slice 5.
+This migration map originally listed source-text scanners. The subsequent
+CI simplification removes the prose-routing scanner and its simulated traces;
+native contract tests remain the authority for runtime behavior.
 
 | # | Slice | Absorbs | Why this order |
 |:--|:--|:--|:--|

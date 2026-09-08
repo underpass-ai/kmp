@@ -1,4 +1,4 @@
-use kmp_mcp::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
+use kmp_mcp::guide;
 use kmp_mcp::summaries::pending;
 
 use super::{looks_like_option, unknown_option};
@@ -41,9 +41,8 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
             return 2;
         }
     };
-    let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
-        store.export_bundle_excluding_abouts_blocking(&ShippedGuideAbouts::owned())
-    });
+    let bundle = kmp_embedded::EmbeddedKernelStore::open(resolved.path())
+        .and_then(|store| store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned()));
     let bundle = match bundle {
         Ok(bundle) => bundle,
         Err(error) => {

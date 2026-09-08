@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use kmp_mcp::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
+use kmp_mcp::guide;
 
 use super::{looks_like_option, unknown_option};
 
@@ -142,7 +142,7 @@ pub(super) async fn run(command: &str, first_argument: Option<&str>, args: &[&st
                 // copy of the guide in every repository that uses KMP and
                 // produce a diff on every version that bumps it.
                 store
-                    .export_bundle_excluding_abouts(&ShippedGuideAbouts::owned())
+                    .export_bundle_excluding_abouts(&guide::abouts_owned())
                     .await
             } else {
                 // An explicit path is a backup or a migration, and it takes

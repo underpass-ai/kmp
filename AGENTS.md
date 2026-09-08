@@ -3,7 +3,7 @@
 ## Public README parity
 
 KMP has three public README surfaces and a change to the product overview must
-update all three in the same change:
+keep all three consistent:
 
 - `README.md` — GitHub repository;
 - `plugins/kmp/README.md` — Codex and Claude plugin marketplaces;
@@ -20,9 +20,8 @@ cargo run --locked --quiet -p kmp-release -- readme sync
 ```
 
 Do not hand-edit the corresponding marked blocks in the other two files.
-Release preparation synchronizes them and CI rejects both byte drift and a
-missing product-contract claim, but the generated changes must still be
-reviewed and committed together.
+Release preparation synchronizes them. Review the generated changes together;
+wording and editorial organization are documentation guidance, not CI gates.
 
 ## Guide parity
 

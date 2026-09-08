@@ -9,7 +9,7 @@ use crate::application::use_cases::prepare_changelog::PrepareChangelog;
 use crate::application::use_cases::prepare_release_version::PrepareReleaseVersion;
 use crate::application::use_cases::read_workspace_version::ReadWorkspaceVersion;
 use crate::application::use_cases::stamp_server_mcpb::StampServerMcpb;
-use crate::application::use_cases::sync_public_readme::SyncPublicReadme;
+use crate::application::use_cases::sync_public_readme::sync_public_readme;
 use crate::application::use_cases::verify_candidate::VerifyCandidate;
 use crate::application::use_cases::verify_marketplace::VerifyMarketplace;
 use crate::application::use_cases::write_guide_assets::WriteGuideAssets;
@@ -87,8 +87,7 @@ where
                 ))
             }
             ReleaseCommandDto::SyncReadme { source, targets } => {
-                let changed =
-                    SyncPublicReadme::new(&self.file_system).execute(&source, &targets)?;
+                let changed = sync_public_readme(&self.file_system, &source, &targets)?;
                 Ok(if changed == 0 {
                     "public README sync: already current".to_string()
                 } else {
