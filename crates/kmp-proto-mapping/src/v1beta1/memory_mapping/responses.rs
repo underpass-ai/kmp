@@ -30,11 +30,11 @@ use super::temporal_admission::TemporalAdmission;
 pub const UNANSWERED: &str = "UNKNOWN";
 use super::bundle_views::{
     about_by_entry, abouts_in_bundle, answer_evidence_from_bundle, answer_relations_from_bundle,
-    bundle_memory_metadata, memory_evidence_from_bundle, memory_relation_from_bundle_relationship,
-    memory_relations_from_bundle, persisted_memory_metadata, persisted_memory_source, proof,
-    proto_coordinate_from_domain, proto_relation_explanation, rendered_current_state,
-    rendered_summary, superseded_from_relations, temporal_evidence_from_bundle,
-    temporal_relations_from_bundle,
+    bundle_memory_metadata, conflicts_from_relations, memory_evidence_from_bundle,
+    memory_relation_from_bundle_relationship, memory_relations_from_bundle,
+    persisted_memory_metadata, persisted_memory_source, proof, proto_coordinate_from_domain,
+    proto_relation_explanation, rendered_current_state, rendered_summary,
+    superseded_from_relations, temporal_evidence_from_bundle, temporal_relations_from_bundle,
 };
 use super::dimensions::proto_dimension_selection_from_domain;
 use super::memory_catalog::labels_from_bundle;
@@ -185,6 +185,8 @@ pub fn wake_response_from_result(
         }),
         proof: {
             let mut wake_proof = proof(relationships, evidence, withheld, MemoryConfidence::Medium);
+            wake_proof.conflicts =
+                conflicts_from_relations(&wake_proof.path, lifecycle.superseded_refs());
             // The field has been in the contract since the proof shape
             // existed and nothing ever filled it, so a memory whose
             // applicability ended arrived as current state next to an empty
@@ -310,6 +312,7 @@ pub fn ask_response_from_result(
     let admission = TemporalAdmission::read(&result.bundle, temporal)?;
     let bounded = admission.bound(&result.bundle);
     let lifecycle = lifecycle_for(&bounded, &admission);
+    let superseded_refs = lifecycle.superseded_refs().clone();
     let ranker = AnswerEvidenceRanker::from_bundle_at(&bounded, bridge, lifecycle);
     // What the selection admits is decided before the ranker weighs a word,
     // so the collection its statistics read is the selection's own: a word
@@ -410,6 +413,9 @@ pub fn ask_response_from_result(
         confidence,
     );
     answer_proof.matched_terms = matched_terms;
+    // A replacement can lie outside the retained answer path. Use lifecycle
+    // from the whole admitted bundle when deciding which conflicts are live.
+    answer_proof.conflicts = conflicts_from_relations(&answer_proof.path, &superseded_refs);
     answer_proof.matched_relations = matched_relations;
     // Ask withholds an entry whose applicability ended rather than offering it
     // as current. Saying so is what separates that from having nothing.

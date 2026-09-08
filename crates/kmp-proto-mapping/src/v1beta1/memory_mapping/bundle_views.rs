@@ -272,8 +272,11 @@ pub(super) fn proof(
     confidence: MemoryConfidence,
 ) -> Proof {
     let path = normalize_proof_path(path, &evidence);
-    let conflicts = conflicts_from_relations(&path);
     let superseded = superseded_from_relations(&path);
+    let conflicts = conflicts_from_relations(
+        &path,
+        &superseded.iter().map(|item| item.r#ref.clone()).collect(),
+    );
     let frontier_size = missing.len() as u32;
     Proof {
         path,
@@ -442,9 +445,15 @@ fn is_supersession(value: &str) -> bool {
     MemoryRelationType::new(value).is_ok_and(|relation_type| relation_type.as_str() == "supersedes")
 }
 
-fn conflicts_from_relations(path: &[MemoryRelation]) -> Vec<String> {
+pub(super) fn conflicts_from_relations(
+    path: &[MemoryRelation],
+    superseded: &BTreeSet<String>,
+) -> Vec<String> {
     path.iter()
         .filter(|relation| is_conflict_relation(&relation.rel))
+        .filter(|relation| {
+            !superseded.contains(&relation.source_ref) && !superseded.contains(&relation.target_ref)
+        })
         .map(conflict_summary)
         .collect::<BTreeSet<_>>()
         .into_iter()
@@ -1003,8 +1012,9 @@ mod tests {
 
 #[cfg(test)]
 mod superseded_tests {
-    use super::superseded_from_relations;
+    use super::{conflicts_from_relations, superseded_from_relations};
     use kmp_proto::v1beta1::MemoryRelation;
+    use std::collections::BTreeSet;
 
     fn relation(rel: &str, source: &str, target: &str, why: &str) -> MemoryRelation {
         MemoryRelation {
@@ -1046,6 +1056,27 @@ mod superseded_tests {
             )])
             .is_empty()
         );
+    }
+
+    #[test]
+    fn only_a_replaced_endpoint_clears_a_live_conflict() {
+        let path = [relation(
+            "contradicts",
+            "claim:a",
+            "claim:b",
+            "exclusive assignments",
+        )];
+        assert_eq!(conflicts_from_relations(&path, &BTreeSet::new()).len(), 1);
+        for endpoint in ["claim:a", "claim:b"] {
+            assert!(
+                conflicts_from_relations(&path, &BTreeSet::from([endpoint.to_string()])).is_empty()
+            );
+        }
+        assert_eq!(
+            conflicts_from_relations(&path, &BTreeSet::from(["claim:other".to_string()])).len(),
+            1
+        );
+        assert_eq!(path[0].rel, "contradicts", "the audit edge is retained");
     }
 
     #[test]
