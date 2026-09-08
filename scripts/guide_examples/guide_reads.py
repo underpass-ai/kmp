@@ -17,7 +17,7 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     topics = {'advanced:relations', 'advanced:scope'}
     if lesson.stem in {'decision-history', 'alias-ownership'}:
         topics.update({'advanced:lifecycle', 'advanced:summary'})
-    elif lesson.stem in {'four-clocks', 'quantities'}:
+    elif lesson.stem in {'four-clocks', 'quantities', 'late-conflict'}:
         topics.add('advanced:lifecycle')
 
     native_call = client.call

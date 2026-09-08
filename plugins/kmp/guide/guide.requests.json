@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:8f47d22cac487861cc3d",
+    "idempotency_key": "ingest:guide-sync:1:agent:29a71cbb6d4720651cb0",
     "memory": {
       "dimensions": [
         {
@@ -704,7 +704,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit and quantity settlement; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
         },
         {
           "coordinates": [
@@ -912,17 +912,16 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:late-conflict",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Conflicting assignments and evidence received late",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Worked example: conflicting assignments and a record received late\n\nTwo reports name different sole operators for the same shift. Keep the claims\nand their provenance. A later receipt is not a reason to choose a winner.\nOnly the signed record and the explicit review decision below resolve this\nparticular conflict. KMP preserves the interpretation and its proof; the LLM\nmust decide whether the sources justify it.\n\nThis is a fictional teaching history for `example:guide:late-conflict`.\nIn a writer evaluation, give the LLM only the sources available at each step,\nthe installed guide and the live tools. Do not provide future sources, reader\nquestions or expected answers. Replaying these authored calls exercises the\nnative contract; it does not measure a writer LLM learning to use KMP.\n\n## Sources, clocks and choices\n\nAll times are UTC. SHIFT-6 is the September 1 interval [08:00, 12:00),\ncomponent journal, environment field. The reports assert the assignment for\nthat entire interval, so their `occurred_at` is the asserted shift start.\nThe signed record uses the same event time. This does not turn a report into\na verified fact. P1 and D1 are review decisions: their event time is when the\nreview took place, not the earlier shift. Each `observed_at` is the explicit\nreceipt time below; ingestion happens at execution and must not be backdated.\nThe shift interval stays in the evidence. These report memories have no\ninvented validity interval: they are claims about a completed shift, not\ncurrently active assignments that expire when the shift ends.\n\n| Source | Event time | Receipt time | Literal source |\n| --- | --- | --- | --- |\n\n| R1, dispatch report | 2026-09-01T08:00:00Z | 2026-09-02T09:00:00Z | R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record. |\n\n| R2, service desk report | 2026-09-01T08:00:00Z | 2026-09-03T09:00:00Z | R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record. |\n\n| P1, review decision | 2026-09-03T10:00:00Z | 2026-09-03T10:00:00Z | P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth. |\n\n| L1, signed duty record received late | 2026-09-01T08:00:00Z | 2026-09-05T09:00:00Z | L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC. |\n\n| D1, final review decision | 2026-09-05T09:05:00Z | 2026-09-05T09:05:00Z | D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC. |\n\nR1, R2 and L1 are observations of attributed source statements. P1 and D1 are\ndecisions actually stated by the reviewer; the writer is not inventing them.\n`contradicts` relates the mutually exclusive assignments inside R1 and R2,\nnot the fact that both reports were received. Confidence in that contradiction\ndoes not express confidence that either assignment is true.\n\nThe process and task identify this teaching workflow. Reuse the component,\nenvironment and shift labels from the initial catalogue. They narrow retrieval\nbut establish neither operator identity nor truth. No `same_entity_as` is\njustified between Maya and Zoe, and no synonym rule can choose the operator.\n\n## Call notation and the first report\n\nRead the brief `guide/AGENT.md`, the relevant indexed verbs, and the lifecycle,\nrelations and scope topics. Reuse those bodies while they remain in context.\nEach JSON block names a tool, its arguments and a local `save_as` binding.\nSend only `arguments`. `${first.generated_refs.0}` means copy the exact ref\nreturned earlier; never send a placeholder or build your own ref. The replay\nresolves these bindings and records the actual native requests and responses.\nAn unexpected error or incomplete page stops it; continue a real partial page\nwith its cursor before claiming a complete result.\n\nAn isolated empty about returns the expected `not_found`. If it exists instead,\ninspect the existing memory and labels; never bypass strict linking rules.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"initial\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"budget\": {\n      \"max_bytes\": 20000,\n      \"detail\": \"full\"\n    }\n  },\n  \"expect_error\": \"not_found\"\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"first\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"actor\": \"guide-writer\",\n    \"intent\": \"record_observation\",\n    \"idempotency_key\": \"guide-late-conflict:first:v1\",\n    \"scope\": {\n      \"process\": \"duty-review\",\n      \"task\": \"responsibility-review\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"field\",\n      \"shift\": \"SHIFT-6\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-02T09:00:00Z\",\n    \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record.\",\n      \"summary_en\": \"Who handled SHIFT-6? Dispatch report R1 names Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.\",\n      \"evidence\": \"R1, dispatch report; received 2026-09-02T09:00:00Z: R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record.\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"first_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${first.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_open\",\n  \"save_as\": \"opened\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"initial_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${opened.view_revision}\",\n    \"idempotency_key\": \"guide-late-conflict:view-initial:v1\",\n    \"explanation\": \"Inspect initial evidence for SHIFT-6 on the observed clock\",\n    \"focus\": {\n      \"time_range\": {\n        \"axis\": \"observed\",\n        \"from\": \"2026-09-01T00:00:00Z\",\n        \"to\": \"2026-09-03T00:00:00Z\"\n      }\n    },\n    \"projection\": {\n      \"semantic_zoom\": \"moment\",\n      \"dimensions\": [\n        \"shift\"\n      ],\n      \"labels\": [\n        {\n          \"key\": \"shift\",\n          \"op\": \"in\",\n          \"values\": [\n            \"SHIFT-6\"\n          ]\n        }\n      ],\n      \"relation_classes\": [\n        \"evidential\",\n        \"motivational\"\n      ]\n    },\n    \"selection\": \"${first.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"initial_state\",\n  \"arguments\": {}\n}\n```\n\nThe initial view contains one attributed report. It is not a confirmed roster.\n\n## Preserve disagreement and the provisional decision\n\nR2 arrives a day later. The same component, shift and interval make these\nassignments incompatible. Inspect the earlier target before linking, and\nreuse the catalogue. Do not add `supersedes`: neither source withdraws R1.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"before_second\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"second\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"actor\": \"guide-writer\",\n    \"intent\": \"record_observation\",\n    \"idempotency_key\": \"guide-late-conflict:second:v1\",\n    \"scope\": {\n      \"process\": \"duty-review\",\n      \"task\": \"responsibility-review\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"field\",\n      \"shift\": \"SHIFT-6\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-03T09:00:00Z\",\n    \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record.\",\n      \"summary_en\": \"Who handled SHIFT-6? Service desk report R2 names Zoe as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.\",\n      \"evidence\": \"R2, service desk report; received 2026-09-03T09:00:00Z: R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${first.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${first.generated_refs.0}\",\n        \"rel\": \"contradicts\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"R1 and R2 assign sole responsibility to different people for the same SHIFT-6 interval, component and environment; both claims cannot be true under those conditions.\",\n        \"evidence\": \"R1 names Maya alone; R2 names Zoe alone. Both specify SHIFT-6, journal in field, September 1 from 08:00 to 12:00 UTC.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"second_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${second.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"pending\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"actor\": \"guide-writer\",\n    \"intent\": \"record_decision\",\n    \"idempotency_key\": \"guide-late-conflict:pending:v1\",\n    \"scope\": {\n      \"process\": \"duty-review\",\n      \"task\": \"responsibility-review\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"field\",\n      \"shift\": \"SHIFT-6\"\n    },\n    \"occurred_at\": \"2026-09-03T10:00:00Z\",\n    \"observed_at\": \"2026-09-03T10:00:00Z\",\n    \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth.\",\n      \"summary_en\": \"Which SHIFT-6 operator can be confirmed? P1 leaves Maya versus Zoe unresolved because R1 and R2 conflict for the same component and interval without signed proof. The reviewer keeps both reports and requests a signed roster instead of trusting the later receipt.\",\n      \"evidence\": \"P1, review decision; received 2026-09-03T10:00:00Z: P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${first.generated_refs.0}\",\n        \"${second.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${first.generated_refs.0}\",\n        \"rel\": \"chosen_because\",\n        \"class\": \"motivational\",\n        \"confidence\": \"high\",\n        \"why\": \"P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.\",\n        \"evidence\": \"P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order.\"\n      },\n      {\n        \"ref\": \"${second.generated_refs.0}\",\n        \"rel\": \"chosen_because\",\n        \"class\": \"motivational\",\n        \"confidence\": \"high\",\n        \"why\": \"P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.\",\n        \"evidence\": \"P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"pending_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${pending.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"unresolved\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    },\n    \"axis\": \"observed\",\n    \"as_of\": {\n      \"time\": \"2026-09-04T00:00:00Z\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"conflict_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${initial_state.view_revision}\",\n    \"idempotency_key\": \"guide-late-conflict:view-conflict:v1\",\n    \"explanation\": \"Inspect conflict evidence for SHIFT-6 on the observed clock\",\n    \"focus\": {\n      \"time_range\": {\n        \"axis\": \"observed\",\n        \"from\": \"2026-09-01T00:00:00Z\",\n        \"to\": \"2026-09-04T00:00:00Z\"\n      }\n    },\n    \"projection\": {\n      \"semantic_zoom\": \"moment\",\n      \"dimensions\": [\n        \"shift\"\n      ],\n      \"labels\": [\n        {\n          \"key\": \"shift\",\n          \"op\": \"in\",\n          \"values\": [\n            \"SHIFT-6\"\n          ]\n        }\n      ],\n      \"relation_classes\": [\n        \"evidential\",\n        \"motivational\"\n      ]\n    },\n    \"selection\": \"${pending.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"conflict_state\",\n  \"arguments\": {}\n}\n```\n\nRead `proof.conflicts`: R1 and R2 are still live. `proof.superseded` is empty.\nThe evidence-backed conclusion is: **no se puede determinar** quién tuvo la\nresponsabilidad con R1 y R2. P1 records exactly that uncertainty. A retrieval\nresponse can return these relevant texts successfully; that does not mean\nKMP has resolved the disagreement or must emit the token `UNKNOWN`.\n\nIn ChronoLoom select R2 to see its `contradicts` edge to R1, then P1 to see\nthe two motivational links. Relation class is not source certainty.\n\n## Receive the late proof, then record the explicit resolution\n\nL1 becomes available on September 5. Its signed assignment concerns September 1.\nThe `answers` edge is deliberately narrow: L1 supplies the record P1 requested;\nit does not claim that the review caused the old shift or created the record.\nDo not infer authenticity from the word “signed” in arbitrary real data:\nthe signatures and their matching shift scope are explicit premises here.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"record\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"actor\": \"guide-writer\",\n    \"intent\": \"record_observation\",\n    \"idempotency_key\": \"guide-late-conflict:record:v1\",\n    \"scope\": {\n      \"process\": \"duty-review\",\n      \"task\": \"responsibility-review\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"field\",\n      \"shift\": \"SHIFT-6\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-05T09:00:00Z\",\n    \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC.\",\n      \"summary_en\": \"What proves SHIFT-6 responsibility? Signed record L1 identifies Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, and Zoe as standby. Both attest the whole period. Received September 5 at 09:00 UTC, it answers P1.\",\n      \"evidence\": \"L1, signed duty record received late; received 2026-09-05T09:00:00Z: L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${pending.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${pending.generated_refs.0}\",\n        \"rel\": \"answers\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"L1 supplies the signed duty record explicitly requested by the unresolved P1 review.\",\n        \"evidence\": \"L1 states that both Maya and Zoe signed the full SHIFT-6 interval and that this record answers the request in P1.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"record_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${record.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\nInspect the replacement targets again before D1. An inspection shows current\nobjects and links, not a snapshot at the scene clock. The dated recall below\nis what checks prior knowledge. D1 replaces only the wrong assignment R2 and\nthe unresolved review P1. R1 remains a historical report consistent with L1.\n`verified_by` points to the signed source; each `supersedes` explains the\nspecific replacement. Do not delete either old object or change its clocks.\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"second_before_resolution\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${second.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"pending_before_resolution\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${pending.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"resolved\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"actor\": \"guide-writer\",\n    \"intent\": \"record_decision\",\n    \"idempotency_key\": \"guide-late-conflict:resolved:v1\",\n    \"scope\": {\n      \"process\": \"duty-review\",\n      \"task\": \"responsibility-review\"\n    },\n    \"labels\": {\n      \"component\": \"journal\",\n      \"environment\": \"field\",\n      \"shift\": \"SHIFT-6\"\n    },\n    \"occurred_at\": \"2026-09-05T09:05:00Z\",\n    \"observed_at\": \"2026-09-05T09:05:00Z\",\n    \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC.\",\n      \"summary_en\": \"Who is confirmed for SHIFT-6? D1 uses signed L1 to confirm Maya for September 1, 08:00 to 12:00 UTC. The September 5, 09:05 UTC review replaces the Zoe assignment in R2 and the uncertainty in P1, retaining R1, R2 and P1 as historical evidence.\",\n      \"evidence\": \"D1, final review decision; received 2026-09-05T09:05:00Z: D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${record.generated_refs.0}\",\n        \"${second.generated_refs.0}\",\n        \"${pending.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${record.generated_refs.0}\",\n        \"rel\": \"verified_by\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"D1 confirms Maya for the exact disputed SHIFT-6 interval because L1 bears both signatures and identifies Zoe as standby only.\",\n        \"evidence\": \"L1: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval.\"\n      },\n      {\n        \"ref\": \"${second.generated_refs.0}\",\n        \"rel\": \"supersedes\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"D1 explicitly replaces the R2 assignment to Zoe with the confirmed Maya assignment after receiving L1; R2 remains evidence of the earlier report.\",\n        \"evidence\": \"D1: Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence.\"\n      },\n      {\n        \"ref\": \"${pending.generated_refs.0}\",\n        \"rel\": \"supersedes\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The signed record supplies the proof that P1 lacked, and D1 explicitly closes that unresolved review from September 5 at 09:05 UTC.\",\n        \"evidence\": \"D1 confirms Maya based on signed record L1, replaces the unresolved P1 decision, and dates the known conclusion to September 5 at 09:05 UTC.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"resolved_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${resolved.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n## Compare what was known with what happened\n\nRepeat the earlier observed selection after the resolution has been written.\nIt must still return the contradiction without applying the later replacement.\nThen read the later selection. These are two intentional historical selections,\nnot retries to force an answer. Preserve the proof and its declared clock.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"unresolved_again\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    },\n    \"axis\": \"observed\",\n    \"as_of\": {\n      \"time\": \"2026-09-04T00:00:00Z\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"resolved_recall\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    },\n    \"axis\": \"observed\",\n    \"as_of\": {\n      \"time\": \"2026-09-06T00:00:00Z\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_ask\",\n  \"save_as\": \"ask_before\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"question\": \"Who was the sole responsible operator for SHIFT-6?\",\n    \"asked_as\": \"¿Quién tuvo la responsabilidad única de SHIFT-6?\",\n    \"axis\": \"observed\",\n    \"as_of\": {\n      \"time\": \"2026-09-04T00:00:00Z\"\n    },\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_ask\",\n  \"save_as\": \"ask_after\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"question\": \"Who was the sole responsible operator for SHIFT-6?\",\n    \"asked_as\": \"¿Quién tuvo la responsabilidad única de SHIFT-6?\",\n    \"axis\": \"observed\",\n    \"as_of\": {\n      \"time\": \"2026-09-06T00:00:00Z\"\n    },\n    \"budget\": {\n      \"max_bytes\": 120000,\n      \"detail\": \"full\"\n    }\n  }\n}\n```\n\nAsk is an optional semantic entrance to this same proof. Inspect the returned\nsources and the lifecycle markers; do not interpret its answer wrapper as a\nnew judgment. Before L1 and D1 the supported answer is uncertainty; afterward\nit is Maya, with L1 and D1 as proof. Neither result proves anything outside\nSHIFT-6. A genuinely semantic UNKNOWN follows the guide's selection limit;\ndo not use navigation to bypass it. The next calls have the separate, explicit\npurpose of comparing the event timeline and known history.\n\n```json\n{\n  \"tool\": \"kmp_goto\",\n  \"save_as\": \"shift_events\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"at\": {\n      \"time\": \"2026-09-01T08:00:00Z\"\n    },\n    \"axis\": \"occurred\",\n    \"dimensions\": {\n      \"mode\": \"only\",\n      \"include\": [\n        \"shift\"\n      ],\n      \"scope_ids\": [\n        \"SHIFT-6\"\n      ],\n      \"selectors\": [\n        {\n          \"key\": \"component\",\n          \"op\": \"in\",\n          \"values\": [\n            \"journal\"\n          ]\n        },\n        {\n          \"key\": \"environment\",\n          \"op\": \"in\",\n          \"values\": [\n            \"field\"\n          ]\n        }\n      ]\n    },\n    \"limit\": {\n      \"entries\": 20\n    },\n    \"budget\": {\n      \"max_bytes\": 50000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"receipt_history\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"from\": {\n      \"time\": \"2026-09-02T00:00:00Z\"\n    },\n    \"axis\": \"observed\",\n    \"dimensions\": {\n      \"mode\": \"only\",\n      \"include\": [\n        \"shift\"\n      ],\n      \"scope_ids\": [\n        \"SHIFT-6\"\n      ],\n      \"selectors\": [\n        {\n          \"key\": \"component\",\n          \"op\": \"in\",\n          \"values\": [\n            \"journal\"\n          ]\n        },\n        {\n          \"key\": \"environment\",\n          \"op\": \"in\",\n          \"values\": [\n            \"field\"\n          ]\n        }\n      ]\n    },\n    \"limit\": {\n      \"entries\": 20\n    },\n    \"budget\": {\n      \"max_bytes\": 50000\n    }\n  }\n}\n```\n\nThe event-time selection can contain the late record L1 beside R1 and R2 at\nthe asserted shift start. That is not evidence that anyone knew L1 on September 1.\nThe observed traversal places L1 on September 5 and D1 five minutes later.\nIts cursor starts before the earliest receipt, so no inclusive boundary entry\nis lost. Keep only the intended interval when using this pattern on a larger\nhistory; follow all returned pages and deduplicate exact refs.\n\n## Audit the links and old objects\n\nFollow the directed edges. The original R2 text and every original coordinate\nmust survive unchanged. Its current inspection can now show the replacement\nlink; that extra link does not rewrite its receipt time.\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"disagreement\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"from\": \"${second.generated_refs.0}\",\n    \"to\": \"${first.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"signed_proof\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"from\": \"${resolved.generated_refs.0}\",\n    \"to\": \"${record.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"replacement\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"from\": \"${resolved.generated_refs.0}\",\n    \"to\": \"${second.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"closed_review\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"from\": \"${resolved.generated_refs.0}\",\n    \"to\": \"${pending.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"second_after\",\n  \"arguments\": {\n    \"about\": \"example:guide:late-conflict\",\n    \"ref\": \"${second.generated_refs.0}\",\n    \"budget\": {\n      \"max_bytes\": 40000\n    }\n  }\n}\n```\n\n## Review the completed story in ChronoLoom\n\nFrame the September 1 event slice, then return to the complete observed history.\nThe scene's date range selects visible memories. Its catalogue and selected\nobject inspector remain current; use the dated MCP proof for lifecycle at a\npast instant. Moving the view never changes a subsequent retrieval's scope.\nUse the returned revision; if a human moves first, read state and rebase.\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"event_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${conflict_state.view_revision}\",\n    \"idempotency_key\": \"guide-late-conflict:view-event:v1\",\n    \"explanation\": \"Inspect event evidence for SHIFT-6 on the occurred clock\",\n    \"focus\": {\n      \"time_range\": {\n        \"axis\": \"occurred\",\n        \"from\": \"2026-09-01T00:00:00Z\",\n        \"to\": \"2026-09-02T00:00:00Z\"\n      }\n    },\n    \"projection\": {\n      \"semantic_zoom\": \"moment\",\n      \"dimensions\": [\n        \"shift\"\n      ],\n      \"labels\": [\n        {\n          \"key\": \"shift\",\n          \"op\": \"in\",\n          \"values\": [\n            \"SHIFT-6\"\n          ]\n        }\n      ],\n      \"relation_classes\": [\n        \"evidential\",\n        \"motivational\"\n      ]\n    },\n    \"selection\": \"${record.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"event_state\",\n  \"arguments\": {}\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"final_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${event_state.view_revision}\",\n    \"idempotency_key\": \"guide-late-conflict:view-final:v1\",\n    \"explanation\": \"Inspect final evidence for SHIFT-6 on the observed clock\",\n    \"focus\": {\n      \"time_range\": {\n        \"axis\": \"observed\",\n        \"from\": \"2026-09-01T00:00:00Z\",\n        \"to\": \"2026-09-06T00:00:00Z\"\n      }\n    },\n    \"projection\": {\n      \"semantic_zoom\": \"moment\",\n      \"dimensions\": [\n        \"shift\"\n      ],\n      \"labels\": [\n        {\n          \"key\": \"shift\",\n          \"op\": \"in\",\n          \"values\": [\n            \"SHIFT-6\"\n          ]\n        }\n      ],\n      \"relation_classes\": [\n        \"evidential\",\n        \"motivational\"\n      ]\n    },\n    \"selection\": \"${resolved.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"final_state\",\n  \"arguments\": {}\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"view_state\",\n  \"arguments\": {}\n}\n```\n\nThe initial scene has one report; the conflict scene has two reports and P1;\nthe final observed scene has all five memories, with observations and decisions\nand both evidential and motivational relations. Select D1 and follow\n`verified_by` to L1 and `supersedes` to R2 or P1. Select R2 to inspect the\noriginal disagreement. A counter can include more relations than the selection\nmode draws; do not report its count as all arcs being visible simultaneously.\n\n## Negative cases and limits\n\n- R2 being later does not justify supersession. With only R1 and R2, retain\n  both and report uncertainty. A high-confidence contradiction cannot choose\n  a high-confidence winner.\n- If the reports concern different shifts, components, intervals or meanings\n  of responsibility, investigate that distinction before asserting conflict.\n  The same names or opposite labels alone prove nothing.\n- If L1 lacks an attestation for the whole disputed interval, or its provenance\n  cannot be checked, keep the uncertainty. The presence of an evidence string\n  is not automatic authentication, truth checking or authority resolution.\n- Do not backdate D1 to the old shift or stamp L1's receipt as September 1.\n  That would leak later knowledge into historical observed retrieval.\n- `supersedes` is a declared lifecycle. A path to L1 alone does not replace R2;\n  D1 explicitly authorizes that replacement in this scenario. Old assertions\n  remain inspectable and the earlier conflict remains historically visible.\n- There is no basis here for other shifts, person aliases, performance or\n  monetary totals. Do not extrapolate from the labels or these proof paths.\n\nNo editorial CI gate is needed for this explanation. The standalone replay\nchecks the native writes, unchanged history, historical conflict, replacement\nproof and view state. Writer learning still needs unseen sources and a blind\nreader evaluation after the guide work is complete.\n"
         },
         {
           "coordinates": [
@@ -944,17 +943,17 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -976,7 +975,7 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -984,9 +983,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -1008,17 +1007,17 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -1040,17 +1039,17 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1072,17 +1071,17 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -1104,17 +1103,17 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1136,17 +1135,17 @@
               "sequence": 36
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1168,17 +1167,17 @@
               "sequence": 37
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1200,17 +1199,17 @@
               "sequence": 38
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1232,17 +1231,17 @@
               "sequence": 39
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1264,7 +1263,7 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1272,9 +1271,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1296,7 +1295,7 @@
               "sequence": 41
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1304,9 +1303,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1328,17 +1327,17 @@
               "sequence": 42
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1358,6 +1357,38 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 43
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:43:00Z",
+              "occurred_at": "2026-08-28T00:43:00Z",
+              "scope_id": "timeline",
+              "sequence": 44
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 44
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 44
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1736,6 +1767,19 @@
             "guide:kmp-agent:example:quantities"
           ],
           "text": "Nine fictional policy and transaction documents support a new decimal EUR subtotal and an exclusion audit. The native lesson distinguishes corrections, duplicate documents, voids and currency units, preserves earlier evidence and follows directed proof in three shared views.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:late-conflict",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:late-conflict"
+          ],
+          "text": "Five fictional source documents preserve contradictory shift assignments, an unresolved review, a signed record received late and an explicit final resolution. Native historical reads retain the earlier conflict after the later replacement.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2188,10 +2232,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "R1 and R2 remain contradictory before L1 and D1 arrive; the later resolution supersedes R2 and P1 while an earlier observed recall retains their prior state.",
+          "from": "guide:kmp-agent:example:late-conflict",
+          "rel": "uses_background",
+          "sequence": 26,
+          "to": "guide:kmp-agent:advanced:lifecycle",
+          "why": "The shift review distinguishes a live contradiction from a later declared replacement and reads both at their observed instants."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2201,7 +2255,7 @@
           "evidence": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2211,7 +2265,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2221,7 +2275,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2231,7 +2285,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2241,7 +2295,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2251,7 +2305,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2261,7 +2315,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2271,7 +2325,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 34,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2281,7 +2335,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 35,
+          "sequence": 36,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2291,7 +2345,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 36,
+          "sequence": 37,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2301,7 +2355,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 37,
+          "sequence": 38,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2311,7 +2365,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 38,
+          "sequence": 39,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2321,7 +2375,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 39,
+          "sequence": 40,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2331,7 +2385,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 40,
+          "sequence": 41,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -2347,7 +2401,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:57f019fa94a71ff28108",
+    "idempotency_key": "ingest:guide-sync:1:person:8e08d194f91b18d8256a",
     "memory": {
       "dimensions": [
         {
@@ -2941,6 +2995,36 @@
             "source": "editorial"
           },
           "text": "TRIP-7 has a transport charge, a corrected hotel invoice, a duplicate copy, a voided meal and a separate USD charge. Ask the agent to read guide:kmp-agent:example:quantities and run the isolated lesson. In ChronoLoom start on September 1 observed time, before correction and cancellation. Then show the EUR source slice: six documents are not six expenses. Follow corrects from H-1 to H-0, same_event_as from H-1-C to H-1, and updates_state from the void to the meal. Finally select CALC-7: total_of points to 20.00 EUR and 35.00 EUR, while the incoming exclusion audit explains what was omitted and why. Follow that audit to its source documents. The subtotal is 55.00 EUR; 7.00 USD stays separate without a conversion rate. The agent calculates from inspected sources; KMP stores the value and proof, and writer acceptance does not check arithmetic. Moving the view does not rewrite earlier receipts or make the later total known sooner. This authored replay is not an LLM learning benchmark."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:19:00Z",
+              "occurred_at": "2026-08-28T00:19:00Z",
+              "scope_id": "timeline",
+              "sequence": 20
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 20
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 20
+            }
+          ],
+          "id": "guide:kmp:advanced:late-conflict",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "SHIFT-6 has two reports assigning sole responsibility to Maya and Zoe for the same interval. Ask the agent to read guide:kmp-agent:example:late-conflict and run the isolated lesson. In ChronoLoom start with R1, then show R2 and the unresolved review P1 on observed time before September 4. Select R2 to inspect contradicts and P1 to follow its two motivational links. The supported conclusion then is that the operator cannot be determined. A signed record L1 arrives September 5 for the September 1 shift; event time can show it beside the older reports, but it was not known sooner. The later review D1 confirms Maya, verified_by L1, and supersedes only R2 and P1. Follow both replacement targets and retain their original evidence. Compare historical observed recall before and after resolution; a current object inspector is not a historical lifecycle snapshot. Receipt order alone never chooses a winner. This authored example checks native behavior, not writer LLM learning."
         }
       ],
       "evidence": [
@@ -3190,6 +3274,19 @@
           ],
           "text": "The source-backed agent lesson records nine original memories and two new derived/audit memories, preserves original clocks, checks decimal operands and frames three stages with explicit observed intervals.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:late-conflict",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:late-conflict"
+          ],
+          "text": "The source-backed lesson preserves five distinct memories, the before/after conflict proof and the original R2 clocks, with four temporal view stages.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -3362,6 +3459,16 @@
           "sequence": 17,
           "to": "guide:kmp:advanced:four-clocks",
           "why": "The settlement example uses the observed clock to separate earlier candidate documents from later correction, cancellation and calculation."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "L1 occurred on September 1 and was observed on September 5; D1 is a September 5 decision and must not be moved back to the shift.",
+          "from": "guide:kmp:advanced:late-conflict",
+          "rel": "uses_background",
+          "sequence": 18,
+          "to": "guide:kmp:advanced:four-clocks",
+          "why": "The late duty record concerns an earlier shift, so the human review must distinguish event time from knowledge at receipt time."
         }
       ]
     },
