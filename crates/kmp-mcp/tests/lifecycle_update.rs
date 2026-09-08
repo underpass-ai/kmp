@@ -61,7 +61,7 @@ fn request(
 }
 
 #[test]
-fn update_from_0_4_2_converges_claude_codex_and_the_shared_engine() {
+fn unpinned_update_uses_latest_and_converges_both_hosts_and_the_shared_engine() {
     let hosts = FakeHostGateway::with_installations(vec![
         installation(Host::Claude, "0.4.2", "/tmp/claude"),
         installation(Host::Codex, "0.4.2", "/tmp/codex"),
@@ -78,11 +78,7 @@ fn update_from_0_4_2_converges_claude_codex_and_the_shared_engine() {
         &FakePluginCache::default(),
         &FakeBridgeStore::default(),
     )
-    .execute(request(
-        LifecycleAction::Update,
-        selected,
-        Some(target.clone()),
-    ))
+    .execute(request(LifecycleAction::Update, selected, None))
     .expect("converged update");
 
     assert_eq!(hosts.refreshes(), vec![Host::Claude, Host::Codex]);

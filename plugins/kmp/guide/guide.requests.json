@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:7f80d6444c881b42503f",
+    "idempotency_key": "ingest:guide-sync:1:agent:f699570a287fb4d49237",
     "memory": {
       "dimensions": [
         {
@@ -333,7 +333,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them."
+          "text": "Synchronize guide assets for requested guide setup/update, a human guide opening that needs current assets, or a confirmed store/version mismatch. The installed guide/AGENT.md is a brief entry with exact references to extended verbs and examples. Read it once while it remains in context; a routine memory call needs no full documentation wake. Sync converges both fixed guide abouts idempotently through kmp-guide-sync.sh; it writes the selected store and may update its maintained bundle. Check the selected store and matching assets before applying them. Software setup/update do not write memory: kmp-update.sh lets the native lifecycle choose the latest public release, or forwards an explicit --version target. The plugin manifest selects the bootstrap engine and default setup version; it must not pin an ordinary update to the old release."
         },
         {
           "coordinates": [

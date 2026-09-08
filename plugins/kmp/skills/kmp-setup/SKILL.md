@@ -13,7 +13,10 @@ proof, effective wiring and plugin-tree parity.
 When a session notice or version comparison says a newer release exists, run
 `<plugin-root>/scripts/kmp-update.sh`. That inventories both native hosts,
 updates every installed KMP plugin, and installs the checksummed engine from
-the same release. Do not update only one host or one half.
+the same release. An ordinary update resolves the latest public release in
+the native lifecycle; `--version <release>` selects an explicit target.
+The installed plugin's manifest only selects the initial bootstrap engine
+and the default setup version. Do not update only one host or one half.
 
 Once the release is proved and every host points at it, the update removes the
 superseded versions each host's plugin cache had kept, leaving the installed

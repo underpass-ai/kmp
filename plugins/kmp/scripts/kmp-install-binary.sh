@@ -11,6 +11,12 @@ version=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
   "$plugin_root/.codex-plugin/plugin.json" | head -n 1)
 version=${version%%+*}
 [ -n "$version" ] || { echo "KMP setup: plugin manifest has no version" >&2; exit 127; }
+# The manifest selects the bootstrap engine, not an upgrade destination.
+# Setup targets this release; update lets Rust resolve latest unless the
+# caller explicitly supplies --version.
+if [ "$action" = setup ]; then
+  set -- --version "$version" "$@"
+fi
 binary=${KMP_MCP_BIN:-"$plugin_root/bin/kmp-mcp"}
 if [ ! -x "$binary" ]; then
   binary=$(command -v kmp-mcp 2>/dev/null || true)
@@ -18,7 +24,7 @@ fi
 if [ -n "$binary" ] && [ -x "$binary" ]; then
   actual=$("$binary" --version 2>/dev/null | sed -n '1s/^kmp-mcp \([^ ]*\).*/\1/p')
   if [ "$actual" = "$version" ]; then
-    exec "$binary" "$action" --version "$version" "$@"
+    exec "$binary" "$action" "$@"
   fi
 fi
 
@@ -52,4 +58,4 @@ fi
 }
 mkdir -p "$install_dir"
 install -m 755 "$scratch/kmp-mcp" "$install_dir/kmp-mcp"
-exec "$install_dir/kmp-mcp" "$action" --version "$version" --engine-dir "$install_dir" "$@"
+exec "$install_dir/kmp-mcp" "$action" --engine-dir "$install_dir" "$@"
