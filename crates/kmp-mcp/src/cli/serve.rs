@@ -171,7 +171,7 @@ async fn server_from_env() -> Result<KernelMcpServer, StartupFailure> {
         .map_err(StartupFailure::after_the_backend_was_chosen)?;
     let commit_native = kmp_embedded::CommitNativeBundle::for_resolved_excluding_abouts(
         &resolved,
-        kmp_mcp::guide::domain::shipped_guide_abouts::ShippedGuideAbouts::owned(),
+        kmp_mcp::guide::abouts_owned(),
     );
     let backend = EmbeddedKernelMcpBackend::open_with_engine_and_commit_native(
         resolved.path(),

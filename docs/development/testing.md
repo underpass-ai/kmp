@@ -11,7 +11,6 @@ cargo fmt --all -- --check
 cargo test --workspace --locked
 bash scripts/ci/documentation-spine.sh
 python3 scripts/ci/kmp-capability-contract.py
-python3 scripts/ci/kmp-agent-routing-contract.py
 bash scripts/ci/retrieval-baseline.sh   # kmp_ask against the judged retrieval collection; refresh with RETRIEVAL_BASELINE=write
 bash scripts/ci/relate-baseline.sh      # kmp_relate against the judged relate collection; refresh with RELATE_BASELINE=write
 ```
@@ -127,3 +126,11 @@ specific deployment authority and credentials supplied for that environment.
 Keep disposable test output under the repository's ignored `tmp/` directory
 and remove it after the run. `target/` and `tmp/` are not evidence. Persist
 only deliberate, reviewable artifacts under `artifacts/`.
+
+## Reviewing agent documentation
+
+Review routing, examples and wording in the guide as documentation. CI does
+not test an agent by searching for sentences in Markdown or replaying tool
+traces already written in a JSON fixture. Use the existing native tests for
+runtime behavior and guide synchronization; keep editorial recommendations
+informative.

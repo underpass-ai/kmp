@@ -1,6 +1,6 @@
 use kmp_embedded::{OrphanedProjectBundle, ResolvedDataDir};
 
-use crate::guide::domain::shipped_guide_abouts::ShippedGuideAbouts;
+use crate::guide;
 use crate::lifecycle::domain::diagnostic_severity::DiagnosticSeverity;
 use crate::lifecycle::domain::lifecycle_finding::LifecycleFinding;
 
@@ -80,19 +80,18 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
             );
         }
     };
-    let authored_text =
-        match kmp_embedded::bundle_excluding_abouts(&text, &ShippedGuideAbouts::owned()) {
-            Ok(bundle) => bundle,
-            Err(error) => {
-                return Some(
-                    LifecycleFinding::new(
-                        DiagnosticSeverity::Fail,
-                        "the committed memory cannot be projected as authored memory",
-                    )
-                    .with_detail(error.to_string()),
-                );
-            }
-        };
+    let authored_text = match kmp_embedded::bundle_excluding_abouts(&text, &guide::abouts_owned()) {
+        Ok(bundle) => bundle,
+        Err(error) => {
+            return Some(
+                LifecycleFinding::new(
+                    DiagnosticSeverity::Fail,
+                    "the committed memory cannot be projected as authored memory",
+                )
+                .with_detail(error.to_string()),
+            );
+        }
+    };
     let authored_header = match kmp_embedded::verify_bundle(&authored_text) {
         Ok(header) => header,
         Err(error) => {
@@ -112,7 +111,7 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
         // sides before comparison: older commit-native writers could publish
         // those release-owned events into the project bundle.
         let live = kmp_embedded::EmbeddedKernelStore::open(resolved.path()).and_then(|store| {
-            store.export_bundle_excluding_abouts_blocking(&ShippedGuideAbouts::owned())
+            store.export_bundle_excluding_abouts_blocking(&guide::abouts_owned())
         });
         let live = match live {
             Ok(live) => live,

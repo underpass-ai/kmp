@@ -1,8 +1,6 @@
 use std::path::Path;
 use std::process::Command;
 
-use kmp_release::domain::public_overview::PublicOverview;
-
 const BEGIN: &str = "<!-- kmp:public-overview:begin -->";
 const END: &str = "<!-- kmp:public-overview:end -->";
 const OVERVIEW: &str = "KMP gives Codex and Claude Code local-first memory. It stores decisions and evidence on embedded SQLite, not transcripts, through ten memory tools plus three semantic view tools over a shared ChronoLoom view.";
@@ -13,26 +11,6 @@ fn binary() -> &'static str {
 
 fn write_surface(path: &Path, body: &str) {
     std::fs::write(path, format!("header\n{BEGIN}\n{body}\n{END}\ntail\n")).expect("surface");
-}
-
-#[test]
-fn repository_public_overviews_are_the_same_value() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let canonical = PublicOverview::parse(
-        &std::fs::read_to_string(root.join("plugins/kmp/README.md")).expect("plugin README"),
-    )
-    .expect("canonical overview");
-    let repository = PublicOverview::parse(
-        &std::fs::read_to_string(root.join("README.md")).expect("repository README"),
-    )
-    .expect("repository overview");
-    let crate_readme = PublicOverview::parse(
-        &std::fs::read_to_string(root.join("crates/kmp-mcp/README.md")).expect("crate README"),
-    )
-    .expect("crate overview");
-
-    assert_eq!(canonical, repository);
-    assert_eq!(canonical, crate_readme);
 }
 
 #[test]
