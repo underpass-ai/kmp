@@ -445,12 +445,15 @@ struct ProjectionPlan {
 
 impl ProjectionPlan {
     fn build(mut value: Value, budget: &ProjectionBudget) -> Self {
-        let mut selection_omitted = 0usize;
+        // Mapping may already have capped the ranked evidence. Those items
+        // are no longer here to count and must not become detail exclusions.
+        let mut selection_omitted =
+            usize::try_from(u64_at(&value, "/projection/selection_omitted")).unwrap_or(usize::MAX);
         if let Some(max_entries) = budget.max_entries
             && let Some(reasons) = array_at_mut(&mut value, &["because"])
             && reasons.len() > max_entries
         {
-            selection_omitted = reasons.len() - max_entries;
+            selection_omitted += reasons.len() - max_entries;
             reasons.truncate(max_entries);
             rebuild_answer(&mut value);
         }
