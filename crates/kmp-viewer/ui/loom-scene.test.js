@@ -236,6 +236,9 @@ test("a late additional-about read cannot replace a newer window or removed laye
       new Promise((resolve) => pending.push({ args, resolve })),
   };
   app.scene = { requestDraw: () => draws++ };
+  app.data = { refreshEntries() {} };
+  app.viewport = { updateAxisLens() {} };
+  app.panels = { renderRail() {}, renderStats() {} };
   Object.assign(app.state.model, { about: "a", currentLod: "moment" });
   Object.assign(app.state.view, {
     layerAbouts: ["b"],

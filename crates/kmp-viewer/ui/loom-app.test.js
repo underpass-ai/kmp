@@ -525,6 +525,46 @@ test("selecting a projected entry inspects it and renders the evidence", async (
   assert.ok(names.includes("panels.renderDetail"));
 });
 
+test("a projected additional-about entry is selected without changing owner or explicit window", async () => {
+  const { app, calls, context } = loom();
+  vm.runInContext(fs.readFileSync(path.join(__dirname, "loom-layers.js"), "utf8"), context);
+  const { model, view } = app.state;
+  model.about = "support";
+  Object.assign(view, {layerAbouts: ["project"], requestedLod: "moment", clock: "occurred",
+    full: {t0: 0, t1: 10000}, t0: 0, t1: 10000});
+  let reads = 0;
+  app.api.fetchProjection = async (about) => {
+    reads++;
+    return {entries: [{ref_id: about === "support" ? "outage" : "recovery",
+      kind: about === "support" ? "observation" : "success_path", text: about,
+      coordinates: [{dimension:"incident", scope_id:"INC-17", occurred_at:"1970-01-01T00:00:05Z"}]}],
+      page:{total:1}, relations:[]};
+  };
+  app.api.call = async (path, params) => {
+    assert.equal(path, "/api/node");
+    assert.equal(params.about, "project", "inspect uses the returned projection's owner, not a parsed ref");
+    assert.equal(params.id, "recovery");
+    return {node:{id:"recovery", kind:"success_path", summary:"restored"}};
+  };
+  app.sync.reportView = () => {};
+  await app.data.loadProjection();
+  assert.equal(model.entries.length, 2);
+  assert.equal(model.total, 2);
+  assert.equal(model.byRef.get("recovery").about, "project");
+  assert.equal(await app.selection.selectEntry("recovery"), true);
+  assert.equal(model.about, "support");
+  assert.equal(view.selectedRef, "recovery");
+  assert.equal(view.t0, 0);
+  assert.equal(view.t1, 10000);
+  assert.equal(reads, 2, "no failed reveal or unintended reframe");
+  assert.ok(calls.some(call => call.name === "panels.renderDetail"));
+  view.layerAbouts = [];
+  await app.data.loadProjection();
+  assert.equal(model.entries.length, 1);
+  assert.equal(model.total, 1);
+  assert.equal(model.byRef.has("recovery"), false, "removed owners are not kept in the selectable index");
+});
+
 test("revealing a ref without temporal coordinates is refused, not faked", async () => {
   const { app, calls } = loom();
   app.state.model.about = "project:x";

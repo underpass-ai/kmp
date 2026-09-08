@@ -352,6 +352,40 @@ pub(crate) fn about_for_intent(arguments: &Value) -> Option<String> {
         })
 }
 
+/// Primary and additional owners after this intent. A supplied projection
+/// replaces the old one; a selection-only move retains its existing layers.
+pub(crate) fn abouts_for_intent(arguments: &Value) -> Vec<String> {
+    let mut abouts = about_for_intent(arguments).into_iter().collect::<Vec<_>>();
+    let layers = if arguments.get("projection").is_some() {
+        arguments
+            .pointer("/projection/abouts")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    } else {
+        ViewRegistry::shared()
+            .view_state(Some(&view_id_of(arguments)))
+            .and_then(|state| state.projection.abouts)
+            .map(|layers| {
+                layers
+                    .abouts()
+                    .iter()
+                    .map(|about| about.as_str().to_string())
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    for layer in layers {
+        if !abouts.contains(&layer) {
+            abouts.push(layer);
+        }
+    }
+    abouts
+}
+
 fn omit_unhonored_projection(intent: &mut ViewIntentDto, unavailable: &UnhonoredProjection) {
     let Some(projection) = intent.projection.as_mut() else {
         return;

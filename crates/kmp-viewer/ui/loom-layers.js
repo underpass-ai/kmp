@@ -90,6 +90,10 @@ KMP_APP.layers = (() => {
     )
       return;
     model.layerProjections = snapshots;
+    KMP_APP.data.refreshEntries();
+    KMP_APP.viewport.updateAxisLens();
+    KMP_APP.panels.renderRail();
+    KMP_APP.panels.renderStats();
     KMP_APP.scene.requestDraw();
   }
   function invalidate() {
