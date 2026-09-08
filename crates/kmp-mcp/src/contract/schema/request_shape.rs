@@ -38,7 +38,7 @@ pub(crate) fn dimensions_schema() -> Value {
             },
             "scope": {
                 "type": "string",
-                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together — this is how one project's memory is read from another project's conversation, since abouts are never joined by relations. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
+                "description": "Which abouts this read may reach. `current_about` (the default) stays inside `about`. `abouts` reads the named list together while preserving separate ownership. A writer may declare a cross-about `same_event_as` or `same_entity_as` link from a kmp_relate proposal with explicit proof; this does not permit arbitrary links or merge the abouts. `all_abouts` sweeps every anchor, which is a real cost on a large store.",
                 "enum": ["current_about", "abouts", "all_abouts"]
             },
             "abouts": {
