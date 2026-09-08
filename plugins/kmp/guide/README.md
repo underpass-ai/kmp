@@ -47,8 +47,9 @@ The worked lessons, [decision history](examples/decision-history.md),
 [four clocks and zoom](examples/four-clocks.md),
 [quantities and exclusions](examples/quantities.md),
 [conflict with late evidence](examples/late-conflict.md),
-[labels, synonyms and negation](examples/labels-negation.md), and
-[budgets and insufficient evidence](examples/budget-proof.md), contain explicit
+[labels, synonyms and negation](examples/labels-negation.md),
+[budgets and insufficient evidence](examples/budget-proof.md), and
+[shared resumption](examples/shared-resumption.md), contain explicit
 fictional sources, source-based writing choices, call
 arguments with bindings to actual returned refs, temporal reads and visual
 inspection. Their JSON envelopes are teaching notation: the replay resolves
@@ -82,6 +83,15 @@ keeps intermediate pending actions, rather than declaring those pages complete. 
 historical validity, inclusive/exclusive traversal and view state. No model
 is invoked. This is an authored teaching case and contract check; measuring
 LLM learning requires a separate unseen history and blind reader questions.
+
+The shared-resumption lesson uses `scripts/guide_examples/replay_shared.py`
+with `--binary`, `--trace` and `--result`. It closes the writer and starts a
+fresh reader over the same temporary store; each client reads its own guide
+entry. The automated run explicitly simulates a human gesture through the
+viewer HTTP adapter. Add `--interactive` to perform that gesture in the real
+browser and review the final frame before typing `quit`. This compares actual
+native behavior with visual operation, without invoking another LLM or treating
+a view gesture as approval. The view itself is process-scoped, not durable memory.
 
 `memory.jsonl` is a regular format-2 bundle for an empty first install.
 Existing stores use the exact same requests through the public MCP writer; the

@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:468dc390ccc3190df378`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:462a5c889fb0a1120277`.
 
 KMP is graph-temporal memory. An LLM writes typed facts with evidence and chooses how to navigate their relations through time. Recover known work with `kmp_wake`, enumerate history with the temporal verbs, compare abouts with `kmp_relate`, ask semantic questions with `kmp_ask`, and inspect or trace the proof you rely on. Write durable decisions, constraints and outcomes; catalogue them with labels that support later navigation.
 
@@ -50,6 +50,7 @@ These are exact refs in `guide:kmp-agent`, used with `kmp_inspect`; they are not
 | Conflicting assignments and evidence received late | `guide:kmp-agent:example:late-conflict` |
 | Labels, synonyms and negation under explicit conditions | `guide:kmp-agent:example:labels-negation` |
 | Budgeted pages, incomplete proof and terminal UNKNOWN | `guide:kmp-agent:example:budget-proof` |
+| Fresh-session handoff and shared-view revision conflicts | `guide:kmp-agent:example:shared-resumption` |
 
 ## Read a selected node
 

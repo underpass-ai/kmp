@@ -7,6 +7,11 @@ evidence the answer relies on. Then open that same about once with
 `kmp_view_apply_intent`. The visual lane frames the retrieved evidence; it does
 not replace retrieval, and the view is not itself proof.
 
+The shared view belongs to its serving process and expires when that process
+ends; durable memories remain in the store. A fresh process first recovers
+those memories, then opens its own view. Sharing a store does not share the
+ephemeral view registry between independent server processes.
+
 Declare meaning, never screen coordinates: clock, range, semantic zoom,
 dimensions, relation classes, selection or trace. Pass the view's current
 `revision` as `expected_revision` on every intent. If another participant has

@@ -24,6 +24,9 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     elif lesson.stem == 'budget-proof':
         topics.update({'advanced:budgets', 'advanced:language'})
 
+    if lesson.stem == 'shared-resumption':
+        topics.add('gate:invocation')
+
     native_call = client.call
 
     def read(tool, arguments):
