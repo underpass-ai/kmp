@@ -5,9 +5,9 @@ use kmp_application::{
     VisualLevelOfDetail, VisualProjectionQuery, VisualProjectionResult, VisualRelation,
 };
 use kmp_proto::v1beta1::{
-    DimensionCoverage, MemoryRelation, MemorySemanticClass, PageInfo, ProjectVisualRequest,
-    ProjectVisualResponse, TemporalAxis as ProtoTemporalAxis, TemporalCoordinate, TemporalCoverage,
-    TemporalEntry, VisualBin, VisualCluster, VisualLabel,
+    DimensionCoverage, MemoryRelation, MemoryRelationExplanation, MemorySemanticClass, PageInfo,
+    ProjectVisualRequest, ProjectVisualResponse, TemporalAxis as ProtoTemporalAxis,
+    TemporalCoordinate, TemporalCoverage, TemporalEntry, VisualBin, VisualCluster, VisualLabel,
     VisualLevelOfDetail as ProtoVisualLevelOfDetail, VisualMetric,
 };
 
@@ -214,7 +214,10 @@ fn proto_relation(value: VisualRelation) -> MemoryRelation {
         evidence: value.evidence.unwrap_or_default(),
         confidence: proto_confidence(value.confidence.as_deref()) as i32,
         sequence: None,
-        explanation: None,
+        explanation: value.method.map(|method| MemoryRelationExplanation {
+            method,
+            ..Default::default()
+        }),
         evidence_refs: Vec::new(),
     }
 }

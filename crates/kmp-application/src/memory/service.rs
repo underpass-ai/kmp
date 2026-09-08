@@ -274,8 +274,15 @@ where
         // `scope_ids` the graph read itself is narrowed to those scopes, so
         // the catalogue is what that read reached.
         let catalogue = VisualLabel::catalogue(&read.context.bundle);
+        let declarations = if query.level_of_detail == super::VisualLevelOfDetail::Moment {
+            super::visual_projection::declared_equivalences(&read.context.bundle)
+        } else {
+            Vec::new()
+        };
         let temporal = temporal_result(temporal_query, read)?;
-        build_visual_projection(&query, temporal, catalogue)
+        let mut projection = build_visual_projection(&query, temporal, catalogue)?;
+        super::visual_projection::include_owned_declarations(&mut projection, declarations);
+        Ok(projection)
     }
 
     /// The neighbourhood `relate` reads: the same load as `ask` over the

@@ -1050,8 +1050,9 @@ link may appear in the panel even when its source is outside the scene.
 Use the explicit observed interval in `known_day1` for a claim about what
 was known then.
 
-The visual review also found a current limitation tracked in KMP #558:
-separate about projections can omit the cross-about arc even when both
-endpoint memories are visible at Moment. The declared link remains readable
-in the evidence panel and in native inspect/trace. Follow and audit that
-stored link; do not read the missing arc as proof that no relation exists.
+Each Moment projection carries the equivalence declared by its visible source
+without importing the target memory. ChronoLoom draws it when both endpoints
+are visible in the selected about planes. Removing the project plane, excluding
+the audit by a label, or moving the window before the reconciliation hides the
+cross-about arc. The source-owned declaration remains auditable through
+inspect/trace; a missing arc alone does not prove that the stored link is absent.
