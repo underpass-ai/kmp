@@ -1,8 +1,8 @@
 # Optional local semantic retrieval
 
 The embedded MCP backend can supplement Ask proof with a local encoder. This
-is experimental work on `work/sota-gaps`; no SOTA or accuracy claim follows from
-enabling it. The remote gRPC backend does not yet use this adapter.
+is experimental; enabling it does not establish an accuracy improvement.
+The remote gRPC backend does not yet use this adapter.
 
 Place `semantic-retrieval.json` beside the selected store and restart its MCP
 process to opt in:

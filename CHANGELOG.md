@@ -9,6 +9,49 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+### Added
+
+- Progressive agent guidance: a brief Markdown entry links to extended verb
+  guidance, five basic lessons and nine advanced memory journeys. Examples
+  teach typed writing, evidence-backed relations, labels, four clocks,
+  cross-about identity, quantities, uncertainty and shared ChronoLoom review.
+- Inspect continuations can set `page.repeat_object=false` after retaining
+  the first object. Later pages return its ref and `object_reused=true` with
+  the remaining evidence and links; the cursor still rejects a changed object
+  or selection. Default responses remain unchanged.
+- Experimental, opt-in loopback semantic retrieval for the embedded backend,
+  with bounded dense/BM25 candidate fusion, pinned model revisions, source
+  fingerprints and ordinary-retrieval fallback. Similarity supplies proof
+  candidates and does not establish an answer or remove UNKNOWN.
+- Optional source-linked formation and cited-mention identity helpers outside
+  the deterministic kernel. They preserve originals and record generated
+  claims and their verification; their quality still requires independent
+  evaluation and they do not run automatically on ordinary writes.
+
+### Changed
+
+- Shorter agent bootstrap and read-schema descriptions, with extended usage
+  consulted by verb. Guide maintenance is documented for agents and humans;
+  editorial wording/layout gates and dedicated guide-maintenance layers are
+  removed.
+- ChronoLoom identifies its inspector as the current record, distinguishing
+  current status and links from the scene's historical time window.
+
+### Fixed
+
+- Recall preserves cited evidence when previews are shortened, keeps ranking
+  across pages, reports selection omissions and explains stalled expansion.
+- Historical queries retain the proof available before a later resolution;
+  temporal selectors use the entry's labels before narrowing returned lanes.
+- ChronoLoom validates projected layers, preserves declared equivalences
+  between planes and follows relation targets outside the current window,
+  including memories written after the viewer opened.
+- Writer parameters remain directly exposed in the MCP schema. Guide language,
+  identity-boundary and budget descriptions match native behavior, and the
+  human guide opens with its welcome readable.
+- Release tools resolve their checkout at invocation time, including explicit
+  roots, rather than using the checkout where the binary was compiled.
+
 ## [0.13.0] - 2026-09-06
 
 ### Added
