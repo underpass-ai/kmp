@@ -17,7 +17,7 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     topics = {'advanced:relations', 'advanced:scope'}
     if lesson.stem in {'decision-history', 'alias-ownership'}:
         topics.update({'advanced:lifecycle', 'advanced:summary'})
-    elif lesson.stem == 'four-clocks':
+    elif lesson.stem in {'four-clocks', 'quantities'}:
         topics.add('advanced:lifecycle')
 
     native_call = client.call
@@ -38,7 +38,12 @@ def prepare(client, root: Path, lesson: Path, mode: str):
             if not page['has_more']:
                 break
             if page.get('returned') == 0:
-                raise ValueError('Guide inspection cannot advance at its explicit byte ceiling')
+                # A long lesson can fill the stable object and leave no room
+                # for its evidence. Use the exact native size, not a new query.
+                required = page.get('required_bytes', 0)
+                if required <= args['budget']['max_bytes']:
+                    raise ValueError('Guide inspection cannot advance at its explicit byte ceiling')
+                args = {**args, 'budget': {**args['budget'], 'max_bytes': required}}
             args = {**args, 'page': {'cursor': page['next_cursor']}}
         else:
             raise ValueError('Guide inspection exceeded 100 pages')

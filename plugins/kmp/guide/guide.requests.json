@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:32d171ee6af0eef94904",
+    "idempotency_key": "ingest:guide-sync:1:agent:8f47d22cac487861cc3d",
     "memory": {
       "dimensions": [
         {
@@ -704,7 +704,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit and quantity settlement; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
         },
         {
           "coordinates": [
@@ -881,17 +881,16 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:quantities",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Quantities, corrections, duplicates and exclusions",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Worked example: quantities, corrections and a source-backed total\n\nRecover a trip's documents, follow corrections and exclusions, then calculate\nwith the verified operands. KMP preserves the graph; an LLM interprets sources\nand a calculator performs arithmetic. Successful writer validation does not\nverify arithmetic, detect a duplicate or convert a currency.\n\nRead guide/AGENT.md once, this lesson, and the extended writer, time, scope,\nrelations, audit and viewer guidance when used. This isolated authored replay\nis teaching material, not a measurement of LLM learning. It has no future reader\nquestion or expected answer in the source-writing phase.\n\n## Literal fictional sources\n\nAll dates below are UTC in September 2026. An expense happened on September 1;\nlater documents can correct or cancel it without becoming new expenses. Keep\neach document's occurrence and observation as listed. Run after September 4\n09:00 UTC. Read the real clock before the new calculation: `clock.calculated`\nis that instant and `clock.until` is the next UTC midnight. Ingestion belongs\nto the kernel. The sources do not contain a precomputed total.\n\n| Source | Document occurred / first observed | Literal source |\n| --- | --- | --- |\n| P7 | Sep 1 08:00 / 08:00 | TRIP-7 reimburses settled EUR charges including tax. Count each transaction once, use its explicitly corrected amount and exclude voided charges. Other currencies require a separate subtotal; no conversion rate is supplied. |\n| R-TRAIN | Sep 1 09:00 / 09:00 | TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included. |\n| H-0 | Sep 1 10:00 / 10:00 | TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included. |\n| M-1 | Sep 1 11:00 / 11:00 | TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included. |\n| U-1 | Sep 1 12:00 / 12:00 | TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included. |\n| H-1 | Sep 2 10:00 / 10:00 | TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction. |\n| H-1-C | Sep 2 11:00 / 11:00 | TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge. |\n| V-MEAL | Sep 3 11:00 / 11:00 | TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled. |\n| STMT-7 | Sep 4 09:00 / 09:00 | TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate. |\n\nThe policy is a constraint, the receipts/correction/copy/statement are\nobservations, and the merchant's void confirmation is feedback. A correction\nis a document about the same transaction, not an extra operand. The shared\ntransaction label finds documents; only H-1-C's literal statement justifies\n`same_event_as`. An unrelated equal amount would not justify that link.\n\nThe JSON envelopes are teaching notation. Send only `arguments`; bindings\ncopy returned refs. Read every relevant continuation before calculating. The\nsmall selections below fit the explicit limits; the replay refuses partial\npages instead of treating them as complete.\n\n## Write the sources without anticipating the total\n\n```json\n{\"tool\": \"kmp_wake\", \"save_as\": \"initial\", \"arguments\": {\"about\": \"example:guide:quantities\", \"budget\": {\"max_bytes\": 40000}}, \"expect_error\": \"not_found\"}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"policy\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:policy:v1\",\n    \"observed_at\": \"2026-09-01T08:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"P7\",\n      \"role\": \"rule\"\n    },\n    \"current\": {\n      \"kind\": \"constraint\",\n      \"summary\": \"P7 limits TRIP-7 settlement to unique settled EUR transactions, corrected amounts and no voids.\",\n      \"evidence\": \"P7: TRIP-7 reimburses settled EUR charges including tax. Count each transaction once, use its explicitly corrected amount and exclude voided charges. Other currencies require a separate subtotal; no conversion rate is supplied.\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\"\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"policy_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${policy.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_wake\", \"save_as\": \"catalogue\", \"arguments\": {\"about\": \"example:guide:quantities\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\nReuse trip=TRIP-7 and the process returned by wake. Source, rule, result and\naudit are different roles. Currency is a unit filter, not a conversion rule.\nNew document IDs H-1 and H-1-C are intentionally distinct from H-0; after\nreading the catalogue, `labels_new` declares that intent without renaming it.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"train\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:train:v1\",\n    \"observed_at\": \"2026-09-01T09:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"R-TRAIN\",\n      \"transaction\": \"TX-TRAIN\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.\",\n      \"evidence\": \"R-TRAIN: TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.\"\n    },\n    \"occurred_at\": \"2026-09-01T09:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${policy.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${policy.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.\",\n        \"evidence\": \"P7 applies to TRIP-7; R-TRAIN identifies TRIP-7 as its trip.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"train_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${train.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"hotel_old\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:hotel_old:v1\",\n    \"observed_at\": \"2026-09-01T10:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"H-0\",\n      \"transaction\": \"TX-HOTEL\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.\",\n      \"evidence\": \"H-0: TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.\"\n    },\n    \"occurred_at\": \"2026-09-01T10:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${policy.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${policy.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.\",\n        \"evidence\": \"P7 applies to TRIP-7; H-0 identifies TRIP-7 as its trip.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"hotel_old_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${hotel_old.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"meal\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:meal:v1\",\n    \"observed_at\": \"2026-09-01T11:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"M-1\",\n      \"transaction\": \"TX-MEAL\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.\",\n      \"evidence\": \"M-1: TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.\"\n    },\n    \"occurred_at\": \"2026-09-01T11:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${policy.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${policy.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.\",\n        \"evidence\": \"P7 applies to TRIP-7; M-1 identifies TRIP-7 as its trip.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"meal_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${meal.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"usd\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:usd:v1\",\n    \"observed_at\": \"2026-09-01T12:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"U-1\",\n      \"transaction\": \"TX-USD\",\n      \"currency\": \"USD\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.\",\n      \"evidence\": \"U-1: TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.\"\n    },\n    \"occurred_at\": \"2026-09-01T12:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${policy.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${policy.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.\",\n        \"evidence\": \"P7 applies to TRIP-7; U-1 identifies TRIP-7 as its trip.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"usd_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${usd.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_rewind\", \"save_as\": \"before_corrections\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": {\"time\": \"2026-09-02T00:00:00Z\"}, \"axis\": \"observed\", \"dimensions\": {\"mode\": \"only\", \"include\": [\"trip\"], \"scope_ids\": [\"TRIP-7\"], \"selectors\": [{\"key\": \"currency\", \"op\": \"in\", \"values\": [\"EUR\"]}]}, \"limit\": {\"entries\": 20}, \"budget\": {\"max_bytes\": 40000}}}\n```\n\nAt this observed cutoff the EUR slice contains R-TRAIN, H-0 and M-1. It does\nnot contain a corrected invoice, a void confirmation or a final total. Adding\nthese figures gives a raw posted-document sum, not the policy's final settled\nreimbursement. Do not silently apply later knowledge to this earlier window.\n\nNow record the later documents with their actual later document clocks.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"hotel_final\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:hotel_final:v1\",\n    \"observed_at\": \"2026-09-02T10:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"H-1\",\n      \"transaction\": \"TX-HOTEL\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.\",\n      \"evidence\": \"H-1: TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.\"\n    },\n    \"occurred_at\": \"2026-09-02T10:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${hotel_old.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${hotel_old.generated_refs.0}\",\n        \"rel\": \"corrects\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The final invoice corrects the amount of this same hotel transaction; it must replace, not be added to, the preliminary figure.\",\n        \"evidence\": \"H-1 explicitly replaces H-0 for TX-HOTEL with settled 35.00 EUR instead of 30.00 EUR.\"\n      }\n    ],\n    \"options\": {\n      \"labels_new\": [\n        \"document\"\n      ]\n    }\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"hotel_final_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${hotel_final.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"hotel_copy\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:hotel_copy:v1\",\n    \"observed_at\": \"2026-09-02T11:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"H-1-C\",\n      \"transaction\": \"TX-HOTEL\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.\",\n      \"evidence\": \"H-1-C: TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.\"\n    },\n    \"occurred_at\": \"2026-09-02T11:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${hotel_final.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${hotel_final.generated_refs.0}\",\n        \"rel\": \"same_event_as\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The copy and final invoice report one hotel charge; the explicit transaction and copy statement justify counting it once.\",\n        \"evidence\": \"H-1-C says it reproduces H-1 for TX-HOTEL and is not another charge.\"\n      }\n    ],\n    \"options\": {\n      \"labels_new\": [\n        \"document\"\n      ]\n    }\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"hotel_copy_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${hotel_copy.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"void\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_feedback\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:void:v1\",\n    \"observed_at\": \"2026-09-03T11:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"V-MEAL\",\n      \"transaction\": \"TX-MEAL\",\n      \"currency\": \"EUR\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"feedback\",\n      \"summary\": \"TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.\",\n      \"evidence\": \"V-MEAL: TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.\"\n    },\n    \"occurred_at\": \"2026-09-03T11:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${meal.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${meal.generated_refs.0}\",\n        \"rel\": \"updates_state\",\n        \"class\": \"causal\",\n        \"confidence\": \"high\",\n        \"why\": \"The merchant confirmation changes this transaction from posted to fully voided, so its charge is not a settled expense.\",\n        \"evidence\": \"V-MEAL names M-1 and TX-MEAL, voids the full 10.00 EUR and reports 0.00 EUR settled.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"void_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${void.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"statement\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-quantities:statement:v1\",\n    \"observed_at\": \"2026-09-04T09:00:00Z\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"STMT-7\",\n      \"role\": \"source\"\n    },\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.\",\n      \"evidence\": \"STMT-7: TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.\"\n    },\n    \"occurred_at\": \"2026-09-04T09:00:00Z\",\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${hotel_final.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${hotel_final.generated_refs.0}\",\n        \"rel\": \"supports\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The closing statement independently confirms the corrected settled hotel figure; it does not create another charge.\",\n        \"evidence\": \"STMT-7 lists TX-HOTEL settled at 35.00 EUR, matching H-1.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"statement_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${statement.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_wake\", \"save_as\": \"sources_catalogue\", \"arguments\": {\"about\": \"example:guide:quantities\", \"budget\": {\"max_bytes\": 50000, \"detail\": \"compact\"}}}\n```\n\n## Recover candidates, then follow the proof\n\nUse the trip lane for traversal and currency/role selectors for membership.\nSelectors read all labels even when the returned coordinates only show trip.\nThe EUR source slice contains six documents, not six independent charges.\nIts earliest source is after September 1 midnight, so forward cannot omit an\nentry at that boundary in this fixture. A general interval also needs the\ninclusive goto probe. Read H-0 -> H-1 as a correction by following the stored\nH-1 -> H-0 edge; direction matters. The copy and void have their own proof.\n\n```json\n{\"tool\": \"kmp_forward\", \"save_as\": \"eur_candidates\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": {\"time\": \"2026-09-01T00:00:00Z\"}, \"axis\": \"observed\", \"dimensions\": {\"mode\": \"only\", \"include\": [\"trip\"], \"scope_ids\": [\"TRIP-7\"], \"selectors\": [{\"key\": \"currency\", \"op\": \"in\", \"values\": [\"EUR\"]}, {\"key\": \"role\", \"op\": \"in\", \"values\": [\"source\"]}]}, \"limit\": {\"entries\": 20}, \"budget\": {\"max_bytes\": 50000}}}\n```\n\n```json\n{\"tool\": \"kmp_forward\", \"save_as\": \"usd_candidates\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": {\"time\": \"2026-09-01T00:00:00Z\"}, \"axis\": \"observed\", \"dimensions\": {\"mode\": \"only\", \"include\": [\"trip\"], \"scope_ids\": [\"TRIP-7\"], \"selectors\": [{\"key\": \"currency\", \"op\": \"in\", \"values\": [\"USD\"]}, {\"key\": \"role\", \"op\": \"in\", \"values\": [\"source\"]}]}, \"limit\": {\"entries\": 20}, \"budget\": {\"max_bytes\": 50000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"correction_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${hotel_final.generated_refs.0}\", \"to\": \"${hotel_old.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"duplicate_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${hotel_copy.generated_refs.0}\", \"to\": \"${hotel_final.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"void_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${void.generated_refs.0}\", \"to\": \"${meal.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"train_operand\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${train.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"hotel_final_operand\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${hotel_final.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"statement_operand\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${statement.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n## Calculate only from the verified operands\n\n| Document | Treatment | Source of the choice |\n| --- | --- | --- |\n| R-TRAIN | +20.00 EUR | Settled TX-TRAIN, also confirmed by STMT-7. |\n| H-0 | Replaced, do not add 30.00 EUR | H-1 explicitly corrects this transaction. |\n| H-1 | +35.00 EUR | Corrected settled TX-HOTEL. |\n| H-1-C | Duplicate, do not add 35.00 EUR again | Explicit same-event proof to H-1. |\n| M-1 | Exclude posted 10.00 EUR | V-MEAL confirms a full void. |\n| V-MEAL | Evidence of the void, not a new negative expense | It reports zero settled, not a separate refund to subtract again. |\n| U-1 | Separate 7.00 USD; outside this EUR total | No conversion rate. |\n\nUse decimal arithmetic or integer cents: 2,000 + 3,500 = 5,500 EUR cents,\ntherefore **55.00 EUR**. Do not add the old invoice or copy, subtract a voided\ncharge a second time, add tax already included, or sum 55.00 EUR + 7.00 USD\nas 62.00 EUR. Without a conversion source the all-currency converted total\nis undetermined. The authored check recalculates from retrieved operand text;\nit does not turn these scenario-specific choices into an automatic resolver.\n\nNow create a new derived value at the real calculation time. Its `total_of`\nlinks point only to included operands. `checked_against` uses class constraint\nfor the rule and closing statement; evidence does not force class evidential.\nThe direct evidence records units, formula and exclusions. This is a calculated\nEUR settlement subtotal, not a new primary receipt or a universal trip total.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"total\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"derived\",\n    \"idempotency_key\": \"guide-quantities:total:v1\",\n    \"observed_at\": \"${clock.calculated}\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"CALC-7\",\n      \"currency\": \"EUR\",\n      \"role\": \"result\"\n    },\n    \"current\": {\n      \"kind\": \"derived_value\",\n      \"summary\": \"TRIP-7 settled EUR subtotal is 55.00 EUR from TX-TRAIN and corrected TX-HOTEL.\",\n      \"evidence\": \"Calculation for TRIP-7 from inspected sources: R-TRAIN 20.00 EUR + corrected H-1 35.00 EUR = 55.00 EUR (2000 + 3500 = 5500 cents). H-1 replaces H-0, so omit 30.00 EUR; H-1-C explicitly copies H-1, so count TX-HOTEL once; V-MEAL voids M-1 fully, so omit 10.00 EUR without subtracting again. U-1 is 7.00 USD, kept separate without conversion. STMT-7 confirms the settled component amounts; P7 requires unique settled EUR charges with tax already included.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${train.generated_refs.0}\",\n        \"${hotel_final.generated_refs.0}\",\n        \"${policy.generated_refs.0}\",\n        \"${statement.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${train.generated_refs.0}\",\n        \"rel\": \"total_of\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The subtotal includes this distinct settled transport charge exactly once.\",\n        \"evidence\": \"R-TRAIN records TX-TRAIN settled 20.00 EUR including tax; STMT-7 confirms it.\"\n      },\n      {\n        \"ref\": \"${hotel_final.generated_refs.0}\",\n        \"rel\": \"total_of\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The subtotal includes the corrected hotel amount once for TX-HOTEL, excluding its old value and duplicate document.\",\n        \"evidence\": \"H-1 replaces H-0 with 35.00 EUR for TX-HOTEL; H-1-C says it is the same charge.\"\n      },\n      {\n        \"ref\": \"${policy.generated_refs.0}\",\n        \"rel\": \"checked_against\",\n        \"class\": \"constraint\",\n        \"confidence\": \"high\",\n        \"why\": \"The calculation is checked against the rule requiring unique settled EUR charges and no voids or currency conversion.\",\n        \"evidence\": \"P7 states count each transaction once, use corrected amounts, exclude voids and separate currencies.\"\n      },\n      {\n        \"ref\": \"${statement.generated_refs.0}\",\n        \"rel\": \"checked_against\",\n        \"class\": \"constraint\",\n        \"confidence\": \"high\",\n        \"why\": \"The selected component amounts and excluded void are checked against the closing settlement record.\",\n        \"evidence\": \"STMT-7 lists 20.00 EUR and 35.00 EUR settled, the meal at 0.00 EUR, and the separate 7.00 USD charge.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"total_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${total.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\nKeep exclusion decisions auditable without rewriting receipt objects or\nretroactively changing their clocks. The next memory is the agent's new audit\nof omitted candidates, not another merchant charge. Its `excluded_from` edge\npoints **from the exclusion record to the total**; `derived_from` and\n`chosen_because` point to the documents justifying the decision. Inspect this\nrecord to reach the duplicate, correction, void and currency source.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"exclusions\",\n  \"arguments\": {\n    \"about\": \"example:guide:quantities\",\n    \"intent\": \"record_decision\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"derived\",\n    \"idempotency_key\": \"guide-quantities:exclusions:v1\",\n    \"observed_at\": \"${clock.calculated}\",\n    \"scope\": {\n      \"process\": \"trip-settlement\"\n    },\n    \"labels\": {\n      \"trip\": \"TRIP-7\",\n      \"document\": \"AUDIT-7\",\n      \"role\": \"audit\"\n    },\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"Exclude H-0, duplicate H-1-C, voided M-1 and USD receipt U-1 from the TRIP-7 EUR subtotal CALC-7.\",\n      \"evidence\": \"Audit of CALC-7: H-1 corrects H-0 from 30.00 EUR to 35.00 EUR for the same TX-HOTEL; H-1-C explicitly duplicates H-1. V-MEAL voids M-1, leaving 0.00 EUR settled. U-1 is 7.00 USD and P7 supplies no conversion rate. These omissions prevent double counting and mixed units.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${total.generated_refs.0}\",\n        \"${hotel_old.generated_refs.0}\",\n        \"${hotel_copy.generated_refs.0}\",\n        \"${meal.generated_refs.0}\",\n        \"${usd.generated_refs.0}\",\n        \"${hotel_final.generated_refs.0}\",\n        \"${void.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${total.generated_refs.0}\",\n        \"rel\": \"excluded_from\",\n        \"class\": \"constraint\",\n        \"confidence\": \"high\",\n        \"why\": \"These documented candidates are deliberately omitted from this EUR subtotal for replacement, duplicate, void or unit mismatch reasons.\",\n        \"evidence\": \"H-1 replaces H-0; H-1-C duplicates H-1; V-MEAL voids M-1; U-1 is USD and P7 supplies no conversion.\"\n      },\n      {\n        \"ref\": \"${hotel_old.generated_refs.0}\",\n        \"rel\": \"derived_from\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"This is the preliminary operand omitted after its explicit correction.\",\n        \"evidence\": \"H-0 reports 30.00 EUR for TX-HOTEL; H-1 replaces that amount.\"\n      },\n      {\n        \"ref\": \"${hotel_copy.generated_refs.0}\",\n        \"rel\": \"derived_from\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The duplicate document identifies the extra 35.00 EUR that must not become a second operand.\",\n        \"evidence\": \"H-1-C explicitly reproduces H-1 for the same TX-HOTEL.\"\n      },\n      {\n        \"ref\": \"${meal.generated_refs.0}\",\n        \"rel\": \"derived_from\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"This is the posted charge removed from the eligible set by its later full void.\",\n        \"evidence\": \"M-1 reports TX-MEAL posted 10.00 EUR; V-MEAL names and voids it.\"\n      },\n      {\n        \"ref\": \"${usd.generated_refs.0}\",\n        \"rel\": \"derived_from\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"The foreign-currency receipt proves a unit mismatch for the EUR subtotal, not a zero-valued expense.\",\n        \"evidence\": \"U-1 records 7.00 USD; no conversion rate is supplied.\"\n      },\n      {\n        \"ref\": \"${hotel_final.generated_refs.0}\",\n        \"rel\": \"chosen_because\",\n        \"class\": \"motivational\",\n        \"confidence\": \"high\",\n        \"why\": \"The explicit replacement is the reason to omit H-0 while retaining the corrected hotel operand.\",\n        \"evidence\": \"H-1 says it replaces H-0 for the same transaction with 35.00 EUR.\"\n      },\n      {\n        \"ref\": \"${void.generated_refs.0}\",\n        \"rel\": \"chosen_because\",\n        \"class\": \"motivational\",\n        \"confidence\": \"high\",\n        \"why\": \"The merchant full-void confirmation is the reason to exclude M-1 under P7.\",\n        \"evidence\": \"V-MEAL confirms all 10.00 EUR were voided and 0.00 EUR remains settled.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"exclusions_read\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${exclusions.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"total_train_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${total.generated_refs.0}\", \"to\": \"${train.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"total_hotel_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${total.generated_refs.0}\", \"to\": \"${hotel_final.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"exclusion_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${exclusions.generated_refs.0}\", \"to\": \"${total.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_trace\", \"save_as\": \"exclusion_void_path\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": \"${exclusions.generated_refs.0}\", \"to\": \"${void.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_inspect\", \"save_as\": \"hotel_old_after\", \"arguments\": {\"about\": \"example:guide:quantities\", \"ref\": \"${hotel_old.generated_refs.0}\", \"budget\": {\"max_bytes\": 40000}}}\n```\n\n```json\n{\"tool\": \"kmp_rewind\", \"save_as\": \"before_corrections_again\", \"arguments\": {\"about\": \"example:guide:quantities\", \"from\": {\"time\": \"2026-09-02T00:00:00Z\"}, \"axis\": \"observed\", \"dimensions\": {\"mode\": \"only\", \"include\": [\"trip\"], \"scope_ids\": [\"TRIP-7\"], \"selectors\": [{\"key\": \"currency\", \"op\": \"in\", \"values\": [\"EUR\"]}]}, \"limit\": {\"entries\": 20}, \"budget\": {\"max_bytes\": 40000}}}\n```\n\nThe earlier observed selection must still contain only its original three\nEUR documents. Later correction and calculation have not erased H-0 or made\nthe subtotal known before it was calculated. Inspect shows a current object\nand links, so an old source can expose later incoming proof; that is not a\nhistorical claim. Use explicit temporal admission before relying on that proof.\n\n## Three views of the same evidence\n\nOpen once. Start at observed September 1, before correction and cancellation.\nNext frame the EUR source documents at Moment and follow the corrected invoice,\ncopy and void edges. Finally show the full trip through the real calculation\nand select CALC-7: included operands lead out, the exclusion audit leads in.\nFollow AUDIT-7 to the omitted documents. Read each why and literal evidence;\nthe picture does not perform the calculation. The viewer has its own shared\nrevision and does not replace the explicit cursor and filters on memory calls.\n\n```json\n{\"tool\": \"kmp_view_open\", \"save_as\": \"opened\", \"arguments\": {\"about\": \"example:guide:quantities\"}}\n```\n\n```json\n{\"tool\": \"kmp_view_apply_intent\", \"save_as\": \"early_frame\", \"arguments\": {\"idempotency_key\": \"guide-quantities:view-early:v1\", \"expected_revision\": \"${opened.view_revision}\", \"explanation\": \"Inspect what was known before the correction and void\", \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"2026-09-02T00:00:00Z\"}}, \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"trip\"], \"labels\": [{\"key\": \"trip\", \"op\": \"in\", \"values\": [\"TRIP-7\"]}]}, \"selection\": null}}\n```\n\n```json\n{\"tool\": \"kmp_view_get_state\", \"save_as\": \"early_state\", \"arguments\": {}}\n```\n\n```json\n{\"tool\": \"kmp_view_apply_intent\", \"save_as\": \"sources_frame\", \"arguments\": {\"idempotency_key\": \"guide-quantities:view-sources:v1\", \"expected_revision\": \"${early_state.view_revision}\", \"explanation\": \"Follow the corrected invoice, duplicate and void evidence\", \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"${clock.until}\"}}, \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"trip\"], \"labels\": [{\"key\": \"trip\", \"op\": \"in\", \"values\": [\"TRIP-7\"]}, {\"key\": \"currency\", \"op\": \"in\", \"values\": [\"EUR\"]}, {\"key\": \"role\", \"op\": \"in\", \"values\": [\"source\"]}]}, \"selection\": \"${hotel_final.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\": \"kmp_view_get_state\", \"save_as\": \"sources_state\", \"arguments\": {}}\n```\n\n```json\n{\"tool\": \"kmp_view_apply_intent\", \"save_as\": \"settlement_frame\", \"arguments\": {\"idempotency_key\": \"guide-quantities:view-settlement:v1\", \"expected_revision\": \"${sources_state.view_revision}\", \"explanation\": \"Inspect the EUR subtotal, its included operands and exclusion audit\", \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T00:00:00Z\", \"to\": \"${clock.until}\"}}, \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"trip\"], \"labels\": [{\"key\": \"trip\", \"op\": \"in\", \"values\": [\"TRIP-7\"]}]}, \"selection\": \"${total.generated_refs.0}\"}}\n```\n\n```json\n{\"tool\": \"kmp_view_get_state\", \"save_as\": \"settlement_state\", \"arguments\": {}}\n```\n\n```json\n{\"tool\": \"kmp_view_get_state\", \"save_as\": \"view_state\", \"arguments\": {}}\n```\n\nThis lesson validates an authored calculation and its graph. It does not\nprove an LLM will find every operand, identify unseen duplicates or select\nvalid rates. Negative boundaries are explicit: early evidence is incomplete,\nan equal amount is not identity, USD cannot enter an EUR sum without a rate,\nand KMP's write acceptance is not an arithmetic verifier. Ask may later retrieve\nthe stored subtotal; it neither replaces this navigation nor creates the sum.\n"
         },
         {
           "coordinates": [
@@ -913,17 +912,17 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -945,7 +944,7 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -953,9 +952,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -977,17 +976,17 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -1009,17 +1008,17 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1041,17 +1040,17 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -1073,17 +1072,17 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1105,17 +1104,17 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1137,17 +1136,17 @@
               "sequence": 36
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1169,17 +1168,17 @@
               "sequence": 37
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1201,17 +1200,17 @@
               "sequence": 38
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1233,7 +1232,7 @@
               "sequence": 39
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1241,9 +1240,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1265,7 +1264,7 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1273,9 +1272,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1297,17 +1296,17 @@
               "sequence": 41
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1327,6 +1326,38 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 42
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:42:00Z",
+              "occurred_at": "2026-08-28T00:42:00Z",
+              "scope_id": "timeline",
+              "sequence": 43
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 43
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 43
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1692,6 +1723,19 @@
             "guide:kmp-agent:example:four-clocks"
           ],
           "text": "Three fictional permit sources resolve to an actual UTC run calendar. The native replay preserves kernel ingestion, distinguishes four axes, rejects a forged ingestion field, checks interval and validity boundaries, and frames seven clock/zoom stages without invoking a model.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:quantities",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:quantities"
+          ],
+          "text": "Nine fictional policy and transaction documents support a new decimal EUR subtotal and an exclusion audit. The native lesson distinguishes corrections, duplicate documents, voids and currency units, preserves earlier evidence and follows directed proof in three shared views.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2134,10 +2178,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "The total links only the two included operands; the separate exclusion audit links the replaced invoice, duplicate, void and foreign currency to their sources.",
+          "from": "guide:kmp-agent:example:quantities",
+          "rel": "uses_background",
+          "sequence": 25,
+          "to": "guide:kmp-agent:advanced:relations",
+          "why": "The settlement lesson uses operand, correction, identity and exclusion relations to retain the proof behind a calculated subtotal."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2147,7 +2201,7 @@
           "evidence": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2157,7 +2211,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2167,7 +2221,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2177,7 +2231,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2187,7 +2241,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2197,7 +2251,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2207,7 +2261,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2217,7 +2271,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2227,7 +2281,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 34,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2237,7 +2291,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 35,
+          "sequence": 36,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2247,7 +2301,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 36,
+          "sequence": 37,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2257,7 +2311,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 37,
+          "sequence": 38,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2267,7 +2321,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 38,
+          "sequence": 39,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2277,7 +2331,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 39,
+          "sequence": 40,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -2293,7 +2347,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:21eacd600b5fec5191aa",
+    "idempotency_key": "ingest:guide-sync:1:person:57f019fa94a71ff28108",
     "memory": {
       "dimensions": [
         {
@@ -2857,6 +2911,36 @@
             "source": "editorial"
           },
           "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, narrow the occurred window, then choose Moment to inspect the permit and the signature check that supports it. Change the same window to observed: it is empty until you move to day three. Ingested shows the actual run day; validity on day two shows the applicable permit, not earlier knowledge of it. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:18:00Z",
+              "occurred_at": "2026-08-28T00:18:00Z",
+              "scope_id": "timeline",
+              "sequence": 19
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 19
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 19
+            }
+          ],
+          "id": "guide:kmp:advanced:quantities",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "TRIP-7 has a transport charge, a corrected hotel invoice, a duplicate copy, a voided meal and a separate USD charge. Ask the agent to read guide:kmp-agent:example:quantities and run the isolated lesson. In ChronoLoom start on September 1 observed time, before correction and cancellation. Then show the EUR source slice: six documents are not six expenses. Follow corrects from H-1 to H-0, same_event_as from H-1-C to H-1, and updates_state from the void to the meal. Finally select CALC-7: total_of points to 20.00 EUR and 35.00 EUR, while the incoming exclusion audit explains what was omitted and why. Follow that audit to its source documents. The subtotal is 55.00 EUR; 7.00 USD stays separate without a conversion rate. The agent calculates from inspected sources; KMP stores the value and proof, and writer acceptance does not check arithmetic. Moving the view does not rewrite earlier receipts or make the later total known sooner. This authored replay is not an LLM learning benchmark."
         }
       ],
       "evidence": [
@@ -3093,6 +3177,19 @@
           ],
           "text": "The agent lesson resolves relative source dates from the actual UTC clock, keeps ingestion assigned by the kernel, and checks explicit read axes, interval boundaries and shared-view state.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:quantities",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:quantities"
+          ],
+          "text": "The source-backed agent lesson records nine original memories and two new derived/audit memories, preserves original clocks, checks decimal operands and frames three stages with explicit observed intervals.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -3255,6 +3352,16 @@
           "sequence": 16,
           "to": "guide:kmp:advanced:clocks",
           "why": "The worked permit makes the four-clock distinction visible through a concrete source and zoom sequence."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "The earlier observed view excludes the correction, duplicate and void; the final view adds the subtotal without altering that historical selection.",
+          "from": "guide:kmp:advanced:quantities",
+          "rel": "uses_background",
+          "sequence": 17,
+          "to": "guide:kmp:advanced:four-clocks",
+          "why": "The settlement example uses the observed clock to separate earlier candidate documents from later correction, cancellation and calculation."
         }
       ]
     },

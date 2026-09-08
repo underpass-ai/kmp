@@ -15,11 +15,13 @@ from decision_history_checks import check as check_history
 from alias_ownership_checks import check as check_alias
 from distributed_incident_checks import check as check_incident
 from four_clocks_checks import check as check_clocks, clock_bindings
+from quantities_checks import check as check_quantities, clock_bindings as quantity_clock
 from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
-           'distributed-incident': check_incident, 'four-clocks': check_clocks}
+           'distributed-incident': check_incident, 'four-clocks': check_clocks,
+           'quantities': check_quantities}
 
 
 def bind(value, saved):
@@ -82,7 +84,7 @@ def run(args):
                     'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                     'model_calls': 0})
             if 'clock' in saved:
-                record({'preparation': 'UTC calendar for synthetic sources', 'clock': saved['clock']})
+                record({'preparation': 'UTC clock bindings for the lesson', 'clock': saved['clock']})
             client = Stdio(binary, store, env, record)
             try:
                 client.rpc('initialize', {'protocolVersion': '2024-11-05', 'capabilities': {},
@@ -91,6 +93,10 @@ def run(args):
                 guide_reads = prepare(client, ROOT, lesson, args.guide_mode)
                 calls = [json.loads(block) for block in re.findall(r'```json\n(.*?)\n```', lesson.read_text(), re.S)]
                 for call in calls:
+                    if args.lesson == 'quantities' and call['save_as'] == 'total':
+                        saved['clock'] = quantity_clock()
+                        record({'preparation': 'Read real UTC clock after inspecting settlement sources',
+                                'clock': saved['clock']})
                     arguments = bind(call['arguments'], saved)
                     result = client.call(call['tool'], arguments, call.get('expect_error'))
                     complete(result)

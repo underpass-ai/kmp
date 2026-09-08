@@ -179,7 +179,7 @@
           "id": "examples:index",
           "kind": "instruction",
           "depth": "basic",
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added.",
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit and quantity settlement; also lifecycle and summary for decision and alias histories. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added.",
           "evidence": "The generated agent Markdown preserves the operating bodies and supplies exact kmp_inspect arguments for the indexed examples stored in the guide. Native replays check the paths separately from LLM learning."
         },
         {
@@ -221,6 +221,14 @@
           "text_file": "examples/four-clocks.md",
           "evidence": "Three fictional permit sources resolve to an actual UTC run calendar. The native replay preserves kernel ingestion, distinguishes four axes, rejects a forged ingestion field, checks interval and validity boundaries, and frames seven clock/zoom stages without invoking a model.",
           "example_title": "Four clocks, interval boundaries and zoom to proof"
+        },
+        {
+          "id": "example:quantities",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/quantities.md",
+          "evidence": "Nine fictional policy and transaction documents support a new decimal EUR subtotal and an exclusion audit. The native lesson distinguishes corrections, duplicate documents, voids and currency units, preserves earlier evidence and follows directed proof in three shared views.",
+          "example_title": "Quantities, corrections, duplicates and exclusions"
         }
       ],
       "relations": [
@@ -415,6 +423,14 @@
           "class": "evidential",
           "why": "The permit lesson applies the temporal verb contract to separate signing, observation, actual ingestion and validity, then zooms to the same proof.",
           "evidence": "The source clock table and native calls compare the same permit at D2 on all four axes and capture both boundaries of a half-open occurred interval."
+        },
+        {
+          "from": "example:quantities",
+          "to": "advanced:relations",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The settlement lesson uses operand, correction, identity and exclusion relations to retain the proof behind a calculated subtotal.",
+          "evidence": "The total links only the two included operands; the separate exclusion audit links the replaced invoice, duplicate, void and foreign currency to their sources."
         }
       ]
     },
@@ -548,6 +564,13 @@
           "depth": "advanced",
           "text": "The TEMP-4 permit is signed on day one, first observed by a reviewer on day three and recorded by KMP on the real execution day four. It applies from day two until day five, exclusive. Ask the agent to read guide:kmp-agent:example:four-clocks and resolve its calendar before running the isolated example:guide:four-clocks. Start in ChronoLoom at Atlas, narrow the occurred window, then choose Moment to inspect the permit and the signature check that supports it. Change the same window to observed: it is empty until you move to day three. Ingested shows the actual run day; validity on day two shows the applicable permit, not earlier knowledge of it. Follow the support edge and read the separate source and rationale. Moving the viewer does not change a native memory query or rewrite its clocks. The exercise uses a decision, an observation and feedback because the three sources have those roles; it does not measure a new writer LLM.",
           "evidence": "The agent lesson resolves relative source dates from the actual UTC clock, keeps ingestion assigned by the kernel, and checks explicit read axes, interval boundaries and shared-view state."
+        },
+        {
+          "id": "advanced:quantities",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "TRIP-7 has a transport charge, a corrected hotel invoice, a duplicate copy, a voided meal and a separate USD charge. Ask the agent to read guide:kmp-agent:example:quantities and run the isolated lesson. In ChronoLoom start on September 1 observed time, before correction and cancellation. Then show the EUR source slice: six documents are not six expenses. Follow corrects from H-1 to H-0, same_event_as from H-1-C to H-1, and updates_state from the void to the meal. Finally select CALC-7: total_of points to 20.00 EUR and 35.00 EUR, while the incoming exclusion audit explains what was omitted and why. Follow that audit to its source documents. The subtotal is 55.00 EUR; 7.00 USD stays separate without a conversion rate. The agent calculates from inspected sources; KMP stores the value and proof, and writer acceptance does not check arithmetic. Moving the view does not rewrite earlier receipts or make the later total known sooner. This authored replay is not an LLM learning benchmark.",
+          "evidence": "The source-backed agent lesson records nine original memories and two new derived/audit memories, preserves original clocks, checks decimal operands and frames three stages with explicit observed intervals."
         }
       ],
       "relations": [
@@ -678,6 +701,14 @@
           "class": "evidential",
           "why": "The worked permit makes the four-clock distinction visible through a concrete source and zoom sequence.",
           "evidence": "The same day-two cursor includes the permit on occurred and validity while excluding it on observed and ingested."
+        },
+        {
+          "from": "advanced:quantities",
+          "to": "advanced:four-clocks",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The settlement example uses the observed clock to separate earlier candidate documents from later correction, cancellation and calculation.",
+          "evidence": "The earlier observed view excludes the correction, duplicate and void; the final view adds the subtotal without altering that historical selection."
         }
       ]
     }
