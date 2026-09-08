@@ -179,7 +179,7 @@
           "id": "examples:index",
           "kind": "instruction",
           "depth": "basic",
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added.",
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language.",
           "evidence": "The generated agent Markdown preserves the operating bodies and supplies exact kmp_inspect arguments for the indexed examples stored in the guide. Native replays check the paths separately from LLM learning."
         },
         {
@@ -245,6 +245,14 @@
           "text_file": "examples/labels-negation.md",
           "evidence": "Six fictional LEX-7 sources distinguish glossary-backed catalogue normalization, an explicit restatement, a negative report under matching conditions, a different environment and a later decision. Native reads preserve the Spanish sources and original clocks.",
           "example_title": "Labels, synonyms and negation under explicit conditions"
+        },
+        {
+          "id": "example:budget-proof",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/budget-proof.md",
+          "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
+          "evidence": "Five fictional source records demonstrate actual temporal, trace and inspect continuations, a capped selection and two terminal semantic UNKNOWN reads."
         }
       ],
       "relations": [
@@ -463,6 +471,14 @@
           "class": "evidential",
           "why": "The LEX-7 lesson uses whole-entry selectors to distinguish component synonyms from matching environment, owner and check conditions.",
           "evidence": "The six-memory component catalogue narrows to three production RUN-7 reports, one staging report or the later RUN-8 decision; exists and notin separate a missing environment from a known one."
+        },
+        {
+          "from": "example:budget-proof",
+          "to": "advanced:budgets",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The packet separates byte floors, selection limits and pending pages before reading or auditing proof.",
+          "evidence": "The lesson preserves exact temporal and trace cursors and resumes a stable-floor inspection at its reported complete size."
         }
       ]
     },
@@ -617,6 +633,13 @@
           "depth": "advanced",
           "text": "LEX-7 gives bitácora and journal one component meaning through an explicit glossary. Ask the agent to read guide:kmp-agent:example:labels-negation and run the isolated lesson. Review S1 before and after relabelling: its Spanish text and original clocks stay intact, and English search returns the Spanish source. In the production RUN-7 view, S2 restates S1 while S3 says not enabled under the same instant and owner. Follow both relations; later receipt does not resolve their conflict. Inspect S4 in staging separately, then show all six component memories, including glossary constraint G1 and later RUN-8 decision D1. Opposite words from different environments or times do not create a universal contradiction. Labels group candidates; source-backed relations express what the writer knows. The Current record panel can show later links while the scene uses its selected observed window. This authored review does not measure LLM learning.",
           "evidence": "The explicit glossary justifies replacing one component label, not rewriting the memory. Six native selector traversals preserve different conditions and an unresolved production disagreement."
+        },
+        {
+          "id": "advanced:budget-proof",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "PACK-8 contains an export requirement, decision, test and result, plus unrelated warehouse lighting. Ask the agent to read guide:kmp-agent:example:budget-proof. Review five typed memories in ChronoLoom and follow R1 verified_by T1, T1 uses_background D1 and D1 chosen_because C1. The temporal reader captures the inclusive start and continues two pages before excluding the exact end. A partial inspection preserves its object but may still omit proof: the agent must report the exact pending continuation and needed size. The viewer has its own reads and does not complete that MCP page. Packet membership creates no path to X1. Neither the sources nor two semantic UNKNOWN selections identify who authorized PURGE-9; stop rather than invent an approver. This authored native review does not measure independent LLM learning.",
+          "evidence": "The source-backed lesson retains five memories, typed path evidence, partial checkpoints and complete continuations with no semantic calls after the second UNKNOWN."
         }
       ],
       "relations": [
@@ -771,6 +794,14 @@
           "class": "evidential",
           "why": "After reviewing late conflict resolution, the reader distinguishes a contradiction that remains unresolved from unrelated opposite states selected by labels.",
           "evidence": "No LEX-7 source resolves S1 versus S3; staging and the later maintenance decision remain separate contexts."
+        },
+        {
+          "from": "advanced:budget-proof",
+          "to": "advanced:labels-negation",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The earlier label lesson distinguishes selection from proof; the budget lesson adds the difference between a page, a selection cap and missing evidence.",
+          "evidence": "A shared PACK-8 label groups export and warehouse records without supplying a semantic relation or authorization."
         }
       ]
     }

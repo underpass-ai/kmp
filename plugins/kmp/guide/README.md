@@ -46,8 +46,9 @@ The worked lessons, [decision history](examples/decision-history.md),
 [distributed incident](examples/distributed-incident.md),
 [four clocks and zoom](examples/four-clocks.md),
 [quantities and exclusions](examples/quantities.md),
-[conflict with late evidence](examples/late-conflict.md), and
-[labels, synonyms and negation](examples/labels-negation.md), contain explicit
+[conflict with late evidence](examples/late-conflict.md),
+[labels, synonyms and negation](examples/labels-negation.md), and
+[budgets and insufficient evidence](examples/budget-proof.md), contain explicit
 fictional sources, source-based writing choices, call
 arguments with bindings to actual returned refs, temporal reads and visual
 inspection. Their JSON envelopes are teaching notation: the replay resolves
@@ -62,8 +63,8 @@ python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
 ```
 
 Choose `--lesson alias-ownership`, `--lesson distributed-incident`,
-`--lesson four-clocks`, `--lesson quantities`, `--lesson late-conflict` or
-`--lesson labels-negation` for those lessons. The default
+`--lesson four-clocks`, `--lesson quantities`, `--lesson late-conflict`,
+`--lesson labels-negation` or `--lesson budget-proof` for those lessons. The default
 `--guide-mode markdown` reads `AGENT.md`, the selected lesson and its
 explicit topic prerequisites; it consults each extended verb at first use and
 reuses it on repeated calls. Work-memory calls are never cached by this helper. `--guide-mode directed` retains compact wake and
@@ -75,7 +76,9 @@ a model; this does not measure LLM learning or billed usage.
 
 Add `--hold-view` to review ChronoLoom before typing `quit`; the temporary
 store is removed when the replay exits. The trace contains real MCP requests
-and responses. Assertions check typed memory, relation direction and proof,
+and responses. The budget lesson marks intentional partial pages with the
+local `expect_partial` envelope field; it checks actual continuations and
+keeps intermediate pending actions, rather than declaring those pages complete. Assertions check typed memory, relation direction and proof,
 historical validity, inclusive/exclusive traversal and view state. No model
 is invoked. This is an authored teaching case and contract check; measuring
 LLM learning requires a separate unseen history and blind reader questions.

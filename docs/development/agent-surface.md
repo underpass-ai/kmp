@@ -93,6 +93,12 @@ Desde la raíz del repo, usar un target separado si hay un binario congelado
 para mediciones. No sobrescribirlo ni sincronizar ejemplos de desarrollo en
 el store personal.
 
+Al alternar worktrees, preferir un target de desarrollo por checkout. Un target
+compartido puede conservar assets de otro checkout aunque el binario arranque.
+Si ocurre, limpiar sólo el crate afectado y reconstruir sus dependientes antes
+de generar o revisar. Comprobar el resultado visible y registrar el hash del
+binario usado; no asumir que una captura representa el código por su ruta.
+
 ```bash
 export CARGO_TARGET_DIR="$PWD/target/guide-development"
 cargo build --locked -p kmp-mcp

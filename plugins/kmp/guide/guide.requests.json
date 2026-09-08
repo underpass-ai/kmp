@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:cd8f41ffe003a6a0c6f0",
+    "idempotency_key": "ingest:guide-sync:1:agent:468dc390ccc3190df378",
     "memory": {
       "dimensions": [
         {
@@ -704,7 +704,7 @@
             "guide_version": "1",
             "source": "editorial"
           },
-          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added."
+          "text": "Worked examples are optional source-grounded lessons. Decision changes and past validity: guide:kmp-agent:example:decision-history. Person alias, unresolved same-name mention and account reassignment: guide:kmp-agent:example:alias-ownership. Distributed incident, proposed identity and late reports: guide:kmp-agent:example:distributed-incident. Four clocks, half-open intervals and zoom to proof: guide:kmp-agent:example:four-clocks. Quantities, corrections, duplicates and exclusions: guide:kmp-agent:example:quantities. Conflicting assignments and evidence received late: guide:kmp-agent:example:late-conflict. Labels, scoped synonyms and negation: guide:kmp-agent:example:labels-negation. Read the brief installed guide/AGENT.md once, consult the extended verb you need, and inspect a selected lesson. Writer prerequisites are selected by the lesson: relations and scope for distributed incidents; lifecycle for the four-clock permit, quantity settlement and late-conflict review; also lifecycle and summary for decision and alias histories. The labels lesson also reads language, summary and lifecycle. Their exact refs are guide:kmp-agent:advanced:relations, guide:kmp-agent:advanced:scope, guide:kmp-agent:advanced:lifecycle guide:kmp-agent:advanced:language and guide:kmp-agent:advanced:summary; reuse already-read bodies. These are exact refs in guide:kmp-agent. Complete selected pages. A compact wake is a catalogue, not the complete lesson. Authored replays check native contracts, not LLM learning; unseen writer and blind reader evaluation remains separate. More basic and advanced cases remain to be added. Budgeted pages and insufficient proof: guide:kmp-agent:example:budget-proof. Its additional prerequisites are guide:kmp-agent:advanced:budgets and guide:kmp-agent:advanced:language."
         },
         {
           "coordinates": [
@@ -974,17 +974,16 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:budget-proof",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:ask",
+            "example_title": "Budgeted pages, incomplete proof and terminal UNKNOWN",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
+          "text": "# Worked example: budgets, continuation and insufficient evidence\n\nPACK-8 is a fictional review packet containing an export history and an\nunrelated warehouse report. An LLM writer interprets the five sources below;\nthe kernel preserves its typed records and justified links. This authored\nnative replay checks the teaching calls, not a new LLM's learning.\n\nUse `example:guide:budget-proof` in an isolated store. Read the installed\nagent entry once, then this exact example, the budget, scope and relations\ntopics, and each extended verb at first use. Source interpretation happens\nbefore the later reading questions; do not add missing facts to satisfy a\nquestion. A checksum test does not authorize an unrelated deletion.\n\n## Sources in receipt order\n\nThe fictional events were each reported at their event time on September 1,\n2026 (UTC). Ingestion is the actual replay time; no validity interval is\ninvented. PACK-8 identifies the review packet, not a semantic identity claim.\n\n| Source | Occurred and observed | Literal source |\n| --- | --- | --- |\n| C1 | 2026-09-01 08:00:00 UTC | C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export. |\n| D1 | 2026-09-01 09:00:00 UTC | D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1. |\n| T1 | 2026-09-01 10:00:00 UTC | T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access. |\n| R1 | 2026-09-01 11:00:00 UTC | R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result. |\n| X1 | 2026-09-01 12:00:00 UTC | X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting. |\n\nC1 is a constraint, D1 a decision, T1 and X1 observations, and R1 a\nsuccess_path. D1 is chosen_because C1; T1 uses_background D1 as the plan\nunder test; R1 is verified_by T1. These are distinct claims, with different\nclasses and reasons. X1 has no justified semantic connection to that chain.\nSharing the packet label does not supply one. X1 intentionally uses\noptions.strict=false for this isolated unlinked write: strict mode otherwise\nrequires a connection after the about exists. State this choice explicitly;\ndo not invent a relation to satisfy that precondition. The four linked-history\nwrites keep the default strict mode and every source retains its evidence.\n\nThe JSON envelopes are teaching notation. Send only `arguments` to `tool`;\n`save_as` binds the returned value. `${name.generated_refs.0}` copies an exact\nreturned ref. `expect_partial` marks an intentionally incomplete response in\nthe replay, never an MCP argument or permission to call that response complete.\n\n## Recover, write and inspect the sources\n\nAn empty about returns not_found. With an existing about, use its actual\ncatalogue and refs instead of repeating this fresh-store assumption.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"initial\",\n  \"expect_error\": \"not_found\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"budget\": {\"max_bytes\": 15000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"constraint\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-budget-proof:constraint:v1\",\n    \"scope\": {\n      \"process\": \"budget-review\",\n      \"task\": \"export-check\"\n    },\n    \"labels\": {\n      \"packet\": \"PACK-8\",\n      \"component\": \"export\"\n    },\n    \"occurred_at\": \"2026-09-01T08:00:00Z\",\n    \"observed_at\": \"2026-09-01T08:00:00Z\",\n    \"current\": {\n      \"kind\": \"constraint\",\n      \"summary\": \"C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.\",\n      \"summary_en\": \"C1 requires offline, device-local ledger storage for export EXP-8: no network access is allowed.\",\n      \"evidence\": \"C1, received 2026-09-01T08:00:00Z: C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.\"\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"constraint_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${constraint.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"decision\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"intent\": \"record_decision\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-budget-proof:decision:v1\",\n    \"scope\": {\n      \"process\": \"budget-review\",\n      \"task\": \"export-check\"\n    },\n    \"labels\": {\n      \"packet\": \"PACK-8\",\n      \"component\": \"export\"\n    },\n    \"occurred_at\": \"2026-09-01T09:00:00Z\",\n    \"observed_at\": \"2026-09-01T09:00:00Z\",\n    \"current\": {\n      \"kind\": \"decision\",\n      \"summary\": \"D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.\",\n      \"summary_en\": \"D1 selects SQLite for EXP-8 because its local storage meets the C1 offline ledger requirement.\",\n      \"evidence\": \"D1, received 2026-09-01T09:00:00Z: D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${constraint.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${constraint.generated_refs.0}\",\n        \"rel\": \"chosen_because\",\n        \"class\": \"motivational\",\n        \"confidence\": \"high\",\n        \"why\": \"D1 explicitly chooses SQLite to meet C1's device-local, network-free export requirement; this is the stated reason for that choice.\",\n        \"evidence\": \"D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"decision_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${decision.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"test\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-budget-proof:test:v1\",\n    \"scope\": {\n      \"process\": \"budget-review\",\n      \"task\": \"export-check\"\n    },\n    \"labels\": {\n      \"packet\": \"PACK-8\",\n      \"component\": \"export\"\n    },\n    \"occurred_at\": \"2026-09-01T10:00:00Z\",\n    \"observed_at\": \"2026-09-01T10:00:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.\",\n      \"summary_en\": \"T1 reports a successful offline EXP-8 test of the D1 SQLite plan: original and restored checksums match at 9a7c.\",\n      \"evidence\": \"T1, received 2026-09-01T10:00:00Z: T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${decision.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${decision.generated_refs.0}\",\n        \"rel\": \"uses_background\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"T1 identifies D1 as the plan used in the test. The plan is context for interpreting the test; it is not itself proof that the test passed.\",\n        \"evidence\": \"T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"test_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${test.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"result\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-budget-proof:result:v1\",\n    \"scope\": {\n      \"process\": \"budget-review\",\n      \"task\": \"export-check\"\n    },\n    \"labels\": {\n      \"packet\": \"PACK-8\",\n      \"component\": \"export\"\n    },\n    \"occurred_at\": \"2026-09-01T11:00:00Z\",\n    \"observed_at\": \"2026-09-01T11:00:00Z\",\n    \"current\": {\n      \"kind\": \"success_path\",\n      \"summary\": \"R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.\",\n      \"summary_en\": \"R1 records successful offline completion of EXP-8, verified by the matching 9a7c checksum in T1.\",\n      \"evidence\": \"R1, received 2026-09-01T11:00:00Z: R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.\"\n    },\n    \"read_context\": {\n      \"inspected_refs\": [\n        \"${test.generated_refs.0}\"\n      ]\n    },\n    \"connect_to\": [\n      {\n        \"ref\": \"${test.generated_refs.0}\",\n        \"rel\": \"verified_by\",\n        \"class\": \"evidential\",\n        \"confidence\": \"high\",\n        \"why\": \"R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1.\",\n        \"evidence\": \"R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.\"\n      }\n    ]\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"result_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${result.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\",\n  \"save_as\": \"unrelated\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"intent\": \"record_observation\",\n    \"actor\": \"guide-writer\",\n    \"source_kind\": \"human\",\n    \"idempotency_key\": \"guide-budget-proof:unrelated:v1\",\n    \"scope\": {\n      \"process\": \"budget-review\",\n      \"task\": \"warehouse-inspection\"\n    },\n    \"labels\": {\n      \"packet\": \"PACK-8\",\n      \"component\": \"warehouse\"\n    },\n    \"occurred_at\": \"2026-09-01T12:00:00Z\",\n    \"observed_at\": \"2026-09-01T12:00:00Z\",\n    \"current\": {\n      \"kind\": \"observation\",\n      \"summary\": \"X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.\",\n      \"summary_en\": \"X1 observes blue lights at Warehouse WH-9 at 12:00 UTC on September 1; this independent lighting inspection reports nothing about an export.\",\n      \"evidence\": \"X1, received 2026-09-01T12:00:00Z: X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.\"\n    },\n    \"options\": {\n      \"strict\": false\n    }\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"unrelated_read\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${unrelated.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 20000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"catalogue\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"budget\": {\"max_bytes\": 20000, \"detail\": \"compact\"}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_open\",\n  \"save_as\": \"view\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"packet_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${view.view_revision}\",\n    \"idempotency_key\": \"guide-budget-proof:view-packet:v1\",\n    \"explanation\": \"Review packet in PACK-8\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T07:00:00Z\", \"to\": \"2026-09-01T13:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"packet\"], \"labels\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}], \"relation_classes\": [\"motivational\", \"evidential\"]},\n    \"selection\": \"${result.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"packet_state\",\n  \"arguments\": {\n  }\n}\n```\n\n## Enumerate an interval with two temporal pages\n\nThe reading request is: list the records received in [08:00, 12:00) UTC.\nUse the observed clock and the actual PACK-8 catalogue value. First capture\nthe inclusive 08:00 boundary with Goto. Retain only records exactly on that\nboundary; the point lookup can also return older state in larger histories.\nThen Forward starts strictly after 08:00. A page is a slice, not the interval.\n\nThe first Forward page contains D1 and T1. Preserve it and its opaque\npage.next_cursor. If the reading allowance ends here, report these refs,\nthe covered boundary, the unchanged clock/labels/limit/budget and the exact\ncontinuation call shown next. Do not answer as though R1 or later records\nhad already been read. A continuation goes in from.ref; do not replace it\nwith the last record's timestamp or restart at the original time.\n\n```json\n{\n  \"tool\": \"kmp_goto\",\n  \"save_as\": \"boundary\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"at\": {\"time\": \"2026-09-01T08:00:00Z\"},\n    \"axis\": \"observed\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"packet\"], \"selectors\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}]},\n    \"limit\": {\"entries\": 10},\n    \"budget\": {\"max_bytes\": 12000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"temporal_first\",\n  \"expect_partial\": true,\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": {\"time\": \"2026-09-01T08:00:00Z\"},\n    \"axis\": \"observed\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"packet\"], \"selectors\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}]},\n    \"limit\": {\"entries\": 2},\n    \"budget\": {\"max_bytes\": 12000}\n  }\n}\n```\n\nAt this checkpoint, the interval is **partial**. The next call resumes\nthat selection with all bound arguments unchanged. In this small packet it\nreturns R1 and X1; X1 is exactly at 12:00 and must be excluded from the\nhalf-open interval. Merge C1, D1, T1 and R1 by exact ref. Do not count X1,\nand do not count repeated coordinates of one entry as separate memories.\nIf has_more stays true, keep the new cursor and continue the same operation.\nA repeated cursor without progress is a reason to stop and report the problem.\n\n```json\n{\n  \"tool\": \"kmp_forward\",\n  \"save_as\": \"temporal_second\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": {\"ref\": \"${temporal_first.page.next_cursor}\"},\n    \"axis\": \"observed\",\n    \"dimensions\": {\"mode\": \"only\", \"include\": [\"packet\"], \"selectors\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}]},\n    \"limit\": {\"entries\": 2},\n    \"budget\": {\"max_bytes\": 12000}\n  }\n}\n```\n\n## Audit a path over three pages\n\nThe separate audit request is to explain the path from R1 to C1. It is not\nan authorization or identity inference. Follow the exact directed relations:\nR1 verified_by T1, T1 uses_background D1, D1 chosen_because C1. Each link's\nreason and evidence still need to support its own claim.\n\nLimit the response to one relation per page. Trace continuation uses\npage.cursor, unlike the temporal from.ref above. Keep both endpoints,\nabout, depth, byte budget and page size unchanged. Save each returned edge\nand verify that new edges arrive and the opaque cursor advances; a page\nmarker is not a new path selection. Trace has no offset field to inspect.\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"trace_first\",\n  \"expect_partial\": true,\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": \"${result.generated_refs.0}\",\n    \"to\": \"${constraint.generated_refs.0}\",\n    \"budget\": {\"depth\": 6, \"max_bytes\": 12000},\n    \"page\": {\"entries\": 1}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"trace_second\",\n  \"expect_partial\": true,\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": \"${result.generated_refs.0}\",\n    \"to\": \"${constraint.generated_refs.0}\",\n    \"budget\": {\"depth\": 6, \"max_bytes\": 12000},\n    \"page\": {\"entries\": 1, \"cursor\": \"${trace_first.page.next_cursor}\"}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"trace_third\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": \"${result.generated_refs.0}\",\n    \"to\": \"${constraint.generated_refs.0}\",\n    \"budget\": {\"depth\": 6, \"max_bytes\": 12000},\n    \"page\": {\"entries\": 1, \"cursor\": \"${trace_second.page.next_cursor}\"}\n  }\n}\n```\n\n## Inspect when only the stable object fits\n\nA 512-byte allowance cannot hold the source inspection. Inspect returns its\nstable object with warnings; it can exceed that requested ceiling rather\nthan erase the object. Expandable evidence and links remain pending. An\naccepted response, or a readable title in ChronoLoom, does not mean the proof\nhas been consumed.\n\nRecord the next cursor and required_bytes. If the available context cannot\naccept that size, say the inspection is partial and hand off its continuation;\ndo not loop at the same ceiling or synthesize the omitted evidence. For this\nteaching continuation, the allowance is then raised to the exact reported\nsize. The replay uses the original bound arguments with only budget.max_bytes\nand page.cursor changed. The full object may repeat; count both responses.\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"inspect_partial\",\n  \"expect_partial\": true,\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${result.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": 512}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_inspect\",\n  \"save_as\": \"inspect_complete\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"ref\": \"${result.generated_refs.0}\",\n    \"budget\": {\"max_bytes\": \"${inspect_partial.page.required_bytes}\"},\n    \"page\": {\"cursor\": \"${inspect_partial.page.next_cursor}\"}\n  }\n}\n```\n\n## A selection cap is not unfinished pagination\n\nHere max_entries=1 deliberately caps the recall selection. Even after its\neligible expansion is fully paged, withheld evidence cannot be\nrecovered by pretending that another page exists. Compare selection_omitted\nwith page.has_more and excluded_by_detail. This compact recall is an\nillustration of a capped selection, not a replacement for the completed\ninterval traversal. Report its limit explicitly; changing max_entries means\nstarting a new selection, not continuing this one. budget.tokens is advisory,\nwhile max_bytes controls the native structured response subject to its floor.\n\n```json\n{\n  \"tool\": \"kmp_wake\",\n  \"save_as\": \"capped_recall\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"budget\": {\"max_bytes\": 20000, \"max_entries\": 1, \"detail\": \"compact\"}\n  }\n}\n```\n\n## Missing path: do not manufacture a connection\n\nA second, independent audit asks whether R1 has a stored proof path to X1.\nInspecting both records has shown only export evidence and warehouse lighting.\nTrace should report no path. Shared packet membership is not causal proof;\ndo not add follows or another fallback relation merely to make the audit pass.\nView the packet and the original disconnected source before the final\nsemantic question. The viewer has its own reads; it does not consume an\noutstanding MCP page or validate a missing proof path.\n\n```json\n{\n  \"tool\": \"kmp_trace\",\n  \"save_as\": \"no_path\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"from\": \"${result.generated_refs.0}\",\n    \"to\": \"${unrelated.generated_refs.0}\",\n    \"budget\": {\"depth\": 6, \"max_bytes\": 12000}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"export_proof_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${packet_state.view_revision}\",\n    \"idempotency_key\": \"guide-budget-proof:view-export_proof:v1\",\n    \"explanation\": \"Review export proof in PACK-8\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T07:00:00Z\", \"to\": \"2026-09-01T13:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"packet\"], \"labels\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}, {\"key\": \"component\", \"op\": \"in\", \"values\": [\"export\"]}], \"relation_classes\": [\"motivational\", \"evidential\"]},\n    \"selection\": \"${result.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"export_proof_state\",\n  \"arguments\": {\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_apply_intent\",\n  \"save_as\": \"unrelated_source_frame\",\n  \"arguments\": {\n    \"expected_revision\": \"${export_proof_state.view_revision}\",\n    \"idempotency_key\": \"guide-budget-proof:view-unrelated_source:v1\",\n    \"explanation\": \"Review unrelated source in PACK-8\",\n    \"focus\": {\"time_range\": {\"axis\": \"observed\", \"from\": \"2026-09-01T07:00:00Z\", \"to\": \"2026-09-01T13:00:00Z\"}},\n    \"projection\": {\"semantic_zoom\": \"moment\", \"dimensions\": [\"packet\"], \"labels\": [{\"key\": \"packet\", \"op\": \"in\", \"values\": [\"PACK-8\"]}], \"relation_classes\": [\"motivational\", \"evidential\"]},\n    \"selection\": \"${unrelated.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"unrelated_source_state\",\n  \"arguments\": {\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_view_get_state\",\n  \"save_as\": \"view_state\",\n  \"arguments\": {\n  }\n}\n```\n\n## Terminal semantic UNKNOWN\n\nThe final independent question is “¿Quién autorizó PURGE-9?”. Render it in\nEnglish without dropping PURGE-9, and preserve the user's wording in asked_as.\nNone of the sources names that operation or its approver. Read the returned\nmissing proof and UNKNOWN. At most one selection in the user's original\nwords is permitted after the English attempt; changing budgets or other\narguments is not another authorized semantic retry.\n\nAfter the second UNKNOWN, stop this semantic investigation. Do not inspect\nthe about root, sweep other abouts, navigate time, or fabricate an approver\nfrom the export history. Earlier traversal and audit calls above answer\ndifferent requests; they are not a fallback after this terminal result.\n\n```json\n{\n  \"tool\": \"kmp_ask\",\n  \"save_as\": \"unknown_english\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"question\": \"Who authorized PURGE-9?\",\n    \"asked_as\": \"¿Quién autorizó PURGE-9?\",\n    \"budget\": {\"max_bytes\": 20000, \"detail\": \"full\"}\n  }\n}\n```\n\n```json\n{\n  \"tool\": \"kmp_ask\",\n  \"save_as\": \"unknown_original\",\n  \"arguments\": {\n    \"about\": \"example:guide:budget-proof\",\n    \"question\": \"¿Quién autorizó PURGE-9?\",\n    \"asked_as\": \"¿Quién autorizó PURGE-9?\",\n    \"budget\": {\"max_bytes\": 20000, \"detail\": \"full\"}\n  }\n}\n```\n\nThe result is UNKNOWN, not a guess about an authorizer. No tool call in\nthis authored lesson follows that terminal result.\n\nRun `python3 scripts/guide_examples/replay.py --lesson budget-proof\n--guide-mode markdown --binary <development-binary> --trace <new-jsonl>\n--result <new-json>`. The checker assembles actual pages, checks source text,\ninterval bounds and directed proof, and retains the intermediate pending\ncontinuations in its result. It invokes no model. For a separate visual\nreview, use --hold-view; viewer operations review the already defined packet,\nnot another attempt to answer PURGE-9.\n\nBefore using these examples with an independent LLM writer, give it only the\nsource history and guide. Reader questions, expected refs and assertions\nbelong to this teaching review, never to that writer's source input.\n"
         },
         {
           "coordinates": [
@@ -1006,17 +1005,17 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:ask",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
+          "text": "LIVE TOOL kmp_ask. Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance."
         },
         {
           "coordinates": [
@@ -1038,7 +1037,7 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1046,9 +1045,9 @@
             "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval."
         },
         {
           "coordinates": [
@@ -1070,17 +1069,17 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -1102,17 +1101,17 @@
               "sequence": 35
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -1134,17 +1133,17 @@
               "sequence": 36
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -1166,17 +1165,17 @@
               "sequence": 37
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:write",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -1198,17 +1197,17 @@
               "sequence": 38
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:relate",
+            "guide_ref": "guide:kmp-agent:verb:write",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -1230,17 +1229,17 @@
               "sequence": 39
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:time",
+            "guide_ref": "guide:kmp-agent:verb:relate",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -1262,17 +1261,17 @@
               "sequence": 40
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:audit",
+            "guide_ref": "guide:kmp-agent:verb:time",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -1294,17 +1293,17 @@
               "sequence": 41
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:view",
+            "guide_ref": "guide:kmp-agent:verb:audit",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -1326,7 +1325,7 @@
               "sequence": 42
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1334,9 +1333,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1358,7 +1357,7 @@
               "sequence": 43
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
@@ -1366,9 +1365,9 @@
             "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1390,17 +1389,17 @@
               "sequence": 44
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
-            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_ref": "guide:kmp-agent:verb:view",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1420,6 +1419,38 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 45
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_ref": "guide:kmp-agent:verb:wake",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:45:00Z",
+              "occurred_at": "2026-08-28T00:45:00Z",
+              "scope_id": "timeline",
+              "sequence": 46
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 46
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 46
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1824,6 +1855,19 @@
             "guide:kmp-agent:example:labels-negation"
           ],
           "text": "Six fictional LEX-7 sources distinguish glossary-backed catalogue normalization, an explicit restatement, a negative report under matching conditions, a different environment and a later decision. Native reads preserve the Spanish sources and original clocks.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:budget-proof",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:budget-proof"
+          ],
+          "text": "Five fictional source records demonstrate actual temporal, trace and inspect continuations, a capped selection and two terminal semantic UNKNOWN reads.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -2296,10 +2340,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "The lesson preserves exact temporal and trace cursors and resumes a stable-floor inspection at its reported complete size.",
+          "from": "guide:kmp-agent:example:budget-proof",
+          "rel": "uses_background",
+          "sequence": 28,
+          "to": "guide:kmp-agent:advanced:budgets",
+          "why": "The packet separates byte floors, selection limits and pending pages before reading or auditing proof."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve cited stored text and evidence, or UNKNOWN; never generate an answer. Read proof.evidence[].text and judge whether it answers. A dated semantic question uses as_of or a half-open UTC interval and axis; proof records the selection and nearest_outside on a bounded UNKNOWN. If the first English question finds UNKNOWN or irrelevant evidence, re-ask at most once in the user's own words. Changing optional arguments is another selection, not pagination; continue only through projection.page.next_cursor with bound arguments unchanged. After those selections, reclassify the original goal: history/current state uses temporal navigation; genuinely semantic UNKNOWN is terminal. Do not inspect the root, widen scope or traverse the graph to bypass it. proof.confidence measures lexical overlap, not answer correctness or relation-writer certainty; reached_by items are supporting proof, not direct answers. See proof fields for language-bridge and summary provenance.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2309,7 +2363,7 @@
           "evidence": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2319,7 +2373,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2329,7 +2383,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2339,7 +2393,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2349,7 +2403,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 33,
+          "sequence": 34,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2359,7 +2413,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 34,
+          "sequence": 35,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2369,7 +2423,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Coordinate comparisons read the dimension scopes two abouts both use and where on one clock each memory stands inside them; they do not declare links. A writer may separately declare only `same_event_as` or `same_entity_as` across abouts, with a returned proposal and explicit proof, without merging their ownership. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the declared relations in the selection, including permitted cross-about equivalences, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may use a returned proposal to declare an equivalence only when source evidence justifies identity. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 35,
+          "sequence": 36,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2379,7 +2433,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 36,
+          "sequence": 37,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2389,7 +2443,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 37,
+          "sequence": 38,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2399,7 +2453,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 38,
+          "sequence": 39,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2409,7 +2463,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 39,
+          "sequence": 40,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2419,7 +2473,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 40,
+          "sequence": 41,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2429,7 +2483,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 41,
+          "sequence": 42,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -2439,7 +2493,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 42,
+          "sequence": 43,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -2455,7 +2509,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:e767c3b0c8ae3ce2211f",
+    "idempotency_key": "ingest:guide-sync:1:person:ba89f69960d8fa5f7a09",
     "memory": {
       "dimensions": [
         {
@@ -3109,6 +3163,36 @@
             "source": "editorial"
           },
           "text": "LEX-7 gives bitácora and journal one component meaning through an explicit glossary. Ask the agent to read guide:kmp-agent:example:labels-negation and run the isolated lesson. Review S1 before and after relabelling: its Spanish text and original clocks stay intact, and English search returns the Spanish source. In the production RUN-7 view, S2 restates S1 while S3 says not enabled under the same instant and owner. Follow both relations; later receipt does not resolve their conflict. Inspect S4 in staging separately, then show all six component memories, including glossary constraint G1 and later RUN-8 decision D1. Opposite words from different environments or times do not create a universal contradiction. Labels group candidates; source-backed relations express what the writer knows. The Current record panel can show later links while the scene uses its selected observed window. This authored review does not measure LLM learning."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:21:00Z",
+              "occurred_at": "2026-08-28T00:21:00Z",
+              "scope_id": "timeline",
+              "sequence": 22
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 22
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 22
+            }
+          ],
+          "id": "guide:kmp:advanced:budget-proof",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "PACK-8 contains an export requirement, decision, test and result, plus unrelated warehouse lighting. Ask the agent to read guide:kmp-agent:example:budget-proof. Review five typed memories in ChronoLoom and follow R1 verified_by T1, T1 uses_background D1 and D1 chosen_because C1. The temporal reader captures the inclusive start and continues two pages before excluding the exact end. A partial inspection preserves its object but may still omit proof: the agent must report the exact pending continuation and needed size. The viewer has its own reads and does not complete that MCP page. Packet membership creates no path to X1. Neither the sources nor two semantic UNKNOWN selections identify who authorized PURGE-9; stop rather than invent an approver. This authored native review does not measure independent LLM learning."
         }
       ],
       "evidence": [
@@ -3384,6 +3468,19 @@
           ],
           "text": "The explicit glossary justifies replacing one component label, not rewriting the memory. Six native selector traversals preserve different conditions and an unresolved production disagreement.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:budget-proof",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:budget-proof"
+          ],
+          "text": "The source-backed lesson retains five memories, typed path evidence, partial checkpoints and complete continuations with no semantic calls after the second UNKNOWN.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -3576,6 +3673,16 @@
           "sequence": 19,
           "to": "guide:kmp:advanced:late-conflict",
           "why": "After reviewing late conflict resolution, the reader distinguishes a contradiction that remains unresolved from unrelated opposite states selected by labels."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "A shared PACK-8 label groups export and warehouse records without supplying a semantic relation or authorization.",
+          "from": "guide:kmp:advanced:budget-proof",
+          "rel": "uses_background",
+          "sequence": 20,
+          "to": "guide:kmp:advanced:labels-negation",
+          "why": "The earlier label lesson distinguishes selection from proof; the budget lesson adds the difference between a page, a selection cap and missing evidence."
         }
       ]
     },

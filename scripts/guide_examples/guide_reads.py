@@ -21,6 +21,8 @@ def prepare(client, root: Path, lesson: Path, mode: str):
         topics.add('advanced:lifecycle')
     elif lesson.stem == 'labels-negation':
         topics.update({'advanced:language', 'advanced:summary', 'advanced:lifecycle'})
+    elif lesson.stem == 'budget-proof':
+        topics.update({'advanced:budgets', 'advanced:language'})
 
     native_call = client.call
 

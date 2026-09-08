@@ -18,13 +18,14 @@ from four_clocks_checks import check as check_clocks, clock_bindings
 from quantities_checks import check as check_quantities, clock_bindings as quantity_clock
 from late_conflict_checks import check as check_late_conflict
 from labels_negation_checks import check as check_labels_negation
+from budget_proof_checks import check as check_budget_proof
 from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
 LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
            'quantities': check_quantities, 'late-conflict': check_late_conflict,
-           'labels-negation': check_labels_negation}
+           'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof}
 
 
 def bind(value, saved):
@@ -102,7 +103,12 @@ def run(args):
                                 'clock': saved['clock']})
                     arguments = bind(call['arguments'], saved)
                     result = client.call(call['tool'], arguments, call.get('expect_error'))
-                    complete(result)
+                    if call.get('expect_partial'):
+                        pages = (result.get('page', {}), result.get('projection', {}).get('page', {}))
+                        if not any(page.get('has_more') for page in pages):
+                            raise ValueError('Expected an explicitly partial teaching response')
+                    else:
+                        complete(result)
                     saved[call['save_as']] = result
                     authored[call['save_as']] = arguments
                 checks = LESSONS[args.lesson](saved, client, authored)
