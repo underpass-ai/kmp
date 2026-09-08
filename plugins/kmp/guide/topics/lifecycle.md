@@ -31,6 +31,11 @@ A replaced entry comes back **marked**. `kmp_wake` and `kmp_ask` carry
 
 It is kept apart from `proof.conflicts` on purpose. `contradicts` says two
 entries disagree and both may still be live — the tension is the information.
+Once an endpoint is superseded at the selected time, that contradiction no
+longer appears as a live `proof.conflicts` marker. Its original edge remains
+in audit paths. An observed recall before the replacement still exposes the
+earlier conflict; do not apply today's resolution to that earlier question.
+
 `supersedes` says one replaced the other: no tension, a lifecycle, and the
 older entry is history rather than advice. Read the older one as what was
 true then, not as what to do now.

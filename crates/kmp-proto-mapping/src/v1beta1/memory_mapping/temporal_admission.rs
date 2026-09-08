@@ -3,8 +3,9 @@
 //! A recall that names an instant or a span reads the bundle's coordinates
 //! — the five clocks every `contains_entry` relation carries — and decides,
 //! entry by entry on the clock the caller asked for, what competes. Evidence
-//! follows the entries it supports: proof for a memory inside the span is
-//! inside the span. What this admits is decided before the ranker builds
+//! follows the entries it supports, but an observed selection cannot admit
+//! proof received after its end merely because it supports an older entry.
+//! What this admits is decided before the ranker builds
 //! its collection, so the statistics that weigh a word are the span's own.
 
 use std::borrow::Cow;
@@ -52,6 +53,8 @@ pub(super) struct TemporalAdmission {
     instants_by_ref: BTreeMap<String, EntryInstant>,
     /// Which entries each evidence node supports, so proof follows its claim.
     supported_by: BTreeMap<String, Vec<String>>,
+    /// Evidence with an explicit receipt time after the observed boundary.
+    late_evidence: BTreeSet<String>,
 }
 
 impl TemporalAdmission {
@@ -67,6 +70,7 @@ impl TemporalAdmission {
                 placed: BTreeSet::new(),
                 instants_by_ref: BTreeMap::new(),
                 supported_by: BTreeMap::new(),
+                late_evidence: BTreeSet::new(),
             });
         };
         let coordinates = coordinates_by_ref(bundle);
@@ -116,6 +120,31 @@ impl TemporalAdmission {
                 .push(relationship.target_node_id().to_string());
         }
 
+        let observed_end = (axis == TemporalAxis::Observed)
+            .then(|| match selection {
+                TemporalSelection::AsOf { .. } => resolved_as_of.as_deref().map(|at| (at, true)),
+                TemporalSelection::Within { interval, .. } => interval.end().map(|at| (at, false)),
+                TemporalSelection::Frontier => None,
+            })
+            .flatten();
+        let late_evidence = std::iter::once(bundle.root_node())
+            .chain(bundle.neighbor_nodes())
+            .filter(|node| matches!(node.node_kind(), "memory_evidence" | "evidence"))
+            .filter(|node| {
+                let Some((end, inclusive)) = observed_end else {
+                    return false;
+                };
+                let Some(time) = node.properties().get("payload_time") else {
+                    return false;
+                };
+                matches!(
+                    compare_temporal_instants(time, end),
+                    Some(Ordering::Greater)
+                ) || (!inclusive && compare_temporal_instants(time, end) == Some(Ordering::Equal))
+            })
+            .map(|node| node.node_id().to_string())
+            .collect();
+
         Ok(Self {
             selection: selection.clone(),
             resolved_as_of,
@@ -123,6 +152,7 @@ impl TemporalAdmission {
             placed: coordinates.into_keys().collect(),
             instants_by_ref,
             supported_by,
+            late_evidence,
         })
     }
 
@@ -159,9 +189,10 @@ impl TemporalAdmission {
     /// coordinate that the selection did not admit. What touches such a
     /// node did not exist where the recall stands.
     pub(super) fn excludes(&self, node_ref: &str) -> bool {
-        self.admitted
-            .as_ref()
-            .is_some_and(|admitted| self.placed.contains(node_ref) && !admitted.contains(node_ref))
+        self.late_evidence.contains(node_ref)
+            || self.admitted.as_ref().is_some_and(|admitted| {
+                self.placed.contains(node_ref) && !admitted.contains(node_ref)
+            })
     }
 
     /// The bundle as it stood where the recall stands: every relation that
@@ -237,6 +268,10 @@ impl TemporalAdmission {
         let Some(admitted) = &self.admitted else {
             return true;
         };
+        let evidence_ref = item.id.strip_prefix("detail:").unwrap_or(&item.id);
+        if self.late_evidence.contains(evidence_ref) {
+            return false;
+        }
         candidate_refs(item)
             .into_iter()
             .any(|candidate_ref| self.admits_ref(admitted, &candidate_ref))

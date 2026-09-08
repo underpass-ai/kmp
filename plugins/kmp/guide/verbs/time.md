@@ -75,6 +75,12 @@ observed this morning, keep yesterday in `occurred_at` and this morning in
 `observed_at`. A backfill preserves a genuinely known earlier observation;
 it does not copy event time into the knowledge clock merely because it is earlier.
 
+An observed recall excludes evidence whose explicit receipt time is after
+`as_of`, or at/after an interval's exclusive end, even if it supports an older
+entry. It does not invent dates for evidence without a timestamp. On the
+occurred axis, late evidence can still describe the earlier event; that does
+not establish that the evidence was known at the event time.
+
 ## Select entries and choose returned lanes
 
 Coordinate filters choose returned lanes; label selectors evaluate the whole
