@@ -13,10 +13,12 @@ from urllib.parse import urlsplit, urlunsplit
 from stdio import Stdio
 from decision_history_checks import check as check_history
 from alias_ownership_checks import check as check_alias
+from distributed_incident_checks import check as check_incident
 from guide_reads import prepare
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias}
+LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
+           'distributed-incident': check_incident}
 
 
 def bind(value, saved):

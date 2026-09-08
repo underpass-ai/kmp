@@ -309,5 +309,6 @@ move, and rebase any later intent on that revision.
   reassignment. If the effective or observed time is unknown, preserve that
   uncertainty; do not borrow this lesson's dates.
 
-Cross-about proposals and following an event through multiple projects are
-the next lesson. This same-about case does not test those preconditions.
+For cross-about proposals and following an event through multiple projects,
+consult the distributed-incident lesson from the guide index. This same-about
+case does not test those preconditions.

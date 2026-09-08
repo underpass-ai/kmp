@@ -14,6 +14,10 @@ def prepare(client, root: Path, lesson: Path, mode: str):
     lesson_entry = next(entry for entry in entries if entry['text'] == lesson.read_text())
     metrics = {'mode': mode, 'calls': 0, 'structured_bytes': 0, 'markdown_bytes': 0, 'inspected_refs': [], 'reused_guidance': 0}
 
+    topics = {'advanced:relations', 'advanced:scope'}
+    if lesson.stem != 'distributed-incident':
+        topics.update({'advanced:lifecycle', 'advanced:summary'})
+
     native_call = client.call
 
     def read(tool, arguments):
@@ -61,12 +65,14 @@ def prepare(client, root: Path, lesson: Path, mode: str):
             inspect(by_ref[ref], {**arguments, 'ref': ref})
             seen.add(ref)
 
+        source = json.loads((root / 'plugins/kmp/guide/editorial.json').read_text())['abouts'][0]
+        topic_texts = {(root / 'plugins/kmp/guide' / entry['text_file']).read_text()
+                       if entry.get('text_file') else entry['text']
+                       for entry in source['entries'] if entry['id'] in topics}
         consult(lesson_entry['id'])
-        # These authored lessons explicitly teach all four topics. This is a
-        # deterministic reader contract, not a substitute for an LLM operator.
+        # Read the topics this authored lesson uses, then reuse them.
         for ref in sorted(allowed):
-            if ref in {'guide:kmp-agent:advanced:relations', 'guide:kmp-agent:advanced:scope',
-                       'guide:kmp-agent:advanced:lifecycle', 'guide:kmp-agent:advanced:summary'}:
+            if by_ref[ref]['text'] in topic_texts:
                 consult(ref)
         tool_refs = {entry['metadata']['tool_name']: entry['metadata']['guide_ref']
                      for entry in entries if entry['metadata'].get('tool_name')}
@@ -99,8 +105,7 @@ def prepare(client, root: Path, lesson: Path, mode: str):
 
     if mode == 'full':
         return metrics
-    selected_ids = {'verb:write', 'advanced:relations', 'advanced:scope',
-                    'advanced:lifecycle', 'advanced:summary', 'examples:index'}
+    selected_ids = {'verb:write', 'examples:index'} | topics
     # The source entry IDs identify which canonical refs to copy, not how to
     # construct them. The full text must then come back through the live MCP.
     source = json.loads((root / 'plugins/kmp/guide/editorial.json').read_text())['abouts'][0]

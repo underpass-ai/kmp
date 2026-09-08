@@ -41,8 +41,9 @@ access. Use one source for the body; missing, empty, ambiguous and parent or
 absolute paths are rejected. The files ship with the plugin and are covered
 by the release input digest.
 
-The worked lessons, [decision history](examples/decision-history.md) and
-[alias and account ownership](examples/alias-ownership.md), contain explicit
+The worked lessons, [decision history](examples/decision-history.md),
+[alias and account ownership](examples/alias-ownership.md) and
+[distributed incident](examples/distributed-incident.md), contain explicit
 fictional sources, source-based writing choices, call
 arguments with bindings to actual returned refs, temporal reads and visual
 inspection. Their JSON envelopes are teaching notation: the replay resolves
@@ -56,7 +57,8 @@ python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
   --result artifacts/guide-decision-history.json
 ```
 
-Choose `--lesson alias-ownership` for the second lesson. The default
+Choose `--lesson alias-ownership` or `--lesson distributed-incident` for those
+lessons. The default
 `--guide-mode markdown` reads `AGENT.md`, the selected lesson and its
 explicit topic prerequisites; it consults each extended verb at first use and
 reuses it on repeated calls. Work-memory calls are never cached by this helper. `--guide-mode directed` retains compact wake and
