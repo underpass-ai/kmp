@@ -2986,3 +2986,167 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
             .all(|entry| entry["ref_id"] != "service:beta:outcome:freeze")
     );
 }
+
+#[test]
+fn temporal_lanes_keep_whole_entry_labels_for_selection() {
+    use serde_json::json;
+
+    let data_dir = tempfile::tempdir().expect("isolated store");
+    let envs = [
+        ("KMP_MCP_BACKEND", "embedded"),
+        ("KMP_MCP_DATA_DIR", data_dir.path().to_str().expect("utf8")),
+        ("KMP_VIEWER_ADDR", "off"),
+    ];
+    let coordinate = |kind: &str, scope: &str, sequence: u64| {
+        json!({
+            "dimension": kind, "scope_id": scope, "sequence": sequence,
+            "occurred_at": "2026-09-01T09:00:00Z", "observed_at": "2026-09-03T14:00:00Z",
+            "ingested_at": "2026-09-04T11:00:00Z", "valid_from": "2026-09-02T00:00:00Z",
+            "valid_until": "2026-09-05T00:00:00Z"
+        })
+    };
+    let mut requests = vec![json!({
+        "jsonrpc":"2.0", "id":1, "method":"initialize", "params":{
+            "protocolVersion":"2024-11-05", "clientInfo":{"name":"selector-regression","version":"1"},
+            "capabilities":{"extensions":{"io.modelcontextprotocol/ui":{"mimeTypes":["text/html;profile=mcp-app"]}}}
+        }
+    })];
+    let tool = |id: usize, name: &str, arguments: Value| {
+        json!({
+            "jsonrpc":"2.0", "id":id, "method":"tools/call", "params":{"name":name,"arguments":arguments}
+        })
+    };
+    requests.push(tool(2, "kmp_ingest", json!({
+        "about":"example:labels", "idempotency_key":"labels:seed", "memory":{
+            "dimensions":[{"id":"TEMP-4","kind":"document"},{"id":"permit","kind":"record"},{"id":"receipt","kind":"record"}],
+            "entries":[
+                {"id":"example:labels:permit","kind":"decision","text":"Permit TEMP-4 allows retries.",
+                 "coordinates":[coordinate("document","TEMP-4",1),coordinate("record","permit",1)]},
+                {"id":"example:labels:receipt","kind":"feedback","text":"Receipt of TEMP-4 was confirmed.",
+                 "coordinates":[coordinate("document","TEMP-4",2),coordinate("record","receipt",1)]}
+            ]
+        }
+    })));
+    let dims = |operator: &str, values: Value| {
+        json!({
+            "mode":"only", "include":["document"], "scope_ids":["TEMP-4"],
+            "selectors":[{"key":"record","op":operator,"values":values}]
+        })
+    };
+    let mut expected = Vec::new();
+    for axis in ["occurred", "observed", "ingested", "validity"] {
+        for (name, cursor, time) in [
+            ("kmp_goto", "at", "2026-09-04T12:00:00Z"),
+            ("kmp_near", "around", "2026-09-04T12:00:00Z"),
+            ("kmp_rewind", "from", "2026-09-04T12:00:00Z"),
+            ("kmp_forward", "from", "2026-09-01T00:00:00Z"),
+        ] {
+            for (op, values, refs) in [
+                ("in", json!(["permit"]), vec!["example:labels:permit"]),
+                ("notin", json!(["permit"]), vec!["example:labels:receipt"]),
+                (
+                    "exists",
+                    json!([]),
+                    vec!["example:labels:permit", "example:labels:receipt"],
+                ),
+                ("notexists", json!([]), vec![]),
+            ] {
+                let mut args = json!({"about":"example:labels","axis":axis,"dimensions":dims(op,values),"limit":{"entries":10},"budget":{"max_bytes":30000}});
+                args[cursor] = json!({"time":time});
+                requests.push(tool(requests.len() + 1, name, args));
+                expected.push((false, refs));
+            }
+        }
+    }
+    // The exact same admission must reach the negotiated App projection,
+    // with only the selected document coordinate and no excluded entry.
+    requests.push(tool(
+        requests.len() + 1,
+        "kmp_view_read_projection",
+        json!({
+            "about":"example:labels","axis":"validity","lod":"moment",
+            "from":"2026-09-02T00:00:00Z","to":"2026-09-03T00:00:00Z",
+            "dimensions":dims("in",json!(["permit"])),"limit":10
+        }),
+    ));
+    expected.push((true, vec!["example:labels:permit"]));
+    let wire = requests
+        .iter()
+        .map(|r| format!("{r}\n"))
+        .collect::<String>();
+    let output = run_binary(&envs, &wire);
+    assert!(output.status.success(), "{output:?}");
+    let responses = String::from_utf8(output.stdout)
+        .expect("utf8")
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("response"))
+        .collect::<Vec<_>>();
+    assert_eq!(responses.len(), requests.len());
+    for (index, (app, mut refs)) in expected.into_iter().enumerate() {
+        let response = &responses[index + 2];
+        let result = &response["result"];
+        assert_ne!(result["isError"], true, "{response}");
+        let entries = result["structuredContent"]["entries"]
+            .as_array()
+            .expect("entries");
+        let mut actual = entries
+            .iter()
+            .map(|entry| {
+                entry[if app { "ref_id" } else { "ref" }]
+                    .as_str()
+                    .expect("ref")
+            })
+            .collect::<Vec<_>>();
+        actual.sort_unstable();
+        refs.sort_unstable();
+        assert_eq!(
+            actual,
+            refs,
+            "request {}: {}",
+            index + 3,
+            requests[index + 2]
+        );
+        assert_ne!(result["structuredContent"]["page"]["has_more"], true);
+        for entry in entries {
+            for coord in entry["coordinates"].as_array().expect("coordinates") {
+                assert_eq!(
+                    coord["dimension"], "document",
+                    "excluded record lane must stay excluded"
+                );
+            }
+        }
+    }
+    // A continuation must keep both the selector and the narrowed output lane.
+    let mut page_args = json!({"about":"example:labels","axis":"occurred",
+        "from":{"time":"2026-09-01T00:00:00Z"},"dimensions":dims("exists",json!([])),
+        "limit":{"entries":1},"budget":{"max_bytes":30000}});
+    let mut paged_refs = Vec::new();
+    for page_index in 0..2 {
+        let request = tool(1, "kmp_forward", page_args.clone());
+        let output = run_binary(&envs, &format!("{request}\n"));
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).expect("page response");
+        assert_ne!(response["result"]["isError"], true, "{response}");
+        let result = &response["result"]["structuredContent"];
+        let entries = result["entries"].as_array().expect("page entries");
+        assert_eq!(entries.len(), 1);
+        paged_refs.push(entries[0]["ref"].as_str().expect("page ref").to_string());
+        assert_eq!(
+            entries[0]["coordinates"]
+                .as_array()
+                .expect("coordinates")
+                .len(),
+            1
+        );
+        assert_eq!(entries[0]["coordinates"][0]["dimension"], "document");
+        assert_eq!(result["page"]["has_more"], page_index == 0);
+        if page_index == 0 {
+            page_args["from"] = json!({"ref":result["page"]["next_cursor"]});
+        }
+    }
+    paged_refs.sort();
+    assert_eq!(
+        paged_refs,
+        vec!["example:labels:permit", "example:labels:receipt"]
+    );
+}

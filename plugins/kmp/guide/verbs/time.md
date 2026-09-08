@@ -74,3 +74,12 @@ refused at write time. For an incident that occurred yesterday but was first
 observed this morning, keep yesterday in `occurred_at` and this morning in
 `observed_at`. A backfill preserves a genuinely known earlier observation;
 it does not copy event time into the knowledge clock merely because it is earlier.
+
+## Select entries and choose returned lanes
+
+Coordinate filters choose returned lanes; label selectors evaluate the whole
+entry, including labels on lanes excluded from the result. Combining
+`include: ["document"]`, `scope_ids: ["TEMP-4"]` and a `record in ["permit"]`
+selector retains the matching document coordinate without returning the record
+coordinate. A missing label in the returned lanes does not mean the entry
+lacks that label. Consult the wake catalogue before selecting.
