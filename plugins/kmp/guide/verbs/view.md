@@ -47,3 +47,7 @@ for the scene. To establish lifecycle at an earlier instant, use a dated
 `kmp_wake` or `kmp_ask` and audit that returned proof.
 
 Following an entry relation in the inspector selects its recorded memory even outside the current window, reveals it on the chosen clock and centers it after successful selection. Missing clocks or inaccessible entries produce the existing read error; the link does not broaden about scope.
+
+Following a relation can reveal a memory written after the view was opened.
+ChronoLoom extends the time window from the target's stored clock and keeps
+the current about and label filters; a filtered target stays unavailable.
