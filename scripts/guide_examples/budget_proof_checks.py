@@ -54,7 +54,8 @@ def check(saved, client, authored):
     assert partial['page']['has_more'] and partial['page']['returned'] == 0
     assert partial['warnings'] and partial['page']['required_bytes'] > 512
     assert not complete['page']['has_more']
-    assert partial['object'] == complete['object'] == saved['result_read']['object']
+    assert partial['object'] == saved['result_read']['object']
+    assert complete['object_reused'] and complete['object'] == {'ref': partial['object']['ref']}
     assert complete['evidence'] and complete['links']['outgoing']
     assert authored['inspect_complete']['page']['cursor'] == partial['page']['next_cursor']
     assert authored['inspect_complete']['budget']['max_bytes'] == partial['page']['required_bytes']

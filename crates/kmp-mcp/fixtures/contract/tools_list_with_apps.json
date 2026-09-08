@@ -4284,7 +4284,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
+      "description": "Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4338,6 +4338,11 @@
                 "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change.",
                 "minLength": 1,
                 "type": "string"
+              },
+              "repeat_object": {
+                "default": true,
+                "description": "False requires page.cursor and retains only object.ref in this response. Reuse the full object from the first page; evidence and links still page verbatim. The cursor rejects a changed object or selection.",
+                "type": "boolean"
               }
             },
             "type": "object"
@@ -4377,8 +4382,12 @@
             "type": "object"
           },
           "object": {
-            "description": "Stored object with ref, kind, canonical text, metadata, and optional source.",
+            "description": "Stored object with ref, kind, canonical text, metadata, and optional source. With page.repeat_object=false, contains only ref; reuse the first page's object.",
             "type": "object"
+          },
+          "object_reused": {
+            "description": "Present and true only when this continuation omits the unchanged object body. Retain the first page's full object; the cursor validates it against the current selection.",
+            "type": "boolean"
           },
           "page": {
             "additionalProperties": false,
@@ -4410,7 +4419,7 @@
                 "type": "object"
               },
               "required_bytes": {
-                "description": "Exact serialized bytes required by the complete inspection, so a partial result never forces callers to probe budgets.",
+                "description": "Exact serialized bytes required by the complete inspection including its full object, even when this continuation reuses that object.",
                 "type": "integer"
               },
               "returned": {

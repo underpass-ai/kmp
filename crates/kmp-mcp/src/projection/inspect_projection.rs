@@ -228,4 +228,109 @@ mod tests {
         .expect_err("a changed selection cannot consume the cursor");
         assert!(error.message.contains("does not match"), "{error}");
     }
+
+    #[test]
+    fn inspect_can_reuse_a_large_object_and_reconstruct_every_expansion() {
+        use serde_json::json;
+
+        let mut value = inspect_value();
+        value["object"]["text"] = json!("Canonical original — 原文. ".repeat(140));
+        value["object"]["metadata"] = json!({"source_revision": "original:3"});
+        value["object"]["source"] = json!("signed source");
+        let full = enforce_inspect_output_budget(
+            value.clone(),
+            &json!({
+                "about": "project:test", "ref": "hub", "budget": {"max_bytes": 100_000}
+            }),
+        )
+        .expect("complete inspection");
+        let mut args = json!({
+            "about": "project:test", "ref": "hub", "budget": {"max_bytes": 2_400}
+        });
+        let first = enforce_inspect_output_budget(value.clone(), &args).expect("first page");
+        assert_eq!(first["object"], full["object"]);
+        assert_eq!(first["page"]["returned"], 0);
+        assert!(first.get("object_reused").is_none());
+
+        let mut accumulated = first.clone();
+        let mut next = first["page"]["next_cursor"].clone();
+        for _ in 0..30 {
+            args["page"] = json!({"cursor": next, "repeat_object": false});
+            let page = enforce_inspect_output_budget(value.clone(), &args).expect("continuation");
+            assert_eq!(page["object"], json!({"ref": "hub"}));
+            assert_eq!(page["object_reused"], true);
+            assert_eq!(
+                page["page"]["required_bytes"],
+                full["page"]["required_bytes"]
+            );
+            assert!(byte_len(&page) <= 2_400);
+            assert!(page["page"]["returned"].as_u64().unwrap() > 0);
+            for path in ["/evidence", "/links/incoming", "/links/outgoing", "/raw"] {
+                accumulated
+                    .pointer_mut(path)
+                    .unwrap()
+                    .as_array_mut()
+                    .unwrap()
+                    .extend(
+                        page.pointer(path)
+                            .unwrap()
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .cloned(),
+                    );
+            }
+            if page["page"]["has_more"] == false {
+                next = serde_json::Value::Null;
+                break;
+            }
+            next = page["page"]["next_cursor"].clone();
+        }
+        assert!(next.is_null(), "the inspection must finish");
+        for path in ["/object", "/evidence", "/links", "/raw"] {
+            assert_eq!(accumulated.pointer(path), full.pointer(path), "{path}");
+        }
+    }
+
+    #[test]
+    fn inspect_reuse_rejects_a_changed_object_or_proof() {
+        use serde_json::json;
+
+        let value = inspect_value();
+        let mut args =
+            json!({"about": "project:test", "ref": "hub", "budget": {"max_bytes": 2_400}});
+        let first = enforce_inspect_output_budget(value.clone(), &args).unwrap();
+        args["page"] = json!({"cursor": first["page"]["next_cursor"], "repeat_object": false});
+        for path in [
+            "/object/text",
+            "/object/metadata",
+            "/evidence/0/text",
+            "/links/outgoing/0/why",
+        ] {
+            let mut changed = value.clone();
+            *changed.pointer_mut(path).unwrap() = json!("changed after the first page");
+            let error = enforce_inspect_output_budget(changed, &args).expect_err("stale selection");
+            assert!(error.message.contains("does not match"), "{path}: {error}");
+        }
+        assert!(enforce_inspect_output_budget(value, &args).is_ok());
+    }
+
+    #[test]
+    fn inspect_reuse_requires_a_valid_continuation() {
+        use serde_json::json;
+
+        for page in [
+            json!({"repeat_object": false}),
+            json!({"repeat_object": false, "cursor": ""}),
+        ] {
+            let error = enforce_inspect_output_budget(
+                inspect_value(),
+                &json!({
+                    "about": "project:test", "ref": "hub", "page": page
+                }),
+            )
+            .expect_err("no first-page object can be reused");
+            assert!(error.message.contains("cursor"));
+        }
+    }
 }

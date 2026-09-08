@@ -494,12 +494,18 @@ than erase the object. Expandable evidence and links remain pending. An
 accepted response, or a readable title in ChronoLoom, does not mean the proof
 has been consumed.
 
-Record the next cursor and required_bytes. If the available context cannot
-accept that size, say the inspection is partial and hand off its continuation;
-do not loop at the same ceiling or synthesize the omitted evidence. For this
-teaching continuation, the allowance is then raised to the exact reported
-size. The replay uses the original bound arguments with only budget.max_bytes
-and page.cursor changed. The full object may repeat; count both responses.
+Retain the full first object and its next cursor. Setting page.repeat_object
+to false makes the continuation return only object.ref and object_reused=true;
+combine its evidence and links with the original object. The cursor still
+validates the full object and selection, and rejects a changed source.
+
+Here 512 bytes is too small even for the expansion envelope, so the teaching
+continuation raises the allowance to required_bytes, the exact size of the
+complete inspection including its object. Reusing the object can otherwise
+let proof fit the original ceiling. If an item still cannot fit, allow more
+context or hand off the explicitly partial result. Keep about, ref and include
+unchanged; count both actual responses. Do not overwrite the retained object
+with the ref-only continuation.
 
 ```json
 {
@@ -522,7 +528,7 @@ and page.cursor changed. The full object may repeat; count both responses.
     "about": "example:guide:budget-proof",
     "ref": "${result.generated_refs.0}",
     "budget": {"max_bytes": "${inspect_partial.page.required_bytes}"},
-    "page": {"cursor": "${inspect_partial.page.next_cursor}"}
+    "page": {"cursor": "${inspect_partial.page.next_cursor}", "repeat_object": false}
   }
 }
 ```

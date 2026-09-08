@@ -1,9 +1,10 @@
 //! Choosing which slice of an inspected object fits the ceiling the caller
 //! named, and how to ask for the next one.
 //!
-//! One concept: inspect pagination. The stable object is always returned; the
+//! One concept: inspect pagination. The first page returns the stable object; the
 //! expandable sections — evidence, links, raw records — are paged in a fixed
-//! order behind a cursor bound to the selection.
+//! order behind a cursor bound to the selection. A caller retaining that object
+//! may request only its ref on subsequent pages. No reader state is stored.
 //!
 //! This runs strictly *after* `inspect_from_response` has rendered its answer,
 //! and reaches into that answer by key. `render_inspect_page` also recomputes
@@ -56,17 +57,34 @@ struct InspectPageItem {
 
 /// Keeps the inspected object as a stable core and pages the sections that can
 /// grow around it. The expansion order is evidence, outgoing links, incoming
-/// links, then raw audit records. Every continuation repeats the object and
-/// advances through that one ordered selection without repeats or gaps.
+/// links, then raw audit records. Continuations repeat the object by default;
+/// page.repeat_object=false reuses the first page's object after validating the
+/// unchanged selection, including the full object, against its cursor.
 pub(crate) fn enforce_inspect_output_budget(
     value: Value,
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let limit = requested_byte_limit(arguments).map_err(ToolError::invalid_argument)?;
+    let repeat_object = arguments
+        .pointer("/page/repeat_object")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    if !repeat_object && arguments.pointer("/page/cursor").is_none() {
+        return Err(ToolError::invalid_argument(
+            "page.repeat_object=false requires page.cursor and the retained object from its first page",
+        ));
+    }
     let items = inspect_page_items(&value);
     let selection_hash = inspect_selection_hash(&value, &items, arguments);
     let offset = inspect_page_offset(arguments, &selection_hash, items.len())?;
     let required_bytes = inspect_full_required_bytes(&value, &items, &selection_hash);
+    // Hash and size the complete inspection before reusing any part of it.
+    // A changed text, metadata, relation or proof must still reject the cursor.
+    let mut value = value;
+    if !repeat_object {
+        value["object"] = json!({"ref": value["object"]["ref"]});
+        value["object_reused"] = json!(true);
+    }
     let full = render_inspect_page(
         &value,
         &items,

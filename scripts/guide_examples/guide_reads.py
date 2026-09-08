@@ -36,22 +36,28 @@ def prepare(client, root: Path, lesson: Path, mode: str):
         return result
 
     def inspect(entry, args):
+        retained_object = None
         for _ in range(100):
             result = read('kmp_inspect', args)
-            # Canonical ingest trims outer whitespace; never rewrite returned proof.
-            if result['object']['text'] != entry['text'].strip():
-                raise ValueError('The synchronized guide body differs from the authored source')
+            if result.get('object_reused'):
+                if retained_object is None or result['object'] != {'ref': retained_object['ref']}:
+                    raise ValueError('Inspect reused an object absent from the retained first page')
+            else:
+                # Canonical ingest trims outer whitespace; never rewrite returned proof.
+                if result['object']['text'] != entry['text'].strip():
+                    raise ValueError('The synchronized guide body differs from the authored source')
+                retained_object = result['object']
             page = result['page']
             if not page['has_more']:
                 break
-            if page.get('returned') == 0:
-                # A long lesson can fill the stable object and leave no room
-                # for its evidence. Use the exact native size, not a new query.
+            if page.get('returned') == 0 and result.get('object_reused'):
+                # Reusing the body was insufficient: an expansion item itself
+                # needs more room. Use the exact native size, not a new query.
                 required = page.get('required_bytes', 0)
                 if required <= args['budget']['max_bytes']:
                     raise ValueError('Guide inspection cannot advance at its explicit byte ceiling')
                 args = {**args, 'budget': {**args['budget'], 'max_bytes': required}}
-            args = {**args, 'page': {'cursor': page['next_cursor']}}
+            args = {**args, 'page': {'cursor': page['next_cursor'], 'repeat_object': False}}
         else:
             raise ValueError('Guide inspection exceeded 100 pages')
         metrics['inspected_refs'].append(entry['id'])

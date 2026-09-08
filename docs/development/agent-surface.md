@@ -64,6 +64,15 @@ haya una confusión probable: compartir etiqueta no prueba identidad; ocurrido
 ayer no significa observado ayer. Un replay escrito demuestra un contrato;
 no demuestra que otro LLM haya aprendido a usarlo.
 
+Al cambiar la representación de una continuación, comprobar la reconstrucción
+completa desde sus páginas contra una lectura sin paginar. En Inspect,
+`page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
+conservado; `object_reused=true` y `object.ref` identifican lo reutilizado.
+Texto, metadatos, fuente y pruebas siguen vinculados al cursor, aunque no se
+repitan. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
+recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
+resumir ni eliminar evidencia.
+
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
 que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
