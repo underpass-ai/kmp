@@ -147,6 +147,13 @@
           "depth": "advanced",
           "text": "An English search summary is searched and never cited. A memory written in any language may carry the reserved entry metadata key summary_en: an English rendering of its text, written by the writer at ingest, that an English question lands on. kmp_ask searches it as content, beside the text, and cites the stored text byte for byte, so the summary is where a writer canonicalises jargon, rollout slipped as launch postponed, while the memory stays what somebody wrote. A cited item carrying matched_via: summary was reached through the rendering and not through its text, and summary_terms names the question's words the rendering supplied; read them as the writer's words, not the memory's. The kernel lints it rather than trusting it: kmp_ingest warns, entry by entry, about a summary that leans to another language, carries fewer than two informative words, repeats the text word for word, or drops an identifier the text carries such as v0.7.0, #469 or kmp-mcp, and ranking makes the same reading, so such a summary carries nothing. kmp_write_memory takes it as current.summary_en: a strict write requires it when the fact is not written in English and refuses one that fails the lint, naming every fault. Fix the summary the error names; never alter the text to fit it. A memory written before summaries existed still owes one: kmp-mcp summaries pending lists them and the doctor counts them; attach each with kmp_write_memory, intent record_summary, current.ref and current.summary_en only, and the stored text stays exactly as it was.",
           "evidence": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text. The summaries verb and the doctor read the same list off the store's event log; record_summary compiles to an ingest of the stored entry with the summary added to its metadata."
+        },
+        {
+          "id": "example:decision-history",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text_file": "examples/decision-history.md",
+          "evidence": "A fictional four-source Atlas history with executable public MCP calls, explicit semantic choices and negative limits. Replayed by scripts/guide_examples/replay.py; this teaches one history and does not measure LLM learning."
         }
       ],
       "relations": [
@@ -285,6 +292,14 @@
           "class": "constraint",
           "why": "The same selection limit applies with or without a lexical bridge: render the semantic question in English, and only if it returns UNKNOWN or irrelevant evidence re-ask at most once in the user's own words. Preserve evidence and identifiers rather than translating the stored proof.",
           "evidence": "The live tool instructions prescribe the English rendering plus at most one re-ask in the user's own words. asked_as carries the original question without being searched; bridge availability does not change the selection limit."
+        },
+        {
+          "from": "example:decision-history",
+          "to": "verb:write",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "The worked history applies the writer contract to explicit source evidence, then audits the resulting decision and its replacement in time.",
+          "evidence": "The example inspects returned refs before linking, uses chosen_because and supersedes with distinct why and evidence, and compares validity at two instants."
         }
       ]
     },
@@ -390,6 +405,13 @@
           "depth": "advanced",
           "text": "Use a plain file when the information is canonical prose, a large artifact or something people should edit directly. Use KMP when time, evidence, typed relations, supersession or cross-session recovery are part of the meaning.",
           "evidence": "KMP is graph-temporal operational memory; it is not a replacement for source files or documentation."
+        },
+        {
+          "id": "advanced:decision-history",
+          "kind": "instruction",
+          "depth": "advanced",
+          "text": "A decision can change without losing its history. In the worked Atlas example, offline work is required on September 1; SQLite is chosen for that reason on September 2. A central shared journal is required on September 5, and a later explicit decision replaces SQLite with PostgreSQL. The agent guide entry guide:kmp-agent:example:decision-history contains the sources and complete calls. Ask your agent to run this fictional example in an isolated store and open its about example:guide:decision-history in ChronoLoom. Select the new decision at Memories detail: one evidential link explains what it replaces, and one motivational link explains why it was chosen. Follow each to its original evidence. Compare September 3 with September 6 using an explicit clock; the new choice must not be projected into the past. Two memory kinds and two relation classes are justified by these sources. This lesson does not cover every kind or relationship, nor establish that a new writer LLM has learned to use KMP.",
+          "evidence": "The agent lesson includes four dated fictional sources, constraint and decision memories, explicit replacement and motivation links, temporal reads and a shared-view intent."
         }
       ],
       "relations": [
@@ -488,6 +510,14 @@
           "class": "constraint",
           "why": "A good memory system must say what should remain ordinary documentation.",
           "evidence": "Canonical prose and large directly edited artifacts do not need graph-temporal semantics."
+        },
+        {
+          "from": "advanced:decision-history",
+          "to": "welcome",
+          "rel": "uses_background",
+          "class": "evidential",
+          "why": "This worked history gives the person a concrete path from the human introduction to the source, decision and later change.",
+          "evidence": "The human lesson points to the exact agent example and frames its two kinds and relation classes for inspection in ChronoLoom."
         }
       ]
     }

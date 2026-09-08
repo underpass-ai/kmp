@@ -130,7 +130,7 @@ if former_tools:
 
 known_non_tools = {
     "kmp_abouts", "kmp_adapter", "kmp_adapter_embedded", "kmp_application",
-    "kmp_domain", "kmp_interpretation", "kmp_mcp_tool", "kmp_move",
+    "kmp_domain", "kmp_entities", "kmp_interpretation", "kmp_mcp_tool", "kmp_move",
     "kmp_plugin_api", "kmp_ref_prefixes", "kmp_runner", "kmp_scope_ids",
     "kmp_scorecard", "kmp_testkit",
 }

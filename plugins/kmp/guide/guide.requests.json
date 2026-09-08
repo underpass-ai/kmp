@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:ec066ab091d2c8429d22",
+    "idempotency_key": "ingest:guide-sync:1:agent:e629c8655a45eeec716d",
     "memory": {
       "dimensions": [
         {
@@ -646,16 +646,15 @@
               "sequence": 21
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ask",
-          "kind": "reference",
+          "id": "guide:kmp-agent:example:decision-history",
+          "kind": "instruction",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
-            "source": "tools/list",
-            "tool_name": "kmp_ask"
+            "source": "editorial"
           },
-          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
+          "text": "# Worked example: a decision changes, its history remains\n\nUse this lesson when a reader needs to reconstruct a decision and its reasons\nat different dates. The LLM interprets the sources, chooses the memory kinds\nand justifies each relation. KMP validates and preserves that interpretation;\nit does not infer the replacement from database names or dates.\n\nThis is a fictional teaching history for `example:guide:decision-history`.\nNever mix it into a real project's about. In a writer evaluation, give the LLM\nthe guide and sources available at each step, without future sources or reader\nquestions. Replaying these authored calls checks the contract, not whether\nanother LLM learned the lesson.\n\n## Sources and choices\n\nAll timestamps below are explicit UTC. The source was received when it\noccurred, and took effect immediately. Ingestion happens when you run the\nexample; do not backdate that clock.\n\n| Source | Time | Literal source |\n| --- | --- | --- |\n| S1, product owner | 2026-09-01T09:00:00Z | Para Atlas, la bitácora debe funcionar sin red. El componente es journal y el entorno es field. |\n| S2, architecture decision | 2026-09-02T09:00:00Z | Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red. |\n| S3, product owner | 2026-09-05T09:00:00Z | Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red. Se mantienen el componente journal y el entorno field. |\n| S4, architecture decision | 2026-09-05T09:05:00Z | Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL. Esta decisión sustituye la elección anterior de SQLite desde ahora. |\n\nS1 and S3 are **constraints**; S2 and S4 are **decisions**. `intent` describes\nthe write operation, so `record_observation` can store a `constraint`.\n`chosen_because` has class `motivational`: the source explicitly gives a\nreason. `supersedes` has class `evidential`: the source explicitly withdraws\nthe old requirement or replaces the old decision. Evidence belongs on both\nclasses. This does not establish that only PostgreSQL could meet S3.\n\nThe about, process and task are declared teaching identifiers. `component`\nand `environment` labels come from S1 and S3, and are reused throughout this\nsingle component's decision history. Labels organize retrieval; they do not\nprove a reason or a replacement.\n\n## Call notation\n\nEach JSON block contains a tool name, its `arguments`, and a local `save_as`\nbinding. Send only the arguments to that tool. A string such as\n`${offline.generated_refs.0}` means copy that exact value from the earlier\nresponse; never send the placeholder, construct a ref, or reuse a ref from\nanother run. The repository replay resolves these bindings and records the\nactual requests and responses. `expect_error` names an intentional negative\nresult; every other error or incomplete page stops this bounded replay.\n\nFirst read the installed `guide:kmp-agent` and live `tools/list`. The lesson\nstarts by recovering its own about and label catalogue. On this fresh store,\nthe about does not exist: the embedded engine returns `not_found`, not an\nempty successful wake packet. That expected result permits the first write.\nIf the about already exists, inspect its memory and labels; do not treat it\nas empty to bypass strict relation validation. Other errors need diagnosis.\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"initial\",\"expect_error\":\"not_found\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"budget\":{\"max_bytes\":20000,\"detail\":\"full\"}}}\n```\n\n## Write the requirement, then the decision it motivates\n\nThe first strict write creates the about, so it has no prior relation. Leave\n`current.ref` out. S1 does not say when this requirement will end; do not give\nit a future `valid_until` learned from S3.\n\n```json\n{\n  \"tool\": \"kmp_write_memory\", \"save_as\": \"offline\",\n  \"arguments\": {\n    \"about\": \"example:guide:decision-history\", \"actor\": \"guide-writer\",\n    \"intent\": \"record_observation\", \"idempotency_key\": \"guide-history:offline:v1\",\n    \"scope\": {\"process\": \"atlas-planning\", \"task\": \"journal-decision\"},\n    \"labels\": {\"component\": \"journal\", \"environment\": \"field\"},\n    \"occurred_at\": \"2026-09-01T09:00:00Z\", \"observed_at\": \"2026-09-01T09:00:00Z\",\n    \"valid_from\": \"2026-09-01T09:00:00Z\", \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"constraint\",\n      \"summary\": \"La bitácora de Atlas debe funcionar sin red.\",\n      \"summary_en\": \"The Atlas journal must work without a network connection.\",\n      \"evidence\": \"S1, product owner, 2026-09-01T09:00:00Z: Para Atlas, la bitácora debe funcionar sin red. El componente es journal y el entorno es field.\"\n    }\n  }\n}\n```\n\nInspect the returned ref before choosing a relation. Read its complete text,\nevidence and coordinates; `read_context` records your actual prior reads,\nand is not a substitute for doing them.\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"offline_read\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"ref\":\"${offline.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\", \"save_as\": \"sqlite\",\n  \"arguments\": {\n    \"about\": \"example:guide:decision-history\", \"actor\": \"guide-writer\",\n    \"intent\": \"record_decision\", \"idempotency_key\": \"guide-history:sqlite:v1\",\n    \"scope\": {\"process\": \"atlas-planning\", \"task\": \"journal-decision\"},\n    \"labels\": {\"component\": \"journal\", \"environment\": \"field\"},\n    \"occurred_at\": \"2026-09-02T09:00:00Z\", \"observed_at\": \"2026-09-02T09:00:00Z\",\n    \"valid_from\": \"2026-09-02T09:00:00Z\", \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"decision\", \"summary\": \"Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.\",\n      \"summary_en\": \"We chose SQLite for the Atlas journal because it must work without a network connection.\",\n      \"evidence\": \"S2, architecture decision, 2026-09-02T09:00:00Z: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.\"\n    },\n    \"read_context\": {\"inspected_refs\": [\"${offline.generated_refs.0}\"]},\n    \"connect_to\": [{\n      \"ref\": \"${offline.generated_refs.0}\", \"rel\": \"chosen_because\", \"class\": \"motivational\", \"confidence\": \"high\",\n      \"why\": \"La decisión identifica el funcionamiento sin red como motivo para elegir SQLite.\",\n      \"evidence\": \"S2: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.\"\n    }]\n  }\n}\n```\n\n## Record the explicit change without rewriting the past\n\nS3 now arrives. Recover the catalogue before writing; reuse its existing\nlabels. The new constraint supersedes S1, not the SQLite decision: S4 is the\nseparate evidence for changing the decision.\n\n```json\n{\"tool\":\"kmp_wake\",\"save_as\":\"before_change\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"budget\":{\"max_bytes\":40000,\"detail\":\"full\"}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\", \"save_as\": \"shared\",\n  \"arguments\": {\n    \"about\": \"example:guide:decision-history\", \"actor\": \"guide-writer\",\n    \"intent\": \"record_observation\", \"idempotency_key\": \"guide-history:shared:v1\",\n    \"scope\": {\"process\": \"atlas-planning\", \"task\": \"journal-decision\"},\n    \"labels\": {\"component\": \"journal\", \"environment\": \"field\"},\n    \"occurred_at\": \"2026-09-05T09:00:00Z\", \"observed_at\": \"2026-09-05T09:00:00Z\",\n    \"valid_from\": \"2026-09-05T09:00:00Z\", \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"constraint\", \"summary\": \"La bitácora de Atlas debe ser central y compartida; se retira el requisito de funcionar sin red.\",\n      \"summary_en\": \"The Atlas journal must be central and shared; the requirement to work without a network connection is withdrawn.\",\n      \"evidence\": \"S3, product owner, 2026-09-05T09:00:00Z: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red. Se mantienen el componente journal y el entorno field.\"\n    },\n    \"read_context\": {\"inspected_refs\": [\"${offline.generated_refs.0}\"]},\n    \"connect_to\": [{\n      \"ref\": \"${offline.generated_refs.0}\", \"rel\": \"supersedes\", \"class\": \"evidential\", \"confidence\": \"high\",\n      \"why\": \"El responsable retira explícitamente el requisito anterior y establece el nuevo desde este instante.\",\n      \"evidence\": \"S3: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red.\"\n    }]\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"shared_read\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"ref\":\"${shared.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"sqlite_read\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"ref\":\"${sqlite.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\n  \"tool\": \"kmp_write_memory\", \"save_as\": \"postgres\",\n  \"arguments\": {\n    \"about\": \"example:guide:decision-history\", \"actor\": \"guide-writer\",\n    \"intent\": \"record_decision\", \"idempotency_key\": \"guide-history:postgres:v1\",\n    \"scope\": {\"process\": \"atlas-planning\", \"task\": \"journal-decision\"},\n    \"labels\": {\"component\": \"journal\", \"environment\": \"field\"},\n    \"occurred_at\": \"2026-09-05T09:05:00Z\", \"observed_at\": \"2026-09-05T09:05:00Z\",\n    \"valid_from\": \"2026-09-05T09:05:00Z\", \"source_kind\": \"human\",\n    \"current\": {\n      \"kind\": \"decision\", \"summary\": \"Elegimos PostgreSQL para la bitácora central y compartida de Atlas; esta decisión sustituye la elección anterior de SQLite.\",\n      \"summary_en\": \"We chose PostgreSQL for the central shared Atlas journal; this decision replaces the previous SQLite choice.\",\n      \"evidence\": \"S4, architecture decision, 2026-09-05T09:05:00Z: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL. Esta decisión sustituye la elección anterior de SQLite desde ahora.\"\n    },\n    \"read_context\": {\"inspected_refs\": [\"${shared.generated_refs.0}\", \"${sqlite.generated_refs.0}\"]},\n    \"connect_to\": [\n      {\"ref\": \"${shared.generated_refs.0}\", \"rel\": \"chosen_because\", \"class\": \"motivational\", \"confidence\": \"high\",\n       \"why\": \"El nuevo requisito se cita como motivo explícito para esta elección de PostgreSQL.\",\n       \"evidence\": \"S4: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL.\"},\n      {\"ref\": \"${sqlite.generated_refs.0}\", \"rel\": \"supersedes\", \"class\": \"evidential\", \"confidence\": \"high\",\n       \"why\": \"La decisión sustituye explícitamente la elección anterior de SQLite desde este instante; no la borra ni la declara inválida en fechas anteriores.\",\n       \"evidence\": \"S4: Esta decisión sustituye la elección anterior de SQLite desde ahora.\"}\n    ]\n  }\n}\n```\n\n## Reconstruct the period, then audit the reasons\n\nThe requested period is [2026-09-01T09:00:00Z, 2026-09-06T00:00:00Z).\n`forward` excludes its starting cursor. Capture the inclusive boundary with\n`goto`, retain only entries exactly on it, then traverse later entries. In\nthis four-entry example the generous limits return complete pages. In larger\nhistories, follow the returned opaque continuation until complete; merge and\ndeduplicate refs, and discard entries at or after the end. Do not infer that\nan empty page means the complete period is empty.\n\n```json\n{\"tool\":\"kmp_goto\",\"save_as\":\"start\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"axis\":\"occurred\",\"at\":{\"time\":\"2026-09-01T09:00:00Z\"},\"window\":{\"before_entries\":0,\"after_entries\":0},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":50000}}}\n```\n\n```json\n{\"tool\":\"kmp_forward\",\"save_as\":\"later\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"axis\":\"occurred\",\"from\":{\"time\":\"2026-09-01T09:00:00Z\"},\"limit\":{\"entries\":10},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":50000}}}\n```\n\nWalk backwards from the new decision. This recovers the new requirement,\nolder decision and older requirement; it does not roll back the store.\n\n```json\n{\"tool\":\"kmp_rewind\",\"save_as\":\"earlier\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"axis\":\"occurred\",\"from\":{\"ref\":\"${postgres.generated_refs.0}\"},\"limit\":{\"entries\":10},\"include\":{\"relations\":true,\"evidence\":true},\"budget\":{\"max_bytes\":50000}}}\n```\n\nAudit the new decision and both paths. Read relation direction, class, `why`\nand `evidence`: one path establishes replacement, the other motivation.\n\n```json\n{\"tool\":\"kmp_inspect\",\"save_as\":\"postgres_read\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"ref\":\"${postgres.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\"tool\":\"kmp_trace\",\"save_as\":\"replacement\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"from\":\"${postgres.generated_refs.0}\",\"to\":\"${sqlite.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\n```json\n{\"tool\":\"kmp_trace\",\"save_as\":\"motivation\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"from\":\"${postgres.generated_refs.0}\",\"to\":\"${shared.generated_refs.0}\",\"budget\":{\"max_bytes\":30000}}}\n```\n\nA dated semantic question is another entry point. Compare the same question\nat two instants, using the validity clock explicitly. Read canonical evidence\nand lifecycle proof rather than accepting the answer wrapper as synthesis.\n\n```json\n{\"tool\":\"kmp_ask\",\"save_as\":\"day3\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"question\":\"Which database was chosen for the Atlas journal?\",\"asked_as\":\"¿Qué base de datos se eligió para la bitácora de Atlas?\",\"axis\":\"validity\",\"as_of\":{\"time\":\"2026-09-03T12:00:00Z\"},\"budget\":{\"max_bytes\":50000,\"detail\":\"full\"}}}\n```\n\n```json\n{\"tool\":\"kmp_ask\",\"save_as\":\"day6\",\"arguments\":{\"about\":\"example:guide:decision-history\",\"question\":\"Which database was chosen for the Atlas journal?\",\"asked_as\":\"¿Qué base de datos se eligió para la bitácora de Atlas?\",\"axis\":\"validity\",\"as_of\":{\"time\":\"2026-09-06T12:00:00Z\"},\"budget\":{\"max_bytes\":50000,\"detail\":\"full\"}}}\n```\n\nExpected conclusion: on day 3, SQLite was chosen because of offline work.\nOn day 6, PostgreSQL replaces it because of the new shared-journal\nrequirement. The day-3 proof must not apply the day-5 replacement to the past.\nBetween 09:00 and 09:05 on day 5 the requirement has changed but S4 has not\nyet replaced the decision. Do not claim the new choice was already made.\n\n## Inspect the same history in ChronoLoom\n\nOpen once, use its revision, frame the period, and select the new decision.\nThe graph should expose two memory kinds and the motivational and evidential\nclasses; structural containment is ordinary background scaffolding. Selecting\none relation class intentionally hides the other, so restore both when\nauditing the whole story. The visual state frames proof and never replaces it.\n\n```json\n{\"tool\":\"kmp_view_open\",\"save_as\":\"view\",\"arguments\":{\"about\":\"example:guide:decision-history\"}}\n```\n\n```json\n{\n  \"tool\":\"kmp_view_apply_intent\", \"save_as\":\"framed\",\n  \"arguments\":{\n    \"expected_revision\":\"${view.view_revision}\", \"idempotency_key\":\"guide-history:view:v1\",\n    \"explanation\":\"Read the decision change beside its old choice and new requirement\",\n    \"focus\":{\"time_range\":{\"axis\":\"occurred\",\"from\":\"2026-09-01T00:00:00Z\",\"to\":\"2026-09-06T00:00:00Z\"}},\n    \"projection\":{\"semantic_zoom\":\"moment\",\"dimensions\":[\"component\",\"environment\"],\"relation_classes\":[\"motivational\",\"evidential\"]},\n    \"selection\":\"${postgres.generated_refs.0}\"\n  }\n}\n```\n\n```json\n{\"tool\":\"kmp_view_get_state\",\"save_as\":\"view_state\",\"arguments\":{}}\n```\n\nIf the human moves first and the revision conflicts, get state and rebase the\nintent; never retry blind. Open the returned viewer URL and check the actual\nmemory kinds, relation classes, dates, selection and evidence. `moment` makes\nthe selected text readable. Move to `episode` or `atlas` to inspect grouping,\nthen return to `moment` to read individual proof. Moving the view does not\nchange the scope, clock or interval of a later MCP retrieval call.\n\n## Negative cases and limits\n\n- If S4 says only “we are considering PostgreSQL”, preserve that uncertainty;\n  it does not justify a replacement or a committed decision. KMP validates\n  the request shape and supplied proof, not the truth of the LLM's reading.\n- If S3 arrives late, set `observed_at` to the real receipt time. Comparing\n  occurred and observed asks different questions. This lesson deliberately\n  aligns these clocks; it is not the late-evidence lesson.\n- Removing relation evidence or choosing an unsupported class must fail a\n  strict write. Do not turn strict mode off to force an unsupported claim in.\n- An exact logical-write retry keeps the same idempotency key and payload.\n  Inspect after an uncertain response; a changed payload needs a new logical\n  write. Do not reassign an old ref to make a replacement look like an edit.\n- No source gives the journal's production latency or cost. Those facts\n  remain unknown; labels, a proof path and the database choice do not supply\n  them. If a semantic Ask lacks evidence after the allowed selections, stop.\n\nThis lesson covers one advanced story, not every tool, kind or relation.\nIts source interpretation is reviewable teaching material. To measure writer\nlearning, use a new history, blind reader questions and independently checked\nevidence after the guide is complete.\n"
         },
         {
           "coordinates": [
@@ -677,16 +676,16 @@
               "sequence": 22
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_forward",
+          "id": "guide:kmp-agent:tool:kmp_ask",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_forward"
+            "tool_name": "kmp_ask"
           },
-          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_ask. Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it."
         },
         {
           "coordinates": [
@@ -708,16 +707,16 @@
               "sequence": 23
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_goto",
+          "id": "guide:kmp-agent:tool:kmp_forward",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_goto"
+            "tool_name": "kmp_forward"
           },
-          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
+          "text": "LIVE TOOL kmp_forward. Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -739,16 +738,16 @@
               "sequence": 24
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_ingest",
+          "id": "guide:kmp-agent:tool:kmp_goto",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_ingest"
+            "tool_name": "kmp_goto"
           },
-          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
+          "text": "LIVE TOOL kmp_goto. Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate."
         },
         {
           "coordinates": [
@@ -770,16 +769,16 @@
               "sequence": 25
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_inspect",
+          "id": "guide:kmp-agent:tool:kmp_ingest",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_inspect"
+            "tool_name": "kmp_ingest"
           },
-          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
+          "text": "LIVE TOOL kmp_ingest. Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape."
         },
         {
           "coordinates": [
@@ -801,16 +800,16 @@
               "sequence": 26
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_near",
+          "id": "guide:kmp-agent:tool:kmp_inspect",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_near"
+            "tool_name": "kmp_inspect"
           },
-          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
+          "text": "LIVE TOOL kmp_inspect. Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling."
         },
         {
           "coordinates": [
@@ -832,16 +831,16 @@
               "sequence": 27
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relabel",
+          "id": "guide:kmp-agent:tool:kmp_near",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relabel"
+            "tool_name": "kmp_near"
           },
-          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
+          "text": "LIVE TOOL kmp_near. Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate."
         },
         {
           "coordinates": [
@@ -863,16 +862,16 @@
               "sequence": 28
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_relate",
+          "id": "guide:kmp-agent:tool:kmp_relabel",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_relate"
+            "tool_name": "kmp_relabel"
           },
-          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
+          "text": "LIVE TOOL kmp_relabel. Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing."
         },
         {
           "coordinates": [
@@ -894,16 +893,16 @@
               "sequence": 29
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_rewind",
+          "id": "guide:kmp-agent:tool:kmp_relate",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_rewind"
+            "tool_name": "kmp_relate"
           },
-          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
+          "text": "LIVE TOOL kmp_relate. Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order."
         },
         {
           "coordinates": [
@@ -925,16 +924,16 @@
               "sequence": 30
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_trace",
+          "id": "guide:kmp-agent:tool:kmp_rewind",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_trace"
+            "tool_name": "kmp_rewind"
           },
-          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
+          "text": "LIVE TOOL kmp_rewind. Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`."
         },
         {
           "coordinates": [
@@ -956,16 +955,16 @@
               "sequence": 31
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
+          "id": "guide:kmp-agent:tool:kmp_trace",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_apply_intent"
+            "tool_name": "kmp_trace"
           },
-          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
+          "text": "LIVE TOOL kmp_trace. Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here."
         },
         {
           "coordinates": [
@@ -987,16 +986,16 @@
               "sequence": 32
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_get_state",
+          "id": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_get_state"
+            "tool_name": "kmp_view_apply_intent"
           },
-          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
+          "text": "LIVE TOOL kmp_view_apply_intent. Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase."
         },
         {
           "coordinates": [
@@ -1018,16 +1017,16 @@
               "sequence": 33
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_view_open",
+          "id": "guide:kmp-agent:tool:kmp_view_get_state",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_view_open"
+            "tool_name": "kmp_view_get_state"
           },
-          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
+          "text": "LIVE TOOL kmp_view_get_state. Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels."
         },
         {
           "coordinates": [
@@ -1049,16 +1048,16 @@
               "sequence": 34
             }
           ],
-          "id": "guide:kmp-agent:tool:kmp_wake",
+          "id": "guide:kmp-agent:tool:kmp_view_open",
           "kind": "reference",
           "metadata": {
             "audience": "agent",
             "depth": "advanced",
             "guide_version": "1",
             "source": "tools/list",
-            "tool_name": "kmp_wake"
+            "tool_name": "kmp_view_open"
           },
-          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+          "text": "LIVE TOOL kmp_view_open. Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record."
         },
         {
           "coordinates": [
@@ -1078,6 +1077,37 @@
               "dimension": "depth",
               "scope_id": "depth-advanced",
               "sequence": 35
+            }
+          ],
+          "id": "guide:kmp-agent:tool:kmp_wake",
+          "kind": "reference",
+          "metadata": {
+            "audience": "agent",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "tools/list",
+            "tool_name": "kmp_wake"
+          },
+          "text": "LIVE TOOL kmp_wake. Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:35:00Z",
+              "occurred_at": "2026-08-28T00:35:00Z",
+              "scope_id": "timeline",
+              "sequence": 36
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-agent",
+              "sequence": 36
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 36
             }
           ],
           "id": "guide:kmp-agent:tool:kmp_write_memory",
@@ -1351,6 +1381,19 @@
             "guide:kmp-agent:advanced:summary"
           ],
           "text": "The ingest translation lints summary_en against the entry text and reports each fault as a warning; the answer ranker scores a summary that passes the same lint as content, notes the words it supplied on the citation, and cites the entry text. The summaries verb and the doctor read the same list off the store's event log; record_summary compiles to an ingest of the stored entry with the summary added to its metadata.",
+          "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp-agent:example:decision-history",
+          "metadata": {
+            "audience": "agent",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp-agent:example:decision-history"
+          ],
+          "text": "A fictional four-source Atlas history with executable public MCP calls, explicit semantic choices and negative limits. Replayed by scripts/guide_examples/replay.py; this teaches one history and does not measure LLM learning.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
@@ -1723,10 +1766,20 @@
         {
           "class": "evidential",
           "confidence": "high",
+          "evidence": "The example inspects returned refs before linking, uses chosen_because and supersedes with distinct why and evidence, and compares validity at two instants.",
+          "from": "guide:kmp-agent:example:decision-history",
+          "rel": "uses_background",
+          "sequence": 18,
+          "to": "guide:kmp-agent:verb:write",
+          "why": "The worked history applies the writer contract to explicit source evidence, then audits the resulting decision and its replacement in time."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
           "evidence": "Retrieve stored entry text and evidence bearing on a question, or UNKNOWN. Nothing is generated: `answer` names what was retrieved and the text lives in `proof.evidence[].text` — `metadata.proof_role` distinguishes an entry claim from stored evidence. Read it and judge whether it answers. `proof.confidence` is lexical term overlap between the question and the best-matching memory item; it is not a judgement that the item answers, and it is not the `confidence` on a relation, which is writer certainty. A citation that crossed a language through the lexical-bridge table is capped at medium and carries `bridged_terms`; one the writer's English `summary_en` carried is not capped and carries `matched_via: summary`. An evidence item with `reached_by` arrived by a route rather than by the question's words and is proof, not an answer. UNKNOWN means memory did not answer; `summary` says whether nothing was retrieved or nothing retrieved bore on the question. A question with a date or a range is one call: `as_of` stands at an instant, `interval` within a half-open span, `axis` names the clock; the proof declares where it stood, and an UNKNOWN within an interval names the nearest match outside it.",
           "from": "guide:kmp-agent:tool:kmp_ask",
           "rel": "uses_background",
-          "sequence": 18,
+          "sequence": 19,
           "to": "guide:kmp-agent:verb:ask",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1736,7 +1789,7 @@
           "evidence": "Move forward through memory from a timestamp, sequence, or ref. Entries and continuation pages are oldest-to-newest. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_forward",
           "rel": "uses_background",
-          "sequence": 19,
+          "sequence": 20,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1746,7 +1799,7 @@
           "evidence": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_goto",
           "rel": "uses_background",
-          "sequence": 20,
+          "sequence": 21,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1756,7 +1809,7 @@
           "evidence": "Low-level batch writer for callers producing the exact graph themselves. Prefer kmp_write_memory for ordinary agent writes because it validates intent and relation quality before compiling to this canonical ingest shape.",
           "from": "guide:kmp-agent:tool:kmp_ingest",
           "rel": "uses_background",
-          "sequence": 21,
+          "sequence": 22,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1766,7 +1819,7 @@
           "evidence": "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
           "from": "guide:kmp-agent:tool:kmp_inspect",
           "rel": "uses_background",
-          "sequence": 22,
+          "sequence": 23,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1776,7 +1829,7 @@
           "evidence": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
           "from": "guide:kmp-agent:tool:kmp_near",
           "rel": "uses_background",
-          "sequence": 23,
+          "sequence": 24,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1786,7 +1839,7 @@
           "evidence": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
           "from": "guide:kmp-agent:tool:kmp_relabel",
           "rel": "uses_background",
-          "sequence": 24,
+          "sequence": 25,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1796,7 +1849,7 @@
           "evidence": "Read what the memories of several abouts have to do with each other, off what they share and without declaring anything. Abouts are never joined by relations, so this reads the coordinates: the dimension scopes two abouts both use, and where on one clock each memory stands inside them. Returns the facts of the selected abouts within the interval with the lifecycle state they had at its end, the relations each about declared between its own facts, coordinate relations between facts of different abouts inside a scope they share (before, after, during, concurrent, same sequence, same rank, or merely the shared scope), tensions: facts that still stand and that a declared `contradicts` joins, and proposed links: pairs of facts of different abouts that share a key — an identifier rare across the span, an English summary that matches, a proper name — each with the signals that read it and a weight, never stored; a writer may declare one with this as the proof. Nothing is ranked by a question and nothing is generated; every relation and every proposal says why in one sentence a reader can check. Pages by position over facts, declared, coordinate, tensions and proposed in that order.",
           "from": "guide:kmp-agent:tool:kmp_relate",
           "rel": "uses_background",
-          "sequence": 25,
+          "sequence": 26,
           "to": "guide:kmp-agent:verb:relate",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1806,7 +1859,7 @@
           "evidence": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
           "from": "guide:kmp-agent:tool:kmp_rewind",
           "rel": "uses_background",
-          "sequence": 26,
+          "sequence": 27,
           "to": "guide:kmp-agent:verb:time",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1816,7 +1869,7 @@
           "evidence": "Trace the proof path between two memory refs owned by one explicit about. Both refs are rejected before traversal unless they belong to that about, or are reachable from it through a declared equivalence (`same_event_as`, `same_entity_as`): the one edge that crosses an about, walked here.",
           "from": "guide:kmp-agent:tool:kmp_trace",
           "rel": "uses_background",
-          "sequence": 27,
+          "sequence": 28,
           "to": "guide:kmp-agent:verb:audit",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1826,7 +1879,7 @@
           "evidence": "Move the view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Never pixels, coordinates or code. Atomic, idempotent, and under optimistic concurrency: if the person at the loom moved first, this conflicts and you rebase.",
           "from": "guide:kmp-agent:tool:kmp_view_apply_intent",
           "rel": "uses_background",
-          "sequence": 28,
+          "sequence": 29,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1836,7 +1889,7 @@
           "evidence": "Read the view's semantic state — clock, window, focus, zoom, filters, selection, revision and who last moved it. Returns this session's capability link when the local viewer is mounted; state, never pixels.",
           "from": "guide:kmp-agent:tool:kmp_view_get_state",
           "rel": "uses_background",
-          "sequence": 29,
+          "sequence": 30,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1846,7 +1899,7 @@
           "evidence": "Open or rehydrate a ChronoLoom view over an about, so a human and this agent look at the same loom. Returns this session's capability link when the local viewer is mounted. Read-only with respect to memory: a view is a camera position, not a record.",
           "from": "guide:kmp-agent:tool:kmp_view_open",
           "rel": "uses_background",
-          "sequence": 30,
+          "sequence": 31,
           "to": "guide:kmp-agent:verb:view",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1856,7 +1909,7 @@
           "evidence": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
           "from": "guide:kmp-agent:tool:kmp_wake",
           "rel": "uses_background",
-          "sequence": 31,
+          "sequence": 32,
           "to": "guide:kmp-agent:verb:wake",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         },
@@ -1866,7 +1919,7 @@
           "evidence": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
           "from": "guide:kmp-agent:tool:kmp_write_memory",
           "rel": "uses_background",
-          "sequence": 32,
+          "sequence": 33,
           "to": "guide:kmp-agent:verb:write",
           "why": "The human-readable verb rule is grounded in this exact live MCP contract."
         }
@@ -1882,7 +1935,7 @@
   },
   {
     "about": "guide:kmp",
-    "idempotency_key": "ingest:guide-sync:1:person:8cd4a7bfecb31dd3f903",
+    "idempotency_key": "ingest:guide-sync:1:person:fce1789073cc64555d0d",
     "memory": {
       "dimensions": [
         {
@@ -2326,6 +2379,36 @@
             "source": "editorial"
           },
           "text": "Use a plain file when the information is canonical prose, a large artifact or something people should edit directly. Use KMP when time, evidence, typed relations, supersession or cross-session recovery are part of the meaning."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "timeline",
+              "observed_at": "2026-08-28T00:14:00Z",
+              "occurred_at": "2026-08-28T00:14:00Z",
+              "scope_id": "timeline",
+              "sequence": 15
+            },
+            {
+              "dimension": "audience",
+              "scope_id": "audience-person",
+              "sequence": 15
+            },
+            {
+              "dimension": "depth",
+              "scope_id": "depth-advanced",
+              "sequence": 15
+            }
+          ],
+          "id": "guide:kmp:advanced:decision-history",
+          "kind": "instruction",
+          "metadata": {
+            "audience": "person",
+            "depth": "advanced",
+            "guide_version": "1",
+            "source": "editorial"
+          },
+          "text": "A decision can change without losing its history. In the worked Atlas example, offline work is required on September 1; SQLite is chosen for that reason on September 2. A central shared journal is required on September 5, and a later explicit decision replaces SQLite with PostgreSQL. The agent guide entry guide:kmp-agent:example:decision-history contains the sources and complete calls. Ask your agent to run this fictional example in an isolated store and open its about example:guide:decision-history in ChronoLoom. Select the new decision at Memories detail: one evidential link explains what it replaces, and one motivational link explains why it was chosen. Follow each to its original evidence. Compare September 3 with September 6 using an explicit clock; the new choice must not be projected into the past. Two memory kinds and two relation classes are justified by these sources. This lesson does not cover every kind or relationship, nor establish that a new writer LLM has learned to use KMP."
         }
       ],
       "evidence": [
@@ -2510,6 +2593,19 @@
           ],
           "text": "KMP is graph-temporal operational memory; it is not a replacement for source files or documentation.",
           "time": "2026-08-28T00:00:00Z"
+        },
+        {
+          "id": "evidence:guide:kmp:advanced:decision-history",
+          "metadata": {
+            "audience": "person",
+            "guide_version": "1"
+          },
+          "source": "KMP editorial guide source v1",
+          "supports": [
+            "guide:kmp:advanced:decision-history"
+          ],
+          "text": "The agent lesson includes four dated fictional sources, constraint and decision memories, explicit replacement and motivation links, temporal reads and a shared-view intent.",
+          "time": "2026-08-28T00:00:00Z"
         }
       ],
       "relations": [
@@ -2632,6 +2728,16 @@
           "sequence": 12,
           "to": "guide:kmp:basic:memory",
           "why": "A good memory system must say what should remain ordinary documentation."
+        },
+        {
+          "class": "evidential",
+          "confidence": "high",
+          "evidence": "The human lesson points to the exact agent example and frames its two kinds and relation classes for inspection in ChronoLoom.",
+          "from": "guide:kmp:advanced:decision-history",
+          "rel": "uses_background",
+          "sequence": 13,
+          "to": "guide:kmp:welcome",
+          "why": "This worked history gives the person a concrete path from the human introduction to the source, decision and later change."
         }
       ]
     },

@@ -1,7 +1,7 @@
 use crate::application::dto::guide_capabilities_dto::GuideCapabilitiesDto;
 use crate::application::dto::guide_request_document_dto::GuideRequestDocumentDto;
-use crate::application::dto::guide_source_dto::GuideSourceDto;
 use crate::application::mappers::guide_request_mapper::GuideRequestMapper;
+use crate::application::use_cases::load_guide_editorial::LoadGuideEditorial;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::repository_root::RepositoryRoot;
 use crate::ports::candidate_file_system::CandidateFileSystem;
@@ -30,12 +30,7 @@ where
         root: &RepositoryRoot,
     ) -> Result<Vec<GuideRequestDocumentDto>, ReleaseError> {
         let plugin = root.join("plugins/kmp");
-        let source: GuideSourceDto = serde_json::from_str(
-            &self
-                .file_system
-                .read_text(&plugin.join("guide/editorial.json"))?,
-        )
-        .map_err(|error| ReleaseError::invalid(format!("editorial.json is invalid: {error}")))?;
+        let source = LoadGuideEditorial::new(self.file_system).execute(root)?;
         let capabilities: GuideCapabilitiesDto = serde_json::from_str(
             &self
                 .file_system
