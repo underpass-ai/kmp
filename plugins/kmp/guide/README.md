@@ -1,6 +1,12 @@
 # KMP shipped guides
 
-KMP ships two deliberately different memories:
+KMP ships an agent Markdown entry and two deliberately different memories:
+
+- [AGENT.md](AGENT.md) is a brief entry and exact node index. It maps every
+  live tool to extended verb guidance, and indexes optional topics and
+  examples. It contains neither their long bodies nor another copy of live
+  tool descriptions. The memory and guide skills both route here and reuse
+  an entry already in context.
 
 - `guide:kmp-agent` is an operating guide for the agent. Its editorial entries
   explain when to choose each verb, when not to, the minimum input, the
@@ -13,6 +19,89 @@ Both are derived from `editorial.json`, carry stable refs and use
 content-derived idempotency keys. An exact sync is a no-op. A changed guide
 gets a new logical key and updates those stable refs through ordinary
 `kmp_ingest`.
+
+The same generation also writes `AGENT.md` from [agent-entry.md](agent-entry.md)
+and the canonical requests. `guide_title` indexes an extended verb or topic;
+`example_title` indexes an example. The live tool mapping supplies the exact
+verb refs. Extended guidance moved out of the long memory skill into `verbs/`
+and `topics/`, included as normal KMP nodes through `text_file`. Each rule has
+an editorial source; generated bundles and Markdown are build outputs.
+
+Read the matching entry once, consult a verb or example as needed, and reuse
+its body while it remains in context. Recheck after compaction, version change
+or a store switch. Documentation inspection can omit adjacent guide links;
+actual work still requires inspection and tracing of its proof. A host without
+file access can use compact guide wake plus selected inspections as an
+alternative entry, never an additional required copy.
+
+Long lessons may use `text_file` instead of inline `text`, relative to this
+directory. The release loader includes the file's exact Markdown in the
+ordinary guide memory, so agents receive it through KMP and do not need file
+access. Use one source for the body; missing, empty, ambiguous and parent or
+absolute paths are rejected. The files ship with the plugin and are covered
+by the release input digest.
+
+Start with [one decision and its reason](examples/first-decision.md), then use
+[the capability index](examples/by-capability.md) to find one concrete source
+case for a tool, memory kind or relation. Basic cases are grouped in
+[preference and policy delta](examples/preference-delta.md),
+[workflow proof](examples/workflow-proof.md),
+[structure and contributions](examples/structure-parts.md), and
+[canonical ingest](examples/canonical-ingest.md). Each selected section explains
+its source, why that relation applies, the prerequisite reads and a limit.
+The index is informative and is not a CI coverage gate.
+
+The worked lessons, [decision history](examples/decision-history.md),
+[alias and account ownership](examples/alias-ownership.md),
+[distributed incident](examples/distributed-incident.md),
+[four clocks and zoom](examples/four-clocks.md),
+[quantities and exclusions](examples/quantities.md),
+[conflict with late evidence](examples/late-conflict.md),
+[labels, synonyms and negation](examples/labels-negation.md),
+[budgets and insufficient evidence](examples/budget-proof.md), and
+[shared resumption](examples/shared-resumption.md), contain explicit
+fictional sources, source-based writing choices, call
+arguments with bindings to actual returned refs, temporal reads and visual
+inspection. Their JSON envelopes are teaching notation: the replay resolves
+bindings and sends only `arguments` to the named public MCP tool.
+
+Run the decision lesson against a fresh temporary store under this repository's `tmp/`:
+
+```bash
+python3 scripts/guide_examples/replay.py --binary target/debug/kmp-mcp \
+  --trace artifacts/guide-decision-history.jsonl \
+  --result artifacts/guide-decision-history.json
+```
+
+Choose `--lesson alias-ownership`, `--lesson distributed-incident`,
+`--lesson four-clocks`, `--lesson quantities`, `--lesson late-conflict`,
+`--lesson labels-negation` or `--lesson budget-proof` for those lessons. The default
+`--guide-mode markdown` reads `AGENT.md`, the selected lesson and its
+explicit topic prerequisites; it consults each extended verb at first use and
+reuses it on repeated calls. Work-memory calls are never cached by this helper. `--guide-mode directed` retains compact wake and
+prerequisite inspection; `--guide-mode full` expands the whole guide for
+comparison. All modes consume relevant pages with explicit bounds. The
+result records Markdown bytes, guide calls and structured bytes separately
+from lesson execution. Tokenization can count these inputs without invoking
+a model; this does not measure LLM learning or billed usage.
+
+Add `--hold-view` to review ChronoLoom before typing `quit`; the temporary
+store is removed when the replay exits. The trace contains real MCP requests
+and responses. The budget lesson marks intentional partial pages with the
+local `expect_partial` envelope field; it checks actual continuations and
+keeps intermediate pending actions, rather than declaring those pages complete. Assertions check typed memory, relation direction and proof,
+historical validity, inclusive/exclusive traversal and view state. No model
+is invoked. This is an authored teaching case and contract check; measuring
+LLM learning requires a separate unseen history and blind reader questions.
+
+The shared-resumption lesson uses `scripts/guide_examples/replay_shared.py`
+with `--binary`, `--trace` and `--result`. It closes the writer and starts a
+fresh reader over the same temporary store; each client reads its own guide
+entry. The automated run explicitly simulates a human gesture through the
+viewer HTTP adapter. Add `--interactive` to perform that gesture in the real
+browser and review the final frame before typing `quit`. This compares actual
+native behavior with visual operation, without invoking another LLM or treating
+a view gesture as approval. The view itself is process-scoped, not durable memory.
 
 `memory.jsonl` is a regular format-2 bundle for an empty first install.
 Existing stores use the exact same requests through the public MCP writer; the
@@ -27,3 +116,11 @@ cargo run --locked --quiet -p kmp-release -- guide assets write --binary target/
 cargo test --locked -p kmp-adapter-embedded --test guide_bundle
 cargo test --locked -p kmp-mcp --test guide_sync
 ```
+
+## Maintaining the agent-facing surface
+
+Use [the maintenance procedure](../../../docs/development/agent-surface.md)
+when a capability or explanation changes. It covers source ownership,
+generated assets, selective guide access, native and host verification,
+context measurement and a reviewable delivery record. It is shared by human
+maintainers and agents; keep it current with the implementation.

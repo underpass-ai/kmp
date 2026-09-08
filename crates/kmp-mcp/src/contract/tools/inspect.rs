@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_inspect",
-        "Inspect one typed stored memory object inside an explicit about boundary. The object is stable; evidence, links and raw records page under the byte ceiling.",
+        "Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -58,7 +58,8 @@ pub(crate) fn definition() -> Value {
 fn inspect_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "Concise statement of which typed object was inspected."),
-        "object": described("object", "Stored object with ref, kind, canonical text, metadata, and optional source."),
+        "object": described("object", "Stored object with ref, kind, canonical text, metadata, and optional source. With page.repeat_object=false, contains only ref; reuse the first page's object."),
+        "object_reused": described("boolean", "Present and true only when this continuation omits the unchanged object body. Retain the first page's full object; the cursor validates it against the current selection."),
         "links": output_object(json!({
             "incoming": described("array", "Direct typed relations whose target is the inspected ref."),
             "outgoing": described("array", "Direct typed relations whose source is the inspected ref.")
@@ -73,7 +74,7 @@ fn inspect_output_schema() -> Value {
             "next_cursor": nullable_described("string", "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor."),
             "omitted": described("object", "Counts still remaining after this page, by details, evidence, outgoing, incoming and raw section."),
             "sections": described("object", "Per-section returned-on-page, remaining and total counts."),
-            "required_bytes": described("integer", "Exact serialized bytes required by the complete inspection, so a partial result never forces callers to probe budgets."),
+            "required_bytes": described("integer", "Exact serialized bytes required by the complete inspection including its full object, even when this continuation reuses that object."),
             "guidance": nullable_described("string", "Continuation, narrowing and budget guidance when this response is partial; null for a complete first page.")
         })),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
@@ -105,6 +106,11 @@ fn inspect_page_schema() -> Value {
                 "type": "string",
                 "minLength": 1,
                 "description": "Opaque cursor returned by inspect page.next_cursor. Repeat all bound arguments unchanged; budget.max_bytes may change."
+            },
+            "repeat_object": {
+                "type": "boolean",
+                "default": true,
+                "description": "False requires page.cursor and retains only object.ref in this response. Reuse the full object from the first page; evidence and links still page verbatim. The cursor rejects a changed object or selection."
             }
         }
     })

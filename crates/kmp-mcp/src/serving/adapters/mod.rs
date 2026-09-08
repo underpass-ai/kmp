@@ -3,4 +3,7 @@ pub(crate) mod embedded_errors;
 pub(crate) mod fixture_backend;
 pub(crate) mod grpc;
 pub(crate) mod lexical_bridge_file;
+mod loopback_semantic_retriever;
 pub(crate) mod retrying_embedded_backend;
+mod semantic_rank_response;
+mod semantic_retriever_config;

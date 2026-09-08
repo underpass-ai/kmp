@@ -90,6 +90,7 @@ fn plugin_package_contains_one_canonical_tree_and_is_deterministic() {
     let plugin = unpacked.join("kmp");
     assert!(plugin.join("hooks/hooks.json").is_file());
     assert!(plugin.join("guide/guide.requests.json").is_file());
+    assert!(plugin.join("guide/AGENT.md").is_file());
     assert!(plugin.join("guide/memory.jsonl").is_file());
     assert!(plugin.join("bin/kmp-mcp").is_file());
     assert!(!plugin.join("guide/build-guide.py").exists());

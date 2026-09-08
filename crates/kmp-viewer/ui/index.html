@@ -52,11 +52,12 @@
  <div id="pulse-legend" class="pulse-legend" aria-label="Observability pulse legend" hidden></div>
  <div class="evidence-tools"><button id="pin-a">Pin A</button><button id="pin-b">Pin B</button><button id="clear-diff">Clear A/B</button></div><section id="diff-panel" aria-label="Comparison between pinned instants" hidden></section>
 </main>
-  <aside id="detail" aria-label="Evidence">
+  <aside id="detail" aria-label="Current memory record">
     <div id="detail-loading" class="loom-loading" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"><span class="loading-threads" aria-hidden="true"><i></i><i></i><i></i></span><span id="detail-loading-label"></span></div>
     <label class="sr-only" for="memory-picker">Inspect a memory</label><select id="memory-picker" aria-label="Inspect a memory"></select>
     <p id="detail-empty" class="muted">Pick an entry. Its record opens here.</p>
     <div id="detail-body" hidden>
+      <p class="inspection-scope"><strong>Current record</strong><br>Status and links include updates outside the scene's time window.</p>
       <div class="node-head">
         <span id="d-kind" class="pill"></span>
         <span id="d-status" class="pill pill-muted"></span>

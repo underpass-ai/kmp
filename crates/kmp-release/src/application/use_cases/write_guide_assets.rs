@@ -1,3 +1,4 @@
+use crate::application::mappers::agent_guide_markdown_mapper::AgentGuideMarkdownMapper;
 use crate::application::use_cases::prepare_guide_requests::PrepareGuideRequests;
 use crate::domain::release_error::ReleaseError;
 use crate::domain::repository_root::RepositoryRoot;
@@ -25,6 +26,10 @@ where
     pub fn execute(&self, root: &RepositoryRoot) -> Result<(), ReleaseError> {
         let requests = PrepareGuideRequests::new(self.file_system, self.engine).execute(root)?;
         let plugin = root.join("plugins/kmp");
+        self.file_system.write_text(
+            &plugin.join("guide/AGENT.md"),
+            &AgentGuideMarkdownMapper::map(&requests)?,
+        )?;
         self.file_system.write_text(
             &plugin.join("guide/guide.requests.json"),
             &PrepareGuideRequests::<F, G>::text(&requests)?,

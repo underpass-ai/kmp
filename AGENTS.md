@@ -34,9 +34,24 @@ both guide abouts with:
 cargo run --locked --quiet -p kmp-release -- guide assets write --binary target/debug/kmp-mcp
 ```
 
-`guide:kmp-agent` is the exact operational guide for agents. `guide:kmp` is a
+`guide:kmp-agent` is the exact operational guide for agents. The same generation
+writes `plugins/kmp/guide/AGENT.md`: a brief entry with exact references to
+extended verb guidance and examples, without loading a second full manual.
+Do not edit this generated Markdown separately from its editorial source.
+`guide:kmp` is a
 shorter human path opened visually through `open:guide`; do not collapse them
 into one audience. Setup, update, the three public READMEs and both guides must
 describe the same shipped version before a release is prepared. The supported
 `scripts/release.sh version` verb builds the bumped engine and regenerates both
 guide assets; candidate and tag paths reject a stale guide envelope.
+
+## Agent-facing surface maintenance
+
+When adding or changing a tool, argument, result, routing rule, skill, guide
+or example, follow [the surface maintenance procedure](docs/development/agent-surface.md).
+It explains the canonical owner, generated assets, behavioral verification,
+context-cost measurement and delivery evidence for humans and agents. Editorial
+recommendations remain informative; do not add CI checks for their wording,
+length or file placement.
+Keep the entry brief, make extended verb guidance discoverable, and verify
+what the host actually exposes. Update that procedure when its workflow changes.
