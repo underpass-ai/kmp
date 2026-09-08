@@ -30,6 +30,9 @@ KMP_APP.selection = (() => {
       throw new Error(`cannot reveal ${ref}: it carries no temporal coordinate`);
     }
     const momentSpan = Math.max(1000, 8000 * Math.max(1, KMP_APP.scene.canvas().clientWidth));
+    // The extent probe may predate this memory. Include its inspected clock
+    // before setWindow clamps the reveal range against that cached extent.
+    view.full = KMP_LOOM.extentIncluding(view.full, instant - momentSpan / 2, instant + momentSpan / 2);
     KMP_APP.viewport.setWindow(instant - momentSpan / 2, instant + momentSpan / 2);
     KMP_APP.data.cancelScheduledProjection();
     await KMP_APP.data.loadProjection();

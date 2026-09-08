@@ -525,6 +525,51 @@ test("selecting a projected entry inspects it and renders the evidence", async (
   assert.ok(names.includes("panels.renderDetail"));
 });
 
+test("selection reaches newly written memory beyond the cached extent without dropping filters", async () => {
+  for (const [clock, stamp, included] of [
+    ["observed", "2026-09-01T10:05:00Z", true],
+    ["occurred", "2026-09-01T08:05:00Z", true],
+    ["observed", "2026-09-01T10:05:00Z", false],
+  ]) {
+    const { app, calls } = loom();
+    const { model, view } = app.state;
+    model.about = "project:x";
+    const instant = Date.parse(stamp);
+    Object.assign(view, {
+      clock, full: { t0: Date.parse("2026-09-01T09:00:00Z"), t1: Date.parse("2026-09-01T09:30:00Z") },
+      t0: Date.parse("2026-09-01T09:00:00Z"), t1: Date.parse("2026-09-01T09:30:00Z"),
+      requestedLod: "moment", selectedRef: "decision:old",
+      selectors: [{ key: "review", op: "in", values: ["HND-9"] }],
+    });
+    const record = { ref_id: "feedback:new", kind: "feedback", text: "Selection confirmed; test still pending",
+      coordinates: [{ dimension: "review", scope_id: "HND-9", [clock + "_at"]: stamp }] };
+    app.api.call = async (path, params) => {
+      assert.equal(path, "/api/node");
+      assert.equal(params.about, "project:x");
+      assert.equal(params.id, record.ref_id);
+      return { node: { id: record.ref_id, kind: record.kind, summary: record.text }, raw_coordinates: record.coordinates };
+    };
+    let reached = false;
+    app.api.fetchProjection = async (about, axis, from, to, lod, bins, labels) => {
+      assert.equal(about, "project:x");
+      assert.equal(axis, clock);
+      assert.equal(labels, "review in HND-9");
+      reached = Date.parse(from) <= instant && instant < Date.parse(to);
+      const entries = reached && included ? [record] : [];
+      return { entries, relations: [], page: { total: entries.length } };
+    };
+    app.sync.reportView = () => {};
+
+    assert.equal(await app.selection.selectEntry(record.ref_id), included);
+    assert.ok(reached, "the real clamped window must reach the inspected clock");
+    assert.equal(view.selectedRef, included ? record.ref_id : "decision:old");
+    assert.equal(view.clock, clock);
+    assert.equal(model.about, "project:x");
+    if (!included) assert.ok(calls.some(call => call.name === "dom.showError" &&
+      String(call.args[0]).includes("not present in the Moment projection")), "a filtered target remains unavailable");
+  }
+});
+
 test("relation links reveal entries outside the projection and center only successful selections", async () => {
   for (const [projected, accepted] of [[false, true], [true, true], [false, false]]) {
     const { app, context } = loom();
