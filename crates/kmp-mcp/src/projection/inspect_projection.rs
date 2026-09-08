@@ -264,18 +264,23 @@ mod tests {
                 full["page"]["required_bytes"]
             );
             assert!(byte_len(&page) <= 2_400);
-            assert!(page["page"]["returned"].as_u64().unwrap() > 0);
+            assert!(
+                page["page"]["returned"]
+                    .as_u64()
+                    .expect("returned item count")
+                    > 0
+            );
             for path in ["/evidence", "/links/incoming", "/links/outgoing", "/raw"] {
                 accumulated
                     .pointer_mut(path)
-                    .unwrap()
+                    .expect("accumulated expansion section")
                     .as_array_mut()
-                    .unwrap()
+                    .expect("expansion array")
                     .extend(
                         page.pointer(path)
-                            .unwrap()
+                            .expect("page expansion section")
                             .as_array()
-                            .unwrap()
+                            .expect("expansion array")
                             .iter()
                             .cloned(),
                     );
@@ -299,7 +304,8 @@ mod tests {
         let value = inspect_value();
         let mut args =
             json!({"about": "project:test", "ref": "hub", "budget": {"max_bytes": 2_400}});
-        let first = enforce_inspect_output_budget(value.clone(), &args).unwrap();
+        let first =
+            enforce_inspect_output_budget(value.clone(), &args).expect("first inspection page");
         args["page"] = json!({"cursor": first["page"]["next_cursor"], "repeat_object": false});
         for path in [
             "/object/text",
@@ -308,7 +314,9 @@ mod tests {
             "/links/outgoing/0/why",
         ] {
             let mut changed = value.clone();
-            *changed.pointer_mut(path).unwrap() = json!("changed after the first page");
+            *changed
+                .pointer_mut(path)
+                .expect("selected object or proof field") = json!("changed after the first page");
             let error = enforce_inspect_output_budget(changed, &args).expect_err("stale selection");
             assert!(error.message.contains("does not match"), "{path}: {error}");
         }
