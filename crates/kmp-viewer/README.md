@@ -14,6 +14,10 @@ The three semantic detail levels remain: Atlas bins, Episode clusters and Moment
 application owns this bounded, paginated projection; the browser never walks a
 whole about or a depth-four graph to manufacture it.
 
+The inspector is labelled **Current record**: its status and links include
+updates outside the scene's time window. The clock and UTC window bound the
+scene; dated memory reads establish what was known at an earlier instant.
+
 Ask Codex or Claude to show the memory behind a decision: the agent can focus
 the relevant evidence and light up its proof path in ChronoLoom. The view stays
 shared. A prominent human/agent panel names the last actor and the reason for
