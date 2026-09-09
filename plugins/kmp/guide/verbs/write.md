@@ -75,3 +75,11 @@ conflict is retryable. A key already accepted with different content must not
 be reused.
 
 For a relation, read `guide:kmp-agent:advanced:relations`. For event and observation timestamps read `guide:kmp-agent:verb:time`; for English search summaries read `guide:kmp-agent:advanced:summary`. Read the lifecycle and cross-about topics when the write uses those features. These are exact refs in `guide:kmp-agent`; reuse bodies already in context.
+
+
+If a summary pre-read fails, its error keeps the store's category: `unavailable`
+can be retried after recovery, `not_found` needs the actual stored target, and
+`conflict` retains its concurrency meaning. Such a failure attempts no ingest.
+Malformed data returned by a backend is `backend_error`. Correcting source text
+cannot repair a store outage; actual malformed writer input remains
+`invalid_argument`.
