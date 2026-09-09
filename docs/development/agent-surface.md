@@ -230,3 +230,10 @@ Actualizar este procedimiento cuando cambie un propietario, un asset, una
 regla de carga o un comando. `AGENTS.md`, el índice de desarrollo y el README
 de la guía deben seguir apuntando aquí, para que una persona y un agente
 encuentren el mismo contrato de mantenimiento.
+
+Writer receipts use the accepted command event and idempotency index. Keep the
+compact acknowledgment, native/gRPC ingest mapping and Inspect audit detail in
+step. Verify actual returned actions across restart, subsequent memory changes
+and export/import; previews and refusals must create neither a receipt nor memory.
+Coverage describes submitted declarations, never completeness against sources the
+writer did not submit. Do not add graph memories or another CI rule for receipts.

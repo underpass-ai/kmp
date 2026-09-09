@@ -70,8 +70,9 @@ pub fn translate_memory_ingest(
     let mut warnings = search_summary_warnings(&command.memory);
     warnings.extend(resembling_labels.iter().map(|label| label.why.clone()));
 
-    let changes = memory_changes(&memory)?;
-    let outcome = MemoryIngestOutcome {
+    let mut changes = memory_changes(&memory)?;
+    let mut outcome = MemoryIngestOutcome {
+        receipt_ref: None,
         about: command.about.clone(),
         memory_id: memory_id_from_idempotency_key(&command.idempotency_key),
         accepted: MemoryAcceptedCounts {
@@ -84,6 +85,11 @@ pub fn translate_memory_ingest(
         created_dimensions,
         resembling_labels,
     };
+
+    if let Some(receipt) = super::receipt::receipt_change(command, &memory, &outcome)? {
+        outcome.receipt_ref = Some(receipt.entity_id.clone());
+        changes.push(receipt);
+    }
 
     Ok((
         UpdateContextCommand {
@@ -684,6 +690,10 @@ fn logical_digest(command: &MemoryIngestCommand) -> String {
             serde_json::to_vec(provenance).expect("provenance serializes: it holds only strings");
         hasher.update(&provenance);
     }
+    if let Some(context) = &command.receipt_context {
+        hasher.update([0]);
+        hasher.update(context.to_string().as_bytes());
+    }
     format!("{:x}", hasher.finalize())
 }
 
@@ -1249,6 +1259,7 @@ mod tests {
 
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
+            receipt_context: None,
             about: "question:830ce83f".to_string(),
             memory: MemoryData {
                 dimensions: vec![MemoryDimensionData {

@@ -2877,7 +2877,20 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
     let written = call(7, "kmp_write_memory", declare);
     assert_ne!(written["isError"], true, "{written}");
     assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
-    let quality = &written["structuredContent"]["relation_quality"][0];
+    let action = &written["structuredContent"]["receipt"]["action"];
+    let inspected = call(
+        70,
+        action["tool"].as_str().expect("receipt tool"),
+        action["arguments"].clone(),
+    );
+    assert_eq!(inspected["isError"], false, "{inspected}");
+    let receipt: serde_json::Value = serde_json::from_str(
+        inspected["structuredContent"]["object"]["text"]
+            .as_str()
+            .expect("receipt body"),
+    )
+    .expect("receipt JSON");
+    let quality = &receipt["receipt"]["writer"]["relation_quality"][0];
     assert_eq!(quality["crosses_about"], true, "{written}");
     assert_eq!(
         quality["prior_context_sources"],

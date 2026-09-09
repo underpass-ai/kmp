@@ -51,3 +51,7 @@ pub use temporal_coordinate::TemporalCoordinate;
 pub use temporal_cursor::{TemporalAxis, TemporalCursor, TemporalDirection, TemporalWindow};
 pub use temporal_interval::TemporalInterval;
 pub use temporal_selection::TemporalSelection;
+
+pub mod memory_receipt_ref;
+mod reference_component;
+pub use memory_receipt_ref::MemoryReceiptRef;

@@ -30,6 +30,7 @@ impl ContextEventStore for EmbeddedKernelStore {
             // recorded.
             let mut event = event;
             event.revision = new_revision;
+            let outcome = IdempotentOutcome::for_event(&event, new_revision)?;
 
             let aggregate_bytes = encode(
                 "aggregate head",
@@ -47,14 +48,7 @@ impl ContextEventStore for EmbeddedKernelStore {
             tx.insert(Table::EventLog, Key::U64(next_sequence), &event_bytes)?;
 
             if let Some(idempotency_key) = event.idempotency_key.as_deref() {
-                let outcome_bytes = encode(
-                    "idempotency outcome",
-                    &IdempotentOutcome {
-                        revision: new_revision,
-                        content_hash: event.content_hash.clone(),
-                        logical_digest: event.logical_digest.clone(),
-                    },
-                )?;
+                let outcome_bytes = encode("idempotency outcome", &outcome)?;
                 tx.insert(
                     Table::Idempotency,
                     Key::Str(idempotency_key),

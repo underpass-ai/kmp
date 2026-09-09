@@ -287,5 +287,16 @@
   "validation": {
     "scope": "fixture"
   },
-  "warnings": []
+  "warnings": [],
+  "coverage": {
+    "scope": "submitted_packet",
+    "complete": true,
+    "source_coverage": "not_assessed",
+    "memories": 2,
+    "search_summaries": 0,
+    "relations": 3,
+    "evidence": 5,
+    "label_memberships": 6,
+    "preserved_memberships": 0
+  }
 }

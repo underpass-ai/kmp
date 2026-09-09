@@ -487,6 +487,13 @@
                 "description": "Whether a read issued now is guaranteed to observe this write.",
                 "type": "boolean"
               },
+              "receipt_ref": {
+                "description": "Accepted writer audit ref when the internal compiler attached receipt context; null for raw ingest or preview.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "resembling_labels": {
                 "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.",
                 "type": "array"
@@ -1032,6 +1039,48 @@
             "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
             "type": "boolean"
           },
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "complete": {
+                "description": "All declared records and label memberships validated; accepted determines persistence.",
+                "type": "boolean"
+              },
+              "evidence": {
+                "description": "Compiled evidence objects.",
+                "type": "integer"
+              },
+              "label_memberships": {
+                "description": "Declared per-memory key/value pairs after shared-label union.",
+                "type": "integer"
+              },
+              "memories": {
+                "description": "Declared source memories.",
+                "type": "integer"
+              },
+              "preserved_memberships": {
+                "description": "Existing memberships preserved by search_summaries.",
+                "type": "integer"
+              },
+              "relations": {
+                "description": "Declared semantic links.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "submitted_packet: coverage of the declaration only.",
+                "type": "string"
+              },
+              "search_summaries": {
+                "description": "Updated search renderings.",
+                "type": "integer"
+              },
+              "source_coverage": {
+                "description": "not_assessed: KMP cannot detect facts omitted by the writer.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "diagnostics": {
             "description": "Planner diagnostics that qualify the write.",
             "type": "array"
@@ -1041,7 +1090,7 @@
             "type": "boolean"
           },
           "feedback": {
-            "description": "Refusal signals. Codes and paths come from validation, not message parsing. Never invent missing proof; acceptance needs no routine readback.",
+            "description": "Validation signals. Codes and paths come from validation, not message parsing. A warning can accompany acceptance; never invent missing proof.",
             "items": {
               "additionalProperties": false,
               "properties": {
@@ -1079,7 +1128,7 @@
                   "type": "string"
                 },
                 "severity": {
-                  "description": "error for a refused write.",
+                  "description": "error for a refusal; warning for accepted relations whose prior context needs review.",
                   "type": "string"
                 }
               },
@@ -1096,10 +1145,6 @@
           },
           "ingest_preview": {
             "description": "Canonical kmp_ingest arguments. Present only on dry-run.",
-            "type": "object"
-          },
-          "ingest_result": {
-            "description": "Canonical kmp_ingest result. Present only after a committed write.",
             "type": "object"
           },
           "labels": {
@@ -1128,18 +1173,43 @@
             "type": "object"
           },
           "next_suggested_reads": {
-            "description": "Concrete refs worth reading next to verify or continue the write.",
-            "items": {
-              "type": "string"
-            },
+            "description": "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand.",
             "type": "array"
           },
+          "read_after_write_ready": {
+            "description": "Whether a read now observes the accepted write.",
+            "type": "boolean"
+          },
+          "receipt": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "additionalProperties": false,
+                "properties": {
+                  "arguments": {
+                    "description": "Complete arguments. object.text holds JSON with receipt.canonical_memory, receipt.writer diagnostics and command revision/hash. It is a historical snapshot, not current graph state.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "description": "kmp_inspect; execute only when accepted detail is needed.",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "ref": {
+                "description": "Immutable accepted-command audit ref. Absent for previews and simulated backends.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "relation_quality": {
-            "description": "Per-relation validation, including rich/anemic quality and prior-context evidence.",
+            "description": "Preview per-relation validation. After commit, recover it with receipt.action.",
             "type": "array"
           },
           "relation_quality_metrics": {
-            "description": "Aggregate counts and prior-context coverage for the compiled relations.",
+            "description": "Preview counts and prior-context coverage; stored in the receipt after commit.",
             "type": "object"
           },
           "relations": {
@@ -1178,7 +1248,7 @@
             "type": "object"
           },
           "warnings": {
-            "description": "Store validation notices returned with a preview.",
+            "description": "Store notices qualifying this preview or accepted write; retain them.",
             "items": {
               "type": "string"
             },
@@ -4398,7 +4468,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
+      "description": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4424,7 +4494,7 @@
             "properties": {
               "details": {
                 "default": true,
-                "description": "Return the inspected object's stored details. Defaults to true.",
+                "description": "Return stored details, or receipt JSON with canonical_memory, writer diagnostics and command revision/hash. Defaults to true.",
                 "type": "boolean"
               },
               "incoming": {

@@ -115,6 +115,7 @@ pub(crate) fn build_summary_plan(
         existing.reference
     ));
     Ok(KernelWritePlan {
+        operation: super::operation::WriteOperation::SearchSummaries,
         about,
         local_refs: Default::default(),
         dry_run,

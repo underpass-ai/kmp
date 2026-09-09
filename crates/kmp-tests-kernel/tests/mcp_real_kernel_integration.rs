@@ -370,6 +370,40 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             preview["result"]["structuredContent"]["local_refs"]
         );
     }
+    for (server, result) in [(&stdio, &committed), (&embedded, &embedded_commit)] {
+        let ack = &result["result"]["structuredContent"];
+        let action = &ack["receipt"]["action"];
+        let inspected = call_tool(
+            server,
+            24,
+            action["tool"].as_str().expect("tool"),
+            action["arguments"].clone(),
+        )
+        .await;
+        assert_tool_success(&inspected);
+        let detail: Value = serde_json::from_str(
+            inspected["result"]["structuredContent"]["object"]["text"]
+                .as_str()
+                .expect("receipt body"),
+        )?;
+        assert_eq!(detail["receipt"]["writer"]["local_refs"], ack["local_refs"]);
+        assert_eq!(
+            detail["receipt"]["writer"]["coverage"]["label_memberships"],
+            4
+        );
+        assert_eq!(
+            detail["receipt"]["canonical_memory"]["relations"][0]["evidence"],
+            "The design cites offline writes as the reason for local storage."
+        );
+        let http_inspected = call_http_tool(
+            &http,
+            24,
+            action["tool"].as_str().expect("tool"),
+            action["arguments"].clone(),
+        )
+        .await;
+        assert_tool_success(&http_inspected);
+    }
     let refs = &committed["result"]["structuredContent"]["local_refs"];
     let trace_args =
         json!({"about":"project:parity-packet", "from":refs["decision"], "to":refs["constraint"]});

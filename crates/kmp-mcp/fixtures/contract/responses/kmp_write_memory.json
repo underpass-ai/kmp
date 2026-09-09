@@ -1,36 +1,29 @@
 {
   "content": [
     {
-      "text": "Prepared 1 entry, 1 relation, and 2 evidence items for question:parity.",
+      "text": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
       "type": "text"
     }
   ],
   "isError": false,
   "structuredContent": {
     "accepted": true,
+    "coverage": {
+      "complete": true,
+      "evidence": 2,
+      "label_memberships": 1,
+      "memories": 1,
+      "preserved_memberships": 0,
+      "relations": 1,
+      "scope": "submitted_packet",
+      "search_summaries": 0,
+      "source_coverage": "not_assessed"
+    },
     "diagnostics": [],
     "dry_run": false,
     "generated_refs": [
       "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
     ],
-    "ingest_result": {
-      "memory": {
-        "about": "question:parity",
-        "accepted": {
-          "entries": 1,
-          "evidence": 2,
-          "relations": 1
-        },
-        "created_dimensions": [
-          "label:v1:question%3Aparity:agentic_process:parity"
-        ],
-        "memory_id": "memory:write:bb2b522031614fc2",
-        "read_after_write_ready": true,
-        "resembling_labels": []
-      },
-      "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
-      "warnings": []
-    },
     "labels": {
       "created": [
         {
@@ -49,52 +42,27 @@
     "local_refs": {
       "current": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
     },
-    "next_suggested_reads": [
-      {
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-        "to": "question:parity:claim:denver",
-        "tool": "kmp_trace"
-      }
-    ],
-    "relation_quality": [
-      {
-        "class": "evidential",
-        "confidence": "medium",
-        "crosses_about": false,
-        "fallback": true,
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
-        "prior_context_observed": true,
-        "prior_context_sources": [
-          "kmp_inspect"
-        ],
-        "proof_complete": true,
-        "quality": "anemic",
-        "quality_reason": "writer scoped the node to background without claiming causal semantics",
-        "rel": "uses_background",
-        "requires_prior_context": false,
-        "target_present": true,
-        "to": "question:parity:claim:denver"
-      }
-    ],
-    "relation_quality_metrics": {
-      "relation_anemic_count": 1,
-      "relation_anemic_ratio": 1.0,
-      "relation_explanatory_ratio": 1.0,
-      "relation_invalid_rejected_count": 0,
-      "relation_prior_context_coverage": 0.0,
-      "relation_prior_context_observed_count": 0,
-      "relation_prior_context_required_count": 0,
-      "relation_proof_coverage": 1.0,
-      "relation_rich_count": 0,
-      "relation_rich_ratio": 0.0,
-      "relation_structural_count": 0,
-      "relation_suspect_count": 0,
-      "relation_target_coverage": 1.0,
-      "relation_total": 1
+    "read_after_write_ready": true,
+    "receipt": {
+      "action": {
+        "arguments": {
+          "about": "question:parity",
+          "include": {
+            "details": true,
+            "incoming": false,
+            "outgoing": false,
+            "raw": false
+          },
+          "ref": "receipt:v1:question%3Aparity:write%3Abb2b522031614fc2"
+        },
+        "tool": "kmp_inspect"
+      },
+      "ref": "receipt:v1:question%3Aparity:write%3Abb2b522031614fc2"
     },
     "relations": [
       "uses_background"
     ],
-    "summary": "Prepared 1 entry, 1 relation, and 2 evidence items for question:parity."
+    "summary": "Ingested 1 entry, 1 relation, and 2 evidence items for question:parity.",
+    "warnings": []
   }
 }

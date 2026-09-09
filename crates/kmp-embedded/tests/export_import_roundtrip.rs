@@ -47,6 +47,7 @@ fn corpus_with_first_entry_text(
     first_entry_text: &str,
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

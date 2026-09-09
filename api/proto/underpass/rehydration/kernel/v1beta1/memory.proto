@@ -36,6 +36,8 @@ message IngestRequest {
   // holds — the same identifier up to case and separators, or the same
   // value under another key. Unspecified reads as WARN.
   LabelPolicy label_policy = 6;
+  // Optional writer diagnostics for an immutable command audit, not memory.
+  optional string receipt_context_json = 7;
 }
 
 enum LabelPolicy {
@@ -152,6 +154,7 @@ message IngestedMemory {
   // Labels this ingest declared that resemble one the about already holds,
   // written under LABEL_POLICY_WARN; each says why in a checkable sentence.
   repeated ResemblingLabel resembling_labels = 6;
+  optional string receipt_ref = 7;
 }
 
 // A label a write named beside the existing label it resembles: `kind` is

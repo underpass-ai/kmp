@@ -19,6 +19,7 @@ const ABOUT: &str = "project:memory-api";
 
 fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {

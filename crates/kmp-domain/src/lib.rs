@@ -25,6 +25,7 @@ pub use projection::{
     ProjectionEventHandler, ProjectionHandlingRequest, ProjectionHandlingResult,
     ProjectionMutation, RelatedNodeExplanationData, RelatedNodeReference,
 };
+pub use repositories::{COMMAND_RECEIPT_ENTITY_KIND, StoredCommandReceipt};
 pub use repositories::{
     ContextEventChange, ContextEventStore, ContextUpdatedEvent, GraphNeighborhoodReader,
     IdempotentOutcome, MemoryAboutIndexReader, NeighborhoodRequest, NodeDetailReader,
@@ -32,6 +33,7 @@ pub use repositories::{
     ProjectionCheckpointStore, ProjectionWriter, QualityMetricsObserver, QualityObservationContext,
     SnapshotSaveOptions, SnapshotStore, TokenEstimator,
 };
+pub use value_objects::MemoryReceiptRef;
 pub use value_objects::{
     BundleMetadata, BundleQualityMetrics, CaseId, CoordinateOrigin, DimensionScopeMode,
     DimensionSelection, DimensionSelectionMode, EntryLabels, LabelSelector, LabelSelectorOperator,

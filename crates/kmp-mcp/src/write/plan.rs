@@ -4,6 +4,7 @@ use serde_json::Value;
 /// it compiled to, and what the caller should read back afterwards.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct KernelWritePlan {
+    pub(crate) operation: super::operation::WriteOperation,
     pub(crate) about: String,
     pub(crate) local_refs: std::collections::BTreeMap<String, String>,
     pub(crate) dry_run: bool,

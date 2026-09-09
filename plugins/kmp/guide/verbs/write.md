@@ -27,7 +27,37 @@ A rejected record writes none of the packet. The transaction covers one about.
 the same idempotency key. Duplicate ids, duplicate targets, self-links and
 undeclared local targets are errors. See
 `guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof
-link, a rejected packet and temporal/ChronoLoom review. Compact recoverable receipts are still being developed.
+link, a rejected packet and temporal/ChronoLoom review. Accepted writes return a compact acknowledgment; recover the detailed receipt only when needed.
+
+## Read the acknowledgment
+
+`accepted=true` confirms the submitted packet was committed. Read `warnings`,
+`diagnostics`, `feedback`, `labels.created` and `labels.resembling`; they can qualify success.
+A lax write can carry `RELATION_CONTEXT_UNVERIFIED` with severity warning and
+an audit action. Acceptance does not establish an unverified causal claim.
+`coverage` counts declared memories, relations, evidence objects and per-memory
+label memberships after the shared-label union. `complete=true` applies only to
+the submitted packet. `source_coverage=not_assessed` means KMP cannot tell whether
+the writer omitted a source fact, alias or date. For `search_summaries`, the
+coverage separates updated renderings from preserved memberships.
+
+The accepted response omits repeated canonical data and per-relation diagnostics.
+`receipt.ref` identifies immutable command detail. Execute `receipt.action`
+verbatim when you need to audit the accepted write; it supplies `kmp_inspect`
+with the about, ref and include options. No routine readback is required.
+For example, after a packet with local ids `source` and `decision`, the action's
+`object.text` is JSON: `receipt.writer.local_refs` maps both ids, and
+`receipt.canonical_memory` preserves their actual coordinates, assigned sequences,
+source evidence and relation proof. `receipt.writer.relation_quality` retains the
+compiler's per-link checks. `command` gives the accepted revision and content hash.
+
+This is the original accepted snapshot. A later relabel or search rendering does
+not rewrite it; inspect the memory's own ref for its current state. Receipts survive
+restart and bundle export/import and are not graph memories, label matches or
+Wake evidence. Previews have no durable receipt and retain `ingest_preview` for
+review. A simulated backend does not prove receipt persistence. Full receipt
+inspection costs more context than the acknowledgment; the ordinary Inspect
+stable-object floor and its warnings apply.
 
 ## Repair a refused packet
 
@@ -46,7 +76,9 @@ the actual returned ref in `read_context` and resubmit the corrected packet.
 The action is a supported reading move, not proof that the relation is true.
 An absent action means no source-backed automatic correction is known.
 Planner refusals commit none of the packet; store failures still carry their
-backend error. A normal accepted write does not require routine readback.
+backend error. A failed pre-read retains unavailable, not_found, conflict or
+backend_error; do not treat it as a malformed source packet. Malformed successful
+store data is a backend_error. A normal accepted write does not require routine readback.
 
 ## What to write, and what never to write
 

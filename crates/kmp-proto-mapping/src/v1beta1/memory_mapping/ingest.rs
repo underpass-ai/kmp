@@ -21,7 +21,22 @@ pub fn ingest_command_from_proto(
         .memory
         .ok_or_else(|| invalid_argument("memory is required"))?;
 
+    let receipt_context = request
+        .receipt_context_json
+        .map(|text| {
+            let value: serde_json::Value = serde_json::from_str(&text)
+                .map_err(|_| invalid_argument("receipt_context_json must encode an object"))?;
+            if !value.is_object() {
+                return Err(invalid_argument(
+                    "receipt_context_json must encode an object",
+                ));
+            }
+            Ok(value)
+        })
+        .transpose()?;
+
     Ok(MemoryIngestCommand {
+        receipt_context,
         about: request.about,
         memory: MemoryData {
             dimensions: memory
@@ -64,6 +79,7 @@ pub fn ingest_response_from_outcome(outcome: MemoryIngestOutcome) -> IngestRespo
             outcome.about
         ),
         memory: Some(IngestedMemory {
+            receipt_ref: outcome.receipt_ref,
             about: outcome.about,
             memory_id: outcome.memory_id,
             accepted: Some(AcceptedCounts {

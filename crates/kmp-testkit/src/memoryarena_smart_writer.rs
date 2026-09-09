@@ -296,7 +296,7 @@ impl MemoryArenaSmartWriter {
                     "entry_ref": input.entry_ref.as_str(),
                     "elapsed_ms": commit_call.elapsed_ms,
                     "read_after_write_ready": commit_content
-                        .pointer("/ingest_result/memory/read_after_write_ready")
+                        .get("read_after_write_ready")
                         .cloned()
                         .unwrap_or(Value::Null)
                 }),

@@ -118,6 +118,7 @@ impl MemoryRecordApi for EmbeddedKernel {
 
 fn ingest_command(request: MemoryRecordRequest) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: request.about,
         memory: MemoryData {
             dimensions: request

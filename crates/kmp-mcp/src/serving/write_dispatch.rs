@@ -24,27 +24,29 @@ impl KernelMcpServer {
         start: Instant,
     ) -> String {
         let planned = match (arguments.get("memories"), arguments.get("search_summaries")) {
-            (Some(_), None) => build_batch_plan(arguments),
+            (Some(_), None) => build_batch_plan(arguments).map_err(ToolError::from),
             (None, Some(_)) => self.plan_search_summary_packet(arguments).await,
             _ => Err(WriteValidationError::new(
                 "provide exactly one of memories or search_summaries",
             )
-            .code("WRITE_OPERATION_REQUIRED")),
+            .code("WRITE_OPERATION_REQUIRED")
+            .into()),
         };
         let plan = match planned {
             Ok(plan) => plan,
-            Err(message) => {
-                // Everything the write planner refuses is about the
-                // arguments: a missing field, an unsupported relation, a rich
-                // link with no evidence. The caller can fix all of it, and
-                // only the caller can.
-                let error = ToolError::from(message);
+            Err(error) => {
+                // Compiler refusals carry field feedback. A failed source read
+                // keeps the category reported by the store (#586).
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
                     arguments,
-                    ToolErrorKind::Validation,
+                    if error.code == crate::serving::ToolErrorCode::InvalidArgument {
+                        ToolErrorKind::Validation
+                    } else {
+                        ToolErrorKind::Backend
+                    },
                     &error.message,
                     start.elapsed(),
                 );
@@ -52,9 +54,11 @@ impl KernelMcpServer {
             }
         };
 
+        let mut ingest_arguments = plan.ingest_arguments.clone();
+        ingest_arguments["receipt_context"] = crate::write::receipt::receipt_context(&plan);
         match self
             .backend
-            .call_tool("kmp_ingest", &plan.ingest_arguments)
+            .call_tool("kmp_ingest", &ingest_arguments)
             .await
         {
             Ok(result) => {
@@ -99,11 +103,11 @@ impl KernelMcpServer {
     async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
-    ) -> Result<crate::write::plan::KernelWritePlan, WriteValidationError> {
+    ) -> Result<crate::write::plan::KernelWritePlan, ToolError> {
         use crate::write::validated_arguments::{required_map_string, required_string};
         let object = arguments
             .as_object()
-            .ok_or("tool arguments must be an object")?;
+            .ok_or_else(|| ToolError::invalid_argument("tool arguments must be an object"))?;
         let about = required_string(object, "about")?;
         for field in [
             "labels",
@@ -116,7 +120,7 @@ impl KernelMcpServer {
             if object.contains_key(field) {
                 return Err(WriteValidationError::new(format!(
                     "search_summaries preserves stored source and coordinates; `{field}` cannot accompany it"
-                )).at(field).code("PRESERVED_FIELD"));
+                )).at(field).code("PRESERVED_FIELD").into());
             }
         }
         for field in ["sequence", "labels_new"] {
@@ -128,14 +132,18 @@ impl KernelMcpServer {
                     "options.{field} does not apply to search_summaries"
                 ))
                 .at(format!("options.{field}"))
-                .code("INAPPLICABLE_OPTION"));
+                .code("INAPPLICABLE_OPTION")
+                .into());
             }
         }
         let records = object
             .get("search_summaries")
             .and_then(Value::as_array)
             .filter(|records| !records.is_empty())
-            .ok_or("search_summaries must be a non-empty array")?;
+            .ok_or_else(|| {
+                WriteValidationError::new("search_summaries must be a non-empty array")
+                    .at("search_summaries")
+            })?;
         let identity = object
             .get("idempotency_key")
             .and_then(Value::as_str)
@@ -145,22 +153,27 @@ impl KernelMcpServer {
         let mut targets = std::collections::BTreeSet::new();
         let mut plans = Vec::new();
         for (index, record) in records.iter().enumerate() {
-            let record = record
-                .as_object()
-                .ok_or_else(|| format!("search_summaries[{index}] must be an object"))?;
+            let record = record.as_object().ok_or_else(|| {
+                WriteValidationError::new(format!("search_summaries[{index}] must be an object"))
+                    .at(format!("search_summaries[{index}]"))
+            })?;
             let reference =
                 required_map_string(record, "ref", &format!("search_summaries[{index}].ref"))?;
             kmp_application::validate_supplied_entry_ref(
                 &about,
                 &format!("search_summaries[{index}].ref"),
                 reference,
-            )?;
+            )
+            .map_err(|error| {
+                WriteValidationError::new(error).at(format!("search_summaries[{index}].ref"))
+            })?;
             if !targets.insert(reference) {
                 return Err(WriteValidationError::new(format!(
                     "search_summaries[{index}].ref repeats target `{reference}`"
                 ))
                 .at(format!("search_summaries[{index}].ref"))
-                .code("DUPLICATE_TARGET"));
+                .code("DUPLICATE_TARGET")
+                .into());
             }
             let existing = read_existing_entry(self.backend.as_ref(), &about, reference).await?;
             let mut request = object.clone();

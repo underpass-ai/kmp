@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_inspect",
-        "Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
+        "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -38,7 +38,7 @@ pub(crate) fn definition() -> Value {
                         "details": {
                             "type": "boolean",
                             "default": true,
-                            "description": "Return the inspected object's stored details. Defaults to true."
+                            "description": "Return stored details, or receipt JSON with canonical_memory, writer diagnostics and command revision/hash. Defaults to true."
                         },
                         "raw": {
                             "type": "boolean",
