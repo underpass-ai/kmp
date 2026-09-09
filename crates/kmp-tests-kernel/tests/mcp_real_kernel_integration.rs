@@ -120,6 +120,14 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             "kmp_inspect",
             json!({"about":"project:parity-live","ref":"project:parity-live:observation:parity-after","include":{"details":true}}),
         ),
+        (
+            "kmp_trace",
+            json!({"about":"project:parity-live","from":"project:parity-live:observation:parity-after","to":"project:parity-live:observation:parity-before","budget":{"max_bytes":512}}),
+        ),
+        (
+            "kmp_relate",
+            json!({"about":"project:parity-live","budget":{"max_bytes":512}}),
+        ),
     ];
 
     for (index, (tool, arguments)) in cases.into_iter().enumerate() {

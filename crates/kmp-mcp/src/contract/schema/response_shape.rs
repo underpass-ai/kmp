@@ -38,6 +38,15 @@ pub(crate) fn page_output_schema(unit: &str, cursor_description: &str) -> Value 
         "next_cursor": nullable_described("string", cursor_description)
     }))
 }
+pub(crate) fn relation_page_output_schema(unit: &str, cursor_description: &str) -> Value {
+    let mut page = page_output_schema(unit, cursor_description);
+    page["properties"]["required_bytes"] = described(
+        "integer",
+        "When no whole item fits, retry page.next_cursor with budget.max_bytes at least this allowance to make progress. Absent otherwise.",
+    );
+    page
+}
+
 /// `proof`, which is where a caller decides whether to believe the answer.
 pub(crate) fn proof_output_schema(confidence_description: &str) -> Value {
     output_object(json!({

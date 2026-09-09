@@ -36,8 +36,8 @@ pub(crate) fn definition() -> Value {
 fn trace_output_schema() -> Value {
     output_object(json!({
         "summary": described("string", "Concise statement of the path selection."),
-        "trace": described("array", "Ordered typed relations connecting from to to; empty means no path in the same memory graph."),
-        "page": page_output_schema("trace relations", "Opaque trace cursor; repeat it as page.cursor with every other argument unchanged."),
+        "trace": described("array", "Ordered typed relations connecting from to to; empty with page.has_more=false means no path in the same memory graph; otherwise proof remains pending."),
+        "page": relation_page_output_schema("trace relations", "Opaque trace cursor; repeat it as page.cursor with selection arguments unchanged. budget.max_bytes and page.entries may vary; restart if memory changes."),
         "quality": nullable_output_schema(quality_output_schema(), "Response-shape metrics; null when the backend supplied none."),
         "warnings": warnings_output_schema()
     }))
