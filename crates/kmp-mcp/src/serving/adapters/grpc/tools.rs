@@ -1,10 +1,10 @@
 use serde_json::Value;
 
 use crate::projection::{
-    ask_from_response, dry_run_ingest_from_plan, enforce_inspect_output_budget,
-    enforce_temporal_output_budget, ingest_from_response, inspect_from_response,
-    relabel_from_response, relate_from_response, temporal_from_response, trace_from_response,
-    visual_projection_from_response, wake_from_response,
+    ask_from_response, enforce_inspect_output_budget, enforce_temporal_output_budget,
+    ingest_from_response, inspect_from_response, relabel_from_response, relate_from_response,
+    temporal_from_response, trace_from_response, visual_projection_from_response,
+    wake_from_response,
 };
 use crate::serving::KernelMcpGrpcTlsConfig;
 use crate::serving::adapters::grpc::channel::connect_memory_client;
@@ -22,7 +22,6 @@ use crate::serving::adapters::grpc::temporal::{
 };
 use crate::serving::{ToolError, ToolErrorCode};
 use crate::serving::{app_data_success_result, tool_success_result};
-use crate::write::build_ingest_plan;
 
 /// gRPC already carries a status code, so this boundary reads that instead of
 /// the sentence it produced. The server said what kind of failure it was; the
@@ -102,10 +101,6 @@ async fn grpc_ingest(
     arguments: &Value,
 ) -> Result<Value, ToolError> {
     let request = ingest_request_from_arguments(arguments).map_err(ToolError::invalid_argument)?;
-    if request.dry_run {
-        let plan = build_ingest_plan(arguments)?;
-        return Ok(tool_success_result(dry_run_ingest_from_plan(&plan)));
-    }
 
     let about = request.about.clone();
     let mut client = connect_memory_client(endpoint, tls)

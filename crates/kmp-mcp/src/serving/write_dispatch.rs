@@ -71,19 +71,6 @@ impl KernelMcpServer {
             }
         };
 
-        if plan.dry_run {
-            let result = tool_success_result(write_dry_run_result(&plan));
-            record_tool_success(
-                self.backend_name(),
-                self.grpc_tls_mode_name(),
-                "kmp_write_memory",
-                arguments,
-                &result,
-                start.elapsed(),
-            );
-            return jsonrpc_result(id, result);
-        }
-
         match self
             .backend
             .call_tool("kmp_ingest", &plan.ingest_arguments)
@@ -91,12 +78,16 @@ impl KernelMcpServer {
         {
             Ok(result) => {
                 let ingest_result = result.get("structuredContent").cloned().unwrap_or(result);
-                let result = tool_success_result(write_commit_result(
-                    &plan,
-                    ingest_result,
-                    self.viewer_invitation(),
-                    self.orphaned_bundle_notice(),
-                ));
+                let result = tool_success_result(if plan.dry_run {
+                    write_dry_run_result(&plan, ingest_result, self.backend_name())
+                } else {
+                    write_commit_result(
+                        &plan,
+                        ingest_result,
+                        self.viewer_invitation(),
+                        self.orphaned_bundle_notice(),
+                    )
+                });
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
