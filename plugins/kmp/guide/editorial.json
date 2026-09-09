@@ -51,7 +51,7 @@
           "id": "verb:time",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval.",
+          "evidence": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Shared clock regressions also bound a relation independently of its older endpoints and verify inclusive as_of, exclusive interval end, emitted Wake proof and replacement state.",
           "text_file": "verbs/time.md",
           "guide_title": "Navigate and zoom in time"
         },

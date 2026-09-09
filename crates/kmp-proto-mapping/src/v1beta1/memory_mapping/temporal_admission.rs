@@ -13,8 +13,8 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_domain::{
-    KmpBundle, TemporalAxis, TemporalCoordinate, TemporalCursor, TemporalSelection,
-    compare_temporal_instants,
+    KmpBundle, RelationExplanation, TemporalAxis, TemporalCoordinate, TemporalCursor,
+    TemporalSelection, compare_temporal_instants,
 };
 use kmp_proto::v1beta1::{MemoryEvidence, NearestOutside, TemporalInterval as ProtoInterval};
 use prost_types::Timestamp;
@@ -196,7 +196,8 @@ impl TemporalAdmission {
     }
 
     /// The bundle as it stood where the recall stands: every relation that
-    /// touches an entry outside the selection is left out, so a replacement
+    /// touches an entry outside the selection or is explicitly later on the
+    /// selected clock is left out, so a replacement
     /// that did not exist yet replaces nothing, a proof path never crosses
     /// into what came later, and the graph the ranker reaches through is the
     /// selection's. Nodes and details stay, so what lies outside can still
@@ -205,12 +206,14 @@ impl TemporalAdmission {
         if self.admitted.is_none() {
             return Cow::Borrowed(bundle);
         }
+        let boundary = self.lifecycle_instant();
         let relationships = bundle
             .relationships()
             .iter()
             .filter(|relationship| {
                 !self.excludes(relationship.source_node_id())
                     && !self.excludes(relationship.target_node_id())
+                    && self.admits_relation_clock(relationship.explanation(), boundary)
             })
             .cloned()
             .collect();
@@ -228,6 +231,34 @@ impl TemporalAdmission {
             // if it were not, standing on the whole is the honest fallback.
             Err(_) => Cow::Borrowed(bundle),
         }
+    }
+
+    fn admits_relation_clock(
+        &self,
+        explanation: &RelationExplanation,
+        boundary: Option<LifecycleInstant>,
+    ) -> bool {
+        let Some(boundary) = boundary else {
+            return true;
+        };
+        let at = match self.axis() {
+            TemporalAxis::Occurred => explanation.occurred_at(),
+            TemporalAxis::Observed => explanation.observed_at(),
+            TemporalAxis::Ingested => explanation.ingested_at(),
+            TemporalAxis::Validity => explanation.valid_from(),
+            TemporalAxis::Default => explanation
+                .occurred_at()
+                .or_else(|| explanation.valid_from())
+                .or_else(|| explanation.observed_at())
+                .or_else(|| explanation.ingested_at()),
+        };
+        // A missing clock does not prove that a link arrived later. Preserve
+        // it without substituting another clock or inventing its timestamp.
+        let Some(at) = timestamp_from_sort_or_rfc3339(at) else {
+            return true;
+        };
+        let instant = (at.seconds, at.nanos);
+        instant < boundary.at || (boundary.inclusive && instant == boundary.at)
     }
 
     /// Whether the recall is bounded to a span — the one case an UNKNOWN can

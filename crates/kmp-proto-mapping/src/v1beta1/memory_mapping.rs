@@ -38,6 +38,8 @@ mod semantic_candidate_ranking;
 mod semantic_recall_tests;
 mod semantic_source;
 mod temporal_admission;
+#[cfg(test)]
+mod temporal_relation_clock_tests;
 mod term_counts;
 mod visual_projection;
 
