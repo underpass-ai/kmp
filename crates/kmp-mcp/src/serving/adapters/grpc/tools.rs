@@ -1,3 +1,4 @@
+use crate::projection::relation_page_budget::RelationPageBudget;
 use serde_json::Value;
 
 use crate::projection::{
@@ -254,7 +255,9 @@ async fn grpc_relate(
         .map_err(grpc_error("Relate", &about))?
         .into_inner();
 
-    Ok(tool_success_result(relate_from_response(response)))
+    Ok(tool_success_result(
+        RelationPageBudget::Relate.apply(relate_from_response(response), arguments)?,
+    ))
 }
 
 async fn grpc_trace(
@@ -274,7 +277,9 @@ async fn grpc_trace(
         .map_err(grpc_error("Trace", &format!("{from}` -> `{to}")))?
         .into_inner();
 
-    Ok(tool_success_result(trace_from_response(response)))
+    Ok(tool_success_result(
+        RelationPageBudget::Trace.apply(trace_from_response(response), arguments)?,
+    ))
 }
 
 async fn grpc_inspect(
