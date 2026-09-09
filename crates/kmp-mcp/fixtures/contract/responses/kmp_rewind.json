@@ -163,7 +163,7 @@
       }
     },
     "warnings": [
-      "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+      "temporal selection is limited; use the transport's continuation to read remaining history"
     ]
   }
 }

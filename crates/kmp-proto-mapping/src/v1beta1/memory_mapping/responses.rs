@@ -722,7 +722,7 @@ pub fn temporal_response_from_result(
     let mut warnings = Vec::new();
     if page.has_more() {
         warnings.push(
-            "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+            "temporal selection is limited; use the transport's continuation to read remaining history"
                 .to_string(),
         );
     }
