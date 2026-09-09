@@ -81,6 +81,16 @@ entry. It does not invent dates for evidence without a timestamp. On the
 occurred axis, late evidence can still describe the earlier event; that does
 not establish that the evidence was known at the event time.
 
+A relation has its own clocks, independently of its endpoints. In bounded
+Wake, Ask and Relate reads, a link explicitly later on the selected clock
+cannot change the earlier proof or replacement state. For two memories from
+10:00 linked by a review first observed at 13:00, `axis: "observed"` with
+`as_of.time: "2026-09-01T12:00:00Z"` excludes that link. At 13:00 an `as_of`
+read includes it, while an interval ending at 13:00 still excludes it.
+Earlier antecedents remain available; a missing relation clock is not proof
+of later arrival and is not replaced by another clock. Inspect the relation
+before inferring when an undated link was known.
+
 ## Select entries and choose returned lanes
 
 Coordinate filters choose returned lanes; label selectors evaluate the whole
