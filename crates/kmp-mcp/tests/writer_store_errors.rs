@@ -65,5 +65,11 @@ async fn summary_pre_read_preserves_the_backend_category_and_never_attempts_inge
             "{result}"
         );
         assert_eq!(*calls.lock().expect("calls"), ["kmp_inspect"]);
+        if matches!(
+            code,
+            ToolErrorCode::BackendError | ToolErrorCode::Unavailable
+        ) {
+            assert!(result["result"]["structuredContent"].get("help").is_none());
+        }
     }
 }

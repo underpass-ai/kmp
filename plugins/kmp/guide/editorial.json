@@ -12,7 +12,7 @@
           "id": "overview",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "This is the agent-only operating contract shipped with the KMP plugin.",
+          "evidence": "The agent entry indexes verb groups and example maps for selective first-use reading; it reuses current context instead of loading every guide body.",
           "text_file": "agent-entry.md"
         },
         {
@@ -210,7 +210,7 @@
           "id": "advanced:errors",
           "kind": "instruction",
           "depth": "advanced",
-          "evidence": "Operating guidance moved from the reviewed memory skill; native lifecycle and tool error contracts remain authoritative.",
+          "evidence": "Native MCP refusals preserve their error code and feedback actions while offering executable verb and lesson reads selected from typed diagnostics. Backend and guide-read failures do not trigger recursive guide help.",
           "text_file": "topics/errors.md",
           "guide_title": "Diagnose missing tools and errors"
         },

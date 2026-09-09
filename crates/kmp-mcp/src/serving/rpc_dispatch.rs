@@ -131,9 +131,13 @@ impl KernelMcpServer {
         {
             return jsonrpc_result(
                 id,
-                tool_error_result(&ToolError::unknown_tool(format!(
-                    "{name} is callable only by a negotiated MCP App"
-                ))),
+                tool_error_result(
+                    name,
+                    arguments,
+                    &ToolError::unknown_tool(format!(
+                        "{name} is callable only by a negotiated MCP App"
+                    )),
+                ),
             );
         }
 
@@ -150,7 +154,7 @@ impl KernelMcpServer {
                 &error.message,
                 start.elapsed(),
             );
-            return jsonrpc_result(id, tool_error_result(&error));
+            return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
         if name == "kmp_write_memory" {
@@ -182,7 +186,7 @@ impl KernelMcpServer {
                 &error.message,
                 start.elapsed(),
             );
-            return jsonrpc_result(id, tool_error_result(&error));
+            return jsonrpc_result(id, tool_error_result(name, arguments, &error));
         }
 
         // The view tools never reach the backend's write path — they hold a
@@ -213,7 +217,7 @@ impl KernelMcpServer {
                     &error.message,
                     start.elapsed(),
                 );
-                jsonrpc_result(id, tool_error_result(&error))
+                jsonrpc_result(id, tool_error_result(name, arguments, &error))
             }
         }
     }

@@ -23,6 +23,7 @@ Las rutas son relativas a la raíz del repositorio.
 | Entrada breve del agente | [guide/agent-entry.md](../../plugins/kmp/guide/agent-entry.md) | Regenerar el índice y comprobar su tamaño; no insertar el manual completo |
 | Explicación extendida o ejemplo | [editorial.json](../../plugins/kmp/guide/editorial.json) y sus `text_file` en `verbs/`, `topics/` o `examples/` | Referencia válida, prueba nativa y lectura selectiva |
 | Correspondencia entre herramienta y verbo | `tool_verb` en [GuideRequestMapper](../../crates/kmp-release/src/application/mappers/guide_request_mapper.rs) | Todo tool público debe resolver a un verbo indexado |
+| Ayuda ante un rechazo de uso | [tool_error_help.rs](../../crates/kmp-mcp/src/serving/tool_error_help.rs) y su envoltorio en `tool_result.rs` | Elegir por código/ruta tipados, conservar feedback y ejecutar las lecturas sugeridas |
 | Cómo se entra desde Codex o Claude | [skills](../../plugins/kmp/skills/), [adaptadores Claude](../../plugins/kmp/claude/commands/) y [capabilities.json](../../plugins/kmp/capabilities.json) | Paridad de capacidades y acceso a la misma entrada; evitar otra copia del manual |
 | Relato público del producto | Bloque `kmp:public-overview` de [plugins/kmp/README.md](../../plugins/kmp/README.md) | Sincronizar README de repositorio y crate; revisar guía humana |
 
@@ -191,6 +192,28 @@ En paridad, aislar XDG_DATA_HOME para que el almacén local no cargue una tabla
 léxica personal ausente en el servidor de prueba; comparar la misma configuración
 de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
 LLM ni facturación del host. Estas instrucciones son documentación informativa.
+
+### Descubrimiento progresivo y errores
+
+La entrada generada muestra los grupos de verbos y dos mapas de ejemplos. Los
+temas y lecciones completos siguen en KMP. Consultar el verbo antes del primer
+uso si no está en contexto y abrir el ejemplo necesario; no cargar todos los
+cuerpos para completar el índice. El registro de una consulta anterior no prueba
+comprensión ni presencia en el contexto actual.
+
+La ayuda de rechazo se decide por nombre de herramienta, código y ruta del
+feedback, nunca analizando su mensaje. `help.guide` y `help.examples` contienen
+llamadas completas a nodos existentes. Conservar las acciones directas de
+reparación y reinicio, los códigos del backend y la ausencia de escrituras en
+un rechazo. La consulta de guía no reintenta ni sincroniza automáticamente. Los
+fallos de infraestructura y de lectura de la guía no generan un bucle de ayuda.
+UNKNOWN sigue siendo una respuesta semántica válida.
+
+Probar que los enlaces se ejecutan contra los assets generados, incluyendo las
+herramientas que comparten verbo. Medir la entrada y las lecturas posteriores:
+mover una lista a un nodo no elimina su coste cuando ese nodo se consulta. La
+misma ayuda aparece en texto para hosts que no muestran structuredContent;
+contar por separado esa representación y el sobre completo.
 
 ## 3. Regenerar con el motor correspondiente
 

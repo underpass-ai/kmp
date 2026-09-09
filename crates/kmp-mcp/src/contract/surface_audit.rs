@@ -517,13 +517,19 @@ mod tests {
         let phrased_like_a_bad_argument =
             "the store must be migrated before it can be opened; this is invalid";
         assert_eq!(
-            tool_error_result(&ToolError::backend(phrased_like_a_bad_argument))["structuredContent"]
-                ["error"]["code"],
+            tool_error_result(
+                "kmp_ask",
+                &json!({}),
+                &ToolError::backend(phrased_like_a_bad_argument)
+            )["structuredContent"]["error"]["code"],
             "backend_error"
         );
         assert_eq!(
-            tool_error_result(&ToolError::invalid_argument(phrased_like_a_bad_argument))["structuredContent"]
-                ["error"]["code"],
+            tool_error_result(
+                "kmp_ask",
+                &json!({}),
+                &ToolError::invalid_argument(phrased_like_a_bad_argument)
+            )["structuredContent"]["error"]["code"],
             "invalid_argument"
         );
     }

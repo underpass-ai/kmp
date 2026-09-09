@@ -53,7 +53,7 @@ pub(crate) fn app_data_success_result(structured_content: Value) -> Value {
     })
 }
 
-pub(crate) fn tool_error_result(error: &ToolError) -> Value {
+pub(crate) fn tool_error_result(tool: &str, arguments: &Value, error: &ToolError) -> Value {
     let mut result = json!({
         "content": [
             {
@@ -71,6 +71,12 @@ pub(crate) fn tool_error_result(error: &ToolError) -> Value {
     });
     if !error.feedback.is_empty() {
         result["structuredContent"]["feedback"] = json!(error.feedback);
+    }
+    if let Some(help) = super::tool_error_help::ToolErrorHelp::for_call(tool, arguments, error) {
+        // Text-only hosts must receive the same callable lessons. Do not copy
+        // guide bodies here or replace an existing repair/restart action.
+        result["content"][0]["text"] = json!(format!("{}\nUsage help: {}", error.message, help));
+        result["structuredContent"]["help"] = help;
     }
     result
 }
@@ -92,12 +98,16 @@ mod tests {
                 .contains("Austin")
         );
 
-        let error = tool_error_result(&ToolError::backend("no evidence"));
+        let error = tool_error_result("kmp_ask", &json!({}), &ToolError::backend("no evidence"));
         assert_eq!(error["isError"], true);
         assert_eq!(error["content"][0]["text"], "no evidence");
         assert_eq!(error["structuredContent"]["error"]["code"], "backend_error");
 
-        let missing = tool_error_result(&ToolError::not_found("node `question:missing` not found"));
+        let missing = tool_error_result(
+            "kmp_inspect",
+            &json!({}),
+            &ToolError::not_found("node `question:missing` not found"),
+        );
         assert_eq!(missing["structuredContent"]["error"]["code"], "not_found");
     }
 }

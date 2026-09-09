@@ -29,3 +29,23 @@ the closed set under `_meta."kmp/errorCodes"` with what each one means.
 An unknown argument is refused rather than dropped: every tool declares
 `additionalProperties: false` and the boundary enforces it, so a misspelling
 comes back naming the key instead of being answered from defaults.
+
+Usage refusals also offer `structuredContent.help.guide` and `help.examples`:
+complete `{tool, arguments}` calls to the relevant verb and worked lessons.
+Read the field and code in every feedback item first; reuse lessons already in
+context and consult only the missing explanation. The help is also available in
+the text fallback. It does not replace `feedback[].action`, which can inspect
+a missing prerequisite or restart a stale selection. Neither help nor a lesson
+authorizes writing invented evidence or widening the task's scope.
+
+Example: a `FUTURE_OBSERVATION` refusal links to the four-clock lesson. Read the
+source to correct the observation time; do not substitute today's time merely
+to make the call pass. A `RELATION_PROOF_REQUIRED` refusal links to decision
+history, where the relation has its own why and evidence. If the source does not
+justify that relation, the lesson cannot supply its proof.
+
+No automatic guide read, sync or retry occurs. Backend/unavailable errors and
+failed reads of the agent guide do not suggest reading the guide again. An Ask
+UNKNOWN is a successful semantic result, not an input error or a trigger for
+this help. First-use discovery is an instruction to the agent; the server does
+not persist a claim that the agent has learned a verb.
