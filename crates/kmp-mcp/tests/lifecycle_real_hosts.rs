@@ -282,7 +282,9 @@ impl RealHostLifecycleHarness {
         let binary = self.binary.to_str().expect("candidate binary");
         let output = self.host_with(
             self.path(&plugin_root.join("scripts/kmp-update.sh")),
-            &["--engine-dir", self.path(&shared)],
+            // This marketplace serves the candidate, which can be newer than
+            // the public latest release used by an unpinned update.
+            &["--version", version, "--engine-dir", self.path(&shared)],
             &[("KMP_MCP_BIN", binary)],
         );
         let receipt: Value =
