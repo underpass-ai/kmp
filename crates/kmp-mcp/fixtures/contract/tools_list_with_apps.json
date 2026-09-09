@@ -5207,6 +5207,24 @@
             },
             "type": "object"
           },
+          "next_actions": {
+            "description": "Complete calls for the same inspection, including an increased byte allowance when no whole item fits. Execute in order and retain earlier pages; empty when complete.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "The complete call, preserving about, ref, include and object reuse.",
+                  "type": "object"
+                },
+                "tool": {
+                  "const": "kmp_inspect",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "object": {
             "description": "Stored object with ref, kind, canonical text, metadata, and optional source. With page.repeat_object=false, contains only ref; reuse the first page's object.",
             "type": "object"
@@ -5228,6 +5246,10 @@
               "has_more": {
                 "description": "Whether expansion items remain after this page.",
                 "type": "boolean"
+              },
+              "minimum_progress_bytes": {
+                "description": "Present only when this page cannot return an expansion item. The next action offers at least this allowance, preferring the complete inspection up to the usual 10,000-byte budget. required_bytes still measures the complete inspection.",
+                "type": "integer"
               },
               "next_cursor": {
                 "description": "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor.",

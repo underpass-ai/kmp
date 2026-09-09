@@ -556,9 +556,27 @@ to false makes the continuation return only object.ref and object_reused=true;
 combine its evidence and links with the original object. The cursor still
 validates the full object and selection, and rejects a changed source.
 
-Here 512 bytes is too small even for the expansion envelope, so the teaching
-continuation raises the allowance to required_bytes, the exact size of the
-complete inspection including its object. Reusing the object can otherwise
+Inspect returns complete `next_actions`. When 512 bytes cannot fit the next
+whole item, the retry offers at least `page.minimum_progress_bytes`. When the
+complete inspection fits the usual 10,000-byte budget, it offers that complete
+read, avoiding a separate call for every item.
+Execute that call and keep following returned actions until `page.has_more`
+is false. Retain the original object and append evidence, incoming/outgoing
+links and raw records from each page. A fixed budget leaves the proof partial;
+never treat it as absent. The native replay checks this action walk against
+a complete inspection of the same stored source.
+
+```python
+while packet["page"]["has_more"]:
+    action = packet["next_actions"][0]
+    packet = call(action["tool"], action["arguments"])
+    append_expansion_items(packet)
+```
+
+The calls below also show the optional object-reuse path. Here 512 bytes is too
+small even for the expansion envelope, so this alternative continuation raises
+the allowance to required_bytes, the exact size of the complete inspection
+including its object. Reusing the object can otherwise
 let proof fit the original ceiling. If an item still cannot fit, allow more
 context or hand off the explicitly partial result. Keep about, ref and include
 unchanged; count both actual responses. Do not overwrite the retained object

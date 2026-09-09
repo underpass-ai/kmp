@@ -69,7 +69,14 @@ completa desde sus páginas contra una lectura sin paginar. En Inspect,
 `page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
 conservado; `object_reused=true` y `object.ref` identifican lo reutilizado.
 Texto, metadatos, fuente y pruebas siguen vinculados al cursor, aunque no se
-repitan. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
+repitan. Inspect devuelve la llamada completa en `next_actions`; si no cabe un
+elemento, su presupuesto ofrece al menos `page.minimum_progress_bytes`; prefiere
+la inspección completa cuando cabe en los 10.000 bytes habituales, para evitar
+reintentos de un elemento por llamada. Conservar el
+significado de `required_bytes`: la inspección completa con su objeto. Contar la
+acción y la advertencia en el suelo de respuesta, y ejecutar el reintento para
+comprobar que avanza. Un conflicto devuelve en feedback un reinicio sin `page`,
+que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
 

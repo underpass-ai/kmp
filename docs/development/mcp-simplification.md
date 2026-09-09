@@ -147,6 +147,13 @@ empty proof and a null resume cursor while the about still has context and label
 The native lesson and transport checks exercise that distinction; the change does
 not reinterpret current-state prose as a historical answer.
 
-Executable Ask/Wake/Inspect actions and independent agent evaluation remain in
-their blocks. These increments do not authorize a benchmark reader awaiting
+Inspect now returns complete continuation calls while preserving about, ref,
+include and object reuse. A stalled page supplies a sufficient next-item byte
+allowance; required_bytes continues to measure the complete inspection. Changed
+objects or selected proof return conflict with a fresh read that restores the
+full object. Native checks execute the calls and reconstruct all selected
+sections; the same calls run across embedded, gRPC, stdio and HTTP.
+
+Executable Ask/Wake actions and independent agent evaluation remain in their
+blocks. These increments do not authorize a benchmark reader awaiting
 human review.

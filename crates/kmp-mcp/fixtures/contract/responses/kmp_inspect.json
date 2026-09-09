@@ -164,6 +164,7 @@
       ],
       "outgoing": []
     },
+    "next_actions": [],
     "object": {
       "kind": "claim",
       "metadata": {},
