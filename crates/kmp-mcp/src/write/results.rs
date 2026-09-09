@@ -12,7 +12,7 @@ pub(crate) fn write_dry_run_result(
     json!({
         "accepted": false,
         "dry_run": true,
-        "validation": {"backend": backend, "scope": if backend == "fixture" { "fixture" } else { "current_store" }},
+        "validation": {"scope": if backend == "fixture" { "fixture" } else { "current_store" }},
         "warnings": validation.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,

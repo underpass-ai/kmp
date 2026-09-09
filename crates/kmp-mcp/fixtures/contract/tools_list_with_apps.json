@@ -1065,10 +1065,6 @@
           "validation": {
             "additionalProperties": false,
             "properties": {
-              "backend": {
-                "description": "Backend that performed preview validation.",
-                "type": "string"
-              },
               "scope": {
                 "description": "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.",
                 "type": "string"

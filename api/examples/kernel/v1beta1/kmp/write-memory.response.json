@@ -259,7 +259,6 @@
     }
   ],
   "validation": {
-    "backend": "fixture",
     "scope": "fixture"
   },
   "warnings": []

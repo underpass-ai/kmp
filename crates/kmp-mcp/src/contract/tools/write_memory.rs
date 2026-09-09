@@ -259,7 +259,6 @@ fn write_memory_output_schema() -> Value {
         "accepted": described("boolean", "True only when the canonical ingest was committed; false for a dry-run preview."),
         "dry_run": described("boolean", "Whether this response is a validated preview that wrote nothing."),
         "validation": output_object(json!({
-            "backend": described("string", "Backend that performed preview validation."),
             "scope": described("string", "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.")
         })),
         "warnings": string_array("Store validation notices returned with a preview."),
