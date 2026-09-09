@@ -1,6 +1,8 @@
 #![cfg(feature = "container-tests")]
 
 mod support;
+#[path = "mcp_real_kernel/temporal_fields.rs"]
+mod temporal_fields;
 #[path = "mcp_real_kernel/temporal_intervals.rs"]
 mod temporal_intervals;
 #[path = "mcp_real_kernel/temporal_pages.rs"]
@@ -150,6 +152,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
 
     temporal_pages::check(&direct, &stdio, &http, &embedded).await;
     temporal_intervals::check(&direct, &stdio, &http, &embedded).await;
+    temporal_fields::check(&direct, &stdio, &http, &embedded).await;
 
     let first_page_arguments = json!({
         "about":"project:parity-live",

@@ -90,6 +90,32 @@ budget and `next_actions` supplies a retry that admits an item. If the allowance
 cannot increase, report the exact pending action and partial coverage. Do not
 repeat an empty page at the unchanged budget.
 
+## Choose entry fields, then expand a selected memory
+
+On Goto, Near, Forward and Rewind, `fields` chooses complete entry fields:
+`ref`, `kind`, `text`, `coordinates` and `metadata`. Omit it for all fields;
+`[]` keeps only identity. `ref` and `kind` always remain. For example, add
+`"fields": ["coordinates"]` to the interval call above to browse references,
+types and clocks before reading their full bodies.
+
+`selection.fields.included` and `.omitted` declare the choice. An omitted field
+is not an empty value or missing source. Each reduced entry carries a complete
+`detail_action`: execute its `kmp_goto` call to expand that ref with the original
+about scope, labels, clock and interval. Its pages and byte negotiation work as
+usual. This is a fresh read, not a stored snapshot; later writes can change it.
+If the entry no longer matches, do not silently remove filters to recover it.
+
+Fields affect `entries` only. `include.evidence`, `include.relations` and
+`include.raw_refs` separately select proof and raw audit data, which can carry
+the same source text. Selecting fewer entry fields does not redact those
+sections or establish that omitted evidence was read. Keep proof when the task
+requires it. Whole selected content, including hidden entry fields, still binds
+a page cursor; changed content or a changed `fields` choice requires a fresh read.
+
+Use this for selective browsing. Expanding every entry afterward can cost more
+than requesting full entries initially; count all calls and expansions when
+comparing tokens. KMP does not summarize or truncate a selected text field.
+
 ## `observed_at` is the real clock, in UTC
 
 Every normal write carries `observed_at`: when this information was observed.

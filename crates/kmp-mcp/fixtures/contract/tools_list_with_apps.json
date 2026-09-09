@@ -2691,6 +2691,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "include": {
             "additionalProperties": false,
             "properties": {
@@ -2698,7 +2713,7 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
@@ -2812,7 +2827,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
           "next_actions": {
@@ -2996,6 +3011,26 @@
               "entries": {
                 "description": "Entries selected for this packet before response pagination.",
                 "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
               },
               "has_more": {
                 "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
@@ -3214,6 +3249,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "include": {
             "additionalProperties": false,
             "properties": {
@@ -3221,7 +3271,7 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
@@ -3335,7 +3385,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
           "next_actions": {
@@ -3519,6 +3569,26 @@
               "entries": {
                 "description": "Entries selected for this packet before response pagination.",
                 "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
               },
               "has_more": {
                 "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
@@ -3728,6 +3798,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "from": {
             "additionalProperties": false,
             "properties": {
@@ -3756,7 +3841,7 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
@@ -3869,7 +3954,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
           "next_actions": {
@@ -4053,6 +4138,26 @@
               "entries": {
                 "description": "Entries selected for this packet before response pagination.",
                 "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
               },
               "has_more": {
                 "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
@@ -4262,6 +4367,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "from": {
             "additionalProperties": false,
             "properties": {
@@ -4290,7 +4410,7 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
@@ -4403,7 +4523,7 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
           "next_actions": {
@@ -4587,6 +4707,26 @@
               "entries": {
                 "description": "Entries selected for this packet before response pagination.",
                 "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
               },
               "has_more": {
                 "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",

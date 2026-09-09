@@ -49,6 +49,18 @@ def check(saved, client, authored):
     assert saved['occurred_interval']['temporal']['interval'] == {
         'start': clock['occurred'], 'end': clock['day2']}
     assert entries('before_end') == interval
+    browse, full = saved['coordinate_browse'], saved['occurred_interval']
+    assert browse['selection']['fields'] == {
+        'included': ['ref', 'kind', 'coordinates'], 'omitted': ['text', 'metadata']}
+    assert browse['proof'] == full['proof']
+    assert browse['raw_refs'] == full['raw_refs']
+    assert len(browse['entries']) == len(full['entries'])
+    for reduced, original in zip(browse['entries'], full['entries']):
+        assert {k: reduced[k] for k in ('ref', 'kind', 'coordinates')} == {
+            k: original[k] for k in ('ref', 'kind', 'coordinates')}
+        assert 'text' not in reduced and 'metadata' not in reduced
+    assert authored['coordinate_detail'] == browse['entries'][0]['detail_action']['arguments']
+    assert saved['coordinate_detail']['entries'] == [full['entries'][0]]
     assert entries('observed_start') == {refs['permit']}
     assert entries('observed_later') == {refs['signature'], refs['receipt']}
     assert entries('ingested_day4') == set(refs.values())
@@ -84,5 +96,6 @@ def check(saved, client, authored):
             'four distinct answers at the same day-two instant', 'exclusive validity expiry',
             'direct interval includes the start and excludes the end in both directions',
             'observation and ingestion timelines retain every source', 'writer rejects forged ingestion',
+            'selected coordinates expand to the complete entry with unchanged scope',
             'signature proof survives trace', 'seven explicit viewer clock and zoom stages',
             'view changes neither explicit MCP selection nor stored object']

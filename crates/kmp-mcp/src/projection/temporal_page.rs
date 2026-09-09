@@ -3,6 +3,7 @@ use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};
 
 use super::serialized_size::serialized_len;
+use super::temporal_entry_projection::TemporalEntryProjection;
 use crate::serving::ToolError;
 use kmp_proto_mapping::v1beta1::recall_projection::requested_byte_limit;
 
@@ -101,6 +102,7 @@ impl TemporalPage {
                 ));
             }
         };
+        let fields = TemporalEntryProjection::read(arguments)?;
         let navigation = navigation(&value, arguments);
         let kernel_page = value["page"].clone();
         value
@@ -132,6 +134,11 @@ impl TemporalPage {
         hash.update(CURSOR_VERSION);
         hash.update(serde_json::to_vec(&bound).expect("arguments serialize"));
         hash.update(serde_json::to_vec(&value).expect("temporal response serializes"));
+        // Bind full content before projection: a hidden-field change still
+        // invalidates a cursor instead of mixing different source versions.
+        if let Some(fields) = fields {
+            fields.apply(&mut value, arguments)?;
+        }
         let mut items = Vec::new();
         for section in SECTIONS {
             if let Some(values) = value.pointer_mut(section).and_then(Value::as_array_mut) {

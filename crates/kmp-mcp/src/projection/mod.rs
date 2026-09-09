@@ -11,6 +11,7 @@ pub(crate) mod relabel_projection;
 pub(crate) mod relate_projection;
 mod rendering;
 mod serialized_size;
+mod temporal_entry_projection;
 mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;

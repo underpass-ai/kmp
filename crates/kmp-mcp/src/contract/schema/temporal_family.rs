@@ -15,6 +15,7 @@ use crate::contract::schema::response_shape::*;
 use crate::contract::schema::response_shape::{
     page_output_schema, proof_output_schema, quality_output_schema, warnings_output_schema,
 };
+use crate::contract::temporal_entry_field::TemporalEntryField;
 pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key: &str) -> Value {
     let cursor_schema = json!({
         "type": "object",
@@ -35,6 +36,9 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
         "required": ["about", cursor_key],
         "properties": {
             "about": string_schema("Memory anchor or root ref to traverse from."),
+            "fields": {"type":"array", "uniqueItems":true,
+                "items":{"type":"string","enum":TemporalEntryField::ALL},
+                "description":"Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include."},
             "axis": {
                 "type": "string",
                 "enum": ["occurred", "observed", "ingested", "validity"],
@@ -77,7 +81,7 @@ pub(crate) fn temporal_tool_definition(name: &str, description: &str, cursor_key
                     "relations": {"type": "boolean"},
                     "raw_refs": {
                         "type": "boolean",
-                        "description": "Return typed raw audit refs for selected temporal entries."
+                        "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields."
                     }
                 }
             },
@@ -130,6 +134,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "arguments":described("object", "Complete bound arguments, including the continuation cursor or a required budget adjustment.")
         }))},
         "selection": output_object(json!({
+            "fields":output_object(json!({"included":string_array("Fields returned on each entry; ref and kind always remain."), "omitted":string_array("Entry fields available through each returned detail_action; omitted fields are not empty values.")})),
             "scope":described("string", "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory."),
             "entries":described("integer", "Entries selected for this packet before response pagination."),
             "matching_entries":described("integer", "Matching temporal entries reported by the kernel before its entry/window limit."),
@@ -142,7 +147,7 @@ pub(crate) fn temporal_output_schema(_tool_name: &str, _cursor_key: &str) -> Val
             "missing": string_array("Requested dimension scope ids not present in the result."),
             "dimensions": described("array", "Per-dimension returned counts and presence flags.")
         })),
-        "entries": described("array", "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata."),
+        "entries": described("array", "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval."),
         "page": page,
         "raw_refs": described("array", "Typed raw audit refs for selected entries when include.raw_refs=true."),
         "proof": proof_output_schema("Temporal reads use medium when entries were returned and unknown when none were returned; this is not relation-writer certainty."),
