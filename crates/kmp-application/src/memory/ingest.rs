@@ -362,7 +362,7 @@ fn namespaced_memory(
             }
         }
         validate_positive_optional(relation.sequence, "memory.relations[].sequence")?;
-        let coordinate = relation
+        let mut coordinate = relation
             .coordinate
             .as_ref()
             .map(|coordinate| {
@@ -382,6 +382,26 @@ fn namespaced_memory(
                     .get_or_insert_with(|| ingested_at.to_string());
                 coordinate
             });
+        // contains_entry is the stored coordinate itself. A redundant link
+        // must retain the coordinate compiled from the entry, not replace
+        // that edge with a coordinate-less upsert (#576).
+        if relation_type.as_str() == "contains_entry" && coordinate.is_none() {
+            coordinate = entries
+                .iter()
+                .find(|entry| entry.id == target_ref)
+                .and_then(|entry| {
+                    entry
+                        .coordinates
+                        .iter()
+                        .find(|position| position.scope_id == source_ref)
+                })
+                .cloned();
+            if coordinate.is_none() {
+                return Err(ApplicationError::Validation(format!(
+                    "contains_entry from `{source_ref}` to `{target_ref}` has no coordinate and no matching entry membership in this write; provide the coordinate or use kmp_relabel to change an existing memory's labels"
+                )));
+            }
+        }
         let mut relation = relation.clone();
         relation.source_ref = source_ref;
         relation.target_ref = target_ref;
@@ -954,6 +974,12 @@ mod tests {
     #[test]
     fn translate_memory_ingest_accepts_a_relation_to_the_abouts_own_anchor() {
         let mut command = sample_command();
+        command.memory.relations[0].rel = "uses_background".to_string();
+        command.memory.relations[0].semantic_class = "evidential".to_string();
+        command.memory.relations[0].confidence = Some("high".to_string());
+        command.memory.relations[0].why =
+            Some("The linked memory supplies the observation's context.".to_string());
+
         command.memory.relations[0].target_ref = command.about.clone();
 
         let (update, _) = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
@@ -1004,6 +1030,12 @@ mod tests {
     #[test]
     fn translate_memory_ingest_accepts_existing_materialized_refs() {
         let mut command = sample_command();
+        command.memory.relations[0].rel = "uses_background".to_string();
+        command.memory.relations[0].semantic_class = "evidential".to_string();
+        command.memory.relations[0].confidence = Some("high".to_string());
+        command.memory.relations[0].why =
+            Some("The linked memory supplies the observation's context.".to_string());
+
         command.memory.dimensions.clear();
         command.memory.entries[0].coordinates[0].scope_id = "conversation:existing".to_string();
         command.memory.relations[0].source_ref = "conversation:existing".to_string();

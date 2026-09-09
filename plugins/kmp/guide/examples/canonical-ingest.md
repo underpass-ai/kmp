@@ -47,6 +47,17 @@ referenced object. A recipient missing C1 needs that dependency first.
 {"tool":"kmp_inspect","save_as":"not_committed","expect_error":"not_found","arguments":{"about":"example:guide:canonical-ingest","ref":"${preview.generated_refs.0}"}}
 ```
 
+## Coordinate ownership
+
+The entry's `coordinates` already create its `contains_entry` memberships.
+Do not add another structural link just to put it on a label. If a canonical
+packet repeats `contains_entry` without a coordinate, KMP reuses the matching
+coordinate of the entry in that same packet, including its assigned sequence
+and ingestion clock. Without a matching membership it refuses the write
+before commit. For an existing memory, use `kmp_relabel` to change labels;
+an explicit membership link must carry its coordinate. A missing coordinate
+must never erase a memory's existing clocks.
+
 ## Commit exactly the reviewed packet
 
 Set only the preview execution flag dry_run to false. The semantic content is the returned packet, with no rewritten text, reconstructed ref or guessed clock. Replay with the same logical key; a repeated import must not add a second D1.
