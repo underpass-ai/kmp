@@ -357,6 +357,8 @@ message TemporalMoveRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 message GotoRequest {
@@ -368,6 +370,8 @@ message GotoRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 message RewindRequest {
@@ -379,6 +383,8 @@ message RewindRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 message ForwardRequest {
@@ -390,6 +396,8 @@ message ForwardRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 // Shared temporal neighborhood payload shape used by transport adapters. Public
@@ -403,6 +411,8 @@ message TemporalNearRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 message NearRequest {
@@ -414,6 +424,8 @@ message NearRequest {
   TemporalInclude include = 6;
   MemoryBudget budget = 7;
   TemporalAxis axis = 8;
+  // Half-open clock selection. Forward/Rewind may start without a cursor.
+  TemporalInterval interval = 9;
 }
 
 // Shared temporal response payload shape used by transport adapters. Public
@@ -483,6 +495,7 @@ message TemporalState {
   TemporalCursor requested = 2;
   TemporalCoordinate resolved = 3;
   TemporalAxis axis = 4;
+  TemporalInterval interval = 5;
 }
 
 message TemporalCoverage {
