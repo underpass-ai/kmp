@@ -31,7 +31,6 @@ pub(crate) mod summary_planner;
 mod writer_identity_audit;
 pub(crate) mod writer_label;
 
-pub(crate) use ingest_plan::KmpIngestPlan;
 pub(crate) use ingest_planner::build_ingest_plan;
 pub(crate) use ingest_validation::reject_refs_outside_about;
 pub(crate) use planner::build_write_plan_with_root;

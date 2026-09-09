@@ -470,7 +470,7 @@ async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
 }
 
 #[tokio::test]
-async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
+async fn grpc_backend_dry_run_ingest_reaches_the_kernel_with_writes_disabled() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
     let server = KernelMcpServer::grpc(endpoint);
@@ -505,13 +505,16 @@ async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
     .await;
 
     assert_eq!(ingest["result"]["isError"], false);
+    let requests = recorded.ingests().await;
+    assert_eq!(requests.len(), 1);
     assert!(
-        ingest["result"]["structuredContent"]["warnings"][0]
-            .as_str()
-            .expect("dry run warning should be text")
-            .contains("KernelMemoryService.Ingest")
+        requests[0].dry_run,
+        "the kernel validates without committing"
     );
-    assert!(recorded.ingests().await.is_empty());
+    assert_eq!(
+        ingest["result"]["structuredContent"]["memory"]["read_after_write_ready"],
+        false
+    );
 }
 
 #[tokio::test]
@@ -681,7 +684,7 @@ impl KernelMemoryService for FakeMemoryService {
                         .map(|memory| memory.evidence.len())
                         .unwrap_or_default() as u32,
                 }),
-                read_after_write_ready: true,
+                read_after_write_ready: !request.dry_run,
                 created_dimensions: Vec::new(),
                 resembling_labels: Vec::new(),
             }),

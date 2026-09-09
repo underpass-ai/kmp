@@ -4,10 +4,16 @@ use serde_json::{Value, json};
 
 use super::plan::KernelWritePlan;
 
-pub(crate) fn write_dry_run_result(plan: &KernelWritePlan) -> Value {
+pub(crate) fn write_dry_run_result(
+    plan: &KernelWritePlan,
+    validation: Value,
+    backend: &str,
+) -> Value {
     json!({
         "accepted": false,
         "dry_run": true,
+        "validation": {"scope": if backend == "fixture" { "fixture" } else { "current_store" }},
+        "warnings": validation.get("warnings").cloned().unwrap_or_else(|| json!([])),
         "summary": write_summary(plan),
         "generated_refs": plan.generated_refs,
         "labels": { "written": plan.labels },

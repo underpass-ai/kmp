@@ -15,9 +15,8 @@ pub(crate) mod temporal_projection;
 mod test_support;
 pub(crate) mod trace_projection;
 pub(crate) mod visual_projection;
-mod wording;
 
-pub(crate) use ingest_projection::{dry_run_ingest_from_plan, ingest_from_response};
+pub(crate) use ingest_projection::ingest_from_response;
 pub(crate) use inspect_budget::enforce_inspect_output_budget;
 pub(crate) use inspect_projection::inspect_from_response;
 #[cfg(test)]
