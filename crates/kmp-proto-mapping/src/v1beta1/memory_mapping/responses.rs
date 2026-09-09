@@ -676,7 +676,7 @@ pub fn temporal_response_from_result(
     // Entry enumeration has a lower bound, but its antecedents may be older.
     // Bound proof only at the exclusive end so later knowledge cannot rewrite
     // the selected history while earlier reasons remain traversable.
-    let proof_selection = traversal
+    let mut proof_selection = traversal
         .interval()
         .and_then(|interval| interval.end())
         .map_or(TemporalSelection::Frontier, |end| {
@@ -686,10 +686,31 @@ pub fn temporal_response_from_result(
                 traversal.axis(),
             )
         });
+    // Goto's state stops at its cursor even when a wider interval is supplied.
+    // An interval ending at or before that cursor remains the stricter,
+    // exclusive bound; other moves retain interval enumeration semantics.
+    let goto_instant = (direction == TemporalDirection::Goto)
+        .then(|| traversal.resolved_cursor())
+        .flatten()
+        .and_then(|cursor| cursor_instant(cursor, traversal.axis()));
+    if let Some(instant) = goto_instant
+        && traversal
+            .interval()
+            .and_then(|interval| interval.end())
+            .is_none_or(|end| compare_temporal_instants(end, instant) == Some(Ordering::Greater))
+    {
+        proof_selection = TemporalSelection::AsOf {
+            cursor: kmp_domain::TemporalCursor::Time(instant.to_string()),
+            axis: traversal.axis(),
+        };
+    }
     let admission = TemporalAdmission::read(&result.source_bundle, &proof_selection)
-        .expect("a validated interval needs no cursor resolution");
+        .expect("a validated interval or resolved time needs no reference lookup");
     let proof_bundle = admission.bound(&result.source_bundle);
-    let expiry_boundary = if let Some(interval) = traversal.interval() {
+    let goto_as_of = matches!(proof_selection, TemporalSelection::AsOf { .. });
+    let expiry_boundary = if goto_as_of {
+        goto_instant.map(|instant| (instant, true))
+    } else if let Some(interval) = traversal.interval() {
         interval.end().map(|end| (end, false))
     } else {
         traversal
@@ -699,7 +720,11 @@ pub fn temporal_response_from_result(
     };
     let expired = expired_at_boundary(
         traversal.entries(),
-        &proof_bundle,
+        if goto_as_of {
+            &result.source_bundle
+        } else {
+            &proof_bundle
+        },
         traversal.axis(),
         expiry_boundary,
     );
@@ -748,9 +773,10 @@ pub fn temporal_response_from_result(
     };
     let page = traversal.page();
     let mut warnings = Vec::new();
-    let expiry_unassessed = traversal
-        .interval()
-        .is_some_and(|interval| interval.end().is_none());
+    let expiry_unassessed = !goto_as_of
+        && traversal
+            .interval()
+            .is_some_and(|interval| interval.end().is_none());
     if expiry_unassessed {
         warnings.push(
             "open-ended temporal interval has no expiry boundary; set interval.end to assess expiry before that instant"
@@ -827,6 +853,7 @@ pub fn temporal_response_from_result(
     let proof_time = admission.proof_fields();
     temporal_proof.interval = proof_time.interval;
     temporal_proof.axis = proof_time.axis;
+    temporal_proof.as_of = proof_time.as_of;
 
     TemporalMoveResponse {
         summary: match absent_requested_clock {

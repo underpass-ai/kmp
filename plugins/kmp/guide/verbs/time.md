@@ -116,6 +116,29 @@ Use this for selective browsing. Expanding every entry afterward can cost more
 than requesting full entries initially; count all calls and expansions when
 comparing tokens. KMP does not summarize or truncate a selected text field.
 
+## Goto carries proof from its historical instant
+
+`kmp_goto` selects a state at its resolved `at` cursor. Its proof uses that
+same inclusive instant and selected clock, declared in `proof.as_of` and
+`proof.axis`. A later replacement, relation or explicitly later observed
+report cannot rewrite the earlier result. This also applies when `at.ref`
+resolves to an earlier memory. Hiding the relation path does not make a
+future replacement current in `proof.superseded`.
+
+For example, CSV is recorded on September 1; JSON is approved on September 3
+and takes effect on September 5. Goto on `observed` before September 3 must
+not report that approval as known. Goto on `validity` before September 5 must
+not mark CSV replaced by JSON. Each boundary is inclusive: the approval is
+known at its observation instant, and the replacement applies at its validity
+start. Keep the original CSV observation; do not anticipate the later change
+by backdating knowledge of its end.
+
+An explicit interval ending at or before the Goto cursor is the stricter,
+exclusive boundary: `proof.interval` declares that end instead of `proof.as_of`.
+A wider or open-ended interval does not admit proof later than the Goto cursor.
+Near, Forward and Rewind enumerate historical positions; their finite interval
+end bounds proof, while their cursor selects positions rather than an as-of state.
+
 ## `observed_at` is the real clock, in UTC
 
 Every normal write carries `observed_at`: when this information was observed.
