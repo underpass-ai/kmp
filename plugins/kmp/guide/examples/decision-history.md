@@ -24,8 +24,8 @@ example; do not backdate that clock.
 | S3, product owner | 2026-09-05T09:00:00Z | Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red. Se mantienen el componente journal y el entorno field. |
 | S4, architecture decision | 2026-09-05T09:05:00Z | Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL. Esta decisión sustituye la elección anterior de SQLite desde ahora. |
 
-S1 and S3 are **constraints**; S2 and S4 are **decisions**. `intent` describes
-the write operation, so `record_observation` can store a `constraint`.
+S1 and S3 are **constraints**; S2 and S4 are **decisions**. Declare that meaning
+directly in `memories[].kind`.
 `chosen_because` has class `motivational`: the source explicitly gives a
 reason. `supersedes` has class `evidential`: the source explicitly withdraws
 the old requirement or replaces the old decision. Evidence belongs on both
@@ -60,25 +60,44 @@ as empty to bypass strict relation validation. Other errors need diagnosis.
 ## Write the requirement, then the decision it motivates
 
 The first strict write creates the about, so it has no prior relation. Leave
-`current.ref` out. S1 does not say when this requirement will end; do not give
+`memories[].ref` out. S1 does not say when this requirement will end; do not give
 it a future `valid_until` learned from S3.
 
 ```json
 {
-  "tool": "kmp_write_memory", "save_as": "offline",
+  "tool": "kmp_write_memory",
+  "save_as": "offline",
   "arguments": {
-    "about": "example:guide:decision-history", "actor": "guide-writer",
-    "intent": "record_observation", "idempotency_key": "guide-history:offline:v1",
-    "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
-    "occurred_at": "2026-09-01T09:00:00Z", "observed_at": "2026-09-01T09:00:00Z",
-    "valid_from": "2026-09-01T09:00:00Z", "source_kind": "human",
-    "current": {
-      "kind": "constraint",
-      "summary": "La bitácora de Atlas debe funcionar sin red.",
-      "summary_en": "The Atlas journal must work without a network connection.",
-      "evidence": "S1, product owner, 2026-09-01T09:00:00Z: Para Atlas, la bitácora debe funcionar sin red. El componente es journal y el entorno es field."
-    }
+    "about": "example:guide:decision-history",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-history:offline:v1",
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "agentic_process": [
+        "atlas-planning"
+      ],
+      "task": [
+        "journal-decision"
+      ]
+    },
+    "occurred_at": "2026-09-01T09:00:00Z",
+    "observed_at": "2026-09-01T09:00:00Z",
+    "valid_from": "2026-09-01T09:00:00Z",
+    "source_kind": "human",
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "La bitácora de Atlas debe funcionar sin red.",
+        "summary_en": "The Atlas journal must work without a network connection.",
+        "evidence": "S1, product owner, 2026-09-01T09:00:00Z: Para Atlas, la bitácora debe funcionar sin red. El componente es journal y el entorno es field."
+      }
+    ]
   }
 }
 ```
@@ -93,25 +112,54 @@ and is not a substitute for doing them.
 
 ```json
 {
-  "tool": "kmp_write_memory", "save_as": "sqlite",
+  "tool": "kmp_write_memory",
+  "save_as": "sqlite",
   "arguments": {
-    "about": "example:guide:decision-history", "actor": "guide-writer",
-    "intent": "record_decision", "idempotency_key": "guide-history:sqlite:v1",
-    "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
-    "occurred_at": "2026-09-02T09:00:00Z", "observed_at": "2026-09-02T09:00:00Z",
-    "valid_from": "2026-09-02T09:00:00Z", "source_kind": "human",
-    "current": {
-      "kind": "decision", "summary": "Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.",
-      "summary_en": "We chose SQLite for the Atlas journal because it must work without a network connection.",
-      "evidence": "S2, architecture decision, 2026-09-02T09:00:00Z: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red."
+    "about": "example:guide:decision-history",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-history:sqlite:v1",
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "agentic_process": [
+        "atlas-planning"
+      ],
+      "task": [
+        "journal-decision"
+      ]
     },
-    "read_context": {"inspected_refs": ["${offline.generated_refs.0}"]},
-    "connect_to": [{
-      "ref": "${offline.generated_refs.0}", "rel": "chosen_because", "class": "motivational", "confidence": "high",
-      "why": "La decisión identifica el funcionamiento sin red como motivo para elegir SQLite.",
-      "evidence": "S2: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red."
-    }]
+    "occurred_at": "2026-09-02T09:00:00Z",
+    "observed_at": "2026-09-02T09:00:00Z",
+    "valid_from": "2026-09-02T09:00:00Z",
+    "source_kind": "human",
+    "read_context": {
+      "inspected_refs": [
+        "${offline.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "decision",
+        "summary": "Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.",
+        "summary_en": "We chose SQLite for the Atlas journal because it must work without a network connection.",
+        "evidence": "S2, architecture decision, 2026-09-02T09:00:00Z: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red.",
+        "connect_to": [
+          {
+            "ref": "${offline.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "La decisión identifica el funcionamiento sin red como motivo para elegir SQLite.",
+            "evidence": "S2: Elegimos SQLite para la bitácora de Atlas porque debe funcionar sin red."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -128,25 +176,54 @@ separate evidence for changing the decision.
 
 ```json
 {
-  "tool": "kmp_write_memory", "save_as": "shared",
+  "tool": "kmp_write_memory",
+  "save_as": "shared",
   "arguments": {
-    "about": "example:guide:decision-history", "actor": "guide-writer",
-    "intent": "record_observation", "idempotency_key": "guide-history:shared:v1",
-    "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
-    "occurred_at": "2026-09-05T09:00:00Z", "observed_at": "2026-09-05T09:00:00Z",
-    "valid_from": "2026-09-05T09:00:00Z", "source_kind": "human",
-    "current": {
-      "kind": "constraint", "summary": "La bitácora de Atlas debe ser central y compartida; se retira el requisito de funcionar sin red.",
-      "summary_en": "The Atlas journal must be central and shared; the requirement to work without a network connection is withdrawn.",
-      "evidence": "S3, product owner, 2026-09-05T09:00:00Z: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red. Se mantienen el componente journal y el entorno field."
+    "about": "example:guide:decision-history",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-history:shared:v1",
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "agentic_process": [
+        "atlas-planning"
+      ],
+      "task": [
+        "journal-decision"
+      ]
     },
-    "read_context": {"inspected_refs": ["${offline.generated_refs.0}"]},
-    "connect_to": [{
-      "ref": "${offline.generated_refs.0}", "rel": "supersedes", "class": "evidential", "confidence": "high",
-      "why": "El responsable retira explícitamente el requisito anterior y establece el nuevo desde este instante.",
-      "evidence": "S3: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red."
-    }]
+    "occurred_at": "2026-09-05T09:00:00Z",
+    "observed_at": "2026-09-05T09:00:00Z",
+    "valid_from": "2026-09-05T09:00:00Z",
+    "source_kind": "human",
+    "read_context": {
+      "inspected_refs": [
+        "${offline.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "La bitácora de Atlas debe ser central y compartida; se retira el requisito de funcionar sin red.",
+        "summary_en": "The Atlas journal must be central and shared; the requirement to work without a network connection is withdrawn.",
+        "evidence": "S3, product owner, 2026-09-05T09:00:00Z: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red. Se mantienen el componente journal y el entorno field.",
+        "connect_to": [
+          {
+            "ref": "${offline.generated_refs.0}",
+            "rel": "supersedes",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "El responsable retira explícitamente el requisito anterior y establece el nuevo desde este instante.",
+            "evidence": "S3: Desde ahora, la bitácora de Atlas debe ser central y compartida. Retiramos el requisito de funcionar sin red."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -161,27 +238,62 @@ separate evidence for changing the decision.
 
 ```json
 {
-  "tool": "kmp_write_memory", "save_as": "postgres",
+  "tool": "kmp_write_memory",
+  "save_as": "postgres",
   "arguments": {
-    "about": "example:guide:decision-history", "actor": "guide-writer",
-    "intent": "record_decision", "idempotency_key": "guide-history:postgres:v1",
-    "scope": {"process": "atlas-planning", "task": "journal-decision"},
-    "labels": {"component": "journal", "environment": "field"},
-    "occurred_at": "2026-09-05T09:05:00Z", "observed_at": "2026-09-05T09:05:00Z",
-    "valid_from": "2026-09-05T09:05:00Z", "source_kind": "human",
-    "current": {
-      "kind": "decision", "summary": "Elegimos PostgreSQL para la bitácora central y compartida de Atlas; esta decisión sustituye la elección anterior de SQLite.",
-      "summary_en": "We chose PostgreSQL for the central shared Atlas journal; this decision replaces the previous SQLite choice.",
-      "evidence": "S4, architecture decision, 2026-09-05T09:05:00Z: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL. Esta decisión sustituye la elección anterior de SQLite desde ahora."
+    "about": "example:guide:decision-history",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-history:postgres:v1",
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "agentic_process": [
+        "atlas-planning"
+      ],
+      "task": [
+        "journal-decision"
+      ]
     },
-    "read_context": {"inspected_refs": ["${shared.generated_refs.0}", "${sqlite.generated_refs.0}"]},
-    "connect_to": [
-      {"ref": "${shared.generated_refs.0}", "rel": "chosen_because", "class": "motivational", "confidence": "high",
-       "why": "El nuevo requisito se cita como motivo explícito para esta elección de PostgreSQL.",
-       "evidence": "S4: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL."},
-      {"ref": "${sqlite.generated_refs.0}", "rel": "supersedes", "class": "evidential", "confidence": "high",
-       "why": "La decisión sustituye explícitamente la elección anterior de SQLite desde este instante; no la borra ni la declara inválida en fechas anteriores.",
-       "evidence": "S4: Esta decisión sustituye la elección anterior de SQLite desde ahora."}
+    "occurred_at": "2026-09-05T09:05:00Z",
+    "observed_at": "2026-09-05T09:05:00Z",
+    "valid_from": "2026-09-05T09:05:00Z",
+    "source_kind": "human",
+    "read_context": {
+      "inspected_refs": [
+        "${shared.generated_refs.0}",
+        "${sqlite.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "decision",
+        "summary": "Elegimos PostgreSQL para la bitácora central y compartida de Atlas; esta decisión sustituye la elección anterior de SQLite.",
+        "summary_en": "We chose PostgreSQL for the central shared Atlas journal; this decision replaces the previous SQLite choice.",
+        "evidence": "S4, architecture decision, 2026-09-05T09:05:00Z: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL. Esta decisión sustituye la elección anterior de SQLite desde ahora.",
+        "connect_to": [
+          {
+            "ref": "${shared.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "El nuevo requisito se cita como motivo explícito para esta elección de PostgreSQL.",
+            "evidence": "S4: Para cumplir el nuevo requisito de bitácora central y compartida de Atlas, elegimos PostgreSQL."
+          },
+          {
+            "ref": "${sqlite.generated_refs.0}",
+            "rel": "supersedes",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La decisión sustituye explícitamente la elección anterior de SQLite desde este instante; no la borra ni la declara inválida en fechas anteriores.",
+            "evidence": "S4: Esta decisión sustituye la elección anterior de SQLite desde ahora."
+          }
+        ]
+      }
     ]
   }
 }

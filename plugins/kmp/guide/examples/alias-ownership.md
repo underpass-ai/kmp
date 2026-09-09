@@ -58,15 +58,36 @@ names the account, not its owner. First write S1 without a prior relation.
 
 ```json
 {
-  "tool":"kmp_write_memory", "save_as":"elena",
-  "arguments":{
-    "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
-    "idempotency_key":"guide-alias:elena:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person":"elena-vega"},
-    "occurred_at":"2026-09-01T08:00:00Z", "observed_at":"2026-09-01T08:00:00Z", "valid_from":"2026-09-01T08:00:00Z",
-    "current":{"kind":"observation","summary":"Elena Vega coordina Atlas.",
-      "summary_en":"Elena Vega coordinates the Atlas project.",
-      "evidence":"S1, Atlas directory, 2026-09-01T08:00:00Z: Elena Vega coordina Atlas."}
+  "tool": "kmp_write_memory",
+  "save_as": "elena",
+  "arguments": {
+    "about": "example:guide:alias-ownership",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-alias:elena:v1",
+    "source_kind": "human",
+    "labels": {
+      "person": [
+        "elena-vega"
+      ],
+      "agentic_process": [
+        "atlas-registry"
+      ],
+      "task": [
+        "identity-review"
+      ]
+    },
+    "occurred_at": "2026-09-01T08:00:00Z",
+    "observed_at": "2026-09-01T08:00:00Z",
+    "valid_from": "2026-09-01T08:00:00Z",
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "Elena Vega coordina Atlas.",
+        "summary_en": "Elena Vega coordinates the Atlas project.",
+        "evidence": "S1, Atlas directory, 2026-09-01T08:00:00Z: Elena Vega coordina Atlas."
+      }
+    ]
   }
 }
 ```
@@ -81,19 +102,51 @@ authorization, dependency or identity link.
 
 ```json
 {
-  "tool":"kmp_write_memory", "save_as":"jon",
-  "arguments":{
-    "about":"example:guide:alias-ownership", "intent":"record_decision", "actor":"guide-writer",
-    "idempotency_key":"guide-alias:jon:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account":"@oak"},
-    "occurred_at":"2026-09-01T10:00:00Z", "observed_at":"2026-09-01T10:00:00Z", "valid_from":"2026-09-01T10:00:00Z",
-    "current":{"kind":"decision","summary":"Asignamos la cuenta @oak a Jon para operar Atlas.",
-      "summary_en":"We assigned the @oak account to Jon to operate Atlas.",
-      "evidence":"S2, Atlas access administrator, 2026-09-01T10:00:00Z: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora."},
-    "read_context":{"inspected_refs":["${elena.generated_refs.0}"]},
-    "connect_to":[{"ref":"${elena.generated_refs.0}","rel":"uses_background","class":"evidential","confidence":"high",
-      "why":"La asignación y la nota de directorio pertenecen al contexto de Atlas; no hay prueba de que Elena haya autorizado esta asignación.",
-      "evidence":"S1: Elena Vega coordina Atlas. S2: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora."}]
+  "tool": "kmp_write_memory",
+  "save_as": "jon",
+  "arguments": {
+    "about": "example:guide:alias-ownership",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-alias:jon:v1",
+    "source_kind": "human",
+    "labels": {
+      "account": [
+        "@oak"
+      ],
+      "agentic_process": [
+        "atlas-registry"
+      ],
+      "task": [
+        "access-review"
+      ]
+    },
+    "occurred_at": "2026-09-01T10:00:00Z",
+    "observed_at": "2026-09-01T10:00:00Z",
+    "valid_from": "2026-09-01T10:00:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${elena.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "decision",
+        "summary": "Asignamos la cuenta @oak a Jon para operar Atlas.",
+        "summary_en": "We assigned the @oak account to Jon to operate Atlas.",
+        "evidence": "S2, Atlas access administrator, 2026-09-01T10:00:00Z: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora.",
+        "connect_to": [
+          {
+            "ref": "${elena.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La asignación y la nota de directorio pertenecen al contexto de Atlas; no hay prueba de que Elena haya autorizado esta asignación.",
+            "evidence": "S1: Elena Vega coordina Atlas. S2: Asignamos la cuenta @oak a Jon para operar Atlas desde ahora."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -112,19 +165,54 @@ not require a cross-about proposal. Across abouts the writer needs the
 
 ```json
 {
-  "tool":"kmp_write_memory", "save_as":"alias",
-  "arguments":{
-    "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
-    "idempotency_key":"guide-alias:nora:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"person":"elena-vega","alias":"Nora"},
-    "occurred_at":"2026-09-02T09:00:00Z", "observed_at":"2026-09-02T09:00:00Z", "valid_from":"2026-09-02T09:00:00Z",
-    "current":{"kind":"observation","summary":"Elena Vega firma también como Nora; ambos nombres identifican a la misma persona.",
-      "summary_en":"Elena Vega also signs as Nora; both names identify the same person.",
-      "evidence":"S3, signed directory clarification, 2026-09-02T09:00:00Z: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona."},
-    "read_context":{"inspected_refs":["${elena.generated_refs.0}"]},
-    "connect_to":[{"ref":"${elena.generated_refs.0}","rel":"same_entity_as","class":"evidential","confidence":"high",
-      "why":"La aclaración firmada identifica expresamente al sujeto llamado Nora con Elena Vega, la persona nombrada en el directorio.",
-      "evidence":"S3: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona."}]
+  "tool": "kmp_write_memory",
+  "save_as": "alias",
+  "arguments": {
+    "about": "example:guide:alias-ownership",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-alias:nora:v1",
+    "source_kind": "human",
+    "labels": {
+      "person": [
+        "elena-vega"
+      ],
+      "alias": [
+        "Nora"
+      ],
+      "agentic_process": [
+        "atlas-registry"
+      ],
+      "task": [
+        "identity-review"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:00:00Z",
+    "observed_at": "2026-09-02T09:00:00Z",
+    "valid_from": "2026-09-02T09:00:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${elena.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "Elena Vega firma también como Nora; ambos nombres identifican a la misma persona.",
+        "summary_en": "Elena Vega also signs as Nora; both names identify the same person.",
+        "evidence": "S3, signed directory clarification, 2026-09-02T09:00:00Z: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona.",
+        "connect_to": [
+          {
+            "ref": "${elena.generated_refs.0}",
+            "rel": "same_entity_as",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La aclaración firmada identifica expresamente al sujeto llamado Nora con Elena Vega, la persona nombrada en el directorio.",
+            "evidence": "S3: Elena Vega firma también como Nora. Ambos nombres identifican a la misma persona."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -144,7 +232,7 @@ was applied, not a new occurrence time for the old memory.
   "arguments":{
     "about":"example:guide:alias-ownership", "ref":"${elena.generated_refs.0}", "actor":"guide-writer",
     "idempotency_key":"guide-alias:catalogue-nora:v1", "observed_at":"2026-09-02T09:00:00Z", "source_kind":"human",
-    "add":{"alias":"Nora"},
+    "add":{"alias": ["Nora"]},
     "why":"S3 identifica expresamente a Elena Vega con Nora; añadimos la etiqueta ya usada en la memoria de esa aclaración, sin cambiar el texto ni la fecha original del directorio."
   }
 }
@@ -162,19 +250,51 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
 
 ```json
 {
-  "tool":"kmp_write_memory", "save_as":"visitor",
-  "arguments":{
-    "about":"example:guide:alias-ownership", "intent":"record_observation", "actor":"guide-writer",
-    "idempotency_key":"guide-alias:unresolved-visitor:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"identity-review"}, "labels":{"alias":"Nora"},
-    "occurred_at":"2026-09-03T11:00:00Z", "observed_at":"2026-09-03T11:00:00Z", "valid_from":"2026-09-03T11:00:00Z",
-    "current":{"kind":"observation","summary":"El registro de visitas a Atlas menciona Nora sin apellidos ni identificador de persona; no permite confirmar su identidad.",
-      "summary_en":"The Atlas visitor log mentions Nora without surnames or a person identifier; it does not establish the visitor's identity.",
-      "evidence":"S4, visitor log, 2026-09-03T11:00:00Z: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona."},
-    "read_context":{"inspected_refs":["${alias.generated_refs.0}"]},
-    "connect_to":[{"ref":"${alias.generated_refs.0}","rel":"uses_background","class":"evidential","confidence":"high",
-      "why":"La aclaración permite comparar el nombre Nora; la mención de visitante carece de los datos necesarios para vincularla a esa persona.",
-      "evidence":"S4: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona."}]
+  "tool": "kmp_write_memory",
+  "save_as": "visitor",
+  "arguments": {
+    "about": "example:guide:alias-ownership",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-alias:unresolved-visitor:v1",
+    "source_kind": "human",
+    "labels": {
+      "alias": [
+        "Nora"
+      ],
+      "agentic_process": [
+        "atlas-registry"
+      ],
+      "task": [
+        "identity-review"
+      ]
+    },
+    "occurred_at": "2026-09-03T11:00:00Z",
+    "observed_at": "2026-09-03T11:00:00Z",
+    "valid_from": "2026-09-03T11:00:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${alias.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "El registro de visitas a Atlas menciona Nora sin apellidos ni identificador de persona; no permite confirmar su identidad.",
+        "summary_en": "The Atlas visitor log mentions Nora without surnames or a person identifier; it does not establish the visitor's identity.",
+        "evidence": "S4, visitor log, 2026-09-03T11:00:00Z: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona.",
+        "connect_to": [
+          {
+            "ref": "${alias.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La aclaración permite comparar el nombre Nora; la mención de visitante carece de los datos necesarios para vincularla a esa persona.",
+            "evidence": "S4: Visita a Atlas: Nora. No se registraron apellidos ni un identificador de persona."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -191,19 +311,51 @@ that name; it does not authorize `same_entity_as` or `person=elena-vega`.
 
 ```json
 {
-  "tool":"kmp_write_memory", "save_as":"rui",
-  "arguments":{
-    "about":"example:guide:alias-ownership", "intent":"record_decision", "actor":"guide-writer",
-    "idempotency_key":"guide-alias:rui:v1", "source_kind":"human",
-    "scope":{"process":"atlas-registry","task":"access-review"}, "labels":{"account":"@oak"},
-    "occurred_at":"2026-09-05T10:00:00Z", "observed_at":"2026-09-05T10:00:00Z", "valid_from":"2026-09-05T10:00:00Z",
-    "current":{"kind":"decision","summary":"Asignamos la cuenta @oak a Rui; esta asignación sustituye la anterior a Jon. Jon y Rui son personas distintas.",
-      "summary_en":"We assigned the @oak account to Rui; this assignment replaces the previous assignment to Jon. Jon and Rui are distinct people.",
-      "evidence":"S5, Atlas access administrator, 2026-09-05T10:00:00Z: Asignamos la cuenta @oak a Rui desde ahora. Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas."},
-    "read_context":{"inspected_refs":["${jon.generated_refs.0}"]},
-    "connect_to":[{"ref":"${jon.generated_refs.0}","rel":"supersedes","class":"evidential","confidence":"high",
-      "why":"La resolución cambia el titular de la misma cuenta desde este instante y sustituye la asignación anterior; distingue expresamente a ambas personas.",
-      "evidence":"S5: Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas."}]
+  "tool": "kmp_write_memory",
+  "save_as": "rui",
+  "arguments": {
+    "about": "example:guide:alias-ownership",
+    "actor": "guide-writer",
+    "idempotency_key": "guide-alias:rui:v1",
+    "source_kind": "human",
+    "labels": {
+      "account": [
+        "@oak"
+      ],
+      "agentic_process": [
+        "atlas-registry"
+      ],
+      "task": [
+        "access-review"
+      ]
+    },
+    "occurred_at": "2026-09-05T10:00:00Z",
+    "observed_at": "2026-09-05T10:00:00Z",
+    "valid_from": "2026-09-05T10:00:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${jon.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "decision",
+        "summary": "Asignamos la cuenta @oak a Rui; esta asignación sustituye la anterior a Jon. Jon y Rui son personas distintas.",
+        "summary_en": "We assigned the @oak account to Rui; this assignment replaces the previous assignment to Jon. Jon and Rui are distinct people.",
+        "evidence": "S5, Atlas access administrator, 2026-09-05T10:00:00Z: Asignamos la cuenta @oak a Rui desde ahora. Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas.",
+        "connect_to": [
+          {
+            "ref": "${jon.generated_refs.0}",
+            "rel": "supersedes",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La resolución cambia el titular de la misma cuenta desde este instante y sustituye la asignación anterior; distingue expresamente a ambas personas.",
+            "evidence": "S5: Esta asignación sustituye la asignación anterior a Jon. Jon y Rui son personas distintas."
+          }
+        ]
+      }
+    ]
   }
 }
 ```

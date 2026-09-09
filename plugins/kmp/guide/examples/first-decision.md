@@ -23,7 +23,34 @@ Read the requirement before writing a decision that refers to it.
 ```
 
 ```json
-{"tool":"kmp_write_memory","save_as":"constraint","arguments":{"about":"example:guide:first-decision","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-first-decision:constraint:v1","scope":{"process":"capability-examples"},"labels":{"case":"first-decision"},"occurred_at":"2026-09-02T09:01:00Z","observed_at":"2026-09-02T09:01:00Z","current":{"kind":"constraint","summary":"C1: START-1 requires the journal to accept writes without a network.","evidence":"C1: START-1 requires the journal to accept writes without a network."}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "constraint",
+  "arguments": {
+    "about": "example:guide:first-decision",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-first-decision:constraint:v1",
+    "labels": {
+      "case": [
+        "first-decision"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:01:00Z",
+    "observed_at": "2026-09-02T09:01:00Z",
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "C1: START-1 requires the journal to accept writes without a network.",
+        "evidence": "C1: START-1 requires the journal to accept writes without a network."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -35,7 +62,49 @@ Read the requirement before writing a decision that refers to it.
 why explains why D1 is linked to C1; evidence keeps the source that proves that reason. One logical write uses one idempotency key.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"decision","arguments":{"about":"example:guide:first-decision","intent":"record_decision","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-first-decision:decision:v1","scope":{"process":"capability-examples"},"labels":{"case":"first-decision"},"occurred_at":"2026-09-02T09:02:00Z","observed_at":"2026-09-02T09:03:00Z","current":{"kind":"decision","summary":"D1: START-1 chooses SQLite because C1 requires journal writes without a network.","evidence":"D1: START-1 chooses SQLite because C1 requires journal writes without a network."},"connect_to":[{"ref":"${constraint.generated_refs.0}","rel":"chosen_because","class":"motivational","confidence":"high","why":"D1 explicitly chooses SQLite for the offline-write requirement recorded by C1.","evidence":"D1: START-1 chooses SQLite because C1 requires journal writes without a network."}],"read_context":{"inspected_refs":["${constraint.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "decision",
+  "arguments": {
+    "about": "example:guide:first-decision",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-first-decision:decision:v1",
+    "labels": {
+      "case": [
+        "first-decision"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:02:00Z",
+    "observed_at": "2026-09-02T09:03:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${constraint.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: START-1 chooses SQLite because C1 requires journal writes without a network.",
+        "evidence": "D1: START-1 chooses SQLite because C1 requires journal writes without a network.",
+        "connect_to": [
+          {
+            "ref": "${constraint.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "D1 explicitly chooses SQLite for the offline-write requirement recorded by C1.",
+            "evidence": "D1: START-1 chooses SQLite because C1 requires journal writes without a network."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json

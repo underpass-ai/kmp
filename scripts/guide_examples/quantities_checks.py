@@ -24,8 +24,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert saved[name]['accepted']
         assert read['object']['kind'] == kind and read['object']['ref'] == refs[name]
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
         for link in read['links']['incoming']:
             if 'coordinate' in link:
                 assert link['coordinate']['observed_at'] == authored[name]['observed_at']
@@ -68,11 +68,11 @@ def check(saved, client, authored):
             ('total_hotel_path', 'total', 'hotel_final', 'total_of'),
             ('exclusion_path', 'exclusions', 'total', 'excluded_from'),
             ('exclusion_void_path', 'exclusions', 'void', 'chosen_because')]:
-        expected = next(e for e in authored[source]['connect_to'] if e['ref'] == refs[target] and e['rel'] == rel)
+        expected = next(e for e in authored[source]['memories'][0]['connect_to'] if e['ref'] == refs[target] and e['rel'] == rel)
         actual = next(e for e in saved[path]['trace'] if e['from'] == refs[source] and e['to'] == refs[target] and e['rel'] == rel)
         for field in ('class', 'why', 'evidence'):
             assert actual[field] == expected[field]
-    assert authored['exclusions']['connect_to'][0]['class'] == 'constraint'
+    assert authored['exclusions']['memories'][0]['connect_to'][0]['class'] == 'constraint'
     for name in ('total', 'exclusions'):
         assert authored[name]['observed_at'] == saved['clock']['calculated']
         assert authored[name]['source_kind'] == 'derived'

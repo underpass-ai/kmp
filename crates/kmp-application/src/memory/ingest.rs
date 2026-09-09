@@ -2,9 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use kmp_domain::{
-    DECLARED_FROM_RELATE_METHOD, INTENDED_NEW_LABEL_METADATA_KEY, MemoryDimensionIdentity,
-    MemoryRelationType, RelationSemanticClass, SearchSummary, SearchSummaryFault, SourceKind,
-    label_resemblances,
+    DECLARED_FROM_RELATE_METHOD, INTENDED_NEW_LABEL_METADATA_KEY, MemoryRelationType,
+    RelationSemanticClass, SearchSummary, SearchSummaryFault, SourceKind, label_resemblances,
 };
 
 use crate::ApplicationError;
@@ -14,6 +13,7 @@ use crate::memory::{
     MemoryIngestCommand, MemoryIngestOutcome, MemoryRelationData, ResemblingLabelData,
 };
 
+use super::dimension_registry::DimensionRegistry;
 use super::ref_boundary::{
     validate_ref_token, validate_supplied_entry_ref, validate_supplied_evidence_ref,
     validate_supplied_member_ref,
@@ -70,8 +70,9 @@ pub fn translate_memory_ingest(
     let mut warnings = search_summary_warnings(&command.memory);
     warnings.extend(resembling_labels.iter().map(|label| label.why.clone()));
 
-    let changes = memory_changes(&memory)?;
-    let outcome = MemoryIngestOutcome {
+    let mut changes = memory_changes(&memory)?;
+    let mut outcome = MemoryIngestOutcome {
+        receipt_ref: None,
         about: command.about.clone(),
         memory_id: memory_id_from_idempotency_key(&command.idempotency_key),
         accepted: MemoryAcceptedCounts {
@@ -84,6 +85,11 @@ pub fn translate_memory_ingest(
         created_dimensions,
         resembling_labels,
     };
+
+    if let Some(receipt) = super::receipt::receipt_change(command, &memory, &outcome)? {
+        outcome.receipt_ref = Some(receipt.entity_id.clone());
+        changes.push(receipt);
+    }
 
     Ok((
         UpdateContextCommand {
@@ -119,9 +125,11 @@ fn resembling_labels(
         .map(|(kind, value)| (kind.as_str(), value.as_str()))
         .collect::<Vec<_>>();
     let mut found = Vec::new();
+    let mut registry = DimensionRegistry::new(about, existing)?;
     for dimension in &memory.dimensions {
-        let identity = dimension_identity(about, &dimension.id)?;
-        if existing.dimensions.contains(&identity.node_id()) {
+        let value = registry.value(&dimension.kind, &dimension.id)?;
+        let reference = registry.declare(&dimension.kind, &dimension.id)?;
+        if existing.dimensions.contains(&reference) {
             continue;
         }
         if dimension
@@ -131,11 +139,7 @@ fn resembling_labels(
         {
             continue;
         }
-        for resemblance in label_resemblances(
-            &dimension.kind,
-            identity.dimension_id(),
-            catalogue.iter().copied(),
-        ) {
+        for resemblance in label_resemblances(&dimension.kind, &value, catalogue.iter().copied()) {
             found.push(ResemblingLabelData {
                 key: resemblance.key().to_string(),
                 value: resemblance.value().to_string(),
@@ -195,41 +199,25 @@ fn namespaced_memory(
     // certainly exists could not be named. (#14)
     known_refs.insert(about.to_string());
     let mut dimension_ids = existing.dimensions.clone();
-    let mut dimension_aliases = existing_dimension_aliases(about, existing);
-    let mut declared_dimension_kinds = BTreeMap::new();
+    let mut dimension_registry = DimensionRegistry::new(about, existing)?;
     let mut declared_dimension_refs = BTreeSet::new();
     let mut max_sequences = existing.max_sequences.clone();
     let mut dimensions = Vec::new();
     for dimension in &memory.dimensions {
         require_non_empty(&dimension.id, "memory.dimensions[].id")?;
-        validate_ref_token("memory.dimensions[].id", &dimension.id)
-            .map_err(ApplicationError::Validation)?;
         require_non_empty(&dimension.kind, "memory.dimensions[].kind")?;
-        let dimension_identity = dimension_identity(about, &dimension.id)?;
-        let dimension_ref = dimension_identity.node_id();
-        declared_dimension_kinds.insert(dimension_ref.clone(), dimension.kind.clone());
+        let dimension_value = dimension_registry.value(&dimension.kind, &dimension.id)?;
+        let dimension_ref = dimension_registry.declare(&dimension.kind, &dimension.id)?;
         insert_unique(
             &mut declared_dimension_refs,
             &dimension_ref,
             "memory dimension",
         )?;
         if existing.dimensions.contains(&dimension_ref) {
-            dimension_aliases
-                .entry(dimension.id.clone())
-                .or_insert_with(|| dimension_ref.clone());
             known_refs.insert(dimension_ref);
             continue;
         }
         insert_unique(&mut dimension_ids, &dimension_ref, "memory dimension")?;
-        if dimension_aliases
-            .insert(dimension.id.clone(), dimension_ref.clone())
-            .is_some()
-        {
-            return Err(ApplicationError::Validation(format!(
-                "duplicate memory dimension `{}`",
-                dimension.id
-            )));
-        }
         known_refs.insert(dimension_ref.clone());
 
         let mut metadata = dimension.metadata.clone();
@@ -240,7 +228,7 @@ fn namespaced_memory(
             .or_insert_with(|| about.to_string());
         metadata
             .entry("memory_dimension_id".to_string())
-            .or_insert_with(|| dimension.id.clone());
+            .or_insert_with(|| dimension_value.clone());
         dimensions.push(MemoryDimensionData {
             id: dimension_ref,
             kind: dimension.kind.clone(),
@@ -267,19 +255,24 @@ fn namespaced_memory(
         known_refs.insert(entry.id.clone());
 
         let mut coordinates = Vec::new();
+        let mut memberships = BTreeSet::new();
         for coordinate in &entry.coordinates {
             let mut coordinate = normalize_coordinate(
                 coordinate,
                 "memory.entries[].coordinates[]",
                 "memory entry",
-                &dimension_aliases,
-                &dimension_ids,
-                &declared_dimension_kinds,
+                &dimension_registry,
             )?;
             coordinate
                 .ingested_at
                 .get_or_insert_with(|| ingested_at.to_string());
             let sequence_key = (coordinate.dimension.clone(), coordinate.scope_id.clone());
+            if !memberships.insert(sequence_key.clone()) {
+                return Err(ApplicationError::Validation(format!(
+                    "memory entry `{}` repeats label `{}={}`",
+                    entry.id, coordinate.dimension, coordinate.scope_id
+                )));
+            }
             let frontier = max_sequences.entry(sequence_key).or_default();
             match coordinate.sequence {
                 Some(sequence) => *frontier = (*frontier).max(sequence),
@@ -311,8 +304,8 @@ fn namespaced_memory(
             RelationSemanticClass::parse(&relation.semantic_class).map_err(|error| {
                 ApplicationError::Validation(format!("memory relation class is invalid: {error}"))
             })?;
-        let source_ref = normalize_ref(&relation.source_ref, &dimension_aliases);
-        let target_ref = normalize_ref(&relation.target_ref, &dimension_aliases);
+        let source_ref = normalize_ref(&relation.source_ref, &dimension_registry)?;
+        let target_ref = normalize_ref(&relation.target_ref, &dimension_registry)?;
         validate_supplied_member_ref(about, "memory.relations[].from", &source_ref)
             .map_err(ApplicationError::Validation)?;
         // The one relation that may cross an about: an equivalence a writer
@@ -370,9 +363,7 @@ fn namespaced_memory(
                     coordinate,
                     "memory.relations[].coordinate",
                     "memory relation",
-                    &dimension_aliases,
-                    &dimension_ids,
-                    &declared_dimension_kinds,
+                    &dimension_registry,
                 )
             })
             .transpose()?
@@ -409,13 +400,13 @@ fn namespaced_memory(
             about,
             "memory.relations[].decision_id",
             relation.decision_id.as_deref(),
-            &dimension_aliases,
+            &dimension_registry,
         )?;
         relation.caused_by_node_id = normalize_optional_member_ref(
             about,
             "memory.relations[].caused_by_node_id",
             relation.caused_by_node_id.as_deref(),
-            &dimension_aliases,
+            &dimension_registry,
         )?;
         relation.rel = relation_type.as_str().to_string();
         relation.coordinate = coordinate;
@@ -434,7 +425,7 @@ fn namespaced_memory(
         let mut supports = Vec::new();
         for supported in &evidence.supports {
             require_non_empty(supported, "memory.evidence[].supports[]")?;
-            let supported_ref = normalize_ref(supported, &dimension_aliases);
+            let supported_ref = normalize_ref(supported, &dimension_registry)?;
             validate_supplied_member_ref(about, "memory.evidence[].supports[]", &supported_ref)
                 .map_err(ApplicationError::Validation)?;
             if !known_refs.contains(&supported_ref) {
@@ -499,33 +490,6 @@ fn kernel_ingested_at() -> String {
     )
 }
 
-fn existing_dimension_aliases(
-    about: &str,
-    existing: &ExistingMemoryRefs,
-) -> BTreeMap<String, String> {
-    existing
-        .dimensions
-        .iter()
-        .filter_map(|dimension_ref| {
-            let identity = MemoryDimensionIdentity::parse(dimension_ref)?;
-            (identity.about() == about)
-                .then(|| (identity.dimension_id().to_string(), dimension_ref.clone()))
-        })
-        .collect()
-}
-
-fn dimension_identity(
-    about: &str,
-    dimension_id: &str,
-) -> Result<MemoryDimensionIdentity, ApplicationError> {
-    MemoryDimensionIdentity::resolve(about, dimension_id).ok_or_else(|| {
-        ApplicationError::Validation(format!(
-            "memory dimension `{dimension_id}` belongs to another about; declare it bare or \
-             namespaced for `{about}`"
-        ))
-    })
-}
-
 /// Whether a relation is the one that may cross an about: `same_event_as`
 /// or `same_entity_as`, evidential, with why and evidence, stamped as
 /// declared from a `kmp_relate` proposal, to a ref this about does not own.
@@ -556,22 +520,19 @@ pub fn crosses_abouts(
             .is_some_and(|method| method.starts_with(DECLARED_FROM_RELATE_METHOD))
 }
 
-fn normalize_ref(value: &str, dimension_aliases: &BTreeMap<String, String>) -> String {
-    dimension_aliases
-        .get(value)
-        .cloned()
-        .unwrap_or_else(|| value.to_string())
+fn normalize_ref(value: &str, dimensions: &DimensionRegistry) -> Result<String, ApplicationError> {
+    dimensions.member(value)
 }
 
 fn normalize_optional_member_ref(
     about: &str,
     path: &str,
     value: Option<&str>,
-    dimension_aliases: &BTreeMap<String, String>,
+    dimensions: &DimensionRegistry,
 ) -> Result<Option<String>, ApplicationError> {
     value
         .map(|value| {
-            let normalized = normalize_ref(value, dimension_aliases);
+            let normalized = normalize_ref(value, dimensions)?;
             validate_supplied_member_ref(about, path, &normalized)
                 .map_err(ApplicationError::Validation)?;
             Ok(normalized)
@@ -583,27 +544,13 @@ fn normalize_coordinate(
     coordinate: &MemoryCoordinateData,
     field: &str,
     label: &str,
-    dimension_aliases: &BTreeMap<String, String>,
-    dimension_ids: &BTreeSet<String>,
-    declared_dimension_kinds: &BTreeMap<String, String>,
+    dimensions: &DimensionRegistry,
 ) -> Result<MemoryCoordinateData, ApplicationError> {
     require_non_empty(&coordinate.dimension, &format!("{field}.dimension"))?;
     require_non_empty(&coordinate.scope_id, &format!("{field}.scope_id"))?;
-    let scope_id = normalize_ref(&coordinate.scope_id, dimension_aliases);
-    if !dimension_ids.contains(&scope_id) {
-        return Err(ApplicationError::Validation(format!(
-            "{label} coordinate references unknown dimension scope `{}`",
-            coordinate.scope_id
-        )));
-    }
-    if let Some(expected_kind) = declared_dimension_kinds.get(&scope_id)
-        && coordinate.dimension != *expected_kind
-    {
-        return Err(ApplicationError::Validation(format!(
-            "{label} coordinate dimension `{}` does not match declared kind `{expected_kind}` for scope `{}`",
-            coordinate.dimension, coordinate.scope_id
-        )));
-    }
+    let scope_id = dimensions
+        .coordinate(&coordinate.dimension, &coordinate.scope_id)
+        .map_err(|error| ApplicationError::Validation(format!("{label} {field}: {error}")))?;
     validate_positive_optional(coordinate.sequence, &format!("{field}.sequence"))?;
     validate_positive_optional(coordinate.rank, &format!("{field}.rank"))?;
 
@@ -743,6 +690,10 @@ fn logical_digest(command: &MemoryIngestCommand) -> String {
             serde_json::to_vec(provenance).expect("provenance serializes: it holds only strings");
         hasher.update(&provenance);
     }
+    if let Some(context) = &command.receipt_context {
+        hasher.update([0]);
+        hasher.update(context.to_string().as_bytes());
+    }
     format!("{:x}", hasher.finalize())
 }
 
@@ -794,21 +745,21 @@ mod tests {
         );
         assert_eq!(
             update.changes[0].entity_id,
-            "about:question:830ce83f:dimension:conversation:rachel-2026-04-12"
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
         );
         assert_eq!(
             update.changes[1].scopes,
-            ["about:question:830ce83f:dimension:conversation:rachel-2026-04-12"]
+            ["label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"]
         );
         assert_eq!(
             update.changes[2].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
+            "relation:label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
         let entry_payload: serde_json::Value =
             serde_json::from_str(&update.changes[1].payload_json).expect("entry payload json");
         assert_eq!(
             entry_payload["coordinates"][0]["scope_id"],
-            "about:question:830ce83f:dimension:conversation:rachel-2026-04-12"
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
         );
         assert!(
             entry_payload["coordinates"][0]["ingested_at"]
@@ -890,7 +841,8 @@ mod tests {
         // Reads hand out the namespaced form, and the agent contract says to
         // copy identifiers back byte-for-byte. Wrapping it again would name a
         // second lane that reads back as the intended one.
-        let namespaced = "about:question:830ce83f:dimension:conversation:rachel-2026-04-12";
+        let namespaced =
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12";
         let mut command = sample_command();
         command.memory.dimensions[0].id = namespaced.to_string();
         command.memory.entries[0].coordinates[0].scope_id = namespaced.to_string();
@@ -909,7 +861,7 @@ mod tests {
     fn translate_memory_ingest_rejects_a_dimension_owned_by_another_about() {
         let mut command = sample_command();
         command.memory.dimensions[0].id =
-            "about:question:other:dimension:conversation:rachel-2026-04-12".to_string();
+            "label:v1:question%3Aother:conversation:conversation%3Arachel-2026-04-12".to_string();
 
         let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
             .expect_err("a foreign about's dimension is not ours to write");
@@ -925,7 +877,7 @@ mod tests {
         let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
             .expect_err("unknown scope should fail");
 
-        assert_validation_contains(error, "unknown dimension scope");
+        assert_validation_contains(error, "unknown dimension");
     }
 
     #[test]
@@ -936,7 +888,7 @@ mod tests {
         let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
             .expect_err("coordinate kind mismatch should fail");
 
-        assert_validation_contains(error, "does not match declared kind `conversation`");
+        assert_validation_contains(error, "unknown dimension `ceremony=");
     }
 
     #[test]
@@ -949,7 +901,7 @@ mod tests {
         let error = translate_memory_ingest(&command, &ExistingMemoryRefs::default())
             .expect_err("relation coordinate kind mismatch should fail");
 
-        assert_validation_contains(error, "does not match declared kind `conversation`");
+        assert_validation_contains(error, "unknown dimension `ceremony=");
     }
 
     #[test]
@@ -1009,7 +961,7 @@ mod tests {
 
         assert_eq!(
             update.changes[2].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
+            "relation:label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
     }
 
@@ -1041,7 +993,8 @@ mod tests {
         command.memory.relations[0].source_ref = "conversation:existing".to_string();
         command.memory.relations[0].target_ref = "question:830ce83f:claim:existing".to_string();
         command.memory.evidence[0].supports = vec!["question:830ce83f:claim:existing".to_string()];
-        let dimension_ref = "about:question:830ce83f:dimension:conversation:existing".to_string();
+        let dimension_ref =
+            "label:v1:question%3A830ce83f:conversation:conversation%3Aexisting".to_string();
         let existing = ExistingMemoryRefs {
             refs: [
                 dimension_ref.clone(),
@@ -1065,7 +1018,8 @@ mod tests {
     fn translate_memory_ingest_treats_existing_namespaced_dimension_as_idempotent() {
         let command = sample_command();
         let dimension_ref =
-            "about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string();
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
+                .to_string();
         let existing = ExistingMemoryRefs {
             refs: [dimension_ref.clone()].into_iter().collect(),
             dimensions: [dimension_ref.clone()].into_iter().collect(),
@@ -1091,7 +1045,7 @@ mod tests {
         );
         assert_eq!(
             update.changes[1].entity_id,
-            "relation:about:question:830ce83f:dimension:conversation:rachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
+            "relation:label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12:contains_entry:question:830ce83f:claim:rachel-denver"
         );
     }
 
@@ -1100,7 +1054,8 @@ mod tests {
         let mut command = sample_command();
         command.memory.dimensions.clear();
         let dimension_ref =
-            "about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string();
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
+                .to_string();
         command.memory.relations[0].source_ref = dimension_ref.clone();
         let existing = ExistingMemoryRefs {
             refs: BTreeSet::new(),
@@ -1128,7 +1083,8 @@ mod tests {
     fn translate_memory_ingest_assigns_next_sequence_when_writer_omits_it() {
         let mut command = sample_command();
         command.memory.entries[0].coordinates[0].sequence = None;
-        let scope = "about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string();
+        let scope = "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
+            .to_string();
         let existing = ExistingMemoryRefs {
             max_sequences: BTreeMap::from([(("conversation".to_string(), scope), 7)]),
             ..ExistingMemoryRefs::default()
@@ -1245,7 +1201,7 @@ mod tests {
     fn a_refusing_ingest_names_both_labels_and_the_way_to_insist() {
         let mut command = sample_command();
         command.label_policy = crate::memory::LabelPolicy::Refuse;
-        let existing = catalogue_with("release", "conversation-rachel-2026-04-12");
+        let existing = catalogue_with("conversation", "conversation-rachel-2026-04-12");
 
         let error = translate_memory_ingest(&command, &existing).expect_err("refused");
 
@@ -1254,11 +1210,11 @@ mod tests {
             other => panic!("expected a validation error, got {other:?}"),
         };
         assert!(
-            message.contains("`conversation=conversation:rachel-2026-04-12` resembles `release=conversation-rachel-2026-04-12`"),
+            message.contains("`conversation=conversation:rachel-2026-04-12` resembles `conversation=conversation-rachel-2026-04-12`"),
             "{message}"
         );
         assert!(
-            message.contains("the same value under another key"),
+            message.contains("same identifier up to case and separators"),
             "{message}"
         );
         assert!(message.contains("writer_intended_new"), "{message}");
@@ -1290,9 +1246,10 @@ mod tests {
     fn a_label_the_about_already_holds_resembles_nothing() {
         let command = sample_command();
         let mut existing = catalogue_with("conversation", "conversation:rachel-2026-04-12");
-        existing
-            .dimensions
-            .insert("about:question:830ce83f:dimension:conversation:rachel-2026-04-12".to_string());
+        existing.dimensions.insert(
+            "label:v1:question%3A830ce83f:conversation:conversation%3Arachel-2026-04-12"
+                .to_string(),
+        );
 
         let (_, outcome) = translate_memory_ingest(&command, &existing).expect("reuse");
 
@@ -1302,6 +1259,7 @@ mod tests {
 
     fn sample_command() -> MemoryIngestCommand {
         MemoryIngestCommand {
+            receipt_context: None,
             about: "question:830ce83f".to_string(),
             memory: MemoryData {
                 dimensions: vec![MemoryDimensionData {

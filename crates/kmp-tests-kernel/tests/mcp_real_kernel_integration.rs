@@ -1,8 +1,18 @@
 #![cfg(feature = "container-tests")]
 
+#[path = "mcp_real_kernel/inspect_actions.rs"]
+mod inspect_actions;
+#[path = "mcp_real_kernel/recall_actions.rs"]
+mod recall_actions;
 #[path = "mcp_real_kernel/relation_cursors.rs"]
 mod relation_cursors;
 mod support;
+#[path = "mcp_real_kernel/temporal_fields.rs"]
+mod temporal_fields;
+#[path = "mcp_real_kernel/temporal_intervals.rs"]
+mod temporal_intervals;
+#[path = "mcp_real_kernel/temporal_pages.rs"]
+mod temporal_pages;
 
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -87,6 +97,18 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         ),
         ("kmp_wake", json!({"about":"project:parity-live","depth":2})),
         (
+            "kmp_wake",
+            json!({"about":"project:parity-live","axis":"occurred",
+                "interval":{"start":"2026-08-25T00:00:00Z","end":"2026-08-25T00:01:00Z"},
+                "budget":{"detail":"full","max_bytes":100000}}),
+        ),
+        (
+            "kmp_wake",
+            json!({"about":"project:parity-live","axis":"occurred",
+                "interval":{"start":"2026-08-24T00:00:00Z","end":"2026-08-24T00:01:00Z"},
+                "budget":{"detail":"full","max_bytes":512}}),
+        ),
+        (
             "kmp_ask",
             json!({"about":"project:parity-live","question":"What changed in the parity fixture?","budget":{"detail":"balanced","max_bytes":10000}}),
         ),
@@ -153,6 +175,12 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             "embedded semantic result diverged for {tool}"
         );
     }
+
+    temporal_pages::check(&direct, &stdio, &http, &embedded).await;
+    temporal_intervals::check(&direct, &stdio, &http, &embedded).await;
+    temporal_fields::check(&direct, &stdio, &http, &embedded).await;
+    inspect_actions::check(&direct, &stdio, &http, &embedded).await;
+    recall_actions::check(&direct, &stdio, &http, &embedded).await;
 
     let first_page_arguments = json!({
         "about":"project:parity-live",
@@ -282,20 +310,36 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         &embedded,
         "kmp_wake",
         stale_arguments,
-        "invalid_argument",
+        "conflict",
     )
     .await;
 
     let write_arguments = json!({
-        "about":"project:parity-write",
-        "intent":"record_observation",
-        "actor":"parity-test",
-        "observed_at":"2026-08-25T00:00:00Z",
-        "scope":{"process":"parity"},
-        "current":{"kind":"observation","summary":"writer parity","evidence":"deterministic fixture"},
-        "connect_to":[{"ref":"project:parity-write","rel":"contains","class":"structural"}],
-        "idempotency_key":"parity-write-dry-run",
-        "options":{"dry_run":true}
+        "about": "project:parity-write",
+        "actor": "parity-test",
+        "observed_at": "2026-08-25T00:00:00Z",
+        "idempotency_key": "parity-write-dry-run",
+        "options": {
+            "dry_run": true
+        },
+        "labels": {
+            "agentic_process": ["parity"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "observation",
+                "summary": "writer parity",
+                "evidence": "deterministic fixture",
+                "connect_to": [
+                    {
+                        "ref": "project:parity-write",
+                        "rel": "contains",
+                        "class": "structural"
+                    }
+                ]
+            }
+        ]
     });
     let stdio_write = call_tool(&stdio, 20, "kmp_write_memory", write_arguments.clone()).await;
     let http_write = call_http_tool(&http, 20, "kmp_write_memory", write_arguments.clone()).await;
@@ -307,6 +351,110 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         Some(&Value::Bool(true)),
         "writer helper must compile to canonical dry-run Ingest"
     );
+
+    let mut batch = json!({
+        "about": "project:parity-packet",
+        "actor": "parity-test",
+        "observed_at": "2026-08-25T00:00:00Z",
+        "labels": {
+            "component": ["journal"]
+        },
+        "idempotency_key": "parity-semantic-packet",
+        "options": {
+            "dry_run": true
+        },
+        "memories": [
+            {
+                "id": "decision",
+                "kind": "decision",
+                "summary": "The journal uses local storage.",
+                "evidence": "The design chooses local storage because writes must work offline.",
+                "connect_to": [
+                    {
+                        "ref": "@constraint",
+                        "rel": "chosen_because",
+                        "class": "causal",
+                        "why": "Local storage satisfies the offline write requirement.",
+                        "evidence": "The design cites offline writes as the reason for local storage."
+                    }
+                ]
+            },
+            {
+                "id": "constraint",
+                "kind": "constraint",
+                "summary": "Journal writes must work offline.",
+                "evidence": "The requirement explicitly prohibits a network dependency for journal writes.",
+                "labels": {
+                    "requirement": ["offline", "local"]
+                }
+            }
+        ]
+    });
+    let preview = call_tool(&stdio, 21, "kmp_write_memory", batch.clone()).await;
+    let http_preview = call_http_tool(&http, 21, "kmp_write_memory", batch.clone()).await;
+    let embedded_preview = call_tool(&embedded, 21, "kmp_write_memory", batch.clone()).await;
+    assert_tool_success(&preview);
+    assert_eq!(preview["result"], http_preview["result"]);
+    assert_eq!(preview["result"], embedded_preview["result"]);
+    batch["options"]["dry_run"] = json!(false);
+    let committed = call_tool(&stdio, 22, "kmp_write_memory", batch.clone()).await;
+    let http_retry = call_http_tool(&http, 22, "kmp_write_memory", batch.clone()).await;
+    let embedded_commit = call_tool(&embedded, 22, "kmp_write_memory", batch).await;
+    for result in [&committed, &http_retry, &embedded_commit] {
+        assert_tool_success(result);
+        assert_eq!(result["result"]["structuredContent"]["accepted"], true);
+        assert_eq!(
+            result["result"]["structuredContent"]["local_refs"],
+            preview["result"]["structuredContent"]["local_refs"]
+        );
+    }
+    for (server, result) in [(&stdio, &committed), (&embedded, &embedded_commit)] {
+        let ack = &result["result"]["structuredContent"];
+        let action = &ack["receipt"]["action"];
+        let inspected = call_tool(
+            server,
+            24,
+            action["tool"].as_str().expect("tool"),
+            action["arguments"].clone(),
+        )
+        .await;
+        assert_tool_success(&inspected);
+        let detail: Value = serde_json::from_str(
+            inspected["result"]["structuredContent"]["object"]["text"]
+                .as_str()
+                .expect("receipt body"),
+        )?;
+        assert_eq!(detail["receipt"]["writer"]["local_refs"], ack["local_refs"]);
+        assert_eq!(
+            detail["receipt"]["writer"]["coverage"]["label_memberships"],
+            4
+        );
+        assert_eq!(
+            detail["receipt"]["canonical_memory"]["relations"][0]["evidence"],
+            "The design cites offline writes as the reason for local storage."
+        );
+        let http_inspected = call_http_tool(
+            &http,
+            24,
+            action["tool"].as_str().expect("tool"),
+            action["arguments"].clone(),
+        )
+        .await;
+        assert_tool_success(&http_inspected);
+    }
+    let refs = &committed["result"]["structuredContent"]["local_refs"];
+    let trace_args =
+        json!({"about":"project:parity-packet", "from":refs["decision"], "to":refs["constraint"]});
+    let remote_proof = call_tool(&stdio, 23, "kmp_trace", trace_args.clone()).await;
+    let local_proof = call_tool(&embedded, 23, "kmp_trace", trace_args).await;
+    for proof in [remote_proof, local_proof] {
+        assert_tool_success(&proof);
+        assert!(
+            proof
+                .to_string()
+                .contains("The design cites offline writes")
+        );
+    }
 
     relation_cursors::check(&direct, &stdio, &http, &embedded).await;
     fixture.shutdown().await?;
@@ -425,10 +573,10 @@ fn parity_seed_arguments() -> Value {
                 {"from":"project:parity-live:observation:parity-proof-3","to":"project:parity-live:observation:parity-proof-2","rel":"follows","class":"procedural","why":"The full check followed balanced.","evidence":"The parity test sequence records this order.","confidence":"high"}
             ],
             "evidence":[
-                {"id":"evidence:project:parity-live:parity-live","supports":["project:parity-live:observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-compact","supports":["project:parity-live:observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-balanced","supports":["project:parity-live:observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity"},
-                {"id":"evidence:project:parity-live:parity-full","supports":["project:parity-live:observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity"}
+                {"id":"evidence:project:parity-live:parity-live","supports":["project:parity-live:observation:parity-after"],"text":"The semantic results matched exactly.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:01:00Z"},
+                {"id":"evidence:project:parity-live:parity-compact","supports":["project:parity-live:observation:parity-proof-1"],"text":"Compact stayed under the byte limit.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:02:00Z"},
+                {"id":"evidence:project:parity-live:parity-balanced","supports":["project:parity-live:observation:parity-proof-2"],"text":"Balanced retained cited evidence.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:03:00Z"},
+                {"id":"evidence:project:parity-live:parity-full","supports":["project:parity-live:observation:parity-proof-3"],"text":"Full retained the relation rationale.","source":"grpc_mcp_semantic_parity","time":"2026-08-25T00:04:00Z"}
             ]
         },
         "provenance":{"source_kind":"agent","source_agent":"grpc_mcp_semantic_parity","observed_at":"2026-08-25T00:01:00Z"},

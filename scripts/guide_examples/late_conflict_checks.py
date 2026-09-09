@@ -10,8 +10,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert saved[name]['accepted']
         assert read['object']['kind'] == kind and read['object']['ref'] == refs[name]
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
         for link in read['links']['incoming']:
             if 'coordinate' in link:
                 assert link['coordinate']['observed_at'] == authored[name]['observed_at']
@@ -24,7 +24,7 @@ def check(saved, client, authored):
         assert len(proof['conflicts']) == 1
         assert refs['first'] in str(proof['conflicts']) and refs['second'] in str(proof['conflicts'])
         assert all(refs[later] not in str(proof['evidence']) for later in ('record', 'resolved'))
-        assert any(e['text'] == authored['pending']['current']['summary'] for e in proof['evidence'])
+        assert any(e['text'] == authored['pending']['memories'][0]['summary'] for e in proof['evidence'])
     assert saved['unresolved']['proof']['conflicts'] == saved['unresolved_again']['proof']['conflicts']
     for name in ('resolved_recall', 'ask_after'):
         proof = saved[name]['proof']
@@ -32,7 +32,7 @@ def check(saved, client, authored):
         assert not proof['conflicts']
         assert {e['ref'] for e in proof['superseded']} == {refs['second'], refs['pending']}
         assert all(e['superseded_by'] == refs['resolved'] for e in proof['superseded'])
-        assert any(e['text'] == authored['resolved']['current']['summary'] for e in proof['evidence'])
+        assert any(e['text'] == authored['resolved']['memories'][0]['summary'] for e in proof['evidence'])
 
     assert {e['ref'] for e in saved['shift_events']['entries']} == {refs[n] for n in ('first', 'second', 'record')}
     assert {e['ref'] for e in saved['receipt_history']['entries']} == set(refs.values())
@@ -47,7 +47,7 @@ def check(saved, client, authored):
                                     ('signed_proof', 'resolved', 'record', 'verified_by'),
                                     ('replacement', 'resolved', 'second', 'supersedes'),
                                     ('closed_review', 'resolved', 'pending', 'supersedes')]:
-        expected = next(e for e in authored[source]['connect_to'] if e['ref'] == refs[target] and e['rel'] == rel)
+        expected = next(e for e in authored[source]['memories'][0]['connect_to'] if e['ref'] == refs[target] and e['rel'] == rel)
         actual = next(e for e in saved[path]['trace'] if e['from'] == refs[source] and e['to'] == refs[target] and e['rel'] == rel)
         for field in ('class', 'why', 'evidence'):
             assert actual[field] == expected[field]

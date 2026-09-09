@@ -141,10 +141,10 @@ mod tests {
         assert!(writer_description.contains("Normal writes are one call"));
         assert!(writer_description.contains("validation failures write nothing"));
         assert!(writer_description.contains("explicitly requested preview"));
-        assert_eq!(tools[1]["inputSchema"]["required"][1], "intent");
+        assert_eq!(tools[1]["inputSchema"]["required"][1], "actor");
         assert_eq!(
-            tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["rel"]["enum"]
-                [0],
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["rel"]["enum"][0],
             "follows"
         );
         assert!(
@@ -152,13 +152,14 @@ mod tests {
                 .get("read_context")
                 .is_some()
         );
-        let why_description = tools[1]["inputSchema"]["properties"]["connect_to"]["items"]
-            ["properties"]["why"]["description"]
-            .as_str()
-            .expect("writer why carries operational guidance");
+        let why_description =
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["why"]["description"]
+                .as_str()
+                .expect("writer why carries operational guidance");
         let evidence_description =
-            tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["evidence"]
-                ["description"]
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["evidence"]["description"]
                 .as_str()
                 .expect("writer evidence carries operational guidance");
         assert!(why_description.contains("specific semantic connection"));
@@ -192,26 +193,20 @@ mod tests {
         assert_eq!(tools[12]["name"], "kmp_view_open");
         assert_eq!(tools[5]["name"], "kmp_goto");
         assert_eq!(tools[5]["inputSchema"]["required"][1], "at");
-        assert!(tools[5]["description"].as_str().is_some_and(|description| {
-            description.contains("feeding page.next_cursor back to kmp_goto does not paginate")
-        }));
-        assert!(
-            tools[5]["outputSchema"]["properties"]
-                .get("next_action")
-                .is_some()
-        );
-        assert!(
-            tools[5]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
-                ["description"]
-                .as_str()
-                .is_some_and(|description| description.contains("Do not pass it back to `at.ref`"))
-        );
-        assert!(
-            tools[6]["outputSchema"]["properties"]["page"]["properties"]["next_cursor"]
-                ["description"]
-                .as_str()
-                .is_some_and(|description| description.contains("Do not pass it back to `around.ref`"))
-        );
+        for index in [5, 6] {
+            assert_eq!(
+                tools[index]["inputSchema"]["properties"]["page"]["properties"]["cursor"]["type"],
+                "string"
+            );
+            assert_eq!(
+                tools[index]["outputSchema"]["properties"]["next_actions"]["type"],
+                "array"
+            );
+            assert_eq!(
+                tools[index]["outputSchema"]["properties"]["selection"]["properties"]["has_more"]["type"],
+                "boolean"
+            );
+        }
     }
 
     #[test]
@@ -299,8 +294,11 @@ mod tests {
                     "budget",
                     "depth",
                     "dimensions",
+                    "fields", // MCP entry projection; not a kernel query filter.
                     "include",
+                    "interval",
                     "limit",
+                    "page", // MCP response projection; the typed query remains unchanged.
                     "window",
                     cursor,
                 ]),
@@ -364,18 +362,15 @@ mod tests {
             expected(&[
                 "about",
                 "actor",
-                "connect_to",
-                "current",
                 "idempotency_key",
-                "intent",
                 "labels",
+                "memories",
                 "occurred_at",
                 "observed_at",
                 "options",
                 "rank",
                 "read_context",
-                "scope",
-                "semantic_delta",
+                "search_summaries",
                 "source_kind",
                 "valid_from",
                 "valid_until",

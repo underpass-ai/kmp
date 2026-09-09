@@ -438,17 +438,21 @@ pub async fn about_index_lists_anchors_and_filters_by_dimension(
     let backend = factory.fresh().await;
     let writer = backend.projection_writer();
 
-    let timeline_dimension = "about:question:a:dimension:timeline:sessions";
+    let timeline_dimension = "label:v1:question%3Aa:timeline:timeline%3Asessions";
+    let mut dimension = node(timeline_dimension, "memory_dimension", "Timeline");
+    dimension.properties = BTreeMap::from([
+        ("dimension_kind".to_string(), "timeline".to_string()),
+        (
+            "dimension_value".to_string(),
+            "timeline:sessions".to_string(),
+        ),
+    ]);
     writer
         .apply_mutations(vec![
             ProjectionMutation::UpsertNode(node("question:a", "memory_anchor", "A")),
             ProjectionMutation::UpsertNode(node("question:b", "memory_anchor", "B")),
             ProjectionMutation::UpsertNode(node("conf:not-anchor", "claim", "Not anchor")),
-            ProjectionMutation::UpsertNode(node(
-                timeline_dimension,
-                "memory_dimension",
-                "Timeline",
-            )),
+            ProjectionMutation::UpsertNode(dimension),
             structural_relation("question:a", timeline_dimension, "has_dimension"),
         ])
         .await
@@ -473,8 +477,15 @@ pub async fn about_index_lists_anchors_and_filters_by_dimension(
     assert_eq!(
         by_dimension,
         vec!["question:a".to_string()],
-        "dimension filter must match namespaced dimension suffixes"
+        "dimension filter must match the declared label value"
     );
+
+    let by_key = backend
+        .graph
+        .list_memory_abouts_by_dimensions(&["timeline".to_string()])
+        .await
+        .expect("key-filtered about index read should succeed");
+    assert_eq!(by_key, vec!["question:a".to_string()]);
 
     let by_exact_id = backend
         .graph

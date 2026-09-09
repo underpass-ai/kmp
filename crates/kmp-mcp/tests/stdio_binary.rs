@@ -700,7 +700,7 @@ fn run_binary_from(
 #[test]
 fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
     let home = tempfile::tempdir().expect("isolated home");
-    for stamp in [Some("3\n"), Some("banana\n"), None] {
+    for stamp in [Some("2\n"), Some("4\n"), Some("banana\n"), None] {
         let data_dir = tempfile::tempdir().expect("data dir");
         let store = data_dir.path().join("store/kernel.sqlite3");
         std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
@@ -843,6 +843,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
     let nested = project.path().join("src");
     std::fs::create_dir_all(&nested).expect("nested working dir");
     let user_data = tempfile::tempdir().expect("isolated user data");
+    let isolated_home = tempfile::tempdir().expect("isolated host registrations");
 
     let doctor = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("doctor")
@@ -851,6 +852,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
         .env("KMP_MCP_BACKEND", "embedded")
         .env("KMP_VIEWER_ADDR", "off")
         .env("XDG_DATA_HOME", user_data.path())
+        .env("HOME", isolated_home.path())
         .output()
         .expect("doctor runs");
     assert_eq!(doctor.status.code(), Some(1));
@@ -879,30 +881,38 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
                 "name": "kmp_write_memory",
                 "arguments": {
                     "about": "project:fallback-notice",
-                    "intent": "record_observation",
                     "actor": "agent:regression",
                     "observed_at": "2026-08-28T17:00:00Z",
-                    "scope": {"process": "project:fallback-notice:process"},
-                    "current": {
-                        "ref": format!("project:fallback-notice:observation:{suffix}"),
-                        "kind": "observation",
-                        "summary": format!("Fallback write {suffix}"),
-                        "evidence": "The regression fixture selected the isolated user store."
-                    },
                     "idempotency_key": format!("fallback-notice:{suffix}"),
-                    "options": {"strict": false}
+                    "options": {
+                        "strict": false
+                    },
+                    "labels": {
+                        "agentic_process": ["project:fallback-notice:process"]
+                    },
+                    "memories": [
+                        {
+                            "id": "current",
+                            "ref": format!("project:fallback-notice:observation:{suffix}"),
+                            "kind": "observation",
+                            "summary": format!("Fallback write {suffix}"),
+                            "evidence": "The regression fixture selected the isolated user store."
+                        }
+                    ]
                 }
             }
         })
     };
     let input = format!("{}\n{}\n", write(1, "one"), write(2, "two"));
     let user_data_text = user_data.path().display().to_string();
+    let home_text = isolated_home.path().display().to_string();
     let output = run_binary_from(
         Some(&nested),
         &[
             ("KMP_MCP_BACKEND", "embedded"),
             ("KMP_VIEWER_ADDR", "off"),
             ("XDG_DATA_HOME", &user_data_text),
+            ("HOME", &home_text),
         ],
         &input,
     );
@@ -918,7 +928,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
         .collect::<Vec<_>>();
     assert_eq!(responses.len(), 2);
     let notice = &responses[0]["result"]["structuredContent"]["durability"];
-    assert_eq!(notice["bundle_orphaned"], true, "{notice}");
+    assert_eq!(notice["bundle_orphaned"], true, "{responses:?}");
     assert_eq!(notice["bundle_path"], bundle.display().to_string());
     assert_eq!(
         notice["selected_store_path"],
@@ -1457,8 +1467,8 @@ fn cli_surface_version_export_import_and_errors() {
     );
     let committed_text = std::fs::read_to_string(&committed).expect("committed bundle reads");
     let committed_header = kmp_embedded::verify_bundle(&committed_text).expect("bundle verifies");
-    assert_eq!(committed_header.bundle_format, 2);
-    assert_eq!(committed_header.event_format, 1);
+    assert_eq!(committed_header.bundle_format, 3);
+    assert_eq!(committed_header.event_format, 2);
     assert!(!committed_header.content_digest.is_empty());
 
     for name in ["before-release", "same-history"] {
@@ -1792,7 +1802,7 @@ fn a_store_with_a_lexical_bridge_initializes_and_reports_its_table() {
 
 /// The backfill, end to end on the real binary: a memory written before
 /// summaries existed is listed as owing one, the agent attaches a rendering
-/// through kmp_write_memory with intent record_summary, the list empties, an
+/// through kmp_write_memory with search_summaries, the list empties, an
 /// English question reaches the Spanish memory through it, and the doctor
 /// reports the store as complete. A rendering that drops the ticket is
 /// refused and attaches nothing.
@@ -1843,15 +1853,23 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
 
     let write = |id: u64, summary_en: &str| -> Value {
         let request = serde_json::json!({
-            "jsonrpc": "2.0", "id": id, "method": "tools/call",
-            "params": {"name": "kmp_write_memory", "arguments": {
-                "about": "project:relleno",
-                "intent": "record_summary",
-                "actor": "agent:backfill",
-                "observed_at": "2026-05-07T10:00:00Z",
-                "scope": {"process": "project:relleno:backfill"},
-                "current": {"ref": "project:relleno:decision:valkey", "summary_en": summary_en}
-            }}
+            "jsonrpc": "2.0",
+            "id": id,
+            "method": "tools/call",
+            "params": {
+                "name": "kmp_write_memory",
+                "arguments": {
+                    "about": "project:relleno",
+                    "actor": "agent:backfill",
+                    "observed_at": "2026-05-07T10:00:00Z",
+                    "search_summaries": [
+                        {
+                            "ref": "project:relleno:decision:valkey",
+                            "summary_en": summary_en
+                        }
+                    ]
+                }
+            }
         });
         let output = run_binary(&envs, &format!("{request}\n"));
         assert!(output.status.success(), "{output:?}");
@@ -1861,7 +1879,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
     let refused = write(2, "Valkey was adopted for the shared store.");
     let refusal = refused.to_string();
     assert!(
-        refusal.contains("refuses current.summary_en") && refusal.contains("adr-018"),
+        refusal.contains("refuses summary_en") && refusal.contains("adr-018"),
         "a rendering that drops the identifiers is refused with them named: {refused}"
     );
 
@@ -1922,7 +1940,7 @@ fn a_memory_written_before_summaries_is_listed_attached_and_then_found_in_englis
 
 /// The failure in #497 on the real binary: inspect pages its expandable
 /// sections with the raw record last, so a memory with enough links put its
-/// own raw record on a continuation page and `record_summary` refused a
+/// own raw record on a continuation page and `search_summaries` refused a
 /// memory that was there. The write now reads the memory without its links
 /// and attaches the summary; the text, kind and coordinates stay the stored
 /// ones.
@@ -2011,15 +2029,23 @@ fn a_well_connected_memory_gets_its_summary_attached_even_when_inspect_pages_its
     );
 
     let attach = serde_json::json!({
-        "jsonrpc": "2.0", "id": 3, "method": "tools/call",
-        "params": {"name": "kmp_write_memory", "arguments": {
-            "about": "project:relleno",
-            "intent": "record_summary",
-            "actor": "agent:backfill",
-            "observed_at": "2026-05-08T10:00:00Z",
-            "scope": {"process": "project:relleno:backfill"},
-            "current": {"ref": target, "summary_en": "Valkey 7.2 was adopted for the shared store (ADR-018)."}
-        }}
+        "jsonrpc": "2.0",
+        "id": 3,
+        "method": "tools/call",
+        "params": {
+            "name": "kmp_write_memory",
+            "arguments": {
+                "about": "project:relleno",
+                "actor": "agent:backfill",
+                "observed_at": "2026-05-08T10:00:00Z",
+                "search_summaries": [
+                    {
+                        "ref": target,
+                        "summary_en": "Valkey 7.2 was adopted for the shared store (ADR-018)."
+                    }
+                ]
+            }
+        }
     });
     let attached = run_binary(&envs, &format!("{attach}\n"));
     assert!(attached.status.success(), "{attached:?}");
@@ -2817,13 +2843,13 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
         "{proposed}"
     );
 
-    let declare: Value = serde_json::from_str(r#"{"about": "service:alpha", "intent": "record_observation", "actor": "agent:relate", "observed_at": "2026-03-25T10:00:00Z", "scope": {"process": "service:alpha:reconcile"}, "current": {"ref": "service:alpha:observation:same-freeze", "kind": "observation", "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.", "evidence": "kmp_relate proposed the pair by identifier."}, "connect_to": [{"ref": "service:beta:outcome:freeze", "rel": "same_event_as", "class": "evidential", "why": "Both record the same freeze, keyed by #469.", "evidence": "kmp_relate proposal by identifier: #469 rare across the span.", "confidence": "high"}, {"ref": "service:alpha:decision:blocker", "rel": "restates", "class": "evidential", "why": "The same freeze in this about's words.", "evidence": "The blocker entry names #469 too.", "confidence": "high"}], "read_context": {"inspected_refs": ["service:alpha:decision:blocker"], "relate_proposals": [{"from": "service:alpha:decision:blocker", "to": "service:beta:outcome:freeze", "proposed_by": ["identifier"]}]}, "options": {"strict": true}}"#).expect("declaration");
+    let declare: Value = serde_json::from_str(r#"{"about": "service:alpha", "actor": "agent:relate", "observed_at": "2026-03-25T10:00:00Z", "read_context": {"inspected_refs": ["service:alpha:decision:blocker"], "relate_proposals": [{"from": "service:alpha:decision:blocker", "to": "service:beta:outcome:freeze", "proposed_by": ["identifier"]}]}, "options": {"strict": true}, "labels": {"agentic_process": ["service:alpha:reconcile"]}, "memories": [{"id": "current", "ref": "service:alpha:observation:same-freeze", "kind": "observation", "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.", "evidence": "kmp_relate proposed the pair by identifier.", "connect_to": [{"ref": "service:beta:outcome:freeze", "rel": "same_event_as", "class": "evidential", "why": "Both record the same freeze, keyed by #469.", "evidence": "kmp_relate proposal by identifier: #469 rare across the span.", "confidence": "high"}, {"ref": "service:alpha:decision:blocker", "rel": "restates", "class": "evidential", "why": "The same freeze in this about's words.", "evidence": "The blocker entry names #469 too.", "confidence": "high"}]}]}"#).expect("declaration");
 
     // Any other relation across abouts is refused, and so is the
     // equivalence without the proposal it was declared from.
     let mut follows = declare.clone();
-    follows["connect_to"][0]["rel"] = serde_json::json!("follows");
-    follows["connect_to"][0]["class"] = serde_json::json!("procedural");
+    follows["memories"][0]["connect_to"][0]["rel"] = serde_json::json!("follows");
+    follows["memories"][0]["connect_to"][0]["class"] = serde_json::json!("procedural");
     let refused = call(5, "kmp_write_memory", follows);
     assert_eq!(refused["isError"], true, "{refused}");
     assert!(
@@ -2847,7 +2873,20 @@ fn an_equivalence_declared_from_a_relate_proposal_is_the_one_edge_that_crosses_a
     let written = call(7, "kmp_write_memory", declare);
     assert_ne!(written["isError"], true, "{written}");
     assert_eq!(written["structuredContent"]["accepted"], true, "{written}");
-    let quality = &written["structuredContent"]["relation_quality"][0];
+    let action = &written["structuredContent"]["receipt"]["action"];
+    let inspected = call(
+        70,
+        action["tool"].as_str().expect("receipt tool"),
+        action["arguments"].clone(),
+    );
+    assert_eq!(inspected["isError"], false, "{inspected}");
+    let receipt: serde_json::Value = serde_json::from_str(
+        inspected["structuredContent"]["object"]["text"]
+            .as_str()
+            .expect("receipt body"),
+    )
+    .expect("receipt JSON");
+    let quality = &receipt["receipt"]["writer"]["relation_quality"][0];
     assert_eq!(quality["crosses_about"], true, "{written}");
     assert_eq!(
         quality["prior_context_sources"],
@@ -3135,9 +3174,13 @@ fn temporal_lanes_keep_whole_entry_labels_for_selection() {
             1
         );
         assert_eq!(entries[0]["coordinates"][0]["dimension"], "document");
-        assert_eq!(result["page"]["has_more"], page_index == 0);
+        assert_eq!(result["page"]["has_more"], false);
+        assert_eq!(result["selection"]["has_more"], page_index == 0);
         if page_index == 0 {
-            page_args["from"] = json!({"ref":result["page"]["next_cursor"]});
+            let action = &result["next_actions"][0];
+            assert_eq!(action["tool"], "kmp_forward");
+            assert_eq!(action["arguments"]["dimensions"], page_args["dimensions"]);
+            page_args = action["arguments"].clone();
         }
     }
     paged_refs.sort();

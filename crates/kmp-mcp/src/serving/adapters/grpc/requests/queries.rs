@@ -63,8 +63,12 @@ pub(crate) fn temporal_move_request_from_arguments(
     };
 
     Ok(TemporalMoveRequest {
+        interval: interval_from_arguments(arguments)?,
         about: required_string(arguments, "about")?,
-        cursor: Some(temporal_cursor_from_arguments(arguments, cursor_key)?),
+        cursor: arguments
+            .get(cursor_key)
+            .map(|_| temporal_cursor_from_arguments(arguments, cursor_key))
+            .transpose()?,
         dimensions: dimension_selection_from_arguments(arguments)?,
         window: temporal_window_from_arguments(arguments)?,
         limit: temporal_limit_from_arguments(arguments)?,
@@ -79,6 +83,7 @@ pub(crate) fn temporal_near_request_from_arguments(
 ) -> Result<TemporalNearRequest, String> {
     validate_required_arguments(arguments, &["about"])?;
     Ok(TemporalNearRequest {
+        interval: interval_from_arguments(arguments)?,
         about: required_string(arguments, "about")?,
         around: Some(temporal_cursor_from_arguments(arguments, "around")?),
         dimensions: dimension_selection_from_arguments(arguments)?,

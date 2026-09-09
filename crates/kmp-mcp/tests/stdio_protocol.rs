@@ -606,7 +606,7 @@ async fn kmp_write_memory_commit_uses_canonical_ingest_backend_path() {
     assert_eq!(response["result"]["isError"], false);
     assert_eq!(response["result"]["structuredContent"]["accepted"], true);
     assert_eq!(
-        response["result"]["structuredContent"]["ingest_result"]["memory"]["accepted"]["relations"],
+        response["result"]["structuredContent"]["coverage"]["relations"],
         3
     );
 
@@ -881,21 +881,27 @@ async fn prefer_is_refused_by_the_schema_rather_than_by_a_special_case() {
 }
 
 #[tokio::test]
-async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link() {
+async fn an_independent_strict_memory_can_be_retried_without_inventing_a_link() {
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server");
     let arguments = json!({
         "about": "project:new-root",
-        "intent": "record_decision",
         "actor": "test-agent",
         "observed_at": "2026-08-17T10:00:00Z",
-        "scope": {"process": "process:test"},
-        "current": {
-            "kind": "decision",
-            "summary": "The first durable memory for this project",
-            "evidence": "The project has no prior KMP entries."
+        "options": {
+            "strict": true
         },
-        "options": {"strict": true}
+        "labels": {
+            "agentic_process": ["process:test"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "decision",
+                "summary": "The first durable memory for this project",
+                "evidence": "The project has no prior KMP entries."
+            }
+        ]
     });
     let request = |id| {
         json!({
@@ -911,12 +917,10 @@ async fn first_strict_memory_can_form_an_about_root_but_later_writes_need_a_link
     assert_eq!(first["result"]["structuredContent"]["accepted"], true);
 
     let second = handle_with(&server, request(71)).await;
-    assert_eq!(second["result"]["isError"], true, "{second}");
-    assert!(
-        second["result"]["content"][0]["text"]
-            .as_str()
-            .expect("validation message")
-            .contains("once the about exists")
+    assert_eq!(second["result"]["isError"], false, "{second}");
+    assert_eq!(
+        second["result"]["structuredContent"]["local_refs"],
+        first["result"]["structuredContent"]["local_refs"]
     );
 }
 

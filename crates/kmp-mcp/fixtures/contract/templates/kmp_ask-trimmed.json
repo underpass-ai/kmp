@@ -24,9 +24,23 @@
       "core_text_shortened": "boolean",
       "detail": "string",
       "excluded_by_detail": "integer",
-      "next_action": "string",
+      "next_action": {
+        "arguments": {
+          "about": "string",
+          "answer_policy": "string",
+          "budget": {
+            "depth": "integer",
+            "detail": "string",
+            "max_bytes": "string",
+            "tokens": "integer"
+          },
+          "question": "string"
+        },
+        "tool": "string"
+      },
       "page": {
         "has_more": "boolean",
+        "minimum_progress_bytes": "string",
         "next_cursor": "string",
         "offset": "integer",
         "returned": "integer",
@@ -61,8 +75,6 @@
         {
           "id": "string",
           "metadata": {
-            "delta_from": "string",
-            "delta_to": "string",
             "proof_role": "string",
             "writer_actor": "string",
             "writer_intent": "string"

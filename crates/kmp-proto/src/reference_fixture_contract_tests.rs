@@ -302,13 +302,10 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
         ))),
         sorted_strs(&[
             "about",
-            "intent",
+            "memories",
+            "labels",
             "actor",
             "observed_at",
-            "scope",
-            "current",
-            "semantic_delta",
-            "connect_to",
             "read_context",
             "idempotency_key",
             "options",
@@ -320,6 +317,10 @@ fn kmp_reference_fixtures_are_valid_json_and_memory_shaped() {
         ))),
         sorted_strs(&[
             "accepted",
+            "validation",
+            "coverage",
+            "warnings",
+            "local_refs",
             "dry_run",
             "summary",
             "generated_refs",
@@ -473,7 +474,7 @@ fn kmp_reference_fixtures_match_live_grpc_temporal_shape() {
         first_coordinate
             .get("scope_id")
             .and_then(Value::as_str)
-            .is_some_and(|scope_id| scope_id.starts_with("about:question:830ce83f:dimension:"))
+            .is_some_and(|scope_id| scope_id.starts_with("label:v1:question%3A830ce83f:"))
     );
 
     let ask = parse_fixture(KMP_ASK_RESPONSE_FIXTURE);

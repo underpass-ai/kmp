@@ -50,6 +50,19 @@ pub struct IdempotentOutcome {
     /// `content_hash`, never assume equality.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logical_digest: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub receipt: Option<crate::StoredCommandReceipt>,
+}
+
+impl IdempotentOutcome {
+    pub fn for_event(event: &ContextUpdatedEvent, revision: u64) -> Result<Self, PortError> {
+        Ok(Self {
+            revision,
+            content_hash: event.content_hash.clone(),
+            logical_digest: event.logical_digest.clone(),
+            receipt: crate::StoredCommandReceipt::from_event(event)?,
+        })
+    }
 }
 
 /// Append-only event store for context update commands.

@@ -206,7 +206,7 @@ mod tests {
         let error = build_write_plan(&request).expect_err("duplicate refs should fail");
 
         assert_eq!(
-            error,
+            error.message,
             "generated duplicate memory ref `incident:mobile-login:entry:decision:duplicate`"
         );
     }
@@ -216,25 +216,25 @@ mod tests {
             "incident:other:entry:observation:foreign",
             "incident:other",
             "evidence:incident:other:entry:observation:foreign:current",
-            "about:incident:other:dimension:shared",
+            "label:v1:incident%3Aother:agentic_process:shared",
             "../../incident:other:entry:observation:foreign",
             "incident:mobile-login:entry:x\nincident:other:entry:y",
         ];
 
-        for (object, path) in [
-            ("current", "current.ref"),
-            ("semantic_delta", "semantic_delta.ref"),
-        ] {
+        for (object, path) in [("current", "ref"), ("semantic_delta", "semantic_delta.ref")] {
             for unsafe_ref in unsafe_refs {
                 let mut request = sample_write_request();
                 request[object]["ref"] = json!(unsafe_ref);
                 let error = build_write_plan(&request).expect_err("unsafe ref must be refused");
                 assert!(
-                    error.contains("does not belong to about")
-                        || error.contains(&format!("invalid `{path}`")),
+                    error.message.contains("does not belong to about")
+                        || error.message.contains(&format!("invalid `{path}`")),
                     "the refusal must name `{path}` and its violated boundary for `{unsafe_ref}`: {error}"
                 );
-                assert!(error.contains(path), "wrong supplied-ref path: {error}");
+                assert!(
+                    error.message.contains(path),
+                    "wrong supplied-ref path: {error}"
+                );
             }
         }
 
@@ -266,7 +266,7 @@ mod tests {
             let mut request = sample_write_request();
             request["about"] = json!(unsafe_about);
             let error = build_write_plan(&request).expect_err("unsafe about must be refused");
-            assert!(error.contains("invalid `about`"), "{error}");
+            assert!(error.message.contains("invalid `about`"), "{error}");
         }
     }
 }

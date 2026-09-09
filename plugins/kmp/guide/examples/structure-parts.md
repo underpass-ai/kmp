@@ -22,7 +22,34 @@ runtime clock. No source below states a validity interval.
 PH1: PLAN-4 includes a checksum verification phase named PH1; this is a planned phase, not a passing test.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"phase","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:phase:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:01:00Z","observed_at":"2026-09-02T09:01:00Z","current":{"kind":"observation","summary":"PH1: PLAN-4 includes a checksum verification phase named PH1; this is a planned phase, not a passing test.","evidence":"PH1: PLAN-4 includes a checksum verification phase named PH1; this is a planned phase, not a passing test."}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "phase",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:phase:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:01:00Z",
+    "observed_at": "2026-09-02T09:01:00Z",
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "PH1: PLAN-4 includes a checksum verification phase named PH1; this is a planned phase, not a passing test.",
+        "evidence": "PH1: PLAN-4 includes a checksum verification phase named PH1; this is a planned phase, not a passing test."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -34,7 +61,49 @@ PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packag
 contains/structural points from the containing plan to the named phase. Stored membership does not imply execution or causality.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"plan","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:plan:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:02:00Z","observed_at":"2026-09-02T09:02:00Z","current":{"kind":"observation","summary":"PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed.","evidence":"PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed."},"connect_to":[{"ref":"${phase.generated_refs.0}","rel":"contains","class":"structural","confidence":"high","why":"PLAN1 explicitly lists PH1 as a phase of PLAN-4; this records organization only.","evidence":"PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed."}],"read_context":{"inspected_refs":["${phase.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "plan",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:plan:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:02:00Z",
+    "observed_at": "2026-09-02T09:02:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${phase.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed.",
+        "evidence": "PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed.",
+        "connect_to": [
+          {
+            "ref": "${phase.generated_refs.0}",
+            "rel": "contains",
+            "class": "structural",
+            "confidence": "high",
+            "why": "PLAN1 explicitly lists PH1 as a phase of PLAN-4; this records organization only.",
+            "evidence": "PLAN1: PLAN-4 consists of the checksum verification phase PH1 followed by packaging; the plan says nothing about whether either phase has completed."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -48,7 +117,37 @@ GROUP1: REVIEW-4 is the group named for the PLAN-4 review.
 The group declaration supplies no connection to PH1, so it is intentionally unlinked.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"group","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:group:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:03:00Z","observed_at":"2026-09-02T09:03:00Z","current":{"kind":"observation","summary":"GROUP1: REVIEW-4 is the group named for the PLAN-4 review.","evidence":"GROUP1: REVIEW-4 is the group named for the PLAN-4 review."},"options":{"strict":false}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "group",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:group:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:03:00Z",
+    "observed_at": "2026-09-02T09:03:00Z",
+    "options": {
+      "strict": false
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "GROUP1: REVIEW-4 is the group named for the PLAN-4 review.",
+        "evidence": "GROUP1: REVIEW-4 is the group named for the PLAN-4 review."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -60,7 +159,49 @@ MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give I
 member_of/structural points from the membership record toward the group. It is not authorizes.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"member","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:member:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:04:00Z","observed_at":"2026-09-02T09:04:00Z","current":{"kind":"observation","summary":"MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights.","evidence":"MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights."},"connect_to":[{"ref":"${group.generated_refs.0}","rel":"member_of","class":"structural","confidence":"high","why":"MEMBER1 names Ivo in the REVIEW-4 roster and states no approval rights.","evidence":"MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights."}],"read_context":{"inspected_refs":["${group.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "member",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:member:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:04:00Z",
+    "observed_at": "2026-09-02T09:04:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${group.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights.",
+        "evidence": "MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights.",
+        "connect_to": [
+          {
+            "ref": "${group.generated_refs.0}",
+            "rel": "member_of",
+            "class": "structural",
+            "confidence": "high",
+            "why": "MEMBER1 names Ivo in the REVIEW-4 roster and states no approval rights.",
+            "evidence": "MEMBER1: The PLAN-4 roster lists Ivo as a member of REVIEW-4; it does not give Ivo deployment approval rights."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -72,7 +213,37 @@ member_of/structural points from the membership record toward the group. It is n
 ENV1: STAGE-4 names the staging environment; PROD-4 is a separate production environment.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"environment","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:environment:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:05:00Z","observed_at":"2026-09-02T09:05:00Z","current":{"kind":"observation","summary":"ENV1: STAGE-4 names the staging environment; PROD-4 is a separate production environment.","evidence":"ENV1: STAGE-4 names the staging environment; PROD-4 is a separate production environment."},"options":{"strict":false}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "environment",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:environment:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:05:00Z",
+    "observed_at": "2026-09-02T09:05:00Z",
+    "options": {
+      "strict": false
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "ENV1: STAGE-4 names the staging environment; PROD-4 is a separate production environment.",
+        "evidence": "ENV1: STAGE-4 names the staging environment; PROD-4 is a separate production environment."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -84,7 +255,49 @@ RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to s
 scoped_to/structural points from the rule to its explicit scope memory. A case label organizes this lesson; the source is what limits the rule to staging.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"rule","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:rule:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:06:00Z","observed_at":"2026-09-02T09:06:00Z","current":{"kind":"constraint","summary":"RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy.","evidence":"RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy."},"connect_to":[{"ref":"${environment.generated_refs.0}","rel":"scoped_to","class":"structural","confidence":"high","why":"RULE1 limits its 30-day retention requirement to STAGE-4 and excludes a claim about production.","evidence":"RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy."}],"read_context":{"inspected_refs":["${environment.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "rule",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:rule:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:06:00Z",
+    "observed_at": "2026-09-02T09:06:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${environment.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy.",
+        "evidence": "RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy.",
+        "connect_to": [
+          {
+            "ref": "${environment.generated_refs.0}",
+            "rel": "scoped_to",
+            "class": "structural",
+            "confidence": "high",
+            "why": "RULE1 limits its 30-day retention requirement to STAGE-4 and excludes a claim about production.",
+            "evidence": "RULE1: Keep review artifacts for 30 days in STAGE-4. This rule applies only to staging and states no production retention policy."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -96,7 +309,37 @@ scoped_to/structural points from the rule to its explicit scope memory. A case l
 BREAKDOWN1: CLAIM-4 lists a transport line and a hotel line as its two cost components.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"breakdown","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:breakdown:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:07:00Z","observed_at":"2026-09-02T09:07:00Z","current":{"kind":"observation","summary":"BREAKDOWN1: CLAIM-4 lists a transport line and a hotel line as its two cost components.","evidence":"BREAKDOWN1: CLAIM-4 lists a transport line and a hotel line as its two cost components."},"options":{"strict":false}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "breakdown",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:breakdown:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:07:00Z",
+    "observed_at": "2026-09-02T09:07:00Z",
+    "options": {
+      "strict": false
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "BREAKDOWN1: CLAIM-4 lists a transport line and a hotel line as its two cost components.",
+        "evidence": "BREAKDOWN1: CLAIM-4 lists a transport line and a hotel line as its two cost components."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -108,7 +351,49 @@ TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR
 The settlement supplies the operands and checked total: 20 EUR + 35 EUR = 55 EUR. The author verifies this arithmetic; KMP does not calculate it from a tag. The total is a separate record from the cost breakdown.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"total","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:total:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:08:00Z","observed_at":"2026-09-02T09:08:00Z","current":{"kind":"derived_value","summary":"TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included.","evidence":"TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included."},"connect_to":[{"ref":"${breakdown.generated_refs.0}","rel":"uses_background","class":"evidential","confidence":"high","why":"TOTAL1 settles the two components described by BREAKDOWN1; the literal settlement supplies amounts and exclusions.","evidence":"TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included."}],"read_context":{"inspected_refs":["${breakdown.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "total",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:total:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:08:00Z",
+    "observed_at": "2026-09-02T09:08:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${breakdown.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "derived_value",
+        "summary": "TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included.",
+        "evidence": "TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included.",
+        "connect_to": [
+          {
+            "ref": "${breakdown.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "TOTAL1 settles the two components described by BREAKDOWN1; the literal settlement supplies amounts and exclusions.",
+            "evidence": "TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -122,7 +407,37 @@ CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a wor
 The category definition is independent of a total; do not join them merely to avoid an unlinked write.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"category","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:category:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:09:00Z","observed_at":"2026-09-02T09:09:00Z","current":{"kind":"constraint","summary":"CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity.","evidence":"CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity."},"options":{"strict":false}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "category",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:category:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:09:00Z",
+    "observed_at": "2026-09-02T09:09:00Z",
+    "options": {
+      "strict": false
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity.",
+        "evidence": "CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity."
+      }
+    ]
+  }
+}
 ```
 
 ```json
@@ -140,7 +455,67 @@ make an excluded receipt contribute to a total. Do not emit all three merely
 because an expense carries a `money` label.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"bus","arguments":{"about":"example:guide:structure-parts","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-structure-parts:bus:v1","scope":{"process":"capability-examples"},"labels":{"case":"structure-parts"},"occurred_at":"2026-09-02T09:10:00Z","observed_at":"2026-09-02T09:10:00Z","current":{"kind":"observation","summary":"BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1.","evidence":"BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1."},"connect_to":[{"ref":"${breakdown.generated_refs.0}","rel":"component_of","class":"evidential","confidence":"high","why":"BUS1 is the transport component explicitly listed in BREAKDOWN1.","evidence":"BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1."},{"ref":"${total.generated_refs.0}","rel":"contributes_to","class":"evidential","confidence":"high","why":"BUS1 is explicitly included as 20 EUR in TOTAL1, whose source also identifies HOTEL1 at 35 EUR.","evidence":"BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1. TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included."},{"ref":"${category.generated_refs.0}","rel":"qualifies_as","class":"evidential","confidence":"high","why":"BUS1 meets the CATEGORY1 criteria through its identified receipt, amount, public transport and work purpose.","evidence":"BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1. CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity."}],"read_context":{"inspected_refs":["${breakdown.generated_refs.0}","${total.generated_refs.0}","${category.generated_refs.0}"]}}}
+{
+  "tool": "kmp_write_memory",
+  "save_as": "bus",
+  "arguments": {
+    "about": "example:guide:structure-parts",
+    "actor": "guide-writer",
+    "source_kind": "human",
+    "idempotency_key": "guide-structure-parts:bus:v1",
+    "labels": {
+      "case": [
+        "structure-parts"
+      ],
+      "agentic_process": [
+        "capability-examples"
+      ]
+    },
+    "occurred_at": "2026-09-02T09:10:00Z",
+    "observed_at": "2026-09-02T09:10:00Z",
+    "read_context": {
+      "inspected_refs": [
+        "${breakdown.generated_refs.0}",
+        "${total.generated_refs.0}",
+        "${category.generated_refs.0}"
+      ]
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1.",
+        "evidence": "BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1.",
+        "connect_to": [
+          {
+            "ref": "${breakdown.generated_refs.0}",
+            "rel": "component_of",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "BUS1 is the transport component explicitly listed in BREAKDOWN1.",
+            "evidence": "BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1."
+          },
+          {
+            "ref": "${total.generated_refs.0}",
+            "rel": "contributes_to",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "BUS1 is explicitly included as 20 EUR in TOTAL1, whose source also identifies HOTEL1 at 35 EUR.",
+            "evidence": "BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1. TOTAL1: The checked CLAIM-4 settlement totals 55 EUR: bus receipt BUS1 is 20 EUR and hotel receipt HOTEL1 is 35 EUR. These are two distinct receipts; no other charges are included."
+          },
+          {
+            "ref": "${category.generated_refs.0}",
+            "rel": "qualifies_as",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "BUS1 meets the CATEGORY1 criteria through its identified receipt, amount, public transport and work purpose.",
+            "evidence": "BUS1: Receipt BUS1 records a public bus work journey for 20 EUR. CLAIM-4 includes it as the transport component and as a 20 EUR contribution to TOTAL1, and classifies it under CATEGORY1. CATEGORY1: CLAIM-4 category transport means a public-transport receipt for a work journey, with amount and receipt identity."
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 ```json

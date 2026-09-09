@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_wake",
-        "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
+        "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
         json!({
             "type": "object",
             "additionalProperties": false,
@@ -36,11 +36,23 @@ pub(crate) fn definition() -> Value {
 }
 
 fn wake_output_schema() -> Value {
+    let mut dimensions = dimensions_schema();
+    dimensions["description"] = json!(
+        "Applied dimensional selection with explicit mode and scope defaults. Both proof and about context use it. The catalogue retains those entries' labels; a predicate does not filter individual catalogue labels. Null means the backend supplied no selection metadata."
+    );
+    dimensions = json!({"anyOf":[dimensions,{"type":"null"}]});
     let mut properties = json!({
+        "scope": output_object(json!({
+            "selection": string_array("Response paths based on the temporal selection declared in proof; requested dimensions also apply. Proof may explicitly identify outside matches or omitted evidence."),
+            "context": string_array("Response paths from the about context after dimensional filtering, before temporal selection. They can describe earlier or later memories; do not treat them as the selected historical state."),
+            "context_time": {"type":"string","const":"unbounded","description":"Context does not apply the requested as_of or interval."},
+            "dimensions": dimensions,
+            "request": string_array("Response paths supplied by the caller, not conclusions from stored memory.")
+        })),
         "summary": described("string", "Four-line L0 resume summary: objective, status, blocker, and next action."),
         "wake": output_object(json!({
             "objective": described("string", "The continuation intent supplied by the caller."),
-            "current_state": string_array("Current semantic state selected from the rendered memory."),
+            "current_state": string_array("State lines from about context, not a historical-state answer; see scope.context."),
             "causal_spine": described("array", "Highest-salience explanatory relations, each with claim, because, and evidence_ref."),
             "open_loops": string_array("Live blocker statements reflected by the L0 summary; empty means no blocker was identified."),
             "next_actions": string_array("Next-action statements reflected by the L0 summary; empty means no concrete next action was identified."),

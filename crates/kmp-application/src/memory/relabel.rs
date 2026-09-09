@@ -21,6 +21,7 @@ use crate::memory::{
     MemoryRelabelCommand, MemoryRelabelOutcome, ResemblingLabelData,
 };
 
+use super::dimension_registry::DimensionRegistry;
 use super::ref_boundary::{validate_ref_token, validate_supplied_entry_ref};
 
 /// The `method` a `contains_entry` edge carries when a relabel put it
@@ -33,7 +34,7 @@ pub const RELABEL_ENTITY_KIND: &str = "memory_relabel";
 
 /// Translates a relabel into the one change the log keeps, refusing what
 /// only the caller can fix: a label the entry already stands in, one it
-/// does not stand in, a value already used under another key, the last
+/// does not stand in, an exact duplicate pair, the last
 /// label an entry has, or a new label that resembles one the about holds
 /// under a policy that refuses it.
 pub fn translate_memory_relabel(
@@ -266,25 +267,20 @@ fn additions(
     let mut dimensions = Vec::new();
     let mut created_dimensions = Vec::new();
     let mut resembling = Vec::new();
-    let mut values_added = BTreeMap::<String, String>::new();
+    let mut values_added = BTreeSet::new();
+    let mut registry = DimensionRegistry::new(&command.about, existing)?;
 
     for label in &command.add {
         let label = normalized_label(label, "add[]")?;
-        let identity = MemoryDimensionIdentity::resolve(&command.about, &label.value)
-            .ok_or_else(|| {
-                ApplicationError::Validation(format!(
-                    "`add[].value` `{}` belongs to another about; name it bare or namespaced for `{}`",
-                    label.value, command.about
-                ))
-            })?;
-        let label = EntryLabelData {
-            key: label.key,
-            value: identity.dimension_id().to_string(),
-        };
-        if let Some(other_key) = values_added.get(&label.value) {
+        // Relabel takes literal values, even when a value looks like a ref.
+        let reference = MemoryDimensionIdentity::new(&command.about, &label.key, &label.value)
+            .map_err(|error| ApplicationError::Validation(error.to_string()))?
+            .node_id();
+        let scope_id = registry.declare(&label.key, &reference)?;
+        if !values_added.insert(label.clone()) {
             return Err(ApplicationError::Validation(format!(
-                "`add` uses `{}` under `{other_key}` and `{}`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds",
-                label.value, label.key
+                "`add` repeats `{}={}`",
+                label.key, label.value
             )));
         }
         if removed.iter().any(|(removed, _)| *removed == label) {
@@ -302,24 +298,7 @@ fn additions(
                 describe_labels(standing.keys())
             )));
         }
-        values_added.insert(label.value.clone(), label.key.clone());
-
-        let scope_id = identity.node_id();
-        if existing.dimensions.contains(&scope_id) {
-            // The about holds this scope already: its kind was fixed at
-            // first use, and a relabel reuses it or names the clash.
-            if let Some((kind, _)) = existing
-                .labels
-                .iter()
-                .find(|(_, value)| *value == label.value)
-                && *kind != label.key
-            {
-                return Err(ApplicationError::Validation(format!(
-                    "`{}` already names the label `{kind}={}` in `{}`; within an about a scope id names one label and keeps the kind of its first use",
-                    label.value, label.value, command.about
-                )));
-            }
-        } else {
+        if !existing.dimensions.contains(&scope_id) {
             if !command.intended_new.contains(&label.key) {
                 resembling.extend(
                     label_resemblances(&label.key, &label.value, catalogue.iter().copied())
@@ -431,7 +410,6 @@ fn normalized_label(
     require_non_empty(key, &format!("{field}.key"))?;
     require_non_empty(value, &format!("{field}.value"))?;
     validate_ref_token(&format!("{field}.key"), key).map_err(ApplicationError::Validation)?;
-    validate_ref_token(&format!("{field}.value"), value).map_err(ApplicationError::Validation)?;
     Ok(EntryLabelData {
         key: key.to_string(),
         value: value.to_string(),
@@ -489,13 +467,7 @@ pub fn replayed_relabel_outcome(
     let pairs = |labels: &[EntryLabelData], field: &str| {
         labels
             .iter()
-            .map(|label| {
-                let label = normalized_label(label, field)?;
-                Ok(EntryLabelData {
-                    key: label.key,
-                    value: bare_value(&label.value),
-                })
-            })
+            .map(|label| normalized_label(label, field))
             .collect::<Result<Vec<_>, ApplicationError>>()
     };
     Ok(MemoryRelabelOutcome {
@@ -552,8 +524,8 @@ mod tests {
 
     const ABOUT: &str = "project:kmp";
     const REF: &str = "project:kmp:decision:relabel";
-    const PROCESS: &str = "about:project:kmp:dimension:harness";
-    const TASK: &str = "about:project:kmp:dimension:launch";
+    const PROCESS: &str = "label:v1:project%3Akmp:agentic_process:harness";
+    const TASK: &str = "label:v1:project%3Akmp:task:launch";
 
     fn label(key: &str, value: &str) -> EntryLabelData {
         EntryLabelData {
@@ -646,7 +618,7 @@ mod tests {
         );
         assert_eq!(
             update.changes[0].entity_id,
-            "about:project:kmp:dimension:506"
+            "label:v1:project%3Akmp:issue:506"
         );
         assert_eq!(update.changes[1].entity_id, REF);
         assert_eq!(
@@ -657,7 +629,7 @@ mod tests {
             serde_json::from_str(&update.changes[1].payload_json).expect("payload json");
         let added = &payload["add"][0];
         assert_eq!(added["dimension"], "issue");
-        assert_eq!(added["scope_id"], "about:project:kmp:dimension:506");
+        assert_eq!(added["scope_id"], "label:v1:project%3Akmp:issue:506");
         assert_eq!(
             added["occurred_at"], "2026-09-01T10:00:00Z",
             "inherited, not today"
@@ -681,7 +653,7 @@ mod tests {
         );
         assert_eq!(
             outcome.created_dimensions,
-            ["about:project:kmp:dimension:506"]
+            ["label:v1:project%3Akmp:issue:506"]
         );
         assert!(outcome.resembling_labels.is_empty());
         assert!(outcome.warnings.is_empty());
@@ -692,11 +664,11 @@ mod tests {
         let mut existing = existing();
         existing
             .dimensions
-            .insert("about:project:kmp:dimension:viewer".to_string());
+            .insert("label:v1:project%3Akmp:component:viewer".to_string());
         existing.max_sequences.insert(
             (
                 "component".to_string(),
-                "about:project:kmp:dimension:viewer".to_string(),
+                "label:v1:project%3Akmp:component:viewer".to_string(),
             ),
             9,
         );
@@ -782,19 +754,20 @@ mod tests {
     }
 
     #[test]
-    fn a_value_used_under_another_key_is_refused_naming_the_first_use() {
-        let error = translate_memory_relabel(
+    fn a_value_used_under_another_key_gets_an_independent_membership() {
+        let (_, outcome) = translate_memory_relabel(
             &command(&[("owner", "launch")], &[]),
             &existing(),
             &current(),
         )
-        .expect_err("one value, one key");
-        assert!(
-            error
-                .to_string()
-                .contains("`launch` already names the label `task=launch`"),
-            "{error}"
+        .expect("the key distinguishes the two labels");
+        assert!(outcome.labels.contains(&label("task", "launch")));
+        assert!(outcome.labels.contains(&label("owner", "launch")));
+        assert_eq!(
+            outcome.created_dimensions,
+            ["label:v1:project%3Akmp:owner:launch"]
         );
+        assert!(outcome.resembling_labels.is_empty());
     }
 
     #[test]
@@ -857,7 +830,7 @@ mod tests {
         let mut current = current();
         current.push(coordinate(
             "issue",
-            "about:project:kmp:dimension:506",
+            "label:v1:project%3Akmp:issue:506",
             "2026-09-01T10:00:00Z",
             1,
         ));

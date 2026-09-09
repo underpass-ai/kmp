@@ -26,15 +26,11 @@ pub struct BundleEventRange {
 }
 
 /// First line of a bundle file: identity and integrity metadata for fail-fast
-/// import. Fields added in bundle format 2 default only so format-1 bundles
-/// remain readable; every format-2 field is validated before replay.
+/// import. Unsupported bundle and event formats are rejected before replay.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BundleHeader {
     pub bundle_format: u32,
     /// Format of the portable event payload, not the on-disk SQLite layout.
-    /// `store_format` is accepted from format-1 bundles because that
-    /// older name described the field ambiguously.
-    #[serde(rename = "event_format", alias = "store_format")]
     pub event_format: u32,
     pub event_count: u64,
     pub kernel_version: String,
@@ -50,7 +46,7 @@ pub struct BundleHeader {
     pub content_digest: String,
 }
 
-pub const BUNDLE_FORMAT_VERSION: u32 = 2;
+pub const BUNDLE_FORMAT_VERSION: u32 = 3;
 
 /// Outcome of an import: events replayed and projections rebuilt.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -242,9 +238,9 @@ fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
             PortError::InvalidState("bundle is empty: missing header line".to_string())
         })?,
     )?;
-    if !matches!(header.bundle_format, 1 | BUNDLE_FORMAT_VERSION) {
+    if header.bundle_format != BUNDLE_FORMAT_VERSION {
         return Err(PortError::InvalidState(format!(
-            "bundle format {} is not supported (this binary reads 1 and {})",
+            "bundle format {} is not supported (this binary reads {})",
             header.bundle_format, BUNDLE_FORMAT_VERSION
         )));
     }
@@ -271,13 +267,11 @@ fn parse_bundle(bundle: &str) -> Result<VerifiedBundle, PortError> {
         )));
     }
 
-    if header.bundle_format == BUNDLE_FORMAT_VERSION {
-        validate_v2_header(&header, &events, &event_payload)?;
-    }
+    validate_header(&header, &events, &event_payload)?;
     Ok(VerifiedBundle { header, events })
 }
 
-fn validate_v2_header(
+fn validate_header(
     header: &BundleHeader,
     events: &[ContextUpdatedEvent],
     event_payload: &str,
@@ -524,7 +518,7 @@ mod tests {
     }
 
     #[test]
-    fn format_two_identifies_and_covers_the_snapshot() {
+    fn current_format_identifies_and_covers_the_snapshot() {
         let events = vec![event("project:b", 1, "b"), event("project:a", 1, "a")];
         let bundle = encode_bundle(&events, Some("pre-release")).expect("bundle");
         let header = verify_bundle(&bundle).expect("verified");
@@ -601,7 +595,7 @@ mod tests {
     }
 
     #[test]
-    fn verified_bundle_exclusion_applies_the_same_policy_to_legacy_bundles() {
+    fn verified_bundle_exclusion_keeps_unexcluded_events() {
         let bundle = encode_bundle(
             &[
                 event("project:a", 1, "a1"),
@@ -700,12 +694,19 @@ mod tests {
     }
 
     #[test]
-    fn legacy_format_one_remains_readable() {
-        let legacy =
-            r#"{"bundle_format":1,"store_format":1,"event_count":0,"kernel_version":"0.1.3"}"#;
-        let header = verify_bundle(legacy).expect("format one remains portable");
-        assert_eq!(header.event_format, 1);
-        assert!(header.snapshot_id.is_empty());
+    fn unsupported_bundle_and_event_formats_are_rejected() {
+        let bundle = encode_bundle(&[], None).expect("bundle");
+        for old in [1, 2] {
+            let legacy = bundle.replace("\"bundle_format\":3", &format!("\"bundle_format\":{old}"));
+            let error = verify_bundle(&legacy).expect_err("old bundle is unsupported");
+            assert!(error.to_string().contains("is not supported"), "{error}");
+        }
+        let legacy = bundle.replace("\"event_format\":2", "\"event_format\":1");
+        let error = verify_bundle(&legacy).expect_err("old events are unsupported");
+        assert!(
+            error.to_string().contains("bundle carries event format 1"),
+            "{error}"
+        );
     }
 
     #[test]

@@ -111,7 +111,7 @@ mod tests {
             kmp_embedded::store_file_path_for(data_dir.path(), kmp_embedded::StorageEngine::Sqlite);
         std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
         std::fs::write(store, b"memory remains on disk").expect("store marker");
-        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "3\n").expect("newer format stamp");
+        std::fs::write(data_dir.path().join("FORMAT_VERSION"), "4\n").expect("newer format stamp");
         let backend = RetryingEmbeddedKernelMcpBackend::new(data_dir.path(), None);
 
         let error = backend

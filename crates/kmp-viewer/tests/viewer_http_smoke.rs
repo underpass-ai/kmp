@@ -39,6 +39,7 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 
 fn corpus() -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -672,6 +673,7 @@ fn sub_second_corpus(
     observed_at: &str,
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: about.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -1359,7 +1361,7 @@ async fn a_relabelled_entry_stands_in_its_own_row_and_says_why() {
     assert!(
         labels[1]["scope_id"]
             .as_str()
-            .is_some_and(|scope| scope.ends_with(":dimension:viewer-labels")),
+            .is_some_and(|scope| scope.ends_with(":task:viewer-labels")),
         "the namespaced id travels beside the bare value: {labels:?}"
     );
 

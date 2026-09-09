@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use crate::{TemporalAxis, TemporalCoordinate};
+use crate::{TemporalAxis, TemporalCoordinate, TemporalInterval};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum TemporalKeyKind {
@@ -47,6 +47,14 @@ impl TemporalAxisKey {
 
     pub(super) fn axis(&self) -> TemporalKeyKind {
         self.axis
+    }
+
+    pub(super) fn in_interval(&self, interval: &TemporalInterval) -> bool {
+        self.axis == TemporalKeyKind::Time
+            && interval
+                .start()
+                .is_none_or(|start| *self >= Self::time(start))
+            && interval.end().is_none_or(|end| *self < Self::time(end))
     }
 
     pub(super) fn from_coordinate(

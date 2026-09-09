@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value};
 
 use super::ingest_arguments::*;
 
-use kmp_application::{validate_ref_token, validate_supplied_member_ref};
+use kmp_application::validate_supplied_member_ref;
 
 pub(super) fn validate_provenance(provenance: &Map<String, Value>) -> Result<(), String> {
     validate_source_kind(required_map_string(
@@ -74,10 +74,15 @@ pub(super) fn validate_ingest_member_ref(
     about: &str,
     path: &str,
     reference: &str,
-    dimension_kinds: &BTreeMap<&str, &str>,
+    dimension_kinds: &BTreeMap<&str, BTreeSet<&str>>,
 ) -> Result<(), String> {
-    if dimension_kinds.contains_key(reference) {
-        validate_ref_token(path, reference)
+    if let Some(kinds) = dimension_kinds.get(reference) {
+        if kinds.len() > 1 {
+            return Err(format!(
+                "`{path}` dimension `{reference}` is ambiguous across keys; use the exact label ref"
+            ));
+        }
+        Ok(())
     } else {
         validate_supplied_member_ref(about, path, reference)
     }
@@ -86,7 +91,7 @@ pub(super) fn validate_ingest_member_ref(
 pub(super) fn validate_evidence_supports(
     about: &str,
     evidence_item: &Value,
-    dimension_kinds: &BTreeMap<&str, &str>,
+    dimension_kinds: &BTreeMap<&str, BTreeSet<&str>>,
 ) -> Result<(), String> {
     for (index, support) in evidence_item
         .get("supports")
@@ -128,7 +133,7 @@ pub(super) fn entry_scopes(entry: &Value) -> Vec<String> {
 
 pub(super) fn validate_entry_positions(
     entry: &Value,
-    dimension_kinds: &BTreeMap<&str, &str>,
+    dimension_kinds: &BTreeMap<&str, BTreeSet<&str>>,
 ) -> Result<(), String> {
     let positions = entry
         .get("coordinates")
@@ -151,7 +156,7 @@ pub(super) fn validate_entry_positions(
 
 pub(super) fn validate_coordinate(
     coordinate: &Value,
-    dimension_kinds: &BTreeMap<&str, &str>,
+    dimension_kinds: &BTreeMap<&str, BTreeSet<&str>>,
     path: &str,
 ) -> Result<(), String> {
     let Some(dimension) = coordinate.get("dimension").and_then(Value::as_str) else {
@@ -171,7 +176,8 @@ pub(super) fn validate_coordinate(
             "{path} references unknown dimension scope `{scope_id}`"
         ));
     };
-    if dimension != *expected_kind {
+    if !expected_kind.contains(dimension) {
+        let expected_kind = expected_kind.iter().copied().collect::<Vec<_>>().join(", ");
         return Err(format!(
             "{path}.dimension `{dimension}` does not match declared kind `{expected_kind}` for scope `{scope_id}`"
         ));
@@ -269,7 +275,7 @@ fn names_another_about(about: &str, reference: &str) -> bool {
     if reference == about
         || reference.starts_with(&format!("{about}:"))
         || reference.starts_with(&format!("evidence:{about}:"))
-        || reference.starts_with(&format!("about:{about}:dimension:"))
+        || kmp_domain::MemoryDimensionIdentity::resolve(about, reference).is_some()
     {
         return false;
     }
@@ -287,7 +293,7 @@ mod boundary_tests {
             "dimensions": [],
             "entries": [{"id": "claim:short", "kind": "claim", "text": "t"}],
             "relations": [{"from": "conversation:rachel", "to": "service:alpha:claim:x", "rel": "contains_entry", "class": "structural"}],
-            "evidence": [{"id": "evidence:service:alpha:e", "supports": ["service:alpha:claim:x", "about:service:alpha:dimension:work:main"], "text": "t"}]
+            "evidence": [{"id": "evidence:service:alpha:e", "supports": ["service:alpha:claim:x", "label:v1:service%3Aalpha:work:work%3Amain"], "text": "t"}]
         }});
         assert!(reject_refs_outside_about(&own).is_ok());
 

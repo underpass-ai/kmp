@@ -317,8 +317,16 @@ mod tests {
             *changed
                 .pointer_mut(path)
                 .expect("selected object or proof field") = json!("changed after the first page");
-            let error = enforce_inspect_output_budget(changed, &args).expect_err("stale selection");
-            assert!(error.message.contains("does not match"), "{path}: {error}");
+            let error =
+                enforce_inspect_output_budget(changed.clone(), &args).expect_err("stale selection");
+            assert_eq!(error.code, crate::serving::ToolErrorCode::Conflict);
+            let restart = &error.feedback[0]["action"];
+            assert_eq!(restart["tool"], "kmp_inspect");
+            assert!(restart["arguments"].get("page").is_none());
+            let fresh = enforce_inspect_output_budget(changed.clone(), &restart["arguments"])
+                .expect("returned restart is executable");
+            assert_eq!(fresh["object"], changed["object"], "{path}");
+            assert!(fresh.get("object_reused").is_none());
         }
         assert!(enforce_inspect_output_budget(value, &args).is_ok());
     }

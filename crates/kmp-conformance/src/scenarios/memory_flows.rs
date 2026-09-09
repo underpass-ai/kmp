@@ -23,7 +23,9 @@ const ABOUT: &str = "question:conformance";
 const SCOPE_ALIAS: &str = "conversation:session-a";
 
 fn namespaced_scope() -> String {
-    format!("about:{ABOUT}:dimension:{SCOPE_ALIAS}")
+    kmp_domain::MemoryDimensionIdentity::new(ABOUT, "conversation", SCOPE_ALIAS)
+        .expect("label")
+        .node_id()
 }
 
 fn coordinate(occurred_at: &str, sequence: u32) -> MemoryCoordinateData {
@@ -53,6 +55,7 @@ fn entry(id: &str, text: &str, occurred_at: &str, sequence: u32) -> MemoryEntryD
 
 fn conversation_memory_command(idempotency_key: &str) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -135,7 +138,8 @@ fn temporal_query(
         about: ABOUT.to_string(),
         direction,
         axis: TemporalAxis::Default,
-        cursor,
+        cursor: Some(cursor),
+        interval: None,
         dimensions: DimensionSelection::all(),
         window,
         limit_entries: None,

@@ -211,19 +211,6 @@ pub(crate) fn committed_bundle_finding(resolved: &ResolvedDataDir) -> Option<Lif
     // store moves the timestamp, and the events above have already been read
     // and compared. Whatever the modification times say, the two hold the same
     // authored memory.
-    if header.bundle_format < kmp_embedded::BUNDLE_FORMAT_VERSION {
-        return Some(
-            LifecycleFinding::new(
-                DiagnosticSeverity::Warn,
-                "the committed memory uses a legacy bundle header",
-            )
-            .with_detail(format!(
-                "{} events · no snapshot identity or digest",
-                authored_header.event_count
-            ))
-            .with_detail("run `kmp-mcp export` to upgrade it without changing the events"),
-        );
-    }
 
     Some(
         LifecycleFinding::new(
@@ -344,7 +331,7 @@ mod tests {
         );
     }
     #[test]
-    fn a_legacy_bundle_is_readable_but_not_mistaken_for_an_identified_snapshot() {
+    fn an_unsupported_bundle_is_reported_as_a_failure() {
         let project = tempfile::tempdir().expect("project");
         let data_dir = project.path().join(".kernel");
         let bundle = project.path().join(".kmp/memory.jsonl");
@@ -357,8 +344,8 @@ mod tests {
         let resolved = ResolvedDataDir::Project(data_dir);
 
         let finding = committed_bundle_finding(&resolved).expect("project finding");
-        assert_eq!(finding.severity(), DiagnosticSeverity::Warn);
-        assert!(finding.headline().contains("legacy"));
+        assert_eq!(finding.severity(), DiagnosticSeverity::Fail);
+        assert!(finding.headline().contains("does not verify"));
     }
     #[test]
     fn an_orphaned_project_bundle_is_compared_with_the_store_that_receives_writes() {

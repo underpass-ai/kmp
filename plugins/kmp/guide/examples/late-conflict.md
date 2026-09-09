@@ -85,26 +85,36 @@ inspect the existing memory and labels; never bypass strict linking rules.
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
-    "intent": "record_observation",
     "idempotency_key": "guide-late-conflict:first:v1",
-    "scope": {
-      "process": "duty-review",
-      "task": "responsibility-review"
-    },
     "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "shift": [
+        "SHIFT-6"
+      ],
+      "agentic_process": [
+        "duty-review"
+      ],
+      "task": [
+        "responsibility-review"
+      ]
     },
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-02T09:00:00Z",
     "source_kind": "human",
-    "current": {
-      "kind": "observation",
-      "summary": "R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record.",
-      "summary_en": "Who handled SHIFT-6? Dispatch report R1 names Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.",
-      "evidence": "R1, dispatch report; received 2026-09-02T09:00:00Z: R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record.",
+        "summary_en": "Who handled SHIFT-6? Dispatch report R1 names Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.",
+        "evidence": "R1, dispatch report; received 2026-09-02T09:00:00Z: R1 asserts that Maya was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R1 provides no signed duty record."
+      }
+    ]
   }
 }
 ```
@@ -209,39 +219,49 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
-    "intent": "record_observation",
     "idempotency_key": "guide-late-conflict:second:v1",
-    "scope": {
-      "process": "duty-review",
-      "task": "responsibility-review"
-    },
     "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "shift": [
+        "SHIFT-6"
+      ],
+      "agentic_process": [
+        "duty-review"
+      ],
+      "task": [
+        "responsibility-review"
+      ]
     },
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-03T09:00:00Z",
     "source_kind": "human",
-    "current": {
-      "kind": "observation",
-      "summary": "R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record.",
-      "summary_en": "Who handled SHIFT-6? Service desk report R2 names Zoe as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.",
-      "evidence": "R2, service desk report; received 2026-09-03T09:00:00Z: R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record."
-    },
     "read_context": {
       "inspected_refs": [
         "${first.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${first.generated_refs.0}",
-        "rel": "contradicts",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "R1 and R2 assign sole responsibility to different people for the same SHIFT-6 interval, component and environment; both claims cannot be true under those conditions.",
-        "evidence": "R1 names Maya alone; R2 names Zoe alone. Both specify SHIFT-6, journal in field, September 1 from 08:00 to 12:00 UTC."
+        "id": "current",
+        "kind": "observation",
+        "summary": "R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record.",
+        "summary_en": "Who handled SHIFT-6? Service desk report R2 names Zoe as the only journal operator in field on September 1, 08:00 to 12:00 UTC, without a signed roster.",
+        "evidence": "R2, service desk report; received 2026-09-03T09:00:00Z: R2 asserts that Zoe was the sole responsible operator for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. R2 provides no signed duty record.",
+        "connect_to": [
+          {
+            "ref": "${first.generated_refs.0}",
+            "rel": "contradicts",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "R1 and R2 assign sole responsibility to different people for the same SHIFT-6 interval, component and environment; both claims cannot be true under those conditions.",
+            "evidence": "R1 names Maya alone; R2 names Zoe alone. Both specify SHIFT-6, journal in field, September 1 from 08:00 to 12:00 UTC."
+          }
+        ]
       }
     ]
   }
@@ -269,48 +289,58 @@ reuse the catalogue. Do not add `supersedes`: neither source withdraws R1.
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
-    "intent": "record_decision",
     "idempotency_key": "guide-late-conflict:pending:v1",
-    "scope": {
-      "process": "duty-review",
-      "task": "responsibility-review"
-    },
     "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "shift": [
+        "SHIFT-6"
+      ],
+      "agentic_process": [
+        "duty-review"
+      ],
+      "task": [
+        "responsibility-review"
+      ]
     },
     "occurred_at": "2026-09-03T10:00:00Z",
     "observed_at": "2026-09-03T10:00:00Z",
     "source_kind": "human",
-    "current": {
-      "kind": "decision",
-      "summary": "P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth.",
-      "summary_en": "Which SHIFT-6 operator can be confirmed? P1 leaves Maya versus Zoe unresolved because R1 and R2 conflict for the same component and interval without signed proof. The reviewer keeps both reports and requests a signed roster instead of trusting the later receipt.",
-      "evidence": "P1, review decision; received 2026-09-03T10:00:00Z: P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth."
-    },
     "read_context": {
       "inspected_refs": [
         "${first.generated_refs.0}",
         "${second.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${first.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.",
-        "evidence": "P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order."
-      },
-      {
-        "ref": "${second.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.",
-        "evidence": "P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order."
+        "id": "current",
+        "kind": "decision",
+        "summary": "P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth.",
+        "summary_en": "Which SHIFT-6 operator can be confirmed? P1 leaves Maya versus Zoe unresolved because R1 and R2 conflict for the same component and interval without signed proof. The reviewer keeps both reports and requests a signed roster instead of trusting the later receipt.",
+        "evidence": "P1, review decision; received 2026-09-03T10:00:00Z: P1: We cannot determine the sole responsible operator for SHIFT-6 from R1 and R2. Their Maya and Zoe assignments conflict for the same interval and component. Keep both claims and request the signed duty record; receiving R2 later does not establish its truth.",
+        "connect_to": [
+          {
+            "ref": "${first.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.",
+            "evidence": "P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order."
+          },
+          {
+            "ref": "${second.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "P1 keeps the review unresolved because this unsupported assignment conflicts with the other report; it requests the missing signed record.",
+            "evidence": "P1 explicitly cites R1 and R2, says their assignments conflict, and refuses to choose by receipt order."
+          }
+        ]
       }
     ]
   }
@@ -420,39 +450,49 @@ the signatures and their matching shift scope are explicit premises here.
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
-    "intent": "record_observation",
     "idempotency_key": "guide-late-conflict:record:v1",
-    "scope": {
-      "process": "duty-review",
-      "task": "responsibility-review"
-    },
     "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "shift": [
+        "SHIFT-6"
+      ],
+      "agentic_process": [
+        "duty-review"
+      ],
+      "task": [
+        "responsibility-review"
+      ]
     },
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-05T09:00:00Z",
     "source_kind": "human",
-    "current": {
-      "kind": "observation",
-      "summary": "L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC.",
-      "summary_en": "What proves SHIFT-6 responsibility? Signed record L1 identifies Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, and Zoe as standby. Both attest the whole period. Received September 5 at 09:00 UTC, it answers P1.",
-      "evidence": "L1, signed duty record received late; received 2026-09-05T09:00:00Z: L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC."
-    },
     "read_context": {
       "inspected_refs": [
         "${pending.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${pending.generated_refs.0}",
-        "rel": "answers",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "L1 supplies the signed duty record explicitly requested by the unresolved P1 review.",
-        "evidence": "L1 states that both Maya and Zoe signed the full SHIFT-6 interval and that this record answers the request in P1."
+        "id": "current",
+        "kind": "observation",
+        "summary": "L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC.",
+        "summary_en": "What proves SHIFT-6 responsibility? Signed record L1 identifies Maya as the only journal operator in field on September 1, 08:00 to 12:00 UTC, and Zoe as standby. Both attest the whole period. Received September 5 at 09:00 UTC, it answers P1.",
+        "evidence": "L1, signed duty record received late; received 2026-09-05T09:00:00Z: L1, signed by Maya and Zoe: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval. This record answers the request in P1; it was received on September 5 at 09:00 UTC.",
+        "connect_to": [
+          {
+            "ref": "${pending.generated_refs.0}",
+            "rel": "answers",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "L1 supplies the signed duty record explicitly requested by the unresolved P1 review.",
+            "evidence": "L1 states that both Maya and Zoe signed the full SHIFT-6 interval and that this record answers the request in P1."
+          }
+        ]
       }
     ]
   }
@@ -515,26 +555,27 @@ specific replacement. Do not delete either old object or change its clocks.
   "arguments": {
     "about": "example:guide:late-conflict",
     "actor": "guide-writer",
-    "intent": "record_decision",
     "idempotency_key": "guide-late-conflict:resolved:v1",
-    "scope": {
-      "process": "duty-review",
-      "task": "responsibility-review"
-    },
     "labels": {
-      "component": "journal",
-      "environment": "field",
-      "shift": "SHIFT-6"
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "field"
+      ],
+      "shift": [
+        "SHIFT-6"
+      ],
+      "agentic_process": [
+        "duty-review"
+      ],
+      "task": [
+        "responsibility-review"
+      ]
     },
     "occurred_at": "2026-09-05T09:05:00Z",
     "observed_at": "2026-09-05T09:05:00Z",
     "source_kind": "human",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC.",
-      "summary_en": "Who is confirmed for SHIFT-6? D1 uses signed L1 to confirm Maya for September 1, 08:00 to 12:00 UTC. The September 5, 09:05 UTC review replaces the Zoe assignment in R2 and the uncertainty in P1, retaining R1, R2 and P1 as historical evidence.",
-      "evidence": "D1, final review decision; received 2026-09-05T09:05:00Z: D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC."
-    },
     "read_context": {
       "inspected_refs": [
         "${record.generated_refs.0}",
@@ -542,30 +583,39 @@ specific replacement. Do not delete either old object or change its clocks.
         "${pending.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${record.generated_refs.0}",
-        "rel": "verified_by",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "D1 confirms Maya for the exact disputed SHIFT-6 interval because L1 bears both signatures and identifies Zoe as standby only.",
-        "evidence": "L1: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval."
-      },
-      {
-        "ref": "${second.generated_refs.0}",
-        "rel": "supersedes",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "D1 explicitly replaces the R2 assignment to Zoe with the confirmed Maya assignment after receiving L1; R2 remains evidence of the earlier report.",
-        "evidence": "D1: Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence."
-      },
-      {
-        "ref": "${pending.generated_refs.0}",
-        "rel": "supersedes",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The signed record supplies the proof that P1 lacked, and D1 explicitly closes that unresolved review from September 5 at 09:05 UTC.",
-        "evidence": "D1 confirms Maya based on signed record L1, replaces the unresolved P1 decision, and dates the known conclusion to September 5 at 09:05 UTC."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC.",
+        "summary_en": "Who is confirmed for SHIFT-6? D1 uses signed L1 to confirm Maya for September 1, 08:00 to 12:00 UTC. The September 5, 09:05 UTC review replaces the Zoe assignment in R2 and the uncertainty in P1, retaining R1, R2 and P1 as historical evidence.",
+        "evidence": "D1, final review decision; received 2026-09-05T09:05:00Z: D1: Confirm Maya as the sole responsible operator for SHIFT-6 on September 1 from 08:00 to 12:00 UTC, based on signed record L1. Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence; this conclusion became known on September 5 at 09:05 UTC.",
+        "connect_to": [
+          {
+            "ref": "${record.generated_refs.0}",
+            "rel": "verified_by",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "D1 confirms Maya for the exact disputed SHIFT-6 interval because L1 bears both signatures and identifies Zoe as standby only.",
+            "evidence": "L1: Maya alone held operational responsibility for SHIFT-6, journal in field, on September 1 from 08:00 to 12:00 UTC. Zoe was standby only. Both signatures attest the full interval."
+          },
+          {
+            "ref": "${second.generated_refs.0}",
+            "rel": "supersedes",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "D1 explicitly replaces the R2 assignment to Zoe with the confirmed Maya assignment after receiving L1; R2 remains evidence of the earlier report.",
+            "evidence": "D1: Replace the R2 assignment to Zoe and the unresolved P1 decision. Preserve R1, R2 and P1 as historical evidence."
+          },
+          {
+            "ref": "${pending.generated_refs.0}",
+            "rel": "supersedes",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The signed record supplies the proof that P1 lacked, and D1 explicitly closes that unresolved review from September 5 at 09:05 UTC.",
+            "evidence": "D1 confirms Maya based on signed record L1, replaces the unresolved P1 decision, and dates the known conclusion to September 5 at 09:05 UTC."
+          }
+        ]
       }
     ]
   }

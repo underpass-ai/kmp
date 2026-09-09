@@ -20,10 +20,12 @@ from late_conflict_checks import check as check_late_conflict
 from labels_negation_checks import check as check_labels_negation
 from budget_proof_checks import check as check_budget_proof
 from guide_reads import prepare
+from dimensional_memberships_checks import check as check_dimensions
+from semantic_batch_checks import check as check_batch
 from capability_checks import check as check_capability
 
 ROOT = Path(__file__).resolve().parents[2]
-LESSONS = {'decision-history': check_history, 'alias-ownership': check_alias,
+LESSONS = {'semantic-batch': check_batch, 'dimensional-memberships': check_dimensions, 'decision-history': check_history, 'alias-ownership': check_alias,
            'distributed-incident': check_incident, 'four-clocks': check_clocks,
            'quantities': check_quantities, 'late-conflict': check_late_conflict,
            'labels-negation': check_labels_negation, 'budget-proof': check_budget_proof,
@@ -107,7 +109,7 @@ def run(args):
                     arguments = bind(call['arguments'], saved)
                     result = client.call(call['tool'], arguments, call.get('expect_error'))
                     if call.get('expect_partial'):
-                        pages = (result.get('page', {}), result.get('projection', {}).get('page', {}))
+                        pages = (result.get('page', {}), result.get('projection', {}).get('page', {}), result.get('selection', {}))
                         if not any(page.get('has_more') for page in pages):
                             raise ValueError('Expected an explicitly partial teaching response')
                     else:

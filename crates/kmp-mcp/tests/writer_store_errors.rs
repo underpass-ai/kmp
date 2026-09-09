@@ -49,9 +49,8 @@ async fn summary_pre_read_preserves_the_backend_category_and_never_attempts_inge
         }));
         let request = json!({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{
             "name":"kmp_write_memory","arguments":{
-                "about":"project:error-check","intent":"record_summary","actor":"writer","observed_at":"2026-09-01T09:00:00Z",
-                "scope":{"process":"summary"},
-                "current":{"ref":"project:error-check:entry:source","summary_en":"The cache stores a stable source."}
+                "about":"project:error-check","actor":"writer","observed_at":"2026-09-01T09:00:00Z",
+                "search_summaries":[{"ref":"project:error-check:entry:source","summary_en":"The cache stores a stable source."}]
             }
         }});
         let result = server

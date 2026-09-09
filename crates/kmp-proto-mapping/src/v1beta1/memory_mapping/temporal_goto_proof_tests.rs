@@ -94,12 +94,20 @@ fn goto(
     old_endpoints: bool,
     relations: bool,
 ) -> TemporalMoveResponse {
-    let source_bundle = bundle(old_endpoints);
-    let traversal = TemporalMemoryTraversal::traverse(
-        &source_bundle,
-        &TemporalTraversalRequest::new(TemporalDirection::Goto, cursor).with_axis(axis),
+    read(
+        TemporalTraversalRequest::new(TemporalDirection::Goto, cursor).with_axis(axis),
+        old_endpoints,
+        relations,
     )
-    .expect("traversal");
+}
+
+fn read(
+    request: TemporalTraversalRequest,
+    old_endpoints: bool,
+    relations: bool,
+) -> TemporalMoveResponse {
+    let source_bundle = bundle(old_endpoints);
+    let traversal = TemporalMemoryTraversal::traverse(&source_bundle, &request).expect("traversal");
     temporal_response_from_result(
         ProtoCursor::default(),
         TemporalDirection::Goto,
@@ -185,4 +193,38 @@ fn goto_respects_a_late_relation_even_when_both_endpoints_are_old() {
     let proof = result.proof.expect("proof");
     assert!(proof.superseded.is_empty());
     assert!(!proof.path.iter().any(|edge| edge.rel == "supersedes"));
+}
+
+#[test]
+fn goto_uses_the_stricter_cursor_or_interval_end_for_its_proof() {
+    for (time, end, replaced, as_of) in [
+        (
+            "2026-09-04T12:00:00Z",
+            Some("2026-09-08T00:00:00Z"),
+            false,
+            true,
+        ),
+        (EFFECTIVE, Some(EFFECTIVE), false, false),
+        (EFFECTIVE, Some("2026-09-02T12:00:00Z"), false, false),
+        (EFFECTIVE, None, true, true),
+    ] {
+        let interval =
+            kmp_domain::TemporalInterval::new(Some(INITIAL.into()), end.map(str::to_string))
+                .expect("interval");
+        let request = TemporalTraversalRequest::new(
+            TemporalDirection::Goto,
+            TemporalCursor::time(time).expect("time"),
+        )
+        .with_axis(TemporalAxis::Validity)
+        .with_interval(interval);
+        let proof = read(request, false, true).proof.expect("proof");
+        assert_eq!(
+            !proof.superseded.is_empty(),
+            replaced,
+            "at {time}, end {end:?}"
+        );
+        assert_eq!(proof.as_of.is_some(), as_of);
+        assert_eq!(proof.interval.is_some(), !as_of);
+        assert!(!proof.missing.iter().any(|item| item == "expiry_boundary"));
+    }
 }

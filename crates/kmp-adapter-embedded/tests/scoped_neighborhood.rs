@@ -12,8 +12,8 @@ use kmp_domain::{
 };
 
 const ABOUT: &str = "about:project";
-const TIMELINE: &str = "about:project:dimension:timeline";
-const CONVERSATION: &str = "about:project:dimension:conversation";
+const TIMELINE: &str = "label:v1:project:timeline:timeline";
+const CONVERSATION: &str = "label:v1:project:conversation:conversation";
 
 fn node(node_id: &str, kind: &str) -> ProjectionMutation {
     ProjectionMutation::UpsertNode(NodeProjection {

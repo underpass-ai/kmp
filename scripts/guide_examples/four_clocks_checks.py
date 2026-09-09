@@ -28,8 +28,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert saved[name]['accepted']
         assert read['object']['ref'] == refs[name] and read['object']['kind'] == kind
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
         coords = [link['coordinate'] for link in read['links']['incoming'] if 'coordinate' in link]
         assert coords
         for coord in coords:
@@ -44,13 +44,23 @@ def check(saved, client, authored):
         return {entry['ref'] for entry in saved[name]['entries']}
 
     assert entries('occurred_start') == {refs['permit']}
-    assert entries('occurred_later') == {refs['signature'], refs['receipt']}
-    interval = {entry['ref'] for name in ('occurred_start', 'occurred_later')
-                for entry in saved[name]['entries']
-                if any(clock['occurred'] <= coord['occurred_at'] < clock['day2']
-                       for coord in entry['coordinates'])}
-    assert interval == {refs['permit'], refs['signature']}
+    interval = {refs['permit'], refs['signature']}
+    assert entries('occurred_interval') == interval
+    assert saved['occurred_interval']['temporal']['interval'] == {
+        'start': clock['occurred'], 'end': clock['day2']}
     assert entries('before_end') == interval
+    browse, full = saved['coordinate_browse'], saved['occurred_interval']
+    assert browse['selection']['fields'] == {
+        'included': ['ref', 'kind', 'coordinates'], 'omitted': ['text', 'metadata']}
+    assert browse['proof'] == full['proof']
+    assert browse['raw_refs'] == full['raw_refs']
+    assert len(browse['entries']) == len(full['entries'])
+    for reduced, original in zip(browse['entries'], full['entries']):
+        assert {k: reduced[k] for k in ('ref', 'kind', 'coordinates')} == {
+            k: original[k] for k in ('ref', 'kind', 'coordinates')}
+        assert 'text' not in reduced and 'metadata' not in reduced
+    assert authored['coordinate_detail'] == browse['entries'][0]['detail_action']['arguments']
+    assert saved['coordinate_detail']['entries'] == [full['entries'][0]]
     assert entries('observed_start') == {refs['permit']}
     assert entries('observed_later') == {refs['signature'], refs['receipt']}
     assert entries('ingested_day4') == set(refs.values())
@@ -65,8 +75,8 @@ def check(saved, client, authored):
     assert entries('after_refusal') == set(refs.values())
     edge = next(edge for edge in saved['signature_path']['trace'] if edge['rel'] == 'supports')
     assert (edge['from'], edge['to']) == (refs['signature'], refs['permit'])
-    assert edge['why'] == authored['signature']['connect_to'][0]['why']
-    assert edge['evidence'] == authored['signature']['connect_to'][0]['evidence']
+    assert edge['why'] == authored['signature']['memories'][0]['connect_to'][0]['why']
+    assert edge['evidence'] == authored['signature']['memories'][0]['connect_to'][0]['evidence']
     assert saved['occurred_after_view']['entries'] == saved['occurred_start']['entries']
     assert saved['permit_after_view']['object'] == saved['permit_read']['object']
     stages = [('overview', 'occurred', 'atlas', 'day1', 'day5'),
@@ -84,7 +94,8 @@ def check(saved, client, authored):
     assert saved['view_state']['state']['selection'] == refs['permit']
     return ['three typed source-backed memories', 'actual kernel ingestion on day four',
             'four distinct answers at the same day-two instant', 'exclusive validity expiry',
-            'inclusive goto plus strict forward and excluded end boundary',
+            'direct interval includes the start and excludes the end in both directions',
             'observation and ingestion timelines retain every source', 'writer rejects forged ingestion',
+            'selected coordinates expand to the complete entry with unchanged scope',
             'signature proof survives trace', 'seven explicit viewer clock and zoom stages',
             'view changes neither explicit MCP selection nor stored object']

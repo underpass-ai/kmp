@@ -700,7 +700,7 @@ fn writer_candidate_detail(candidate: &CandidateDraft, entry_ref: &str, entry_ki
 }
 
 fn writer_candidate_role(entry_ref: &str, candidate_ref: &str) -> String {
-    if candidate_ref.contains(":dimension:") {
+    if kmp_domain::MemoryDimensionIdentity::parse(candidate_ref).is_some() {
         return "dimension_scope".to_string();
     }
     let Some(entry) = parse_memoryarena_turn_ref(entry_ref) else {

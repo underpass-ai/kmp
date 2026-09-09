@@ -65,10 +65,20 @@ fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(),
                 continue;
             }
             let known = properties.keys().cloned().collect::<Vec<_>>().join(", ");
-            return Err(ToolError::invalid_argument(format!(
+            let error = ToolError::invalid_argument(format!(
                 "`{path}` has no argument `{key}`. This call would otherwise have been answered \
                  with that argument silently dropped. Accepted here: {known}."
-            )));
+            ));
+            return Err(if path.starts_with("kmp_write_memory") {
+                error.with_feedback(serde_json::json!({
+                    "code": "UNKNOWN_ARGUMENT", "severity": "error",
+                    "field": format!("{}.{}", path.strip_prefix("kmp_write_memory.").unwrap_or_default(), key).trim_start_matches('.'),
+                    "reason": "This field is not part of the native writer contract; remove it or use a declared field.",
+                    "action": null
+                }))
+            } else {
+                error
+            });
         }
     }
 
@@ -79,8 +89,8 @@ fn check_against_schema(schema: &Value, value: &Value, path: &str) -> Result<(),
         let nested_path = format!("{path}.{key}");
         check_against_schema(nested_schema, nested, &nested_path)?;
         if let (Some(items), Some(array)) = (nested_schema.get("items"), nested.as_array()) {
-            for entry in array {
-                check_against_schema(items, entry, &nested_path)?;
+            for (index, entry) in array.iter().enumerate() {
+                check_against_schema(items, entry, &format!("{nested_path}[{index}]"))?;
             }
         }
     }

@@ -181,20 +181,16 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("process scope is required");
 
-        assert_eq!(error, "missing required argument `scope.process`");
+        assert_eq!(error.message, "missing required argument `scope.process`");
     }
 
     #[test]
-    fn rejects_scope_ids_reused_across_dimensions_before_ingest() {
+    fn scope_values_can_be_reused_across_dimensions() {
         let mut request = sample_write_request();
         request["scope"]["task"] = json!("incident:mobile-login:resolution");
-
-        let error = build_write_plan(&request).expect_err("scope ids must be distinct");
-
-        assert_eq!(
-            error,
-            "scope.process and scope.task reuse `incident:mobile-login:resolution`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds"
-        );
+        let plan = build_write_plan(&request).expect("same value, different keys");
+        let dimensions = &plan.ingest_arguments["memory"]["dimensions"];
+        assert_ne!(dimensions[0]["id"], dimensions[1]["id"]);
     }
 
     #[test]
@@ -223,7 +219,10 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("relation evidence is required");
 
-        assert_eq!(error, "missing required argument `connect_to[0].evidence`");
+        assert_eq!(
+            error.message,
+            "missing required argument `connect_to[0].evidence`"
+        );
     }
 
     #[test]
@@ -237,7 +236,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("strict write requires a relation");
 
         assert_eq!(
-            error,
+            error.message,
             "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
         );
     }
@@ -272,7 +271,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("rich relation requires prior read");
 
         assert_eq!(
-            error,
+            error.message,
             "strict kmp_write_memory rich relation `chosen_because` to `incident:mobile-login:observation:401-refresh-race` requires read_context evidence; inspect, trace, or traverse the target first, or use an explicit anemic fallback"
         );
     }
@@ -287,7 +286,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("self-loop should fail");
 
         assert_eq!(
-            error,
+            error.message,
             "kmp_write_memory relation `chosen_because` cannot point from and to the same ref `incident:mobile-login:entry:decision:self`"
         );
     }
@@ -348,7 +347,7 @@ pub(crate) mod tests {
         let error = build_write_plan(&request).expect_err("vague relation should fail");
 
         assert_eq!(
-            error,
+            error.message,
             "unsupported or vague kmp_write_memory relation `related_to`"
         );
     }
@@ -390,8 +389,8 @@ pub(crate) mod tests {
             json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
 
         let error = build_write_plan(&request).expect_err("no rendering, no strict write");
-        assert!(error.contains("requires current.summary_en"), "{error}");
-        assert!(error.contains("leans to spanish"), "{error}");
+        assert!(error.message.contains("requires summary_en"), "{error}");
+        assert!(error.message.contains("leans to spanish"), "{error}");
 
         request["current"]["summary_en"] =
             json!("The v0.7.0 launch was postponed because the auditors had not signed off.");
@@ -418,9 +417,11 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("a dropped identifier is refused");
 
-        assert!(error.contains("refuses current.summary_en"), "{error}");
+        assert!(error.message.contains("refuses summary_en"), "{error}");
         assert!(
-            error.contains("drops identifiers the text carries: v0.7.0"),
+            error
+                .message
+                .contains("drops identifiers the text carries: v0.7.0"),
             "{error}"
         );
     }
@@ -513,82 +514,5 @@ pub(crate) mod tests {
                 "strict": true
             }
         })
-    }
-
-    fn cross_about_request() -> Value {
-        let mut request = sample_write_request();
-        // A declaration of identity carries no delta of its own: the delta
-        // relation would point at the other about too, and only the
-        // equivalence may.
-        request
-            .as_object_mut()
-            .expect("request object")
-            .remove("semantic_delta");
-        request["connect_to"] = json!([{
-            "ref": "incident:platform:outcome:freeze",
-            "rel": "same_event_as",
-            "class": "evidential",
-            "why": "Both record the same freeze.",
-            "evidence": "kmp_relate proposal by identifier.",
-            "confidence": "high"
-        }]);
-        request["read_context"] = json!({
-            "relate_proposals": [{
-                "from": "incident:mobile-login:observation:401-refresh-race",
-                "to": "incident:platform:outcome:freeze",
-                "proposed_by": ["identifier", "entity"]
-            }]
-        });
-        request["options"] = json!({"dry_run": true, "strict": true});
-        request
-    }
-
-    /// The one relation that crosses an about: declared from a proposal,
-    /// stamped with it, its evidence claiming only what this about owns.
-    #[test]
-    fn an_equivalence_to_another_about_is_declared_from_its_proposal() {
-        let plan = build_write_plan_with_root(&cross_about_request(), false)
-            .expect("a declared equivalence is accepted");
-        let relation = &plan.ingest_arguments["memory"]["relations"][0];
-        assert_eq!(relation["rel"], "same_event_as");
-        assert_eq!(relation["to"], "incident:platform:outcome:freeze");
-        assert_eq!(relation["method"], "kmp_relate:identifier+entity");
-        let evidence = &plan.ingest_arguments["memory"]["evidence"][0];
-        assert_eq!(
-            evidence["supports"].as_array().map(Vec::len),
-            Some(1),
-            "the evidence node claims this about's entry, not the other about's: {evidence}"
-        );
-        assert_eq!(plan.relation_quality[0]["crosses_about"], true);
-        assert_eq!(
-            plan.relation_quality[0]["prior_context_sources"],
-            json!(["kmp_relate"])
-        );
-    }
-
-    #[test]
-    fn any_other_relation_across_abouts_and_an_unproven_equivalence_are_refused() {
-        let mut follows = cross_about_request();
-        follows["connect_to"][0]["rel"] = json!("follows");
-        follows["connect_to"][0]["class"] = json!("procedural");
-        let error =
-            build_write_plan_with_root(&follows, false).expect_err("no other relation crosses");
-        assert!(
-            error.contains("only with `same_event_as` or `same_entity_as`"),
-            "{error}"
-        );
-
-        let mut unproven = cross_about_request();
-        unproven["read_context"] = json!({"inspected_refs": ["incident:platform:outcome:freeze"]});
-        let error = build_write_plan_with_root(&unproven, false)
-            .expect_err("an inspection is not a proposal");
-        assert!(error.contains("read_context.relate_proposals"), "{error}");
-
-        let mut foreign_pair = cross_about_request();
-        foreign_pair["read_context"]["relate_proposals"][0]["from"] =
-            json!("incident:other:entry:x");
-        let error = build_write_plan_with_root(&foreign_pair, false)
-            .expect_err("one ref of the proposal must be this about's");
-        assert!(error.contains("read_context.relate_proposals"), "{error}");
     }
 }

@@ -33,8 +33,8 @@ and `event=EVT-17-R` names its recovery. Matching incident labels do not make
 these events identical. `atlas-incident-review` names this authored process.
 
 S1 and S4 are observations; S2 is a successful rollback path; S3 is a failed
-deployment path. All use `record_observation` as the writing intent. Intent,
-memory kind, relation and relation class are separate choices. S3 uses
+deployment path. Each record declares its memory kind; relation
+and relation class describe its links to other records. S3 uses
 `uses_background` toward S2 because its source explicitly compares them;
 it does not say the recovery is the failure or a requirement. In particular,
 `checked_against` belongs to the constraint class in the live vocabulary and
@@ -76,24 +76,30 @@ the missing-about assumption. Every logical write has its own idempotency key.
   "save_as": "outage",
   "arguments": {
     "about": "example:guide:incident-support",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:outage:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-F"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:05:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "At 09:00 UTC on September 1, INC-17 event EVT-17-F stopped checkout in Atlas.",
-      "evidence": "At 09:00 UTC on September 1, INC-17 event EVT-17-F stopped checkout in Atlas."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "At 09:00 UTC on September 1, INC-17 event EVT-17-F stopped checkout in Atlas.",
+        "evidence": "At 09:00 UTC on September 1, INC-17 event EVT-17-F stopped checkout in Atlas."
+      }
+    ]
   }
 }
 ```
@@ -118,24 +124,30 @@ the missing-about assumption. Every logical write has its own idempotency key.
   "save_as": "recovery",
   "arguments": {
     "about": "example:guide:incident-project",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:recovery:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-R"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-R"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:30:00Z",
     "observed_at": "2026-09-01T09:35:00Z",
-    "current": {
-      "kind": "success_path",
-      "summary": "Rollback of rel-17 restored Atlas checkout at 09:30 UTC on September 1. This recovery is event EVT-17-R within INC-17.",
-      "evidence": "Rollback of rel-17 restored Atlas checkout at 09:30 UTC on September 1. This recovery is event EVT-17-R within INC-17."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "success_path",
+        "summary": "Rollback of rel-17 restored Atlas checkout at 09:30 UTC on September 1. This recovery is event EVT-17-R within INC-17.",
+        "evidence": "Rollback of rel-17 restored Atlas checkout at 09:30 UTC on September 1. This recovery is event EVT-17-R within INC-17."
+      }
+    ]
   }
 }
 ```
@@ -231,37 +243,43 @@ A compact wake does not include the full proof; the targeted inspections do.
   "save_as": "audit",
   "arguments": {
     "about": "example:guide:incident-project",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:audit:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-F"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:00:00Z",
-    "current": {
-      "kind": "error_path",
-      "summary": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R.",
-      "evidence": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R."
-    },
     "read_context": {
       "inspected_refs": [
         "${recovery.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${recovery.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The audit explicitly compares the failed deployment with the separately recorded recovery; comparison does not identify the two events.",
-        "evidence": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R."
+        "id": "current",
+        "kind": "error_path",
+        "summary": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R.",
+        "evidence": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R.",
+        "connect_to": [
+          {
+            "ref": "${recovery.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The audit explicitly compares the failed deployment with the separately recorded recovery; comparison does not identify the two events.",
+            "evidence": "The deployment of rel-17 exhausted Atlas database connections at 09:00 UTC on September 1: outage EVT-17-F in INC-17. The audit compared it with recovery EVT-17-R."
+          }
+        ]
       }
     ]
   }
@@ -425,46 +443,52 @@ fails before ingest; it does not add a fifth memory or change either report.
   "save_as": "missing_proposal",
   "arguments": {
     "about": "example:guide:incident-support",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:missing-proposal:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-F"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
-      "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-    },
     "read_context": {
       "inspected_refs": [
         "${outage.generated_refs.0}",
         "${audit.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${audit.generated_refs.0}",
-        "rel": "same_event_as",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-      },
-      {
-        "ref": "${outage.generated_refs.0}",
-        "rel": "restates",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+        "id": "current",
+        "kind": "observation",
+        "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "connect_to": [
+          {
+            "ref": "${audit.generated_refs.0}",
+            "rel": "same_event_as",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          },
+          {
+            "ref": "${outage.generated_refs.0}",
+            "rel": "restates",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          }
+        ]
       }
     ]
   },
@@ -482,24 +506,22 @@ Only the permitted equivalences cross this boundary through the writer.
   "save_as": "unsupported_cross_link",
   "arguments": {
     "about": "example:guide:incident-support",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:unsupported-cross-link:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-F"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
-      "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-    },
     "read_context": {
       "inspected_refs": [
         "${outage.generated_refs.0}",
@@ -513,22 +535,30 @@ Only the permitted equivalences cross this boundary through the writer.
         }
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${audit.generated_refs.0}",
-        "rel": "follows",
-        "class": "procedural",
-        "confidence": "high",
-        "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-      },
-      {
-        "ref": "${outage.generated_refs.0}",
-        "rel": "restates",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+        "id": "current",
+        "kind": "observation",
+        "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "connect_to": [
+          {
+            "ref": "${audit.generated_refs.0}",
+            "rel": "follows",
+            "class": "procedural",
+            "confidence": "high",
+            "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          },
+          {
+            "ref": "${outage.generated_refs.0}",
+            "rel": "restates",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          }
+        ]
       }
     ]
   },
@@ -554,24 +584,22 @@ is filled with a matching score as a substitute for the source.
   "save_as": "identity",
   "arguments": {
     "about": "example:guide:incident-support",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-distributed:identity:v1",
-    "scope": {
-      "process": "atlas-incident-review"
-    },
     "labels": {
-      "incident": "INC-17",
-      "event": "EVT-17-F"
+      "incident": [
+        "INC-17"
+      ],
+      "event": [
+        "EVT-17-F"
+      ],
+      "agentic_process": [
+        "atlas-incident-review"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-02T08:30:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
-      "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-    },
     "read_context": {
       "inspected_refs": [
         "${outage.generated_refs.0}",
@@ -585,22 +613,30 @@ is filled with a matching score as a substitute for the source.
         }
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${audit.generated_refs.0}",
-        "rel": "same_event_as",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
-      },
-      {
-        "ref": "${outage.generated_refs.0}",
-        "rel": "restates",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
-        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+        "id": "current",
+        "kind": "observation",
+        "summary": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event.",
+        "connect_to": [
+          {
+            "ref": "${audit.generated_refs.0}",
+            "rel": "same_event_as",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The reconciliation explicitly identifies support and audit as reports of outage EVT-17-F; it distinguishes recovery EVT-17-R.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          },
+          {
+            "ref": "${outage.generated_refs.0}",
+            "rel": "restates",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "This new support entry restates the original outage report with the now-confirmed cross-team identity; it does not replace that source.",
+            "evidence": "The support report and deployment audit identify the same outage EVT-17-F in INC-17. Recovery EVT-17-R is a separate, later event."
+          }
+        ]
       }
     ]
   }

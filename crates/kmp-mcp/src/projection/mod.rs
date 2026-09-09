@@ -6,6 +6,7 @@ pub(crate) mod ingest_projection;
 pub(crate) mod inspect_budget;
 pub(crate) mod inspect_projection;
 mod recall_budget_audit;
+pub(crate) mod recall_error;
 pub(crate) mod recall_projection;
 pub(crate) mod relabel_projection;
 pub(crate) mod relate_projection;
@@ -13,13 +14,14 @@ pub(crate) mod relation_cursor;
 pub(crate) mod relation_page_budget;
 mod rendering;
 mod serialized_size;
+mod temporal_entry_projection;
+mod temporal_page;
 pub(crate) mod temporal_projection;
 mod test_support;
 pub(crate) mod trace_projection;
 pub(crate) mod visual_projection;
-mod wording;
 
-pub(crate) use ingest_projection::{dry_run_ingest_from_plan, ingest_from_response};
+pub(crate) use ingest_projection::ingest_from_response;
 pub(crate) use inspect_budget::enforce_inspect_output_budget;
 pub(crate) use inspect_projection::inspect_from_response;
 #[cfg(test)]

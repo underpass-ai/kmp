@@ -24,7 +24,7 @@ async fn empty_bundle_is_rejected() {
 #[tokio::test]
 async fn unknown_bundle_format_is_rejected() {
     expect_import_error(
-        r#"{"bundle_format":99,"store_format":1,"event_count":0,"kernel_version":"x"}"#,
+        r#"{"bundle_format":99,"event_format":2,"event_count":0,"kernel_version":"x"}"#,
         "bundle format 99",
     )
     .await;
@@ -33,7 +33,7 @@ async fn unknown_bundle_format_is_rejected() {
 #[tokio::test]
 async fn mismatched_event_format_is_rejected() {
     expect_import_error(
-        r#"{"bundle_format":1,"store_format":99,"event_count":0,"kernel_version":"x"}"#,
+        r#"{"bundle_format":3,"event_format":99,"event_count":0,"kernel_version":"x"}"#,
         "event format 99",
     )
     .await;
@@ -42,7 +42,7 @@ async fn mismatched_event_format_is_rejected() {
 #[tokio::test]
 async fn wrong_event_count_is_rejected() {
     expect_import_error(
-        r#"{"bundle_format":1,"store_format":1,"event_count":3,"kernel_version":"x"}"#,
+        r#"{"bundle_format":3,"event_format":2,"event_count":3,"kernel_version":"x"}"#,
         "declares 3 events but 0",
     )
     .await;
@@ -51,7 +51,7 @@ async fn wrong_event_count_is_rejected() {
 #[tokio::test]
 async fn corrupt_event_line_is_rejected() {
     let bundle = concat!(
-        r#"{"bundle_format":1,"store_format":1,"event_count":1,"kernel_version":"x"}"#,
+        r#"{"bundle_format":3,"event_format":2,"event_count":1,"kernel_version":"x"}"#,
         "\n",
         "not-json"
     );

@@ -14,6 +14,7 @@ pub(super) fn method_name(direction: &str) -> &'static str {
 
 pub(super) fn goto_request_from_temporal(request: TemporalMoveRequest) -> GotoRequest {
     GotoRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -27,6 +28,7 @@ pub(super) fn goto_request_from_temporal(request: TemporalMoveRequest) -> GotoRe
 
 pub(super) fn rewind_request_from_temporal(request: TemporalMoveRequest) -> RewindRequest {
     RewindRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -40,6 +42,7 @@ pub(super) fn rewind_request_from_temporal(request: TemporalMoveRequest) -> Rewi
 
 pub(super) fn forward_request_from_temporal(request: TemporalMoveRequest) -> ForwardRequest {
     ForwardRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -53,6 +56,7 @@ pub(super) fn forward_request_from_temporal(request: TemporalMoveRequest) -> For
 
 pub(super) fn near_request_from_temporal(request: TemporalNearRequest) -> NearRequest {
     NearRequest {
+        interval: request.interval,
         about: request.about,
         around: request.around,
         dimensions: request.dimensions,

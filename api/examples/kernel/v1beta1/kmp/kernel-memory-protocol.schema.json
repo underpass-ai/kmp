@@ -609,7 +609,7 @@
           "items": {
             "$ref": "#/$defs/non_empty_string"
           },
-          "description": "Exact dimension scope ids to include. Values may be local dimension ids or namespaced about:<about>:dimension:<dimension_id> ids."
+          "description": "Exact label refs or bare values to include. Combine bare values with a dimension key to select a facet."
         }
       }
     },
@@ -1115,17 +1115,6 @@
         }
       }
     },
-    "writer_intent": {
-      "type": "string",
-      "enum": [
-        "record_turn",
-        "record_observation",
-        "record_decision",
-        "record_feedback",
-        "record_delta",
-        "record_summary"
-      ]
-    },
     "writer_node_kind": {
       "type": "string",
       "enum": [
@@ -1177,122 +1166,6 @@
         "scoped_to"
       ]
     },
-    "write_scope": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "process"
-      ],
-      "properties": {
-        "task": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "process": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "episode": {
-          "$ref": "#/$defs/non_empty_string"
-        }
-      }
-    },
-    "current_write_entry": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "kind",
-        "summary"
-      ],
-      "properties": {
-        "ref": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "kind": {
-          "$ref": "#/$defs/writer_node_kind"
-        },
-        "summary": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "summary_en": {
-          "$ref": "#/$defs/non_empty_string",
-          "description": "English rendering of summary for search: searched by kmp_ask and never cited. Strict writes require it when summary is not written in English and refuse one that fails the kernel's lint."
-        },
-        "evidence": {
-          "$ref": "#/$defs/non_empty_string"
-        }
-      }
-    },
-    "semantic_delta_write": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "from",
-        "to",
-        "why",
-        "evidence"
-      ],
-      "properties": {
-        "ref": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "from": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "to": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "why": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "evidence": {
-          "$ref": "#/$defs/non_empty_string"
-        }
-      }
-    },
-    "write_link": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "ref",
-        "rel",
-        "class"
-      ],
-      "properties": {
-        "ref": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "rel": {
-          "$ref": "#/$defs/writer_relation_name"
-        },
-        "class": {
-          "$ref": "#/$defs/semantic_class"
-        },
-        "why": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "evidence": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "confidence": {
-          "$ref": "#/$defs/confidence"
-        }
-      }
-    },
-    "write_options": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "dry_run": {
-          "type": "boolean"
-        },
-        "strict": {
-          "type": "boolean"
-        },
-        "sequence": {
-          "type": "integer",
-          "minimum": 1
-        }
-      }
-    },
     "trace_path_read_context": {
       "type": "object",
       "additionalProperties": false,
@@ -1311,48 +1184,6 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/non_empty_string"
-          }
-        }
-      }
-    },
-    "write_read_context": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "inspected_refs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/non_empty_string"
-          }
-        },
-        "temporal_refs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/non_empty_string"
-          }
-        },
-        "wake_refs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/non_empty_string"
-          }
-        },
-        "ask_refs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/non_empty_string"
-          }
-        },
-        "trace_paths": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/trace_path_read_context"
-          }
-        },
-        "relate_proposals": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/relate_proposal_read_context"
           }
         }
       }
@@ -1535,127 +1366,629 @@
       }
     },
     "write_memory_request": {
-      "type": "object",
       "additionalProperties": false,
-      "required": [
-        "about",
-        "intent",
-        "actor",
-        "observed_at",
-        "scope",
-        "current",
-        "connect_to"
-      ],
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "labels"
+              ]
+            },
+            {
+              "required": [
+                "occurred_at"
+              ]
+            },
+            {
+              "required": [
+                "valid_from"
+              ]
+            },
+            {
+              "required": [
+                "valid_until"
+              ]
+            },
+            {
+              "required": [
+                "rank"
+              ]
+            },
+            {
+              "required": [
+                "read_context"
+              ]
+            }
+          ]
+        },
+        "properties": {
+          "options": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "sequence"
+                  ]
+                },
+                {
+                  "required": [
+                    "labels_new"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "search_summaries"
+        ]
+      },
+      "if": {
+        "required": [
+          "memories"
+        ]
+      },
       "properties": {
         "about": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "intent": {
-          "$ref": "#/$defs/writer_intent"
+          "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
+          "minLength": 1,
+          "type": "string"
         },
         "actor": {
-          "$ref": "#/$defs/non_empty_string"
+          "description": "Human, agent or component producing the write.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "idempotency_key": {
+          "description": "One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+          "type": "object"
+        },
+        "memories": {
+          "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "connect_to": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "class": {
+                      "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                      "enum": [
+                        "structural",
+                        "causal",
+                        "motivational",
+                        "procedural",
+                        "evidential",
+                        "constraint"
+                      ],
+                      "type": "string"
+                    },
+                    "confidence": {
+                      "enum": [
+                        "high",
+                        "medium",
+                        "low",
+                        "unknown"
+                      ],
+                      "type": "string"
+                    },
+                    "evidence": {
+                      "description": "The concrete observation or source supporting the relation rationale. Required for non-structural links.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "ref": {
+                      "description": "@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "rel": {
+                      "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                      "enum": [
+                        "follows",
+                        "answers",
+                        "uses_background",
+                        "depends_on",
+                        "chosen_because",
+                        "triggers",
+                        "authorizes",
+                        "verified_by",
+                        "semantic_delta_from",
+                        "updates_state",
+                        "supports",
+                        "supersedes",
+                        "contradicts",
+                        "satisfies_constraint",
+                        "violates_constraint",
+                        "contributes_to",
+                        "excluded_from",
+                        "checked_against",
+                        "derived_from",
+                        "confirms_selection",
+                        "restates",
+                        "corrects",
+                        "component_of",
+                        "total_of",
+                        "same_event_as",
+                        "same_entity_as",
+                        "qualifies_as",
+                        "matches_requirement",
+                        "contains",
+                        "member_of",
+                        "scoped_to"
+                      ],
+                      "type": "string"
+                    },
+                    "why": {
+                      "description": "Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links.",
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ref",
+                    "rel",
+                    "class"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "evidence": {
+                "description": "Concrete source or observation supporting this memory. Required unless options.strict is explicitly false.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "id": {
+                "description": "Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address.",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+                "type": "string"
+              },
+              "kind": {
+                "description": "What this memory records. No separate writer intent is needed.",
+                "enum": [
+                  "turn",
+                  "observation",
+                  "decision",
+                  "feedback",
+                  "semantic_delta",
+                  "constraint",
+                  "preference",
+                  "derived_value",
+                  "error_path",
+                  "success_path"
+                ],
+                "type": "string"
+              },
+              "labels": {
+                "additionalProperties": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "minItems": 1,
+                  "type": "array",
+                  "uniqueItems": true
+                },
+                "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+                "type": "object"
+              },
+              "observed_at": {
+                "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "occurred_at": {
+                "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "rank": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "ref": {
+                "description": "Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary": {
+                "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary_en": {
+                "description": "Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "valid_from": {
+                "description": "Inclusive start of the recorded state's validity.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "valid_until": {
+                "description": "Exclusive end of the recorded state's validity.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "summary"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
         },
         "observed_at": {
-          "$ref": "#/$defs/date_time"
+          "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "occurred_at": {
+          "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "options": {
+          "additionalProperties": false,
+          "properties": {
+            "dry_run": {
+              "description": "Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend.",
+              "type": "boolean"
+            },
+            "labels_new": {
+              "description": "Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "sequence": {
+              "description": "Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates.",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "strict": {
+              "description": "Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed.",
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "rank": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "read_context": {
+          "additionalProperties": false,
+          "description": "Caller-supplied audit of which stored refs were read before choosing a relation. Strict validation checks that rich relation targets occur here; KMP cannot prove that a caller actually read them, so prior_context_observed is an asserted audit fact rather than a server observation.",
+          "properties": {
+            "ask_refs": {
+              "items": {
+                "description": "Memory ref observed in deterministic kmp_ask proof/evidence before writing.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "inspected_refs": {
+              "items": {
+                "description": "Memory ref inspected with kmp_inspect before writing.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "relate_proposals": {
+              "description": "Proposals kmp_relate returned, handed back as they came: the proof a writer carries when it declares an equivalence to a ref of another about.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "description": "The proposal's `from`, as kmp_relate returned it.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "proposed_by": {
+                    "items": {
+                      "enum": [
+                        "identifier",
+                        "summary",
+                        "entity"
+                      ],
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "to": {
+                    "description": "The proposal's `to`, as kmp_relate returned it.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to",
+                  "proposed_by"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "temporal_refs": {
+              "items": {
+                "description": "Memory ref observed through kmp_goto, kmp_near, kmp_rewind, or kmp_forward before writing.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "trace_paths": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "from": {
+                    "description": "Trace source ref observed before writing.",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "refs": {
+                    "items": {
+                      "description": "Optional intermediate ref observed in the trace path.",
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "to": {
+                    "description": "Trace target ref observed before writing.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "wake_refs": {
+              "items": {
+                "description": "Memory ref observed in a kmp_wake packet before writing.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "search_summaries": {
+          "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "ref": {
+                "description": "Existing memory in this about. The stored source is not replaced.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "summary_en": {
+                "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "ref",
+              "summary_en"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
         },
         "source_kind": {
-          "type": "string",
           "enum": [
             "human",
             "agent",
             "projection",
             "derived"
+          ],
+          "type": "string"
+        },
+        "valid_from": {
+          "description": "Inclusive start of the recorded state's validity.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "valid_until": {
+          "description": "Exclusive end of the recorded state's validity.",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "about",
+        "actor",
+        "observed_at"
+      ],
+      "then": {
+        "if": {
+          "not": {
+            "properties": {
+              "options": {
+                "properties": {
+                  "strict": {
+                    "const": false
+                  }
+                },
+                "required": [
+                  "strict"
+                ]
+              }
+            },
+            "required": [
+              "options"
+            ]
+          }
+        },
+        "not": {
+          "required": [
+            "search_summaries"
           ]
         },
-        "scope": {
-          "$ref": "#/$defs/write_scope"
-        },
-        "current": {
-          "$ref": "#/$defs/current_write_entry"
-        },
-        "semantic_delta": {
-          "$ref": "#/$defs/semantic_delta_write"
-        },
-        "connect_to": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/write_link"
+        "then": {
+          "properties": {
+            "memories": {
+              "items": {
+                "required": [
+                  "evidence"
+                ]
+              }
+            }
           }
-        },
-        "read_context": {
-          "$ref": "#/$defs/write_read_context"
-        },
-        "idempotency_key": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "options": {
-          "$ref": "#/$defs/write_options"
         }
-      }
+      },
+      "type": "object"
     },
     "write_memory_response": {
-      "type": "object",
       "additionalProperties": false,
-      "required": [
-        "accepted",
-        "dry_run",
-        "summary",
-        "generated_refs",
-        "relations",
-        "relation_quality",
-        "relation_quality_metrics",
-        "diagnostics",
-        "next_suggested_reads"
-      ],
       "properties": {
         "accepted": {
+          "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
           "type": "boolean"
-        },
-        "dry_run": {
-          "type": "boolean"
-        },
-        "summary": {
-          "$ref": "#/$defs/non_empty_string"
-        },
-        "generated_refs": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/non_empty_string"
-          }
-        },
-        "relations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/writer_relation_name"
-          }
-        },
-        "relation_quality": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/relation_quality"
-          }
-        },
-        "relation_quality_metrics": {
-          "$ref": "#/$defs/relation_quality_metrics"
-        },
-        "ingest_preview": {
-          "$ref": "#/$defs/ingest_request"
-        },
-        "ingest_result": {
-          "$ref": "#/$defs/ingest_response"
         },
         "diagnostics": {
-          "$ref": "#/$defs/warning_list"
+          "description": "Planner diagnostics that qualify the write.",
+          "type": "array"
+        },
+        "dry_run": {
+          "description": "Whether this response is a validated preview that wrote nothing.",
+          "type": "boolean"
+        },
+        "generated_refs": {
+          "description": "Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ingest_preview": {
+          "description": "Canonical kmp_ingest arguments. Present only on dry-run.",
+          "type": "object"
+        },
+        "ingest_result": {
+          "description": "Canonical kmp_ingest result. Present only after a committed write.",
+          "type": "object"
+        },
+        "labels": {
+          "additionalProperties": false,
+          "properties": {
+            "created": {
+              "description": "Of those, the labels the about did not hold before this write. Present only after a committed write; vocabulary grows here, so read it.",
+              "type": "array"
+            },
+            "resembling": {
+              "description": "After a committed non-strict write: the labels written that resemble one the about already held, each with `key`, `value`, `existing_key`, `existing_value`, `kind` and `why`. Under strict such a write is refused instead, naming both labels, unless `options.labels_new` insists.",
+              "type": "array"
+            },
+            "written": {
+              "description": "The labels this write carries, each `key` and `value`, in the order their coordinates were emitted.",
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "local_refs": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence.",
+          "type": "object"
         },
         "next_suggested_reads": {
-          "type": "array",
+          "description": "Concrete refs worth reading next to verify or continue the write.",
           "items": {
-            "$ref": "#/$defs/suggested_read"
-          }
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "relation_quality": {
+          "description": "Per-relation validation, including rich/anemic quality and prior-context evidence.",
+          "type": "array"
+        },
+        "relation_quality_metrics": {
+          "description": "Aggregate counts and prior-context coverage for the compiled relations.",
+          "type": "object"
+        },
+        "relations": {
+          "description": "Typed relation names compiled into the canonical ingest.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "summary": {
+          "description": "Counts and scope of the semantic write the planner prepared.",
+          "type": "string"
+        },
+        "validation": {
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "description": "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "viewer": {
+          "additionalProperties": false,
+          "properties": {
+            "tell_the_user": {
+              "description": "One-time handoff text for the human; it is not another kernel instruction.",
+              "type": "string"
+            },
+            "url": {
+              "description": "Loopback, read-only viewer URL carrying this session's capability.",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "warnings": {
+          "description": "Store validation notices returned with a preview.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
-      }
+      },
+      "type": "object"
     },
     "ingest_request": {
       "type": "object",

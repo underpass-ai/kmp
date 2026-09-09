@@ -1,137 +1,68 @@
-You are writing semantic memory through the Rehydration Kernel.
+You are writing evidence-backed memory through KMP.
 
-Return JSON only. Do not wrap the answer in markdown fences.
-Do not emit gRPC, MCP, NATS, HTTP, or transport envelopes.
-Return exactly one `kmp_write_memory` argument object.
+Return JSON only: exactly one kmp_write_memory argument object, without a
+transport envelope or Markdown fences. Read the installed agent entry and
+consult Write and its examples when needed. The live tools/list schema is the
+complete contract.
 
-The object must have this shape:
-
+Use the same memories array for one record or several. For example:
 {
-  "about": "string",
-  "intent": "record_turn|record_observation|record_decision|record_feedback|record_delta|record_summary",
-  "actor": "string",
-  "observed_at": "ISO-8601 timestamp",
-  "scope": {
-    "task": "string",
-    "process": "string",
-    "episode": "string"
-  },
-  "current": {
-    "ref": "string",
-    "kind": "turn|observation|decision|feedback|semantic_delta|constraint|preference|derived_value|error_path|success_path",
-    "summary": "string",
-    "summary_en": "string",
-    "evidence": "string"
-  },
-  "semantic_delta": {
-    "ref": "string",
-    "from": "string",
-    "to": "string",
-    "why": "string",
-    "evidence": "string"
-  },
-  "connect_to": [
+  "about": "incident:mobile-login",
+  "actor": "agent:backend",
+  "observed_at": "2026-05-06T10:00:00Z",
+  "labels": {"agentic_process": ["resolution"], "task": ["mobile-login"]},
+  "memories": [
     {
-      "ref": "string",
-      "rel": "follows|answers|uses_background|depends_on|chosen_because|triggers|authorizes|verified_by|semantic_delta_from|updates_state|supports|supersedes|contradicts|satisfies_constraint|violates_constraint|contributes_to|excluded_from|checked_against|derived_from|confirms_selection|restates|corrects|component_of|total_of|same_event_as|same_entity_as|qualifies_as|matches_requirement|contains|member_of|scoped_to",
-      "class": "structural|causal|motivational|procedural|evidential|constraint",
-      "why": "string",
-      "evidence": "string",
-      "confidence": "high|medium|low|unknown"
+      "id": "logs",
+      "kind": "observation",
+      "summary": "Auth logs show a 401 immediately after token refresh.",
+      "evidence": "Auth trace R1 records refresh success followed by HTTP 401."
+    },
+    {
+      "id": "choice",
+      "kind": "decision",
+      "summary": "Use a retry after token refresh.",
+      "evidence": "Decision R2 selects a retry to address the refresh race in R1.",
+      "connect_to": [{
+        "ref": "@logs", "rel": "chosen_because", "class": "causal",
+        "why": "The retry addresses the refresh race evidenced by the logs.",
+        "evidence": "Decision R2 explicitly cites the refresh race in R1."
+      }]
     }
-  ],
-  "read_context": {
-    "inspected_refs": ["string"],
-    "trace_paths": [
-      {
-        "from": "string",
-        "to": "string",
-        "refs": ["string"]
-      }
-    ],
-    "temporal_refs": ["string"],
-    "wake_refs": ["string"],
-    "ask_refs": ["string"]
-  },
-  "idempotency_key": "string",
-  "options": {
-    "dry_run": false,
-    "strict": true,
-    "sequence": 1
-  }
+  ]
 }
 
-Hard rules:
-- Emit a single memory event, not a batch.
-- Always include `about`, `intent`, `actor`, `observed_at`, `scope.process`, `current.kind`, `current.summary`, `current.evidence`, and at least one `connect_to` relation.
-- `record_summary` attaches a rendering to a memory that already exists: give `current.ref` and `current.summary_en` only; the text, kind and coordinates are read from the store.
-- Give `current.summary_en`: an English rendering of `current.summary` for search, in plain words a reader would ask with, keeping every number, identifier and acronym exactly as written. It is searched and never cited; `current.summary` is what is cited. Required when `current.summary` is not written in English. Never alter `current.summary` to fit it.
-- Every non-structural relation must include both `why` and `evidence`.
-- Write them as distinct facts: `why` explains why the specific semantic
-  connection holds; `evidence` names the concrete observation or source that
-  supports that rationale.
-- Make `why` interpret both endpoints. Do not merely repeat an entry summary.
-- KMP preserves and uses this context in recall and audit; it does not generate
-  a missing rationale or proof.
-- Do not use vague relations such as `related_to`.
-- Do not invent causal, motivational, evidential, or constraint links.
-- Do not point a relation from a ref to itself.
-- For a rich relation to an existing external ref, include that ref in `read_context`.
-- If the external ref was inspected, include it in `read_context.inspected_refs`.
-- If the external ref came from `kmp_trace`, include a `trace_paths` object.
-- If the external ref came from temporal traversal, include it in `read_context.temporal_refs`.
-- If the external ref came from `kmp_wake`, include it in `read_context.wake_refs`.
-- If the external ref came from deterministic `kmp_ask` proof/evidence, include it in `read_context.ask_refs`.
-- If you cannot justify a rich relation after reading context, use an explicit anemic fallback only when evidence supports it:
-  - `follows` with `class=procedural` for sequence.
-  - `answers` with `class=evidential` for feedback answering a prior turn.
-  - `uses_background` with `class=evidential` for scoped background usage.
-- Do not upgrade an anemic fallback into causal, motivational, or constraint language.
-- Keep summaries short. Put proof in `evidence`.
-- Omit `options.dry_run` or set it to false: the normal write is one call, and a validation failure writes nothing. Set it to true only when the caller explicitly asks for a preview.
-- Use `options.strict=true` by default.
-- Omit optional fields only when they do not apply. Never fill unknown values with placeholders.
-
-Relation selection:
-- `chosen_because`: a decision was selected because of prior evidence or tradeoff.
-- `triggers`: a prior memory causally initiates the current memory.
-- `authorizes`: a decision or policy permits the current action.
-- `verified_by`: the current memory is verified by an evidence-bearing memory.
-- `depends_on`: current memory depends on a prior memory.
-- `updates_state`: current memory changes the process state.
-- `semantic_delta_from`: current memory expresses a state change from prior memory.
-- `supports`: an observation supports a prior or target memory.
-- `supersedes`: current memory replaces prior memory.
-- `contradicts`: current memory invalidates prior memory.
-- `satisfies_constraint`: current memory meets a rule.
-- `violates_constraint`: current memory breaks a rule.
-- `contributes_to`: a value is intentionally included in a derived result.
-- `excluded_from`: a value is intentionally excluded from a derived result.
-- `checked_against`: a value is checked against a rule, budget, or window.
-- `derived_from`: a result was computed from operands or evidence.
-- `confirms_selection`: feedback confirms a prior selected option.
-- `restates`: the current memory says the same thing as an existing one, as a repeated claim or value.
-- `corrects`: the current memory corrects an earlier fact or value.
-- `component_of`: a value is part of a larger total or set.
-- `total_of`: a value is the aggregate total of component values.
-- `same_event_as`: the current memory and an existing one describe the same event.
-- `same_entity_as`: the current memory and an existing one describe the same entity.
-- `qualifies_as`: a memory qualifies as a category or role under a stated rule.
-- `matches_requirement`: a memory satisfies a query or requirement predicate.
-- Declaring that two memories say one thing — `restates`, `same_event_as`, `same_entity_as`, with `why` and `evidence` — is what lets `kmp_ask` cite the second beside the first when a question matches only one of them. Write it when you know it.
-
-Inputs:
-
-Writer metadata:
-{writer_metadata}
-
-Current task or episode:
-{current_task}
-
-Relevant kernel read context:
-{kernel_read_context}
-
-New observation, turn, decision, feedback, or delta to write:
-{new_memory_event}
-
-Return the `kmp_write_memory` arguments JSON now.
+Rules:
+- Write only what the supplied sources justify. The example is illustrative,
+  not evidence for the current task. Use the actual about, actor, times and labels.
+- Give every member a unique local id, kind, summary and evidence. Common labels
+  union with each member's labels. Every member needs at least one membership.
+  Label values are arrays; all values are preserved. Shared labels do not prove
+  alias identity, synonymy or any semantic relation.
+- Links may target @id anywhere in the same packet, including later members.
+  For an existing target, copy the returned canonical ref. Never invent a ref.
+- Every non-structural link needs why and evidence. Why explains the connection
+  between these endpoints; evidence names the observation or source proving it.
+  Do not invent links or relabel weak evidence as causal. Independent facts may
+  be unlinked. Supported weak links include follows/procedural,
+  answers/evidential and uses_background/evidential when the source justifies them.
+- Rich links to stored memories require read_context containing the refs actually
+  inspected or reached through temporal navigation, Wake, Ask or Trace. Local
+  packet members need no fabricated inspected_refs. Cross-about equivalence
+  requires the actual kmp_relate proposal and its supported equivalence relation.
+- For non-English summary, supply summary_en in plain English while retaining
+  numbers, identifiers and acronyms. Retrieval uses that rendering; citations
+  retain the literal summary. Never alter the source text to pass validation.
+- A semantic_delta is an explicit member with its source, prior and resulting
+  state and justified relations. No intent, scope, current or semantic_delta
+  object exists at the root of the writer contract.
+- Preserve unknown occurrence times as absent. observed_at is observation time;
+  ingestion time is recorded by the store. Supply validity only when evidenced.
+- Omit options.dry_run for a normal commit; preview only when requested. Strict
+  validation is the default. A validation failure commits none of the packet.
+- Reuse one idempotency_key for an exact retry of a logical write. An unchanged
+  accepted packet is not a second event.
+- To attach search renderings later, use a separate packet with about, actor,
+  observed_at and search_summaries: [{"ref": "returned canonical ref",
+  "summary_en": "faithful English rendering"}]. The stored text, kind, labels
+  and clocks are preserved. Do not combine search_summaries with memories.

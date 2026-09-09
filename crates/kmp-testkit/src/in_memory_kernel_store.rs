@@ -343,9 +343,11 @@ impl MemoryAboutIndexReader for InMemoryKernelStore {
                 node.node_kind == "memory_dimension"
                     && dimension_ids.iter().any(|dimension_id| {
                         &node.node_id == dimension_id
-                            || node
-                                .node_id
-                                .ends_with(&format!(":dimension:{dimension_id}"))
+                            || kmp_domain::MemoryDimensionIdentity::parse(&node.node_id)
+                                .is_some_and(|label| {
+                                    label.dimension_id() == dimension_id
+                                        || label.key() == dimension_id
+                                })
                     })
             });
             if anchor_matches && dimension_matches {

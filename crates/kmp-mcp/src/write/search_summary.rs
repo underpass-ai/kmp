@@ -6,6 +6,8 @@
 //! the strict writer's version of it, which refuses instead of warning.
 //! It judges what the caller supplied and never rewrites it.
 
+use super::validation_error::WriteValidationError;
+
 use kmp_domain::language::{KERNEL_LANGUAGE, LanguageVocabulary};
 use kmp_domain::{SearchSummary, SearchSummaryFault};
 
@@ -17,7 +19,7 @@ pub(super) struct SearchSummaryDecision {
     pub(super) diagnostics: Vec<String>,
 }
 
-/// Judges `current.summary_en` against `current.summary`.
+/// Judges `summary_en` against `summary`.
 ///
 /// Strict mode is where the writer is told rather than warned: a memory that
 /// does not read as English must carry a rendering, because that is the only
@@ -29,15 +31,19 @@ pub(super) fn decide_search_summary(
     text: &str,
     summary: Option<&str>,
     strict: bool,
-) -> Result<SearchSummaryDecision, String> {
+) -> Result<SearchSummaryDecision, WriteValidationError> {
     let Some(summary) = summary else {
         return match LanguageVocabulary::shipped().leans_in(text) {
-            Some(language) if strict && language != KERNEL_LANGUAGE => Err(format!(
-                "strict kmp_write_memory requires current.summary_en: current.summary leans to \
+            Some(language) if strict && language != KERNEL_LANGUAGE => {
+                Err(WriteValidationError::new(format!(
+                    "strict kmp_write_memory requires summary_en: summary leans to \
                  {language}, and an English rendering is what an English question lands on. Write \
                  it in plain English, keep every number, identifier and acronym exactly as \
-                 written, and never alter current.summary to fit it"
-            )),
+                 written, and never alter summary to fit it"
+                ))
+                .at("summary_en")
+                .code("SEARCH_SUMMARY_REQUIRED"))
+            }
             _ => Ok(SearchSummaryDecision::default()),
         };
     };
@@ -46,15 +52,17 @@ pub(super) fn decide_search_summary(
             stored: Some(summary.to_string()),
             diagnostics: Vec::new(),
         }),
-        Err(faults) if strict => Err(format!(
-            "strict kmp_write_memory refuses current.summary_en: {}. Fix the summary, never \
-             current.summary",
+        Err(faults) if strict => Err(WriteValidationError::new(format!(
+            "strict kmp_write_memory refuses summary_en: {}. Fix the summary, never \
+             summary",
             SearchSummaryFault::describe(&faults)
-        )),
+        ))
+        .at("summary_en")
+        .code("INVALID_SEARCH_SUMMARY")),
         Err(faults) => Ok(SearchSummaryDecision {
             stored: Some(summary.to_string()),
             diagnostics: vec![format!(
-                "current.summary_en is stored but will not carry retrieval: {}",
+                "summary_en is stored but will not carry retrieval: {}",
                 SearchSummaryFault::describe(&faults)
             )],
         }),
@@ -72,9 +80,9 @@ mod tests {
         let error = decide_search_summary(SPANISH, None, true)
             .expect_err("a Spanish memory without a rendering is refused in strict mode");
 
-        assert!(error.contains("requires current.summary_en"), "{error}");
-        assert!(error.contains("leans to spanish"), "{error}");
-        assert!(error.contains("never alter current.summary"), "{error}");
+        assert!(error.message.contains("requires summary_en"), "{error}");
+        assert!(error.message.contains("leans to spanish"), "{error}");
+        assert!(error.message.contains("never alter summary"), "{error}");
     }
 
     #[test]
@@ -110,16 +118,18 @@ mod tests {
         let error = decide_search_summary(SPANISH, Some("Se pospuso."), true)
             .expect_err("a rendering that fails the lint is refused in strict mode");
 
-        assert!(error.contains("refuses current.summary_en"), "{error}");
+        assert!(error.message.contains("refuses summary_en"), "{error}");
         assert!(
-            error.contains("leans to spanish, not to English"),
+            error.message.contains("leans to spanish, not to English"),
             "{error}"
         );
         assert!(
-            error.contains("drops identifiers the text carries: v0.7.0"),
+            error
+                .message
+                .contains("drops identifiers the text carries: v0.7.0"),
             "{error}"
         );
-        assert!(error.contains("never current.summary"), "{error}");
+        assert!(error.message.contains("never summary"), "{error}");
     }
 
     #[test]
@@ -135,7 +145,7 @@ mod tests {
         assert_eq!(
             decision.diagnostics,
             [
-                "current.summary_en is stored but will not carry retrieval: drops identifiers the \
+                "summary_en is stored but will not carry retrieval: drops identifiers the \
               text carries: v0.7.0"
             ]
         );

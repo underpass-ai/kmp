@@ -32,7 +32,12 @@ pub(crate) fn ingest_request_from_arguments(arguments: &Value) -> Result<IngestR
         }
     };
 
+    let receipt_context_json =
+        optional_object_field(arguments, "receipt_context", "receipt_context")?
+            .map(|context| Value::Object(context.clone()).to_string());
+
     Ok(IngestRequest {
+        receipt_context_json,
         about,
         memory: Some(memory),
         provenance,

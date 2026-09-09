@@ -15,10 +15,19 @@ const KMP_LOOM = (() => {
 
   const parseMs = (value) => (value ? Date.parse(value) : null);
 
+  function labelValue(reference) {
+    const parts = String(reference || "").split(":");
+    if (parts.length === 5 && parts[0] === "label" && parts[1] === "v1") {
+      try { return decodeURIComponent(parts[4]); } catch (_) { /* Show the original malformed ref. */ }
+    }
+    return reference;
+  }
+
   function entryModel(entry) {
     const coords = (entry.coordinates || []).map((c) => ({
       dimension: c.dimension,
       scope: c.scope_id,
+      value: labelValue(c.scope_id),
       sequence: c.sequence === undefined ? null : c.sequence,
       rank: c.rank === undefined ? null : c.rank,
       occurred: parseMs(c.occurred_at),
@@ -581,6 +590,7 @@ const KMP_LOOM = (() => {
       order: model.coords.map((coord) => ({
         dimension: coord.dimension,
         scope: coord.scope,
+        value: coord.value,
         sequence: coord.sequence,
         rank: coord.rank,
       })),

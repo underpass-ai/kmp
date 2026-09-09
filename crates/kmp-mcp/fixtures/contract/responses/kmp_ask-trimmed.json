@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Retrieved 4 memory items for: Where is Rachel moving?",
+      "text": "Retrieved 5 memory items for: Where is Rachel moving?",
       "type": "text"
     }
   ],
@@ -10,52 +10,70 @@
     "answer": "<budget-shortened prefix of the full answer>",
     "because": [
       {
-        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-        "ref": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+        "claim": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "ref": "entry:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
       },
       {
-        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
-        "ref": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+        "ref": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
       },
       {
-        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-        "ref": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta"
+        "claim": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "ref": "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current"
       },
       {
-        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
-        "ref": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:current"
+        "claim": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "ref": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2"
+      },
+      {
+        "claim": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+        "ref": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current"
       }
     ],
     "projection": {
       "budget": {
-        "max_bytes": 6000,
+        "max_bytes": 7500,
         "tokens_advisory": 2400,
         "used_bytes": "<verified shortened byte count>"
       },
       "contract": "kmp.recall.projection.v1",
       "core_text_shortened": true,
       "detail": "compact",
-      "excluded_by_detail": 10,
-      "next_action": "Call the same recall tool with identical bound arguments and page.cursor=\"kmp1:1:6e79e67c443e8dbed066106c2d80c05fc3a4f19029680993c367512b0d2a5ec4\"; budget.tokens, budget.max_bytes, and page.entries may change.",
+      "excluded_by_detail": 13,
+      "next_action": {
+        "arguments": {
+          "about": "question:parity",
+          "answer_policy": "evidence_or_unknown",
+          "budget": {
+            "depth": 2,
+            "detail": "compact",
+            "max_bytes": "<stamped at call time>",
+            "tokens": 2400
+          },
+          "question": "Where is Rachel moving?"
+        },
+        "tool": "kmp_ask"
+      },
       "page": {
         "has_more": true,
-        "next_cursor": "kmp1:1:6e79e67c443e8dbed066106c2d80c05fc3a4f19029680993c367512b0d2a5ec4",
+        "minimum_progress_bytes": "<stamped at call time>",
+        "next_cursor": "kmp1:1:aa8028b67e04939706cf1e28894763d689c460f8f6f68146b17fe66e0a51cd35",
         "offset": 0,
         "returned": 1,
         "total": 3
       },
       "sections": {
         "proof.evidence": {
-          "core": 4,
-          "eligible": 4,
+          "core": 5,
+          "eligible": 5,
           "returned_on_page": 0,
-          "total": 4
+          "total": 5
         },
         "proof.path": {
           "core": 0,
           "eligible": 3,
           "returned_on_page": 1,
-          "total": 13
+          "total": 16
         }
       },
       "selection_omitted": 0
@@ -71,54 +89,64 @@
       "conflicts": [],
       "evidence": [
         {
-          "id": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "id": "entry:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "metadata": {
-            "delta_from": "Rachel said she was moving to Denver.",
-            "delta_to": "Rachel is moving to Boulder.",
             "proof_role": "entry_text",
             "writer_actor": "parity-test",
-            "writer_intent": "record_delta"
+            "writer_intent": "record_observation"
           },
-          "source": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "source": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "supports": [
-            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+            "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
           ],
           "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
         },
         {
-          "id": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "id": "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "metadata": {
             "proof_role": "entry_text",
             "writer_actor": "parity-test",
-            "writer_intent": "record_delta"
+            "writer_intent": "record_observation"
           },
-          "source": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "source": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "supports": [
-            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
           "text": "Rachel is moving to Boulder, not Denver."
         },
         {
-          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
-          "metadata": {
-            "proof_role": "stored_evidence"
-          },
-          "source": "kmp_write_memory:parity-test:semantic_delta",
-          "supports": [
-            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
-          ],
-          "text": "Both statements are hers, minutes apart.",
-          "time": "2026-04-12T17:00:00Z"
-        },
-        {
-          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:current",
+          "id": "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
           "metadata": {
             "proof_role": "stored_evidence"
           },
           "source": "kmp_write_memory:parity-test",
           "supports": [
-            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+            "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
+          ],
+          "text": "Both statements are hers, minutes apart.",
+          "time": "2026-04-12T17:00:00Z"
+        },
+        {
+          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "kmp_write_memory:parity-test:relation:updates_state",
+          "supports": [
+            "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
+          ],
+          "text": "Both statements are hers, minutes apart.",
+          "time": "2026-04-12T17:00:00Z"
+        },
+        {
+          "id": "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
+          "metadata": {
+            "proof_role": "stored_evidence"
+          },
+          "source": "kmp_write_memory:parity-test",
+          "supports": [
+            "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
           "text": "She corrected the city in the same conversation.",
           "time": "2026-04-12T17:00:00Z"
@@ -148,32 +176,33 @@
           "class": "causal",
           "confidence": "high",
           "evidence_refs": [
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
-            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:current",
-            "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-            "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d"
+            "detail:evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
+            "detail:evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+            "entry:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+            "entry:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3"
           ],
-          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "rel": "updates_state",
-          "sequence": 2,
-          "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+          "sequence": 1,
+          "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
           "why": "The later statement corrects the earlier one."
         }
       ],
       "superseded": [
         {
           "ref": "question:parity:claim:denver",
-          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ]
     },
-    "summary": "Retrieved 4 memory items for: Where is Rachel moving?",
+    "summary": "Retrieved 5 memory items for: Where is Rachel moving?",
     "truncation": {
-      "byte_limit": 6000,
+      "byte_limit": 7500,
       "omitted": {
         "core_text_shortened": true,
-        "excluded_by_detail": 10,
+        "excluded_by_detail": 13,
         "page_items": 2,
         "prior_page_items": 0,
         "remaining_page_items": 2,

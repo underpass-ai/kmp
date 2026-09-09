@@ -470,7 +470,7 @@ async fn grpc_backend_forwards_incremental_ingest_with_empty_dimensions() {
 }
 
 #[tokio::test]
-async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
+async fn grpc_backend_dry_run_ingest_reaches_the_kernel_with_writes_disabled() {
     let recorded = RecordedMemoryRequests::default();
     let endpoint = spawn_fake_memory_server(recorded.clone()).await;
     let server = KernelMcpServer::grpc(endpoint);
@@ -505,13 +505,16 @@ async fn grpc_backend_dry_run_ingest_does_not_call_kernel_memory_service() {
     .await;
 
     assert_eq!(ingest["result"]["isError"], false);
+    let requests = recorded.ingests().await;
+    assert_eq!(requests.len(), 1);
     assert!(
-        ingest["result"]["structuredContent"]["warnings"][0]
-            .as_str()
-            .expect("dry run warning should be text")
-            .contains("KernelMemoryService.Ingest")
+        requests[0].dry_run,
+        "the kernel validates without committing"
     );
-    assert!(recorded.ingests().await.is_empty());
+    assert_eq!(
+        ingest["result"]["structuredContent"]["memory"]["read_after_write_ready"],
+        false
+    );
 }
 
 #[tokio::test]
@@ -668,6 +671,7 @@ impl KernelMemoryService for FakeMemoryService {
         Ok(Response::new(IngestResponse {
             summary: format!("Ingested memory for {}.", request.about),
             memory: Some(IngestedMemory {
+                receipt_ref: None,
                 about: request.about,
                 memory_id,
                 accepted: Some(AcceptedCounts {
@@ -681,7 +685,7 @@ impl KernelMemoryService for FakeMemoryService {
                         .map(|memory| memory.evidence.len())
                         .unwrap_or_default() as u32,
                 }),
-                read_after_write_ready: true,
+                read_after_write_ready: !request.dry_run,
                 created_dimensions: Vec::new(),
                 resembling_labels: Vec::new(),
             }),
@@ -694,6 +698,7 @@ impl KernelMemoryService for FakeMemoryService {
         self.recorded.wakes.lock().await.push(request.clone());
 
         let response = WakeResponse {
+            dimension_selection: None,
             summary: format!("Wake summary for {}.", request.about),
             labels: Vec::new(),
             wake: Some(WakePacket {
@@ -918,6 +923,7 @@ impl FakeMemoryService {
 
 fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -931,6 +937,7 @@ fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest 
 
 fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -944,6 +951,7 @@ fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequ
 
 fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -957,6 +965,7 @@ fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRe
 
 fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest {
     TemporalNearRequest {
+        interval: request.interval,
         about: request.about,
         around: request.around,
         dimensions: request.dimensions,
@@ -1031,6 +1040,7 @@ fn temporal_response(
     TemporalMoveResponse {
         summary: "Returned typed temporal entries.".to_string(),
         temporal: Some(TemporalState {
+            interval: None,
             direction: direction as i32,
             axis: kmp_proto::v1beta1::TemporalAxis::Unspecified as i32,
             requested,

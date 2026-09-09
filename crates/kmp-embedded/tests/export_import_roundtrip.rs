@@ -47,6 +47,7 @@ fn corpus_with_first_entry_text(
     first_entry_text: &str,
 ) -> MemoryIngestCommand {
     MemoryIngestCommand {
+        receipt_context: None,
         about: ABOUT.to_string(),
         memory: MemoryData {
             dimensions: vec![MemoryDimensionData {
@@ -198,7 +199,8 @@ async fn export_import_preserves_wake_temporal_and_proof() {
                 about: ABOUT.to_string(),
                 direction: TemporalDirection::Goto,
                 axis: kmp_domain::TemporalAxis::Default,
-                cursor: TemporalCursor::time("2026-07-01T12:00:00Z").expect("cursor"),
+                cursor: Some(TemporalCursor::time("2026-07-01T12:00:00Z").expect("cursor")),
+                interval: None,
                 dimensions: DimensionSelection::all(),
                 window: TemporalWindow::new(0, 0),
                 limit_entries: None,

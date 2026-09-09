@@ -782,7 +782,7 @@ fn writer_candidate_role(entry_ref: &str, candidate_ref: &str, target_ref: &str)
     if !target_ref.is_empty() && candidate_ref == target_ref {
         return "target_question".to_string();
     }
-    if candidate_ref.contains(":dimension:") {
+    if kmp_domain::MemoryDimensionIdentity::parse(candidate_ref).is_some() {
         return "dimension_scope".to_string();
     }
     if candidate_ref.starts_with("question:") {

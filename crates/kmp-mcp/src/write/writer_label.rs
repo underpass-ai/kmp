@@ -1,6 +1,6 @@
 //! A label as the writer emits it, and the two checks every label passes
-//! before it becomes a coordinate: a key a filter can name, and a value
-//! not already used under another key in the same write.
+//! before it becomes a coordinate: a key a filter can name, and a unique
+//! membership under that key.
 
 /// One label the writer emits as a coordinate: its key is the dimension
 /// kind, its value the scope id, and `field` names the argument it came
@@ -29,21 +29,47 @@ impl WriterLabel {
     }
 }
 
-/// Within an about a scope id names one label and keeps the kind of its
-/// first use, which the ingest enforces. The writer refuses the reuse before
-/// it reaches the kernel, naming both arguments.
-pub(super) fn validate_distinct_label_values(labels: &[WriterLabel]) -> Result<(), String> {
-    for (index, left) in labels.iter().enumerate() {
-        for right in &labels[index + 1..] {
-            if left.value == right.value {
-                return Err(format!(
-                    "{} and {} reuse `{}`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds",
-                    left.field, right.field, left.value
-                ));
-            }
+/// Duplicate membership is an error; the same value under another key is
+/// a separate dimension and is valid.
+pub(super) fn validate_distinct_labels(labels: &[WriterLabel]) -> Result<(), String> {
+    let mut seen = std::collections::BTreeMap::new();
+    for label in labels {
+        if let Some(first) = seen.insert((&label.key, &label.value), &label.field) {
+            return Err(format!(
+                "{first} and {} repeat `{}={}`",
+                label.field, label.key, label.value
+            ));
         }
     }
     Ok(())
+}
+
+/// All label inputs use arrays, including single values. This keeps the
+/// public schema uniform and allows multiple memberships under every key.
+pub(super) fn label_values(value: &serde_json::Value, field: &str) -> Result<Vec<String>, String> {
+    let values = value
+        .as_array()
+        .filter(|values| !values.is_empty())
+        .ok_or_else(|| format!("`{field}` must be a non-empty array of strings"))?;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut result = Vec::new();
+    for (index, value) in values.iter().enumerate() {
+        let value = value
+            .as_str()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| format!("`{field}[{index}]` must be a non-empty string"))?;
+        if value.chars().any(char::is_control) {
+            return Err(format!(
+                "`{field}[{index}]` cannot contain control characters"
+            ));
+        }
+        if !seen.insert(value) {
+            return Err(format!("`{field}[{index}]` repeats `{value}`"));
+        }
+        result.push(value.to_string());
+    }
+    Ok(result)
 }
 
 /// A label key is an identifier a filter can name: lowercase letters,

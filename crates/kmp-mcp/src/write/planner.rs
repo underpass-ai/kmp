@@ -1,3 +1,4 @@
+use super::validation_error::WriteValidationError;
 use serde_json::{Value, json};
 
 use std::collections::BTreeSet;
@@ -5,7 +6,6 @@ use std::collections::BTreeSet;
 use kmp_application::{validate_ref_token, validate_supplied_entry_ref};
 use kmp_domain::{INTENDED_NEW_LABEL_METADATA_KEY, MemoryRelationType};
 
-use super::arguments::*;
 use super::coordinates::*;
 use super::generated_ref::*;
 use super::plan::KernelWritePlan;
@@ -13,13 +13,14 @@ use super::read_context::ReadContext;
 use super::relation_quality::*;
 use super::relations::*;
 use super::search_summary::decide_search_summary;
+use super::validated_arguments::*;
 use super::writer_label::*;
 
 const DEFAULT_CONFIDENCE: &str = "high";
 const DEFAULT_SOURCE_KIND: &str = "agent";
 
 #[cfg(test)]
-pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, String> {
+pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, WriteValidationError> {
     build_write_plan_with_root(arguments, false)
 }
 
@@ -28,20 +29,38 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Str
 /// inspecting the about immediately before calling this function; keeping
 /// the storage read outside the pure compiler preserves deterministic dry
 /// runs and focused validation tests.
+#[cfg(test)]
 pub(crate) fn build_write_plan_with_root(
     arguments: &Value,
     allow_unlinked_root: bool,
-) -> Result<KernelWritePlan, String> {
+) -> Result<KernelWritePlan, WriteValidationError> {
+    build_write_plan_with_local_refs(arguments, allow_unlinked_root, &BTreeSet::new())
+}
+
+/// All batch entry refs are known before any member is compiled. They are
+/// current-request context, never a claim that a stored target was inspected.
+pub(super) fn build_write_plan_with_local_refs(
+    arguments: &Value,
+    allow_unlinked_root: bool,
+    batch_refs: &BTreeSet<String>,
+) -> Result<KernelWritePlan, WriteValidationError> {
     let arguments = arguments
         .as_object()
         .ok_or_else(|| "tool arguments must be a JSON object".to_string())?;
     let about = required_string(arguments, "about")?;
-    validate_ref_token("about", &about)?;
+    validate_ref_token("about", &about)
+        .map_err(|error| WriteValidationError::new(error).at("about").global())?;
     let intent = required_string(arguments, "intent")?;
     validate_intent(&intent)?;
     let actor = required_string(arguments, "actor")?;
     let observed_at = required_string(arguments, "observed_at")?;
-    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds())?;
+    reject_a_time_that_has_not_happened(&observed_at, crate::clock::now_seconds()).map_err(
+        |error| {
+            WriteValidationError::new(error)
+                .at("observed_at")
+                .code("FUTURE_OBSERVATION")
+        },
+    )?;
     let clocks = WriterCoordinate {
         occurred_at: optional_string(arguments.get("occurred_at")),
         observed_at: &observed_at,
@@ -53,17 +72,31 @@ pub(crate) fn build_write_plan_with_root(
             .and_then(|value| u32::try_from(value).ok())
             .filter(|value| *value > 0),
     };
-    let scope = required_object(arguments, "scope")?;
-    let read_context = ReadContext::from_arguments(arguments)?;
-    let process_scope = required_map_string(scope, "process", "scope.process")?;
-    let task_scope = optional_map_string(scope, "task");
-    let episode_scope = optional_map_string(scope, "episode");
+    let scope = if batch_refs.is_empty() {
+        Some(required_object(arguments, "scope")?)
+    } else {
+        // Packet records use their explicit memberships without synthesizing
+        // a process scope. The single-current contract still requires it.
+        arguments.get("scope").and_then(Value::as_object)
+    };
+    let read_context = ReadContext::from_arguments(arguments)
+        .map_err(|error| WriteValidationError::new(error).at("read_context").global())?;
+    let process_scope = scope
+        .map(|scope| required_map_string(scope, "process", "scope.process"))
+        .transpose()?;
+    let task_scope = scope.and_then(|scope| optional_map_string(scope, "task"));
+    let episode_scope = scope.and_then(|scope| optional_map_string(scope, "episode"));
     let labels = writer_labels(
         process_scope,
         task_scope,
         episode_scope,
         arguments.get("labels"),
-    )?;
+    )
+    .map_err(|error| {
+        WriteValidationError::new(error)
+            .at("labels")
+            .code("INVALID_LABELS")
+    })?;
     let options = arguments.get("options").and_then(Value::as_object);
     // A tool called write_memory commits. Previewing was the default here,
     // so every caller that did not know to pass `dry_run: false` got
@@ -107,9 +140,9 @@ pub(crate) fn build_write_plan_with_root(
         .unwrap_or_default();
     for key in &labels_new {
         if !labels.iter().any(|label| label.key == *key) {
-            return Err(format!(
+            return Err(WriteValidationError::new(format!(
                 "options.labels_new names `{key}`, which is not a label of this write"
-            ));
+            )));
         }
     }
     // The logical write identity is also the uniqueness component of every
@@ -123,12 +156,21 @@ pub(crate) fn build_write_plan_with_root(
         .unwrap_or_else(|| stable_idempotency_key(arguments));
 
     let current = required_object(arguments, "current")?;
-    let current_kind = required_map_string(current, "kind", "current.kind")?;
-    validate_node_kind(current_kind)?;
-    let current_summary = required_map_string(current, "summary", "current.summary")?;
+    let current_kind = required_map_string(current, "kind", "kind")?;
+    validate_node_kind(current_kind).map_err(|error| {
+        WriteValidationError::new(error)
+            .at("kind")
+            .code("INVALID_KIND")
+            .allowed_values(crate::contract::writer_memory_kinds::WRITER_MEMORY_KINDS)
+    })?;
+    let current_summary = required_map_string(current, "summary", "summary")?;
     let current_evidence = optional_map_string(current, "evidence");
     if strict && current_evidence.is_none() {
-        return Err("strict kmp_write_memory requires current.evidence".to_string());
+        return Err(
+            WriteValidationError::new("strict kmp_write_memory requires evidence")
+                .at("evidence")
+                .code("MEMORY_EVIDENCE_REQUIRED"),
+        );
     }
     let search_summary = decide_search_summary(
         current_summary,
@@ -137,7 +179,11 @@ pub(crate) fn build_write_plan_with_root(
     )?;
 
     let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
-        validate_supplied_entry_ref(&about, "current.ref", current_ref)?;
+        validate_supplied_entry_ref(&about, "ref", current_ref).map_err(|error| {
+            WriteValidationError::new(error)
+                .at("ref")
+                .code("INVALID_REF")
+        })?;
         current_ref.to_string()
     } else {
         generated_entry_ref(
@@ -149,16 +195,22 @@ pub(crate) fn build_write_plan_with_root(
         )
     };
     let mut generated_refs = vec![current_ref.clone()];
-    let mut local_refs = BTreeSet::from([current_ref.clone()]);
+    let mut local_refs = std::borrow::Cow::Borrowed(batch_refs);
+    if !local_refs.contains(&current_ref) {
+        local_refs.to_mut().insert(current_ref.clone());
+    }
     let mut dimensions = Vec::new();
     let mut coordinates = Vec::new();
     for label in &labels {
-        let mut declared = dimension(&label.value, &label.key, label.title);
+        let scope_id = kmp_domain::MemoryDimensionIdentity::new(&about, &label.key, &label.value)
+            .map_err(|error| error.to_string())?
+            .node_id();
+        let mut declared = dimension(&scope_id, &label.key, label.title);
         if labels_new.contains(&label.key) {
             declared["metadata"] = json!({ INTENDED_NEW_LABEL_METADATA_KEY: "true" });
         }
         dimensions.push(declared);
-        coordinates.push(coordinate(&label.key, &label.value, sequence, clocks));
+        coordinates.push(coordinate(&label.key, &scope_id, sequence, clocks));
     }
 
     let mut current_metadata = json!({
@@ -191,10 +243,8 @@ pub(crate) fn build_write_plan_with_root(
 
     let connect_to = optional_array(arguments.get("connect_to"), "connect_to")?;
     if strict && connect_to.is_empty() && !allow_unlinked_root {
-        return Err(
-            "strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
-                .to_string(),
-        );
+        return Err(WriteValidationError::new("strict kmp_write_memory requires at least one connect_to relation once the about exists; inspect or traverse a target first, or set options.strict=false when an unlinked write is intentional"
+                .to_string()));
     }
     for (index, link) in connect_to.iter().enumerate() {
         let link = link
@@ -207,11 +257,15 @@ pub(crate) fn build_write_plan_with_root(
         let rel = relation_type.as_str();
         let semantic_class =
             required_map_string(link, "class", &format!("connect_to[{index}].class"))?;
-        validate_semantic_class(semantic_class)?;
+        validate_semantic_class(semantic_class).map_err(|error| {
+            WriteValidationError::new(error).at(format!("connect_to[{index}].class"))
+        })?;
         let why = required_relation_string(link, "why", semantic_class, index)?;
         let relation_evidence = required_relation_string(link, "evidence", semantic_class, index)?;
         let confidence = optional_map_string(link, "confidence").unwrap_or(DEFAULT_CONFIDENCE);
-        validate_confidence(confidence)?;
+        validate_confidence(confidence).map_err(|error| {
+            WriteValidationError::new(error).at(format!("connect_to[{index}].confidence"))
+        })?;
         let quality = relation_quality_diagnostic(RelationQualityInput {
             about: &about,
             from: &current_ref,
@@ -224,7 +278,8 @@ pub(crate) fn build_write_plan_with_root(
             strict,
             read_context: &read_context,
             local_refs: &local_refs,
-        })?;
+        })
+        .map_err(|error| error.within(&format!("connect_to[{index}]")))?;
 
         let mut link_value = relation(
             &current_ref,
@@ -291,7 +346,7 @@ pub(crate) fn build_write_plan_with_root(
             )
         };
         reject_duplicate_ref(&mut generated_refs, &delta_ref)?;
-        local_refs.insert(delta_ref.clone());
+        local_refs.to_mut().insert(delta_ref.clone());
         entries.push(json!({
             "id": delta_ref.clone(),
             "kind": "semantic_delta",
@@ -391,7 +446,9 @@ pub(crate) fn build_write_plan_with_root(
     let relation_quality_metrics = relation_quality_metrics(&relation_quality);
 
     Ok(KernelWritePlan {
+        operation: super::operation::WriteOperation::Memories,
         about,
+        local_refs: Default::default(),
         dry_run,
         ingest_arguments,
         generated_refs,
@@ -409,12 +466,11 @@ pub(crate) fn build_write_plan_with_root(
 
 /// The labels a write emits, in the order the ingest has always carried
 /// them: the well-known task, process and episode scopes first, then the
-/// caller's own `labels` by key. `scope.process` is the one label every
-/// write carries; `scope.task` and `scope.episode` are the two well-known
-/// ones; `labels` names any other facet. A value is refused where it is
-/// already used under another key.
+/// caller's own `labels` by key. Packet records can supply only labels;
+/// the single-current form provides the well-known process/task/episode
+/// memberships through scope. Neither path invents a label.
 fn writer_labels(
-    process: &str,
+    process: Option<&str>,
     task: Option<&str>,
     episode: Option<&str>,
     labels: Option<&Value>,
@@ -428,12 +484,14 @@ fn writer_labels(
             "Kernel write task",
         ));
     }
-    emitted.push(WriterLabel::new(
-        "agentic_process",
-        process,
-        "scope.process",
-        "Kernel write process",
-    ));
+    if let Some(process) = process {
+        emitted.push(WriterLabel::new(
+            "agentic_process",
+            process,
+            "scope.process",
+            "Kernel write process",
+        ));
+    }
     if let Some(episode) = episode {
         emitted.push(WriterLabel::new(
             "agentic_episode",
@@ -443,51 +501,26 @@ fn writer_labels(
         ));
     }
     if let Some(labels) = labels {
-        let object = labels
-            .as_object()
-            .ok_or_else(|| "`labels` must be an object of `key: value` strings".to_string())?;
+        let object = labels.as_object().ok_or_else(|| {
+            "`labels` must map each key to a non-empty array of strings".to_string()
+        })?;
         let mut own = object.iter().collect::<Vec<_>>();
         own.sort_by(|left, right| left.0.cmp(right.0));
         for (key, value) in own {
             validate_label_key(key)?;
             let field = format!("labels.{key}");
-            let value = value
-                .as_str()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-                .ok_or_else(|| format!("`{field}` must be a non-empty string"))?;
-            validate_ref_token(&field, value)?;
-            match key.as_str() {
-                "agentic_process" => {
-                    return Err(
-                        "`labels.agentic_process` is `scope.process`: give the process there"
-                            .to_string(),
-                    );
-                }
-                "task" if task.is_some() => {
-                    return Err(
-                        "`task` is given twice: use `scope.task` or `labels.task`, not both"
-                            .to_string(),
-                    );
-                }
-                "agentic_episode" if episode.is_some() => {
-                    return Err("`agentic_episode` is given twice: use `scope.episode` or `labels.agentic_episode`, not both".to_string());
-                }
-                _ => {}
+            for value in label_values(value, &field)? {
+                emitted.push(WriterLabel::new(key, value, &field, "Kernel write label"));
             }
-            emitted.push(WriterLabel::new(key, value, field, "Kernel write label"));
         }
     }
-    // The reuse check reads process first so a refusal names the argument
-    // every write carries before the optional one that collided with it.
-    let mut declared = emitted.clone();
-    declared.sort_by_key(|label| match label.field.as_str() {
-        "scope.process" => 0,
-        "scope.task" => 1,
-        "scope.episode" => 2,
-        _ => 3,
-    });
-    validate_distinct_label_values(&declared)?;
+    validate_distinct_labels(&emitted)?;
+    if emitted.is_empty() {
+        return Err(
+            "labels must declare at least one key/value membership for temporal navigation"
+                .to_string(),
+        );
+    }
     Ok(emitted)
 }
 

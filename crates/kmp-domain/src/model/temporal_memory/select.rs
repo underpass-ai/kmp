@@ -60,28 +60,56 @@ pub(super) fn resolve_cursor(
 
 pub(super) fn select_positions(
     positions: &[TemporalPosition],
-    cursor: &ResolvedTemporalCursor,
+    cursor: Option<&ResolvedTemporalCursor>,
     request: &TemporalTraversalRequest,
 ) -> TemporalSelection {
-    let Some(cursor_axis_key) = cursor.axis_key.as_ref() else {
+    if cursor.is_some_and(|cursor| cursor.axis_key.is_none()) {
         return TemporalSelection {
             positions: Vec::new(),
             total_unique_refs: 0,
             next_cursor: None,
         };
-    };
+    }
+    let cursor_axis_key = cursor.and_then(|cursor| cursor.axis_key.as_ref());
     let mut comparable = positions
         .iter()
-        .filter(|position| position.axis_key.axis() == cursor_axis_key.axis())
+        .filter(|position| {
+            position.axis_key.axis()
+                == cursor_axis_key.map_or(TemporalKeyKind::Time, TemporalAxisKey::axis)
+        })
+        .filter(|position| {
+            request.interval().is_none_or(|interval| {
+                if request.axis() == TemporalAxis::Validity {
+                    interval.overlaps(
+                        position.coordinate.valid_from(),
+                        position.coordinate.valid_until(),
+                    )
+                } else {
+                    position.axis_key.in_interval(interval)
+                }
+            })
+        })
         .cloned()
         .collect::<Vec<_>>();
+
+    let Some(cursor_axis_key) = cursor_axis_key else {
+        // A direct interval starts at the selected range itself. Do not invent
+        // a time just before its start or lose memories tied at that boundary.
+        let side = if request.direction() == TemporalDirection::Rewind {
+            PageSide::Before
+        } else {
+            PageSide::After
+        };
+        return select_limited(comparable, request.limit_entries().unwrap_or(5), side);
+    };
 
     // Every time-based move on the validity clock rejects intervals that had
     // already ended at the cursor. `valid_until` is exclusive. Ref and
     // sequence cursors retain their historical navigation semantics so page
     // continuations can still walk recorded positions.
     let validity_time_cursor = request.axis() == TemporalAxis::Validity
-        && matches!(request.cursor(), TemporalCursor::Time(_));
+        && matches!(request.cursor(), Some(TemporalCursor::Time(_)))
+        && request.interval().is_none();
     if validity_time_cursor {
         comparable.retain(|position| validity_not_ended(&position.coordinate, cursor_axis_key));
     }
@@ -101,7 +129,11 @@ pub(super) fn select_positions(
         );
     }
 
-    let partitions = partition_positions(comparable, cursor_axis_key, cursor.ref_id.as_deref());
+    let partitions = partition_positions(
+        comparable,
+        cursor_axis_key,
+        cursor.and_then(|cursor| cursor.ref_id.as_deref()),
+    );
 
     match request.direction() {
         TemporalDirection::Goto => {

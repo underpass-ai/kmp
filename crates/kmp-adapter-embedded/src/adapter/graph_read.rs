@@ -305,9 +305,8 @@ impl MemoryAboutIndexReader for EmbeddedKernelStore {
                             dimension.node_kind == "memory_dimension"
                                 && dimension_ids.iter().any(|dimension_id| {
                                     dimension.node_id == *dimension_id
-                                        || dimension
-                                            .node_id
-                                            .ends_with(&format!(":dimension:{dimension_id}"))
+                                        || kmp_domain::MemoryDimensionIdentity::parse(&dimension.node_id)
+                                            .is_some_and(|identity| identity.dimension_id() == dimension_id)
                                         // A selection names dimensions by kind
                                         // (`incident`) as readily as by id
                                         // (`incident:north-outage`); the filter

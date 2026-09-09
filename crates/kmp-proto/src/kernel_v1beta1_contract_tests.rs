@@ -93,7 +93,8 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "provenance",
             "idempotency_key",
             "dry_run",
-            "label_policy"
+            "label_policy",
+            "receipt_context_json"
         ]
     );
     assert_eq!(
@@ -125,6 +126,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "projection",
             "truncation",
             "labels",
+            "dimension_selection",
         ]
     );
     assert_eq!(
@@ -192,6 +194,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "selection_omitted",
             "core_text_shortened",
             "next_action",
+            "next_call",
         ]
     );
     assert_eq!(
@@ -200,7 +203,14 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "RecallProjectionPage"),
-        vec!["offset", "returned", "total", "has_more", "next_cursor"]
+        vec![
+            "offset",
+            "returned",
+            "total",
+            "has_more",
+            "next_cursor",
+            "minimum_progress_bytes"
+        ]
     );
     assert_eq!(
         message_field_names(memory_file, "RecallProjectionSection"),
@@ -223,7 +233,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
     );
     assert_eq!(
         message_field_names(memory_file, "RecallCursorError"),
-        vec!["reason", "cursor", "message"]
+        vec!["reason", "cursor", "message", "restart"]
     );
     assert_eq!(
         message_field_names(memory_file, "TemporalCoordinate"),
@@ -254,6 +264,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -267,6 +278,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -280,6 +292,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -293,6 +306,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -306,6 +320,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     assert_eq!(
@@ -319,6 +334,7 @@ fn v1beta1_kernel_memory_core_fields_are_stable() {
             "include",
             "budget",
             "axis",
+            "interval",
         ]
     );
     // The four temporal-move responses share one field set (including the

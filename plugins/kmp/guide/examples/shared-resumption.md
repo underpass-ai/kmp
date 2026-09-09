@@ -69,26 +69,34 @@ and idempotency_key; it does not rephrase the source or create a new key.
   "save_as": "constraint",
   "arguments": {
     "about": "example:guide:shared-resumption",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-shared:constraint:v1",
-    "scope": {
-      "process": "handoff-review",
-      "task": "journal-choice"
-    },
     "labels": {
-      "component": "journal",
-      "review": "HND-9"
+      "component": [
+        "journal"
+      ],
+      "review": [
+        "HND-9"
+      ],
+      "agentic_process": [
+        "handoff-review"
+      ],
+      "task": [
+        "journal-choice"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:05:00Z",
-    "current": {
-      "kind": "constraint",
-      "summary": "C1: The HND-9 journal must work offline. Ledger records must remain on this device.",
-      "summary_en": "C1 requires device-local ledger storage and offline journal operation for HND-9.",
-      "evidence": "C1, received 2026-09-01T09:05:00Z: C1: The HND-9 journal must work offline. Ledger records must remain on this device."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "C1: The HND-9 journal must work offline. Ledger records must remain on this device.",
+        "summary_en": "C1 requires device-local ledger storage and offline journal operation for HND-9.",
+        "evidence": "C1, received 2026-09-01T09:05:00Z: C1: The HND-9 journal must work offline. Ledger records must remain on this device."
+      }
+    ]
   }
 }
 ```
@@ -113,39 +121,47 @@ and idempotency_key; it does not rephrase the source or create a new key.
   "save_as": "decision",
   "arguments": {
     "about": "example:guide:shared-resumption",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-shared:decision:v1",
-    "scope": {
-      "process": "handoff-review",
-      "task": "journal-choice"
-    },
     "labels": {
-      "component": "journal",
-      "review": "HND-9"
+      "component": [
+        "journal"
+      ],
+      "review": [
+        "HND-9"
+      ],
+      "agentic_process": [
+        "handoff-review"
+      ],
+      "task": [
+        "journal-choice"
+      ]
     },
     "occurred_at": "2026-09-01T09:10:00Z",
     "observed_at": "2026-09-01T09:15:00Z",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
-      "summary_en": "D1 selects SQLite for HND-9 because device-local storage can meet C1, the offline journal requirement.",
-      "evidence": "D1, received 2026-09-01T09:15:00Z: D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
-    },
     "read_context": {
       "inspected_refs": [
         "${constraint.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${constraint.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "D1 explicitly selects SQLite because its local storage can satisfy C1. The choice is motivated by that constraint, not evidence of a completed test.",
-        "evidence": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
+        "summary_en": "D1 selects SQLite for HND-9 because device-local storage can meet C1, the offline journal requirement.",
+        "evidence": "D1, received 2026-09-01T09:15:00Z: D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
+        "connect_to": [
+          {
+            "ref": "${constraint.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "D1 explicitly selects SQLite because its local storage can satisfy C1. The choice is motivated by that constraint, not evidence of a completed test.",
+            "evidence": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
+          }
+        ]
       }
     ]
   }
@@ -172,39 +188,47 @@ and idempotency_key; it does not rephrase the source or create a new key.
   "save_as": "decision_retry",
   "arguments": {
     "about": "example:guide:shared-resumption",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-shared:decision:v1",
-    "scope": {
-      "process": "handoff-review",
-      "task": "journal-choice"
-    },
     "labels": {
-      "component": "journal",
-      "review": "HND-9"
+      "component": [
+        "journal"
+      ],
+      "review": [
+        "HND-9"
+      ],
+      "agentic_process": [
+        "handoff-review"
+      ],
+      "task": [
+        "journal-choice"
+      ]
     },
     "occurred_at": "2026-09-01T09:10:00Z",
     "observed_at": "2026-09-01T09:15:00Z",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
-      "summary_en": "D1 selects SQLite for HND-9 because device-local storage can meet C1, the offline journal requirement.",
-      "evidence": "D1, received 2026-09-01T09:15:00Z: D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
-    },
     "read_context": {
       "inspected_refs": [
         "${constraint.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${constraint.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "D1 explicitly selects SQLite because its local storage can satisfy C1. The choice is motivated by that constraint, not evidence of a completed test.",
-        "evidence": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
+        "summary_en": "D1 selects SQLite for HND-9 because device-local storage can meet C1, the offline journal requirement.",
+        "evidence": "D1, received 2026-09-01T09:15:00Z: D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1.",
+        "connect_to": [
+          {
+            "ref": "${constraint.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "D1 explicitly selects SQLite because its local storage can satisfy C1. The choice is motivated by that constraint, not evidence of a completed test.",
+            "evidence": "D1: We choose SQLite for the HND-9 journal because its device-local storage can satisfy the offline requirement C1."
+          }
+        ]
       }
     ]
   }
@@ -217,39 +241,47 @@ and idempotency_key; it does not rephrase the source or create a new key.
   "save_as": "handoff",
   "arguments": {
     "about": "example:guide:shared-resumption",
-    "intent": "record_turn",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-shared:handoff:v1",
-    "scope": {
-      "process": "handoff-review",
-      "task": "journal-choice"
-    },
     "labels": {
-      "component": "journal",
-      "review": "HND-9"
+      "component": [
+        "journal"
+      ],
+      "review": [
+        "HND-9"
+      ],
+      "agentic_process": [
+        "handoff-review"
+      ],
+      "task": [
+        "journal-choice"
+      ]
     },
     "occurred_at": "2026-09-01T09:20:00Z",
     "observed_at": "2026-09-01T09:25:00Z",
-    "current": {
-      "kind": "turn",
-      "summary": "H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available.",
-      "summary_en": "H1 requests confirmation of the D1 review selection for HND-9 and leaves the offline restore test pending without a report.",
-      "evidence": "H1, received 2026-09-01T09:25:00Z: H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available."
-    },
     "read_context": {
       "inspected_refs": [
         "${decision.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${decision.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "H1 names D1 as the decision to review. D1 is the context for the request; it does not establish an offline test result.",
-        "evidence": "H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available."
+        "id": "current",
+        "kind": "turn",
+        "summary": "H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available.",
+        "summary_en": "H1 requests confirmation of the D1 review selection for HND-9 and leaves the offline restore test pending without a report.",
+        "evidence": "H1, received 2026-09-01T09:25:00Z: H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available.",
+        "connect_to": [
+          {
+            "ref": "${decision.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "H1 names D1 as the decision to review. D1 is the context for the request; it does not establish an offline test result.",
+            "evidence": "H1: Please confirm D1 is the selection to review for HND-9. The offline restore test is still pending; no test report is available."
+          }
+        ]
       }
     ]
   }
@@ -616,48 +648,56 @@ is at 10:10 UTC, after F1 was received.
   "save_as": "feedback",
   "arguments": {
     "about": "example:guide:shared-resumption",
-    "intent": "record_feedback",
     "actor": "guide-reviewer",
     "source_kind": "human",
     "idempotency_key": "guide-shared:feedback:v1",
-    "scope": {
-      "process": "handoff-review",
-      "task": "journal-choice"
-    },
     "labels": {
-      "component": "journal",
-      "review": "HND-9"
+      "component": [
+        "journal"
+      ],
+      "review": [
+        "HND-9"
+      ],
+      "agentic_process": [
+        "handoff-review"
+      ],
+      "task": [
+        "journal-choice"
+      ]
     },
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:05:00Z",
-    "current": {
-      "kind": "feedback",
-      "summary": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending.",
-      "summary_en": "F1 answers H1 by confirming D1 as the HND-9 review selection; it does not confirm test success, and the offline restore test remains pending.",
-      "evidence": "F1, received 2026-09-01T10:05:00Z: F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending."
-    },
     "read_context": {
       "inspected_refs": [
         "${recovered_handoff.object.ref}",
         "${recovered_decision.object.ref}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${recovered_handoff.object.ref}",
-        "rel": "answers",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "F1 explicitly answers H1, the stored request for confirmation of the review selection.",
-        "evidence": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending."
-      },
-      {
-        "ref": "${recovered_decision.object.ref}",
-        "rel": "confirms_selection",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "F1 explicitly confirms D1 as the selection to review. It limits that confirmation to selection and leaves the offline test pending.",
-        "evidence": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending."
+        "id": "current",
+        "kind": "feedback",
+        "summary": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending.",
+        "summary_en": "F1 answers H1 by confirming D1 as the HND-9 review selection; it does not confirm test success, and the offline restore test remains pending.",
+        "evidence": "F1, received 2026-09-01T10:05:00Z: F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending.",
+        "connect_to": [
+          {
+            "ref": "${recovered_handoff.object.ref}",
+            "rel": "answers",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "F1 explicitly answers H1, the stored request for confirmation of the review selection.",
+            "evidence": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending."
+          },
+          {
+            "ref": "${recovered_decision.object.ref}",
+            "rel": "confirms_selection",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "F1 explicitly confirms D1 as the selection to review. It limits that confirmation to selection and leaves the offline test pending.",
+            "evidence": "F1: In answer to H1, I confirm D1 is the selection to review for HND-9. This confirms the selection only; the offline restore test is still pending."
+          }
+        ]
       }
     ]
   }

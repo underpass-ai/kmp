@@ -120,26 +120,34 @@ fn calls() -> Vec<(&'static str, Value)> {
             "kmp_write_memory",
             json!({
                 "about": ABOUT,
-                "intent": "record_decision",
                 "actor": "parity-test",
                 "source_kind": "agent",
                 "observed_at": "2026-04-12T16:00:00Z",
                 "occurred_at": "2026-04-12T16:00:00Z",
-                "scope": {"process": "parity"},
-                "current": {
-                    "kind": "decision",
-                    "summary": "Pin the answered surface, not only the advertised one.",
-                    "evidence": "A refactor that preserves schemas can still change answers."
+                "read_context": {
+                    "inspected_refs": [CLAIM]
                 },
-                "connect_to": [{
-                    "ref": CLAIM,
-                    "rel": "uses_background",
-                    "class": "evidential",
-                    "confidence": "medium",
-                    "why": "The decision was taken while reading this claim back.",
-                    "evidence": "The claim is the store's only prior entry."
-                }],
-                "read_context": {"inspected_refs": [CLAIM]}
+                "labels": {
+                    "agentic_process": ["parity"]
+                },
+                "memories": [
+                    {
+                        "id": "current",
+                        "kind": "decision",
+                        "summary": "Pin the answered surface, not only the advertised one.",
+                        "evidence": "A refactor that preserves schemas can still change answers.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "uses_background",
+                                "class": "evidential",
+                                "confidence": "medium",
+                                "why": "The decision was taken while reading this claim back.",
+                                "evidence": "The claim is the store's only prior entry."
+                            }
+                        ]
+                    }
+                ]
             }),
         ),
         // `proof.superseded` and `proof.expired` are pinned empty by every
@@ -151,33 +159,57 @@ fn calls() -> Vec<(&'static str, Value)> {
             "kmp_write_memory:supersedes",
             json!({
                 "about": ABOUT,
-                "intent": "record_delta",
                 "actor": "parity-test",
                 "source_kind": "agent",
                 "observed_at": "2026-04-12T17:00:00Z",
                 "occurred_at": "2026-04-12T17:00:00Z",
-                "scope": {"process": "parity"},
-                "current": {
-                    "kind": "semantic_delta",
-                    "summary": "Rachel is moving to Boulder, not Denver.",
-                    "evidence": "She corrected the city in the same conversation."
+                "read_context": {
+                    "inspected_refs": [CLAIM]
                 },
-                "semantic_delta": {
-                    "from": "Rachel said she was moving to Denver.",
-                    "to": "Rachel is moving to Boulder.",
-                    "why": "The later statement corrects the earlier one.",
-                    "evidence": "Both statements are hers, minutes apart."
+                "labels": {
+                    "agentic_process": ["parity"]
                 },
-                "connect_to": [{
-                    "ref": CLAIM,
-                    "rel": "supersedes",
-                    "class": "evidential",
-                    "confidence": "high",
-                    "why": "The corrected city replaces the first one while the \
+                "memories": [
+                    {
+                        "id": "current",
+                        "kind": "semantic_delta",
+                        "summary": "Rachel is moving to Boulder, not Denver.",
+                        "evidence": "She corrected the city in the same conversation.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "supersedes",
+                                "class": "evidential",
+                                "confidence": "high",
+                                "why": "The corrected city replaces the first one while the \
             first stays readable as history.",
-                    "evidence": "She named Boulder after naming Denver."
-                }],
-                "read_context": {"inspected_refs": [CLAIM]}
+                                "evidence": "She named Boulder after naming Denver."
+                            },
+                            {
+                                "ref": "@semantic_delta",
+                                "rel": "updates_state",
+                                "class": "causal",
+                                "why": "The later statement corrects the earlier one.",
+                                "evidence": "Both statements are hers, minutes apart."
+                            }
+                        ]
+                    },
+                    {
+                        "id": "semantic_delta",
+                        "kind": "semantic_delta",
+                        "summary": format!("From: {}\nTo: {}\nWhy: {}", "Rachel said she was moving to Denver.", "Rachel is moving to Boulder.", "The later statement corrects the earlier one."),
+                        "evidence": "Both statements are hers, minutes apart.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "semantic_delta_from",
+                                "class": "causal",
+                                "why": "The later statement corrects the earlier one.",
+                                "evidence": "Both statements are hers, minutes apart."
+                            }
+                        ]
+                    }
+                ]
             }),
         ),
         ("kmp_wake", json!({"about": ABOUT})),
@@ -190,7 +222,7 @@ fn calls() -> Vec<(&'static str, Value)> {
             json!({
                 "about": ABOUT,
                 "question": "Where is Rachel moving?",
-                "budget": {"detail": "compact", "max_bytes": 6000}
+                "budget": {"detail": "compact", "max_bytes": 7500}
             }),
         ),
         (
@@ -274,7 +306,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "dimensions": {
                     "mode": "only",
                     "include": ["conversation"],
-                    "scope_ids": ["about:question:parity:dimension:conversation:rachel"]
+                    "scope_ids": ["label:v1:question%3Aparity:conversation:conversation%3Arachel"]
                 }
             }),
         ),
@@ -374,7 +406,7 @@ fn calls() -> Vec<(&'static str, Value)> {
                 "actor": "parity-test",
                 "observed_at": "2026-04-12T19:00:00Z",
                 "why": "The claim is the one the parity fixture catalogues by issue.",
-                "add": {"issue": "parity-1"},
+                "add": {"issue": ["parity-1"]},
                 "idempotency_key": "parity:relabel:1"
             }),
         ),
@@ -417,7 +449,13 @@ fn blessing() -> bool {
 /// Masking the value keeps the key pinned: a rename still fails, only the
 /// count stops being asserted. A flaky red would be worse than that, and a
 /// bless taken under the flake would pin a number every later run rejects.
-const VOLATILE_KEYS: [&str; 4] = ["at", "ingested_at", "content_hash", "required_bytes"];
+const VOLATILE_KEYS: [&str; 5] = [
+    "at",
+    "ingested_at",
+    "content_hash",
+    "required_bytes",
+    "minimum_progress_bytes",
+];
 const REDACTED: &str = "<stamped at call time>";
 
 /// An inspect cursor is `kmpi1:<offset>:<sha256>`, and the digest covers the
@@ -434,6 +472,18 @@ fn redact_inspect_digest(text: &str) -> Option<String> {
 fn redact(value: &mut Value) {
     match value {
         Value::Object(fields) => {
+            // Recovery allowance includes the complete proof's ingestion-clock
+            // bytes. Native action tests execute it; snapshot its shape, not
+            // the fractional timestamp precision of this particular run.
+            if fields
+                .get("page")
+                .and_then(|page| page.get("minimum_progress_bytes"))
+                .is_some_and(Value::is_number)
+                && let Some(action) = fields.get_mut("next_action")
+                && action.is_object()
+            {
+                action["arguments"]["budget"]["max_bytes"] = json!(REDACTED);
+            }
             for (key, child) in fields.iter_mut() {
                 if VOLATILE_KEYS.contains(&key.as_str()) && !child.is_object() {
                     *child = json!(REDACTED);

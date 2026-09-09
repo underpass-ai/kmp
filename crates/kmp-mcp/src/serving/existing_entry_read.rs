@@ -1,4 +1,4 @@
-//! Reading a memory back before `record_summary` attaches to it.
+//! Reading a memory back before `search_summaries` attaches to it.
 //!
 //! The pre-read asks `kmp_inspect` for exactly what the write needs — the
 //! stable object and the raw record — and for nothing that can crowd them
@@ -20,7 +20,7 @@ use crate::write::existing_entry::ExistingEntry;
 /// The smallest ceiling `kmp_inspect` accepts.
 const MINIMUM_INSPECT_BUDGET_BYTES: u64 = 512;
 
-/// Reads `reference` out of the store as `record_summary` needs it: the
+/// Reads `reference` out of the store as `search_summaries` needs it: the
 /// stored text, kind, coordinates and metadata, from the object and its raw
 /// record, with links left out of the inspection.
 pub(crate) async fn read_existing_entry(
@@ -55,7 +55,7 @@ async fn inspect(
         .await
         .map_err(|mut error| {
             error.message = format!(
-                "record_summary could not read `{reference}` before attaching to it: {}",
+                "search_summaries could not read `{reference}` before attaching to it: {}",
                 error.message
             );
             error

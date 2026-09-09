@@ -63,26 +63,34 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "constraint",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:constraint:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
-    },
     "labels": {
-      "packet": "PACK-8",
-      "component": "export"
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T08:00:00Z",
-    "current": {
-      "kind": "constraint",
-      "summary": "C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.",
-      "summary_en": "C1 requires offline, device-local ledger storage for export EXP-8: no network access is allowed.",
-      "evidence": "C1, received 2026-09-01T08:00:00Z: C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.",
+        "summary_en": "C1 requires offline, device-local ledger storage for export EXP-8: no network access is allowed.",
+        "evidence": "C1, received 2026-09-01T08:00:00Z: C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export."
+      }
+    ]
   }
 }
 ```
@@ -105,39 +113,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "decision",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:decision:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
-    },
     "labels": {
-      "packet": "PACK-8",
-      "component": "export"
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:00:00Z",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
-      "summary_en": "D1 selects SQLite for EXP-8 because its local storage meets the C1 offline ledger requirement.",
-      "evidence": "D1, received 2026-09-01T09:00:00Z: D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
-    },
     "read_context": {
       "inspected_refs": [
         "${constraint.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${constraint.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "D1 explicitly chooses SQLite to meet C1's device-local, network-free export requirement; this is the stated reason for that choice.",
-        "evidence": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
+        "summary_en": "D1 selects SQLite for EXP-8 because its local storage meets the C1 offline ledger requirement.",
+        "evidence": "D1, received 2026-09-01T09:00:00Z: D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
+        "connect_to": [
+          {
+            "ref": "${constraint.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "D1 explicitly chooses SQLite to meet C1's device-local, network-free export requirement; this is the stated reason for that choice.",
+            "evidence": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
+          }
+        ]
       }
     ]
   }
@@ -162,39 +178,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "test",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:test:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
-    },
     "labels": {
-      "packet": "PACK-8",
-      "component": "export"
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:00:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
-      "summary_en": "T1 reports a successful offline EXP-8 test of the D1 SQLite plan: original and restored checksums match at 9a7c.",
-      "evidence": "T1, received 2026-09-01T10:00:00Z: T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
-    },
     "read_context": {
       "inspected_refs": [
         "${decision.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${decision.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "T1 identifies D1 as the plan used in the test. The plan is context for interpreting the test; it is not itself proof that the test passed.",
-        "evidence": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
+        "id": "current",
+        "kind": "observation",
+        "summary": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
+        "summary_en": "T1 reports a successful offline EXP-8 test of the D1 SQLite plan: original and restored checksums match at 9a7c.",
+        "evidence": "T1, received 2026-09-01T10:00:00Z: T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
+        "connect_to": [
+          {
+            "ref": "${decision.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "T1 identifies D1 as the plan used in the test. The plan is context for interpreting the test; it is not itself proof that the test passed.",
+            "evidence": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
+          }
+        ]
       }
     ]
   }
@@ -219,39 +243,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "result",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:result:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
-    },
     "labels": {
-      "packet": "PACK-8",
-      "component": "export"
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
     "occurred_at": "2026-09-01T11:00:00Z",
     "observed_at": "2026-09-01T11:00:00Z",
-    "current": {
-      "kind": "success_path",
-      "summary": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
-      "summary_en": "R1 records successful offline completion of EXP-8, verified by the matching 9a7c checksum in T1.",
-      "evidence": "R1, received 2026-09-01T11:00:00Z: R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
-    },
     "read_context": {
       "inspected_refs": [
         "${test.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${test.generated_refs.0}",
-        "rel": "verified_by",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1.",
-        "evidence": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
+        "id": "current",
+        "kind": "success_path",
+        "summary": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
+        "summary_en": "R1 records successful offline completion of EXP-8, verified by the matching 9a7c checksum in T1.",
+        "evidence": "R1, received 2026-09-01T11:00:00Z: R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
+        "connect_to": [
+          {
+            "ref": "${test.generated_refs.0}",
+            "rel": "verified_by",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1.",
+            "evidence": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
+          }
+        ]
       }
     ]
   }
@@ -276,29 +308,37 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "unrelated",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:unrelated:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "warehouse-inspection"
-    },
     "labels": {
-      "packet": "PACK-8",
-      "component": "warehouse"
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "warehouse"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "warehouse-inspection"
+      ]
     },
     "occurred_at": "2026-09-01T12:00:00Z",
     "observed_at": "2026-09-01T12:00:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.",
-      "summary_en": "X1 observes blue lights at Warehouse WH-9 at 12:00 UTC on September 1; this independent lighting inspection reports nothing about an export.",
-      "evidence": "X1, received 2026-09-01T12:00:00Z: X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting."
-    },
     "options": {
       "strict": false
-    }
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.",
+        "summary_en": "X1 observes blue lights at Warehouse WH-9 at 12:00 UTC on September 1; this independent lighting inspection reports nothing about an export.",
+        "evidence": "X1, received 2026-09-01T12:00:00Z: X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting."
+      }
+    ]
   }
 }
 ```
@@ -325,6 +365,41 @@ catalogue and refs instead of repeating this fresh-store assumption.
   }
 }
 ```
+
+```json
+{
+  "tool": "kmp_wake",
+  "save_as": "historical_context",
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T09:00:00Z"},
+    "budget": {"max_bytes": 100000, "detail": "full"}
+  }
+}
+```
+
+The historical proof contains C1. `scope.context` identifies the state lines,
+summary, semantic next actions and labels drawn from other times as well;
+D1 in those state lines does not place D1 inside the selected hour.
+
+```json
+{
+  "tool": "kmp_wake",
+  "save_as": "empty_history",
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T09:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["warehouse"]}]},
+    "budget": {"max_bytes": 100000, "detail": "full"}
+  }
+}
+```
+
+The warehouse source arrived later. This hour has empty proof and a null
+resume cursor, while its about context and labels still describe the warehouse.
+The response's scope distinguishes that context from evidence for the hour.
 
 ```json
 {
@@ -368,8 +443,8 @@ the inclusive 08:00 boundary with Goto. Retain only records exactly on that
 boundary; the point lookup can also return older state in larger histories.
 Then Forward starts strictly after 08:00. A page is a slice, not the interval.
 
-The first Forward page contains D1 and T1. Preserve it and its opaque
-page.next_cursor. If the reading allowance ends here, report these refs,
+The first Forward page contains D1 and T1. Preserve it and execute
+the returned next_actions call. If the reading allowance ends here, report these refs,
 the covered boundary, the unchanged clock/labels/limit/budget and the exact
 continuation call shown next. Do not answer as though R1 or later records
 had already been read. A continuation goes in from.ref; do not replace it
@@ -385,7 +460,7 @@ with the last record's timestamp or restart at the original time.
     "axis": "observed",
     "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
     "limit": {"entries": 10},
-    "budget": {"max_bytes": 12000}
+    "budget": {"max_bytes": 30000}
   }
 }
 ```
@@ -401,7 +476,7 @@ with the last record's timestamp or restart at the original time.
     "axis": "observed",
     "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
     "limit": {"entries": 2},
-    "budget": {"max_bytes": 12000}
+    "budget": {"max_bytes": 30000}
   }
 }
 ```
@@ -411,21 +486,15 @@ that selection with all bound arguments unchanged. In this small packet it
 returns R1 and X1; X1 is exactly at 12:00 and must be excluded from the
 half-open interval. Merge C1, D1, T1 and R1 by exact ref. Do not count X1,
 and do not count repeated coordinates of one entry as separate memories.
-If has_more stays true, keep the new cursor and continue the same operation.
+Complete page.has_more first by executing next_actions and collecting each section.
+Then selection.has_more reports remaining history; execute the returned navigation call.
 A repeated cursor without progress is a reason to stop and report the problem.
 
 ```json
 {
   "tool": "kmp_forward",
   "save_as": "temporal_second",
-  "arguments": {
-    "about": "example:guide:budget-proof",
-    "from": {"ref": "${temporal_first.page.next_cursor}"},
-    "axis": "observed",
-    "dimensions": {"mode": "only", "include": ["packet"], "selectors": [{"key": "packet", "op": "in", "values": ["PACK-8"]}]},
-    "limit": {"entries": 2},
-    "budget": {"max_bytes": 12000}
-  }
+  "arguments": "${temporal_first.next_actions.0.arguments}"
 }
 ```
 
@@ -437,7 +506,7 @@ R1 verified_by T1, T1 uses_background D1, D1 chosen_because C1. Each link's
 reason and evidence still need to support its own claim.
 
 Limit the response to one relation per page. Trace continuation uses
-page.cursor, unlike the temporal from.ref above. Keep both endpoints,
+page.cursor; the temporal next_actions above carries its own complete arguments. Keep both endpoints,
 about, depth, byte budget and page size unchanged. Save each returned edge
 and verify that new edges arrive and the opaque cursor advances; a page
 marker is not a new path selection. Trace has no offset field to inspect.
@@ -487,9 +556,27 @@ to false makes the continuation return only object.ref and object_reused=true;
 combine its evidence and links with the original object. The cursor still
 validates the full object and selection, and rejects a changed source.
 
-Here 512 bytes is too small even for the expansion envelope, so the teaching
-continuation raises the allowance to required_bytes, the exact size of the
-complete inspection including its object. Reusing the object can otherwise
+Inspect returns complete `next_actions`. When 512 bytes cannot fit the next
+whole item, the retry offers at least `page.minimum_progress_bytes`. When the
+complete inspection fits the usual 10,000-byte budget, it offers that complete
+read, avoiding a separate call for every item.
+Execute that call and keep following returned actions until `page.has_more`
+is false. Retain the original object and append evidence, incoming/outgoing
+links and raw records from each page. A fixed budget leaves the proof partial;
+never treat it as absent. The native replay checks this action walk against
+a complete inspection of the same stored source.
+
+```python
+while packet["page"]["has_more"]:
+    action = packet["next_actions"][0]
+    packet = call(action["tool"], action["arguments"])
+    append_expansion_items(packet)
+```
+
+The calls below also show the optional object-reuse path. Here 512 bytes is too
+small even for the expansion envelope, so this alternative continuation raises
+the allowance to required_bytes, the exact size of the complete inspection
+including its object. Reusing the object can otherwise
 let proof fit the original ceiling. If an item still cannot fit, allow more
 context or hand off the explicitly partial result. Keep about, ref and include
 unchanged; count both actual responses. Do not overwrite the retained object
@@ -636,6 +723,55 @@ After the second UNKNOWN, stop this semantic investigation. Do not inspect
 the about root, sweep other abouts, navigate time, or fabricate an approver
 from the export history. Earlier traversal and audit calls above answer
 different requests; they are not a fallback after this terminal result.
+
+Ask and Wake also return executable `projection.next_action` calls. These
+requests deliberately begin at 512 bytes, with the same clock, interval and
+component filter. Send the returned `arguments` unchanged to its `tool`.
+If `core_text_shortened` is true, the action omits `page.cursor`: discard that
+partial reconstruction and restart at the proposed allowance to restore the
+full core. Otherwise append only the expansions beyond each section's `core`
+count. Continue until `next_action` is null; `has_more=false` alone only says
+that expansion has finished. A fixed budget may leave the result partial.
+A cursor conflict returns `feedback[].action` for a fresh selection; never
+combine the old pages with the restarted selection.
+
+```json
+{
+  "tool": "kmp_wake",
+  "save_as": "wake_action_start",
+  "expect_partial": true,
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "role": "reviewer", "intent": "Review offline export",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T12:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["export"]}]},
+    "budget": {"max_bytes": 512, "detail": "full"}
+  }
+}
+```
+
+```json
+{
+  "tool": "kmp_ask",
+  "save_as": "ask_action_start",
+  "expect_partial": true,
+  "arguments": {
+    "about": "example:guide:budget-proof",
+    "question": "Why does export EXP-8 use SQLite without network access?",
+    "asked_as": "¿Por qué la exportación EXP-8 usa SQLite sin acceso a la red?",
+    "axis": "observed",
+    "interval": {"start": "2026-09-01T08:00:00Z", "end": "2026-09-01T12:00:00Z"},
+    "dimensions": {"selectors": [{"key": "component", "op": "in", "values": ["export"]}]},
+    "budget": {"max_bytes": 512, "detail": "full"}
+  }
+}
+```
+
+The native replay executes these returned actions to completion and compares
+all reconstructed sections against a full read of the same store. It does not
+invent a cursor or recover a missing field from the lesson. The next two
+questions concern an unrelated, unsupported authorization:
 
 ```json
 {

@@ -296,7 +296,7 @@ impl MemoryArenaSmartWriter {
                     "entry_ref": input.entry_ref.as_str(),
                     "elapsed_ms": commit_call.elapsed_ms,
                     "read_after_write_ready": commit_content
-                        .pointer("/ingest_result/memory/read_after_write_ready")
+                        .get("read_after_write_ready")
                         .cloned()
                         .unwrap_or(Value::Null)
                 }),
@@ -750,29 +750,31 @@ fn write_memory_request(
 ) -> Value {
     let current_summary = compact_memory_text(&input.text, MAX_CURRENT_SUMMARY_CHARS);
     let current_evidence = compact_memory_text(&input.text, MAX_CURRENT_EVIDENCE_CHARS);
-    let mut scope = Map::new();
+    let mut labels = Map::new();
     if let Some(task_scope) = input.task_scope.as_deref() {
-        scope.insert("task".to_string(), json!(task_scope));
+        labels.insert("task".to_string(), json!([task_scope]));
     }
-    scope.insert("process".to_string(), json!(input.process_scope));
+    labels.insert("agentic_process".to_string(), json!([input.process_scope]));
     if let Some(episode_scope) = input.episode_scope.as_deref() {
-        scope.insert("episode".to_string(), json!(episode_scope));
+        labels.insert("agentic_episode".to_string(), json!([episode_scope]));
     }
 
     json!({
         "about": about,
-        "intent": writer_intent(&input.entry_kind),
         "actor": DEFAULT_WRITER_ACTOR,
         "observed_at": input.observed_at,
         "source_kind": DEFAULT_SOURCE_KIND,
-        "scope": Value::Object(scope),
-        "current": {
-            "ref": input.entry_ref,
-            "kind": writer_current_kind(&input.entry_kind),
-            "summary": current_summary,
-            "evidence": current_evidence
-        },
-        "connect_to": proposal.connect_to,
+        "labels": Value::Object(labels),
+        "memories": [
+            {
+                "id": "current",
+                "ref": input.entry_ref,
+                "kind": writer_current_kind(&input.entry_kind),
+                "summary": current_summary,
+                "evidence": current_evidence,
+                "connect_to": proposal.connect_to
+            }
+        ],
         "read_context": read_context_json(read_context),
         "idempotency_key": format!("smart-writer:{}", input.entry_ref),
         "options": {
@@ -835,7 +837,9 @@ fn fallback_connect_to(input: &EntryWriteInput) -> Vec<Value> {
 }
 
 fn namespaced_dimension_ref(about: &str, scope_id: &str) -> String {
-    format!("about:{about}:dimension:{scope_id}")
+    kmp_domain::MemoryDimensionIdentity::new(about, "agentic_process", scope_id)
+        .expect("process label")
+        .node_id()
 }
 
 fn preferred_candidate<'a>(
@@ -1408,7 +1412,7 @@ mod tests {
         assert_eq!(connect_to[0]["class"], "structural");
         assert_eq!(
             connect_to[0]["ref"],
-            "about:memoryarena:x:dimension:memoryarena:process:x"
+            "label:v1:memoryarena%3Ax:agentic_process:memoryarena%3Aprocess%3Ax"
         );
         assert_eq!(connect_to[0]["evidence"], "background");
     }
@@ -1661,9 +1665,11 @@ mod tests {
             &ReadContextPlan::default(),
         );
 
-        let summary = request["current"]["summary"].as_str().expect("summary");
-        let evidence = request["current"]["evidence"].as_str().expect("evidence");
-        let relation_evidence = request["connect_to"][0]["evidence"]
+        let summary = request["memories"][0]["summary"].as_str().expect("summary");
+        let evidence = request["memories"][0]["evidence"]
+            .as_str()
+            .expect("evidence");
+        let relation_evidence = request["memories"][0]["connect_to"][0]["evidence"]
             .as_str()
             .expect("relation evidence");
         assert!(char_count(summary) <= MAX_CURRENT_SUMMARY_CHARS);

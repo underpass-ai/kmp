@@ -539,6 +539,7 @@ where
 
 fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -552,6 +553,7 @@ fn temporal_move_request_from_goto(request: GotoRequest) -> TemporalMoveRequest 
 
 fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -565,6 +567,7 @@ fn temporal_move_request_from_rewind(request: RewindRequest) -> TemporalMoveRequ
 
 fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRequest {
     TemporalMoveRequest {
+        interval: request.interval,
         about: request.about,
         cursor: request.cursor,
         dimensions: request.dimensions,
@@ -578,6 +581,7 @@ fn temporal_move_request_from_forward(request: ForwardRequest) -> TemporalMoveRe
 
 fn temporal_near_request_from_near(request: NearRequest) -> TemporalNearRequest {
     TemporalNearRequest {
+        interval: request.interval,
         about: request.about,
         around: request.around,
         dimensions: request.dimensions,
@@ -713,7 +717,12 @@ fn recall_projection_status(error: RecallProjectionError) -> Status {
     let message = error.to_string();
     match error.cursor_detail() {
         Some(detail) => Status::with_details(
-            Code::InvalidArgument,
+            if detail.reason == kmp_proto::v1beta1::RecallCursorErrorReason::SelectionChanged as i32
+            {
+                Code::Aborted
+            } else {
+                Code::InvalidArgument
+            },
             message,
             detail.encode_to_vec().into(),
         ),
@@ -872,8 +881,8 @@ mod tests {
             selected_abouts_from_bundle_and_scope_ids(
                 &bundle,
                 [
-                    "about:question:other:dimension:timeline",
-                    "about:question:current:dimension:timeline",
+                    "label:v1:question%3Aother:timeline:timeline",
+                    "label:v1:question%3Acurrent:timeline:timeline",
                 ],
             ),
             vec!["question:current", "question:other"]

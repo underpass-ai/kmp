@@ -69,37 +69,11 @@ A fresh missing about returns not_found. An existing about requires recovery
 and catalogue reuse; do not treat it as empty.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "permit",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_decision",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:permit:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "permit"
-    },
-    "occurred_at": "${clock.occurred}",
-    "observed_at": "${clock.observed}",
-    "valid_from": "${clock.day2}",
-    "valid_until": "${clock.day5}",
-    "current": {
-      "kind": "decision",
-      "summary": "Permit TEMP-4 allows Atlas to retry failed uploads during its stated validity interval.",
-      "evidence": "S1, signed permit: Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive."
-    }
-  }
-}
+{"tool":"kmp_write_memory","save_as":"permit","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:permit:v1","labels":{"document":["TEMP-4"],"record":["permit"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.occurred}","observed_at":"${clock.observed}","valid_from":"${clock.day2}","valid_until":"${clock.day5}","memories":[{"id":"current","kind":"decision","summary":"Permit TEMP-4 allows Atlas to retry failed uploads during its stated validity interval.","evidence":"S1, signed permit: Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive."}]}}
 ```
 
 ```json
-{"tool":"kmp_inspect","save_as":"permit_read","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"ref":"${permit.generated_refs.0}"}}
+{"tool":"kmp_inspect","save_as":"permit_read","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"ref":"${permit.generated_refs.0}","include":{"raw":true}}}
 ```
 
 ```json
@@ -112,46 +86,7 @@ check supports the permit document; its why explains that limited support and
 its evidence is the observed check. It does not prove permission before D2.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "signature",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_observation",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:signature:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "signature-check"
-    },
-    "occurred_at": "${clock.checked}",
-    "observed_at": "${clock.check_observed}",
-    "current": {
-      "kind": "observation",
-      "summary": "CHECK-4 verified the signature and printed validity dates of permit TEMP-4.",
-      "evidence": "S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."
-    },
-    "read_context": {
-      "inspected_refs": [
-        "${permit.generated_refs.0}"
-      ]
-    },
-    "connect_to": [
-      {
-        "ref": "${permit.generated_refs.0}",
-        "rel": "supports",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.",
-        "evidence": "S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."
-      }
-    ]
-  }
-}
+{"tool":"kmp_write_memory","save_as":"signature","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:signature:v1","labels":{"document":["TEMP-4"],"record":["signature-check"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"memories":[{"id":"current","kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}]}]}}
 ```
 
 ```json
@@ -162,46 +97,7 @@ The receipt refers to the inspected permit as background. It supplies no
 source for a stronger authorization or causal claim.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "receipt",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_feedback",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:receipt:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {
-      "document": "TEMP-4",
-      "record": "delivery-receipt"
-    },
-    "occurred_at": "${clock.day2}",
-    "observed_at": "${clock.receipt_observed}",
-    "current": {
-      "kind": "feedback",
-      "summary": "RECEIPT-4 confirms that permit TEMP-4 reached the Atlas operations mailbox.",
-      "evidence": "S3, delivery receipt: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."
-    },
-    "read_context": {
-      "inspected_refs": [
-        "${permit.generated_refs.0}"
-      ]
-    },
-    "connect_to": [
-      {
-        "ref": "${permit.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The receipt names this permit as its subject; delivery alone does not establish a new approval or the time the reviewer read it.",
-        "evidence": "S3: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."
-      }
-    ]
-  }
-}
+{"tool":"kmp_write_memory","save_as":"receipt","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:receipt:v1","labels":{"document":["TEMP-4"],"record":["delivery-receipt"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.day2}","observed_at":"${clock.receipt_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"memories":[{"id":"current","kind":"feedback","summary":"RECEIPT-4 confirms that permit TEMP-4 reached the Atlas operations mailbox.","evidence":"S3, delivery receipt: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"uses_background","class":"evidential","confidence":"high","why":"The receipt names this permit as its subject; delivery alone does not establish a new approval or the time the reviewer read it.","evidence":"S3: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."}]}]}}
 ```
 
 ```json
@@ -210,25 +106,45 @@ source for a stronger authorization or causal claim.
 
 ## Enumerate a half-open interval without losing either boundary
 
-For occurred [D1 09:00, D2 00:00), first keep only entries exactly at the
-start from goto. Then read strictly later entries with forward, paginate if
-needed, merge by ref and exclude times at or after D2 00:00. Expected: S1 and
-S2; the receipt S3 lies exactly at the excluded end. Forward alone omits S1.
-Rewind from the end independently checks the two earlier entries in this case.
-Use the document lane consistently so extra label coordinates do not duplicate
-entry counts. This is temporal enumeration and does not require Ask.
+For occurred [D1 09:00, D2 00:00), pass the interval directly to Forward
+without `from`. Expected: S1 and S2; the receipt S3 lies exactly at the excluded
+end. No date filtering or boundary union is needed. The separate Goto below
+locates the start moment for comparison with the viewer; it is not a prerequisite
+for enumeration. Rewind with the same interval independently checks the reverse
+order. Use the document lane consistently so extra label coordinates do not
+duplicate entry counts. This temporal enumeration does not require Ask.
 
 ```json
 {"tool":"kmp_goto","save_as":"occurred_start","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
 ```
 
 ```json
-{"tool":"kmp_forward","save_as":"occurred_later","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.occurred}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_forward","save_as":"occurred_interval","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
 
 ```json
-{"tool":"kmp_rewind","save_as":"before_end","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"from":{"time":"${clock.day2}"},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10}}}
+{"tool":"kmp_rewind","save_as":"before_end","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"}}}
 ```
+
+## Browse coordinates and expand one entry
+
+Select just coordinates to browse the interval. Ref and kind remain; text and
+metadata are explicitly omitted. The proof remains selected by the same
+`include` policy, so this is not a claim that all source text leaves context.
+Execute the returned action to expand the first entry. It preserves document
+selection, clock and interval; do not invent another about or cursor.
+
+```json
+{"tool":"kmp_forward","save_as":"coordinate_browse","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"axis":"occurred","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"]},"limit":{"entries":10},"interval":{"start":"${clock.occurred}","end":"${clock.day2}"},"fields":["coordinates"]}}
+```
+
+```json
+{"tool":"kmp_goto","save_as":"coordinate_detail","arguments":"${coordinate_browse.entries.0.detail_action.arguments}"}
+```
+
+The full entry must match the corresponding full interval entry while the store
+is unchanged. Expansion is a fresh read; a later write can change its content.
+Count this expansion as well as the browse call when assessing context cost.
 
 ## Stand at D2 with each of the four clocks
 
@@ -288,7 +204,7 @@ all label coordinates the same ingestion time for S1; copy one returned
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"ingested_exact","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.links.incoming.0.coordinate.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_goto","save_as":"ingested_exact","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.raw.0.coordinates.0.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ## Refuse a forged ingestion clock and audit the support
@@ -299,7 +215,7 @@ The normal writer has no ingested_at input. Canonical migration/replay is a
 different operation; it is not a way to backdate a new writer observation.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","scope":{"process":"atlas-permit-review"},"labels":{"document":"TEMP-4","record":"signature-check"},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","current":{"kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."},"read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}],"ingested_at":"${clock.day1}"},"expect_error":"invalid_argument"}
+{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","labels":{"document":["TEMP-4"],"record":["signature-check"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"ingested_at":"${clock.day1}","memories":[{"id":"current","kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}]}]},"expect_error":"invalid_argument"}
 ```
 
 ```json

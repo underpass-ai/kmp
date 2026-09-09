@@ -161,6 +161,7 @@ pub fn wake_response_from_result(
     let labels = labels_from_bundle(&result.bundle);
 
     Ok(WakeResponse {
+        dimension_selection: None,
         projection: selection_projection,
         truncation: None,
         resume_cursor,
@@ -672,28 +673,60 @@ pub fn temporal_response_from_result(
     result: TemporalMemoryResult,
 ) -> TemporalMoveResponse {
     let traversal = result.traversal;
-    // Goto projects history as of its resolved cursor. Its proof must stand
-    // there too, including links learned after two already-existing entries.
-    // Other moves enumerate a neighborhood rather than an as-of state.
-    let proof_selection = if direction == TemporalDirection::Goto {
-        cursor_instant(traversal.resolved_cursor(), traversal.axis()).map_or(
-            TemporalSelection::Frontier,
-            |instant| TemporalSelection::AsOf {
-                cursor: kmp_domain::TemporalCursor::Time(instant.to_string()),
-                axis: traversal.axis(),
-            },
-        )
-    } else {
-        TemporalSelection::Frontier
-    };
+    // Entry enumeration has a lower bound, but its antecedents may be older.
+    // Bound proof only at the exclusive end so later knowledge cannot rewrite
+    // the selected history while earlier reasons remain traversable.
+    let mut proof_selection = traversal
+        .interval()
+        .and_then(|interval| interval.end())
+        .map_or(TemporalSelection::Frontier, |end| {
+            TemporalSelection::within(
+                kmp_domain::TemporalInterval::new(None, Some(end.to_string()))
+                    .expect("validated interval end"),
+                traversal.axis(),
+            )
+        });
+    // Goto's state stops at its cursor even when a wider interval is supplied.
+    // An interval ending at or before that cursor remains the stricter,
+    // exclusive bound; other moves retain interval enumeration semantics.
+    let goto_instant = (direction == TemporalDirection::Goto)
+        .then(|| traversal.resolved_cursor())
+        .flatten()
+        .and_then(|cursor| cursor_instant(cursor, traversal.axis()));
+    if let Some(instant) = goto_instant
+        && traversal
+            .interval()
+            .and_then(|interval| interval.end())
+            .is_none_or(|end| compare_temporal_instants(end, instant) == Some(Ordering::Greater))
+    {
+        proof_selection = TemporalSelection::AsOf {
+            cursor: kmp_domain::TemporalCursor::Time(instant.to_string()),
+            axis: traversal.axis(),
+        };
+    }
     let admission = TemporalAdmission::read(&result.source_bundle, &proof_selection)
-        .expect("a resolved time needs no reference lookup");
+        .expect("a validated interval or resolved time needs no reference lookup");
     let proof_bundle = admission.bound(&result.source_bundle);
-    let expired = expired_at_cursor(
+    let goto_as_of = matches!(proof_selection, TemporalSelection::AsOf { .. });
+    let expiry_boundary = if goto_as_of {
+        goto_instant.map(|instant| (instant, true))
+    } else if let Some(interval) = traversal.interval() {
+        interval.end().map(|end| (end, false))
+    } else {
+        traversal
+            .resolved_cursor()
+            .and_then(|cursor| cursor_instant(cursor, traversal.axis()))
+            .map(|instant| (instant, true))
+    };
+    let expired = expired_at_boundary(
         traversal.entries(),
-        &result.source_bundle,
+        if goto_as_of {
+            &result.source_bundle
+        } else {
+            &proof_bundle
+        },
         traversal.axis(),
-        traversal.resolved_cursor(),
+        expiry_boundary,
     );
     let entries = traversal
         .entries()
@@ -740,9 +773,19 @@ pub fn temporal_response_from_result(
     };
     let page = traversal.page();
     let mut warnings = Vec::new();
+    let expiry_unassessed = !goto_as_of
+        && traversal
+            .interval()
+            .is_some_and(|interval| interval.end().is_none());
+    if expiry_unassessed {
+        warnings.push(
+            "open-ended temporal interval has no expiry boundary; set interval.end to assess expiry before that instant"
+                .to_string(),
+        );
+    }
     if page.has_more() {
         warnings.push(
-            "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+            "temporal selection is limited; use the transport's continuation to read remaining history"
                 .to_string(),
         );
     }
@@ -751,7 +794,9 @@ pub fn temporal_response_from_result(
             .missing()
             .iter()
             .any(|item| item == "temporal_positions")
-        && let Some(clock) = missing_explicit_clock(traversal.axis(), traversal.resolved_cursor())
+        && let Some(clock) = traversal
+            .resolved_cursor()
+            .and_then(|cursor| missing_explicit_clock(traversal.axis(), cursor))
     {
         warnings.push(format!(
             "temporal cursor ref `{}` exists but carries no `{clock}` clock",
@@ -802,7 +847,11 @@ pub fn temporal_response_from_result(
     );
     temporal_proof.superseded = superseded_from_relations(&selected_relationships);
     temporal_proof.expired = expired;
+    if expiry_unassessed {
+        temporal_proof.missing.push("expiry_boundary".to_string());
+    }
     let proof_time = admission.proof_fields();
+    temporal_proof.interval = proof_time.interval;
     temporal_proof.axis = proof_time.axis;
     temporal_proof.as_of = proof_time.as_of;
 
@@ -817,10 +866,21 @@ pub fn temporal_response_from_result(
             ),
         },
         temporal: Some(TemporalState {
+            interval: traversal
+                .interval()
+                .map(|interval| kmp_proto::v1beta1::TemporalInterval {
+                    start: timestamp_from_sort_or_rfc3339(interval.start()),
+                    end: timestamp_from_sort_or_rfc3339(interval.end()),
+                }),
             direction: proto_direction(direction) as i32,
             axis: proto_temporal_axis(traversal.axis()) as i32,
-            requested: Some(requested_cursor),
-            resolved: Some(proto_coordinate_from_domain(traversal.resolved_cursor())),
+            requested: (!requested_cursor.r#ref.is_empty()
+                || requested_cursor.time.is_some()
+                || requested_cursor.sequence.is_some())
+            .then_some(requested_cursor),
+            resolved: traversal
+                .resolved_cursor()
+                .map(proto_coordinate_from_domain),
         }),
         coverage: Some(kmp_proto::v1beta1::TemporalCoverage {
             requested: Some(proto_dimension_selection_from_domain(
@@ -858,13 +918,13 @@ pub fn temporal_response_from_result(
 /// what an as-of view left out for having ended. That filter runs inside the
 /// traversal, before this ever sees the entries, which is why the one read
 /// where expiry is the whole subject used to report none of it.
-fn expired_at_cursor(
+fn expired_at_boundary(
     entries: &[kmp_domain::TemporalEntry],
     bundle: &KmpBundle,
     axis: TemporalAxis,
-    cursor: &TemporalCoordinate,
+    boundary: Option<(&str, bool)>,
 ) -> Vec<ExpiredMemory> {
-    let Some(instant) = cursor_instant(cursor, axis) else {
+    let Some((instant, inclusive)) = boundary else {
         return Vec::new();
     };
 
@@ -902,9 +962,13 @@ fn expired_at_cursor(
             // however many others have run out.
             let active = validity.iter().any(|(start, end)| {
                 start.is_none_or(|start| {
-                    compare_temporal_instants(start, instant) != Some(Ordering::Greater)
+                    compare_temporal_instants(start, instant).is_some_and(|order| {
+                        order == Ordering::Less || (inclusive && order == Ordering::Equal)
+                    })
                 }) && end.is_none_or(|end| {
-                    compare_temporal_instants(end, instant) == Some(Ordering::Greater)
+                    compare_temporal_instants(end, instant).is_some_and(|order| {
+                        order == Ordering::Greater || (!inclusive && order == Ordering::Equal)
+                    })
                 })
             });
             if active {
@@ -914,10 +978,9 @@ fn expired_at_cursor(
                 .iter()
                 .filter_map(|(_, end)| *end)
                 .filter(|end| {
-                    matches!(
-                        compare_temporal_instants(end, instant),
-                        Some(Ordering::Less | Ordering::Equal)
-                    )
+                    compare_temporal_instants(end, instant).is_some_and(|order| {
+                        order == Ordering::Less || (inclusive && order == Ordering::Equal)
+                    })
                 })
                 .max_by(|left, right| {
                     compare_temporal_instants(left, right).unwrap_or(Ordering::Equal)

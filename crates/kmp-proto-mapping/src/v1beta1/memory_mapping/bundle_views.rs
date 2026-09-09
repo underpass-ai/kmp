@@ -1141,12 +1141,12 @@ mod abouts_tests {
             node("project:beta", "memory_anchor"),
             vec![
                 node(
-                    "about:project:beta:dimension:incident:north",
+                    "label:v1:project%3Abeta:incident:incident%3Anorth",
                     "memory_dimension",
                 ),
                 node("project:beta:e1", "memory_entry"),
                 node(
-                    "about:project:alpha:dimension:incident:north",
+                    "label:v1:project%3Aalpha:incident:incident%3Anorth",
                     "memory_dimension",
                 ),
                 node("project:alpha:e1", "memory_entry"),
@@ -1155,12 +1155,12 @@ mod abouts_tests {
             ],
             vec![
                 placed(
-                    "about:project:beta:dimension:incident:north",
+                    "label:v1:project%3Abeta:incident:incident%3Anorth",
                     "project:beta:e1",
                 ),
                 records("project:beta", "project:beta:e1"),
                 placed(
-                    "about:project:alpha:dimension:incident:north",
+                    "label:v1:project%3Aalpha:incident:incident%3Anorth",
                     "project:alpha:e1",
                 ),
                 records("project:gamma", "project:gamma:e1"),

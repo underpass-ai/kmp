@@ -3,7 +3,7 @@ use kmp_application::{
 };
 use serde_json::Value;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use super::accepted_counts::AcceptedCounts;
 use super::ingest_arguments::*;
@@ -31,14 +31,20 @@ pub(crate) fn build_ingest_plan(arguments: &Value) -> Result<KmpIngestPlan, Stri
     if let Some(provenance) = provenance {
         validate_provenance(provenance)?;
     }
-    let mut dimension_kinds = BTreeMap::new();
+    let mut dimension_kinds: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
     let mut changes = Vec::new();
     for dimension in dimensions {
         let id = required_object_string(dimension, "memory.dimensions[].id")?;
-        validate_ref_token("memory.dimensions[].id", id)?;
         let kind = required_object_string(dimension, "memory.dimensions[].kind")?;
-        if dimension_kinds.insert(id, kind).is_some() {
-            return Err(format!("duplicate memory dimension `{id}`"));
+        if let Some(identity) = kmp_domain::MemoryDimensionIdentity::parse(id)
+            && (identity.about() != about || identity.key() != kind)
+        {
+            return Err(format!(
+                "memory dimension ref `{id}` must belong to `{about}` and key `{kind}`"
+            ));
+        }
+        if !dimension_kinds.entry(id).or_default().insert(kind) {
+            return Err(format!("duplicate memory dimension `{kind}={id}`"));
         }
         changes.push(KmpIngestChange {
             entity_kind: "memory_dimension".to_string(),

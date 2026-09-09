@@ -38,7 +38,7 @@
             "ingested_at": "<stamped at call time>",
             "occurred_at": "2026-04-12T15:05:00Z",
             "rank": 2,
-            "scope_id": "about:question:parity:dimension:conversation:rachel",
+            "scope_id": "label:v1:question%3Aparity:conversation:conversation%3Arachel",
             "sequence": 2,
             "valid_from": "2026-04-12T15:05:00Z",
             "valid_until": "2026-04-12T18:00:00Z"
@@ -50,12 +50,89 @@
         "text": "She starts the new job in Denver in June."
       }
     ],
-    "next_action": "Continue the earlier history with kmp_rewind using from.ref=\"question:parity:claim:denver-detail\". Keep about, axis, dimensions, include, depth, budget, and limit unchanged. Do not pass this cursor back to kmp_goto.",
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "question:parity",
+          "axis": "occurred",
+          "dimensions": {
+            "abouts": [
+              "question:parity"
+            ],
+            "include": [
+              "conversation"
+            ],
+            "mode": "only",
+            "scope": "abouts"
+          },
+          "from": {
+            "ref": "question:parity:claim:denver-detail"
+          },
+          "limit": {
+            "entries": 1
+          }
+        },
+        "tool": "kmp_rewind"
+      }
+    ],
     "page": {
-      "has_more": true,
-      "next_cursor": "question:parity:claim:denver-detail",
+      "has_more": false,
+      "next_cursor": null,
+      "offset": 0,
       "returned": 1,
-      "total": 2
+      "sections": {
+        "entries": {
+          "remaining": 0,
+          "returned_on_page": 1,
+          "total": 1
+        },
+        "proof.conflicts": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.evidence": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.expired": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_relations": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.matched_terms": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.missing": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.path": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "proof.superseded": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        },
+        "raw_refs": {
+          "remaining": 0,
+          "returned_on_page": 0,
+          "total": 0
+        }
+      },
+      "total": 1
     },
     "proof": {
       "abouts_empty_in_selection": [],
@@ -84,10 +161,17 @@
       "truncated": true
     },
     "raw_refs": [],
+    "selection": {
+      "entries": 1,
+      "has_more": true,
+      "matching_entries": 2,
+      "scope": "selected_packet"
+    },
     "summary": "Returned 1 temporal entry.",
     "temporal": {
       "axis": "occurred",
       "direction": "goto",
+      "interval": null,
       "requested": {
         "time": "2026-04-12T15:05:00Z"
       },
@@ -96,7 +180,7 @@
       }
     },
     "warnings": [
-      "temporal response paginated; use page.next_cursor as a temporal cursor ref to continue"
+      "temporal selection is limited; use the transport's continuation to read remaining history"
     ]
   }
 }

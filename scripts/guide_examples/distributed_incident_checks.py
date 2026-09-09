@@ -11,8 +11,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert read['object']['ref'] == refs[name]
         assert read['object']['kind'] == kind
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
 
     before = saved['related']
     proposal = before['proposed'][0]
@@ -31,8 +31,8 @@ def check(saved, client, authored):
     edge = identities[0]
     assert (edge['from'], edge['to'], edge['rel']) == (refs['identity'], refs['audit'], 'same_event_as')
     assert edge['class'] == 'evidential' and edge['confidence'] == 'high'
-    assert edge['why'] == authored['identity']['connect_to'][0]['why']
-    assert edge['evidence'] == authored['identity']['current']['evidence']
+    assert edge['why'] == authored['identity']['memories'][0]['connect_to'][0]['why']
+    assert edge['evidence'] == authored['identity']['memories'][0]['evidence']
     assert edge['method'] == 'kmp_relate:' + '+'.join(proposal['proposed_by'])
     assert edge in saved['identity_path']['trace']
     assert any(e['from'] == refs['identity'] and e['to'] == refs['outage']

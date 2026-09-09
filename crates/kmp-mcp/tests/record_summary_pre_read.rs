@@ -46,7 +46,7 @@ fn raw_record() -> Value {
         "text": TEXT,
         "coordinates": [{
             "dimension": "work",
-            "scope_id": "about:project:kmp:dimension:work:main",
+            "scope_id": "label:v1:project%3Akmp:work:work%3Amain",
             "occurred_at": "2026-05-06T10:00:00Z",
             "ingested_at": "2026-05-06T10:00:01Z",
             "sequence": 3
@@ -115,16 +115,24 @@ fn record_summary_request() -> Value {
         "jsonrpc": "2.0",
         "id": 7,
         "method": "tools/call",
-        "params": {"name": "kmp_write_memory", "arguments": {
-            "about": "project:kmp",
-            "intent": "record_summary",
-            "actor": "Codex",
-            "observed_at": "2026-09-03T22:14:35Z",
-            "scope": {"process": "kmp-summary-backfill-20260904"},
-            "current": {"ref": REFERENCE, "summary_en": SUMMARY},
-            "idempotency_key": "kmp-summary-backfill-20260904:01",
-            "options": {"strict": true}
-        }}
+        "params": {
+            "name": "kmp_write_memory",
+            "arguments": {
+                "about": "project:kmp",
+                "actor": "Codex",
+                "observed_at": "2026-09-03T22:14:35Z",
+                "search_summaries": [
+                    {
+                        "ref": REFERENCE,
+                        "summary_en": SUMMARY
+                    }
+                ],
+                "idempotency_key": "kmp-summary-backfill-20260904:01",
+                "options": {
+                    "strict": true
+                }
+            }
+        }
     })
 }
 

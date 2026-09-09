@@ -36,13 +36,28 @@ async fn write(
     seen: &str,
     target: Option<(&str, &str)>,
 ) -> String {
-    let mut args = json!({"about":ABOUT,"actor":"test-writer","intent":"record_observation",
-        "idempotency_key":key,"scope":{"process":"duty-review"},
-        "occurred_at":"2026-09-01T08:00:00Z","observed_at":seen,"source_kind":"human",
-        "current":{"kind":"observation","summary":text,"evidence":text}});
+    let mut args = json!({
+        "about": ABOUT,
+        "actor": "test-writer",
+        "idempotency_key": key,
+        "occurred_at": "2026-09-01T08:00:00Z",
+        "observed_at": seen,
+        "source_kind": "human",
+        "labels": {
+            "agentic_process": ["duty-review"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "observation",
+                "summary": text,
+                "evidence": text
+            }
+        ]
+    });
     if let Some((target, relation)) = target {
         args["read_context"] = json!({"inspected_refs":[target]});
-        args["connect_to"] = json!([{"ref":target,"rel":relation,"class":"evidential",
+        args["memories"][0]["connect_to"] = json!([{"ref":target,"rel":relation,"class":"evidential",
             "confidence":"high","why":"These sole-operator assignments concern the same shift.",
             "evidence":if relation == "supersedes" { LATE_PROOF } else { "One report names Maya alone, the other Zoe alone." }}]);
     }

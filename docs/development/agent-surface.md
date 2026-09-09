@@ -64,14 +64,54 @@ haya una confusión probable: compartir etiqueta no prueba identidad; ocurrido
 ayer no significa observado ayer. Un replay escrito demuestra un contrato;
 no demuestra que otro LLM haya aprendido a usarlo.
 
+En escritura, consumir toda la lista `feedback`: cada registro que falla durante
+la compilación independiente aporta su primer error, con código, ruta y acción
+si existe. Conservar esos campos al agrupar; no reconstruir reparaciones desde
+el mensaje general. La forma del paquete, sus identidades y los fallos del
+backend pueden detener la validación antes. Tampoco es una lista exhaustiva de
+todos los errores de un mismo registro. Comprobar que el rechazo completo no
+escribe nada y que las acciones siguen siendo ejecutables después de agrupar.
+
+La autoverificación del escritor debe comparar fuentes con lo que realmente
+guardó: reloj de observación frente a ocurrencia, vigencia, prueba y una ruta
+dimensional útil. Reutilizar el contexto ya disponible y ampliar sólo lo necesario.
+La cobertura del paquete no demuestra cobertura de la fuente; el lint literal
+de `summary_en` no comprueba equivalencias semánticas ni fechas dentro de la
+prosa. Enseñar ejemplos concretos de esas diferencias, claves estables para una
+misma ruta y hechos con ciclos de vida separados. No imponer cuotas de tipos o
+etiquetas ni convertir esta revisión informativa en un gate editorial.
+
 Al cambiar la representación de una continuación, comprobar la reconstrucción
 completa desde sus páginas contra una lectura sin paginar. En Inspect,
 `page.repeat_object=false` sólo sirve con un cursor y el objeto inicial
 conservado; `object_reused=true` y `object.ref` identifican lo reutilizado.
 Texto, metadatos, fuente y pruebas siguen vinculados al cursor, aunque no se
-repitan. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
+repitan. Inspect devuelve la llamada completa en `next_actions`; si no cabe un
+elemento, su presupuesto ofrece al menos `page.minimum_progress_bytes`; prefiere
+la inspección completa cuando cabe en los 10.000 bytes habituales, para evitar
+reintentos de un elemento por llamada. Conservar el
+significado de `required_bytes`: la inspección completa con su objeto. Contar la
+acción y la advertencia en el suelo de respuesta, y ejecutar el reintento para
+comprobar que avanza. Un conflicto devuelve en feedback un reinicio sin `page`,
+que recupera el objeto nuevo aunque las páginas anteriores lo reutilizasen. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
+
+En los verbos temporales, `page` cuenta elementos de entradas y prueba del mismo
+paquete; `selection` identifica la selección limitada del núcleo. Ejecutar
+`next_actions` con sus argumentos completos: primero reconstruir ese paquete y
+después navegar la historia que quede fuera. No convertir `page.next_cursor` en
+una referencia de memoria. Una prueba de continuación debe conservar los filtros,
+el reloj y la prueba, y comprobar que el cursor rechaza cambios del contenido.
+Medir el recorrido completo: cuatro páginas pueden costar más tokens que una
+respuesta grande aunque permitan avanzar con un límite menor por respuesta.
+
+Al cambiar `fields`, comprobar qué se proyecta: en los verbos temporales sólo
+las entradas; prueba y auditoría dependen de `include`. Conservar identidad,
+declarar campos omitidos y ejecutar las acciones de ampliación con el mismo
+alcance. Un cambio en contenido oculto también debe invalidar el cursor.
+La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
+navegación selectiva como ampliación de todos los resultados.
 
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
@@ -98,6 +138,18 @@ manual común. No acoplar esta distribución a tests de frases o de orden del te
 
 ### Huellas de selección y cambios del transporte
 
+En Wake, `scope.selection` identifica la prueba y las secciones sujetas al reloj
+y al intervalo o instante declarados en `proof`. `scope.context` identifica el
+contexto del about, cuyo tiempo es `unbounded`; puede describir recuerdos fuera
+de esa selección histórica. `scope.dimensions` declara los filtros aplicados a
+ambos grupos, con sus valores y predicados. El catálogo conserva las etiquetas
+de las entradas que pasan: filtrar por una etiqueta no elimina sus otras etiquetas.
+Conservar esta señal dentro del presupuesto y a través del transporte tipado.
+Verificar una ventana con prueba, otra sin prueba pero con contexto, y filtros
+dimensionales; un about inexistente es un caso distinto. `wake.objective` procede
+del solicitante, no es evidencia recuperada. Enseñar estas diferencias en el
+verbo y en una lección con fuentes, también visible en ChronoLoom.
+
 Trace y Relate calculan su huella sobre la selección completa antes de cortar
 la página. Al añadir un campo a esos resultados, incluirlo en la huella si
 cambia contenido, evidencia o alcance observables. El orden de mapas de metadata
@@ -111,6 +163,34 @@ de `crates/kmp-proto/proto`. El MCP y el kernel deben compartir ese contrato;
 un backend sin huella se rechaza explícitamente. Comprobar continuación, cambio
 en una página posterior y acción de reinicio en los transportes afectados.
 Esta explicación es mantenimiento informativo; no añade un control de CI.
+
+### Continuaciones de Ask y Wake
+
+`kmp-proto-mapping/src/v1beta1/recall_projection.rs` cuenta la acción antes
+que la expansión. `recall_actions.rs` construye la llamada y su presupuesto
+suficiente. Al añadir un argumento a Ask/Wake, actualizar su conversión a
+argumentos nativos, la identidad del cursor y la prueba que ejecuta la llamada
+recibida. Conservar selección temporal, dimensiones y `asked_as`; omitir
+`max_entries` ilimitado en vez de enviar un cero rechazado por el MCP.
+
+La respuesta MCP usa `projection.next_action: {tool, arguments}`. El proto
+transporta `RecallCall` en `next_call`, con argumentos JSON para conservar
+enteros exactamente; el antiguo campo de prosa queda sin emitir y no tiene
+adaptador de compatibilidad. Los errores tipados transportan `restart` y el
+MCP lo expone como `feedback[].action`. Mantener ambas copias del proto y
+comprobar ejecución equivalente en los transportes.
+
+Una acción sin cursor tras `core_text_shortened` restaura el núcleo con una
+lectura nueva: descartar la reconstrucción parcial anterior. Las continuaciones
+ordinarias añaden sólo expansiones. Probar el recorrido completo contra una
+lectura amplia del mismo store, restauración desde 512 bytes, límites y errores
+sin analizar el texto del diagnóstico. Medir argumentos más respuestas de todo
+el recorrido, incluyendo reinicios. La recuperación propone el tamaño suficiente
+más 10.000 bytes para expansión; ofrecer sólo el mínimo puede multiplicar llamadas.
+En paridad, aislar XDG_DATA_HOME para que el almacén local no cargue una tabla
+léxica personal ausente en el servidor de prueba; comparar la misma configuración
+de recuperación en ambos caminos. La comprobación nativa no mide aprendizaje
+LLM ni facturación del host. Estas instrucciones son documentación informativa.
 
 ## 3. Regenerar con el motor correspondiente
 
@@ -215,6 +295,19 @@ Si se elimina detalle del contexto inicial, contar también la lectura posterior
 de ese detalle. No sumar dos representaciones alternativas como si ambas se
 inyectaran, ni presentar estos conteos como facturación o ahorro monetario.
 
+Para errores de escritura, asignar código y ruta donde se valida el campo.
+No deducirlos del texto del error. Conservar la categoría de un fallo del backend;
+una instrucción de reparación no debe convertirlo en un error del llamante.
+Si se propone una lectura, incluir nombre y argumentos completos y probar que
+puede ejecutarse. Si falta evidencia, señalar el campo sin fabricar un payload.
+El vocabulario de tipos del escritor vive en
+`contract/writer_memory_kinds.rs`: schema, validación y `allowed_values` lo
+consumen directamente. Al ampliarlo, enseñar cuándo corresponde el tipo y
+verificar rechazo, elección basada en fuente y commit; nunca añadir un reemplazo
+automático deducido del nombre inválido. Revisar también los errores de esquema anteriores al planner y los índices del
+paquete. Las pruebas deben recorrer rechazo, lectura/corrección y commit, con
+verificación de que el paquete rechazado no produjo escrituras parciales.
+
 Cuando el cambio dependa de cómo aprende o decide un LLM, probarlo por separado
 con fuentes nuevas y preguntas ocultas al escritor, dentro del presupuesto y
 estado de pausa autorizados. La validación nativa no reanuda por sí sola una
@@ -237,3 +330,10 @@ Actualizar este procedimiento cuando cambie un propietario, un asset, una
 regla de carga o un comando. `AGENTS.md`, el índice de desarrollo y el README
 de la guía deben seguir apuntando aquí, para que una persona y un agente
 encuentren el mismo contrato de mantenimiento.
+
+Writer receipts use the accepted command event and idempotency index. Keep the
+compact acknowledgment, native/gRPC ingest mapping and Inspect audit detail in
+step. Verify actual returned actions across restart, subsequent memory changes
+and export/import; previews and refusals must create neither a receipt nor memory.
+Coverage describes submitted declarations, never completeness against sources the
+writer did not submit. Do not add graph memories or another CI rule for receipts.

@@ -13,7 +13,7 @@ use crate::contract::schema::response_shape::*;
 pub(crate) fn definition() -> Value {
     tool_definition_with_output(
         "kmp_relabel",
-        "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+        "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
         relabel_schema(),
         relabel_output_schema(),
     )
@@ -35,13 +35,13 @@ pub(crate) fn relabel_schema() -> Value {
             },
             "add": {
                 "type": "object",
-                "additionalProperties": string_schema("The scope id the memory now stands in under that key."),
-                "description": "Labels to add, `key: value`. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned and reuse what exists: a value already used under another key in this about is refused, naming both. A label the memory already stands in is refused too."
+                "additionalProperties": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "description": "Values of the memberships under this key."},
+                "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused."
             },
             "remove": {
                 "type": "object",
-                "additionalProperties": string_schema("The scope id to take the memory out of under that key."),
-                "description": "Labels to take off, `key: value`, as `kmp_inspect` with `include.raw` lists them on the memory (the `dimension` is the key, the bare `scope_id` the value). A label the memory does not stand in is refused, naming the ones it does; so is taking off its last label, since a memory stands in at least one."
+                "additionalProperties": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "description": "Values of the memberships under this key."},
+                "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused."
             },
             "why": string_schema("Why the labels change, in one sentence a later reader can check. Kept with the change and on every edge it adds."),
             "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the arguments."),

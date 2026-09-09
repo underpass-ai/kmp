@@ -148,7 +148,7 @@ impl fmt::Display for LabelSelector {
 }
 
 /// A label value as the catalogue shows it: a namespaced scope id loses its
-/// `about:…:dimension:` prefix, anything else is taken as written.
+/// canonical `label:v1` ref, anything else is taken as written.
 pub fn bare_label_value(value: &str) -> String {
     MemoryDimensionIdentity::parse(value)
         .map(|identity| identity.dimension_id().to_string())
@@ -210,7 +210,7 @@ mod tests {
         let selector = LabelSelector::new(
             "incident",
             LabelSelectorOperator::In,
-            ["about:project:kmp:dimension:north-outage"],
+            ["label:v1:project%3Akmp:incident:north-outage"],
         )
         .expect("selector");
         assert_eq!(

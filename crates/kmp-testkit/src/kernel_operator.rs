@@ -140,12 +140,29 @@ pub fn kernel_operator_primary_refs(action: &Value) -> Vec<String> {
             .map(|value| vec![value.to_string()])
             .unwrap_or_default(),
         "kmp_write_memory" => arguments
-            .get("connect_to")
+            .get("memories")
             .and_then(Value::as_array)
             .into_iter()
             .flatten()
+            .flat_map(|memory| {
+                memory
+                    .get("connect_to")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+            })
             .filter_map(|link| link.get("ref").and_then(Value::as_str))
+            .filter(|reference| !reference.starts_with('@'))
             .map(ToString::to_string)
+            .chain(
+                arguments
+                    .get("search_summaries")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|record| record.get("ref").and_then(Value::as_str))
+                    .map(ToString::to_string),
+            )
             .collect(),
         _ => Vec::new(),
     }
@@ -355,58 +372,105 @@ fn validate_write_memory_arguments(arguments: &Value) -> Result<(), String> {
     exact_keys(
         arguments,
         "action.arguments",
+        &["about", "actor", "observed_at"],
         &[
-            "about",
-            "intent",
-            "actor",
-            "observed_at",
-            "scope",
-            "current",
-            "connect_to",
+            "memories",
+            "search_summaries",
+            "labels",
             "read_context",
             "idempotency_key",
             "options",
+            "source_kind",
+            "occurred_at",
+            "valid_from",
+            "valid_until",
+            "rank",
         ],
-        &["semantic_delta", "source_kind"],
     )?;
-    required_non_empty_string(arguments, "about", "action.arguments")?;
-    validate_writer_intent(required_string(arguments, "intent", "action.arguments")?)?;
-    required_non_empty_string(arguments, "actor", "action.arguments")?;
-    required_non_empty_string(arguments, "observed_at", "action.arguments")?;
-    validate_write_scope(
-        required_value(arguments, "scope", "action.arguments")?,
-        "action.arguments.scope",
-    )?;
-    let current_ref = validate_write_current(
-        required_value(arguments, "current", "action.arguments")?,
-        "action.arguments.current",
-    )?;
-    let semantic_delta_ref = if let Some(delta) = arguments.get("semantic_delta") {
-        validate_semantic_delta(delta, "action.arguments.semantic_delta")?
-    } else {
-        None
-    };
-    let read_context_refs = read_context_refs(
-        required_value(arguments, "read_context", "action.arguments")?,
-        "action.arguments.read_context",
-    )?;
-    let local_refs = [current_ref, semantic_delta_ref]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
-    validate_connect_to(
-        required_value(arguments, "connect_to", "action.arguments")?,
-        "action.arguments.connect_to",
-        &local_refs,
-        &read_context_refs,
-    )?;
-    required_non_empty_string(arguments, "idempotency_key", "action.arguments")?;
-    validate_write_options(
-        required_value(arguments, "options", "action.arguments")?,
-        "action.arguments.options",
-    )?;
+    for field in ["about", "actor", "observed_at"] {
+        required_non_empty_string(arguments, field, "action.arguments")?;
+    }
+    if let Some(options) = arguments.get("options") {
+        validate_write_options(options, "action.arguments.options")?;
+    }
+    match (arguments.get("memories"), arguments.get("search_summaries")) {
+        (Some(memories), None) => {
+            let records = non_empty_array(memories, "action.arguments.memories")?;
+            let mut local_refs = Vec::new();
+            let mut ids = std::collections::BTreeSet::new();
+            for (index, record) in records.iter().enumerate() {
+                let context = format!("action.arguments.memories[{index}]");
+                let id = required_non_empty_string(record, "id", &context)?;
+                if !ids.insert(id) {
+                    return Err(format!("{context}.id repeats local id `{id}`"));
+                }
+                local_refs.push(format!("@{id}"));
+                if let Some(reference) = validate_write_record(record, &context)? {
+                    local_refs.push(reference);
+                }
+            }
+            let read_refs = arguments
+                .get("read_context")
+                .map(|value| read_context_refs(value, "action.arguments.read_context"))
+                .transpose()?
+                .unwrap_or_default();
+            let shared = arguments
+                .get("labels")
+                .map(|value| validate_label_memberships(value, "action.arguments.labels"))
+                .transpose()?
+                .unwrap_or(0);
+            for (index, record) in records.iter().enumerate() {
+                let context = format!("action.arguments.memories[{index}]");
+                let own = record
+                    .get("labels")
+                    .map(|value| validate_label_memberships(value, &format!("{context}.labels")))
+                    .transpose()?
+                    .unwrap_or(0);
+                if shared + own == 0 {
+                    return Err(format!("{context} requires at least one label membership"));
+                }
+                if let Some(links) = record.get("connect_to") {
+                    validate_connect_to(
+                        links,
+                        &format!("{context}.connect_to"),
+                        &local_refs,
+                        &read_refs,
+                    )?;
+                }
+            }
+        }
+        (None, Some(summaries)) => {
+            for (index, record) in non_empty_array(summaries, "action.arguments.search_summaries")?
+                .iter()
+                .enumerate()
+            {
+                let context = format!("action.arguments.search_summaries[{index}]");
+                exact_keys(record, &context, &["ref", "summary_en"], &[])?;
+                required_non_empty_string(record, "ref", &context)?;
+                required_non_empty_string(record, "summary_en", &context)?;
+            }
+        }
+        _ => {
+            return Err(
+                "action.arguments requires exactly one of memories or search_summaries".to_string(),
+            );
+        }
+    }
+    validate_optional_non_empty_string(arguments, "idempotency_key", "action.arguments")?;
     validate_optional_non_empty_string(arguments, "source_kind", "action.arguments")?;
     Ok(())
+}
+
+fn validate_label_memberships(value: &Value, context: &str) -> Result<usize, String> {
+    let mut count = 0;
+    for (key, values) in object(value, context)? {
+        let values = string_array(values, &format!("{context}.{key}"))?;
+        if values.is_empty() || values.iter().any(|value| value.trim().is_empty()) {
+            return Err(format!("{context}.{key} requires non-empty label values"));
+        }
+        count += values.len();
+    }
+    Ok(count)
 }
 
 fn validate_relabel_arguments(arguments: &Value) -> Result<(), String> {
@@ -424,15 +488,7 @@ fn validate_relabel_arguments(arguments: &Value) -> Result<(), String> {
     let mut labels = 0usize;
     for field in ["add", "remove"] {
         if let Some(value) = arguments.get(field) {
-            let object = object(value, &format!("action.arguments.{field}"))?;
-            for (key, value) in object {
-                if value.as_str().is_none_or(|value| value.trim().is_empty()) {
-                    return Err(format!(
-                        "action.arguments.{field}.{key} must be a non-empty scope id"
-                    ));
-                }
-            }
-            labels += object.len();
+            labels += validate_label_memberships(value, &format!("action.arguments.{field}"))?;
         }
     }
     if labels == 0 {
@@ -623,36 +679,31 @@ fn validate_page(value: &Value, context: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_write_scope(value: &Value, context: &str) -> Result<(), String> {
-    exact_keys(value, context, &["process"], &["task", "episode"])?;
-    required_non_empty_string(value, "process", context)?;
-    validate_optional_non_empty_string(value, "task", context)?;
-    validate_optional_non_empty_string(value, "episode", context)?;
-    Ok(())
-}
-
-fn validate_write_current(value: &Value, context: &str) -> Result<Option<String>, String> {
-    exact_keys(value, context, &["kind", "summary", "evidence"], &["ref"])?;
+fn validate_write_record(value: &Value, context: &str) -> Result<Option<String>, String> {
+    exact_keys(
+        value,
+        context,
+        &["id", "kind", "summary", "evidence"],
+        &[
+            "ref",
+            "summary_en",
+            "labels",
+            "connect_to",
+            "observed_at",
+            "occurred_at",
+            "valid_from",
+            "valid_until",
+            "rank",
+        ],
+    )?;
     validate_writer_node_kind(required_string(value, "kind", context)?)?;
-    required_non_empty_string(value, "summary", context)?;
-    required_non_empty_string(value, "evidence", context)?;
-    validate_optional_non_empty_string(value, "ref", context)?;
-    Ok(value
-        .get("ref")
-        .and_then(Value::as_str)
-        .map(ToString::to_string))
-}
-
-fn validate_semantic_delta(value: &Value, context: &str) -> Result<Option<String>, String> {
-    exact_keys(value, context, &["from", "to", "why", "evidence"], &["ref"])?;
-    for field in ["from", "to", "why", "evidence"] {
+    for field in ["summary", "evidence"] {
         required_non_empty_string(value, field, context)?;
     }
-    validate_optional_non_empty_string(value, "ref", context)?;
-    Ok(value
-        .get("ref")
-        .and_then(Value::as_str)
-        .map(ToString::to_string))
+    for field in ["ref", "summary_en"] {
+        validate_optional_non_empty_string(value, field, context)?;
+    }
+    Ok(value.get("ref").and_then(Value::as_str).map(str::to_owned))
 }
 
 fn validate_connect_to(
@@ -661,7 +712,7 @@ fn validate_connect_to(
     local_refs: &[String],
     read_context_refs: &[String],
 ) -> Result<(), String> {
-    let links = non_empty_array(value, context)?;
+    let links = array(value, context)?;
     for (index, link) in links.iter().enumerate() {
         let link_context = format!("{context}[{index}]");
         exact_keys(
@@ -746,11 +797,20 @@ fn read_context_refs(value: &Value, context: &str) -> Result<Vec<String>, String
 }
 
 fn validate_write_options(value: &Value, context: &str) -> Result<(), String> {
-    exact_keys(value, context, &["dry_run", "strict"], &["sequence"])?;
-    required_bool(value, "dry_run", context)?;
-    let strict = required_bool(value, "strict", context)?;
-    if !strict {
+    exact_keys(
+        value,
+        context,
+        &[],
+        &["dry_run", "strict", "sequence", "labels_new"],
+    )?;
+    if value.get("dry_run").is_some() {
+        required_bool(value, "dry_run", context)?;
+    }
+    if value.get("strict").is_some() && !required_bool(value, "strict", context)? {
         return Err(format!("{context}.strict must be true for operator-write"));
+    }
+    if let Some(keys) = value.get("labels_new") {
+        string_array(keys, &format!("{context}.labels_new"))?;
     }
     validate_optional_positive_integer(value, "sequence", context)?;
     Ok(())
@@ -912,22 +972,6 @@ fn validate_answer_policy(value: &str) -> Result<(), String> {
     }
 }
 
-fn validate_writer_intent(value: &str) -> Result<(), String> {
-    if [
-        "record_turn",
-        "record_observation",
-        "record_decision",
-        "record_feedback",
-        "record_delta",
-    ]
-    .contains(&value)
-    {
-        Ok(())
-    } else {
-        Err(format!("unsupported writer intent `{value}`"))
-    }
-}
-
 fn validate_writer_node_kind(value: &str) -> Result<(), String> {
     if [
         "turn",
@@ -945,7 +989,7 @@ fn validate_writer_node_kind(value: &str) -> Result<(), String> {
     {
         Ok(())
     } else {
-        Err(format!("unsupported writer current.kind `{value}`"))
+        Err(format!("unsupported writer kind `{value}`"))
     }
 }
 
@@ -1115,19 +1159,15 @@ fn optional_limit(value: &Value, path: &[&str], max: u64) -> bool {
 
 fn bounded_write_memory(arguments: &Value) -> bool {
     validate_write_memory_arguments(arguments).is_ok()
-        && arguments
-            .pointer("/options/strict")
-            .and_then(Value::as_bool)
-            == Some(true)
-        && arguments
-            .pointer("/options/dry_run")
-            .and_then(Value::as_bool)
-            .is_some()
         && optional_limit(arguments, &["options", "sequence"], u32::MAX.into())
         && arguments
-            .pointer("/connect_to")
+            .get("memories")
             .and_then(Value::as_array)
-            .is_some_and(|links| !links.is_empty() && links.len() <= 32)
+            .into_iter()
+            .flatten()
+            .map(|record| array_len(record.get("connect_to")))
+            .sum::<usize>()
+            <= 32
 }
 
 fn bounded_ingest(arguments: &Value) -> bool {
@@ -1268,9 +1308,23 @@ mod tests {
                 "type": "tool_call",
                 "tool": "kmp_write_memory",
                 "arguments": {
-                    "connect_to": [
-                        { "ref": "node:prior", "rel": "chosen_because" },
-                        { "ref": "node:fallback", "rel": "follows" }
+                    "memories": [
+                        {
+                            "connect_to": [
+                                {
+                                    "ref": "node:prior",
+                                    "rel": "chosen_because"
+                                },
+                                {
+                                    "ref": "node:fallback",
+                                    "rel": "follows"
+                                },
+                                {
+                                    "ref": "@other",
+                                    "rel": "supports"
+                                }
+                            ]
+                        }
                     ]
                 }
             })),
@@ -1534,7 +1588,7 @@ mod tests {
         assert_eq!(
             kernel_operator_action_contract_error(&action),
             Some(
-                "action.arguments.connect_to[0].ref `incident:mobile-login:observation:401-refresh-race` uses a rich relation without read_context proof"
+                "action.arguments.memories[0].connect_to[0].ref `incident:mobile-login:observation:401-refresh-race` uses a rich relation without read_context proof"
                     .to_string()
             )
         );
@@ -1543,7 +1597,7 @@ mod tests {
     #[test]
     fn action_contract_rejects_smart_write_without_relation_evidence() {
         let mut arguments = valid_write_memory_arguments();
-        arguments["connect_to"][0]["evidence"] = json!("");
+        arguments["memories"][0]["connect_to"][0]["evidence"] = json!("");
         let action = json!({
             "type": "tool_call",
             "tool": "kmp_write_memory",
@@ -1552,7 +1606,9 @@ mod tests {
 
         assert_eq!(
             kernel_operator_action_contract_error(&action),
-            Some("action.arguments.connect_to[0].evidence must not be empty".to_string())
+            Some(
+                "action.arguments.memories[0].connect_to[0].evidence must not be empty".to_string()
+            )
         );
     }
 
@@ -1570,35 +1626,8 @@ mod tests {
     fn valid_write_memory_arguments() -> serde_json::Value {
         json!({
             "about": "incident:mobile-login",
-            "intent": "record_decision",
             "actor": "agent:backend",
             "observed_at": "2026-05-06T10:00:00Z",
-            "scope": {
-                "task": "incident:mobile-login",
-                "process": "incident:mobile-login:resolution",
-                "episode": "incident:mobile-login:episode:backend"
-            },
-            "current": {
-                "kind": "decision",
-                "summary": "Use token refresh retry instead of widening timeout.",
-                "evidence": "Logs show 401 immediately after token refresh."
-            },
-            "semantic_delta": {
-                "from": "The team suspected network timeout.",
-                "to": "The evidence points to token refresh race.",
-                "why": "The failing requests return 401 immediately after refresh.",
-                "evidence": "Auth logs show refresh success followed by 401 on the next request."
-            },
-            "connect_to": [
-                {
-                    "ref": "incident:mobile-login:observation:401-refresh-race",
-                    "rel": "chosen_because",
-                    "class": "causal",
-                    "why": "The decision addresses the observed token refresh race.",
-                    "evidence": "The chosen retry targets the refresh race seen in auth logs.",
-                    "confidence": "high"
-                }
-            ],
             "read_context": {
                 "inspected_refs": [
                     "incident:mobile-login:observation:401-refresh-race"
@@ -1609,7 +1638,52 @@ mod tests {
                 "dry_run": true,
                 "strict": true,
                 "sequence": 1
-            }
+            },
+            "labels": {
+                "agentic_process": ["incident:mobile-login:resolution"],
+                "task": ["incident:mobile-login"],
+                "agentic_episode": ["incident:mobile-login:episode:backend"]
+            },
+            "memories": [
+                {
+                    "id": "current",
+                    "kind": "decision",
+                    "summary": "Use token refresh retry instead of widening timeout.",
+                    "evidence": "Logs show 401 immediately after token refresh.",
+                    "connect_to": [
+                        {
+                            "ref": "incident:mobile-login:observation:401-refresh-race",
+                            "rel": "chosen_because",
+                            "class": "causal",
+                            "why": "The decision addresses the observed token refresh race.",
+                            "evidence": "The chosen retry targets the refresh race seen in auth logs.",
+                            "confidence": "high"
+                        },
+                        {
+                            "ref": "@semantic_delta",
+                            "rel": "updates_state",
+                            "class": "causal",
+                            "why": "The failing requests return 401 immediately after refresh.",
+                            "evidence": "Auth logs show refresh success followed by 401 on the next request."
+                        }
+                    ]
+                },
+                {
+                    "id": "semantic_delta",
+                    "kind": "semantic_delta",
+                    "summary": format!("From: {}\nTo: {}\nWhy: {}", "The team suspected network timeout.", "The evidence points to token refresh race.", "The failing requests return 401 immediately after refresh."),
+                    "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+                    "connect_to": [
+                        {
+                            "ref": "incident:mobile-login:observation:401-refresh-race",
+                            "rel": "semantic_delta_from",
+                            "class": "causal",
+                            "why": "The failing requests return 401 immediately after refresh.",
+                            "evidence": "Auth logs show refresh success followed by 401 on the next request."
+                        }
+                    ]
+                }
+            ]
         })
     }
 

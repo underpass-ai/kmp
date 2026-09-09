@@ -42,6 +42,7 @@
             "type": "string"
           },
           "dry_run": {
+            "description": "Validate against the selected store without committing. References, labels and coordinates are checked by the kernel; the backend must be reachable. This reserves no future write.",
             "type": "boolean"
           },
           "idempotency_key": {
@@ -50,7 +51,7 @@
             "type": "string"
           },
           "label_policy": {
-            "description": "What to do with a dimension that resembles a label the about already holds — the same identifier up to case and separators, or the same value under another key. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`.",
+            "description": "What to do with a dimension that resembles a label the about already holds — the same identifier under the same key up to case and separators. `warn` (the default) writes it and says so in `warnings` and `memory.resembling_labels`; `refuse` rejects the ingest naming both labels, unless the dimension carries the metadata `writer_intended_new: \"true\"`.",
             "enum": [
               "warn",
               "refuse"
@@ -472,7 +473,7 @@
                 "type": "object"
               },
               "created_dimensions": {
-                "description": "Dimension nodes this ingest declared for the first time, namespaced `about:{about}:dimension:{scope}`: the labels the write created rather than reused.",
+                "description": "Refs of label dimensions this ingest created, identified by about, key and value. Copy returned refs; do not construct them.",
                 "items": {
                   "type": "string"
                 },
@@ -486,8 +487,15 @@
                 "description": "Whether a read issued now is guaranteed to observe this write.",
                 "type": "boolean"
               },
+              "receipt_ref": {
+                "description": "Accepted writer audit ref when the internal compiler attached receipt context; null for raw ingest or preview.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
               "resembling_labels": {
-                "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently` or `value_under_another_key`) and `why`.",
+                "description": "Labels this ingest declared that resemble one the about already holds, written under `label_policy: warn`: each with `key`, `value`, `existing_key`, `existing_value`, `kind` (`same_label_spelled_differently`) and `why`.",
                 "type": "array"
               }
             },
@@ -512,231 +520,288 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Write to memory. This is the writer to use: it validates intent and relation quality, then commits through canonical kmp_ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
+      "description": "Write memory with evidence. Use memories for one or more records with local ids, labels and justified links, validated as one packet before canonical ingest. Normal writes are one call: omit `options.dry_run` or set it to false; validation failures write nothing. Set it to true only for an explicitly requested preview or payload debugging. Reach for kmp_ingest only when producing the exact graph yourself.",
       "inputSchema": {
         "additionalProperties": false,
         "else": {
-          "if": {
-            "not": {
-              "properties": {
-                "options": {
-                  "properties": {
-                    "strict": {
-                      "const": false
-                    }
-                  },
-                  "required": [
-                    "strict"
-                  ]
-                }
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "labels"
+                ]
               },
-              "required": [
-                "options"
-              ]
-            }
+              {
+                "required": [
+                  "occurred_at"
+                ]
+              },
+              {
+                "required": [
+                  "valid_from"
+                ]
+              },
+              {
+                "required": [
+                  "valid_until"
+                ]
+              },
+              {
+                "required": [
+                  "rank"
+                ]
+              },
+              {
+                "required": [
+                  "read_context"
+                ]
+              }
+            ]
           },
           "properties": {
-            "current": {
-              "required": [
-                "kind",
-                "summary"
-              ]
-            }
-          },
-          "then": {
-            "properties": {
-              "current": {
-                "required": [
-                  "evidence"
+            "options": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "sequence"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "labels_new"
+                    ]
+                  }
                 ]
               }
             }
-          }
-        },
-        "if": {
-          "properties": {
-            "intent": {
-              "const": "record_summary"
-            }
           },
           "required": [
-            "intent"
+            "search_summaries"
+          ]
+        },
+        "if": {
+          "required": [
+            "memories"
           ]
         },
         "properties": {
           "about": {
-            "description": "Memory anchor or root ref this semantic memory event should attach to.",
+            "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
             "minLength": 1,
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent, or component producing the write.",
+            "description": "Human, agent or component producing the write.",
             "minLength": 1,
             "type": "string"
           },
-          "connect_to": {
-            "description": "Existing memory refs the new entry connects to. Omit this field or send an empty array only for the first strict write that creates a new about; once the about exists, strict runtime validation requires at least one relation.",
+          "idempotency_key": {
+            "description": "One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "labels": {
+            "additionalProperties": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+            "type": "object"
+          },
+          "memories": {
+            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
             "items": {
               "additionalProperties": false,
               "properties": {
-                "class": {
-                  "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
-                  "enum": [
-                    "structural",
-                    "causal",
-                    "motivational",
-                    "procedural",
-                    "evidential",
-                    "constraint"
-                  ],
-                  "type": "string"
-                },
-                "confidence": {
-                  "enum": [
-                    "high",
-                    "medium",
-                    "low",
-                    "unknown"
-                  ],
-                  "type": "string"
+                "connect_to": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "class": {
+                        "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
+                        "enum": [
+                          "structural",
+                          "causal",
+                          "motivational",
+                          "procedural",
+                          "evidential",
+                          "constraint"
+                        ],
+                        "type": "string"
+                      },
+                      "confidence": {
+                        "enum": [
+                          "high",
+                          "medium",
+                          "low",
+                          "unknown"
+                        ],
+                        "type": "string"
+                      },
+                      "evidence": {
+                        "description": "The concrete observation or source supporting the relation rationale. Required for non-structural links.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "ref": {
+                        "description": "@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "rel": {
+                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                        "enum": [
+                          "follows",
+                          "answers",
+                          "uses_background",
+                          "depends_on",
+                          "chosen_because",
+                          "triggers",
+                          "authorizes",
+                          "verified_by",
+                          "semantic_delta_from",
+                          "updates_state",
+                          "supports",
+                          "supersedes",
+                          "contradicts",
+                          "satisfies_constraint",
+                          "violates_constraint",
+                          "contributes_to",
+                          "excluded_from",
+                          "checked_against",
+                          "derived_from",
+                          "confirms_selection",
+                          "restates",
+                          "corrects",
+                          "component_of",
+                          "total_of",
+                          "same_event_as",
+                          "same_entity_as",
+                          "qualifies_as",
+                          "matches_requirement",
+                          "contains",
+                          "member_of",
+                          "scoped_to"
+                        ],
+                        "type": "string"
+                      },
+                      "why": {
+                        "description": "Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links.",
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "ref",
+                      "rel",
+                      "class"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "evidence": {
-                  "description": "The concrete observation or source that supports the relation rationale. Required for non-structural relations.",
+                  "description": "Concrete source or observation supporting this memory. Required unless options.strict is explicitly false.",
                   "minLength": 1,
                   "type": "string"
                 },
-                "ref": {
-                  "description": "Existing memory ref this new memory connects to. Inside this about for every relation; a ref of another about is accepted only with `same_event_as` or `same_entity_as`, class `evidential`, `why`, `evidence`, and the kmp_relate proposal in `read_context.relate_proposals`. That is the one relation that crosses an about; the edge lives in this about and the other does not change.",
-                  "minLength": 1,
+                "id": {
+                  "description": "Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address.",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
                   "type": "string"
                 },
-                "rel": {
-                  "description": "Relation type for this link. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
+                "kind": {
+                  "description": "What this memory records. No separate writer intent is needed.",
                   "enum": [
-                    "follows",
-                    "answers",
-                    "uses_background",
-                    "depends_on",
-                    "chosen_because",
-                    "triggers",
-                    "authorizes",
-                    "verified_by",
-                    "semantic_delta_from",
-                    "updates_state",
-                    "supports",
-                    "supersedes",
-                    "contradicts",
-                    "satisfies_constraint",
-                    "violates_constraint",
-                    "contributes_to",
-                    "excluded_from",
-                    "checked_against",
-                    "derived_from",
-                    "confirms_selection",
-                    "restates",
-                    "corrects",
-                    "component_of",
-                    "total_of",
-                    "same_event_as",
-                    "same_entity_as",
-                    "qualifies_as",
-                    "matches_requirement",
-                    "contains",
-                    "member_of",
-                    "scoped_to"
+                    "turn",
+                    "observation",
+                    "decision",
+                    "feedback",
+                    "semantic_delta",
+                    "constraint",
+                    "preference",
+                    "derived_value",
+                    "error_path",
+                    "success_path"
                   ],
                   "type": "string"
                 },
-                "why": {
-                  "description": "Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations.",
+                "labels": {
+                  "additionalProperties": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
+                  "type": "object"
+                },
+                "observed_at": {
+                  "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "occurred_at": {
+                  "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "rank": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "ref": {
+                  "description": "Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary": {
+                  "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary_en": {
+                  "description": "Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "valid_from": {
+                  "description": "Inclusive start of the recorded state's validity.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "valid_until": {
+                  "description": "Exclusive end of the recorded state's validity.",
                   "minLength": 1,
                   "type": "string"
                 }
               },
               "required": [
-                "ref",
-                "rel",
-                "class"
+                "id",
+                "kind",
+                "summary"
               ],
               "type": "object"
             },
+            "minItems": 1,
             "type": "array"
           },
-          "current": {
-            "additionalProperties": false,
-            "properties": {
-              "evidence": {
-                "description": "Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "kind": {
-                "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
-                "enum": [
-                  "turn",
-                  "observation",
-                  "decision",
-                  "feedback",
-                  "semantic_delta",
-                  "constraint",
-                  "preference",
-                  "derived_value",
-                  "error_path",
-                  "success_path"
-                ],
-                "type": "string"
-              },
-              "ref": {
-                "description": "Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "summary": {
-                "description": "Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "summary_en": {
-                "description": "English rendering of `summary` for search, written by you as you write the memory. kmp_ask searches it and never cites it: an English question reaches this memory through it, and the citation is `summary` byte for byte. Write plain English a reader would ask with, keep every number, identifier and acronym exactly as written (`v0.7.0`, `#469`, `kmp-mcp`, `ADR`), and never alter `summary` to fit it. Strict mode requires it when `summary` is not written in English, and refuses one that leans to another language, carries fewer than two informative words, repeats `summary` word for word, or drops an identifier `summary` carries; outside strict mode such a summary is stored and carries nothing. Worth writing for English text too when its wording is jargon (`rollout slipped` → `launch postponed`).",
-                "minLength": 1,
-                "type": "string"
-              }
-            },
-            "type": "object"
-          },
-          "idempotency_key": {
-            "description": "Optional stable idempotency key. Omit to generate one from the write payload.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "intent": {
-            "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact. record_summary attaches an English search summary to a memory that already exists: give current.ref and current.summary_en only — the text, kind and coordinates are read from the store and cannot be supplied, no connect_to is written, and a summary the lint refuses is rejected with every fault named. `kmp-mcp summaries pending` lists the memories that owe one.",
-            "enum": [
-              "record_turn",
-              "record_observation",
-              "record_decision",
-              "record_feedback",
-              "record_delta",
-              "record_summary"
-            ],
-            "type": "string"
-          },
-          "labels": {
-            "additionalProperties": {
-              "description": "The scope id this memory stands in under that key.",
-              "minLength": 1,
-              "type": "string"
-            },
-            "description": "Any other label this memory stands in, `key: value`: `component`, `release`, `customer`, whatever catalogues this about. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned before naming one and reuse what exists. Within an about a scope id names one label and keeps the kind of its first use, so a value already used under another key is refused, naming both. Each label becomes a coordinate with the same clocks; `scope.process`, `scope.task` and `scope.episode` are the same thing under their well-known keys and cannot be given twice.",
-            "type": "object"
-          },
           "observed_at": {
-            "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
+            "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
             "minLength": 1,
             "type": "string"
           },
           "occurred_at": {
-            "description": "Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute.",
+            "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
             "minLength": 1,
             "type": "string"
           },
@@ -744,32 +809,29 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
-                "description": "When true, only return the compiled canonical kmp_ingest preview and write nothing. Defaults to false: the call commits.",
+                "description": "Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend.",
                 "type": "boolean"
               },
               "labels_new": {
-                "description": "Label keys the writer insists are new even where the catalogue holds one that resembles them: it read the catalogue and means something else. The kernel leaves those labels out of the resemblance check; every other new label that resembles an existing one is refused under strict and written with a warning otherwise.",
+                "description": "Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently.",
                 "items": {
-                  "description": "A label key of this write.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "sequence": {
-                "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate.",
+                "description": "Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates.",
                 "minimum": 1,
                 "type": "integer"
               },
               "strict": {
-                "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint, and a new label that resembles one the about already holds. Defaults to true.",
+                "description": "Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed.",
                 "type": "boolean"
               }
             },
             "type": "object"
           },
           "rank": {
-            "description": "Optional positive rank within each emitted coordinate.",
             "minimum": 1,
             "type": "integer"
           },
@@ -880,66 +942,30 @@
             },
             "type": "object"
           },
-          "scope": {
-            "additionalProperties": false,
-            "properties": {
-              "episode": {
-                "description": "Optional agentic episode scope id: the well-known `agentic_episode` label.",
-                "minLength": 1,
-                "type": "string"
+          "search_summaries": {
+            "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "ref": {
+                  "description": "Existing memory in this about. The stored source is not replaced.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary_en": {
+                  "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
+                  "minLength": 1,
+                  "type": "string"
+                }
               },
-              "process": {
-                "description": "Caller-defined stable id for the agentic process this memory belongs to: the `agentic_process` label every write carries. Unknown values intentionally create or attach that dimension; this is an identifier, not an enum.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "task": {
-                "description": "Optional task scope id: the well-known `task` label.",
-                "minLength": 1,
-                "type": "string"
-              }
+              "required": [
+                "ref",
+                "summary_en"
+              ],
+              "type": "object"
             },
-            "required": [
-              "process"
-            ],
-            "type": "object"
-          },
-          "semantic_delta": {
-            "additionalProperties": false,
-            "properties": {
-              "evidence": {
-                "description": "Evidence proving the state change.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "from": {
-                "description": "Previous known state.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "ref": {
-                "description": "Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "to": {
-                "description": "New state.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "why": {
-                "description": "Why this state change is valid.",
-                "minLength": 1,
-                "type": "string"
-              }
-            },
-            "required": [
-              "from",
-              "to",
-              "why",
-              "evidence"
-            ],
-            "type": "object"
+            "minItems": 1,
+            "type": "array"
           },
           "source_kind": {
             "enum": [
@@ -951,31 +977,55 @@
             "type": "string"
           },
           "valid_from": {
-            "description": "Optional RFC3339 start of the interval in which the recorded state is valid.",
+            "description": "Inclusive start of the recorded state's validity.",
             "minLength": 1,
             "type": "string"
           },
           "valid_until": {
-            "description": "Optional RFC3339 exclusive end of the interval in which the recorded state is valid.",
+            "description": "Exclusive end of the recorded state's validity.",
             "minLength": 1,
             "type": "string"
           }
         },
         "required": [
           "about",
-          "intent",
           "actor",
-          "observed_at",
-          "scope",
-          "current"
+          "observed_at"
         ],
         "then": {
-          "properties": {
-            "current": {
+          "if": {
+            "not": {
+              "properties": {
+                "options": {
+                  "properties": {
+                    "strict": {
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "strict"
+                  ]
+                }
+              },
               "required": [
-                "ref",
-                "summary_en"
+                "options"
               ]
+            }
+          },
+          "not": {
+            "required": [
+              "search_summaries"
+            ]
+          },
+          "then": {
+            "properties": {
+              "memories": {
+                "items": {
+                  "required": [
+                    "evidence"
+                  ]
+                }
+              }
             }
           }
         },
@@ -989,6 +1039,48 @@
             "description": "True only when the canonical ingest was committed; false for a dry-run preview.",
             "type": "boolean"
           },
+          "coverage": {
+            "additionalProperties": false,
+            "properties": {
+              "complete": {
+                "description": "All declared records and label memberships validated; accepted determines persistence.",
+                "type": "boolean"
+              },
+              "evidence": {
+                "description": "Compiled evidence objects.",
+                "type": "integer"
+              },
+              "label_memberships": {
+                "description": "Declared per-memory key/value pairs after shared-label union.",
+                "type": "integer"
+              },
+              "memories": {
+                "description": "Declared source memories.",
+                "type": "integer"
+              },
+              "preserved_memberships": {
+                "description": "Existing memberships preserved by search_summaries.",
+                "type": "integer"
+              },
+              "relations": {
+                "description": "Declared semantic links.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "submitted_packet: coverage of the declaration only.",
+                "type": "string"
+              },
+              "search_summaries": {
+                "description": "Updated search renderings.",
+                "type": "integer"
+              },
+              "source_coverage": {
+                "description": "not_assessed: KMP cannot detect facts omitted by the writer.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "diagnostics": {
             "description": "Planner diagnostics that qualify the write.",
             "type": "array"
@@ -996,6 +1088,68 @@
           "dry_run": {
             "description": "Whether this response is a validated preview that wrote nothing.",
             "type": "boolean"
+          },
+          "feedback": {
+            "description": "Validation signals. Codes and paths come from validation, not message parsing. A warning can accompany acceptance; never invent missing proof.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "arguments": {
+                          "description": "Complete arguments to execute that read.",
+                          "type": "object"
+                        },
+                        "tool": {
+                          "description": "Supported reading move, not proof that the proposed relation holds.",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "allowed_values": {
+                  "description": "Valid vocabulary when the refused field has one; choose using the source, never automatically substitute a kind.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "code": {
+                  "description": "Stable rule identifier.",
+                  "type": "string"
+                },
+                "expected_type": {
+                  "description": "JSON type required by an INVALID_TYPE refusal, such as array or object.",
+                  "type": "string"
+                },
+                "field": {
+                  "description": "Argument path, for example memories[1].evidence; empty denotes the request as a whole.",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "What must be corrected using actual sources.",
+                  "type": "string"
+                },
+                "received_type": {
+                  "description": "Actual JSON type at the refused field; a JSON-encoded string remains string and is never coerced.",
+                  "type": "string"
+                },
+                "severity": {
+                  "description": "error for a refusal; warning for accepted relations whose prior context needs review.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "generated_refs": {
             "description": "Stable refs generated for entries whose ref the caller omitted. Their identity suffix is deterministic for an exact logical-write retry and distinct across different writes.",
@@ -1006,10 +1160,6 @@
           },
           "ingest_preview": {
             "description": "Canonical kmp_ingest arguments. Present only on dry-run.",
-            "type": "object"
-          },
-          "ingest_result": {
-            "description": "Canonical kmp_ingest result. Present only after a committed write.",
             "type": "object"
           },
           "labels": {
@@ -1030,19 +1180,51 @@
             },
             "type": "object"
           },
-          "next_suggested_reads": {
-            "description": "Concrete refs worth reading next to verify or continue the write.",
-            "items": {
+          "local_refs": {
+            "additionalProperties": {
               "type": "string"
             },
+            "description": "For a memories packet, local id to canonical memory ref. Preview refs are planned; accepted=true confirms persistence.",
+            "type": "object"
+          },
+          "next_suggested_reads": {
+            "description": "Optional preview reading suggestions. Accepted writes need no routine verification; receipt.action retrieves audit detail on demand.",
             "type": "array"
           },
+          "read_after_write_ready": {
+            "description": "Whether a read now observes the accepted write.",
+            "type": "boolean"
+          },
+          "receipt": {
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "additionalProperties": false,
+                "properties": {
+                  "arguments": {
+                    "description": "Complete arguments. object.text holds JSON with receipt.canonical_memory, receipt.writer diagnostics and command revision/hash. It is a historical snapshot, not current graph state.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "description": "kmp_inspect; execute only when accepted detail is needed.",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "ref": {
+                "description": "Immutable accepted-command audit ref. Absent for previews and simulated backends.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "relation_quality": {
-            "description": "Per-relation validation, including rich/anemic quality and prior-context evidence.",
+            "description": "Preview per-relation validation. After commit, recover it with receipt.action.",
             "type": "array"
           },
           "relation_quality_metrics": {
-            "description": "Aggregate counts and prior-context coverage for the compiled relations.",
+            "description": "Preview counts and prior-context coverage; stored in the receipt after commit.",
             "type": "object"
           },
           "relations": {
@@ -1055,6 +1237,16 @@
           "summary": {
             "description": "Counts and scope of the semantic write the planner prepared.",
             "type": "string"
+          },
+          "validation": {
+            "additionalProperties": false,
+            "properties": {
+              "scope": {
+                "description": "current_store for a live embedded/gRPC preview; fixture for a simulated backend. A successful preview is not a reservation or a commit.",
+                "type": "string"
+              }
+            },
+            "type": "object"
           },
           "viewer": {
             "additionalProperties": false,
@@ -1069,6 +1261,13 @@
               }
             },
             "type": "object"
+          },
+          "warnings": {
+            "description": "Store notices qualifying this preview or accepted write; retain them.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -1078,7 +1277,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work from memory. `as_of`, `interval` and `axis` bound the packet in time the way they bound `kmp_ask`: its evidence, spine, resume cursor and proof stand on the selection, while the rendered summary is the about's.",
+      "description": "Return a compact Kernel Memory Protocol wake packet for continuing work. scope distinguishes selected proof from about context: time bounds apply to the selection, while summary, current_state, semantic next actions and labels can include other times. Requested dimensions apply to both.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -1204,7 +1403,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -1331,9 +1530,27 @@
                 "type": "integer"
               },
               "next_action": {
-                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "additionalProperties": false,
+                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "properties": {
+                  "arguments": {
+                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "enum": [
+                      "kmp_ask",
+                      "kmp_wake"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool",
+                  "arguments"
+                ],
                 "type": [
-                  "string",
+                  "object",
                   "null"
                 ]
               },
@@ -1343,6 +1560,13 @@
                   "has_more": {
                     "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
+                  },
+                  "minimum_progress_bytes": {
+                    "description": "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "next_cursor": {
                     "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
@@ -1466,6 +1690,139 @@
               "null"
             ]
           },
+          "scope": {
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "description": "Response paths from the about context after dimensional filtering, before temporal selection. They can describe earlier or later memories; do not treat them as the selected historical state.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "context_time": {
+                "const": "unbounded",
+                "description": "Context does not apply the requested as_of or interval.",
+                "type": "string"
+              },
+              "dimensions": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Applied dimensional selection with explicit mode and scope defaults. Both proof and about context use it. The catalogue retains those entries' labels; a predicate does not filter individual catalogue labels. Null means the backend supplied no selection metadata.",
+                    "properties": {
+                      "abouts": {
+                        "description": "Non-empty selection for scope=abouts. Include the current about if wanted.",
+                        "items": {
+                          "description": "Memory about id.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "exclude": {
+                        "items": {
+                          "description": "Dimension kind to exclude.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "include": {
+                        "items": {
+                          "description": "Dimension kind to include.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "mode": {
+                        "enum": [
+                          "all",
+                          "only",
+                          "except"
+                        ],
+                        "type": "string"
+                      },
+                      "scope": {
+                        "description": "Default current_about stays inside about. abouts reads the named list with separate ownership; selection neither merges abouts nor authorizes cross-about links. all_abouts scans every anchor, at a real cost.",
+                        "enum": [
+                          "current_about",
+                          "abouts",
+                          "all_abouts"
+                        ],
+                        "type": "string"
+                      },
+                      "scope_ids": {
+                        "items": {
+                          "description": "Bare label value or complete label ref returned by KMP.",
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "selectors": {
+                        "description": "All predicates must hold on the whole entry's key-to-values labels. mode/include/exclude/scope_ids instead keep an entry when any coordinate passes: exclude task is not task notexists. Hard filters hide evidence; read kmp_wake.labels first.",
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "key": {
+                              "description": "Label key: the dimension kind (`task`, `agentic_process`, `incident`).",
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "op": {
+                              "description": "in: any value under key is listed. notin: none is; an absent key passes. exists/notexists: key present/absent, with values empty.",
+                              "enum": [
+                                "in",
+                                "notin",
+                                "exists",
+                                "notexists"
+                              ],
+                              "type": "string"
+                            },
+                            "values": {
+                              "items": {
+                                "description": "Bare value from kmp_wake.labels; namespaced scope ids normalize to bare values.",
+                                "minLength": 1,
+                                "type": "string"
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "op"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "request": {
+                "description": "Response paths supplied by the caller, not conclusions from stored memory.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "selection": {
+                "description": "Response paths based on the temporal selection declared in proof; requested dimensions also apply. Proof may explicitly identify outside matches or omitted evidence.",
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Four-line L0 resume summary: objective, status, blocker, and next action.",
             "type": "string"
@@ -1500,7 +1857,7 @@
                 "type": "array"
               },
               "current_state": {
-                "description": "Current semantic state selected from the rendered memory.",
+                "description": "State lines from about context, not a historical-state answer; see scope.context.",
                 "items": {
                   "type": "string"
                 },
@@ -1689,7 +2046,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -1823,9 +2180,27 @@
                 "type": "integer"
               },
               "next_action": {
-                "description": "The exact call that continues this page, or null when there is nothing after it.",
+                "additionalProperties": false,
+                "description": "Execute this complete native call. It continues expansion, or restarts without page.cursor when core_text_shortened to recover the full core. The proposed allowance is sufficient; keep the result partial if unavailable. Null when neither action remains.",
+                "properties": {
+                  "arguments": {
+                    "description": "Complete bound request; question, original wording, clock, interval and dimension filters are preserved.",
+                    "type": "object"
+                  },
+                  "tool": {
+                    "enum": [
+                      "kmp_ask",
+                      "kmp_wake"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool",
+                  "arguments"
+                ],
                 "type": [
-                  "string",
+                  "object",
                   "null"
                 ]
               },
@@ -1835,6 +2210,13 @@
                   "has_more": {
                     "description": "More items remain; this page is incomplete.",
                     "type": "boolean"
+                  },
+                  "minimum_progress_bytes": {
+                    "description": "When stalled or core_text_shortened, a sufficient byte allowance for the unshortened core and expansion progress. The returned action adds 10000 bytes for useful expansion instead of negotiating only one item.",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "next_cursor": {
                     "description": "Opaque recall cursor for page.cursor, or null. Keep bound arguments unchanged; only page.entries, budget.tokens and budget.max_bytes may vary.",
@@ -2096,7 +2478,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2343,7 +2725,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
+      "description": "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2473,7 +2855,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2519,6 +2901,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "include": {
             "additionalProperties": false,
             "properties": {
@@ -2526,11 +2923,29 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
                 "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -2543,6 +2958,22 @@
                 "type": "integer"
               },
               "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -2606,15 +3037,26 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -2623,19 +3065,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Boundary ref for earlier history. Do not pass it back to `at.ref`; follow top-level `next_action`, which continues with `kmp_rewind`.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -2761,12 +3215,54 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -2787,7 +3283,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
+      "description": "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2917,7 +3413,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -2963,6 +3459,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "include": {
             "additionalProperties": false,
             "properties": {
@@ -2970,11 +3481,29 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
                 "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -2987,6 +3516,22 @@
                 "type": "integer"
               },
               "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3050,15 +3595,26 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -3067,19 +3623,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Boundary ref for a partial neighborhood. Do not pass it back to `around.ref`; follow top-level `next_action`, which names the earlier and later moves.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -3205,12 +3773,54 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -3231,9 +3841,21 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
+      "description": "Read newest-to-oldest: start directly with interval [start,end), or move strictly before from (time, sequence or ref). Execute next_actions unchanged to reconstruct the packet and then continue earlier history within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "from"
+            ]
+          },
+          {
+            "required": [
+              "interval"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3340,7 +3962,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -3386,6 +4008,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "from": {
             "additionalProperties": false,
             "properties": {
@@ -3414,11 +4051,29 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
                 "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -3431,6 +4086,22 @@
                 "type": "integer"
               },
               "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3453,8 +4124,7 @@
           }
         },
         "required": [
-          "about",
-          "from"
+          "about"
         ],
         "type": "object"
       },
@@ -3494,15 +4164,26 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -3511,19 +4192,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -3649,12 +4342,54 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -3675,9 +4410,21 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
+      "description": "Read oldest-to-newest: start directly with interval [start,end), or move strictly after from (time, sequence or ref). Execute next_actions unchanged to reconstruct entries and proof, then continue within the same clock, dimensions and interval.",
       "inputSchema": {
         "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "from"
+            ]
+          },
+          {
+            "required": [
+              "interval"
+            ]
+          }
+        ],
         "properties": {
           "about": {
             "description": "Memory anchor or root ref to traverse from.",
@@ -3784,7 +4531,7 @@
               },
               "scope_ids": {
                 "items": {
-                  "description": "Exact scope id: local or about:<about>:dimension:<dimension_id>.",
+                  "description": "Bare label value or complete label ref returned by KMP.",
                   "minLength": 1,
                   "type": "string"
                 },
@@ -3830,6 +4577,21 @@
             },
             "type": "object"
           },
+          "fields": {
+            "description": "Choose entry fields; omit for all. ref and kind always remain. Omitted fields are declared in selection.fields and each reduced entry supplies detail_action. Only entries are projected: proof and raw audit data are controlled separately by include.",
+            "items": {
+              "enum": [
+                "ref",
+                "kind",
+                "text",
+                "coordinates",
+                "metadata"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
           "from": {
             "additionalProperties": false,
             "properties": {
@@ -3858,11 +4620,29 @@
                 "type": "boolean"
               },
               "raw_refs": {
-                "description": "Return typed raw audit refs for selected temporal entries.",
+                "description": "Return typed raw audit refs for selected temporal entries, unaffected by fields.",
                 "type": "boolean"
               },
               "relations": {
                 "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "interval": {
+            "additionalProperties": false,
+            "description": "Half-open [start,end) entry selection on axis, with at least one bound. Validity selects overlapping spans. Forward/Rewind can start with interval alone; returned continuations preserve it.",
+            "minProperties": 1,
+            "properties": {
+              "end": {
+                "description": "ISO-8601 exclusive end. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "start": {
+                "description": "ISO-8601 inclusive start. Omit it to leave the span open on this side.",
+                "minLength": 1,
+                "type": "string"
               }
             },
             "type": "object"
@@ -3875,6 +4655,22 @@
                 "type": "integer"
               },
               "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3897,8 +4693,7 @@
           }
         },
         "required": [
-          "about",
-          "from"
+          "about"
         ],
         "type": "object"
       },
@@ -3938,15 +4733,26 @@
             "type": "object"
           },
           "entries": {
-            "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
+            "description": "Temporal entries in traversal order. ref/kind always remain; fields selects text, coordinates and metadata. Each reduced entry has an executable detail_action for a fresh full entry read in the same scope, clock and interval.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -3955,19 +4761,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -4093,12 +4911,54 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "fields": {
+                "additionalProperties": false,
+                "properties": {
+                  "included": {
+                    "description": "Fields returned on each entry; ref and kind always remain.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "omitted": {
+                    "description": "Entry fields available through each returned detail_action; omitted fields are not empty values.",
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
           },
           "temporal": {
-            "description": "Resolved direction, selected clock axis, requested cursor, and resolved coordinate.",
+            "description": "Direction, clock axis and entry interval. requested/resolved are null for a direct interval without an initial cursor.",
             "type": [
               "object",
               "null"
@@ -4308,7 +5168,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Inspect one typed stored memory object inside an explicit about boundary. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
+      "description": "Inspect one stored memory object or accepted write receipt inside an explicit about boundary. Receipt object.text is immutable command-detail JSON, not current memory. Evidence, links and raw records page under the byte ceiling; continuations can reuse the first page's object.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4334,7 +5194,7 @@
             "properties": {
               "details": {
                 "default": true,
-                "description": "Return the inspected object's stored details. Defaults to true.",
+                "description": "Return stored details, or receipt JSON with canonical_memory, writer diagnostics and command revision/hash. Defaults to true.",
                 "type": "boolean"
               },
               "incoming": {
@@ -4405,6 +5265,24 @@
             },
             "type": "object"
           },
+          "next_actions": {
+            "description": "Complete calls for the same inspection, including an increased byte allowance when no whole item fits. Execute in order and retain earlier pages; empty when complete.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "The complete call, preserving about, ref, include and object reuse.",
+                  "type": "object"
+                },
+                "tool": {
+                  "const": "kmp_inspect",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
           "object": {
             "description": "Stored object with ref, kind, canonical text, metadata, and optional source. With page.repeat_object=false, contains only ref; reuse the first page's object.",
             "type": "object"
@@ -4426,6 +5304,10 @@
               "has_more": {
                 "description": "Whether expansion items remain after this page.",
                 "type": "boolean"
+              },
+              "minimum_progress_bytes": {
+                "description": "Present only when this page cannot return an expansion item. The next action offers at least this allowance, preferring the complete inspection up to the usual 10,000-byte budget. required_bytes still measures the complete inspection.",
+                "type": "integer"
               },
               "next_cursor": {
                 "description": "Opaque inspect cursor. Repeat the same bound arguments with this value in page.cursor.",
@@ -4518,7 +5400,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, a value already used under another key in the about, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
+      "description": "Change the labels one memory stands in without rewriting its text: labels to add, labels to take off, and why. The kernel reads the memory's coordinates and the about's catalogue itself, so name pairs, never coordinates. A label added late inherits the memory's clocks — its time does not move — and its own instant lives on the edge it added, as `method: kmp_relabel` with your `why`; the event log keeps who did it when. Refused, naming what the memory stands in: a label it already stands in, one it does not, and taking its last label off. A new label that resembles one the catalogue holds is refused under strict and written with a warning otherwise, unless its key is in `options.labels_new`. Normal calls commit; `options.dry_run` validates against the store and writes nothing.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4534,11 +5416,16 @@
           },
           "add": {
             "additionalProperties": {
-              "description": "The scope id the memory now stands in under that key.",
-              "minLength": 1,
-              "type": "string"
+              "description": "Values of the memberships under this key.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
             },
-            "description": "Labels to add, `key: value`. A key is lowercase letters, digits, `_`, `.` or `-`, starting with a letter; a value is a scope id. Read the `labels` catalogue `kmp_wake` returned and reuse what exists: a value already used under another key in this about is refused, naming both. A label the memory already stands in is refused too.",
+            "description": "Labels to add as key-to-array values. Multiple values per key and the same value under different keys are valid. An exact membership already present is refused.",
             "type": "object"
           },
           "idempotency_key": {
@@ -4581,11 +5468,16 @@
           },
           "remove": {
             "additionalProperties": {
-              "description": "The scope id to take the memory out of under that key.",
-              "minLength": 1,
-              "type": "string"
+              "description": "Values of the memberships under this key.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
             },
-            "description": "Labels to take off, `key: value`, as `kmp_inspect` with `include.raw` lists them on the memory (the `dimension` is the key, the bare `scope_id` the value). A label the memory does not stand in is refused, naming the ones it does; so is taking off its last label, since a memory stands in at least one.",
+            "description": "Labels to remove as key-to-array values. Only the named memberships change; a missing membership or removal of the last label is refused.",
             "type": "object"
           },
           "source_kind": {

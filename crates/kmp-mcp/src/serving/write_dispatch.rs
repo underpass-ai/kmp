@@ -1,5 +1,5 @@
-//! The writer's dispatch: plan, preflight the one unlinked-root allowance,
-//! then commit through canonical ingest. A dry run answers without writing.
+//! Compile one semantic or search-summary packet, then validate and commit
+//! through canonical ingest. Explicit previews perform validation without writes.
 
 use std::time::Instant;
 
@@ -11,9 +11,10 @@ use crate::serving::kernel_mcp_server::KernelMcpServer;
 use crate::serving::telemetry::{ToolErrorKind, record_tool_error, record_tool_success};
 use crate::serving::tool_error::ToolError;
 use crate::serving::tool_result::{tool_error_result, tool_success_result};
+use crate::write::validation_error::WriteValidationError;
+use crate::write::validation_errors::WriteValidationErrors;
 use crate::write::{
-    build_summary_plan, build_write_plan_with_root, is_summary_write, summary_target,
-    write_commit_result, write_dry_run_result,
+    build_batch_plan, build_summary_plan, write_commit_result, write_dry_run_result,
 };
 
 impl KernelMcpServer {
@@ -23,39 +24,20 @@ impl KernelMcpServer {
         arguments: &Value,
         start: Instant,
     ) -> String {
-        // A summary attaches to a memory that exists, so the unlinked-root
-        // allowance has nothing to say about it and its read is not made.
-        let preflight = if is_summary_write(arguments) {
-            Ok(false)
-        } else {
-            self.allow_unlinked_strict_root(arguments).await
-        };
-        let allow_unlinked_root = match preflight {
-            Ok(allowed) => allowed,
-            Err(error) => {
-                record_tool_error(
-                    self.backend_name(),
-                    self.grpc_tls_mode_name(),
-                    "kmp_write_memory",
-                    arguments,
-                    ToolErrorKind::Backend,
-                    &error.message,
-                    start.elapsed(),
-                );
-                return jsonrpc_result(id, tool_error_result(&error));
-            }
-        };
-        let planned = if is_summary_write(arguments) {
-            self.plan_summary_write(arguments).await
-        } else {
-            build_write_plan_with_root(arguments, allow_unlinked_root)
-                .map_err(ToolError::invalid_argument)
+        let planned = match (arguments.get("memories"), arguments.get("search_summaries")) {
+            (Some(_), None) => build_batch_plan(arguments).map_err(ToolError::from),
+            (None, Some(_)) => self.plan_search_summary_packet(arguments).await,
+            _ => Err(WriteValidationError::new(
+                "provide exactly one of memories or search_summaries",
+            )
+            .code("WRITE_OPERATION_REQUIRED")
+            .into()),
         };
         let plan = match planned {
             Ok(plan) => plan,
             Err(error) => {
-                // The pure compiler rejects input; summary planning also reads
-                // storage and must preserve a failure reported by that backend.
+                // Compiler refusals carry field feedback. A failed source read
+                // keeps the category reported by the store (#586).
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
@@ -73,32 +55,25 @@ impl KernelMcpServer {
             }
         };
 
-        if plan.dry_run {
-            let result = tool_success_result(write_dry_run_result(&plan));
-            record_tool_success(
-                self.backend_name(),
-                self.grpc_tls_mode_name(),
-                "kmp_write_memory",
-                arguments,
-                &result,
-                start.elapsed(),
-            );
-            return jsonrpc_result(id, result);
-        }
-
+        let mut ingest_arguments = plan.ingest_arguments.clone();
+        ingest_arguments["receipt_context"] = crate::write::receipt::receipt_context(&plan);
         match self
             .backend
-            .call_tool("kmp_ingest", &plan.ingest_arguments)
+            .call_tool("kmp_ingest", &ingest_arguments)
             .await
         {
             Ok(result) => {
                 let ingest_result = result.get("structuredContent").cloned().unwrap_or(result);
-                let result = tool_success_result(write_commit_result(
-                    &plan,
-                    ingest_result,
-                    self.viewer_invitation(),
-                    self.orphaned_bundle_notice(),
-                ));
+                let result = tool_success_result(if plan.dry_run {
+                    write_dry_run_result(&plan, ingest_result, self.backend_name())
+                } else {
+                    write_commit_result(
+                        &plan,
+                        ingest_result,
+                        self.viewer_invitation(),
+                        self.orphaned_bundle_notice(),
+                    )
+                });
                 record_tool_success(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
@@ -124,73 +99,118 @@ impl KernelMcpServer {
         }
     }
 
-    /// A `record_summary` write attaches to a memory that exists, so the
-    /// memory is read first — text, kind, coordinates and metadata all come
-    /// from the store — and only the rendering comes from the caller.
-    async fn plan_summary_write(
+    /// Read every target before committing the packet. A rendering changes only
+    /// search metadata; the authoritative text, kind and clocks come from storage.
+    async fn plan_search_summary_packet(
         &self,
         arguments: &Value,
     ) -> Result<crate::write::plan::KernelWritePlan, ToolError> {
-        let (about, reference) = summary_target(arguments).map_err(ToolError::invalid_argument)?;
-        let existing = read_existing_entry(self.backend.as_ref(), &about, &reference).await?;
-        build_summary_plan(arguments, &existing).map_err(ToolError::invalid_argument)
-    }
-
-    async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, ToolError> {
-        let Some(object) = arguments.as_object() else {
-            return Ok(false);
-        };
-        let strict = object
-            .get("options")
-            .and_then(Value::as_object)
-            .and_then(|options| options.get("strict"))
-            .and_then(Value::as_bool)
-            .unwrap_or(true);
-        let has_links = object
-            .get("connect_to")
-            .and_then(Value::as_array)
-            .is_some_and(|links| !links.is_empty());
-        if !strict || has_links {
-            return Ok(false);
-        }
-        let Some(about) = object
-            .get("about")
-            .and_then(Value::as_str)
-            .map(str::trim)
-            .filter(|about| !about.is_empty())
-        else {
-            return Ok(false);
-        };
-
-        match self
-            .backend
-            .call_tool(
-                "kmp_inspect",
-                &serde_json::json!({
-                    "about": about,
-                    "ref": about,
-                    "include": {"incoming": false, "outgoing": false, "details": false}
-                }),
-            )
-            .await
-        {
-            Ok(_) => Ok(false),
-            // The kernel says which failure this was, so this no longer has
-            // to guess from the words — and "not found" here is the whole
-            // point: an about nobody has written yet is allowed one unlinked
-            // root entry.
-            Err(error)
-                if error.code == crate::serving::tool_error_code::ToolErrorCode::NotFound =>
-            {
-                Ok(true)
+        use crate::write::validated_arguments::{required_map_string, required_string};
+        let object = arguments
+            .as_object()
+            .ok_or_else(|| ToolError::invalid_argument("tool arguments must be an object"))?;
+        let about = required_string(object, "about")?;
+        for field in [
+            "labels",
+            "occurred_at",
+            "valid_from",
+            "valid_until",
+            "rank",
+            "read_context",
+        ] {
+            if object.contains_key(field) {
+                return Err(WriteValidationError::new(format!(
+                    "search_summaries preserves stored source and coordinates; `{field}` cannot accompany it"
+                )).at(field).code("PRESERVED_FIELD").into());
             }
-            Err(error) => Err(ToolError::new(
-                error.code,
-                format!(
-                    "kmp_write_memory could not verify whether `{about}` is a new about: {}",
-                    error.message
-                ),
-            )),
         }
+        for field in ["sequence", "labels_new"] {
+            if arguments
+                .get("options")
+                .is_some_and(|options| options.get(field).is_some())
+            {
+                return Err(WriteValidationError::new(format!(
+                    "options.{field} does not apply to search_summaries"
+                ))
+                .at(format!("options.{field}"))
+                .code("INAPPLICABLE_OPTION")
+                .into());
+            }
+        }
+        let records = object
+            .get("search_summaries")
+            .and_then(Value::as_array)
+            .filter(|records| !records.is_empty())
+            .ok_or_else(|| {
+                WriteValidationError::new("search_summaries must be a non-empty array")
+                    .at("search_summaries")
+            })?;
+        let identity = object
+            .get("idempotency_key")
+            .and_then(Value::as_str)
+            .filter(|key| !key.trim().is_empty())
+            .map(str::to_owned)
+            .unwrap_or_else(|| crate::write::generated_ref::stable_idempotency_key(object));
+        let mut targets = std::collections::BTreeSet::new();
+        let mut plans = Vec::new();
+        let mut errors = Vec::new();
+        for (index, record) in records.iter().enumerate() {
+            let record = record.as_object().ok_or_else(|| {
+                WriteValidationError::new(format!("search_summaries[{index}] must be an object"))
+                    .at(format!("search_summaries[{index}]"))
+            })?;
+            let reference =
+                required_map_string(record, "ref", &format!("search_summaries[{index}].ref"))?;
+            kmp_application::validate_supplied_entry_ref(
+                &about,
+                &format!("search_summaries[{index}].ref"),
+                reference,
+            )
+            .map_err(|error| {
+                WriteValidationError::new(error).at(format!("search_summaries[{index}].ref"))
+            })?;
+            if !targets.insert(reference) {
+                return Err(WriteValidationError::new(format!(
+                    "search_summaries[{index}].ref repeats target `{reference}`"
+                ))
+                .at(format!("search_summaries[{index}].ref"))
+                .code("DUPLICATE_TARGET")
+                .into());
+            }
+            let existing = read_existing_entry(self.backend.as_ref(), &about, reference).await?;
+            let mut request = object.clone();
+            request.remove("search_summaries");
+            request.insert("current".into(), Value::Object(record.clone()));
+            request.insert("idempotency_key".into(), serde_json::json!(identity));
+            let mut plan = match build_summary_plan(&Value::Object(request), &existing) {
+                Ok(plan) => plan,
+                Err(error) => {
+                    errors.push(error.within(&format!("search_summaries[{index}]")));
+                    continue;
+                }
+            };
+            for action in &mut plan.next_suggested_reads {
+                action["about"] = serde_json::json!(about);
+            }
+            plans.push(plan);
+        }
+        if let Some(errors) = WriteValidationErrors::collected(errors) {
+            return Err(errors.into());
+        }
+        let mut result = plans.remove(0);
+        for plan in plans {
+            let entries = plan.ingest_arguments["memory"]["entries"]
+                .as_array()
+                .expect("compiled entries");
+            result.ingest_arguments["memory"]["entries"]
+                .as_array_mut()
+                .expect("compiled entries")
+                .extend(entries.iter().cloned());
+            result.diagnostics.extend(plan.diagnostics);
+            result
+                .next_suggested_reads
+                .extend(plan.next_suggested_reads);
+        }
+        Ok(result)
     }
 }

@@ -19,6 +19,7 @@
       ],
       "memory_id": "string",
       "read_after_write_ready": "boolean",
+      "receipt_ref": "null",
       "resembling_labels": []
     },
     "summary": "string",

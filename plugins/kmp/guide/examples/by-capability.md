@@ -1,6 +1,6 @@
 # Find a concrete example by capability
 
-Start with [one decision and its reason](./first-decision.md). It has two
+Start with [one semantic packet](./semantic-batch.md) for local ids and an atomic write, or [one decision and its reason](./first-decision.md). It has two
 source lines and a direct write → inspect → retrieve → audit path. The other
 basic files group independent small cases so each relation has its own source,
 rationale and limit. Read the source and prerequisite writes before a selected
@@ -38,8 +38,9 @@ returned-ref bindings, expected evidence and negative limits.
 
 ## Memory kinds
 
-Intent names the writer operation; kind names what is remembered. In the
-record_delta case, the writer also generates a separate semantic_delta entry.
+Kind names what is remembered. A state change can declare a semantic_delta
+member and its justified updates_state and semantic_delta_from relations in the
+same packet. No extra intent or hidden delta generation is required.
 
 | Kind | Source and call | What it records |
 | --- | --- | --- |
@@ -124,3 +125,5 @@ interpretations. The standalone replays check kinds, refs, clocks and proof
 preservation; the visual reviews check their presentation. Counting a name
 in a file would not prove any of those properties. Independent learning on
 new sources and reader questions remains a separate evaluation.
+
+The multivalue contract is demonstrated in [dimensional-memberships](./dimensional-memberships.md), exact ref `guide:kmp-agent:example:dimensional-memberships`: arrays, independent keys, selectors, late relabel and visual review.

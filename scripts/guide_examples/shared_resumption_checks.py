@@ -11,9 +11,9 @@ def check(saved, authored, sessions):
     for name in ('constraint', 'decision', 'handoff'):
         read = saved['recovered_' + name]
         assert read['object']['ref'] == refs[name]
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert read['object']['kind'] == authored[name]['current']['kind']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert read['object']['kind'] == authored[name]['memories'][0]['kind']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
     # Reader navigation binds to its own wake/inspect responses, not injected writer refs.
     assert authored['recovered_handoff']['ref'] == saved['resume']['resume_cursor']['ref']
     assert authored['recovered_decision']['ref'] == saved['recovered_handoff']['links']['outgoing'][0]['to']
@@ -24,7 +24,7 @@ def check(saved, authored, sessions):
         (refs['decision'], refs['constraint'], 'chosen_because')]
     for name, edge in zip(('handoff', 'decision'), edges):
         for field in ('why', 'evidence', 'class'):
-            assert edge[field] == authored[name]['connect_to'][0][field]
+            assert edge[field] == authored[name]['memories'][0]['connect_to'][0][field]
     before, human = saved['before_human']['state'], saved['human_state']['state']
     assert before['clock'] == 'occurred' and before['selection'] == refs['decision']
     assert human['clock'] == 'observed' and human['selection'] == refs['constraint']
@@ -47,11 +47,11 @@ def check(saved, authored, sessions):
     assert {e['ref'] for e in saved['since_handoff']['entries']} == {refs['feedback']}
     feedback = saved['feedback_read']
     assert feedback['object']['kind'] == 'feedback'
-    assert feedback['object']['text'] == authored['feedback']['current']['summary']
+    assert feedback['object']['text'] == authored['feedback']['memories'][0]['summary']
     assert {(e['rel'], e['to']) for e in feedback['links']['outgoing']} == {
         ('answers', refs['handoff']), ('confirms_selection', refs['decision'])}
     for edge in feedback['links']['outgoing']:
-        source = next(e for e in authored['feedback']['connect_to'] if e['rel'] == edge['rel'])
+        source = next(e for e in authored['feedback']['memories'][0]['connect_to'] if e['rel'] == edge['rel'])
         for field in ('why', 'evidence', 'class'):
             assert edge[field] == source[field]
     entries = saved['final_records']['entries']

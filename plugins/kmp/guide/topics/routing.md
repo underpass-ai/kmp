@@ -31,7 +31,7 @@ to the part of the goal the wake packet did not already answer.
 | Signal in the user's goal | First move |
 | --- | --- |
 | Continue known work or recover its state | `kmp_wake` |
-| Enumerate a period: yesterday, since, before/after, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_goto`, `kmp_near`, `kmp_rewind` or `kmp_forward` |
+| Enumerate a period: yesterday, since, before/after, what changed, current/latest/recent state, why now, or a release/decision window | `kmp_forward` or `kmp_rewind` with a direct `interval`; `kmp_goto` or `kmp_near` to position or zoom |
 | A semantic question that carries a date or a range: why something was decided in March, what rule held during the incident, what was known on the tenth | one `kmp_ask` with `interval` or `as_of`, and `axis` for a clock other than when it happened |
 | A genuinely semantic question with no date, answerable from stored evidence | `kmp_ask` |
 | What the memories of several abouts have to do with each other in a span: which facts fell in the window, how they stand in time inside the labels they share (the same dimension kind and scope), what each about declared, which contradictions still stand | `kmp_relate` |
@@ -88,6 +88,10 @@ Route again after every response:
   repository files while a relevant KMP page or interval is incomplete. If
   files are consulted after the memory route is complete, identify them as
   repository evidence rather than stored KMP evidence.
-- A temporal response with `page.has_more=true` must consume
-  `page.next_cursor` until complete or report the exact continuation. Never
-  present the first page as the interval.
+- A temporal response with `page.has_more=true` still owes entry or proof
+  items. Execute its `next_actions` with all arguments unchanged until the
+  response packet is complete, or report the pending action. Its opaque
+  `page.next_cursor` is not a memory ref. Then `selection.has_more` identifies
+  history outside that packet; use the returned navigation actions as needed
+  for the requested interval. Never present one response page or one selected
+  packet as the entire interval.

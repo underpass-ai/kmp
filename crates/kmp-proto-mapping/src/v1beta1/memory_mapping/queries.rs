@@ -146,6 +146,7 @@ pub fn temporal_query_from_move_proto(
     temporal_query(TemporalQueryParts {
         about: request.about,
         cursor: request.cursor,
+        interval: request.interval,
         dimensions: request.dimensions,
         window: request.window,
         limit: request.limit,
@@ -162,6 +163,7 @@ pub fn temporal_query_from_near_proto(
     temporal_query(TemporalQueryParts {
         about: request.about,
         cursor: request.around,
+        interval: request.interval,
         dimensions: request.dimensions,
         window: request.window,
         limit: request.limit,
@@ -208,6 +210,7 @@ pub fn inspect_query_from_proto(request: InspectRequest) -> ProtoMappingResult<I
 struct TemporalQueryParts {
     about: String,
     cursor: Option<kmp_proto::v1beta1::TemporalCursor>,
+    interval: Option<kmp_proto::v1beta1::TemporalInterval>,
     dimensions: Option<kmp_proto::v1beta1::DimensionSelection>,
     window: Option<kmp_proto::v1beta1::TemporalWindow>,
     limit: Option<TemporalLimit>,
@@ -218,9 +221,35 @@ struct TemporalQueryParts {
 }
 
 fn temporal_query(parts: TemporalQueryParts) -> ProtoMappingResult<TemporalMemoryQuery> {
+    let interval = parts
+        .interval
+        .map(|interval| {
+            temporal_selection_from_proto(None, Some(interval), parts.axis)
+                .map(|selection| selection.interval().cloned())
+        })
+        .transpose()?
+        .flatten();
+    if parts.cursor.is_none()
+        && (interval.is_none()
+            || !matches!(
+                parts.direction,
+                TemporalDirection::Forward | TemporalDirection::Rewind
+            ))
+    {
+        return Err(invalid_argument(
+            "temporal cursor is required except for Forward/Rewind with an interval",
+        ));
+    }
     let cursor = parts
         .cursor
-        .ok_or_else(|| invalid_argument("temporal cursor is required"))?;
+        .as_ref()
+        .map(domain_cursor_from_proto)
+        .transpose()?;
+    if interval.is_some() && matches!(cursor, Some(TemporalCursor::Sequence(_))) {
+        return Err(invalid_argument(
+            "an interval continuation uses a ref or time, not a sequence",
+        ));
+    }
     let budget = parts.budget.unwrap_or_default();
     let limit_entries = parts
         .limit
@@ -235,7 +264,8 @@ fn temporal_query(parts: TemporalQueryParts) -> ProtoMappingResult<TemporalMemor
         about: parts.about,
         direction: parts.direction,
         axis: temporal_axis_from_proto(parts.axis)?,
-        cursor: domain_cursor_from_proto(&cursor)?,
+        cursor,
+        interval,
         dimensions: domain_dimension_selection(parts.dimensions)?,
         window: parts
             .window
@@ -349,6 +379,7 @@ mod tests {
     fn temporal_query_carries_the_selected_clock_into_the_domain() {
         let query = temporal_query_from_move_proto(
             TemporalMoveRequest {
+                interval: None,
                 about: "project:kmp".to_string(),
                 cursor: Some(TemporalCursor {
                     r#ref: "project:kmp:entry:one".to_string(),

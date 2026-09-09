@@ -1,6 +1,9 @@
 mod axis_key;
 mod extract;
 mod position;
+mod request;
+
+pub use request::TemporalTraversalRequest;
 mod select;
 
 pub use axis_key::{compare_temporal_instants, temporal_instant_nanos, temporal_instant_rfc3339};
@@ -9,7 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
     DimensionSelection, DimensionSelectionMode, DomainError, EntryLabels, KmpBundle, TemporalAxis,
-    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalWindow, bare_label_value,
+    TemporalCoordinate, TemporalCursor, TemporalDirection, TemporalInterval, bare_label_value,
     labels_by_entry,
 };
 
@@ -17,91 +20,6 @@ use self::axis_key::TemporalKeyKind;
 use self::extract::{bundle_nodes_by_id, temporal_positions};
 use self::position::TemporalPosition;
 use self::select::{coordinates_by_ref, ordered_unique_ref_ids, resolve_cursor, select_positions};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TemporalTraversalRequest {
-    direction: TemporalDirection,
-    axis: TemporalAxis,
-    cursor: TemporalCursor,
-    dimensions: DimensionSelection,
-    requested_dimensions: Option<DimensionSelection>,
-    window: TemporalWindow,
-    limit_entries: Option<usize>,
-}
-
-impl TemporalTraversalRequest {
-    pub fn new(direction: TemporalDirection, cursor: TemporalCursor) -> Self {
-        Self {
-            direction,
-            axis: TemporalAxis::Default,
-            cursor,
-            dimensions: DimensionSelection::all(),
-            requested_dimensions: None,
-            window: TemporalWindow::default(),
-            limit_entries: None,
-        }
-    }
-
-    pub fn with_dimensions(mut self, dimensions: DimensionSelection) -> Self {
-        self.dimensions = dimensions;
-        self
-    }
-
-    pub fn with_axis(mut self, axis: TemporalAxis) -> Self {
-        self.axis = axis;
-        self
-    }
-
-    pub fn with_requested_dimensions(mut self, dimensions: DimensionSelection) -> Self {
-        self.requested_dimensions = Some(dimensions);
-        self
-    }
-
-    pub fn with_window(mut self, window: TemporalWindow) -> Self {
-        self.window = window;
-        self
-    }
-
-    pub fn with_limit_entries(mut self, limit_entries: usize) -> Result<Self, DomainError> {
-        if limit_entries == 0 {
-            return Err(DomainError::InvalidState(
-                "temporal limit_entries must be greater than zero".to_string(),
-            ));
-        }
-        self.limit_entries = Some(limit_entries);
-        Ok(self)
-    }
-
-    pub fn direction(&self) -> TemporalDirection {
-        self.direction
-    }
-
-    pub fn axis(&self) -> TemporalAxis {
-        self.axis
-    }
-
-    pub fn cursor(&self) -> &TemporalCursor {
-        &self.cursor
-    }
-
-    pub fn dimensions(&self) -> &DimensionSelection {
-        &self.dimensions
-    }
-
-    pub fn requested_dimensions(&self) -> &DimensionSelection {
-        self.requested_dimensions
-            .as_ref()
-            .unwrap_or(&self.dimensions)
-    }
-
-    pub(super) fn window(&self) -> TemporalWindow {
-        self.window
-    }
-
-    pub(super) fn limit_entries(&self) -> Option<usize> {
-        self.limit_entries
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TemporalEntry {
@@ -133,7 +51,8 @@ impl TemporalEntry {
 pub struct TemporalTraversalResult {
     direction: TemporalDirection,
     axis: TemporalAxis,
-    resolved_cursor: TemporalCoordinate,
+    resolved_cursor: Option<TemporalCoordinate>,
+    interval: Option<TemporalInterval>,
     requested_dimensions: DimensionSelection,
     included_dimensions: Vec<String>,
     missing_dimensions: Vec<String>,
@@ -158,8 +77,12 @@ impl TemporalTraversalResult {
         self.axis
     }
 
-    pub fn resolved_cursor(&self) -> &TemporalCoordinate {
-        &self.resolved_cursor
+    pub fn resolved_cursor(&self) -> Option<&TemporalCoordinate> {
+        self.resolved_cursor.as_ref()
+    }
+
+    pub fn interval(&self) -> Option<&TemporalInterval> {
+        self.interval.as_ref()
     }
 
     pub fn requested_dimensions(&self) -> &DimensionSelection {
@@ -227,37 +150,53 @@ impl TemporalMemoryTraversal {
         bundle: &KmpBundle,
         request: &TemporalTraversalRequest,
     ) -> Result<TemporalTraversalResult, DomainError> {
+        request.validate()?;
         let nodes = bundle_nodes_by_id(bundle);
         let labels = labels_by_entry(bundle);
         let no_labels = EntryLabels::default();
         let mut positions = temporal_positions(bundle, &nodes, request.axis())?
             .into_iter()
             .filter(|position| {
-                request.dimensions.includes_coordinate(
+                request.dimensions().includes_coordinate(
                     position.coordinate.dimension(),
                     position.coordinate.scope_id(),
                 ) && request
-                    .dimensions
+                    .dimensions()
                     .admits(labels.get(&position.ref_id).unwrap_or(&no_labels))
             })
             .collect::<Vec<_>>();
         positions.sort();
-        let warnings = sequence_cursor_warnings(request.cursor(), &positions);
+        let warnings = request
+            .cursor()
+            .map(|cursor| sequence_cursor_warnings(cursor, &positions))
+            .unwrap_or_default();
         let available_dimensions = dimensions_from_positions(&positions);
 
-        let cursor = resolve_cursor(&positions, request.cursor(), request.axis())?;
-        let has_comparable_positions = cursor.axis_key.as_ref().is_some_and(|axis_key| {
-            positions
-                .iter()
-                .any(|position| position.axis_key.axis() == axis_key.axis())
-        });
-        let selection = select_positions(&positions, &cursor, request);
+        let cursor = request
+            .cursor()
+            .map(|cursor| resolve_cursor(&positions, cursor, request.axis()))
+            .transpose()?;
+        let has_comparable_positions = cursor.as_ref().map_or_else(
+            || {
+                positions
+                    .iter()
+                    .any(|position| position.axis_key.axis() == TemporalKeyKind::Time)
+            },
+            |cursor| {
+                cursor.axis_key.as_ref().is_some_and(|axis_key| {
+                    positions
+                        .iter()
+                        .any(|position| position.axis_key.axis() == axis_key.axis())
+                })
+            },
+        );
+        let selection = select_positions(&positions, cursor.as_ref(), request);
         let mut selected_ref_ids = ordered_unique_ref_ids(selection.positions);
         // A rewind page is consumed in the same direction the cursor moves:
         // newest to oldest. Keeping the page ascending while its continuation
         // walks backwards makes concatenated pages non-monotonic and lets the
         // page size change which entry appears "most recent".
-        if request.direction == TemporalDirection::Rewind {
+        if request.direction() == TemporalDirection::Rewind {
             selected_ref_ids.reverse();
         }
         let page = TemporalTraversalPage::new(
@@ -286,9 +225,10 @@ impl TemporalMemoryTraversal {
         };
 
         Ok(TemporalTraversalResult {
-            direction: request.direction,
-            axis: request.axis,
-            resolved_cursor: cursor.coordinate,
+            direction: request.direction(),
+            axis: request.axis(),
+            resolved_cursor: cursor.map(|cursor| cursor.coordinate),
+            interval: request.interval().cloned(),
             requested_dimensions: request.requested_dimensions().clone(),
             included_dimensions,
             missing_dimensions,
@@ -417,7 +357,7 @@ mod tests {
 
     use crate::{
         BundleMetadata, BundleNode, BundleRelationship, CaseId, RelationExplanation,
-        RelationSemanticClass, Role,
+        RelationSemanticClass, Role, TemporalWindow,
     };
 
     use super::*;
@@ -551,15 +491,33 @@ mod tests {
         );
         assert_eq!(observed.axis(), TemporalAxis::Observed);
         assert_eq!(
-            occurred.resolved_cursor().occurred_at(),
+            occurred
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .occurred_at(),
             Some("2026-04-12T11:30:00Z")
         );
-        assert_eq!(occurred.resolved_cursor().observed_at(), None);
         assert_eq!(
-            observed.resolved_cursor().observed_at(),
+            occurred
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .observed_at(),
+            None
+        );
+        assert_eq!(
+            observed
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .observed_at(),
             Some("2026-04-12T11:30:00Z")
         );
-        assert_eq!(observed.resolved_cursor().occurred_at(), None);
+        assert_eq!(
+            observed
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .occurred_at(),
+            None
+        );
 
         let ingested = TemporalMemoryTraversal::traverse(
             &bundle,
@@ -568,7 +526,10 @@ mod tests {
         )
         .expect("ingested axis should still resolve its cursor");
         assert_eq!(
-            ingested.resolved_cursor().ingested_at(),
+            ingested
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .ingested_at(),
             Some("2026-04-12T11:30:00Z")
         );
         let validity = TemporalMemoryTraversal::traverse(
@@ -578,7 +539,10 @@ mod tests {
         )
         .expect("validity axis should still resolve its cursor");
         assert_eq!(
-            validity.resolved_cursor().valid_from(),
+            validity
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .valid_from(),
             Some("2026-04-12T11:30:00Z")
         );
     }
@@ -708,7 +672,13 @@ mod tests {
             TemporalMemoryTraversal::traverse(&bundle, &request).expect("ref should resolve");
 
         assert!(result.entries().is_empty());
-        assert_eq!(result.resolved_cursor().sequence(), Some(1));
+        assert_eq!(
+            result
+                .resolved_cursor()
+                .expect("resolved cursor")
+                .sequence(),
+            Some(1)
+        );
         assert_eq!(result.missing(), &["temporal_positions".to_string()]);
         assert_eq!(result.page().returned(), 0);
         assert_eq!(result.page().total(), 0);
@@ -989,10 +959,10 @@ mod tests {
         use crate::{LabelSelector, LabelSelectorOperator};
 
         let bundle = temporal_bundle(&[
-            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
-            ("entry-1", "env", "about:question:a:dimension:prod", 1),
-            ("entry-2", "task", "about:question:a:dimension:t-2", 2),
-            ("entry-3", "env", "about:question:a:dimension:prod", 3),
+            ("entry-1", "task", "label:v1:question%3Aa:task:t-1", 1),
+            ("entry-1", "env", "label:v1:question%3Aa:env:prod", 1),
+            ("entry-2", "task", "label:v1:question%3Aa:task:t-2", 2),
+            ("entry-3", "env", "label:v1:question%3Aa:env:prod", 3),
         ]);
         let rewind = |selection: DimensionSelection| {
             TemporalMemoryTraversal::traverse(
@@ -1043,9 +1013,9 @@ mod tests {
     #[test]
     fn a_sequence_cursor_across_labels_is_warned_about_and_pinning_one_silences_it() {
         let bundle = temporal_bundle(&[
-            ("entry-1", "task", "about:question:a:dimension:t-1", 1),
-            ("entry-2", "task", "about:question:a:dimension:t-2", 1),
-            ("entry-3", "task", "about:question:a:dimension:t-1", 2),
+            ("entry-1", "task", "label:v1:question%3Aa:task:t-1", 1),
+            ("entry-2", "task", "label:v1:question%3Aa:task:t-2", 1),
+            ("entry-3", "task", "label:v1:question%3Aa:task:t-1", 2),
         ]);
         let rewind = |selection: DimensionSelection| {
             TemporalMemoryTraversal::traverse(

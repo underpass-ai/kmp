@@ -54,25 +54,33 @@ pages instead of treating them as complete.
   "save_as": "policy",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:policy:v1",
     "observed_at": "2026-09-01T08:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "P7",
-      "role": "rule"
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "P7"
+      ],
+      "role": [
+        "rule"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
-    "current": {
-      "kind": "constraint",
-      "summary": "P7 limits TRIP-7 settlement to unique settled EUR transactions, corrected amounts and no voids.",
-      "evidence": "P7: TRIP-7 reimburses settled EUR charges including tax. Count each transaction once, use its explicitly corrected amount and exclude voided charges. Other currencies require a separate subtotal; no conversion rate is supplied."
-    },
-    "occurred_at": "2026-09-01T08:00:00Z"
+    "occurred_at": "2026-09-01T08:00:00Z",
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "P7 limits TRIP-7 settlement to unique settled EUR transactions, corrected amounts and no voids.",
+        "evidence": "P7: TRIP-7 reimburses settled EUR charges including tax. Count each transaction once, use its explicitly corrected amount and exclude voided charges. Other currencies require a separate subtotal; no conversion rate is supplied."
+      }
+    ]
   }
 }
 ```
@@ -96,25 +104,29 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
   "save_as": "train",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:train:v1",
     "observed_at": "2026-09-01T09:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "R-TRAIN",
-      "transaction": "TX-TRAIN",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.",
-      "evidence": "R-TRAIN: TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "R-TRAIN"
+      ],
+      "transaction": [
+        "TX-TRAIN"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-01T09:00:00Z",
     "read_context": {
@@ -122,14 +134,22 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
         "${policy.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${policy.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
-        "evidence": "P7 applies to TRIP-7; R-TRAIN identifies TRIP-7 as its trip."
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.",
+        "evidence": "R-TRAIN: TRIP-7 transaction TX-TRAIN: settled transport charge 20.00 EUR, tax included.",
+        "connect_to": [
+          {
+            "ref": "${policy.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
+            "evidence": "P7 applies to TRIP-7; R-TRAIN identifies TRIP-7 as its trip."
+          }
+        ]
       }
     ]
   }
@@ -146,25 +166,29 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
   "save_as": "hotel_old",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:hotel_old:v1",
     "observed_at": "2026-09-01T10:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "H-0",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.",
-      "evidence": "H-0: TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "H-0"
+      ],
+      "transaction": [
+        "TX-HOTEL"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-01T10:00:00Z",
     "read_context": {
@@ -172,14 +196,22 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
         "${policy.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${policy.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
-        "evidence": "P7 applies to TRIP-7; H-0 identifies TRIP-7 as its trip."
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.",
+        "evidence": "H-0: TRIP-7 transaction TX-HOTEL: hotel invoice initially reports 30.00 EUR, tax included.",
+        "connect_to": [
+          {
+            "ref": "${policy.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
+            "evidence": "P7 applies to TRIP-7; H-0 identifies TRIP-7 as its trip."
+          }
+        ]
       }
     ]
   }
@@ -196,25 +228,29 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
   "save_as": "meal",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:meal:v1",
     "observed_at": "2026-09-01T11:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "M-1",
-      "transaction": "TX-MEAL",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.",
-      "evidence": "M-1: TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "M-1"
+      ],
+      "transaction": [
+        "TX-MEAL"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-01T11:00:00Z",
     "read_context": {
@@ -222,14 +258,22 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
         "${policy.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${policy.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
-        "evidence": "P7 applies to TRIP-7; M-1 identifies TRIP-7 as its trip."
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.",
+        "evidence": "M-1: TRIP-7 transaction TX-MEAL: posted meal charge 10.00 EUR, tax included.",
+        "connect_to": [
+          {
+            "ref": "${policy.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
+            "evidence": "P7 applies to TRIP-7; M-1 identifies TRIP-7 as its trip."
+          }
+        ]
       }
     ]
   }
@@ -246,25 +290,29 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
   "save_as": "usd",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:usd:v1",
     "observed_at": "2026-09-01T12:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "U-1",
-      "transaction": "TX-USD",
-      "currency": "USD",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.",
-      "evidence": "U-1: TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "U-1"
+      ],
+      "transaction": [
+        "TX-USD"
+      ],
+      "currency": [
+        "USD"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-01T12:00:00Z",
     "read_context": {
@@ -272,14 +320,22 @@ reading the catalogue, `labels_new` declares that intent without renaming it.
         "${policy.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${policy.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
-        "evidence": "P7 applies to TRIP-7; U-1 identifies TRIP-7 as its trip."
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.",
+        "evidence": "U-1: TRIP-7 transaction TX-USD: settled local transport charge 7.00 USD, tax included.",
+        "connect_to": [
+          {
+            "ref": "${policy.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The writer uses the TRIP-7 settlement rule to catalogue this source; the rule does not prove that the charge is eligible.",
+            "evidence": "P7 applies to TRIP-7; U-1 identifies TRIP-7 as its trip."
+          }
+        ]
       }
     ]
   }
@@ -307,25 +363,29 @@ Now record the later documents with their actual later document clocks.
   "save_as": "hotel_final",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:hotel_final:v1",
     "observed_at": "2026-09-02T10:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "H-1",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.",
-      "evidence": "H-1: TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "H-1"
+      ],
+      "transaction": [
+        "TX-HOTEL"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-02T10:00:00Z",
     "read_context": {
@@ -333,21 +393,29 @@ Now record the later documents with their actual later document clocks.
         "${hotel_old.generated_refs.0}"
       ]
     },
-    "connect_to": [
-      {
-        "ref": "${hotel_old.generated_refs.0}",
-        "rel": "corrects",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The final invoice corrects the amount of this same hotel transaction; it must replace, not be added to, the preliminary figure.",
-        "evidence": "H-1 explicitly replaces H-0 for TX-HOTEL with settled 35.00 EUR instead of 30.00 EUR."
-      }
-    ],
     "options": {
       "labels_new": [
         "document"
       ]
-    }
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.",
+        "evidence": "H-1: TRIP-7 correction H-1 replaces H-0 for transaction TX-HOTEL: the settled hotel amount is 35.00 EUR including tax, not 30.00 EUR. This is not a second transaction.",
+        "connect_to": [
+          {
+            "ref": "${hotel_old.generated_refs.0}",
+            "rel": "corrects",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The final invoice corrects the amount of this same hotel transaction; it must replace, not be added to, the preliminary figure.",
+            "evidence": "H-1 explicitly replaces H-0 for TX-HOTEL with settled 35.00 EUR instead of 30.00 EUR."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -362,25 +430,29 @@ Now record the later documents with their actual later document clocks.
   "save_as": "hotel_copy",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:hotel_copy:v1",
     "observed_at": "2026-09-02T11:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "H-1-C",
-      "transaction": "TX-HOTEL",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.",
-      "evidence": "H-1-C: TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "H-1-C"
+      ],
+      "transaction": [
+        "TX-HOTEL"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-02T11:00:00Z",
     "read_context": {
@@ -388,21 +460,29 @@ Now record the later documents with their actual later document clocks.
         "${hotel_final.generated_refs.0}"
       ]
     },
-    "connect_to": [
-      {
-        "ref": "${hotel_final.generated_refs.0}",
-        "rel": "same_event_as",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The copy and final invoice report one hotel charge; the explicit transaction and copy statement justify counting it once.",
-        "evidence": "H-1-C says it reproduces H-1 for TX-HOTEL and is not another charge."
-      }
-    ],
     "options": {
       "labels_new": [
         "document"
       ]
-    }
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.",
+        "evidence": "H-1-C: TRIP-7 copy H-1-C reproduces H-1 for transaction TX-HOTEL, 35.00 EUR including tax. It is a duplicate document, not another charge.",
+        "connect_to": [
+          {
+            "ref": "${hotel_final.generated_refs.0}",
+            "rel": "same_event_as",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The copy and final invoice report one hotel charge; the explicit transaction and copy statement justify counting it once.",
+            "evidence": "H-1-C says it reproduces H-1 for TX-HOTEL and is not another charge."
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -417,25 +497,29 @@ Now record the later documents with their actual later document clocks.
   "save_as": "void",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_feedback",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:void:v1",
     "observed_at": "2026-09-03T11:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "V-MEAL",
-      "transaction": "TX-MEAL",
-      "currency": "EUR",
-      "role": "source"
-    },
-    "current": {
-      "kind": "feedback",
-      "summary": "TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.",
-      "evidence": "V-MEAL: TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "V-MEAL"
+      ],
+      "transaction": [
+        "TX-MEAL"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-03T11:00:00Z",
     "read_context": {
@@ -443,14 +527,22 @@ Now record the later documents with their actual later document clocks.
         "${meal.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${meal.generated_refs.0}",
-        "rel": "updates_state",
-        "class": "causal",
-        "confidence": "high",
-        "why": "The merchant confirmation changes this transaction from posted to fully voided, so its charge is not a settled expense.",
-        "evidence": "V-MEAL names M-1 and TX-MEAL, voids the full 10.00 EUR and reports 0.00 EUR settled."
+        "id": "current",
+        "kind": "feedback",
+        "summary": "TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.",
+        "evidence": "V-MEAL: TRIP-7 transaction TX-MEAL from M-1 was voided in full. Its posted 10.00 EUR leaves 0.00 EUR settled.",
+        "connect_to": [
+          {
+            "ref": "${meal.generated_refs.0}",
+            "rel": "updates_state",
+            "class": "causal",
+            "confidence": "high",
+            "why": "The merchant confirmation changes this transaction from posted to fully voided, so its charge is not a settled expense.",
+            "evidence": "V-MEAL names M-1 and TX-MEAL, voids the full 10.00 EUR and reports 0.00 EUR settled."
+          }
+        ]
       }
     ]
   }
@@ -467,23 +559,23 @@ Now record the later documents with their actual later document clocks.
   "save_as": "statement",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-quantities:statement:v1",
     "observed_at": "2026-09-04T09:00:00Z",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "STMT-7",
-      "role": "source"
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.",
-      "evidence": "STMT-7: TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "STMT-7"
+      ],
+      "role": [
+        "source"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "occurred_at": "2026-09-04T09:00:00Z",
     "read_context": {
@@ -491,14 +583,22 @@ Now record the later documents with their actual later document clocks.
         "${hotel_final.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${hotel_final.generated_refs.0}",
-        "rel": "supports",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The closing statement independently confirms the corrected settled hotel figure; it does not create another charge.",
-        "evidence": "STMT-7 lists TX-HOTEL settled at 35.00 EUR, matching H-1."
+        "id": "current",
+        "kind": "observation",
+        "summary": "TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.",
+        "evidence": "STMT-7: TRIP-7 closing statement: TX-TRAIN settled 20.00 EUR; TX-HOTEL settled 35.00 EUR; TX-MEAL voided, settled 0.00 EUR; TX-USD settled 7.00 USD. No currency conversion rate.",
+        "connect_to": [
+          {
+            "ref": "${hotel_final.generated_refs.0}",
+            "rel": "supports",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The closing statement independently confirms the corrected settled hotel figure; it does not create another charge.",
+            "evidence": "STMT-7 lists TX-HOTEL settled at 35.00 EUR, matching H-1."
+          }
+        ]
       }
     ]
   }
@@ -586,24 +686,26 @@ EUR settlement subtotal, not a new primary receipt or a universal trip total.
   "save_as": "total",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "derived",
     "idempotency_key": "guide-quantities:total:v1",
     "observed_at": "${clock.calculated}",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "CALC-7",
-      "currency": "EUR",
-      "role": "result"
-    },
-    "current": {
-      "kind": "derived_value",
-      "summary": "TRIP-7 settled EUR subtotal is 55.00 EUR from TX-TRAIN and corrected TX-HOTEL.",
-      "evidence": "Calculation for TRIP-7 from inspected sources: R-TRAIN 20.00 EUR + corrected H-1 35.00 EUR = 55.00 EUR (2000 + 3500 = 5500 cents). H-1 replaces H-0, so omit 30.00 EUR; H-1-C explicitly copies H-1, so count TX-HOTEL once; V-MEAL voids M-1 fully, so omit 10.00 EUR without subtracting again. U-1 is 7.00 USD, kept separate without conversion. STMT-7 confirms the settled component amounts; P7 requires unique settled EUR charges with tax already included."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "CALC-7"
+      ],
+      "currency": [
+        "EUR"
+      ],
+      "role": [
+        "result"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "read_context": {
       "inspected_refs": [
@@ -613,38 +715,46 @@ EUR settlement subtotal, not a new primary receipt or a universal trip total.
         "${statement.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${train.generated_refs.0}",
-        "rel": "total_of",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The subtotal includes this distinct settled transport charge exactly once.",
-        "evidence": "R-TRAIN records TX-TRAIN settled 20.00 EUR including tax; STMT-7 confirms it."
-      },
-      {
-        "ref": "${hotel_final.generated_refs.0}",
-        "rel": "total_of",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The subtotal includes the corrected hotel amount once for TX-HOTEL, excluding its old value and duplicate document.",
-        "evidence": "H-1 replaces H-0 with 35.00 EUR for TX-HOTEL; H-1-C says it is the same charge."
-      },
-      {
-        "ref": "${policy.generated_refs.0}",
-        "rel": "checked_against",
-        "class": "constraint",
-        "confidence": "high",
-        "why": "The calculation is checked against the rule requiring unique settled EUR charges and no voids or currency conversion.",
-        "evidence": "P7 states count each transaction once, use corrected amounts, exclude voids and separate currencies."
-      },
-      {
-        "ref": "${statement.generated_refs.0}",
-        "rel": "checked_against",
-        "class": "constraint",
-        "confidence": "high",
-        "why": "The selected component amounts and excluded void are checked against the closing settlement record.",
-        "evidence": "STMT-7 lists 20.00 EUR and 35.00 EUR settled, the meal at 0.00 EUR, and the separate 7.00 USD charge."
+        "id": "current",
+        "kind": "derived_value",
+        "summary": "TRIP-7 settled EUR subtotal is 55.00 EUR from TX-TRAIN and corrected TX-HOTEL.",
+        "evidence": "Calculation for TRIP-7 from inspected sources: R-TRAIN 20.00 EUR + corrected H-1 35.00 EUR = 55.00 EUR (2000 + 3500 = 5500 cents). H-1 replaces H-0, so omit 30.00 EUR; H-1-C explicitly copies H-1, so count TX-HOTEL once; V-MEAL voids M-1 fully, so omit 10.00 EUR without subtracting again. U-1 is 7.00 USD, kept separate without conversion. STMT-7 confirms the settled component amounts; P7 requires unique settled EUR charges with tax already included.",
+        "connect_to": [
+          {
+            "ref": "${train.generated_refs.0}",
+            "rel": "total_of",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The subtotal includes this distinct settled transport charge exactly once.",
+            "evidence": "R-TRAIN records TX-TRAIN settled 20.00 EUR including tax; STMT-7 confirms it."
+          },
+          {
+            "ref": "${hotel_final.generated_refs.0}",
+            "rel": "total_of",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The subtotal includes the corrected hotel amount once for TX-HOTEL, excluding its old value and duplicate document.",
+            "evidence": "H-1 replaces H-0 with 35.00 EUR for TX-HOTEL; H-1-C says it is the same charge."
+          },
+          {
+            "ref": "${policy.generated_refs.0}",
+            "rel": "checked_against",
+            "class": "constraint",
+            "confidence": "high",
+            "why": "The calculation is checked against the rule requiring unique settled EUR charges and no voids or currency conversion.",
+            "evidence": "P7 states count each transaction once, use corrected amounts, exclude voids and separate currencies."
+          },
+          {
+            "ref": "${statement.generated_refs.0}",
+            "rel": "checked_against",
+            "class": "constraint",
+            "confidence": "high",
+            "why": "The selected component amounts and excluded void are checked against the closing settlement record.",
+            "evidence": "STMT-7 lists 20.00 EUR and 35.00 EUR settled, the meal at 0.00 EUR, and the separate 7.00 USD charge."
+          }
+        ]
       }
     ]
   }
@@ -668,23 +778,23 @@ record to reach the duplicate, correction, void and currency source.
   "save_as": "exclusions",
   "arguments": {
     "about": "example:guide:quantities",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "derived",
     "idempotency_key": "guide-quantities:exclusions:v1",
     "observed_at": "${clock.calculated}",
-    "scope": {
-      "process": "trip-settlement"
-    },
     "labels": {
-      "trip": "TRIP-7",
-      "document": "AUDIT-7",
-      "role": "audit"
-    },
-    "current": {
-      "kind": "decision",
-      "summary": "Exclude H-0, duplicate H-1-C, voided M-1 and USD receipt U-1 from the TRIP-7 EUR subtotal CALC-7.",
-      "evidence": "Audit of CALC-7: H-1 corrects H-0 from 30.00 EUR to 35.00 EUR for the same TX-HOTEL; H-1-C explicitly duplicates H-1. V-MEAL voids M-1, leaving 0.00 EUR settled. U-1 is 7.00 USD and P7 supplies no conversion rate. These omissions prevent double counting and mixed units."
+      "trip": [
+        "TRIP-7"
+      ],
+      "document": [
+        "AUDIT-7"
+      ],
+      "role": [
+        "audit"
+      ],
+      "agentic_process": [
+        "trip-settlement"
+      ]
     },
     "read_context": {
       "inspected_refs": [
@@ -697,62 +807,70 @@ record to reach the duplicate, correction, void and currency source.
         "${void.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${total.generated_refs.0}",
-        "rel": "excluded_from",
-        "class": "constraint",
-        "confidence": "high",
-        "why": "These documented candidates are deliberately omitted from this EUR subtotal for replacement, duplicate, void or unit mismatch reasons.",
-        "evidence": "H-1 replaces H-0; H-1-C duplicates H-1; V-MEAL voids M-1; U-1 is USD and P7 supplies no conversion."
-      },
-      {
-        "ref": "${hotel_old.generated_refs.0}",
-        "rel": "derived_from",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "This is the preliminary operand omitted after its explicit correction.",
-        "evidence": "H-0 reports 30.00 EUR for TX-HOTEL; H-1 replaces that amount."
-      },
-      {
-        "ref": "${hotel_copy.generated_refs.0}",
-        "rel": "derived_from",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The duplicate document identifies the extra 35.00 EUR that must not become a second operand.",
-        "evidence": "H-1-C explicitly reproduces H-1 for the same TX-HOTEL."
-      },
-      {
-        "ref": "${meal.generated_refs.0}",
-        "rel": "derived_from",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "This is the posted charge removed from the eligible set by its later full void.",
-        "evidence": "M-1 reports TX-MEAL posted 10.00 EUR; V-MEAL names and voids it."
-      },
-      {
-        "ref": "${usd.generated_refs.0}",
-        "rel": "derived_from",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The foreign-currency receipt proves a unit mismatch for the EUR subtotal, not a zero-valued expense.",
-        "evidence": "U-1 records 7.00 USD; no conversion rate is supplied."
-      },
-      {
-        "ref": "${hotel_final.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "The explicit replacement is the reason to omit H-0 while retaining the corrected hotel operand.",
-        "evidence": "H-1 says it replaces H-0 for the same transaction with 35.00 EUR."
-      },
-      {
-        "ref": "${void.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "The merchant full-void confirmation is the reason to exclude M-1 under P7.",
-        "evidence": "V-MEAL confirms all 10.00 EUR were voided and 0.00 EUR remains settled."
+        "id": "current",
+        "kind": "decision",
+        "summary": "Exclude H-0, duplicate H-1-C, voided M-1 and USD receipt U-1 from the TRIP-7 EUR subtotal CALC-7.",
+        "evidence": "Audit of CALC-7: H-1 corrects H-0 from 30.00 EUR to 35.00 EUR for the same TX-HOTEL; H-1-C explicitly duplicates H-1. V-MEAL voids M-1, leaving 0.00 EUR settled. U-1 is 7.00 USD and P7 supplies no conversion rate. These omissions prevent double counting and mixed units.",
+        "connect_to": [
+          {
+            "ref": "${total.generated_refs.0}",
+            "rel": "excluded_from",
+            "class": "constraint",
+            "confidence": "high",
+            "why": "These documented candidates are deliberately omitted from this EUR subtotal for replacement, duplicate, void or unit mismatch reasons.",
+            "evidence": "H-1 replaces H-0; H-1-C duplicates H-1; V-MEAL voids M-1; U-1 is USD and P7 supplies no conversion."
+          },
+          {
+            "ref": "${hotel_old.generated_refs.0}",
+            "rel": "derived_from",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "This is the preliminary operand omitted after its explicit correction.",
+            "evidence": "H-0 reports 30.00 EUR for TX-HOTEL; H-1 replaces that amount."
+          },
+          {
+            "ref": "${hotel_copy.generated_refs.0}",
+            "rel": "derived_from",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The duplicate document identifies the extra 35.00 EUR that must not become a second operand.",
+            "evidence": "H-1-C explicitly reproduces H-1 for the same TX-HOTEL."
+          },
+          {
+            "ref": "${meal.generated_refs.0}",
+            "rel": "derived_from",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "This is the posted charge removed from the eligible set by its later full void.",
+            "evidence": "M-1 reports TX-MEAL posted 10.00 EUR; V-MEAL names and voids it."
+          },
+          {
+            "ref": "${usd.generated_refs.0}",
+            "rel": "derived_from",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "The foreign-currency receipt proves a unit mismatch for the EUR subtotal, not a zero-valued expense.",
+            "evidence": "U-1 records 7.00 USD; no conversion rate is supplied."
+          },
+          {
+            "ref": "${hotel_final.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "The explicit replacement is the reason to omit H-0 while retaining the corrected hotel operand.",
+            "evidence": "H-1 says it replaces H-0 for the same transaction with 35.00 EUR."
+          },
+          {
+            "ref": "${void.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "The merchant full-void confirmation is the reason to exclude M-1 under P7.",
+            "evidence": "V-MEAL confirms all 10.00 EUR were voided and 0.00 EUR remains settled."
+          }
+        ]
       }
     ]
   }

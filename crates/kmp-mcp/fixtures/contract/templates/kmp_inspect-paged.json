@@ -25,6 +25,21 @@
       "incoming": [],
       "outgoing": []
     },
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "string",
+          "budget": {
+            "max_bytes": "integer"
+          },
+          "page": {
+            "cursor": "string"
+          },
+          "ref": "string"
+        },
+        "tool": "string"
+      }
+    ],
     "object": {
       "kind": "string",
       "metadata": {},

@@ -29,7 +29,7 @@ pub(crate) fn dimensions_schema() -> Value {
             },
             "scope_ids": {
                 "type": "array",
-                "items": string_schema("Exact scope id: local or about:<about>:dimension:<dimension_id>.")
+                "items": string_schema("Bare label value or complete label ref returned by KMP.")
             },
             "selectors": {
                 "type": "array",

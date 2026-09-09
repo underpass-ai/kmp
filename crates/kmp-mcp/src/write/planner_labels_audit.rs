@@ -13,7 +13,7 @@ mod tests {
     #[test]
     fn labels_become_coordinates_under_their_own_key_after_the_well_known_ones() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "release": "v0.12.0", "component": "kmp-viewer" });
+        request["labels"] = json!({"release": ["v0.12.0"], "component": ["kmp-viewer"]});
 
         let plan = build_write_plan(&request).expect("labels plan");
 
@@ -37,7 +37,10 @@ mod tests {
         let coordinates = &plan.ingest_arguments["memory"]["entries"][0]["coordinates"];
         assert_eq!(coordinates.as_array().map(Vec::len), Some(5));
         assert_eq!(coordinates[4]["dimension"], "release");
-        assert_eq!(coordinates[4]["scope_id"], "v0.12.0");
+        assert_eq!(
+            coordinates[4]["scope_id"],
+            "label:v1:incident%3Amobile-login:release:v0.12.0"
+        );
         assert_eq!(
             coordinates[4]["observed_at"], coordinates[1]["observed_at"],
             "every label carries the same clocks"
@@ -52,60 +55,77 @@ mod tests {
     #[test]
     fn a_label_key_must_be_an_identifier_a_filter_can_name() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "Release Train": "v0.12.0" });
+        request["labels"] = json!({"Release Train": ["v0.12.0"]});
 
         let error = build_write_plan(&request).expect_err("bad key");
 
         assert!(
-            error.starts_with("`labels.Release Train` is not a label key"),
+            error
+                .message
+                .starts_with("`labels.Release Train` is not a label key"),
             "{error}"
         );
     }
 
     #[test]
-    fn a_well_known_label_cannot_be_given_twice() {
+    fn primary_scopes_accept_additional_memberships_but_not_duplicates() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "task": "another-task" });
-        let error = build_write_plan(&request).expect_err("task twice");
-        assert_eq!(
-            error,
-            "`task` is given twice: use `scope.task` or `labels.task`, not both"
-        );
-
-        let mut request = sample_write_request();
-        request["labels"] = json!({ "agentic_process": "elsewhere" });
-        let error = build_write_plan(&request).expect_err("process in labels");
-        assert_eq!(
-            error,
-            "`labels.agentic_process` is `scope.process`: give the process there"
+        request["labels"] = json!({"task": ["another-task"], "agentic_process": ["elsewhere"]});
+        let plan = build_write_plan(&request).expect("additional memberships");
+        assert_eq!(plan.labels.len(), 5);
+        request["labels"] = json!({"agentic_process": ["incident:mobile-login:resolution"]});
+        let error = build_write_plan(&request).expect_err("exact duplicate");
+        assert!(
+            error.message.contains("repeat `agentic_process="),
+            "{error}"
         );
     }
 
     #[test]
-    fn a_value_already_used_under_another_key_is_refused_naming_both() {
+    fn same_value_under_different_keys_and_multiple_aliases_are_independent() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "env": "incident:mobile-login:resolution" });
+        request["labels"] = json!({"alias": ["neb", "Nébula Cache"], "component": ["neb"]});
+        let plan = build_write_plan(&request).expect("multivalue labels");
+        let dimensions = plan.ingest_arguments["memory"]["dimensions"]
+            .as_array()
+            .expect("dimensions");
+        let refs: std::collections::BTreeSet<_> = dimensions
+            .iter()
+            .map(|d| d["id"].as_str().expect("ref"))
+            .collect();
+        assert_eq!(refs.len(), dimensions.len());
+        assert!(refs.contains("label:v1:incident%3Amobile-login:alias:neb"));
+        assert!(refs.contains("label:v1:incident%3Amobile-login:component:neb"));
+        assert!(refs.contains("label:v1:incident%3Amobile-login:alias:N%C3%A9bula%20Cache"));
+    }
 
-        let error = build_write_plan(&request).expect_err("value reused");
-
-        assert_eq!(
-            error,
-            "scope.process and labels.env reuse `incident:mobile-login:resolution`; within an about a scope id names one label and keeps the kind of its first use, so one id cannot be two kinds"
-        );
+    #[test]
+    fn labels_require_nonempty_distinct_arrays() {
+        for labels in [
+            json!({"alias": "neb"}),
+            json!({"alias": []}),
+            json!({"alias": [""]}),
+            json!({"alias": ["neb", "neb"]}),
+            json!({"alias": [42]}),
+        ] {
+            let mut request = sample_write_request();
+            request["labels"] = labels;
+            assert!(build_write_plan(&request).is_err(), "{request}");
+        }
     }
 
     #[test]
     fn a_committed_write_says_which_labels_it_created() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "release": "v0.12.0" });
+        request["labels"] = json!({"release": ["v0.12.0"]});
         request["options"]["dry_run"] = json!(false);
         let plan = build_write_plan(&request).expect("plan");
         let ingest_result = json!({
             "memory": {
                 "about": "incident:mobile-login",
                 "created_dimensions": [
-                    "about:incident:mobile-login:dimension:v0.12.0",
-                    "about:incident:mobile-login:dimension:incident:mobile-login:episode:backend"
+                    "label:v1:incident%3Amobile-login:release:v0.12.0",
+                    "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend"
                 ]
             }
         });
@@ -139,7 +159,7 @@ mod tests {
     #[test]
     fn labels_new_marks_the_dimension_the_writer_insists_on() {
         let mut request = sample_write_request();
-        request["labels"] = json!({ "component": "kmp_viewer" });
+        request["labels"] = json!({"component": ["kmp_viewer"]});
         request["options"]["labels_new"] = json!(["component"]);
 
         let plan = build_write_plan(&request).expect("plan");
@@ -164,7 +184,7 @@ mod tests {
         request["options"]["labels_new"] = json!(["release"]);
         let error = build_write_plan(&request).expect_err("unknown key");
         assert_eq!(
-            error,
+            error.message,
             "options.labels_new names `release`, which is not a label of this write"
         );
     }

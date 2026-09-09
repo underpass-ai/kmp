@@ -11,8 +11,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert saved[name]['accepted']
         assert read['object']['kind'] == kind and read['object']['ref'] == refs[name]
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
         coords = [e['coordinate'] for e in read['links']['incoming'] if e.get('coordinate')]
         assert coords
         assert all(c['occurred_at'] == authored[name]['occurred_at'] and
@@ -20,7 +20,7 @@ def check(saved, client, authored):
 
     early = saved['english_summary']
     assert early['answer'] != 'UNKNOWN'
-    assert any(e['text'] == authored['original']['current']['summary'] and
+    assert any(e['text'] == authored['original']['memories'][0]['summary'] and
                e.get('metadata', {}).get('matched_via') == 'summary'
                for e in early['proof']['evidence'])
     assert saved['canonical_label']['accepted']
@@ -57,7 +57,7 @@ def check(saved, client, authored):
 
     for path, source, rel in [('restatement_path', 'restated', 'restates'),
                               ('contradiction_path', 'negative', 'contradicts')]:
-        wanted = next(e for e in authored[source]['connect_to'] if e['rel'] == rel)
+        wanted = next(e for e in authored[source]['memories'][0]['connect_to'] if e['rel'] == rel)
         actual = next(e for e in saved[path]['trace'] if e['from'] == refs[source] and
                       e['to'] == refs['original'] and e['rel'] == rel)
         for field in ('class', 'why', 'evidence'):

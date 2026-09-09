@@ -44,19 +44,77 @@ covered. Do not invent a date merely to fit the bounded-interval recipe.
 
 Resolve relative dates in the user's timezone. If the timezone is genuinely
 unknown and changes the answer, ask for it. Convert a bounded calendar window
-to an explicit half-open UTC interval `[start, end)`. Use `kmp_goto`,
-`kmp_near`, `kmp_rewind` or `kmp_forward`, keep only entries whose effective
-time is inside the interval, and continue while `page.has_more`.
+to an explicit half-open UTC interval `[start, end)`. Pass it directly to
+`kmp_forward` for oldest first, or `kmp_rewind` for newest first. Omit `from`
+on the first interval read. KMP includes every start-time tie and excludes
+the end, without a separate boundary probe or client-side date filtering.
 
-The start is inclusive but `kmp_forward` is strictly after its cursor. First
-call `kmp_goto` at `start` and retain entries whose effective time equals
-`start`; discard older state. Then call `kmp_forward` from the same `start` for
-the strictly later entries. Merge and deduplicate refs from both reads. Put
-each returned `page.next_cursor` in the next move's cursor field — for example
-`from.ref` for `kmp_forward` — while keeping the other arguments unchanged.
-Exclude entries at or after `end`. If a budget or selection cap prevents a
-complete boundary probe or interval, report the exact continuation action;
-never call a partial page the whole period.
+```json
+{"about":"project:release","interval":{"start":"2026-09-01T00:00:00Z","end":"2026-09-02T00:00:00Z"},"axis":"observed","limit":{"entries":10}}
+```
+
+Execute the returned `next_actions` with their complete arguments. They retain
+the interval, clock and dimension selection across both proof pages and history
+moves. `from` remains a strict cursor when supplied; interval continuations use
+returned refs, never a sequence. Goto and Near can narrow their cursor/window
+with the same interval but still require their initial cursor.
+
+Either bound may be open. On validity, a memory qualifies when its applicability
+overlaps the interval. On the other clocks, its recorded instant must fall
+inside. The selected entries obey `temporal.interval`; proof may retain earlier
+antecedents needed to explain them. Explicitly later proof is excluded at the
+finite end. With no end, `proof.missing: ["expiry_boundary"]` says expiry has not
+been assessed: supply `interval.end` to ask what had expired before that instant.
+An empty `proof.expired` alone does not establish that every returned state holds.
+
+If a budget or selection cap prevents completion, report the exact pending
+continuation; never call a partial packet the whole period.
+
+## Complete the selected packet before navigating onward
+
+`page.has_more` means entry or proof items remain in this response selection.
+Execute `next_actions` exactly, appending each section using `page.sections`.
+`page.next_cursor` is opaque and belongs in `page.cursor`; it is never a memory
+ref. A cursor binds the verb, arguments and complete selected content. Changing
+a filter, clock, entry limit or stored proof rejects it; the error supplies a
+fresh read. Only `page.entries` and `budget.max_bytes` may vary while continuing.
+
+After the packet is complete, `selection.has_more` reports history outside it.
+The returned actions then navigate that history; Near can offer earlier and
+later calls. Top-level summary, coverage and quality describe the selected
+packet, while page counts describe the items carried by this response. Neither
+establishes that all memory or the user's entire question has been covered.
+
+If no complete next item fits, `page.minimum_progress_bytes` names the required
+budget and `next_actions` supplies a retry that admits an item. If the allowance
+cannot increase, report the exact pending action and partial coverage. Do not
+repeat an empty page at the unchanged budget.
+
+## Choose entry fields, then expand a selected memory
+
+On Goto, Near, Forward and Rewind, `fields` chooses complete entry fields:
+`ref`, `kind`, `text`, `coordinates` and `metadata`. Omit it for all fields;
+`[]` keeps only identity. `ref` and `kind` always remain. For example, add
+`"fields": ["coordinates"]` to the interval call above to browse references,
+types and clocks before reading their full bodies.
+
+`selection.fields.included` and `.omitted` declare the choice. An omitted field
+is not an empty value or missing source. Each reduced entry carries a complete
+`detail_action`: execute its `kmp_goto` call to expand that ref with the original
+about scope, labels, clock and interval. Its pages and byte negotiation work as
+usual. This is a fresh read, not a stored snapshot; later writes can change it.
+If the entry no longer matches, do not silently remove filters to recover it.
+
+Fields affect `entries` only. `include.evidence`, `include.relations` and
+`include.raw_refs` separately select proof and raw audit data, which can carry
+the same source text. Selecting fewer entry fields does not redact those
+sections or establish that omitted evidence was read. Keep proof when the task
+requires it. Whole selected content, including hidden entry fields, still binds
+a page cursor; changed content or a changed `fields` choice requires a fresh read.
+
+Use this for selective browsing. Expanding every entry afterward can cost more
+than requesting full entries initially; count all calls and expansions when
+comparing tokens. KMP does not summarize or truncate a selected text field.
 
 ## Goto carries proof from its historical instant
 
@@ -75,9 +133,11 @@ known at its observation instant, and the replacement applies at its validity
 start. Keep the original CSV observation; do not anticipate the later change
 by backdating knowledge of its end.
 
-Near, Forward and Rewind enumerate related historical positions. Their cursor
-is not an as-of proof boundary. Use Goto for a state, or bounded Wake/Ask when
-the request is to recover or answer from knowledge at a particular instant.
+An explicit interval ending at or before the Goto cursor is the stricter,
+exclusive boundary: `proof.interval` declares that end instead of `proof.as_of`.
+A wider or open-ended interval does not admit proof later than the Goto cursor.
+Near, Forward and Rewind enumerate historical positions; their finite interval
+end bounds proof, while their cursor selects positions rather than an as-of state.
 
 ## `observed_at` is the real clock, in UTC
 

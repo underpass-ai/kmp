@@ -775,14 +775,15 @@ fn field_allows_memory_ref(field: Option<&str>) -> bool {
 }
 
 fn looks_like_memory_ref(value: &str) -> bool {
-    !value.contains(' ')
-        && value.len() <= 500
-        && (value.starts_with("memoryarena:")
-            || value.starts_with("longmemeval:")
-            || value.starts_with("turn:")
-            || value.starts_with("question:")
-            || value.starts_with("evidence:")
-            || value.starts_with("about:"))
+    kmp_domain::MemoryDimensionIdentity::parse(value).is_some()
+        || (!value.contains(' ')
+            && value.len() <= 500
+            && (value.starts_with("memoryarena:")
+                || value.starts_with("longmemeval:")
+                || value.starts_with("turn:")
+                || value.starts_with("question:")
+                || value.starts_with("evidence:")
+                || value.starts_with("about:")))
 }
 
 fn action_label(action: &Value) -> String {
@@ -821,7 +822,7 @@ mod tests {
                 ],
                 "path": [
                     {
-                        "from": "about:longmemeval:run:lme:item:q:dimension:longmemeval:session:s1",
+                        "from": "label:v1:longmemeval%3Arun%3Alme%3Aitem%3Aq:longmemeval:longmemeval%3Asession%3As1",
                         "to": "longmemeval:run:lme:item:q"
                     }
                 ]
@@ -833,7 +834,9 @@ mod tests {
         assert!(refs.contains("turn:run:lme:question:q:answer:a:1"));
         assert!(refs.contains("evidence:run:lme:question:q:answer:a:1"));
         assert!(refs.contains("question:run:lme:question:q"));
-        assert!(refs.contains("about:longmemeval:run:lme:item:q:dimension:longmemeval:session:s1"));
+        assert!(refs.contains(
+            "label:v1:longmemeval%3Arun%3Alme%3Aitem%3Aq:longmemeval:longmemeval%3Asession%3As1"
+        ));
         assert!(refs.contains("longmemeval:run:lme:item:q"));
         assert!(!refs.contains("turn:run:lme:question:q:answer:a:2"));
     }

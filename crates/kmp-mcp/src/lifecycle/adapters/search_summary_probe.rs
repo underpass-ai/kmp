@@ -80,7 +80,7 @@ pub(crate) fn search_summary_finding(resolved: &ResolvedDataDir) -> Option<Lifec
         ))
         .with_detail(
             "list them with `kmp-mcp summaries pending`; the agent attaches each with \
-             kmp_write_memory, intent record_summary",
+             kmp_write_memory, search_summaries",
         ),
     )
 }
