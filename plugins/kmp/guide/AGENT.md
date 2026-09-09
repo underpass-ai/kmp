@@ -1,6 +1,6 @@
 # KMP agent entry
 
-Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:ac2086528880be44a686`.
+Guide version: `1`. Asset key: `ingest:guide-sync:1:agent:f5aafe0be9a9ffeb52a0`.
 
 KMP stores facts, evidence and relations through time. The agent writes and navigates; KMP does not generate answers.
 
@@ -10,7 +10,7 @@ Recover known work with Wake. Read history with temporal verbs. Compare abouts w
 
 Write separate facts with evidence and useful labels. Distinguish event, observation, ingestion and validity. Rich relations need why and evidence. Never invent a date, identity or proof to pass validation.
 
-First use: read the relevant verb and a needed example below. Reuse guidance while present and current; no second documentation Wake. After compaction or a store/version change, recheck availability. A rejected call offers `help.guide` and `help.examples`; consult only what the failure needs. Direct `feedback[].action` still supplies repair or restart.
+Start once with `kmp_guide {"registration_key":"unique-task-and-agent-key"}`. Keep its agent and context ids. Use `context_id` plus `topic` for one worked card, then follow its extended guide when needed. Reuse guidance while current and present. After compaction use `agent_id` plus a new `context_key`. Served does not mean understood. This Markdown index is the alternative entry, not another manual to load. Rejections offer `help.guide`, `help.examples` and direct `feedback[].action`.
 
 Follow executable continuations and finish relevant pages. Partial results are incomplete. UNKNOWN can be the correct final result.
 
@@ -27,6 +27,7 @@ Read its row with `kmp_inspect` if that guidance is absent from context. Reuse i
 | Inspect evidence and trace a connection: `kmp_inspect`, `kmp_trace` | `guide:kmp-agent:verb:audit` |
 | Write evidence or change labels: `kmp_ingest`, `kmp_relabel`, `kmp_write_memory` | `guide:kmp-agent:verb:write` |
 | Frame and share ChronoLoom: `kmp_view_apply_intent`, `kmp_view_get_state`, `kmp_view_open` | `guide:kmp-agent:verb:view` |
+| Manage agent identity and guidance: `kmp_guide` | `guide:kmp-agent:verb:guide` |
 
 ## Examples on demand
 

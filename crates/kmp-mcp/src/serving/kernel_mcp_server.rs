@@ -13,6 +13,10 @@ use crate::serving::adapters::fixture_backend::FixtureKernelMcpBackend;
 
 pub struct KernelMcpServer {
     pub(super) backend: Arc<dyn KernelMcpToolBackend>,
+    pub(super) agent_directory: std::sync::OnceLock<
+        Result<crate::guidance::SqliteAgentDirectory, crate::guidance::GuidanceError>,
+    >,
+    pub(super) agent_directory_path: Option<std::path::PathBuf>,
     /// Shared store-use claim held until this MCP transport exits. Selective
     /// uninstall must acquire the exclusive counterpart before it can remove
     /// the directory.
@@ -51,7 +55,13 @@ impl KernelMcpServer {
     }
 
     pub fn grpc_with_tls(endpoint: impl Into<String>, tls: KernelMcpGrpcTlsConfig) -> Self {
-        Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls))
+        use sha2::{Digest, Sha256};
+        let endpoint = endpoint.into();
+        let key = format!("{:x}", Sha256::digest(endpoint.as_bytes()));
+        let mut server = Self::with_backend(GrpcKernelMcpBackend::new(endpoint, tls));
+        server.agent_directory_path = kmp_embedded::user_data_home()
+            .map(|home| home.join("agent-users").join(format!("{key}.sqlite3")));
+        server
     }
 
     pub fn embedded(data_dir: &std::path::Path) -> Result<Self, String> {
@@ -69,6 +79,7 @@ impl KernelMcpServer {
         let opened_engine = backend.engine();
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(opened_engine);
+        server.agent_directory_path = Some(data_dir.join("agent-users.sqlite3"));
         Ok(server)
     }
 
@@ -79,6 +90,8 @@ impl KernelMcpServer {
     pub fn with_shared_backend(backend: Arc<dyn KernelMcpToolBackend>) -> Self {
         Self {
             backend,
+            agent_directory: std::sync::OnceLock::new(),
+            agent_directory_path: None,
             store_session_lease: None,
             embedded_engine: None,
             viewer_url: None,
@@ -93,8 +106,10 @@ impl KernelMcpServer {
     /// the viewer path, which needs the kernel handle before wrapping it.
     pub fn with_embedded_backend(backend: crate::serving::EmbeddedKernelMcpBackend) -> Self {
         let engine = backend.engine();
+        let agents = std::path::Path::new(backend.data_dir()).join("agent-users.sqlite3");
         let mut server = Self::with_backend(backend);
         server.embedded_engine = Some(engine);
+        server.agent_directory_path = Some(agents);
         server
     }
 
@@ -221,7 +236,7 @@ impl KernelMcpServer {
                     &resolved,
                     crate::guide::abouts_owned(),
                 );
-                let server = Self::with_retrying_embedded_backend(
+                let mut server = Self::with_retrying_embedded_backend(
                     crate::serving::RetryingEmbeddedKernelMcpBackend::new_with_commit_native(
                         resolved.path(),
                         engine,
@@ -229,6 +244,9 @@ impl KernelMcpServer {
                     ),
                 )
                 .with_orphaned_bundle(resolved.orphaned_bundle().cloned());
+                // Open lazily after a guide read opened the kernel. A metadata
+                // file must not make a not-yet-created kernel look non-empty.
+                server.agent_directory_path = Some(resolved.path().join("agent-users.sqlite3"));
                 Ok(match lease {
                     Some(lease) => server.with_store_session_lease(lease),
                     None => server,

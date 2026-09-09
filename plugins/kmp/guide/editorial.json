@@ -12,7 +12,7 @@
           "id": "overview",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The agent entry indexes verb groups and example maps for selective first-use reading; it reuses current context instead of loading every guide body.",
+          "evidence": "The agent entry routes first-time users to the persistent guide scheme, with Markdown as an alternative entry and extended lessons on demand.",
           "text_file": "agent-entry.md"
         },
         {
@@ -325,6 +325,70 @@
           "text_file": "examples/semantic-batch.md",
           "example_title": "Atomic semantic packet with local proof links",
           "evidence": "Two fictional R1/R2 sources exercise one-about atomic validation, forward local refs, all declared labels, independent clocks, exact retry and shared ChronoLoom proof inspection. Native INVALID_KIND feedback exposes the schema vocabulary without choosing a meaning. The semantic-batch replay checks individual source labels, explicit aliases and an unapproved request that preserves the prior decision. The teaching review contrasts R1/R2 source clocks with the accepted packet, distinguishes a request from an executed change and explains separate lifecycles and consistent account labels."
+        },
+        {
+          "id": "card:wake",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/wake.md",
+          "evidence": "A short worked starting card for wake; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:write",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/write.md",
+          "evidence": "A short worked starting card for write; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:ask",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/ask.md",
+          "evidence": "A short worked starting card for ask; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:time",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/time.md",
+          "evidence": "A short worked starting card for time; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:audit",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/audit.md",
+          "evidence": "A short worked starting card for audit; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:relate",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/relate.md",
+          "evidence": "A short worked starting card for relate; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:view",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/view.md",
+          "evidence": "A short worked starting card for view; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "card:guide",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "cards/guide.md",
+          "evidence": "A short worked starting card for guide; extended guidance remains available through its canonical verb reference."
+        },
+        {
+          "id": "verb:guide",
+          "kind": "instruction",
+          "depth": "basic",
+          "text_file": "verbs/guide.md",
+          "evidence": "The MCP guide assigns persistent agent identities and contexts, distinguishes served guidance from understanding, and provides explicit reset and fold operations.",
+          "guide_title": "Manage agent identity and guidance"
         }
       ],
       "relations": [
@@ -591,6 +655,70 @@
           "class": "evidential",
           "why": "This case applies the writer contract to explicit sources and reads every existing relation target.",
           "evidence": "A deliberately compiled writer preview is absent before ingest and preserves refs, clocks and proof on canonical replay. Coordinate ownership explains preservation of a redundant contains_entry declaration and refusal when its membership cannot be resolved; regression #576 exercises committed MCP and export/import."
+        },
+        {
+          "from": "card:wake",
+          "to": "verb:wake",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic wake returns an inspect action for verb:wake."
+        },
+        {
+          "from": "card:write",
+          "to": "verb:write",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic write returns an inspect action for verb:write."
+        },
+        {
+          "from": "card:ask",
+          "to": "verb:ask",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic ask returns an inspect action for verb:ask."
+        },
+        {
+          "from": "card:time",
+          "to": "verb:time",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic time returns an inspect action for verb:time."
+        },
+        {
+          "from": "card:audit",
+          "to": "verb:audit",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic audit returns an inspect action for verb:audit."
+        },
+        {
+          "from": "card:relate",
+          "to": "verb:relate",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic relate returns an inspect action for verb:relate."
+        },
+        {
+          "from": "card:view",
+          "to": "verb:view",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic view returns an inspect action for verb:view."
+        },
+        {
+          "from": "card:guide",
+          "to": "verb:guide",
+          "rel": "follows",
+          "class": "procedural",
+          "why": "The short starting card links to the extended verb for further explanation.",
+          "evidence": "kmp_guide topic guide returns an inspect action for verb:guide."
         }
       ]
     },

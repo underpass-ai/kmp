@@ -5,16 +5,17 @@ description: Operate KMP agent memory through the kmp MCP server — recover sto
 
 # KMP agent memory
 
-Read [the agent entry](../../guide/AGENT.md) once when KMP is invoked, unless
-that same asset is already in context. It routes all memory verbs and the
-shared view tools `kmp_view_open`, `kmp_view_apply_intent` and
-`kmp_view_get_state` to their extended guidance in KMP. Consult the relevant
-verb or example by its exact reference; reuse bodies already read while
-context and version remain valid. Do not also wake the full agent guide.
+Start guidance once with `kmp_guide` and a unique `registration_key` for this
+logical agent. Keep its returned agent and context ids in the host task state.
+Resume with `context_id`; add `topic` to read one worked card and follow its
+extended guide when needed. Reuse current bodies already in context.
+After compaction use `agent_id` and a new `context_key`; the agent keeps its
+identity and random name. Served guidance does not prove understanding.
 
-If this host cannot read the installed file, use the fallback in
-[the guide skill](../kmp-guide/SKILL.md). Missing tools or an unexpected store
-belong to [doctor](../kmp-doctor/SKILL.md).
+[The installed entry](../../guide/AGENT.md) is an alternative entry, not a
+second manual to load. Missing or stale guide assets belong to
+[guide](../kmp-guide/SKILL.md); missing tools or an unexpected store belong to
+[doctor](../kmp-doctor/SKILL.md).
 
 For relation rationale (the former “Why the `why` matters” section), consult
 `guide:kmp-agent:advanced:relations` in `guide:kmp-agent`. This skill is the
