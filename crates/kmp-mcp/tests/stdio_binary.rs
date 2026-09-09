@@ -700,7 +700,7 @@ fn run_binary_from(
 #[test]
 fn doctor_fails_on_every_layout_that_real_store_open_refuses() {
     let home = tempfile::tempdir().expect("isolated home");
-    for stamp in [Some("3\n"), Some("banana\n"), None] {
+    for stamp in [Some("2\n"), Some("4\n"), Some("banana\n"), None] {
         let data_dir = tempfile::tempdir().expect("data dir");
         let store = data_dir.path().join("store/kernel.sqlite3");
         std::fs::create_dir_all(store.parent().expect("parent")).expect("store dir");
@@ -843,6 +843,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
     let nested = project.path().join("src");
     std::fs::create_dir_all(&nested).expect("nested working dir");
     let user_data = tempfile::tempdir().expect("isolated user data");
+    let isolated_home = tempfile::tempdir().expect("isolated host registrations");
 
     let doctor = Command::new(env!("CARGO_BIN_EXE_kmp-mcp"))
         .arg("doctor")
@@ -851,6 +852,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
         .env("KMP_MCP_BACKEND", "embedded")
         .env("KMP_VIEWER_ADDR", "off")
         .env("XDG_DATA_HOME", user_data.path())
+        .env("HOME", isolated_home.path())
         .output()
         .expect("doctor runs");
     assert_eq!(doctor.status.code(), Some(1));
@@ -897,12 +899,14 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
     };
     let input = format!("{}\n{}\n", write(1, "one"), write(2, "two"));
     let user_data_text = user_data.path().display().to_string();
+    let home_text = isolated_home.path().display().to_string();
     let output = run_binary_from(
         Some(&nested),
         &[
             ("KMP_MCP_BACKEND", "embedded"),
             ("KMP_VIEWER_ADDR", "off"),
             ("XDG_DATA_HOME", &user_data_text),
+            ("HOME", &home_text),
         ],
         &input,
     );
@@ -918,7 +922,7 @@ fn orphaned_project_bundle_is_diagnosed_and_reported_once_on_project_writes() {
         .collect::<Vec<_>>();
     assert_eq!(responses.len(), 2);
     let notice = &responses[0]["result"]["structuredContent"]["durability"];
-    assert_eq!(notice["bundle_orphaned"], true, "{notice}");
+    assert_eq!(notice["bundle_orphaned"], true, "{responses:?}");
     assert_eq!(notice["bundle_path"], bundle.display().to_string());
     assert_eq!(
         notice["selected_store_path"],
@@ -1457,8 +1461,8 @@ fn cli_surface_version_export_import_and_errors() {
     );
     let committed_text = std::fs::read_to_string(&committed).expect("committed bundle reads");
     let committed_header = kmp_embedded::verify_bundle(&committed_text).expect("bundle verifies");
-    assert_eq!(committed_header.bundle_format, 2);
-    assert_eq!(committed_header.event_format, 1);
+    assert_eq!(committed_header.bundle_format, 3);
+    assert_eq!(committed_header.event_format, 2);
     assert!(!committed_header.content_digest.is_empty());
 
     for name in ["before-release", "same-history"] {

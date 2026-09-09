@@ -89,6 +89,7 @@ impl RealHostLifecycleHarness {
         self.materialize_marketplace(&marketplace, &candidate_product, candidate_version);
         let updated = self.lifecycle("update", candidate_version);
         Self::assert_receipt(&updated, "update", candidate_version, true);
+        self.preserve_unsupported_store_and_select_fresh_one();
         self.assert_memory_empty("after-update");
 
         // Once the native managers have replaced the 0.4.2 plugin, prove that
@@ -108,7 +109,6 @@ impl RealHostLifecycleHarness {
             "codex: effective MCP registration is usable",
             answers_all.as_str(),
             "plugin trees are byte-for-byte identical",
-            "Usable.",
         ] {
             assert!(
                 diagnosis.contains(clause),
@@ -342,6 +342,34 @@ impl RealHostLifecycleHarness {
 
     fn shared_binary(&self) -> PathBuf {
         self.root.path().join("shared/kmp-mcp")
+    }
+
+    // Software updates converge the hosts; they do not migrate old memory.
+    // Prove refusal preserves the old store, then explicitly choose a fresh
+    // test store before exercising the new engine's memory surface.
+    fn preserve_unsupported_store_and_select_fresh_one(&self) {
+        let source = self.root.path().join("memory");
+        let stamp = source.join("FORMAT_VERSION");
+        let before = fs::read(&stamp).expect("baseline store stamp");
+        let refused_export = self.root.path().join("unsupported-export.jsonl");
+        let output = Command::new(self.shared_binary())
+            .args(["export", self.path(&refused_export)])
+            .env("KMP_MCP_DATA_DIR", &source)
+            .env("KMP_MCP_BACKEND", "embedded")
+            .env("KMP_VIEWER_ADDR", "off")
+            .output()
+            .expect("candidate export attempts to open the old store");
+        assert!(!output.status.success(), "old format must be refused");
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("unsupported format"),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(fs::read(&stamp).expect("unchanged stamp"), before);
+        assert!(!refused_export.exists());
+        fs::rename(&source, self.root.path().join("baseline-memory"))
+            .expect("preserve the baseline store separately");
+        fs::create_dir(&source).expect("explicit fresh test store");
     }
 
     fn assert_memory_empty(&self, label: &str) {

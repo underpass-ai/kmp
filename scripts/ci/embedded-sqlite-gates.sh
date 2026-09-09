@@ -62,7 +62,7 @@ PROBE='{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"kmp_wake"
 # proves that storage initialization has happened.
 printf '%s\n' "${PROBE}" | env KMP_MCP_BACKEND=embedded KMP_MCP_ENGINE=sqlite \
   KMP_MCP_DATA_DIR="${SHARED_DIR}" "${INSTALL_ROOT}/bin/kmp-mcp" >/dev/null 2>&1
-grep -q 2 "${SHARED_DIR}/FORMAT_VERSION" \
+grep -qx 3 "${SHARED_DIR}/FORMAT_VERSION" \
   || { echo "sqlite-gates: the shared directory is not on the sqlite engine" >&2; exit 1; }
 
 count_tools() {
