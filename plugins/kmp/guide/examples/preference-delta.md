@@ -117,13 +117,14 @@ The source states its reason, so chosen_because has motivational class. The deci
 
 D2: POL-2 replaces D1 for normal NOTIFY-2 events: use immediate notices because the operations team requested immediate updates. Urgent alerts remain immediate.
 
-The first connect_to target is the inspected old policy D1. This matters:
-The packet declares a second entry of kind semantic_delta, links the new
-policy to that delta with updates_state/causal, and links the delta to
-the first target with semantic_delta_from/causal. Supply from/to as states,
-not as guessed refs. The canonical delta text is generated from those fields;
-its evidence remains D2. Do not add those same two generated edges manually.
-Supersedes points from the new decision to D1; P1 remains a preference.
+Declare the decision and the change as two members of memories. Write the
+before, after and reason in the semantic_delta member's summary, with D2 as
+its evidence. Declare both links explicitly in connect_to: the new decision
+uses updates_state/causal toward @semantic_delta, and the delta uses
+semantic_delta_from/causal toward the inspected old policy D1. KMP resolves
+the local reference and validates the declared packet; it does not author
+this delta text or infer these two relations. Supersedes points from the new
+decision to D1; P1 remains a preference.
 
 ```json
 {
