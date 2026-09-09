@@ -9,6 +9,8 @@ Detailed notes from the early release cycle remain available in the
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-09-09
+
 ### Changed
 
 - **Breaking:** semantic writes use one `memories` packet with local IDs, per-record evidence and label arrays. `search_summaries` is a separate batch operation. The former `current`, `intent` and process `scope` writer shape is rejected.
@@ -1606,7 +1608,8 @@ The initial agent schema that expands with use and persistent consultation profi
 - First public KMP release: crates.io packages, prebuilt MCP binaries, plugin
   bundles, container image, Helm chart and release automation.
 
-[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/underpass-ai/kmp/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/underpass-ai/kmp/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/underpass-ai/kmp/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/underpass-ai/kmp/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/underpass-ai/kmp/compare/v0.12.1...v0.12.2
