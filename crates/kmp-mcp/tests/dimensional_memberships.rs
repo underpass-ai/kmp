@@ -22,10 +22,29 @@ async fn call(server: &KernelMcpServer, name: &str, arguments: Value) -> Value {
 
 fn write() -> Value {
     json!({
-        "about":ABOUT, "intent":"record_observation", "actor":"fixture", "source_kind":"human",
-        "scope":{"process":"registry"}, "labels":{"alias":["neb","Nébula Cache"],"component":["neb"]},
-        "current":{"ref":REF,"kind":"observation","summary":"The registry lists neb and Nébula Cache as aliases of the neb component.","evidence":"Registry R1 lists these exact names for the component."},
-        "occurred_at":AT,"observed_at":AT,"idempotency_key":"dimensions:write", "options":{"strict":false}
+        "about": ABOUT,
+        "actor": "fixture",
+        "source_kind": "human",
+        "labels": {
+            "alias": ["neb", "Nébula Cache"],
+            "component": ["neb"],
+            "agentic_process": ["registry"]
+        },
+        "occurred_at": AT,
+        "observed_at": AT,
+        "idempotency_key": "dimensions:write",
+        "options": {
+            "strict": false
+        },
+        "memories": [
+            {
+                "id": "current",
+                "ref": REF,
+                "kind": "observation",
+                "summary": "The registry lists neb and Nébula Cache as aliases of the neb component.",
+                "evidence": "Registry R1 lists these exact names for the component."
+            }
+        ]
     })
 }
 

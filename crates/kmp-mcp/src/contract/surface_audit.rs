@@ -143,8 +143,8 @@ mod tests {
         assert!(writer_description.contains("explicitly requested preview"));
         assert_eq!(tools[1]["inputSchema"]["required"][1], "actor");
         assert_eq!(
-            tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["rel"]["enum"]
-                [0],
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["rel"]["enum"][0],
             "follows"
         );
         assert!(
@@ -152,13 +152,14 @@ mod tests {
                 .get("read_context")
                 .is_some()
         );
-        let why_description = tools[1]["inputSchema"]["properties"]["connect_to"]["items"]
-            ["properties"]["why"]["description"]
-            .as_str()
-            .expect("writer why carries operational guidance");
+        let why_description =
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["why"]["description"]
+                .as_str()
+                .expect("writer why carries operational guidance");
         let evidence_description =
-            tools[1]["inputSchema"]["properties"]["connect_to"]["items"]["properties"]["evidence"]
-                ["description"]
+            tools[1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]
+                ["items"]["properties"]["evidence"]["description"]
                 .as_str()
                 .expect("writer evidence carries operational guidance");
         assert!(why_description.contains("specific semantic connection"));
@@ -364,10 +365,7 @@ mod tests {
             expected(&[
                 "about",
                 "actor",
-                "connect_to",
-                "current",
                 "idempotency_key",
-                "intent",
                 "labels",
                 "memories",
                 "occurred_at",
@@ -375,8 +373,7 @@ mod tests {
                 "options",
                 "rank",
                 "read_context",
-                "scope",
-                "semantic_delta",
+                "search_summaries",
                 "source_kind",
                 "valid_from",
                 "valid_until",

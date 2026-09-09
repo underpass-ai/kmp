@@ -1,34 +1,7 @@
 {
   "about": "incident:mobile-login",
-  "intent": "record_decision",
   "actor": "agent:backend",
   "observed_at": "2026-05-06T10:00:00Z",
-  "scope": {
-    "task": "incident:mobile-login",
-    "process": "incident:mobile-login:resolution",
-    "episode": "incident:mobile-login:episode:backend"
-  },
-  "current": {
-    "kind": "decision",
-    "summary": "Use token refresh retry instead of widening timeout.",
-    "evidence": "Logs show 401 immediately after token refresh."
-  },
-  "semantic_delta": {
-    "from": "The team suspected network timeout.",
-    "to": "The evidence points to token refresh race.",
-    "why": "The failing requests return 401 immediately after refresh.",
-    "evidence": "Auth logs show refresh success followed by 401 on the next request."
-  },
-  "connect_to": [
-    {
-      "ref": "incident:mobile-login:observation:401-refresh-race",
-      "rel": "chosen_because",
-      "class": "causal",
-      "why": "The decision addresses the observed token refresh race.",
-      "evidence": "The chosen retry targets the refresh race seen in auth logs.",
-      "confidence": "high"
-    }
-  ],
   "read_context": {
     "inspected_refs": [
       "incident:mobile-login:observation:401-refresh-race"
@@ -38,5 +11,58 @@
   "options": {
     "dry_run": true,
     "strict": true
-  }
+  },
+  "labels": {
+    "agentic_process": [
+      "incident:mobile-login:resolution"
+    ],
+    "task": [
+      "incident:mobile-login"
+    ],
+    "agentic_episode": [
+      "incident:mobile-login:episode:backend"
+    ]
+  },
+  "memories": [
+    {
+      "id": "current",
+      "kind": "decision",
+      "summary": "Use token refresh retry instead of widening timeout.",
+      "evidence": "Logs show 401 immediately after token refresh.",
+      "connect_to": [
+        {
+          "ref": "incident:mobile-login:observation:401-refresh-race",
+          "rel": "chosen_because",
+          "class": "causal",
+          "why": "The decision addresses the observed token refresh race.",
+          "evidence": "The chosen retry targets the refresh race seen in auth logs.",
+          "confidence": "high"
+        },
+        {
+          "ref": "@semantic_delta",
+          "rel": "updates_state",
+          "class": "causal",
+          "why": "The failing requests return 401 immediately after refresh.",
+          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+          "confidence": "high"
+        }
+      ]
+    },
+    {
+      "id": "semantic_delta",
+      "kind": "semantic_delta",
+      "summary": "From: The team suspected network timeout.\nTo: The evidence points to token refresh race.\nWhy: The failing requests return 401 immediately after refresh.",
+      "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+      "connect_to": [
+        {
+          "ref": "incident:mobile-login:observation:401-refresh-race",
+          "rel": "semantic_delta_from",
+          "class": "causal",
+          "why": "The failing requests return 401 immediately after refresh.",
+          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+          "confidence": "high"
+        }
+      ]
+    }
+  ]
 }

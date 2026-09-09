@@ -38,8 +38,9 @@ returned-ref bindings, expected evidence and negative limits.
 
 ## Memory kinds
 
-Intent names the writer operation; kind names what is remembered. In the
-record_delta case, the writer also generates a separate semantic_delta entry.
+Kind names what is remembered. A state change can declare a semantic_delta
+member and its justified updates_state and semantic_delta_from relations in the
+same packet. No extra intent or hidden delta generation is required.
 
 | Kind | Source and call | What it records |
 | --- | --- | --- |

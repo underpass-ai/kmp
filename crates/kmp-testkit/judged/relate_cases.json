@@ -1106,36 +1106,8 @@
       "writes": [
         {
           "about": "service:alpha",
-          "intent": "record_observation",
           "actor": "agent:relate",
           "observed_at": "2026-03-25T10:00:00Z",
-          "scope": {
-            "process": "service:alpha:reconcile"
-          },
-          "current": {
-            "ref": "service:alpha:observation:same-freeze",
-            "kind": "observation",
-            "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.",
-            "evidence": "kmp_relate proposed the pair by identifier."
-          },
-          "connect_to": [
-            {
-              "ref": "service:beta:outcome:freeze",
-              "rel": "same_event_as",
-              "class": "evidential",
-              "why": "Both record the same freeze, keyed by #469.",
-              "evidence": "kmp_relate proposal by identifier: #469 rare across the span.",
-              "confidence": "high"
-            },
-            {
-              "ref": "service:alpha:decision:blocker",
-              "rel": "restates",
-              "class": "evidential",
-              "why": "The same freeze in this about's words.",
-              "evidence": "The blocker entry names #469 too.",
-              "confidence": "high"
-            }
-          ],
           "read_context": {
             "inspected_refs": [
               "service:alpha:decision:blocker"
@@ -1152,7 +1124,39 @@
           },
           "options": {
             "strict": true
-          }
+          },
+          "labels": {
+            "agentic_process": [
+              "service:alpha:reconcile"
+            ]
+          },
+          "memories": [
+            {
+              "id": "current",
+              "ref": "service:alpha:observation:same-freeze",
+              "kind": "observation",
+              "summary": "Same event as the platform's audit outcome: recorded to join the two abouts.",
+              "evidence": "kmp_relate proposed the pair by identifier.",
+              "connect_to": [
+                {
+                  "ref": "service:beta:outcome:freeze",
+                  "rel": "same_event_as",
+                  "class": "evidential",
+                  "why": "Both record the same freeze, keyed by #469.",
+                  "evidence": "kmp_relate proposal by identifier: #469 rare across the span.",
+                  "confidence": "high"
+                },
+                {
+                  "ref": "service:alpha:decision:blocker",
+                  "rel": "restates",
+                  "class": "evidential",
+                  "why": "The same freeze in this about's words.",
+                  "evidence": "The blocker entry names #469 too.",
+                  "confidence": "high"
+                }
+              ]
+            }
+          ]
         }
       ],
       "expected": {

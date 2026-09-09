@@ -69,34 +69,11 @@ A fresh missing about returns not_found. An existing about requires recovery
 and catalogue reuse; do not treat it as empty.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "permit",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_decision",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:permit:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {"document": ["TEMP-4"], "record": ["permit"]},
-    "occurred_at": "${clock.occurred}",
-    "observed_at": "${clock.observed}",
-    "valid_from": "${clock.day2}",
-    "valid_until": "${clock.day5}",
-    "current": {
-      "kind": "decision",
-      "summary": "Permit TEMP-4 allows Atlas to retry failed uploads during its stated validity interval.",
-      "evidence": "S1, signed permit: Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive."
-    }
-  }
-}
+{"tool":"kmp_write_memory","save_as":"permit","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:permit:v1","labels":{"document":["TEMP-4"],"record":["permit"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.occurred}","observed_at":"${clock.observed}","valid_from":"${clock.day2}","valid_until":"${clock.day5}","memories":[{"id":"current","kind":"decision","summary":"Permit TEMP-4 allows Atlas to retry failed uploads during its stated validity interval.","evidence":"S1, signed permit: Permit TEMP-4 allows Atlas to retry failed uploads from D2 00:00 UTC until D5 00:00 UTC, exclusive."}]}}
 ```
 
 ```json
-{"tool":"kmp_inspect","save_as":"permit_read","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"ref":"${permit.generated_refs.0}"}}
+{"tool":"kmp_inspect","save_as":"permit_read","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"ref":"${permit.generated_refs.0}","include":{"raw":true}}}
 ```
 
 ```json
@@ -109,43 +86,7 @@ check supports the permit document; its why explains that limited support and
 its evidence is the observed check. It does not prove permission before D2.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "signature",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_observation",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:signature:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {"document": ["TEMP-4"], "record": ["signature-check"]},
-    "occurred_at": "${clock.checked}",
-    "observed_at": "${clock.check_observed}",
-    "current": {
-      "kind": "observation",
-      "summary": "CHECK-4 verified the signature and printed validity dates of permit TEMP-4.",
-      "evidence": "S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."
-    },
-    "read_context": {
-      "inspected_refs": [
-        "${permit.generated_refs.0}"
-      ]
-    },
-    "connect_to": [
-      {
-        "ref": "${permit.generated_refs.0}",
-        "rel": "supports",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.",
-        "evidence": "S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."
-      }
-    ]
-  }
-}
+{"tool":"kmp_write_memory","save_as":"signature","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:signature:v1","labels":{"document":["TEMP-4"],"record":["signature-check"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"memories":[{"id":"current","kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}]}]}}
 ```
 
 ```json
@@ -156,43 +97,7 @@ The receipt refers to the inspected permit as background. It supplies no
 source for a stronger authorization or causal claim.
 
 ```json
-{
-  "tool": "kmp_write_memory",
-  "save_as": "receipt",
-  "arguments": {
-    "about": "example:guide:four-clocks",
-    "intent": "record_feedback",
-    "actor": "guide-writer",
-    "source_kind": "human",
-    "idempotency_key": "guide-clocks:receipt:v1",
-    "scope": {
-      "process": "atlas-permit-review"
-    },
-    "labels": {"document": ["TEMP-4"], "record": ["delivery-receipt"]},
-    "occurred_at": "${clock.day2}",
-    "observed_at": "${clock.receipt_observed}",
-    "current": {
-      "kind": "feedback",
-      "summary": "RECEIPT-4 confirms that permit TEMP-4 reached the Atlas operations mailbox.",
-      "evidence": "S3, delivery receipt: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."
-    },
-    "read_context": {
-      "inspected_refs": [
-        "${permit.generated_refs.0}"
-      ]
-    },
-    "connect_to": [
-      {
-        "ref": "${permit.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "The receipt names this permit as its subject; delivery alone does not establish a new approval or the time the reviewer read it.",
-        "evidence": "S3: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."
-      }
-    ]
-  }
-}
+{"tool":"kmp_write_memory","save_as":"receipt","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:receipt:v1","labels":{"document":["TEMP-4"],"record":["delivery-receipt"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.day2}","observed_at":"${clock.receipt_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"memories":[{"id":"current","kind":"feedback","summary":"RECEIPT-4 confirms that permit TEMP-4 reached the Atlas operations mailbox.","evidence":"S3, delivery receipt: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"uses_background","class":"evidential","confidence":"high","why":"The receipt names this permit as its subject; delivery alone does not establish a new approval or the time the reviewer read it.","evidence":"S3: RECEIPT-4 confirms delivery of permit TEMP-4 to the Atlas operations mailbox."}]}]}}
 ```
 
 ```json
@@ -279,7 +184,7 @@ all label coordinates the same ingestion time for S1; copy one returned
 ```
 
 ```json
-{"tool":"kmp_goto","save_as":"ingested_exact","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.links.incoming.0.coordinate.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
+{"tool":"kmp_goto","save_as":"ingested_exact","arguments":{"about":"example:guide:four-clocks","budget":{"max_bytes":30000},"at":{"time":"${permit_read.raw.0.coordinates.0.ingested_at}"},"axis":"ingested","dimensions":{"mode":"only","include":["document"],"scope_ids":["TEMP-4"],"selectors":[{"key":"record","op":"in","values":["permit"]}]},"limit":{"entries":10}}}
 ```
 
 ## Refuse a forged ingestion clock and audit the support
@@ -290,7 +195,7 @@ The normal writer has no ingested_at input. Canonical migration/replay is a
 different operation; it is not a way to backdate a new writer observation.
 
 ```json
-{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","intent":"record_observation","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","scope":{"process":"atlas-permit-review"},"labels":{"document": ["TEMP-4"], "record": ["signature-check"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","current":{"kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."},"read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}],"ingested_at":"${clock.day1}"},"expect_error":"invalid_argument"}
+{"tool":"kmp_write_memory","save_as":"forged_ingestion","arguments":{"about":"example:guide:four-clocks","actor":"guide-writer","source_kind":"human","idempotency_key":"guide-clocks:forged-ingestion:v1","labels":{"document":["TEMP-4"],"record":["signature-check"],"agentic_process":["atlas-permit-review"]},"occurred_at":"${clock.checked}","observed_at":"${clock.check_observed}","read_context":{"inspected_refs":["${permit.generated_refs.0}"]},"ingested_at":"${clock.day1}","memories":[{"id":"current","kind":"observation","summary":"CHECK-4 verified the signature and printed validity dates of permit TEMP-4.","evidence":"S2, signature check: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it.","connect_to":[{"ref":"${permit.generated_refs.0}","rel":"supports","class":"evidential","confidence":"high","why":"The recorded signature check supports the authenticity of this permit and its printed dates, not permission outside those dates.","evidence":"S2: CHECK-4 verifies the signature of permit TEMP-4 and the validity dates printed on it."}]}]},"expect_error":"invalid_argument"}
 ```
 
 ```json

@@ -28,6 +28,7 @@ pub(crate) fn build_write_plan(arguments: &Value) -> Result<KernelWritePlan, Str
 /// inspecting the about immediately before calling this function; keeping
 /// the storage read outside the pure compiler preserves deterministic dry
 /// runs and focused validation tests.
+#[cfg(test)]
 pub(crate) fn build_write_plan_with_root(
     arguments: &Value,
     allow_unlinked_root: bool,
@@ -141,12 +142,12 @@ pub(super) fn build_write_plan_with_local_refs(
         .unwrap_or_else(|| stable_idempotency_key(arguments));
 
     let current = required_object(arguments, "current")?;
-    let current_kind = required_map_string(current, "kind", "current.kind")?;
+    let current_kind = required_map_string(current, "kind", "kind")?;
     validate_node_kind(current_kind)?;
-    let current_summary = required_map_string(current, "summary", "current.summary")?;
+    let current_summary = required_map_string(current, "summary", "summary")?;
     let current_evidence = optional_map_string(current, "evidence");
     if strict && current_evidence.is_none() {
-        return Err("strict kmp_write_memory requires current.evidence".to_string());
+        return Err("strict kmp_write_memory requires evidence".to_string());
     }
     let search_summary = decide_search_summary(
         current_summary,
@@ -155,7 +156,7 @@ pub(super) fn build_write_plan_with_local_refs(
     )?;
 
     let current_ref = if let Some(current_ref) = optional_map_string(current, "ref") {
-        validate_supplied_entry_ref(&about, "current.ref", current_ref)?;
+        validate_supplied_entry_ref(&about, "ref", current_ref)?;
         current_ref.to_string()
     } else {
         generated_entry_ref(

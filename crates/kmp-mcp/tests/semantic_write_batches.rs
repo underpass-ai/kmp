@@ -24,20 +24,45 @@ async fn events(store: &EmbeddedKernelStore) -> u64 {
 }
 
 fn packet() -> Value {
-    json!({"about":ABOUT,"actor":"source-reader","observed_at":AT,
-    "idempotency_key":"batch:configuration","labels":{"component":["neb"]},
-    "memories":[
-        {"id":"choice","kind":"decision","summary":"The team chooses a retry after token refresh.",
-         "evidence":"Decision R2 selects the retry because request logs show a refresh race.",
-         "observed_at":"2026-09-01T09:50:00Z","occurred_at":"2026-09-01T09:45:00Z",
-         "connect_to":[{"ref":"@logs","rel":"chosen_because","class":"causal",
-         "why":"A retry addresses the refresh race shown by the request logs.",
-         "evidence":"R2 cites the R1 refresh race as the reason to retry."}]},
-        {"id":"logs","kind":"observation","summary":"Request logs show a token refresh race.",
-         "evidence":"R1 shows refresh success followed immediately by an unauthorized request; its registry lists Nebula cache and NC for neb.",
-         "labels":{"alias":["Nebula cache","NC"],"component":["neb"]},
-         "observed_at":"2026-09-01T09:35:00Z"}
-    ]})
+    json!({
+        "about": ABOUT,
+        "actor": "source-reader",
+        "observed_at": AT,
+        "idempotency_key": "batch:configuration",
+        "labels": {
+            "component": ["neb"]
+        },
+        "memories": [
+            {
+                "id": "choice",
+                "kind": "decision",
+                "summary": "The team chooses a retry after token refresh.",
+                "evidence": "Decision R2 selects the retry because request logs show a refresh race.",
+                "observed_at": "2026-09-01T09:50:00Z",
+                "occurred_at": "2026-09-01T09:45:00Z",
+                "connect_to": [
+                    {
+                        "ref": "@logs",
+                        "rel": "chosen_because",
+                        "class": "causal",
+                        "why": "A retry addresses the refresh race shown by the request logs.",
+                        "evidence": "R2 cites the R1 refresh race as the reason to retry."
+                    }
+                ]
+            },
+            {
+                "id": "logs",
+                "kind": "observation",
+                "summary": "Request logs show a token refresh race.",
+                "evidence": "R1 shows refresh success followed immediately by an unauthorized request; its registry lists Nebula cache and NC for neb.",
+                "labels": {
+                    "alias": ["Nebula cache", "NC"],
+                    "component": ["neb"]
+                },
+                "observed_at": "2026-09-01T09:35:00Z"
+            }
+        ]
+    })
 }
 
 #[tokio::test]
@@ -185,4 +210,105 @@ async fn missing_stored_target_fails_kernel_validation_with_no_partial_commit() 
         assert_eq!(rejected["isError"], true, "{rejected}");
         assert_eq!(events(&store).await, 0);
     }
+}
+
+#[tokio::test]
+async fn search_summary_packet_is_atomic_and_preserves_every_stored_source_and_clock() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let store = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let written = call(&server, "kmp_write_memory", packet()).await;
+    let refs = &written["structuredContent"]["local_refs"];
+    let mut before = Vec::new();
+    for id in ["choice", "logs"] {
+        before.push(
+            call(
+                &server,
+                "kmp_inspect",
+                json!({"about":ABOUT,"ref":refs[id],"include":{"raw":true}}),
+            )
+            .await,
+        );
+    }
+    let mut update = json!({
+        "about": ABOUT,
+        "actor": "search-editor",
+        "observed_at": AT,
+        "idempotency_key": "batch:search-renderings",
+        "search_summaries": [
+            {
+                "ref": refs["choice"],
+                "summary_en": "A retry was selected for requests after token refresh."
+            },
+            {
+                "ref": refs["logs"],
+                "summary_en": "retry"
+            }
+        ]
+    });
+    let invalid = call(&server, "kmp_write_memory", update.clone()).await;
+    assert_eq!(invalid["isError"], true, "{invalid}");
+    assert!(
+        invalid.to_string().contains("search_summaries[1]"),
+        "{invalid}"
+    );
+    assert_eq!(events(&store).await, 1);
+    update["search_summaries"][1]["summary_en"] =
+        json!("Request failures occur during token refresh.");
+    let committed = call(&server, "kmp_write_memory", update.clone()).await;
+    assert_eq!(
+        committed["structuredContent"]["accepted"], true,
+        "{committed}"
+    );
+    assert_eq!(events(&store).await, 2);
+    for (index, id) in ["choice", "logs"].into_iter().enumerate() {
+        let after = call(
+            &server,
+            "kmp_inspect",
+            json!({"about":ABOUT,"ref":refs[id],"include":{"raw":true}}),
+        )
+        .await;
+        let old = before[index]["structuredContent"]["raw"]
+            .as_array()
+            .expect("raw")
+            .iter()
+            .find(|r| r["ref"] == refs[id])
+            .expect("source");
+        let new = after["structuredContent"]["raw"]
+            .as_array()
+            .expect("raw")
+            .iter()
+            .find(|r| r["ref"] == refs[id])
+            .expect("source");
+        for field in ["text", "kind", "coordinates"] {
+            assert_eq!(new[field], old[field], "{field}");
+        }
+        assert_eq!(
+            after["structuredContent"]["object"]["metadata"]["summary_en"],
+            update["search_summaries"][index]["summary_en"]
+        );
+        assert_eq!(
+            after["structuredContent"]["object"]["metadata"]["summary_en_by"],
+            "search-editor"
+        );
+    }
+    let replay = call(&server, "kmp_write_memory", update).await;
+    assert_eq!(replay["structuredContent"]["accepted"], true, "{replay}");
+    assert_eq!(events(&store).await, 2);
+}
+
+#[tokio::test]
+async fn legacy_writer_fields_are_rejected_instead_of_adapted() {
+    let dir = tempfile::tempdir().expect("store");
+    let server = KernelMcpServer::embedded(dir.path()).expect("server");
+    let store = EmbeddedKernelStore::open(dir.path()).expect("reader");
+    let rejected=call(&server,"kmp_write_memory",json!({"about":ABOUT,"actor":"old-writer","observed_at":AT,
+        "intent":"record_observation","scope":{"process":"old"},
+        "current":{"kind":"observation","summary":"An old write shape.","evidence":"An old shape has no implicit adapter."}})).await;
+    assert_eq!(rejected["isError"], true, "{rejected}");
+    assert_eq!(
+        rejected["structuredContent"]["error"]["code"],
+        "invalid_argument"
+    );
+    assert_eq!(events(&store).await, 0);
 }

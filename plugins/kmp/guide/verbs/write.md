@@ -3,8 +3,7 @@
 Use `memories` for one or more source-backed records in one about. Give each a
 short local `id`, `kind`, `summary`, `evidence`, and its label arrays. A single
 record is a one-element packet. No `intent`, `current` or process `scope` is
-needed in this form. The existing single-current form remains available during
-this integration; it is not a compatibility promise for the final redesign.
+needed in this form. The former current/intent/scope input is rejected; there is no compatibility adapter.
 
 Top-level labels are shared memberships, unioned with each record's labels.
 Every record must have at least one membership; none is invented. Repeating a
@@ -28,8 +27,7 @@ A rejected record writes none of the packet. The transaction covers one about.
 the same idempotency key. Duplicate ids, duplicate targets, self-links and
 undeclared local targets are errors. See
 `guide:kmp-agent:example:semantic-batch` for a minimal packet, a forward proof
-link, a rejected packet and temporal/ChronoLoom review. Detailed receipts and
-the single-current form are still being simplified in this integration.
+link, a rejected packet and temporal/ChronoLoom review. Compact receipts and structured repair signals are the remaining writing work.
 
 ## What to write, and what never to write
 
@@ -40,8 +38,8 @@ Never write transcripts. Memory is not a log of the conversation; it is the
 durable shape of the work. A transcript makes later traversal worthless.
 
 Label what you write. Every label is a `(key, value)` membership within its
-about. `scope.process` supplies the primary process; `scope.task` and
-`scope.episode` supply optional primary memberships. `labels` uses arrays,
+about. Use keys such as agentic_process, task and agentic_episode when the source
+supports those memberships. `labels` uses arrays,
 even for a single value, and may add further values under any key:
 
 ```json
@@ -54,8 +52,7 @@ even for a single value, and may add further values under any key:
 
 Each pair becomes its own coordinate with the memory's clocks. Two aliases
 under `alias` are valid, as is `neb` under both `alias` and `component`.
-The key distinguishes them. Repeating the exact pair, including a primary
-scope membership, is an error. Values may contain spaces, punctuation and
+The key distinguishes them. Repeating a value inside an array is an error. Shared and record labels are unioned. Values may contain spaces, punctuation and
 Unicode. The server returns canonical refs: copy them when an exact graph
 address is needed. Do not construct refs or infer entity identity from labels.
 
@@ -84,10 +81,10 @@ candidates; only justified relations declare that two memories concern the
 same entity or event.
 
 Write in the language of the work, and give the memory an English rendering
-for search: `current.summary_en`, plain English a reader would ask with, every
+for search: `memories[].summary_en`, plain English a reader would ask with, every
 number, identifier and acronym kept exactly as written (`v0.7.0`, `#469`,
 `kmp-mcp`, `ADR`). `kmp_ask` searches it and never cites it — the citation is
-`current.summary`, byte for byte — so an English question reaches a memory
+`memories[].summary`, byte for byte — so an English question reaches a memory
 written in Spanish, and jargon (`rollout slipped`) is found by the words
 people ask with (`launch postponed`). A strict write requires it when the
 memory is not written in English and refuses one that fails the lint: wrong
@@ -98,11 +95,11 @@ through its summary says so with `matched_via: summary` and `summary_terms`.
 Memories written before summaries existed still owe one. `kmp-mcp summaries
 pending [<about>] [--json]` lists them, with the text to render and, for a
 summary the lint refuses, what is wrong with it; `kmp-mcp doctor` counts them.
-Attach each with `kmp_write_memory`, intent `record_summary`, `current.ref`
-and `current.summary_en` only: the text, kind and coordinates are read from
+Attach one or more with `kmp_write_memory`, using `search_summaries` records
+containing only `ref` and `summary_en`: the text, kind and coordinates are read from
 the store and cannot be supplied, no relation is written, and a rendering
-that fails the lint is refused with every fault named. Do it once per store;
-an exact retry is a no-op.
+that fails the lint is refused with every fault named. Each target must belong to the declared about; all renderings are validated
+before one commit. An exact retry is a no-op.
 
 Normal writes are one call: omit `options.dry_run` or set it to false.
 The relation guide documents explicit previews and validation before commit.

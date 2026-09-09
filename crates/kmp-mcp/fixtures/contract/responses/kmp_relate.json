@@ -13,17 +13,27 @@
         "class": "evidential",
         "confidence": "medium",
         "evidence": "The claim is the store's only prior entry.",
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "rel": "uses_background",
         "sequence": 1,
         "to": "question:parity:claim:denver",
         "why": "The decision was taken while reading this claim back."
       },
       {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "rel": "semantic_delta_from",
+        "sequence": 1,
+        "to": "question:parity:claim:denver",
+        "why": "The later statement corrects the earlier one."
+      },
+      {
         "class": "evidential",
         "confidence": "high",
         "evidence": "She named Boulder after naming Denver.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "rel": "supersedes",
         "sequence": 1,
         "to": "question:parity:claim:denver",
@@ -33,20 +43,10 @@
         "class": "causal",
         "confidence": "high",
         "evidence": "Both statements are hers, minutes apart.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-        "rel": "semantic_delta_from",
-        "sequence": 2,
-        "to": "question:parity:claim:denver",
-        "why": "The later statement corrects the earlier one."
-      },
-      {
-        "class": "causal",
-        "confidence": "high",
-        "evidence": "Both statements are hers, minutes apart.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "rel": "updates_state",
-        "sequence": 2,
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "sequence": 1,
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "why": "The later statement corrects the earlier one."
       },
       {
@@ -91,7 +91,7 @@
         "kind": "claim",
         "ref": "question:parity:claim:denver",
         "state": "superseded",
-        "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "text": "Rachel said she was moving to Denver."
       },
       {
@@ -131,7 +131,7 @@
           "writer_actor": "parity-test",
           "writer_intent": "record_decision"
         },
-        "ref": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "ref": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "state": "current",
         "text": "Pin the answered surface, not only the advertised one."
       },
@@ -149,12 +149,10 @@
         ],
         "kind": "semantic_delta",
         "metadata": {
-          "delta_from": "Rachel said she was moving to Denver.",
-          "delta_to": "Rachel is moving to Boulder.",
           "writer_actor": "parity-test",
-          "writer_intent": "record_delta"
+          "writer_intent": "record_observation"
         },
-        "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "ref": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "state": "current",
         "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
       },
@@ -173,9 +171,9 @@
         "kind": "semantic_delta",
         "metadata": {
           "writer_actor": "parity-test",
-          "writer_intent": "record_delta"
+          "writer_intent": "record_observation"
         },
-        "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "ref": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "state": "current",
         "text": "Rachel is moving to Boulder, not Denver."
       }
@@ -212,7 +210,7 @@
       "superseded": [
         {
           "ref": "question:parity:claim:denver",
-          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+          "superseded_by": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
           "why": "The corrected city replaces the first one while the first stays readable as history."
         }
       ]

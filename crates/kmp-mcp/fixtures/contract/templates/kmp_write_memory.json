@@ -46,6 +46,9 @@
         }
       ]
     },
+    "local_refs": {
+      "current": "string"
+    },
     "next_suggested_reads": [
       {
         "from": "string",

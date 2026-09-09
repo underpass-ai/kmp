@@ -21,7 +21,7 @@ pub(super) fn required_object<'a>(
 /// A shape the clock cannot read is left alone. Format is the ingest layer's
 /// contract, and refusing here for a second reason would move that argument
 /// into the wrong place.
-pub(super) fn required_string(object: &Map<String, Value>, key: &str) -> Result<String, String> {
+pub(crate) fn required_string(object: &Map<String, Value>, key: &str) -> Result<String, String> {
     object
         .get(key)
         .and_then(Value::as_str)
@@ -30,7 +30,7 @@ pub(super) fn required_string(object: &Map<String, Value>, key: &str) -> Result<
         .ok_or_else(|| format!("missing required argument `{key}`"))
 }
 
-pub(super) fn required_map_string<'a>(
+pub(crate) fn required_map_string<'a>(
     object: &'a Map<String, Value>,
     key: &str,
     path: &str,
@@ -103,7 +103,7 @@ pub(super) fn validate_node_kind(value: &str) -> Result<(), String> {
     match value {
         "turn" | "observation" | "decision" | "feedback" | "semantic_delta" | "constraint"
         | "preference" | "derived_value" | "error_path" | "success_path" => Ok(()),
-        other => Err(format!("invalid kmp_write_memory current.kind `{other}`")),
+        other => Err(format!("invalid kmp_write_memory kind `{other}`")),
     }
 }
 

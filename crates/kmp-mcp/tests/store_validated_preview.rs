@@ -23,11 +23,27 @@ async fn events(store: &EmbeddedKernelStore) -> u64 {
 }
 
 fn observation(key: &str, reference: &str) -> Value {
-    json!({"about":ABOUT,"actor":"test-writer","intent":"record_observation",
-        "observed_at":"2026-09-01T10:00:00Z","scope":{"process":"review"},
-        "current":{"ref":reference,"kind":"observation","summary":"A source records the configuration.",
-        "evidence":"The source contains an explicit configuration entry."},
-        "idempotency_key":key,"options":{"strict":false}})
+    json!({
+        "about": ABOUT,
+        "actor": "test-writer",
+        "observed_at": "2026-09-01T10:00:00Z",
+        "idempotency_key": key,
+        "options": {
+            "strict": false
+        },
+        "labels": {
+            "agentic_process": ["review"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "ref": reference,
+                "kind": "observation",
+                "summary": "A source records the configuration.",
+                "evidence": "The source contains an explicit configuration entry."
+            }
+        ]
+    })
 }
 
 #[tokio::test]
@@ -45,7 +61,7 @@ async fn preview_checks_existing_refs_without_committing_and_can_then_be_written
     let next = "project:preview:observation:next";
     let mut args = observation("preview:next", next);
     args["options"]["dry_run"] = json!(true);
-    args["connect_to"] = json!([{"ref":"project:preview:observation:missing",
+    args["memories"][0]["connect_to"] = json!([{"ref":"project:preview:observation:missing",
         "rel":"uses_background","class":"evidential","why":"The prior configuration gives context.",
         "evidence":"The source links this change to the prior configuration.","confidence":"high"}]);
     let invalid = call(&server, "kmp_write_memory", args.clone()).await;
@@ -55,7 +71,7 @@ async fn preview_checks_existing_refs_without_committing_and_can_then_be_written
         "invalid_argument"
     );
     assert_eq!(events(&store).await, 1);
-    args["connect_to"][0]["ref"] = json!(SEED);
+    args["memories"][0]["connect_to"][0]["ref"] = json!(SEED);
     let preview = call(&server, "kmp_write_memory", args.clone()).await;
     assert_eq!(preview["isError"], false, "{preview}");
     assert_eq!(preview["structuredContent"]["accepted"], false);

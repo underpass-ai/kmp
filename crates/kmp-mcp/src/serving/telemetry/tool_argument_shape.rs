@@ -54,6 +54,17 @@ impl ToolArgumentShape {
             read_context_refs: 0,
             trace_paths: array_len_at(arguments.get("read_context"), &["trace_paths"]),
         };
+        if canonical_move(name) == "kmp_write_memory" {
+            shape.entries = array_len_at(Some(arguments), &["memories"])
+                + array_len_at(Some(arguments), &["search_summaries"]);
+            shape.connect_to = arguments
+                .get("memories")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .map(|memory| array_len_at(Some(memory), &["connect_to"]))
+                .sum();
+        }
         shape.read_context_refs = read_context_ref_count(arguments.get("read_context"));
         shape
     }
@@ -126,25 +137,39 @@ mod tests {
             "kmp_write_memory",
             &json!({
                 "about": "incident:mobile-login",
-                "intent": "record_decision",
                 "options": {
                     "dry_run": true,
                     "strict": true
                 },
-                "current": {
-                    "kind": "decision",
-                    "summary": "Do not log this",
-                    "evidence": "Do not log this either"
-                },
-                "connect_to": [
-                    {"ref": "node:a", "rel": "chosen_because", "class": "motivational"},
-                    {"ref": "node:b", "rel": "follows", "class": "procedural"}
+                "memories": [
+                    {
+                        "id": "fact",
+                        "kind": "decision",
+                        "summary": "Do not log this",
+                        "evidence": "Do not log this either",
+                        "connect_to": [
+                            {
+                                "ref": "node:a",
+                                "rel": "chosen_because",
+                                "class": "motivational"
+                            },
+                            {
+                                "ref": "node:b",
+                                "rel": "follows",
+                                "class": "procedural"
+                            }
+                        ]
+                    }
                 ],
                 "read_context": {
                     "inspected_refs": ["node:a"],
                     "ask_refs": ["node:b"],
                     "trace_paths": [
-                        {"from": "node:a", "to": "node:c", "refs": ["node:b"]}
+                        {
+                            "from": "node:a",
+                            "to": "node:c",
+                            "refs": ["node:b"]
+                        }
                     ]
                 }
             }),
@@ -153,6 +178,7 @@ mod tests {
         assert_eq!(shape.dry_run, Some(true));
         assert_eq!(shape.strict, Some(true));
         assert_eq!(shape.connect_to, 2);
+        assert_eq!(shape.entries, 1);
         assert_eq!(shape.trace_paths, 1);
         assert_eq!(shape.read_context_refs, 5);
     }

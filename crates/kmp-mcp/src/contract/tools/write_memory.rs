@@ -20,236 +20,101 @@ pub(crate) fn definition() -> Value {
 }
 
 pub(crate) fn write_memory_schema() -> Value {
-    let mut schema = json!({
+    let labels = json!({
         "type": "object",
-        "additionalProperties": false,
-        "required": ["about", "intent", "actor", "observed_at", "scope", "current"],
-        "properties": {
-            "about": string_schema("Memory anchor or root ref this semantic memory event should attach to."),
-            "intent": {
-                "type": "string",
-                "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact. record_summary attaches an English search summary to a memory that already exists: give current.ref and current.summary_en only — the text, kind and coordinates are read from the store and cannot be supplied, no connect_to is written, and a summary the lint refuses is rejected with every fault named. `kmp-mcp summaries pending` lists the memories that owe one.",
-                "enum": [
-                    "record_turn",
-                    "record_observation",
-                    "record_decision",
-                    "record_feedback",
-                    "record_delta",
-                    "record_summary"
-                ]
-            },
-            "actor": string_schema("Human, agent, or component producing the write."),
-            "observed_at": string_schema("RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused \u{2014} read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error."),
-            "occurred_at": string_schema("Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute."),
-            "valid_from": string_schema("Optional RFC3339 start of the interval in which the recorded state is valid."),
-            "valid_until": string_schema("Optional RFC3339 exclusive end of the interval in which the recorded state is valid."),
-            "rank": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Optional positive rank within each emitted coordinate."
-            },
-            "source_kind": {
-                "type": "string",
-                "enum": ["human", "agent", "projection", "derived"]
-            },
-            "scope": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["process"],
-                "properties": {
-                    "task": string_schema("Optional task scope id: the well-known `task` label."),
-                    "process": string_schema("Caller-defined stable id for the agentic process this memory belongs to: the `agentic_process` label every write carries. Unknown values intentionally create or attach that dimension; this is an identifier, not an enum."),
-                    "episode": string_schema("Optional agentic episode scope id: the well-known `agentic_episode` label.")
-                }
-            },
-            "labels": {
-                "type": "object",
-                "additionalProperties": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}, "description": "The values this memory stands in under this key."},
-                "description": "Labels as key-to-array values, for example alias: [neb, nebula]. Keys name dimensions; each key/value pair becomes a coordinate with the same clocks. The same value under another key is a distinct label. Additional values under scope keys are allowed; repeating an exact pair is an error. Read the about catalogue to reuse intended vocabulary."
-            },
-            "current": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                    "ref": string_schema("Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix."),
-                    "kind": {
-                        "type": "string",
-                        "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
-                        "enum": [
-                            "turn",
-                            "observation",
-                            "decision",
-                            "feedback",
-                            "semantic_delta",
-                            "constraint",
-                            "preference",
-                            "derived_value",
-                            "error_path",
-                            "success_path"
-                        ]
-                    },
-                    "summary": string_schema("Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte."),
-                    "summary_en": string_schema("English rendering of `summary` for search, written by you as you write the memory. kmp_ask searches it and never cites it: an English question reaches this memory through it, and the citation is `summary` byte for byte. Write plain English a reader would ask with, keep every number, identifier and acronym exactly as written (`v0.7.0`, `#469`, `kmp-mcp`, `ADR`), and never alter `summary` to fit it. Strict mode requires it when `summary` is not written in English, and refuses one that leans to another language, carries fewer than two informative words, repeats `summary` word for word, or drops an identifier `summary` carries; outside strict mode such a summary is stored and carries nothing. Worth writing for English text too when its wording is jargon (`rollout slipped` → `launch postponed`)."),
-                    "evidence": string_schema("Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.")
-                }
-            },
-            "semantic_delta": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["from", "to", "why", "evidence"],
-                "properties": {
-                    "ref": string_schema("Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key."),
-                    "from": string_schema("Previous known state."),
-                    "to": string_schema("New state."),
-                    "why": string_schema("Why this state change is valid."),
-                    "evidence": string_schema("Evidence proving the state change.")
-                }
-            },
-            "connect_to": {
-                "type": "array",
-                "description": "Existing memory refs the new entry connects to. Omit this field or send an empty array only for the first strict write that creates a new about; once the about exists, strict runtime validation requires at least one relation.",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["ref", "rel", "class"],
-                    "properties": {
-                        "ref": string_schema("Existing memory ref this new memory connects to. Inside this about for every relation; a ref of another about is accepted only with `same_event_as` or `same_entity_as`, class `evidential`, `why`, `evidence`, and the kmp_relate proposal in `read_context.relate_proposals`. That is the one relation that crosses an about; the edge lives in this about and the other does not change."),
-                        "rel": {
-                            "type": "string",
-                            "enum": writer_relation_names(),
-                            "description": relation_vocabulary_description(
-                                "Relation type for this link."
-                            )
-                        },
-                        "class": semantic_class_schema(),
-                        "why": string_schema("Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations."),
-                        "evidence": string_schema("The concrete observation or source that supports the relation rationale. Required for non-structural relations."),
-                        "confidence": {
-                            "type": "string",
-                            "enum": ["high", "medium", "low", "unknown"]
+        "additionalProperties": {"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},
+        "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary."
+    });
+    let observed = string_schema(
+        "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
+    );
+    let occurred = string_schema(
+        "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
+    );
+    let valid_from = string_schema("Inclusive start of the recorded state's validity.");
+    let valid_until = string_schema("Exclusive end of the recorded state's validity.");
+    let rank = json!({"type":"integer","minimum":1});
+    let memories = json!({
+        "type":"array","minItems":1,
+        "description":"One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
+        "items":{
+            "type":"object","additionalProperties":false,
+            "required":["id","kind","summary"],
+            "properties":{
+                "id":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_-]*$","description":"Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address."},
+                "ref":string_schema("Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object."),
+                "kind":{"type":"string","enum":["turn","observation","decision","feedback","semantic_delta","constraint","preference","derived_value","error_path","success_path"],"description":"What this memory records. No separate writer intent is needed."},
+                "summary":string_schema("Literal memory text, in the language of the work. Ask cites this text byte for byte."),
+                "summary_en":string_schema("Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples."),
+                "evidence":string_schema("Concrete source or observation supporting this memory. Required unless options.strict is explicitly false."),
+                "labels":labels,
+                "observed_at":observed,
+                "occurred_at":occurred,
+                "valid_from":valid_from,
+                "valid_until":valid_until,
+                "rank":rank,
+                "connect_to":{
+                    "type":"array","items":{
+                        "type":"object","additionalProperties":false,"required":["ref","rel","class"],
+                        "properties":{
+                            "ref":string_schema("@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal."),
+                            "rel":{"type":"string","enum":writer_relation_names(),"description":relation_vocabulary_description("Choose the specific relation justified by the source.")},
+                            "class":semantic_class_schema(),
+                            "why":string_schema("Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links."),
+                            "evidence":string_schema("The concrete observation or source supporting the relation rationale. Required for non-structural links."),
+                            "confidence":{"type":"string","enum":["high","medium","low","unknown"]}
                         }
                     }
-                }
-            },
-            "read_context": read_context_schema(),
-            "idempotency_key": string_schema("Optional stable idempotency key. Omit to generate one from the write payload."),
-            "options": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                    "dry_run": {
-                        "type": "boolean",
-                        "description": "When true, validate the compiled packet against the selected store and return its preview without committing. Requires the backend to be available; it reserves no refs or sequence numbers. Defaults to false: the call validates and commits."
-                    },
-                    "labels_new": {
-                        "type": "array",
-                        "items": string_schema("A label key of this write."),
-                        "description": "Label keys the writer insists are new even where the catalogue holds one that resembles them: it read the catalogue and means something else. The kernel leaves those labels out of the resemblance check; every other new label that resembles an existing one is refused under strict and written with a warning otherwise."
-                    },
-                    "strict": {
-                        "type": "boolean",
-                        "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint, and a new label that resembles one the about already holds. Defaults to true."
-                    },
-                    "sequence": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate."
-                    }
-                }
-            }
-        },
-        "if": {
-            "properties": {"intent": {"const": "record_summary"}},
-            "required": ["intent"]
-        },
-        "then": {
-            "properties": {
-                "current": {"required": ["ref", "summary_en"]}
-            }
-        },
-        "else": {
-            "properties": {
-                "current": {"required": ["kind", "summary"]}
-            },
-            "if": {
-                "not": {
-                    "required": ["options"],
-                    "properties": {
-                        "options": {
-                            "required": ["strict"],
-                            "properties": {"strict": {"const": false}}
-                        }
-                    }
-                }
-            },
-            "then": {
-                "properties": {
-                    "current": {"required": ["evidence"]}
                 }
             }
         }
     });
-    let properties = schema["properties"].as_object().expect("writer properties");
-    let mut record = properties["current"].clone();
-    record["required"] = json!(["id", "kind", "summary"]);
-    record["properties"]["id"] = json!({
-        "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
-        "description": "Local name in this packet. Use @name in connect_to.ref, including forward links. Returned local_refs maps names to canonical refs."
-    });
-    for field in [
-        "labels",
-        "connect_to",
-        "observed_at",
-        "occurred_at",
-        "valid_from",
-        "valid_until",
-        "rank",
-    ] {
-        record["properties"][field] = properties[field].clone();
-    }
-    record["properties"]["connect_to"]["description"] = json!(
-        "Justified links to records in this packet or stored memories. Independent source facts may be unlinked; never invent a relation to satisfy a shape."
-    );
-    record["properties"]["connect_to"]["items"]["properties"]["ref"]["description"] = json!(
-        "@local-id in this packet, or an existing canonical ref. Rich links to packet members use current_request context; stored targets require read_context. Cross-about equivalence still requires a kmp_relate proposal."
-    );
-    record["properties"]["kind"]["description"] =
-        json!("Stored semantic kind; the writer operation is inferred.");
-    record["properties"]["ref"]["description"] = json!(
-        "Omit for a new record. An explicit canonical ref updates that exact entry and must belong to this about. It cannot name the anchor or an internal dimension/evidence object."
-    );
-    record["properties"]["summary_en"]["description"] = json!(
-        "English search rendering of summary, retaining its numbers, identifiers and acronyms. Strict mode requires it for non-English text and rejects a faulty rendering; original summary remains the cited source. Consult Write for the rendering rules."
-    );
-    record["properties"]["labels"]["description"] = json!(
-        "Per-record memberships, unioned with the shared top-level labels. Declare all source-backed values; labels alone do not prove entity equivalence."
-    );
-    record["properties"]["connect_to"]["items"]["properties"]["rel"]["description"] = json!(
-        "Canonical relation type. Choose it from source evidence; use the relation guide for classes and examples. Honest fallback relations do not imply a richer dependency."
-    );
-    let single_condition = json!({
-        "required": ["intent", "scope", "current"],
-        "if": schema["if"], "then": schema["then"], "else": schema["else"]
-    });
-    schema["required"] = json!(["about", "actor", "observed_at"]);
-    schema["properties"]["memories"] = json!({
-        "type": "array", "minItems": 1, "items": record,
-        "description": "One or more semantic records committed atomically in this about. Use kind once per record; no top-level intent/current/scope/connect_to/semantic_delta. Shared labels are unioned with each record's labels; at least one membership is required per record. Each record inherits clocks unless overridden. KMP resolves local ids and validates the entire packet before writing anything."
-    });
-    schema["if"] = json!({"required": ["memories"]});
-    schema["then"] = json!({
-        "not": {"anyOf": [
-            {"required": ["current"]}, {"required": ["intent"]},
-            {"required": ["scope"]}, {"required": ["connect_to"]},
-            {"required": ["semantic_delta"]}
-        ]},
-        "if": {"not": {"required": ["options"], "properties": {"options": {
-            "required": ["strict"], "properties": {"strict": {"const": false}}
-        }}}},
-        "then": {"properties": {"memories": {"items": {"required": ["evidence"]}}}}
-    });
-    schema["else"] = single_condition;
-    schema
+    json!({
+        "type":"object", "additionalProperties":false,
+        "required":["about","actor","observed_at"],
+        "properties":{
+            "about":string_schema("Exact about receiving this one transaction. Never inferred or changed by a default."),
+            "actor":string_schema("Human, agent or component producing the write."),
+            "observed_at":observed,
+            "occurred_at":occurred,
+            "valid_from":valid_from,
+            "valid_until":valid_until,
+            "rank":rank,
+            "source_kind":{"type":"string","enum":["human","agent","projection","derived"]},
+            "labels":labels,
+            "memories":memories,
+            "search_summaries":{
+                "type":"array","minItems":1,
+                "description":"Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+                "items":{"type":"object","additionalProperties":false,"required":["ref","summary_en"],"properties":{
+                    "ref":string_schema("Existing memory in this about. The stored source is not replaced."),
+                    "summary_en":string_schema("English search rendering of the stored source, retaining its numbers, identifiers and acronyms.")
+                }}
+            },
+            "read_context":read_context_schema(),
+            "idempotency_key":string_schema("One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload."),
+            "options":{
+                "type":"object","additionalProperties":false,
+                "properties":{
+                    "dry_run":{"type":"boolean","description":"Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend."},
+                    "strict":{"type":"boolean","description":"Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed."},
+                    "labels_new":{"type":"array","items":{"type":"string"},"description":"Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently."},
+                    "sequence":{"type":"integer","minimum":1,"description":"Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates."}
+                }
+            }
+        },
+        "if":{"required":["memories"]},
+        "then":{
+            "not":{"required":["search_summaries"]},
+            "if":{"not":{"required":["options"],"properties":{"options":{"required":["strict"],"properties":{"strict":{"const":false}}}}}},
+            "then":{"properties":{"memories":{"items":{"required":["evidence"]}}}}
+        },
+        "else":{
+            "required":["search_summaries"],
+            "properties":{"options":{"not":{"anyOf":[{"required":["sequence"]},{"required":["labels_new"]}]}}},
+            "not":{"anyOf":[{"required":["labels"]},{"required":["occurred_at"]},{"required":["valid_from"]},{"required":["valid_until"]},{"required":["rank"]},{"required":["read_context"]}]}
+        }
+    })
 }
 
 pub(crate) fn read_context_schema() -> Value {

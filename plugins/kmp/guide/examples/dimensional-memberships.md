@@ -24,12 +24,8 @@ another record or another about with the word neb is the same entity.
   "save_as": "original",
   "arguments": {
     "about": "example:guide:dimensional-memberships",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
-    "scope": {
-      "process": "registry"
-    },
     "labels": {
       "alias": [
         "neb",
@@ -37,19 +33,25 @@ another record or another about with the word neb is the same entity.
       ],
       "component": [
         "neb"
+      ],
+      "agentic_process": [
+        "registry"
       ]
-    },
-    "current": {
-      "kind": "observation",
-      "summary": "R1: The registry lists neb and Nébula Cache as aliases of component neb.",
-      "evidence": "R1: The registry lists neb and Nébula Cache as aliases of component neb."
     },
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:00:00Z",
     "idempotency_key": "guide-dimensional:original",
     "options": {
       "strict": false
-    }
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "R1: The registry lists neb and Nébula Cache as aliases of component neb.",
+        "evidence": "R1: The registry lists neb and Nébula Cache as aliases of component neb."
+      }
+    ]
   }
 }
 ```

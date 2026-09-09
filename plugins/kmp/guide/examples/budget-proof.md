@@ -63,23 +63,34 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "constraint",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:constraint:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
+    "labels": {
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
-    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T08:00:00Z",
-    "current": {
-      "kind": "constraint",
-      "summary": "C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.",
-      "summary_en": "C1 requires offline, device-local ledger storage for export EXP-8: no network access is allowed.",
-      "evidence": "C1, received 2026-09-01T08:00:00Z: C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "constraint",
+        "summary": "C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export.",
+        "summary_en": "C1 requires offline, device-local ledger storage for export EXP-8: no network access is allowed.",
+        "evidence": "C1, received 2026-09-01T08:00:00Z: C1: Export EXP-8 must keep ledger records on this device. Network access is not permitted during the export."
+      }
+    ]
   }
 }
 ```
@@ -102,36 +113,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "decision",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:decision:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
+    "labels": {
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
-    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:00:00Z",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
-      "summary_en": "D1 selects SQLite for EXP-8 because its local storage meets the C1 offline ledger requirement.",
-      "evidence": "D1, received 2026-09-01T09:00:00Z: D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
-    },
     "read_context": {
       "inspected_refs": [
         "${constraint.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${constraint.generated_refs.0}",
-        "rel": "chosen_because",
-        "class": "motivational",
-        "confidence": "high",
-        "why": "D1 explicitly chooses SQLite to meet C1's device-local, network-free export requirement; this is the stated reason for that choice.",
-        "evidence": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
+        "summary_en": "D1 selects SQLite for EXP-8 because its local storage meets the C1 offline ledger requirement.",
+        "evidence": "D1, received 2026-09-01T09:00:00Z: D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1.",
+        "connect_to": [
+          {
+            "ref": "${constraint.generated_refs.0}",
+            "rel": "chosen_because",
+            "class": "motivational",
+            "confidence": "high",
+            "why": "D1 explicitly chooses SQLite to meet C1's device-local, network-free export requirement; this is the stated reason for that choice.",
+            "evidence": "D1: For export EXP-8 we choose SQLite because it can keep the ledger on this device without network access, as required by C1."
+          }
+        ]
       }
     ]
   }
@@ -156,36 +178,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "test",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:test:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
+    "labels": {
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
-    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T10:00:00Z",
     "observed_at": "2026-09-01T10:00:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
-      "summary_en": "T1 reports a successful offline EXP-8 test of the D1 SQLite plan: original and restored checksums match at 9a7c.",
-      "evidence": "T1, received 2026-09-01T10:00:00Z: T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
-    },
     "read_context": {
       "inspected_refs": [
         "${decision.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${decision.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "T1 identifies D1 as the plan used in the test. The plan is context for interpreting the test; it is not itself proof that the test passed.",
-        "evidence": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
+        "id": "current",
+        "kind": "observation",
+        "summary": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
+        "summary_en": "T1 reports a successful offline EXP-8 test of the D1 SQLite plan: original and restored checksums match at 9a7c.",
+        "evidence": "T1, received 2026-09-01T10:00:00Z: T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access.",
+        "connect_to": [
+          {
+            "ref": "${decision.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "T1 identifies D1 as the plan used in the test. The plan is context for interpreting the test; it is not itself proof that the test passed.",
+            "evidence": "T1: The EXP-8 offline test used the SQLite plan D1. Input and restored ledger checksums both equal 9a7c. The test finished without network access."
+          }
+        ]
       }
     ]
   }
@@ -210,36 +243,47 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "result",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:result:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "export-check"
+    "labels": {
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "export"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "export-check"
+      ]
     },
-    "labels": {"packet": ["PACK-8"], "component": ["export"]},
     "occurred_at": "2026-09-01T11:00:00Z",
     "observed_at": "2026-09-01T11:00:00Z",
-    "current": {
-      "kind": "success_path",
-      "summary": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
-      "summary_en": "R1 records successful offline completion of EXP-8, verified by the matching 9a7c checksum in T1.",
-      "evidence": "R1, received 2026-09-01T11:00:00Z: R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
-    },
     "read_context": {
       "inspected_refs": [
         "${test.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${test.generated_refs.0}",
-        "rel": "verified_by",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1.",
-        "evidence": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
+        "id": "current",
+        "kind": "success_path",
+        "summary": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
+        "summary_en": "R1 records successful offline completion of EXP-8, verified by the matching 9a7c checksum in T1.",
+        "evidence": "R1, received 2026-09-01T11:00:00Z: R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result.",
+        "connect_to": [
+          {
+            "ref": "${test.generated_refs.0}",
+            "rel": "verified_by",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "R1's matching-checksum and offline-completion claims are verified by the measured result recorded in T1.",
+            "evidence": "R1: Export EXP-8 completed its offline round trip with matching checksum 9a7c. Test report T1 verifies this result."
+          }
+        ]
       }
     ]
   }
@@ -264,26 +308,37 @@ catalogue and refs instead of repeating this fresh-store assumption.
   "save_as": "unrelated",
   "arguments": {
     "about": "example:guide:budget-proof",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-budget-proof:unrelated:v1",
-    "scope": {
-      "process": "budget-review",
-      "task": "warehouse-inspection"
+    "labels": {
+      "packet": [
+        "PACK-8"
+      ],
+      "component": [
+        "warehouse"
+      ],
+      "agentic_process": [
+        "budget-review"
+      ],
+      "task": [
+        "warehouse-inspection"
+      ]
     },
-    "labels": {"packet": ["PACK-8"], "component": ["warehouse"]},
     "occurred_at": "2026-09-01T12:00:00Z",
     "observed_at": "2026-09-01T12:00:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.",
-      "summary_en": "X1 observes blue lights at Warehouse WH-9 at 12:00 UTC on September 1; this independent lighting inspection reports nothing about an export.",
-      "evidence": "X1, received 2026-09-01T12:00:00Z: X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting."
-    },
     "options": {
       "strict": false
-    }
+    },
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting.",
+        "summary_en": "X1 observes blue lights at Warehouse WH-9 at 12:00 UTC on September 1; this independent lighting inspection reports nothing about an export.",
+        "evidence": "X1, received 2026-09-01T12:00:00Z: X1: Warehouse WH-9 lights were blue at 12:00 UTC on September 1. This independent inspection reports only the warehouse lighting."
+      }
+    ]
   }
 }
 ```

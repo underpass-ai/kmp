@@ -1,263 +1,289 @@
 {
   "accepted": false,
+  "diagnostics": [],
   "dry_run": true,
-  "summary": "Prepared 2 entries, 3 relations, and 3 evidence items for incident:mobile-login.",
   "generated_refs": [
     "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-    "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c"
+    "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c"
   ],
+  "ingest_preview": {
+    "about": "incident:mobile-login",
+    "dry_run": true,
+    "idempotency_key": "write:incident-mobile-login-decision-v1",
+    "label_policy": "refuse",
+    "memory": {
+      "dimensions": [
+        {
+          "id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
+          "kind": "agentic_episode",
+          "title": "Kernel write label"
+        },
+        {
+          "id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
+          "kind": "agentic_process",
+          "title": "Kernel write label"
+        },
+        {
+          "id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
+          "kind": "task",
+          "title": "Kernel write label"
+        }
+      ],
+      "entries": [
+        {
+          "coordinates": [
+            {
+              "dimension": "agentic_episode",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend"
+            },
+            {
+              "dimension": "agentic_process",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution"
+            },
+            {
+              "dimension": "task",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login"
+            }
+          ],
+          "id": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+          "kind": "decision",
+          "metadata": {
+            "writer_actor": "agent:backend",
+            "writer_intent": "record_decision"
+          },
+          "text": "Use token refresh retry instead of widening timeout."
+        },
+        {
+          "coordinates": [
+            {
+              "dimension": "agentic_episode",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend"
+            },
+            {
+              "dimension": "agentic_process",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution"
+            },
+            {
+              "dimension": "task",
+              "observed_at": "2026-05-06T10:00:00Z",
+              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login"
+            }
+          ],
+          "id": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+          "kind": "semantic_delta",
+          "metadata": {
+            "writer_actor": "agent:backend",
+            "writer_intent": "record_observation"
+          },
+          "text": "From: The team suspected network timeout.\nTo: The evidence points to token refresh race.\nWhy: The failing requests return 401 immediately after refresh."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:current",
+          "source": "kmp_write_memory:agent:backend",
+          "supports": [
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9"
+          ],
+          "text": "Logs show 401 immediately after token refresh.",
+          "time": "2026-05-06T10:00:00Z"
+        },
+        {
+          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:relation:1",
+          "source": "kmp_write_memory:agent:backend:relation:chosen_because",
+          "supports": [
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+            "incident:mobile-login:observation:401-refresh-race"
+          ],
+          "text": "The chosen retry targets the refresh race seen in auth logs.",
+          "time": "2026-05-06T10:00:00Z"
+        },
+        {
+          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:relation:2",
+          "source": "kmp_write_memory:agent:backend:relation:updates_state",
+          "supports": [
+            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+            "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c"
+          ],
+          "text": "Auth logs show refresh success followed by 401 on the next request.",
+          "time": "2026-05-06T10:00:00Z"
+        },
+        {
+          "id": "evidence:incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c:current",
+          "source": "kmp_write_memory:agent:backend",
+          "supports": [
+            "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c"
+          ],
+          "text": "Auth logs show refresh success followed by 401 on the next request.",
+          "time": "2026-05-06T10:00:00Z"
+        },
+        {
+          "id": "evidence:incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c:relation:1",
+          "source": "kmp_write_memory:agent:backend:relation:semantic_delta_from",
+          "supports": [
+            "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+            "incident:mobile-login:observation:401-refresh-race"
+          ],
+          "text": "Auth logs show refresh success followed by 401 on the next request.",
+          "time": "2026-05-06T10:00:00Z"
+        }
+      ],
+      "relations": [
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence": "The chosen retry targets the refresh race seen in auth logs.",
+          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+          "rel": "chosen_because",
+          "sequence": 1,
+          "to": "incident:mobile-login:observation:401-refresh-race",
+          "why": "The decision addresses the observed token refresh race."
+        },
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+          "rel": "updates_state",
+          "sequence": 1,
+          "to": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+          "why": "The failing requests return 401 immediately after refresh."
+        },
+        {
+          "class": "causal",
+          "confidence": "high",
+          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
+          "from": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+          "rel": "semantic_delta_from",
+          "sequence": 1,
+          "to": "incident:mobile-login:observation:401-refresh-race",
+          "why": "The failing requests return 401 immediately after refresh."
+        }
+      ]
+    },
+    "provenance": {
+      "causation_id": "write:incident-mobile-login-decision-v1",
+      "correlation_id": "kmp_write:incident:mobile-login",
+      "observed_at": "2026-05-06T10:00:00Z",
+      "source_agent": "agent:backend",
+      "source_kind": "agent"
+    }
+  },
   "labels": {
     "written": [
       {
-        "key": "task",
-        "value": "incident:mobile-login"
+        "key": "agentic_episode",
+        "value": "incident:mobile-login:episode:backend"
       },
       {
         "key": "agentic_process",
         "value": "incident:mobile-login:resolution"
       },
       {
-        "key": "agentic_episode",
-        "value": "incident:mobile-login:episode:backend"
+        "key": "task",
+        "value": "incident:mobile-login"
       }
     ]
+  },
+  "local_refs": {
+    "current": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+    "semantic_delta": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c"
+  },
+  "next_suggested_reads": [
+    {
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+      "to": "incident:mobile-login:observation:401-refresh-race",
+      "tool": "kmp_trace"
+    },
+    {
+      "from": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+      "to": "incident:mobile-login:observation:401-refresh-race",
+      "tool": "kmp_trace"
+    }
+  ],
+  "relation_quality": [
+    {
+      "class": "causal",
+      "confidence": "high",
+      "crosses_about": false,
+      "fallback": false,
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+      "prior_context_observed": true,
+      "prior_context_sources": [
+        "kmp_inspect"
+      ],
+      "proof_complete": true,
+      "quality": "rich",
+      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+      "rel": "chosen_because",
+      "requires_prior_context": true,
+      "target_present": true,
+      "to": "incident:mobile-login:observation:401-refresh-race"
+    },
+    {
+      "class": "causal",
+      "confidence": "high",
+      "crosses_about": false,
+      "fallback": false,
+      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
+      "prior_context_observed": true,
+      "prior_context_sources": [
+        "current_request"
+      ],
+      "proof_complete": true,
+      "quality": "rich",
+      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+      "rel": "updates_state",
+      "requires_prior_context": false,
+      "target_present": true,
+      "to": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c"
+    },
+    {
+      "class": "causal",
+      "confidence": "high",
+      "crosses_about": false,
+      "fallback": false,
+      "from": "incident:mobile-login:entry:semantic_delta:from-the-team-suspected-network-timeout-to-the-evidence-points-4a1f234062bc3c3c",
+      "prior_context_observed": true,
+      "prior_context_sources": [
+        "kmp_inspect"
+      ],
+      "proof_complete": true,
+      "quality": "rich",
+      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
+      "rel": "semantic_delta_from",
+      "requires_prior_context": true,
+      "target_present": true,
+      "to": "incident:mobile-login:observation:401-refresh-race"
+    }
+  ],
+  "relation_quality_metrics": {
+    "relation_anemic_count": 0,
+    "relation_anemic_ratio": 0.0,
+    "relation_explanatory_ratio": 1.0,
+    "relation_invalid_rejected_count": 0,
+    "relation_prior_context_coverage": 1.0,
+    "relation_prior_context_observed_count": 2,
+    "relation_prior_context_required_count": 2,
+    "relation_proof_coverage": 1.0,
+    "relation_rich_count": 3,
+    "relation_rich_ratio": 1.0,
+    "relation_structural_count": 0,
+    "relation_suspect_count": 0,
+    "relation_target_coverage": 1.0,
+    "relation_total": 3
   },
   "relations": [
     "chosen_because",
     "updates_state",
     "semantic_delta_from"
   ],
-  "relation_quality": [
-    {
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-      "to": "incident:mobile-login:observation:401-refresh-race",
-      "rel": "chosen_because",
-      "class": "causal",
-      "crosses_about": false,
-      "confidence": "high",
-      "quality": "rich",
-      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
-      "fallback": false,
-      "requires_prior_context": true,
-      "prior_context_observed": true,
-      "prior_context_sources": [
-        "kmp_inspect"
-      ],
-      "proof_complete": true,
-      "target_present": true
-    },
-    {
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-      "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-      "rel": "updates_state",
-      "class": "causal",
-      "crosses_about": false,
-      "confidence": "high",
-      "quality": "rich",
-      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
-      "fallback": false,
-      "requires_prior_context": false,
-      "prior_context_observed": true,
-      "prior_context_sources": [
-        "current_request"
-      ],
-      "proof_complete": true,
-      "target_present": true
-    },
-    {
-      "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-      "to": "incident:mobile-login:observation:401-refresh-race",
-      "rel": "semantic_delta_from",
-      "class": "causal",
-      "crosses_about": false,
-      "confidence": "high",
-      "quality": "rich",
-      "quality_reason": "non-structural relation has target ref, why, evidence, and supported semantic class",
-      "fallback": false,
-      "requires_prior_context": true,
-      "prior_context_observed": true,
-      "prior_context_sources": [
-        "kmp_inspect"
-      ],
-      "proof_complete": true,
-      "target_present": true
-    }
-  ],
-  "relation_quality_metrics": {
-    "relation_total": 3,
-    "relation_rich_count": 3,
-    "relation_anemic_count": 0,
-    "relation_structural_count": 0,
-    "relation_invalid_rejected_count": 0,
-    "relation_suspect_count": 0,
-    "relation_rich_ratio": 1.0,
-    "relation_anemic_ratio": 0.0,
-    "relation_explanatory_ratio": 1.0,
-    "relation_proof_coverage": 1.0,
-    "relation_target_coverage": 1.0,
-    "relation_prior_context_required_count": 2,
-    "relation_prior_context_observed_count": 2,
-    "relation_prior_context_coverage": 1.0
-  },
-  "ingest_preview": {
-    "about": "incident:mobile-login",
-    "idempotency_key": "write:incident-mobile-login-decision-v1",
-    "dry_run": true,
-    "label_policy": "refuse",
-    "memory": {
-      "dimensions": [
-        {
-          "id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
-          "kind": "task",
-          "title": "Kernel write task"
-        },
-        {
-          "id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
-          "kind": "agentic_process",
-          "title": "Kernel write process"
-        },
-        {
-          "id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
-          "kind": "agentic_episode",
-          "title": "Kernel write episode"
-        }
-      ],
-      "entries": [
-        {
-          "id": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-          "kind": "decision",
-          "text": "Use token refresh retry instead of widening timeout.",
-          "coordinates": [
-            {
-              "dimension": "task",
-              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
-              "observed_at": "2026-05-06T10:00:00Z"
-            },
-            {
-              "dimension": "agentic_process",
-              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
-              "observed_at": "2026-05-06T10:00:00Z"
-            },
-            {
-              "dimension": "agentic_episode",
-              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
-              "observed_at": "2026-05-06T10:00:00Z"
-            }
-          ],
-          "metadata": {
-            "writer_intent": "record_decision",
-            "writer_actor": "agent:backend"
-          }
-        },
-        {
-          "id": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-          "kind": "semantic_delta",
-          "text": "From: The team suspected network timeout.\nTo: The evidence points to token refresh race.\nWhy: The failing requests return 401 immediately after refresh.",
-          "coordinates": [
-            {
-              "dimension": "task",
-              "scope_id": "label:v1:incident%3Amobile-login:task:incident%3Amobile-login",
-              "observed_at": "2026-05-06T10:00:00Z"
-            },
-            {
-              "dimension": "agentic_process",
-              "scope_id": "label:v1:incident%3Amobile-login:agentic_process:incident%3Amobile-login%3Aresolution",
-              "observed_at": "2026-05-06T10:00:00Z"
-            },
-            {
-              "dimension": "agentic_episode",
-              "scope_id": "label:v1:incident%3Amobile-login:agentic_episode:incident%3Amobile-login%3Aepisode%3Abackend",
-              "observed_at": "2026-05-06T10:00:00Z"
-            }
-          ],
-          "metadata": {
-            "writer_intent": "record_decision",
-            "writer_actor": "agent:backend",
-            "delta_from": "The team suspected network timeout.",
-            "delta_to": "The evidence points to token refresh race."
-          }
-        }
-      ],
-      "relations": [
-        {
-          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-          "to": "incident:mobile-login:observation:401-refresh-race",
-          "rel": "chosen_because",
-          "class": "causal",
-          "confidence": "high",
-          "why": "The decision addresses the observed token refresh race.",
-          "evidence": "The chosen retry targets the refresh race seen in auth logs.",
-          "sequence": 1
-        },
-        {
-          "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-          "to": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-          "rel": "updates_state",
-          "class": "causal",
-          "confidence": "high",
-          "why": "The failing requests return 401 immediately after refresh.",
-          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
-          "sequence": 2
-        },
-        {
-          "from": "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-          "to": "incident:mobile-login:observation:401-refresh-race",
-          "rel": "semantic_delta_from",
-          "class": "causal",
-          "confidence": "high",
-          "why": "The failing requests return 401 immediately after refresh.",
-          "evidence": "Auth logs show refresh success followed by 401 on the next request.",
-          "sequence": 2
-        }
-      ],
-      "evidence": [
-        {
-          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:current",
-          "supports": [
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9"
-          ],
-          "text": "Logs show 401 immediately after token refresh.",
-          "source": "kmp_write_memory:agent:backend",
-          "time": "2026-05-06T10:00:00Z"
-        },
-        {
-          "id": "evidence:incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9:relation:1",
-          "supports": [
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-            "incident:mobile-login:observation:401-refresh-race"
-          ],
-          "text": "The chosen retry targets the refresh race seen in auth logs.",
-          "source": "kmp_write_memory:agent:backend:relation:chosen_because",
-          "time": "2026-05-06T10:00:00Z"
-        },
-        {
-          "id": "evidence:incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c:semantic_delta",
-          "supports": [
-            "incident:mobile-login:entry:semantic_delta:the-evidence-points-to-token-refresh-race-4a1f234062bc3c3c",
-            "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9"
-          ],
-          "text": "Auth logs show refresh success followed by 401 on the next request.",
-          "source": "kmp_write_memory:agent:backend:semantic_delta",
-          "time": "2026-05-06T10:00:00Z"
-        }
-      ]
-    },
-    "provenance": {
-      "source_kind": "agent",
-      "source_agent": "agent:backend",
-      "observed_at": "2026-05-06T10:00:00Z",
-      "correlation_id": "kmp_write:incident:mobile-login",
-      "causation_id": "write:incident-mobile-login-decision-v1"
-    }
-  },
-  "diagnostics": [],
-  "next_suggested_reads": [
-    {
-      "tool": "kmp_trace",
-      "from": "incident:mobile-login:entry:decision:use-token-refresh-retry-instead-of-widening-timeout-22ebb087f6444be9",
-      "to": "incident:mobile-login:observation:401-refresh-race"
-    }
-  ],
+  "summary": "Prepared 2 entries, 3 relations, and 5 evidence items for incident:mobile-login.",
   "validation": {
     "scope": "fixture"
   },

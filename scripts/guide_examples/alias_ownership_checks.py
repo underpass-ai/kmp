@@ -10,8 +10,8 @@ def check(saved, client, authored):
         inspected = saved[name + '_read']
         assert inspected['object']['ref'] == refs[name]
         assert inspected['object']['kind'] == kind
-        assert inspected['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in inspected['evidence'])
+        assert inspected['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in inspected['evidence'])
     assert saved['alias_label']['accepted'] is True
     before, after = saved['elena_before'], saved['elena_read']
     assert before['object'] == after['object'], 'Relabel must preserve the canonical memory'
@@ -41,10 +41,10 @@ def check(saved, client, authored):
     day3, day6 = saved['day3']['proof'], saved['day6']['proof']
     assert day3['axis'] == day6['axis'] == 'validity'
     assert day3['as_of'] == '2026-09-03T12:00:00Z' and day6['as_of'] == '2026-09-06T12:00:00Z'
-    assert any(e['text'] == authored['jon']['current']['summary'] for e in day3['evidence'])
+    assert any(e['text'] == authored['jon']['memories'][0]['summary'] for e in day3['evidence'])
     assert all(refs['rui'] not in str(e) for e in day3['evidence'])
     assert not day3['superseded']
-    assert any(e['text'] == authored['rui']['current']['summary'] for e in day6['evidence'])
+    assert any(e['text'] == authored['rui']['memories'][0]['summary'] for e in day6['evidence'])
     assert any(item['ref'] == refs['jon'] and item['superseded_by'] == refs['rui'] for item in day6['superseded'])
     unknown = saved['before_alias_known']
     assert unknown['answer'] == 'UNKNOWN' and not unknown['proof']['evidence']

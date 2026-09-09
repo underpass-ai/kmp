@@ -74,8 +74,8 @@ all claimed rich relations retain proof requirements. Per-record observation,
 occurrence and validity remain distinct from the packet's provenance and the
 kernel's actual ingestion clock.
 
-The current-entry form remains available during these integration increments.
-This is not a compatibility commitment: consolidating the final public writer
-shape, compact recoverable receipts, declared coverage and structured repair
-signals still belongs to block 2. A native packet replay is not independent
-agent evaluation and does not resume a reader awaiting human review.
+The unified public writer accepts `memories` or the separate `search_summaries`
+operation. The former `current`/`intent`/`scope` fields are rejected; semantic deltas
+are explicit packet members with justified relations. Compact recoverable
+receipts, declared coverage and structured repair signals still belong to block 2.
+A native packet replay is not independent agent evaluation and does not resume a reader awaiting human review.
