@@ -61,8 +61,6 @@
         {
           "id": "string",
           "metadata": {
-            "delta_from": "string",
-            "delta_to": "string",
             "proof_role": "string",
             "writer_actor": "string",
             "writer_intent": "string"

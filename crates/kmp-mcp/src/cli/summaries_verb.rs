@@ -7,7 +7,7 @@ use super::{looks_like_option, unknown_option};
 /// selected store that owe an English search summary.
 ///
 /// The kernel cannot write the summary; the agent does, with
-/// `kmp_write_memory` and the intent `record_summary`. This is the list it
+/// `kmp_write_memory` and `search_summaries`. This is the list it
 /// works from, and the doctor's count comes from the same reading.
 pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
     let Some((verb, rest)) = args.split_first() else {
@@ -81,7 +81,7 @@ pub(super) async fn run_summaries_command(args: &[&str]) -> i32 {
     println!(
         "{} {} an English search summary. Render each in plain English, keep every number, \
          identifier and acronym exactly as written, and attach it with kmp_write_memory \
-         (intent record_summary, current.ref, current.summary_en).\n",
+         (search_summaries with ref and summary_en).\n",
         pending.len(),
         if pending.len() == 1 {
             "memory owes"

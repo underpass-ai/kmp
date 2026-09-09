@@ -386,7 +386,7 @@ pub(crate) mod tests {
             json!("El despliegue de v0.7.0 se retrasó porque los auditores no firmaron.");
 
         let error = build_write_plan(&request).expect_err("no rendering, no strict write");
-        assert!(error.contains("requires current.summary_en"), "{error}");
+        assert!(error.contains("requires summary_en"), "{error}");
         assert!(error.contains("leans to spanish"), "{error}");
 
         request["current"]["summary_en"] =
@@ -414,7 +414,7 @@ pub(crate) mod tests {
 
         let error = build_write_plan(&request).expect_err("a dropped identifier is refused");
 
-        assert!(error.contains("refuses current.summary_en"), "{error}");
+        assert!(error.contains("refuses summary_en"), "{error}");
         assert!(
             error.contains("drops identifiers the text carries: v0.7.0"),
             "{error}"

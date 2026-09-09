@@ -517,69 +517,61 @@
       "inputSchema": {
         "additionalProperties": false,
         "else": {
-          "else": {
-            "if": {
-              "not": {
-                "properties": {
-                  "options": {
-                    "properties": {
-                      "strict": {
-                        "const": false
-                      }
-                    },
-                    "required": [
-                      "strict"
-                    ]
-                  }
-                },
+          "not": {
+            "anyOf": [
+              {
                 "required": [
-                  "options"
+                  "labels"
+                ]
+              },
+              {
+                "required": [
+                  "occurred_at"
+                ]
+              },
+              {
+                "required": [
+                  "valid_from"
+                ]
+              },
+              {
+                "required": [
+                  "valid_until"
+                ]
+              },
+              {
+                "required": [
+                  "rank"
+                ]
+              },
+              {
+                "required": [
+                  "read_context"
                 ]
               }
-            },
-            "properties": {
-              "current": {
-                "required": [
-                  "kind",
-                  "summary"
-                ]
-              }
-            },
-            "then": {
-              "properties": {
-                "current": {
-                  "required": [
-                    "evidence"
-                  ]
-                }
-              }
-            }
-          },
-          "if": {
-            "properties": {
-              "intent": {
-                "const": "record_summary"
-              }
-            },
-            "required": [
-              "intent"
             ]
           },
-          "required": [
-            "intent",
-            "scope",
-            "current"
-          ],
-          "then": {
-            "properties": {
-              "current": {
-                "required": [
-                  "ref",
-                  "summary_en"
+          "properties": {
+            "options": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "sequence"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "labels_new"
+                    ]
+                  }
                 ]
               }
             }
-          }
+          },
+          "required": [
+            "search_summaries"
+          ]
         },
         "if": {
           "required": [
@@ -588,165 +580,22 @@
         },
         "properties": {
           "about": {
-            "description": "Memory anchor or root ref this semantic memory event should attach to.",
+            "description": "Exact about receiving this one transaction. Never inferred or changed by a default.",
             "minLength": 1,
             "type": "string"
           },
           "actor": {
-            "description": "Human, agent, or component producing the write.",
+            "description": "Human, agent or component producing the write.",
             "minLength": 1,
             "type": "string"
-          },
-          "connect_to": {
-            "description": "Existing memory refs the new entry connects to. Omit this field or send an empty array only for the first strict write that creates a new about; once the about exists, strict runtime validation requires at least one relation.",
-            "items": {
-              "additionalProperties": false,
-              "properties": {
-                "class": {
-                  "description": "What the link explains: structural = containment/membership, no proof required; causal = one memory triggered or produced another; motivational = one memory justifies or authorizes another; procedural = how something was executed, or plain succession; evidential = validates, proves, contradicts or verifies; constraint = limits or shapes another memory.",
-                  "enum": [
-                    "structural",
-                    "causal",
-                    "motivational",
-                    "procedural",
-                    "evidential",
-                    "constraint"
-                  ],
-                  "type": "string"
-                },
-                "confidence": {
-                  "enum": [
-                    "high",
-                    "medium",
-                    "low",
-                    "unknown"
-                  ],
-                  "type": "string"
-                },
-                "evidence": {
-                  "description": "The concrete observation or source that supports the relation rationale. Required for non-structural relations.",
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "ref": {
-                  "description": "Existing memory ref this new memory connects to. Inside this about for every relation; a ref of another about is accepted only with `same_event_as` or `same_entity_as`, class `evidential`, `why`, `evidence`, and the kmp_relate proposal in `read_context.relate_proposals`. That is the one relation that crosses an about; the edge lives in this about and the other does not change.",
-                  "minLength": 1,
-                  "type": "string"
-                },
-                "rel": {
-                  "description": "Relation type for this link. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
-                  "enum": [
-                    "follows",
-                    "answers",
-                    "uses_background",
-                    "depends_on",
-                    "chosen_because",
-                    "triggers",
-                    "authorizes",
-                    "verified_by",
-                    "semantic_delta_from",
-                    "updates_state",
-                    "supports",
-                    "supersedes",
-                    "contradicts",
-                    "satisfies_constraint",
-                    "violates_constraint",
-                    "contributes_to",
-                    "excluded_from",
-                    "checked_against",
-                    "derived_from",
-                    "confirms_selection",
-                    "restates",
-                    "corrects",
-                    "component_of",
-                    "total_of",
-                    "same_event_as",
-                    "same_entity_as",
-                    "qualifies_as",
-                    "matches_requirement",
-                    "contains",
-                    "member_of",
-                    "scoped_to"
-                  ],
-                  "type": "string"
-                },
-                "why": {
-                  "description": "Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations.",
-                  "minLength": 1,
-                  "type": "string"
-                }
-              },
-              "required": [
-                "ref",
-                "rel",
-                "class"
-              ],
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "current": {
-            "additionalProperties": false,
-            "properties": {
-              "evidence": {
-                "description": "Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "kind": {
-                "description": "Semantic kind stored on the current entry. It is deliberately broader than intent: constraint, preference, derived_value, error_path, and success_path describe durable facts while intent describes the writer operation.",
-                "enum": [
-                  "turn",
-                  "observation",
-                  "decision",
-                  "feedback",
-                  "semantic_delta",
-                  "constraint",
-                  "preference",
-                  "derived_value",
-                  "error_path",
-                  "success_path"
-                ],
-                "type": "string"
-              },
-              "ref": {
-                "description": "Optional stable memory entry ref. Omit it for a new memory so the writer planner generates a readable ref with a deterministic logical-write identity suffix. A supplied ref is an update address: it must be a safe descendant of this exact about (`{about}:...`) and can never target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key. Exact retries keep the same generated ref; distinct writes cannot collapse merely because their summaries match or share a long prefix.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "summary": {
-                "description": "Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "summary_en": {
-                "description": "English rendering of `summary` for search, written by you as you write the memory. kmp_ask searches it and never cites it: an English question reaches this memory through it, and the citation is `summary` byte for byte. Write plain English a reader would ask with, keep every number, identifier and acronym exactly as written (`v0.7.0`, `#469`, `kmp-mcp`, `ADR`), and never alter `summary` to fit it. Strict mode requires it when `summary` is not written in English, and refuses one that leans to another language, carries fewer than two informative words, repeats `summary` word for word, or drops an identifier `summary` carries; outside strict mode such a summary is stored and carries nothing. Worth writing for English text too when its wording is jargon (`rollout slipped` → `launch postponed`).",
-                "minLength": 1,
-                "type": "string"
-              }
-            },
-            "type": "object"
           },
           "idempotency_key": {
-            "description": "Optional stable idempotency key. Omit to generate one from the write payload.",
+            "description": "One stable key per logical packet. Exact retries keep refs; a different payload must not reuse an accepted key. Omit to derive the key from the payload.",
             "minLength": 1,
-            "type": "string"
-          },
-          "intent": {
-            "description": "What this write records and therefore which planner rules apply. This is a write-operation intent, not the stored entry kind: record_delta requires semantic_delta, while current.kind describes the durable fact. record_summary attaches an English search summary to a memory that already exists: give current.ref and current.summary_en only — the text, kind and coordinates are read from the store and cannot be supplied, no connect_to is written, and a summary the lint refuses is rejected with every fault named. `kmp-mcp summaries pending` lists the memories that owe one.",
-            "enum": [
-              "record_turn",
-              "record_observation",
-              "record_decision",
-              "record_feedback",
-              "record_delta",
-              "record_summary"
-            ],
             "type": "string"
           },
           "labels": {
             "additionalProperties": {
-              "description": "The values this memory stands in under this key.",
               "items": {
                 "minLength": 1,
                 "type": "string"
@@ -755,16 +604,15 @@
               "type": "array",
               "uniqueItems": true
             },
-            "description": "Labels as key-to-array values, for example alias: [neb, nebula]. Keys name dimensions; each key/value pair becomes a coordinate with the same clocks. The same value under another key is a distinct label. Additional values under scope keys are allowed; repeating an exact pair is an error. Read the about catalogue to reuse intended vocabulary.",
+            "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
             "type": "object"
           },
           "memories": {
-            "description": "One or more semantic records committed atomically in this about. Use kind once per record; no top-level intent/current/scope/connect_to/semantic_delta. Shared labels are unioned with each record's labels; at least one membership is required per record. Each record inherits clocks unless overridden. KMP resolves local ids and validates the entire packet before writing anything.",
+            "description": "One or more source-backed records. All ids and proof links are validated before one commit in this about. Shared labels union with record labels; every record needs at least one membership. A one-record packet uses the same shape. Independent facts may be unlinked; do not invent relations.",
             "items": {
               "additionalProperties": false,
               "properties": {
                 "connect_to": {
-                  "description": "Justified links to records in this packet or stored memories. Independent source facts may be unlinked; never invent a relation to satisfy a shape.",
                   "items": {
                     "additionalProperties": false,
                     "properties": {
@@ -790,17 +638,17 @@
                         "type": "string"
                       },
                       "evidence": {
-                        "description": "The concrete observation or source that supports the relation rationale. Required for non-structural relations.",
+                        "description": "The concrete observation or source supporting the relation rationale. Required for non-structural links.",
                         "minLength": 1,
                         "type": "string"
                       },
                       "ref": {
-                        "description": "@local-id in this packet, or an existing canonical ref. Rich links to packet members use current_request context; stored targets require read_context. Cross-about equivalence still requires a kmp_relate proposal.",
+                        "description": "@local-id in this packet, or an existing canonical ref. Stored rich targets require read_context. Only same_event_as/same_entity_as may cross abouts, with the returned kmp_relate proposal.",
                         "minLength": 1,
                         "type": "string"
                       },
                       "rel": {
-                        "description": "Canonical relation type. Choose it from source evidence; use the relation guide for classes and examples. Honest fallback relations do not imply a richer dependency.",
+                        "description": "Choose the specific relation justified by the source. The relation carries the explanation: non-structural classes require why, evidence and confidence. Prefer rich types — anemic types are an honest fallback for when no richer semantic dependency can be proven, never a default. Vocabulary (quality; allowed classes; when to use): follows (anemic; procedural; writer proved process succession but not a richer semantic dependency). answers (anemic; evidential; writer proved answerhood but not a richer semantic dependency). uses_background (anemic; evidential; writer scoped the node to background without claiming causal semantics). depends_on (rich; causal; explicit dependency relation with target ref, why, and evidence). chosen_because (rich; causal|motivational; decision relation explains why a prior memory led to the current choice). triggers (rich; causal; causal relation identifies the event or decision that triggered an action). authorizes (rich; causal|motivational; authorization relation identifies the decision that permitted an action). verified_by (rich; evidential; verification relation identifies the evidence or check that verified a claim). semantic_delta_from (rich; causal; delta relation explains how current state changes from prior memory). updates_state (rich; causal; state transition relation identifies what memory is being changed). supports (rich; evidential; evidence relation identifies the memory supported by the current observation). supersedes (rich; evidential; replacement relation identifies the superseded memory and evidence). contradicts (rich; evidential; conflict relation identifies the contradicted memory and evidence). satisfies_constraint (rich; constraint; constraint relation identifies the rule satisfied by the current memory). violates_constraint (rich; constraint; constraint relation identifies the rule violated by the current memory). contributes_to (rich; evidential; operand relation marks a value as intentionally included in a derived result). excluded_from (rich; constraint; operand relation marks a value as intentionally excluded). checked_against (rich; constraint; verification relation marks a value checked against a rule or window). derived_from (rich; evidential; derived value relation identifies source operands or evidence). confirms_selection (rich; evidential|motivational; feedback relation identifies the selection confirmed by later evidence). restates (rich; evidential; operand relation marks a repeated claim or value as the same fact). corrects (rich; evidential; operand relation marks a later value as correcting an earlier fact). component_of (rich; evidential; operand relation marks a value as part of a larger total or set). total_of (rich; evidential; operand relation marks a value as an aggregate total for component values). same_event_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). same_entity_as (rich; evidential; identity relation declares two refs the same event or entity; the one relation that may cross an about, declared by a writer from a kmp_relate proposal). qualifies_as (rich; evidential; identity relation disambiguates whether refs describe the same item). matches_requirement (rich; constraint; operand relation marks a ref as satisfying the query or requirement predicate). contains (structural; structural; structural relation is accepted but excluded from semantic writer quality). member_of (structural; structural; structural relation is accepted but excluded from semantic writer quality). scoped_to (structural; structural; structural relation is accepted but excluded from semantic writer quality).",
                         "enum": [
                           "follows",
                           "answers",
@@ -837,7 +685,7 @@
                         "type": "string"
                       },
                       "why": {
-                        "description": "Why this specific semantic connection holds and what a later reader should understand when traversing it. Required for non-structural relations.",
+                        "description": "Why this specific semantic connection holds and what a later reader should understand. Required for non-structural links.",
                         "minLength": 1,
                         "type": "string"
                       }
@@ -852,17 +700,17 @@
                   "type": "array"
                 },
                 "evidence": {
-                  "description": "Direct evidence for the new memory entry. Required when options.strict is omitted or true; optional only when the caller explicitly sets options.strict=false.",
+                  "description": "Concrete source or observation supporting this memory. Required unless options.strict is explicitly false.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "id": {
-                  "description": "Local name in this packet. Use @name in connect_to.ref, including forward links. Returned local_refs maps names to canonical refs.",
+                  "description": "Local name. @name in connect_to.ref addresses this record, including forward links. local_refs returns its canonical address.",
                   "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
                   "type": "string"
                 },
                 "kind": {
-                  "description": "Stored semantic kind; the writer operation is inferred.",
+                  "description": "What this memory records. No separate writer intent is needed.",
                   "enum": [
                     "turn",
                     "observation",
@@ -879,7 +727,6 @@
                 },
                 "labels": {
                   "additionalProperties": {
-                    "description": "The values this memory stands in under this key.",
                     "items": {
                       "minLength": 1,
                       "type": "string"
@@ -888,46 +735,45 @@
                     "type": "array",
                     "uniqueItems": true
                   },
-                  "description": "Per-record memberships, unioned with the shared top-level labels. Declare all source-backed values; labels alone do not prove entity equivalence.",
+                  "description": "Key-to-array memberships. Every declared value is materialized. Sharing a string does not prove entity identity; reuse the about catalogue's intended vocabulary.",
                   "type": "object"
                 },
                 "observed_at": {
-                  "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
+                  "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "occurred_at": {
-                  "description": "Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute.",
+                  "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "rank": {
-                  "description": "Optional positive rank within each emitted coordinate.",
                   "minimum": 1,
                   "type": "integer"
                 },
                 "ref": {
-                  "description": "Omit for a new record. An explicit canonical ref updates that exact entry and must belong to this about. It cannot name the anchor or an internal dimension/evidence object.",
+                  "description": "Omit for a new memory. An explicit canonical ref updates that exact entry and must be a safe descendant of this about, not its anchor or an internal evidence/dimension object.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "summary": {
-                  "description": "Concise semantic memory text to store, in the language of the work. This is what kmp_ask cites, byte for byte.",
+                  "description": "Literal memory text, in the language of the work. Ask cites this text byte for byte.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "summary_en": {
-                  "description": "English search rendering of summary, retaining its numbers, identifiers and acronyms. Strict mode requires it for non-English text and rejects a faulty rendering; original summary remains the cited source. Consult Write for the rendering rules.",
+                  "description": "Your English search rendering, retaining numbers, identifiers and acronyms. Strict mode requires it for non-English summary and rejects a wrong-language, thin, identical or identifier-dropping rendering. Search uses this field; citations retain summary. Consult Write for examples.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "valid_from": {
-                  "description": "Optional RFC3339 start of the interval in which the recorded state is valid.",
+                  "description": "Inclusive start of the recorded state's validity.",
                   "minLength": 1,
                   "type": "string"
                 },
                 "valid_until": {
-                  "description": "Optional RFC3339 exclusive end of the interval in which the recorded state is valid.",
+                  "description": "Exclusive end of the recorded state's validity.",
                   "minLength": 1,
                   "type": "string"
                 }
@@ -943,12 +789,12 @@
             "type": "array"
           },
           "observed_at": {
-            "description": "RFC3339 timestamp in UTC for provenance and default coordinates. UTC is required, not implied: RFC3339 permits an offset, and writers sending local wall-clock time with a `Z` put the memory's frontier hours into the future. A stamp more than five minutes ahead of the kernel's clock is refused — read the real clock rather than composing one. Earlier times are fine: recording something that happened yesterday is a backfill, not an error.",
+            "description": "RFC3339 observation time, with its true UTC offset. More than five minutes ahead of the kernel clock is refused; backfill is allowed. Actual ingestion is recorded separately.",
             "minLength": 1,
             "type": "string"
           },
           "occurred_at": {
-            "description": "Optional RFC3339 timestamp for when the recorded fact or event happened. Omit it when the writer does not know; observed_at is not a substitute.",
+            "description": "When the event occurred, if known. Omission remains unknown; observation is not a substitute.",
             "minLength": 1,
             "type": "string"
           },
@@ -956,32 +802,29 @@
             "additionalProperties": false,
             "properties": {
               "dry_run": {
-                "description": "When true, validate the compiled packet against the selected store and return its preview without committing. Requires the backend to be available; it reserves no refs or sequence numbers. Defaults to false: the call validates and commits.",
+                "description": "Explicit preview against the selected store, without commit or reservation. Defaults to false: ordinary writes validate and commit in one call. Requires an available backend.",
                 "type": "boolean"
               },
               "labels_new": {
-                "description": "Label keys the writer insists are new even where the catalogue holds one that resembles them: it read the catalogue and means something else. The kernel leaves those labels out of the resemblance check; every other new label that resembles an existing one is refused under strict and written with a warning otherwise.",
+                "description": "Keys whose new values are intentional after consulting the catalogue. Every named key must occur in the packet; the kernel neither renames nor merges a label silently.",
                 "items": {
-                  "description": "A label key of this write.",
-                  "minLength": 1,
                   "type": "string"
                 },
                 "type": "array"
               },
               "sequence": {
-                "description": "Explicit coordinate sequence. Omit it to let the kernel assign the next free sequence independently in every selected (dimension, scope) coordinate.",
+                "description": "Optional first sequence, advanced per record. Omit for the next free sequence in each coordinate. Not used for search_summaries, which preserve stored coordinates.",
                 "minimum": 1,
                 "type": "integer"
               },
               "strict": {
-                "description": "When true, fail fast on unsupported relations, missing proof, a memory not written in English that has no current.summary_en, and a current.summary_en that fails the lint, and a new label that resembles one the about already holds. Defaults to true.",
+                "description": "Defaults to true. Requires evidence, justified supported relations, prior context for stored rich targets, and valid search renderings; refuses resembling new labels unless confirmed.",
                 "type": "boolean"
               }
             },
             "type": "object"
           },
           "rank": {
-            "description": "Optional positive rank within each emitted coordinate.",
             "minimum": 1,
             "type": "integer"
           },
@@ -1092,66 +935,30 @@
             },
             "type": "object"
           },
-          "scope": {
-            "additionalProperties": false,
-            "properties": {
-              "episode": {
-                "description": "Optional agentic episode scope id: the well-known `agentic_episode` label.",
-                "minLength": 1,
-                "type": "string"
+          "search_summaries": {
+            "description": "Attach English search renderings to existing memories, separately from memories. KMP reads the stored text, kind, coordinates and metadata first and preserves them. Duplicate targets or an invalid rendering reject the whole packet.",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "ref": {
+                  "description": "Existing memory in this about. The stored source is not replaced.",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "summary_en": {
+                  "description": "English search rendering of the stored source, retaining its numbers, identifiers and acronyms.",
+                  "minLength": 1,
+                  "type": "string"
+                }
               },
-              "process": {
-                "description": "Caller-defined stable id for the agentic process this memory belongs to: the `agentic_process` label every write carries. Unknown values intentionally create or attach that dimension; this is an identifier, not an enum.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "task": {
-                "description": "Optional task scope id: the well-known `task` label.",
-                "minLength": 1,
-                "type": "string"
-              }
+              "required": [
+                "ref",
+                "summary_en"
+              ],
+              "type": "object"
             },
-            "required": [
-              "process"
-            ],
-            "type": "object"
-          },
-          "semantic_delta": {
-            "additionalProperties": false,
-            "properties": {
-              "evidence": {
-                "description": "Evidence proving the state change.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "from": {
-                "description": "Previous known state.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "ref": {
-                "description": "Optional stable semantic delta entry ref. Omit it for a new delta. Like current.ref, a supplied value is an update address and must be a safe descendant of this exact about (`{about}:...`); it cannot target the about anchor, another about, an internal evidence/dimension id, or a path-shaped key.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "to": {
-                "description": "New state.",
-                "minLength": 1,
-                "type": "string"
-              },
-              "why": {
-                "description": "Why this state change is valid.",
-                "minLength": 1,
-                "type": "string"
-              }
-            },
-            "required": [
-              "from",
-              "to",
-              "why",
-              "evidence"
-            ],
-            "type": "object"
+            "minItems": 1,
+            "type": "array"
           },
           "source_kind": {
             "enum": [
@@ -1163,12 +970,12 @@
             "type": "string"
           },
           "valid_from": {
-            "description": "Optional RFC3339 start of the interval in which the recorded state is valid.",
+            "description": "Inclusive start of the recorded state's validity.",
             "minLength": 1,
             "type": "string"
           },
           "valid_until": {
-            "description": "Optional RFC3339 exclusive end of the interval in which the recorded state is valid.",
+            "description": "Exclusive end of the recorded state's validity.",
             "minLength": 1,
             "type": "string"
           }
@@ -1199,32 +1006,8 @@
             }
           },
           "not": {
-            "anyOf": [
-              {
-                "required": [
-                  "current"
-                ]
-              },
-              {
-                "required": [
-                  "intent"
-                ]
-              },
-              {
-                "required": [
-                  "scope"
-                ]
-              },
-              {
-                "required": [
-                  "connect_to"
-                ]
-              },
-              {
-                "required": [
-                  "semantic_delta"
-                ]
-              }
+            "required": [
+              "search_summaries"
             ]
           },
           "then": {

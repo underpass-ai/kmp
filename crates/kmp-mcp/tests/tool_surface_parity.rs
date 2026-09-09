@@ -120,26 +120,34 @@ fn calls() -> Vec<(&'static str, Value)> {
             "kmp_write_memory",
             json!({
                 "about": ABOUT,
-                "intent": "record_decision",
                 "actor": "parity-test",
                 "source_kind": "agent",
                 "observed_at": "2026-04-12T16:00:00Z",
                 "occurred_at": "2026-04-12T16:00:00Z",
-                "scope": {"process": "parity"},
-                "current": {
-                    "kind": "decision",
-                    "summary": "Pin the answered surface, not only the advertised one.",
-                    "evidence": "A refactor that preserves schemas can still change answers."
+                "read_context": {
+                    "inspected_refs": [CLAIM]
                 },
-                "connect_to": [{
-                    "ref": CLAIM,
-                    "rel": "uses_background",
-                    "class": "evidential",
-                    "confidence": "medium",
-                    "why": "The decision was taken while reading this claim back.",
-                    "evidence": "The claim is the store's only prior entry."
-                }],
-                "read_context": {"inspected_refs": [CLAIM]}
+                "labels": {
+                    "agentic_process": ["parity"]
+                },
+                "memories": [
+                    {
+                        "id": "current",
+                        "kind": "decision",
+                        "summary": "Pin the answered surface, not only the advertised one.",
+                        "evidence": "A refactor that preserves schemas can still change answers.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "uses_background",
+                                "class": "evidential",
+                                "confidence": "medium",
+                                "why": "The decision was taken while reading this claim back.",
+                                "evidence": "The claim is the store's only prior entry."
+                            }
+                        ]
+                    }
+                ]
             }),
         ),
         // `proof.superseded` and `proof.expired` are pinned empty by every
@@ -151,33 +159,57 @@ fn calls() -> Vec<(&'static str, Value)> {
             "kmp_write_memory:supersedes",
             json!({
                 "about": ABOUT,
-                "intent": "record_delta",
                 "actor": "parity-test",
                 "source_kind": "agent",
                 "observed_at": "2026-04-12T17:00:00Z",
                 "occurred_at": "2026-04-12T17:00:00Z",
-                "scope": {"process": "parity"},
-                "current": {
-                    "kind": "semantic_delta",
-                    "summary": "Rachel is moving to Boulder, not Denver.",
-                    "evidence": "She corrected the city in the same conversation."
+                "read_context": {
+                    "inspected_refs": [CLAIM]
                 },
-                "semantic_delta": {
-                    "from": "Rachel said she was moving to Denver.",
-                    "to": "Rachel is moving to Boulder.",
-                    "why": "The later statement corrects the earlier one.",
-                    "evidence": "Both statements are hers, minutes apart."
+                "labels": {
+                    "agentic_process": ["parity"]
                 },
-                "connect_to": [{
-                    "ref": CLAIM,
-                    "rel": "supersedes",
-                    "class": "evidential",
-                    "confidence": "high",
-                    "why": "The corrected city replaces the first one while the \
+                "memories": [
+                    {
+                        "id": "current",
+                        "kind": "semantic_delta",
+                        "summary": "Rachel is moving to Boulder, not Denver.",
+                        "evidence": "She corrected the city in the same conversation.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "supersedes",
+                                "class": "evidential",
+                                "confidence": "high",
+                                "why": "The corrected city replaces the first one while the \
             first stays readable as history.",
-                    "evidence": "She named Boulder after naming Denver."
-                }],
-                "read_context": {"inspected_refs": [CLAIM]}
+                                "evidence": "She named Boulder after naming Denver."
+                            },
+                            {
+                                "ref": "@semantic_delta",
+                                "rel": "updates_state",
+                                "class": "causal",
+                                "why": "The later statement corrects the earlier one.",
+                                "evidence": "Both statements are hers, minutes apart."
+                            }
+                        ]
+                    },
+                    {
+                        "id": "semantic_delta",
+                        "kind": "semantic_delta",
+                        "summary": format!("From: {}\nTo: {}\nWhy: {}", "Rachel said she was moving to Denver.", "Rachel is moving to Boulder.", "The later statement corrects the earlier one."),
+                        "evidence": "Both statements are hers, minutes apart.",
+                        "connect_to": [
+                            {
+                                "ref": CLAIM,
+                                "rel": "semantic_delta_from",
+                                "class": "causal",
+                                "why": "The later statement corrects the earlier one.",
+                                "evidence": "Both statements are hers, minutes apart."
+                            }
+                        ]
+                    }
+                ]
             }),
         ),
         ("kmp_wake", json!({"about": ABOUT})),
@@ -190,7 +222,7 @@ fn calls() -> Vec<(&'static str, Value)> {
             json!({
                 "about": ABOUT,
                 "question": "Where is Rachel moving?",
-                "budget": {"detail": "compact", "max_bytes": 6000}
+                "budget": {"detail": "compact", "max_bytes": 6500}
             }),
         ),
         (

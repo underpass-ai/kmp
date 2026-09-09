@@ -1562,29 +1562,39 @@ async fn writer_relation_why_survives_paraphrased_recall_and_audit() {
     let write_arguments = |dry_run| {
         json!({
             "about": "project:relation-why-conformance",
-            "intent": "record_decision",
             "actor": "agent:relation-why-conformance",
             "observed_at": "2026-08-18T09:05:00Z",
-            "scope": {"process": "work:relation-why"},
-            "current": {
-                "ref": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
-                "kind": "decision",
-                "summary": "Use SQLite WAL instead of a single-writer layout for shared embedded storage.",
-                "evidence": "The architecture comparison selected SQLite WAL after exercising two independent processes."
-            },
-            "connect_to": [{
-                "ref": "project:relation-why-conformance:constraint:share-embedded-store",
-                "rel": "chosen_because",
-                "class": "motivational",
-                "why": WHY,
-                "evidence": RELATION_EVIDENCE,
-                "confidence": "high"
-            }],
             "read_context": {
                 "inspected_refs": ["project:relation-why-conformance:constraint:share-embedded-store"]
             },
             "idempotency_key": "write:relation-why-sqlite-decision",
-            "options": {"dry_run": dry_run, "strict": true, "sequence": 2}
+            "options": {
+                "dry_run": dry_run,
+                "strict": true,
+                "sequence": 2
+            },
+            "labels": {
+                "agentic_process": ["work:relation-why"]
+            },
+            "memories": [
+                {
+                    "id": "current",
+                    "ref": "project:relation-why-conformance:decision:sqlite-wal-shared-store",
+                    "kind": "decision",
+                    "summary": "Use SQLite WAL instead of a single-writer layout for shared embedded storage.",
+                    "evidence": "The architecture comparison selected SQLite WAL after exercising two independent processes.",
+                    "connect_to": [
+                        {
+                            "ref": "project:relation-why-conformance:constraint:share-embedded-store",
+                            "rel": "chosen_because",
+                            "class": "motivational",
+                            "why": WHY,
+                            "evidence": RELATION_EVIDENCE,
+                            "confidence": "high"
+                        }
+                    ]
+                }
+            ]
         })
     };
 
@@ -1690,17 +1700,23 @@ async fn generated_writer_refs_keep_repeated_and_long_prefix_memories_distinct()
     let record = |summary: &str, evidence: &str, occurred_at: &str| {
         json!({
             "about": "incident:writer-ref-collision",
-            "intent": "record_observation",
             "actor": "agent:patrol",
             "observed_at": "2026-08-18T18:00:00Z",
             "occurred_at": occurred_at,
-            "scope": {"process": "incident:writer-ref-collision:patrol"},
-            "current": {
-                "kind": "observation",
-                "summary": summary,
-                "evidence": evidence
+            "options": {
+                "strict": false
             },
-            "options": {"strict": false}
+            "labels": {
+                "agentic_process": ["incident:writer-ref-collision:patrol"]
+            },
+            "memories": [
+                {
+                    "id": "current",
+                    "kind": "observation",
+                    "summary": summary,
+                    "evidence": evidence
+                }
+            ]
         })
     };
 
@@ -1762,16 +1778,22 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
     let record = |about: &str, summary: &str, evidence: &str| {
         json!({
             "about": about,
-            "intent": "record_observation",
             "actor": "agent:boundary-test",
             "observed_at": "2026-08-18T18:00:00Z",
-            "scope": {"process": format!("{about}:patrol")},
-            "current": {
-                "kind": "observation",
-                "summary": summary,
-                "evidence": evidence
+            "options": {
+                "strict": false
             },
-            "options": {"strict": false}
+            "labels": {
+                "agentic_process": [format!("{about}:patrol")]
+            },
+            "memories": [
+                {
+                    "id": "current",
+                    "kind": "observation",
+                    "summary": summary,
+                    "evidence": evidence
+                }
+            ]
         })
     };
 
@@ -1852,24 +1874,20 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
         "incident:alpha:entry:x\nincident:beta:entry:y",
     ];
     let mut request_id = 10;
-    for field in ["current", "semantic_delta"] {
+    for index in [0, 1] {
         for forbidden_ref in forbidden_refs {
             let mut attack = record(
                 "incident:alpha",
                 "texto plantado desde alpha que no deberia vivir en beta",
                 "escritura hecha desde el about alpha",
             );
-            if field == "semantic_delta" {
-                attack["intent"] = json!("record_delta");
-                attack["semantic_delta"] = json!({
-                    "ref": forbidden_ref,
-                    "from": "estado anterior del muelle",
-                    "to": "estado plantado desde alpha",
-                    "why": "vector de regresion del limite entre abouts",
-                    "evidence": "la llamada declara incident:alpha"
-                });
+            if index == 1 {
+                attack["memories"].as_array_mut().expect("packet records").push(json!({
+                    "id":"change", "ref":forbidden_ref, "kind":"semantic_delta",
+                    "summary":"The prior state was replaced.", "evidence":"The regression attempts a foreign address."
+                }));
             } else {
-                attack["current"]["ref"] = json!(forbidden_ref);
+                attack["memories"][0]["ref"] = json!(forbidden_ref);
             }
             let refused = call(&server, request_id, "kmp_write_memory", attack).await;
             request_id += 1;
@@ -1877,7 +1895,7 @@ async fn writer_supplied_refs_cannot_escape_their_about_or_replace_another_root(
             assert!(
                 refused["error"]["message"]
                     .as_str()
-                    .is_some_and(|message| message.contains(&format!("{field}.ref"))),
+                    .is_some_and(|message| message.contains(&format!("memories[{index}].ref"))),
                 "the refusal must name the supplied field: {refused}"
             );
         }
@@ -1914,16 +1932,22 @@ async fn raw_ingest_refs_cannot_escape_their_about_or_replace_another_root() {
     let record = |about: &str, summary: &str| {
         json!({
             "about": about,
-            "intent": "record_observation",
             "actor": "agent:ingest-boundary-test",
             "observed_at": "2026-08-28T07:00:00Z",
-            "scope": {"process": format!("{about}:patrol")},
-            "current": {
-                "kind": "observation",
-                "summary": summary,
-                "evidence": format!("seed evidence for {about}")
+            "options": {
+                "strict": false
             },
-            "options": {"strict": false}
+            "labels": {
+                "agentic_process": [format!("{about}:patrol")]
+            },
+            "memories": [
+                {
+                    "id": "current",
+                    "kind": "observation",
+                    "summary": summary,
+                    "evidence": format!("seed evidence for {about}")
+                }
+            ]
         })
     };
 
@@ -2829,7 +2853,7 @@ async fn an_english_summary_is_linted_at_ingest_and_searched_at_ask() {
 
 /// The writer asks for the rendering and stores it beside the text: a strict
 /// `kmp_write_memory` of a Spanish decision refuses to proceed without
-/// `current.summary_en`, accepts a faithful one, and the memory is then
+/// `summary_en`, accepts a faithful one, and the memory is then
 /// cited by an English question through it, the Spanish text byte for byte.
 #[tokio::test]
 async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_through_it() {
@@ -2838,7 +2862,7 @@ async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_
     let data_dir = tempfile::tempdir().expect("temp data dir");
     let server = KernelMcpServer::embedded(data_dir.path()).expect("embedded server opens");
     let write = |summary_en: Option<&str>| {
-        let mut current = json!({
+        let mut current = json!({"id":"current",
             "kind": "decision",
             "summary": SPANISH,
             "evidence": "Registro de la decisión en la reunión de arquitectura."
@@ -2848,11 +2872,12 @@ async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_
         }
         json!({
             "about": "project:escritor",
-            "intent": "record_decision",
             "actor": "agent:tests",
             "observed_at": "2026-05-06T10:00:00Z",
-            "scope": {"process": "project:escritor:proceso"},
-            "current": current
+            "labels": {
+                "agentic_process": ["project:escritor:proceso"]
+            },
+            "memories": [current]
         })
     };
 
@@ -2863,7 +2888,7 @@ async fn a_strict_write_asks_for_the_english_summary_and_ask_reaches_the_memory_
     let refused: Value = serde_json::from_str(&refused).expect("response is JSON");
     let refusal = refused.to_string();
     assert!(
-        refusal.contains("requires current.summary_en") && refusal.contains("leans to spanish"),
+        refusal.contains("requires summary_en") && refusal.contains("leans to spanish"),
         "a strict write of a Spanish memory without a rendering must say what it needs: {refused}"
     );
 

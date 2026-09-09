@@ -8,9 +8,9 @@ def check(saved, client, authored):
         source = authored[name]
         read = saved[name + '_read']
         assert read['object']['ref'] == refs[name]
-        assert read['object']['kind'] == source['current']['kind']
-        assert read['object']['text'] == source['current']['summary']
-        assert any(e['text'] == source['current']['evidence'] for e in read['evidence'])
+        assert read['object']['kind'] == source['memories'][0]['kind']
+        assert read['object']['text'] == source['memories'][0]['summary']
+        assert any(e['text'] == source['memories'][0]['evidence'] for e in read['evidence'])
 
     boundary = saved['boundary']['entries']
     assert {e['ref'] for e in boundary} == {refs['constraint']}
@@ -40,7 +40,7 @@ def check(saved, client, authored):
         (refs['test'], refs['decision'], 'uses_background'),
         (refs['decision'], refs['constraint'], 'chosen_because')]
     for name, edge in zip(('result', 'test', 'decision'), edges):
-        expected = authored[name]['connect_to'][0]
+        expected = authored[name]['memories'][0]['connect_to'][0]
         for field in ('why', 'evidence', 'class'):
             assert edge[field] == expected[field]
     for prior, current in zip(('first', 'second'), ('second', 'third')):

@@ -28,8 +28,8 @@ def check(saved, client, authored):
         read = saved[name + '_read']
         assert saved[name]['accepted']
         assert read['object']['ref'] == refs[name] and read['object']['kind'] == kind
-        assert read['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in read['evidence'])
+        assert read['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in read['evidence'])
         coords = [link['coordinate'] for link in read['links']['incoming'] if 'coordinate' in link]
         assert coords
         for coord in coords:
@@ -65,8 +65,8 @@ def check(saved, client, authored):
     assert entries('after_refusal') == set(refs.values())
     edge = next(edge for edge in saved['signature_path']['trace'] if edge['rel'] == 'supports')
     assert (edge['from'], edge['to']) == (refs['signature'], refs['permit'])
-    assert edge['why'] == authored['signature']['connect_to'][0]['why']
-    assert edge['evidence'] == authored['signature']['connect_to'][0]['evidence']
+    assert edge['why'] == authored['signature']['memories'][0]['connect_to'][0]['why']
+    assert edge['evidence'] == authored['signature']['memories'][0]['connect_to'][0]['evidence']
     assert saved['occurred_after_view']['entries'] == saved['occurred_start']['entries']
     assert saved['permit_after_view']['object'] == saved['permit_read']['object']
     stages = [('overview', 'occurred', 'atlas', 'day1', 'day5'),

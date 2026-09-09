@@ -277,15 +277,31 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     .await;
 
     let write_arguments = json!({
-        "about":"project:parity-write",
-        "intent":"record_observation",
-        "actor":"parity-test",
-        "observed_at":"2026-08-25T00:00:00Z",
-        "scope":{"process":"parity"},
-        "current":{"kind":"observation","summary":"writer parity","evidence":"deterministic fixture"},
-        "connect_to":[{"ref":"project:parity-write","rel":"contains","class":"structural"}],
-        "idempotency_key":"parity-write-dry-run",
-        "options":{"dry_run":true}
+        "about": "project:parity-write",
+        "actor": "parity-test",
+        "observed_at": "2026-08-25T00:00:00Z",
+        "idempotency_key": "parity-write-dry-run",
+        "options": {
+            "dry_run": true
+        },
+        "labels": {
+            "agentic_process": ["parity"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "observation",
+                "summary": "writer parity",
+                "evidence": "deterministic fixture",
+                "connect_to": [
+                    {
+                        "ref": "project:parity-write",
+                        "rel": "contains",
+                        "class": "structural"
+                    }
+                ]
+            }
+        ]
     });
     let stdio_write = call_tool(&stdio, 20, "kmp_write_memory", write_arguments.clone()).await;
     let http_write = call_http_tool(&http, 20, "kmp_write_memory", write_arguments.clone()).await;
@@ -299,18 +315,41 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
     );
 
     let mut batch = json!({
-        "about":"project:parity-packet", "actor":"parity-test",
-        "observed_at":"2026-08-25T00:00:00Z", "labels":{"component":["journal"]},
-        "idempotency_key":"parity-semantic-packet", "options":{"dry_run":true},
-        "memories":[
-            {"id":"decision", "kind":"decision", "summary":"The journal uses local storage.",
-             "evidence":"The design chooses local storage because writes must work offline.",
-             "connect_to":[{"ref":"@constraint", "rel":"chosen_because", "class":"causal",
-                "why":"Local storage satisfies the offline write requirement.",
-                "evidence":"The design cites offline writes as the reason for local storage."}]},
-            {"id":"constraint", "kind":"constraint", "summary":"Journal writes must work offline.",
-             "evidence":"The requirement explicitly prohibits a network dependency for journal writes.",
-             "labels":{"requirement":["offline","local"]}}
+        "about": "project:parity-packet",
+        "actor": "parity-test",
+        "observed_at": "2026-08-25T00:00:00Z",
+        "labels": {
+            "component": ["journal"]
+        },
+        "idempotency_key": "parity-semantic-packet",
+        "options": {
+            "dry_run": true
+        },
+        "memories": [
+            {
+                "id": "decision",
+                "kind": "decision",
+                "summary": "The journal uses local storage.",
+                "evidence": "The design chooses local storage because writes must work offline.",
+                "connect_to": [
+                    {
+                        "ref": "@constraint",
+                        "rel": "chosen_because",
+                        "class": "causal",
+                        "why": "Local storage satisfies the offline write requirement.",
+                        "evidence": "The design cites offline writes as the reason for local storage."
+                    }
+                ]
+            },
+            {
+                "id": "constraint",
+                "kind": "constraint",
+                "summary": "Journal writes must work offline.",
+                "evidence": "The requirement explicitly prohibits a network dependency for journal writes.",
+                "labels": {
+                    "requirement": ["offline", "local"]
+                }
+            }
         ]
     });
     let preview = call_tool(&stdio, 21, "kmp_write_memory", batch.clone()).await;

@@ -561,26 +561,28 @@ fn write_memory_request(
     proposal: &RelationProposal,
     read_context: &ReadContextPlan,
 ) -> Value {
-    let mut scope = Map::new();
+    let mut labels = Map::new();
     if let Some(task_scope) = input.task_scope.as_deref() {
-        scope.insert("task".to_string(), json!(task_scope));
+        labels.insert("task".to_string(), json!([task_scope]));
     }
-    scope.insert("process".to_string(), json!(input.process_scope));
+    labels.insert("agentic_process".to_string(), json!([input.process_scope]));
 
     json!({
         "about": input.about,
-        "intent": "record_turn",
         "actor": DEFAULT_WRITER_ACTOR,
         "observed_at": input.observed_at,
         "source_kind": DEFAULT_SOURCE_KIND,
-        "scope": Value::Object(scope),
-        "current": {
-            "ref": input.entry_ref,
-            "kind": "turn",
-            "summary": compact_memory_text(&input.text, MAX_CURRENT_SUMMARY_CHARS),
-            "evidence": compact_memory_text(&input.text, MAX_CURRENT_EVIDENCE_CHARS)
-        },
-        "connect_to": proposal.connect_to,
+        "labels": Value::Object(labels),
+        "memories": [
+            {
+                "id": "current",
+                "ref": input.entry_ref,
+                "kind": "turn",
+                "summary": compact_memory_text(&input.text, MAX_CURRENT_SUMMARY_CHARS),
+                "evidence": compact_memory_text(&input.text, MAX_CURRENT_EVIDENCE_CHARS),
+                "connect_to": proposal.connect_to
+            }
+        ],
         "read_context": read_context_json(read_context),
         "idempotency_key": format!("longmemeval-smart-writer:{}:{}", input.entry_ref, input.target_ref),
         "options": {

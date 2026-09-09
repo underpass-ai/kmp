@@ -39,6 +39,10 @@
         }
       ]
     },
+    "local_refs": {
+      "current": "string",
+      "semantic_delta": "string"
+    },
     "next_suggested_reads": [
       {
         "from": "string",

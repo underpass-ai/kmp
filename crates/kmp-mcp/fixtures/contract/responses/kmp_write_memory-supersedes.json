@@ -1,7 +1,7 @@
 {
   "content": [
     {
-      "text": "Prepared 2 entries, 3 relations, and 3 evidence items for question:parity.",
+      "text": "Prepared 2 entries, 3 relations, and 5 evidence items for question:parity.",
       "type": "text"
     }
   ],
@@ -11,23 +11,23 @@
     "diagnostics": [],
     "dry_run": false,
     "generated_refs": [
-      "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
-      "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+      "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+      "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
     ],
     "ingest_result": {
       "memory": {
         "about": "question:parity",
         "accepted": {
           "entries": 2,
-          "evidence": 3,
+          "evidence": 5,
           "relations": 3
         },
         "created_dimensions": [],
-        "memory_id": "memory:write:756d82ab906b9c4d",
+        "memory_id": "memory:write:9f90874e51e083ef",
         "read_after_write_ready": true,
         "resembling_labels": []
       },
-      "summary": "Ingested 2 entries, 3 relations, and 3 evidence items for question:parity.",
+      "summary": "Ingested 2 entries, 3 relations, and 5 evidence items for question:parity.",
       "warnings": []
     },
     "labels": {
@@ -40,9 +40,18 @@
         }
       ]
     },
+    "local_refs": {
+      "current": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+      "semantic_delta": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
+    },
     "next_suggested_reads": [
       {
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+        "to": "question:parity:claim:denver",
+        "tool": "kmp_trace"
+      },
+      {
+        "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "to": "question:parity:claim:denver",
         "tool": "kmp_trace"
       }
@@ -53,7 +62,7 @@
         "confidence": "high",
         "crosses_about": false,
         "fallback": false,
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "prior_context_observed": true,
         "prior_context_sources": [
           "kmp_inspect"
@@ -71,7 +80,7 @@
         "confidence": "high",
         "crosses_about": false,
         "fallback": false,
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "prior_context_observed": true,
         "prior_context_sources": [
           "current_request"
@@ -82,14 +91,14 @@
         "rel": "updates_state",
         "requires_prior_context": false,
         "target_present": true,
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe"
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631"
       },
       {
         "class": "causal",
         "confidence": "high",
         "crosses_about": false,
         "fallback": false,
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "prior_context_observed": true,
         "prior_context_sources": [
           "kmp_inspect"
@@ -124,6 +133,6 @@
       "updates_state",
       "semantic_delta_from"
     ],
-    "summary": "Prepared 2 entries, 3 relations, and 3 evidence items for question:parity."
+    "summary": "Prepared 2 entries, 3 relations, and 5 evidence items for question:parity."
   }
 }

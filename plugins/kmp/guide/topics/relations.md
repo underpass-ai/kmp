@@ -82,7 +82,7 @@ something observed.
 
 Before committing a rich relation:
 
-- omit `current.ref` and `semantic_delta.ref` for new memory. Supply either
+- omit `memories[].ref` for new memory. Supply it
   only to update an existing entry inside the same `about`; it must begin with
   that exact about plus `:`, so never reuse a foreign ref surfaced by a
   cross-about read;

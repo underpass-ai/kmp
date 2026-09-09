@@ -115,16 +115,24 @@ fn record_summary_request() -> Value {
         "jsonrpc": "2.0",
         "id": 7,
         "method": "tools/call",
-        "params": {"name": "kmp_write_memory", "arguments": {
-            "about": "project:kmp",
-            "intent": "record_summary",
-            "actor": "Codex",
-            "observed_at": "2026-09-03T22:14:35Z",
-            "scope": {"process": "kmp-summary-backfill-20260904"},
-            "current": {"ref": REFERENCE, "summary_en": SUMMARY},
-            "idempotency_key": "kmp-summary-backfill-20260904:01",
-            "options": {"strict": true}
-        }}
+        "params": {
+            "name": "kmp_write_memory",
+            "arguments": {
+                "about": "project:kmp",
+                "actor": "Codex",
+                "observed_at": "2026-09-03T22:14:35Z",
+                "search_summaries": [
+                    {
+                        "ref": REFERENCE,
+                        "summary_en": SUMMARY
+                    }
+                ],
+                "idempotency_key": "kmp-summary-backfill-20260904:01",
+                "options": {
+                    "strict": true
+                }
+            }
+        }
     })
 }
 

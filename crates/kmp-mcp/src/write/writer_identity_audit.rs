@@ -221,10 +221,7 @@ mod tests {
             "incident:mobile-login:entry:x\nincident:other:entry:y",
         ];
 
-        for (object, path) in [
-            ("current", "current.ref"),
-            ("semantic_delta", "semantic_delta.ref"),
-        ] {
+        for (object, path) in [("current", "ref"), ("semantic_delta", "semantic_delta.ref")] {
             for unsafe_ref in unsafe_refs {
                 let mut request = sample_write_request();
                 request[object]["ref"] = json!(unsafe_ref);

@@ -127,7 +127,7 @@
           }
         ],
         "kind": "decision",
-        "ref_id": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "ref_id": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "text": "Pin the answered surface, not only the advertised one."
       },
       {
@@ -142,7 +142,7 @@
           }
         ],
         "kind": "semantic_delta",
-        "ref_id": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "ref_id": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "text": "From: Rachel said she was moving to Denver.\nTo: Rachel is moving to Boulder.\nWhy: The later statement corrects the earlier one."
       },
       {
@@ -157,7 +157,7 @@
           }
         ],
         "kind": "semantic_delta",
-        "ref_id": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "ref_id": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "text": "Rachel is moving to Boulder, not Denver."
       },
       {
@@ -206,13 +206,13 @@
         "name": "relation_count",
         "scope": "selected_subgraph",
         "unit": "relations",
-        "value": 14.0
+        "value": 17.0
       },
       {
         "name": "causal_density",
         "scope": "selected_subgraph",
         "unit": "ratio",
-        "value": 0.14285714285714285
+        "value": 0.1176470588235294
       }
     ],
     "missing": [],
@@ -231,16 +231,25 @@
         "class": "evidential",
         "confidence": "medium",
         "evidence": "The claim is the store's only prior entry.",
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "rel": "uses_background",
         "to": "question:parity:claim:denver",
         "why": "The decision was taken while reading this claim back."
       },
       {
+        "class": "causal",
+        "confidence": "high",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "rel": "semantic_delta_from",
+        "to": "question:parity:claim:denver",
+        "why": "The later statement corrects the earlier one."
+      },
+      {
         "class": "evidential",
         "confidence": "high",
         "evidence": "She named Boulder after naming Denver.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "rel": "supersedes",
         "to": "question:parity:claim:denver",
         "why": "The corrected city replaces the first one while the first stays readable as history."
@@ -249,18 +258,9 @@
         "class": "causal",
         "confidence": "high",
         "evidence": "Both statements are hers, minutes apart.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
-        "rel": "semantic_delta_from",
-        "to": "question:parity:claim:denver",
-        "why": "The later statement corrects the earlier one."
-      },
-      {
-        "class": "causal",
-        "confidence": "high",
-        "evidence": "Both statements are hers, minutes apart.",
-        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "from": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "rel": "updates_state",
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "why": "The later statement corrects the earlier one."
       },
       {
@@ -276,16 +276,16 @@
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "A refactor that preserves schemas can still change answers.",
-        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:current",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:current",
         "rel": "supports",
-        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "The claim is the store's only prior entry.",
-        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
         "rel": "supports",
         "to": "question:parity:claim:denver",
         "why": "Evidence supports this memory entry."
@@ -294,43 +294,52 @@
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "The claim is the store's only prior entry.",
-        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b:relation:1",
+        "from": "evidence:question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151:relation:1",
         "rel": "supports",
-        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "to": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "Both statements are hers, minutes apart.",
-        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+        "from": "evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:current",
         "rel": "supports",
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe",
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "Both statements are hers, minutes apart.",
-        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-b5075647d72db1fe:semantic_delta",
+        "from": "evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
         "rel": "supports",
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "to": "question:parity:claim:denver",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "evidence:question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631:relation:1",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
         "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "She corrected the city in the same conversation.",
-        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:current",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:current",
         "rel": "supports",
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "why": "Evidence supports this memory entry."
       },
       {
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "She named Boulder after naming Denver.",
-        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
         "rel": "supports",
         "to": "question:parity:claim:denver",
         "why": "Evidence supports this memory entry."
@@ -339,9 +348,27 @@
         "class": "evidential",
         "confidence": "unknown",
         "evidence": "She named Boulder after naming Denver.",
-        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d:relation:1",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:1",
         "rel": "supports",
-        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-cb7be2e28485a92d",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:from-rachel-said-she-was-moving-to-denver-to-rachel-is-moving-t-7ddecc80da1dc631",
+        "why": "Evidence supports this memory entry."
+      },
+      {
+        "class": "evidential",
+        "confidence": "unknown",
+        "evidence": "Both statements are hers, minutes apart.",
+        "from": "evidence:question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3:relation:2",
+        "rel": "supports",
+        "to": "question:parity:entry:semantic_delta:rachel-is-moving-to-boulder-not-denver-c28ad40f32808af3",
         "why": "Evidence supports this memory entry."
       },
       {

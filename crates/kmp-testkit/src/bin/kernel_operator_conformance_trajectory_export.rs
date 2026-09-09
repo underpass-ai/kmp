@@ -1132,9 +1132,8 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "temporal_refs": [stale_decision_ref]
                 },
                 "draft_write": {
-                    "intent": "record_decision",
                     "prepared_arguments": write_memory_arguments(true),
-                    "current": {
+                    "memory": {
                         "kind": "decision",
                         "summary": "Use token refresh retry instead of widening timeout.",
                         "evidence": "Auth logs show 401 immediately after refresh."
@@ -1188,9 +1187,8 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "inspected_refs": [prior_observation_ref]
                 },
                 "draft_write": {
-                    "intent": "record_observation",
                     "prepared_arguments": write_memory_rich_without_delta_arguments(),
-                    "current": {
+                    "memory": {
                         "kind": "observation",
                         "summary": "Token refresh race confirmed by auth log ordering.",
                         "evidence": "Refresh success is followed by 401 on the next login attempt."
@@ -1247,9 +1245,8 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "candidate_refs": [final_decision_ref],
                 "read_context": { "temporal_refs": [final_decision_ref] },
                 "draft_write": {
-                    "intent": "record_turn",
                     "prepared_arguments": write_memory_anemic_arguments(),
-                    "current": {
+                    "memory": {
                         "kind": "turn",
                         "summary": "The operator recorded a follow-up status check.",
                         "evidence": "The follow-up only continues the process timeline."
@@ -1301,9 +1298,8 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "candidate_refs": [final_decision_ref],
                 "read_context": { "temporal_refs": [final_decision_ref] },
                 "draft_write": {
-                    "intent": "record_turn",
                     "prepared_arguments": write_memory_anemic_without_delta_arguments(),
-                    "current": {
+                    "memory": {
                         "kind": "turn",
                         "summary": "Operator added a short follow-up note.",
                         "evidence": "The note only follows the prior decision in process order."
@@ -1360,8 +1356,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                 "candidate_refs": [prior_observation_ref],
                 "read_context": { "inspected_refs": [] },
                 "draft_write": {
-                    "intent": "record_decision",
-                    "current": {
+                    "memory": {
                         "kind": "decision",
                         "summary": "Use token refresh retry.",
                         "evidence": "The draft claims evidence but has not inspected the target."
@@ -1417,8 +1412,7 @@ fn conformance_trajectories(run_id: &str) -> Vec<TrajectoryItem> {
                     "temporal_refs": [prior_observation_ref, stale_decision_ref]
                 },
                 "draft_write": {
-                    "intent": "record_decision",
-                    "current": {
+                    "memory": {
                         "kind": "decision",
                         "summary": "Choose a remediation path.",
                         "evidence": "Both candidates are plausible but neither is proven decisive."
@@ -3400,7 +3394,6 @@ fn push_training_corpus_variants(
                         "inspected_refs": [prior_observation_ref]
                     },
                     "draft_write": {
-                        "intent": "record_decision",
                         "proposed_relation": draft_relation
                     },
                     "remaining_budget": budget(1),
@@ -4180,34 +4173,8 @@ fn write_memory_arguments(rich: bool) -> Value {
     };
     json!({
         "about": "incident:mobile-login",
-        "intent": if rich { "record_decision" } else { "record_turn" },
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:05:00Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": if rich { "decision" } else { "turn" },
-            "summary": if rich {
-                "Use token refresh retry instead of widening timeout."
-            } else {
-                "Record the follow-up status check after the refresh retry decision."
-            },
-            "evidence": if rich {
-                "Auth logs show 401 immediately after refresh."
-            } else {
-                "The follow-up only continues the process timeline."
-            }
-        },
-        "semantic_delta": {
-            "from": "The team suspected a network timeout.",
-            "to": "The evidence points to a token refresh race.",
-            "why": "The failure appears immediately after refresh rather than after a long timeout.",
-            "evidence": "401 appears after refresh success in auth logs."
-        },
-        "connect_to": [relation],
         "read_context": if rich {
             json!({
                 "inspected_refs": ["incident:mobile-login:observation:401-refresh-race"],
@@ -4228,7 +4195,53 @@ fn write_memory_arguments(rich: bool) -> Value {
             "strict": true,
             "sequence": if rich { 1 } else { 2 }
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": if rich { "decision" } else { "turn" },
+                "summary": if rich {
+                "Use token refresh retry instead of widening timeout."
+            } else {
+                "Record the follow-up status check after the refresh retry decision."
+            },
+                "evidence": if rich {
+                "Auth logs show 401 immediately after refresh."
+            } else {
+                "The follow-up only continues the process timeline."
+            },
+                "connect_to": [
+                    relation,
+                    {
+                        "ref": "@semantic_delta",
+                        "rel": "updates_state",
+                        "class": "causal",
+                        "why": "The failure appears immediately after refresh rather than after a long timeout.",
+                        "evidence": "401 appears after refresh success in auth logs."
+                    }
+                ]
+            },
+            {
+                "id": "semantic_delta",
+                "kind": "semantic_delta",
+                "summary": format!("From: {}\nTo: {}\nWhy: {}", "The team suspected a network timeout.", "The evidence points to a token refresh race.", "The failure appears immediately after refresh rather than after a long timeout."),
+                "evidence": "401 appears after refresh success in auth logs.",
+                "connect_to": [
+                    {
+                        "ref": relation["ref"].clone(),
+                        "rel": "semantic_delta_from",
+                        "class": "causal",
+                        "why": "The failure appears immediately after refresh rather than after a long timeout.",
+                        "evidence": "401 appears after refresh success in auth logs."
+                    }
+                ]
+            }
+        ]
     })
 }
 
@@ -4239,29 +4252,8 @@ fn write_memory_anemic_arguments() -> Value {
 fn write_memory_rich_without_delta_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_observation",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:06:00Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "observation",
-            "summary": "Token refresh race confirmed by auth log ordering.",
-            "evidence": "Refresh success is followed by 401 on the next login attempt."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:observation:401-refresh-race",
-                "rel": "supports",
-                "class": "evidential",
-                "why": "The new observation confirms the previously inspected refresh-race evidence.",
-                "evidence": "Both observations describe refresh success immediately followed by 401.",
-                "confidence": "high"
-            }
-        ],
         "read_context": {
             "inspected_refs": ["incident:mobile-login:observation:401-refresh-race"]
         },
@@ -4271,36 +4263,38 @@ fn write_memory_rich_without_delta_arguments() -> Value {
             "strict": true,
             "sequence": 3
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "observation",
+                "summary": "Token refresh race confirmed by auth log ordering.",
+                "evidence": "Refresh success is followed by 401 on the next login attempt.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:observation:401-refresh-race",
+                        "rel": "supports",
+                        "class": "evidential",
+                        "why": "The new observation confirms the previously inspected refresh-race evidence.",
+                        "evidence": "Both observations describe refresh success immediately followed by 401.",
+                        "confidence": "high"
+                    }
+                ]
+            }
+        ]
     })
 }
 
 fn write_memory_anemic_without_delta_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_turn",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:07:00Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "turn",
-            "summary": "Operator added a short follow-up note.",
-            "evidence": "The note only follows the prior decision in process order."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:decision:refresh-retry",
-                "rel": "follows",
-                "class": "procedural",
-                "why": "The note follows the prior decision in process order.",
-                "evidence": "No stronger causal or evidential relation was justified.",
-                "confidence": "medium"
-            }
-        ],
         "read_context": {
             "temporal_refs": ["incident:mobile-login:decision:refresh-retry"]
         },
@@ -4310,42 +4304,38 @@ fn write_memory_anemic_without_delta_arguments() -> Value {
             "strict": true,
             "sequence": 4
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "turn",
+                "summary": "Operator added a short follow-up note.",
+                "evidence": "The note only follows the prior decision in process order.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:decision:refresh-retry",
+                        "rel": "follows",
+                        "class": "procedural",
+                        "why": "The note follows the prior decision in process order.",
+                        "evidence": "No stronger causal or evidential relation was justified.",
+                        "confidence": "medium"
+                    }
+                ]
+            }
+        ]
     })
 }
 
 fn write_memory_updates_state_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_delta",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:08:00Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "semantic_delta",
-            "summary": "Token refresh policy now prefers retry over timeout widening.",
-            "evidence": "The retry passed while timeout widening was superseded."
-        },
-        "semantic_delta": {
-            "from": "Timeout widening was still considered a remediation path.",
-            "to": "Token refresh retry is the selected remediation path.",
-            "why": "The later evidence confirms refresh ordering and removes timeout widening.",
-            "evidence": "Refresh retry passed and the timeout workaround was removed."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:state:token-refresh-policy",
-                "rel": "updates_state",
-                "class": "causal",
-                "why": "The new delta updates the token refresh policy state.",
-                "evidence": "The selected remediation changes the policy from timeout widening to refresh retry.",
-                "confidence": "high"
-            }
-        ],
         "read_context": {
             "inspected_refs": ["incident:mobile-login:state:token-refresh-policy"],
             "temporal_refs": ["incident:mobile-login:decision:refresh-retry"]
@@ -4356,36 +4346,60 @@ fn write_memory_updates_state_arguments() -> Value {
             "strict": true,
             "sequence": 5
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "semantic_delta",
+                "summary": "Token refresh policy now prefers retry over timeout widening.",
+                "evidence": "The retry passed while timeout widening was superseded.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:state:token-refresh-policy",
+                        "rel": "updates_state",
+                        "class": "causal",
+                        "why": "The new delta updates the token refresh policy state.",
+                        "evidence": "The selected remediation changes the policy from timeout widening to refresh retry.",
+                        "confidence": "high"
+                    },
+                    {
+                        "ref": "@semantic_delta",
+                        "rel": "updates_state",
+                        "class": "causal",
+                        "why": "The later evidence confirms refresh ordering and removes timeout widening.",
+                        "evidence": "Refresh retry passed and the timeout workaround was removed."
+                    }
+                ]
+            },
+            {
+                "id": "semantic_delta",
+                "kind": "semantic_delta",
+                "summary": format!("From: {}\nTo: {}\nWhy: {}", "Timeout widening was still considered a remediation path.", "Token refresh retry is the selected remediation path.", "The later evidence confirms refresh ordering and removes timeout widening."),
+                "evidence": "Refresh retry passed and the timeout workaround was removed.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:state:token-refresh-policy",
+                        "rel": "semantic_delta_from",
+                        "class": "causal",
+                        "why": "The later evidence confirms refresh ordering and removes timeout widening.",
+                        "evidence": "Refresh retry passed and the timeout workaround was removed."
+                    }
+                ]
+            }
+        ]
     })
 }
 
 fn write_memory_contradicts_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_observation",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:08:30Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "observation",
-            "summary": "Auth log order contradicts the network-timeout hypothesis.",
-            "evidence": "The 401 appears immediately after refresh success, not after a timeout window."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:hypothesis:network-timeout",
-                "rel": "contradicts",
-                "class": "evidential",
-                "why": "The observed timing conflicts with the timeout hypothesis.",
-                "evidence": "401 occurs immediately after refresh success.",
-                "confidence": "high"
-            }
-        ],
         "read_context": {
             "inspected_refs": ["incident:mobile-login:hypothesis:network-timeout"],
             "temporal_refs": ["incident:mobile-login:observation:401-refresh-race"]
@@ -4396,36 +4410,38 @@ fn write_memory_contradicts_arguments() -> Value {
             "strict": true,
             "sequence": 6
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "observation",
+                "summary": "Auth log order contradicts the network-timeout hypothesis.",
+                "evidence": "The 401 appears immediately after refresh success, not after a timeout window.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:hypothesis:network-timeout",
+                        "rel": "contradicts",
+                        "class": "evidential",
+                        "why": "The observed timing conflicts with the timeout hypothesis.",
+                        "evidence": "401 occurs immediately after refresh success.",
+                        "confidence": "high"
+                    }
+                ]
+            }
+        ]
     })
 }
 
 fn write_memory_contributes_to_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_observation",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:09:00Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "derived_value",
-            "summary": "Refresh ordering is one operand in the final remediation evidence.",
-            "evidence": "The derived remediation uses auth-log ordering as a supporting operand."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:observation:401-refresh-race",
-                "rel": "contributes_to",
-                "class": "evidential",
-                "why": "The observation is intentionally included in the derived remediation evidence.",
-                "evidence": "The derived value uses the refresh-race observation.",
-                "confidence": "medium"
-            }
-        ],
         "read_context": {
             "inspected_refs": ["incident:mobile-login:observation:401-refresh-race"],
             "ask_refs": ["incident:mobile-login:question:login-failure"]
@@ -4436,36 +4452,38 @@ fn write_memory_contributes_to_arguments() -> Value {
             "strict": true,
             "sequence": 7
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "derived_value",
+                "summary": "Refresh ordering is one operand in the final remediation evidence.",
+                "evidence": "The derived remediation uses auth-log ordering as a supporting operand.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:observation:401-refresh-race",
+                        "rel": "contributes_to",
+                        "class": "evidential",
+                        "why": "The observation is intentionally included in the derived remediation evidence.",
+                        "evidence": "The derived value uses the refresh-race observation.",
+                        "confidence": "medium"
+                    }
+                ]
+            }
+        ]
     })
 }
 
 fn write_memory_answers_arguments() -> Value {
     json!({
         "about": "incident:mobile-login",
-        "intent": "record_feedback",
         "actor": "operator:conformance",
         "observed_at": "2026-05-06T10:09:30Z",
-        "scope": {
-            "task": "incident:mobile-login",
-            "process": "incident:mobile-login:resolution",
-            "episode": "incident:mobile-login:episode:operator"
-        },
-        "current": {
-            "kind": "feedback",
-            "summary": "The operator has enough evidence to answer the login-failure question.",
-            "evidence": "The visible evidence identifies the refresh race and final remediation."
-        },
-        "connect_to": [
-            {
-                "ref": "incident:mobile-login:question:login-failure",
-                "rel": "answers",
-                "class": "evidential",
-                "why": "The feedback answers the original incident question without claiming a richer dependency.",
-                "evidence": "The refresh-race evidence and final decision are visible.",
-                "confidence": "medium"
-            }
-        ],
         "read_context": {
             "ask_refs": ["incident:mobile-login:question:login-failure"],
             "temporal_refs": ["incident:mobile-login:decision:refresh-retry"]
@@ -4476,7 +4494,30 @@ fn write_memory_answers_arguments() -> Value {
             "strict": true,
             "sequence": 8
         },
-        "source_kind": "synthetic_conformance"
+        "source_kind": "synthetic_conformance",
+        "labels": {
+            "agentic_process": ["incident:mobile-login:resolution"],
+            "task": ["incident:mobile-login"],
+            "agentic_episode": ["incident:mobile-login:episode:operator"]
+        },
+        "memories": [
+            {
+                "id": "current",
+                "kind": "feedback",
+                "summary": "The operator has enough evidence to answer the login-failure question.",
+                "evidence": "The visible evidence identifies the refresh race and final remediation.",
+                "connect_to": [
+                    {
+                        "ref": "incident:mobile-login:question:login-failure",
+                        "rel": "answers",
+                        "class": "evidential",
+                        "why": "The feedback answers the original incident question without claiming a richer dependency.",
+                        "evidence": "The refresh-race evidence and final decision are visible.",
+                        "confidence": "medium"
+                    }
+                ]
+            }
+        ]
     })
 }
 

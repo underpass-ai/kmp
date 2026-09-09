@@ -24,7 +24,7 @@ pub(super) fn generated_entry_ref(
     format!("{about}:entry:{kind}:{suffix}")
 }
 
-pub(super) fn stable_idempotency_key(arguments: &Map<String, Value>) -> String {
+pub(crate) fn stable_idempotency_key(arguments: &Map<String, Value>) -> String {
     let mut stable = Value::Object(arguments.clone());
     if let Some(options) = stable.get_mut("options").and_then(Value::as_object_mut) {
         options.remove("dry_run");

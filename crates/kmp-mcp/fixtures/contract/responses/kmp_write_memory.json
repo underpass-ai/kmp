@@ -11,7 +11,7 @@
     "diagnostics": [],
     "dry_run": false,
     "generated_refs": [
-      "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b"
+      "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
     ],
     "ingest_result": {
       "memory": {
@@ -24,7 +24,7 @@
         "created_dimensions": [
           "label:v1:question%3Aparity:agentic_process:parity"
         ],
-        "memory_id": "memory:write:f44bcf5cd628fba5",
+        "memory_id": "memory:write:bb2b522031614fc2",
         "read_after_write_ready": true,
         "resembling_labels": []
       },
@@ -46,9 +46,12 @@
         }
       ]
     },
+    "local_refs": {
+      "current": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151"
+    },
     "next_suggested_reads": [
       {
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "to": "question:parity:claim:denver",
         "tool": "kmp_trace"
       }
@@ -59,7 +62,7 @@
         "confidence": "medium",
         "crosses_about": false,
         "fallback": true,
-        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-b0750e66809d528b",
+        "from": "question:parity:entry:decision:pin-the-answered-surface-not-only-the-advertised-one-8e69ff1fccb64151",
         "prior_context_observed": true,
         "prior_context_sources": [
           "kmp_inspect"

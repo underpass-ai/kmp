@@ -68,23 +68,43 @@ catalogue and use the actual refs instead of pretending the history is empty.
   "save_as": "original",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:original:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "operation-check"
+    "labels": {
+      "component": [
+        "bitácora"
+      ],
+      "environment": [
+        "prod"
+      ],
+      "owner": [
+        "ana"
+      ],
+      "run": [
+        "RUN-7"
+      ],
+      "state": [
+        "enabled"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "operation-check"
+      ]
     },
-    "labels": {"component": ["bitácora"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["enabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T08:10:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana.",
-      "summary_en": "S1 reports enabled logging: component bitácora was enabled in prod under Ana during RUN-7 at 08:00 UTC on September 1.",
-      "evidence": "S1, received 2026-09-01T08:10:00Z: S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana."
-    }
+    "memories": [
+      {
+        "id": "current",
+        "kind": "observation",
+        "summary": "S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana.",
+        "summary_en": "S1 reports enabled logging: component bitácora was enabled in prod under Ana during RUN-7 at 08:00 UTC on September 1.",
+        "evidence": "S1, received 2026-09-01T08:10:00Z: S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana."
+      }
+    ]
   }
 }
 ```
@@ -137,36 +157,44 @@ into another enabled-state report. Read the catalogue after writing G1.
   "save_as": "glossary",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:glossary:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "catalogue-rule"
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "catalogue-rule"
+      ]
     },
-    "labels": {"component": ["journal"]},
     "occurred_at": "2026-09-01T09:00:00Z",
     "observed_at": "2026-09-01T09:00:00Z",
-    "current": {
-      "kind": "constraint",
-      "summary": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.",
-      "summary_en": "G1 is the LEX-7 catalogue rule: bitácora and journal name one logging component, catalogued as journal. Retain environment and owner. Enabled and disabled conflict only for the same check, instant, environment and owner.",
-      "evidence": "G1, received 2026-09-01T09:00:00Z: G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
-    },
     "read_context": {
       "inspected_refs": [
         "${original.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${original.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "La norma G1 explica cómo catalogar el término bitácora usado por S1 dentro de LEX-7; no verifica el estado habilitado que S1 afirma.",
-        "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+        "id": "current",
+        "kind": "constraint",
+        "summary": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.",
+        "summary_en": "G1 is the LEX-7 catalogue rule: bitácora and journal name one logging component, catalogued as journal. Retain environment and owner. Enabled and disabled conflict only for the same check, instant, environment and owner.",
+        "evidence": "G1, received 2026-09-01T09:00:00Z: G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable.",
+        "connect_to": [
+          {
+            "ref": "${original.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La norma G1 explica cómo catalogar el término bitácora usado por S1 dentro de LEX-7; no verifica el estado habilitado que S1 afirma.",
+            "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+          }
+        ]
       }
     ]
   }
@@ -250,45 +278,65 @@ claims; sharing journal alone would not justify it.
   "save_as": "restated",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:restated:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "operation-check"
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "prod"
+      ],
+      "owner": [
+        "ana"
+      ],
+      "run": [
+        "RUN-7"
+      ],
+      "state": [
+        "enabled"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "operation-check"
+      ]
     },
-    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["enabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:10:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1.",
-      "summary_en": "S2 restates S1: journal logging was enabled in prod for RUN-7 at 08:00 UTC on September 1, with Ana responsible.",
-      "evidence": "S2, received 2026-09-01T09:10:00Z: S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1."
-    },
     "read_context": {
       "inspected_refs": [
         "${original.generated_refs.0}",
         "${glossary.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${original.generated_refs.0}",
-        "rel": "restates",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "S2 declara que reformula S1: ambos afirman habilitado para RUN-7, prod, Ana y el mismo instante; G1 identifica los dos nombres del componente.",
-        "evidence": "S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
-      },
-      {
-        "ref": "${glossary.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "La equivalencia de términos de G1 permite catalogar y comparar S2 con el componente nombrado en S1, sin sustituir la prueba del estado.",
-        "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+        "id": "current",
+        "kind": "observation",
+        "summary": "S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1.",
+        "summary_en": "S2 restates S1: journal logging was enabled in prod for RUN-7 at 08:00 UTC on September 1, with Ana responsible.",
+        "evidence": "S2, received 2026-09-01T09:10:00Z: S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1.",
+        "connect_to": [
+          {
+            "ref": "${original.generated_refs.0}",
+            "rel": "restates",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "S2 declara que reformula S1: ambos afirman habilitado para RUN-7, prod, Ana y el mismo instante; G1 identifica los dos nombres del componente.",
+            "evidence": "S2: Journal estaba habilitado en prod durante RUN-7 a las 08:00 UTC del 1 de septiembre, bajo la responsabilidad de Ana. Es otra redacción del informe S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+          },
+          {
+            "ref": "${glossary.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "La equivalencia de términos de G1 permite catalogar y comparar S2 con el componente nombrado en S1, sin sustituir la prueba del estado.",
+            "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+          }
+        ]
       }
     ]
   }
@@ -319,45 +367,65 @@ owner. Later receipt alone does not supersede S1 or S2.
   "save_as": "negative",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:negative:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "operation-check"
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "prod"
+      ],
+      "owner": [
+        "ana"
+      ],
+      "run": [
+        "RUN-7"
+      ],
+      "state": [
+        "disabled"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "operation-check"
+      ]
     },
-    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-7"], "state": ["disabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:20:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1.",
-      "summary_en": "S3 says journal was not enabled in prod; it was disabled for RUN-7 at 08:00 UTC on September 1 under Ana. This report supplies no verification that resolves its disagreement with S1.",
-      "evidence": "S3, received 2026-09-01T09:20:00Z: S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1."
-    },
     "read_context": {
       "inspected_refs": [
         "${original.generated_refs.0}",
         "${glossary.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${original.generated_refs.0}",
-        "rel": "contradicts",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "S1 afirma habilitado y S3 lo niega para el mismo RUN-7, prod, Ana e instante; G1 prueba que bitácora y journal designan el mismo componente en este catálogo.",
-        "evidence": "S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana. S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
-      },
-      {
-        "ref": "${glossary.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "G1 fija las condiciones y el vocabulario usados al comparar la negación de S3 con S1; el glosario no decide cuál de los informes es correcto.",
-        "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+        "id": "current",
+        "kind": "observation",
+        "summary": "S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1.",
+        "summary_en": "S3 says journal was not enabled in prod; it was disabled for RUN-7 at 08:00 UTC on September 1 under Ana. This report supplies no verification that resolves its disagreement with S1.",
+        "evidence": "S3, received 2026-09-01T09:20:00Z: S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1.",
+        "connect_to": [
+          {
+            "ref": "${original.generated_refs.0}",
+            "rel": "contradicts",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "S1 afirma habilitado y S3 lo niega para el mismo RUN-7, prod, Ana e instante; G1 prueba que bitácora y journal designan el mismo componente en este catálogo.",
+            "evidence": "S1: En RUN-7, el componente bitácora estaba habilitado en prod a las 08:00 UTC del 1 de septiembre. Responsable: Ana. S3: Durante RUN-7 a las 08:00 UTC del 1 de septiembre, journal no estaba habilitado en prod: estaba deshabilitado. Responsable: Ana. Este informe no aporta una verificación que resuelva la discrepancia con S1. G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+          },
+          {
+            "ref": "${glossary.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "G1 fija las condiciones y el vocabulario usados al comparar la negación de S3 con S1; el glosario no decide cuál de los informes es correcto.",
+            "evidence": "G1: Norma del catálogo LEX-7: bitácora y journal nombran el mismo componente de registro; catalogarlo como journal. Conservar entorno y responsable. Habilitado y deshabilitado son estados incompatibles sólo para la misma comprobación, instante, entorno y responsable."
+          }
+        ]
       }
     ]
   }
@@ -425,36 +493,56 @@ the historical RUN-7 disagreement. `follows` records only order.
   "save_as": "other_environment",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_observation",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:other_environment:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "operation-check"
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "staging"
+      ],
+      "owner": [
+        "ana"
+      ],
+      "run": [
+        "RUN-7"
+      ],
+      "state": [
+        "disabled"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "operation-check"
+      ]
     },
-    "labels": {"component": ["journal"], "environment": ["staging"], "owner": ["ana"], "run": ["RUN-7"], "state": ["disabled"]},
     "occurred_at": "2026-09-01T08:00:00Z",
     "observed_at": "2026-09-01T09:30:00Z",
-    "current": {
-      "kind": "observation",
-      "summary": "S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.",
-      "summary_en": "S4 records disabled journal logging in staging for RUN-7 at 08:00 UTC on September 1 under Ana. Its scope is staging, not prod.",
-      "evidence": "S4, received 2026-09-01T09:30:00Z: S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod."
-    },
     "read_context": {
       "inspected_refs": [
         "${negative.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${negative.generated_refs.0}",
-        "rel": "uses_background",
-        "class": "evidential",
-        "confidence": "high",
-        "why": "S4 permite comparar la comprobación de staging con la de prod descrita por S3; los entornos diferentes impiden tratarlas como el mismo hecho.",
-        "evidence": "S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod."
+        "id": "current",
+        "kind": "observation",
+        "summary": "S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.",
+        "summary_en": "S4 records disabled journal logging in staging for RUN-7 at 08:00 UTC on September 1 under Ana. Its scope is staging, not prod.",
+        "evidence": "S4, received 2026-09-01T09:30:00Z: S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod.",
+        "connect_to": [
+          {
+            "ref": "${negative.generated_refs.0}",
+            "rel": "uses_background",
+            "class": "evidential",
+            "confidence": "high",
+            "why": "S4 permite comparar la comprobación de staging con la de prod descrita por S3; los entornos diferentes impiden tratarlas como el mismo hecho.",
+            "evidence": "S4: Journal estaba deshabilitado en staging durante RUN-7 a las 08:00 UTC del 1 de septiembre. Responsable: Ana. Este informe sólo describe staging, no prod."
+          }
+        ]
       }
     ]
   }
@@ -480,36 +568,56 @@ the historical RUN-7 disagreement. `follows` records only order.
   "save_as": "later_decision",
   "arguments": {
     "about": "example:guide:labels-negation",
-    "intent": "record_decision",
     "actor": "guide-writer",
     "source_kind": "human",
     "idempotency_key": "guide-labels-negation:later_decision:v1",
-    "scope": {
-      "process": "lexicon-review",
-      "task": "maintenance-decision"
+    "labels": {
+      "component": [
+        "journal"
+      ],
+      "environment": [
+        "prod"
+      ],
+      "owner": [
+        "ana"
+      ],
+      "run": [
+        "RUN-8"
+      ],
+      "state": [
+        "disabled"
+      ],
+      "agentic_process": [
+        "lexicon-review"
+      ],
+      "task": [
+        "maintenance-decision"
+      ]
     },
-    "labels": {"component": ["journal"], "environment": ["prod"], "owner": ["ana"], "run": ["RUN-8"], "state": ["disabled"]},
     "occurred_at": "2026-09-02T08:00:00Z",
     "observed_at": "2026-09-02T08:00:00Z",
-    "current": {
-      "kind": "decision",
-      "summary": "D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.",
-      "summary_en": "D1 follows review of RUN-7 reports: disable journal in prod for RUN-8 from 08:00 UTC on September 2, with Ana responsible. This later decision does not determine the earlier RUN-7 state or replace its reports.",
-      "evidence": "D1, received 2026-09-02T08:00:00Z: D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes."
-    },
     "read_context": {
       "inspected_refs": [
         "${other_environment.generated_refs.0}"
       ]
     },
-    "connect_to": [
+    "memories": [
       {
-        "ref": "${other_environment.generated_refs.0}",
-        "rel": "follows",
-        "class": "procedural",
-        "confidence": "high",
-        "why": "La decisión D1 se registra después de revisar los informes de RUN-7; este enlace conserva el orden y no verifica ni sustituye sus estados anteriores.",
-        "evidence": "D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes."
+        "id": "current",
+        "kind": "decision",
+        "summary": "D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.",
+        "summary_en": "D1 follows review of RUN-7 reports: disable journal in prod for RUN-8 from 08:00 UTC on September 2, with Ana responsible. This later decision does not determine the earlier RUN-7 state or replace its reports.",
+        "evidence": "D1, received 2026-09-02T08:00:00Z: D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes.",
+        "connect_to": [
+          {
+            "ref": "${other_environment.generated_refs.0}",
+            "rel": "follows",
+            "class": "procedural",
+            "confidence": "high",
+            "why": "La decisión D1 se registra después de revisar los informes de RUN-7; este enlace conserva el orden y no verifica ni sustituye sus estados anteriores.",
+            "evidence": "D1: Tras revisar los informes de RUN-7, decidimos deshabilitar journal en prod para RUN-8 desde las 08:00 UTC del 2 de septiembre. Responsable: Ana. Esta decisión posterior no determina el estado que tuvo RUN-7 ni sustituye sus informes."
+          }
+        ]
       }
     ]
   }

@@ -14,8 +14,8 @@ def check(saved, client, authored):
         inspected = saved[name + '_read']
         assert inspected['object']['kind'] == kind
         assert inspected['object']['ref'] == refs[name]
-        assert inspected['object']['text'] == authored[name]['current']['summary']
-        assert any(e['text'] == authored[name]['current']['evidence'] for e in inspected['evidence'])
+        assert inspected['object']['text'] == authored[name]['memories'][0]['summary']
+        assert any(e['text'] == authored[name]['memories'][0]['evidence'] for e in inspected['evidence'])
     outgoing = saved['postgres_read']['links']['outgoing']
     for relation, target, relation_class in [('chosen_because', 'shared', 'motivational'),
                                              ('supersedes', 'sqlite', 'evidential')]:
@@ -52,9 +52,9 @@ def check(saved, client, authored):
         invalid['idempotency_key'] = 'guide-history:negative:' + removed
         invalid['options'] = {'dry_run': True}
         if removed == 'evidence':
-            del invalid['connect_to'][0]['evidence']
+            del invalid['memories'][0]['connect_to'][0]['evidence']
         else:
-            invalid['connect_to'][0]['class'] = 'structural'
+            invalid['memories'][0]['connect_to'][0]['class'] = 'structural'
         client.call('kmp_write_memory', invalid, expect_error='invalid_argument')
     retry = client.call('kmp_write_memory', authored['postgres'])
     assert retry['accepted'] and retry['generated_refs'] == [refs['postgres']]

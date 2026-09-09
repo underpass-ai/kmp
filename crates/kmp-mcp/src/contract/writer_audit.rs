@@ -15,31 +15,20 @@ mod tests {
     use kmp_domain::KnownMemoryRelationType;
 
     #[test]
-    fn writer_schema_allows_the_relation_free_root_that_runtime_accepts() {
-        let contract = tools_list_result();
-        let writer = contract["tools"]
-            .as_array()
-            .expect("tools")
-            .iter()
-            .find(|tool| tool["name"] == "kmp_write_memory")
-            .map(|tool| &tool["inputSchema"])
-            .expect("writer schema");
-        let required = writer["required"]
-            .as_array()
-            .expect("writer required fields");
-        assert!(
-            !required.iter().any(|field| field == "connect_to"),
-            "a new about has no existing ref to connect its first memory to"
+    fn writer_schema_has_one_record_shape_for_single_and_batch_writes() {
+        let writer = write_memory_schema();
+        for retired in ["intent", "scope", "current", "semantic_delta", "connect_to"] {
+            assert!(writer["properties"].get(retired).is_none());
+        }
+        assert_eq!(writer["properties"]["memories"]["minItems"], 1);
+        assert_eq!(
+            writer["properties"]["memories"]["items"]["required"],
+            serde_json::json!(["id", "kind", "summary"])
         );
         assert!(
-            writer["properties"]["connect_to"].get("minItems").is_none(),
-            "an explicit empty connect_to must describe the same valid root write"
-        );
-        assert!(
-            writer["properties"]["connect_to"]["description"]
-                .as_str()
-                .is_some_and(|description| description.contains("first strict write")),
-            "tools/list must explain the data-dependent runtime rule"
+            writer["properties"]["memories"]["items"]["properties"]["connect_to"]
+                .get("minItems")
+                .is_none()
         );
     }
     /// The tool documentation is generated from the writer spec; this pins
@@ -49,7 +38,7 @@ mod tests {
     #[test]
     fn relation_vocabulary_documentation_matches_the_writer_spec() {
         let tools = tools_list_result();
-        let writer_doc = tools["tools"][1]["inputSchema"]["properties"]["connect_to"]["items"]
+        let writer_doc = tools["tools"][1]["inputSchema"]["properties"]["memories"]["items"]["properties"]["connect_to"]["items"]
             ["properties"]["rel"]["description"]
             .as_str()
             .expect("writer rel carries generated documentation")
