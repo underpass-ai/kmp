@@ -255,9 +255,12 @@ async fn grpc_relate(
         .map_err(grpc_error("Relate", &about))?
         .into_inner();
 
-    Ok(tool_success_result(
-        RelationPageBudget::Relate.apply(relate_from_response(response), arguments)?,
-    ))
+    let fingerprint = response.selection_fingerprint.clone();
+    Ok(tool_success_result(RelationPageBudget::Relate.apply(
+        relate_from_response(response),
+        arguments,
+        &fingerprint,
+    )?))
 }
 
 async fn grpc_trace(
@@ -277,9 +280,12 @@ async fn grpc_trace(
         .map_err(grpc_error("Trace", &format!("{from}` -> `{to}")))?
         .into_inner();
 
-    Ok(tool_success_result(
-        RelationPageBudget::Trace.apply(trace_from_response(response), arguments)?,
-    ))
+    let fingerprint = response.selection_fingerprint.clone();
+    Ok(tool_success_result(RelationPageBudget::Trace.apply(
+        trace_from_response(response),
+        arguments,
+        &fingerprint,
+    )?))
 }
 
 async fn grpc_inspect(

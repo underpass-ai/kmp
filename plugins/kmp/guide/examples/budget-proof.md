@@ -462,13 +462,7 @@ marker is not a new path selection. Trace has no offset field to inspect.
   "tool": "kmp_trace",
   "save_as": "trace_second",
   "expect_partial": true,
-  "arguments": {
-    "about": "example:guide:budget-proof",
-    "from": "${result.generated_refs.0}",
-    "to": "${constraint.generated_refs.0}",
-    "budget": {"depth": 6, "max_bytes": 12000},
-    "page": {"entries": 1, "cursor": "${trace_first.page.next_cursor}"}
-  }
+  "arguments": "${trace_first.next_actions.0.arguments}"
 }
 ```
 
@@ -476,13 +470,7 @@ marker is not a new path selection. Trace has no offset field to inspect.
 {
   "tool": "kmp_trace",
   "save_as": "trace_third",
-  "arguments": {
-    "about": "example:guide:budget-proof",
-    "from": "${result.generated_refs.0}",
-    "to": "${constraint.generated_refs.0}",
-    "budget": {"depth": 6, "max_bytes": 12000},
-    "page": {"entries": 1, "cursor": "${trace_second.page.next_cursor}"}
-  }
+  "arguments": "${trace_second.next_actions.0.arguments}"
 }
 ```
 

@@ -4,6 +4,7 @@
 //! other, and the tensions that still stand — with a proof that says where
 //! the read stood, one page at a time.
 
+use super::read_selection_fingerprint::ReadSelectionFingerprint;
 use std::collections::{BTreeMap, BTreeSet};
 
 use kmp_application::{GetContextResult, RelateMemoryQuery};
@@ -362,13 +363,14 @@ pub fn relate_response_from_result(
         )
     };
 
-    Ok(RelateResponse {
+    let mut response = RelateResponse {
+        selection_fingerprint: String::new(),
         summary,
-        facts: facts_page,
-        declared: declared_page,
-        coordinate: coordinate_page,
-        tensions: tensions_page,
-        proposed: proposed_page,
+        facts,
+        declared,
+        coordinate,
+        tensions,
+        proposed,
         proof: Some(proof),
         warnings,
         page: Some(PageInfo {
@@ -381,7 +383,14 @@ pub fn relate_response_from_result(
                 String::new()
             },
         }),
-    })
+    };
+    response.selection_fingerprint = ReadSelectionFingerprint::relate(&response);
+    response.facts = facts_page;
+    response.declared = declared_page;
+    response.coordinate = coordinate_page;
+    response.tensions = tensions_page;
+    response.proposed = proposed_page;
+    Ok(response)
 }
 
 /// The items of one section that fall in `[offset, end)` of the flattened

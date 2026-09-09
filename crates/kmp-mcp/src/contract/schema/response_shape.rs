@@ -40,6 +40,10 @@ pub(crate) fn page_output_schema(unit: &str, cursor_description: &str) -> Value 
 }
 pub(crate) fn relation_page_output_schema(unit: &str, cursor_description: &str) -> Value {
     let mut page = page_output_schema(unit, cursor_description);
+    page["properties"]["offset"] = described(
+        "integer",
+        "Number of selected items already read before this page.",
+    );
     page["properties"]["required_bytes"] = described(
         "integer",
         "When no whole item fits, retry page.next_cursor with budget.max_bytes at least this allowance to make progress. Absent otherwise.",

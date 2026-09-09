@@ -45,6 +45,7 @@ def check(saved, client, authored):
             assert edge[field] == expected[field]
     for prior, current in zip(('first', 'second'), ('second', 'third')):
         old, new = authored['trace_' + prior], authored['trace_' + current]
+        assert new == saved['trace_' + prior]['next_actions'][0]['arguments']
         assert new['page']['cursor'] == saved['trace_' + prior]['page']['next_cursor']
         assert {k: v for k, v in old.items() if k != 'page'} == {
             k: v for k, v in new.items() if k != 'page'}

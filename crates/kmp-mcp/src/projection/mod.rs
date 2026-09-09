@@ -9,6 +9,7 @@ mod recall_budget_audit;
 pub(crate) mod recall_projection;
 pub(crate) mod relabel_projection;
 pub(crate) mod relate_projection;
+pub(crate) mod relation_cursor;
 pub(crate) mod relation_page_budget;
 mod rendering;
 mod serialized_size;

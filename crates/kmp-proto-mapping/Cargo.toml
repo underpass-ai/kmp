@@ -15,6 +15,7 @@ publish = true
 workspace = true
 
 [dependencies]
+prost.workspace = true
 prost-types.workspace = true
 serde.workspace = true
 rust-stemmers.workspace = true

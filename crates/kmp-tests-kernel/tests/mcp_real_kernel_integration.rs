@@ -1,5 +1,7 @@
 #![cfg(feature = "container-tests")]
 
+#[path = "mcp_real_kernel/relation_cursors.rs"]
+mod relation_cursors;
 mod support;
 
 use std::collections::BTreeSet;
@@ -306,6 +308,7 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
         "writer helper must compile to canonical dry-run Ingest"
     );
 
+    relation_cursors::check(&direct, &stdio, &http, &embedded).await;
     fixture.shutdown().await?;
     Ok(())
 }

@@ -812,6 +812,7 @@ impl KernelMemoryService for FakeMemoryService {
         let request = request.into_inner();
         Ok(Response::new(RelateResponse {
             summary: format!("Related nothing of `{}`.", request.about),
+            selection_fingerprint: "mock-relate-selection".to_string(),
             ..RelateResponse::default()
         }))
     }
@@ -854,9 +855,15 @@ impl KernelMemoryService for FakeMemoryService {
 
         Ok(Response::new(TraceResponse {
             summary: format!("Trace from {} to {}.", request.from, request.to),
+            selection_fingerprint: "mock-trace-selection".to_string(),
             trace: vec![relation(&request.from, &request.to, "supports")],
             warnings: Vec::new(),
-            page: None,
+            page: Some(kmp_proto::v1beta1::PageInfo {
+                returned: 1,
+                total: 1,
+                has_more: false,
+                next_cursor: String::new(),
+            }),
             quality: None,
         }))
     }
