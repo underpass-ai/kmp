@@ -5,6 +5,7 @@ pub mod candidate_asset_set;
 pub mod candidate_input_digest;
 pub mod candidate_input_selector;
 pub mod candidate_workspace;
+pub mod guide_position_timestamp;
 pub mod mcpb_digest;
 pub mod mcpb_target;
 pub mod plugin_package_kind;

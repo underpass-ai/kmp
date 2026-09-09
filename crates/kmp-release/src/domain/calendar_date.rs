@@ -31,6 +31,10 @@ impl CalendarDate {
                 ReleaseError::invalid(format!("system clock predates Unix epoch: {error}"))
             })?
             .as_secs();
+        Self::from_unix_seconds(seconds)
+    }
+
+    pub fn from_unix_seconds(seconds: u64) -> Result<Self, ReleaseError> {
         let days = i64::try_from(seconds / 86_400)
             .map_err(|_| ReleaseError::invalid("current date is outside the supported range"))?;
         let era_day = days + 719_468;
