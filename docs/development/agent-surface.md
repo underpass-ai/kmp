@@ -82,6 +82,13 @@ el reloj y la prueba, y comprobar que el cursor rechaza cambios del contenido.
 Medir el recorrido completo: cuatro páginas pueden costar más tokens que una
 respuesta grande aunque permitan avanzar con un límite menor por respuesta.
 
+Al cambiar `fields`, comprobar qué se proyecta: en los verbos temporales sólo
+las entradas; prueba y auditoría dependen de `include`. Conservar identidad,
+declarar campos omitidos y ejecutar las acciones de ampliación con el mismo
+alcance. Un cambio en contenido oculto también debe invalidar el cursor.
+La ampliación es una lectura nueva, no una promesa de snapshot. Medir tanto
+navegación selectiva como ampliación de todos los resultados.
+
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
 que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada

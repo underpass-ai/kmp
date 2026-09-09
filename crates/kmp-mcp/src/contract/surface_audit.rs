@@ -294,6 +294,7 @@ mod tests {
                     "budget",
                     "depth",
                     "dimensions",
+                    "fields", // MCP entry projection; not a kernel query filter.
                     "include",
                     "interval",
                     "limit",

@@ -115,6 +115,17 @@ continuation recomputes the bounded selection. It does not promise a snapshot
 across subsequent temporal moves or reduced total traversal tokens. Native tests
 reconstruct complete sections and execute the actions, including transport parity.
 
-Direct interval arguments and field projection remain pending in block 3. This
-increment does not complete the reading block or authorize a benchmark reader
-awaiting human review.
+Direct intervals are integrated in #600, including the shared relation-clock
+fix #599; #602 synchronizes the canonical protobuf source after the delivery
+omission. Forward/Rewind accept an interval without an initial cursor, include
+all start ties, exclude the end and preserve earlier explanatory proof. An
+open end explicitly leaves expiry unassessed.
+
+Temporal entry projection adds `fields`, explicit included/omitted fields and an
+executable scoped Goto action on each reduced entry. Identity always remains;
+proof and raw audit selection remain separate. A page cursor binds hidden
+content too. Expansions are fresh reads, not retained snapshots. This is selective
+retrieval, not a claim of lower total tokens when every body is expanded.
+
+The remaining scope/signals review and agent evaluation still belong to their
+blocks. These increments do not authorize a benchmark reader awaiting human review.

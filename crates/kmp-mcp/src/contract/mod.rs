@@ -7,6 +7,7 @@ pub(crate) mod handshake;
 pub(crate) mod registry;
 pub(crate) mod schema;
 mod surface_audit;
+pub(crate) mod temporal_entry_field;
 pub(crate) mod tools;
 pub(crate) mod validator;
 mod writer_audit;
