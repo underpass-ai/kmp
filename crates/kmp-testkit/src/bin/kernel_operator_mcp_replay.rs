@@ -775,14 +775,15 @@ fn field_allows_memory_ref(field: Option<&str>) -> bool {
 }
 
 fn looks_like_memory_ref(value: &str) -> bool {
-    !value.contains(' ')
-        && value.len() <= 500
-        && (value.starts_with("memoryarena:")
-            || value.starts_with("longmemeval:")
-            || value.starts_with("turn:")
-            || value.starts_with("question:")
-            || value.starts_with("evidence:")
-            || value.starts_with("about:"))
+    kmp_domain::MemoryDimensionIdentity::parse(value).is_some()
+        || (!value.contains(' ')
+            && value.len() <= 500
+            && (value.starts_with("memoryarena:")
+                || value.starts_with("longmemeval:")
+                || value.starts_with("turn:")
+                || value.starts_with("question:")
+                || value.starts_with("evidence:")
+                || value.starts_with("about:")))
 }
 
 fn action_label(action: &Value) -> String {
