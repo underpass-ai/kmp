@@ -67,7 +67,7 @@
           "id": "verb:write",
           "kind": "instruction",
           "depth": "basic",
-          "evidence": "The live writer contract validates intent and relation quality before compiling to canonical ingest.",
+          "evidence": "Writer summary pre-reads preserve backend failure categories and never ingest after a failed source read.",
           "text_file": "verbs/write.md",
           "guide_title": "Write evidence or change labels"
         },

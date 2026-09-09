@@ -13,6 +13,7 @@
 
 use serde_json::{Value, json};
 
+use crate::serving::ToolError;
 use crate::serving::ports::kernel_tool_backend::KernelMcpToolBackend;
 use crate::write::existing_entry::ExistingEntry;
 
@@ -26,7 +27,7 @@ pub(crate) async fn read_existing_entry(
     backend: &dyn KernelMcpToolBackend,
     about: &str,
     reference: &str,
-) -> Result<ExistingEntry, String> {
+) -> Result<ExistingEntry, ToolError> {
     let mut arguments = json!({
         "about": about,
         "ref": reference,
@@ -41,22 +42,23 @@ pub(crate) async fn read_existing_entry(
         });
         inspected = inspect(backend, reference, &arguments).await?;
     }
-    ExistingEntry::from_inspect(reference, &inspected)
+    ExistingEntry::from_inspect(reference, &inspected).map_err(ToolError::backend)
 }
 
 async fn inspect(
     backend: &dyn KernelMcpToolBackend,
     reference: &str,
     arguments: &Value,
-) -> Result<Value, String> {
+) -> Result<Value, ToolError> {
     let result = backend
         .call_tool("kmp_inspect", arguments)
         .await
-        .map_err(|error| {
-            format!(
+        .map_err(|mut error| {
+            error.message = format!(
                 "record_summary could not read `{reference}` before attaching to it: {}",
                 error.message
-            )
+            );
+            error
         })?;
     Ok(result.get("structuredContent").cloned().unwrap_or(result))
 }

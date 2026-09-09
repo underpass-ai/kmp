@@ -49,21 +49,23 @@ impl KernelMcpServer {
             self.plan_summary_write(arguments).await
         } else {
             build_write_plan_with_root(arguments, allow_unlinked_root)
+                .map_err(ToolError::invalid_argument)
         };
         let plan = match planned {
             Ok(plan) => plan,
-            Err(message) => {
-                // Everything the write planner refuses is about the
-                // arguments: a missing field, an unsupported relation, a rich
-                // link with no evidence. The caller can fix all of it, and
-                // only the caller can.
-                let error = ToolError::invalid_argument(message);
+            Err(error) => {
+                // The pure compiler rejects input; summary planning also reads
+                // storage and must preserve a failure reported by that backend.
                 record_tool_error(
                     self.backend_name(),
                     self.grpc_tls_mode_name(),
                     "kmp_write_memory",
                     arguments,
-                    ToolErrorKind::Validation,
+                    if error.code == crate::serving::ToolErrorCode::InvalidArgument {
+                        ToolErrorKind::Validation
+                    } else {
+                        ToolErrorKind::Backend
+                    },
                     &error.message,
                     start.elapsed(),
                 );
@@ -128,10 +130,10 @@ impl KernelMcpServer {
     async fn plan_summary_write(
         &self,
         arguments: &Value,
-    ) -> Result<crate::write::plan::KernelWritePlan, String> {
-        let (about, reference) = summary_target(arguments)?;
+    ) -> Result<crate::write::plan::KernelWritePlan, ToolError> {
+        let (about, reference) = summary_target(arguments).map_err(ToolError::invalid_argument)?;
         let existing = read_existing_entry(self.backend.as_ref(), &about, &reference).await?;
-        build_summary_plan(arguments, &existing)
+        build_summary_plan(arguments, &existing).map_err(ToolError::invalid_argument)
     }
 
     async fn allow_unlinked_strict_root(&self, arguments: &Value) -> Result<bool, ToolError> {
