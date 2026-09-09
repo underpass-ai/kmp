@@ -86,11 +86,15 @@
     },
     {
       "name": "kmp_view_apply_intent",
-      "description": "Move that view by declaring what it should show \u2014 focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Atomic, idempotent, and under optimistic concurrency."
+      "description": "Move that view by declaring what it should show — focus, clock axis, semantic zoom, dimensions, relation classes, selection, trace. Atomic, idempotent, and under optimistic concurrency."
     },
     {
       "name": "kmp_view_get_state",
       "description": "Read the view's semantic state, revision, selection and filters. Returns state, never pixels."
+    },
+    {
+      "name": "kmp_guide",
+      "description": "Open a progressive capability map, keep a persistent agent identity and expand one worked card."
     }
   ],
   "keywords": [
