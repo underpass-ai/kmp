@@ -1,7 +1,7 @@
 [
   {
     "about": "guide:kmp-agent",
-    "idempotency_key": "ingest:guide-sync:1:agent:fdd5dadf591a36d191d0",
+    "idempotency_key": "ingest:guide-sync:1:agent:9d83b925e9f57dfee117",
     "memory": {
       "dimensions": [
         {
@@ -1821,7 +1821,7 @@
           "supports": [
             "guide:kmp-agent:verb:time"
           ],
-          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation.",
+          "text": "The four live temporal contracts define direction, cursor field, ordering and continuation semantics separately. A real embedded MCP regression combines lane selection with positive and negative selectors through all four temporal verbs and clocks, and the negotiated App projection. Native wake/ask rejects explicitly later receipt evidence from earlier observed instants and exclusive interval ends while preserving event-time retrieval. Native response-page tests reconstruct entries and proof verbatim, reject a changed selection and execute the minimum-budget retry; completed packets offer executable temporal navigation. The limited-selection warning leaves continuation syntax to the transport; MCP actions do not reinterpret an opaque response cursor as a memory ref.",
           "time": "2026-08-28T00:00:00Z"
         },
         {
