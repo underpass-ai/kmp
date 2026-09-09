@@ -47,11 +47,84 @@
         "text": "string"
       }
     ],
-    "next_action": "string",
+    "next_actions": [
+      {
+        "arguments": {
+          "about": "string",
+          "axis": "string",
+          "dimensions": {
+            "exclude": [
+              "string"
+            ],
+            "mode": "string"
+          },
+          "from": {
+            "ref": "string"
+          },
+          "limit": {
+            "entries": "integer"
+          }
+        },
+        "tool": "string"
+      }
+    ],
     "page": {
       "has_more": "boolean",
-      "next_cursor": "string",
+      "next_cursor": "null",
+      "offset": "integer",
       "returned": "integer",
+      "sections": {
+        "entries": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.conflicts": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.evidence": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.expired": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.matched_relations": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.matched_terms": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.missing": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.path": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "proof.superseded": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        },
+        "raw_refs": {
+          "remaining": "integer",
+          "returned_on_page": "integer",
+          "total": "integer"
+        }
+      },
       "total": "integer"
     },
     "proof": {
@@ -81,6 +154,12 @@
       "truncated": "boolean"
     },
     "raw_refs": [],
+    "selection": {
+      "entries": "integer",
+      "has_more": "boolean",
+      "matching_entries": "integer",
+      "scope": "string"
+    },
     "summary": "string",
     "temporal": {
       "axis": "string",

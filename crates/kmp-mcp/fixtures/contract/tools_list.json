@@ -2515,7 +2515,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Jump to memory state at a timestamp, sequence, or ref. Cursor parameter: `at`. When the result is partial, response.next_action continues earlier history with kmp_rewind; feeding page.next_cursor back to kmp_goto does not paginate.",
+      "description": "Jump to memory state at `at` (timestamp, sequence or ref). Follow executable next_actions: response pages reconstruct this packet first, then kmp_rewind explores earlier history. page.has_more counts packet expansion; selection.has_more reports history outside it.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -2721,6 +2721,22 @@
             },
             "type": "object"
           },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -2781,12 +2797,23 @@
             "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -2795,19 +2822,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Boundary ref for earlier history. Do not pass it back to `at.ref`; follow top-level `next_action`, which continues with `kmp_rewind`.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -2933,6 +2972,28 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
@@ -2959,7 +3020,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
+      "description": "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -3165,6 +3226,22 @@
             },
             "type": "object"
           },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -3225,12 +3302,23 @@
             "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -3239,19 +3327,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Boundary ref for a partial neighborhood. Do not pass it back to `around.ref`; follow top-level `next_action`, which names the earlier and later moves.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -3377,6 +3477,28 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
@@ -3403,7 +3525,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move backward through memory from a timestamp, sequence, or ref. Entries within each page are newest-to-oldest, so concatenating continuation pages stays globally descending. Cursor parameter: `from`.",
+      "description": "Move strictly before `from` (time, sequence or ref), newest-to-oldest. Execute next_actions unchanged to reconstruct the packet and then continue earlier history. page.has_more counts entry/proof expansion; selection.has_more reports history outside the packet.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -3603,6 +3725,22 @@
                 "type": "integer"
               },
               "tokens": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
                 "minimum": 1,
                 "type": "integer"
               }
@@ -3669,12 +3807,23 @@
             "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -3683,19 +3832,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -3821,6 +3982,28 @@
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
           },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
           "summary": {
             "description": "Concise description of the temporal selection.",
             "type": "string"
@@ -3847,7 +4030,7 @@
       "_meta": {
         "anthropic/maxResultSizeChars": 10000
       },
-      "description": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. To enumerate [start,end), first kmp_goto at start and retain entries exactly at start; then kmp_forward from start. Complete relevant pages, merge and deduplicate refs, and exclude entries at or after end. Follow next_action for continuation; disclose any incomplete boundary or interval.",
+      "description": "Move strictly after `from` (time, sequence or ref), oldest-to-newest. Execute next_actions unchanged to reconstruct entries and proof before continuing history. For [start,end), retain exact-start entries from Goto, merge Forward by ref and exclude entries at or after end.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -4053,6 +4236,22 @@
             },
             "type": "object"
           },
+          "page": {
+            "additionalProperties": false,
+            "properties": {
+              "cursor": {
+                "description": "Opaque response-page cursor; execute next_actions to keep the selection bound. Changed arguments or content require a fresh read.",
+                "minLength": 1,
+                "type": "string"
+              },
+              "entries": {
+                "description": "Maximum complete expansion items on this response page, including entries and proof.",
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
           "window": {
             "additionalProperties": false,
             "properties": {
@@ -4113,12 +4312,23 @@
             "description": "Temporal entries in traversal order, each with ref, kind, text, coordinates, and metadata.",
             "type": "array"
           },
-          "next_action": {
-            "description": "The exact temporal move that can consume a partial result's boundary cursor, or null when the selection is complete.",
-            "type": [
-              "string",
-              "null"
-            ]
+          "next_actions": {
+            "description": "Execute these calls unchanged. While page.has_more, reconstruct this packet first; once complete, these calls navigate remaining history (Near can offer both directions).",
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arguments": {
+                  "description": "Complete bound arguments, including the continuation cursor or a required budget adjustment.",
+                  "type": "object"
+                },
+                "tool": {
+                  "description": "Native temporal tool to execute.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
           },
           "page": {
             "additionalProperties": false,
@@ -4127,19 +4337,31 @@
                 "description": "More items remain; this page is incomplete.",
                 "type": "boolean"
               },
+              "minimum_progress_bytes": {
+                "description": "Present when the next complete item cannot fit. next_actions supplies a retry with this budget that admits at least one item.",
+                "type": "integer"
+              },
               "next_cursor": {
-                "description": "Memory-ref cursor for the next temporal slice; place it in `from.ref` while keeping the other arguments unchanged.",
+                "description": "Opaque cursor for page.cursor; execute the complete next_actions call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
+              "offset": {
+                "description": "Expansion items reconstructed before this page.",
+                "type": "integer"
+              },
               "returned": {
                 "description": "Items returned on this page.",
                 "type": "integer"
               },
+              "sections": {
+                "description": "Per-section returned_on_page, remaining and total counts. Append each section across pages before concluding from proof.",
+                "type": "object"
+              },
               "total": {
-                "description": "Total temporal entries in the selection.",
+                "description": "Total entry and proof expansion items in the selection.",
                 "type": "integer"
               }
             },
@@ -4264,6 +4486,28 @@
           "raw_refs": {
             "description": "Typed raw audit refs for selected entries when include.raw_refs=true.",
             "type": "array"
+          },
+          "selection": {
+            "additionalProperties": false,
+            "properties": {
+              "entries": {
+                "description": "Entries selected for this packet before response pagination.",
+                "type": "integer"
+              },
+              "has_more": {
+                "description": "More matching history remains outside this packet. Complete its response pages before following the returned navigation actions.",
+                "type": "boolean"
+              },
+              "matching_entries": {
+                "description": "Matching temporal entries reported by the kernel before its entry/window limit.",
+                "type": "integer"
+              },
+              "scope": {
+                "description": "selected_packet: top-level summary, coverage and quality refer to this bounded selection, not the current response page or all memory.",
+                "type": "string"
+              }
+            },
+            "type": "object"
           },
           "summary": {
             "description": "Concise description of the temporal selection.",

@@ -5,7 +5,7 @@ use crate::contract::schema::temporal_family::temporal_tool_definition;
 pub(crate) fn definition() -> Value {
     temporal_tool_definition(
         "kmp_near",
-        "Return the temporal neighborhood around a timestamp, sequence, or ref. Cursor parameter: `around`. A partial neighborhood continues through response.next_action with kmp_rewind and kmp_forward; feeding page.next_cursor back to kmp_near does not paginate.",
+        "Return the temporal neighborhood around `around` (timestamp, sequence or ref). Execute next_actions to reconstruct response pages; after the packet is complete, the actions offer kmp_rewind and kmp_forward for the surrounding history.",
         "around",
     )
 }

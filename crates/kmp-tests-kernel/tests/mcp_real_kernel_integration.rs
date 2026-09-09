@@ -1,6 +1,8 @@
 #![cfg(feature = "container-tests")]
 
 mod support;
+#[path = "mcp_real_kernel/temporal_pages.rs"]
+mod temporal_pages;
 
 use std::collections::BTreeSet;
 use std::error::Error;
@@ -143,6 +145,8 @@ async fn grpc_mcp_semantic_parity() -> Result<(), Box<dyn Error + Send + Sync>> 
             "embedded semantic result diverged for {tool}"
         );
     }
+
+    temporal_pages::check(&direct, &stdio, &http, &embedded).await;
 
     let first_page_arguments = json!({
         "about":"project:parity-live",

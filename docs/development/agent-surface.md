@@ -73,6 +73,15 @@ repitan. Verificar el rechazo si cambian y medir bytes y llamadas de todo el
 recorrido, incluida la primera página; omitir un cuerpo repetido no autoriza
 resumir ni eliminar evidencia.
 
+En los verbos temporales, `page` cuenta elementos de entradas y prueba del mismo
+paquete; `selection` identifica la selección limitada del núcleo. Ejecutar
+`next_actions` con sus argumentos completos: primero reconstruir ese paquete y
+después navegar la historia que quede fuera. No convertir `page.next_cursor` en
+una referencia de memoria. Una prueba de continuación debe conservar los filtros,
+el reloj y la prueba, y comprobar que el cursor rechaza cambios del contenido.
+Medir el recorrido completo: cuatro páginas pueden costar más tokens que una
+respuesta grande aunque permitan avanzar con un límite menor por respuesta.
+
 La regla de no repetir es sobre la carga en contexto. Un archivo fuente y sus
 assets generados no son dos manuales que el agente deba leer. Las reglas comunes
 que ya llegan en initialize tampoco necesitan copiarse íntegramente en cada
